@@ -282,7 +282,8 @@ def get_missing_episodes(api_url: str, api_key: str, api_timeout: int, monitored
             params = {
                 "page": page,
                 "pageSize": page_size,
-                "includeSeries": "true"
+                "includeSeries": "true",
+                "monitored": monitored_only
             }
             
             # Add series ID filter if provided
@@ -405,7 +406,8 @@ def get_cutoff_unmet_episodes(api_url: str, api_key: str, api_timeout: int, moni
                 "pageSize": page_size,
                 "includeSeries": "true", # Include series info for filtering
                 "sortKey": "airDateUtc",
-                "sortDir": "asc"
+                "sortDir": "asc",
+                "monitored": monitored_only
             }
             url = f"{api_url}/api/v3/{endpoint}"
             sonarr_logger.debug(f"Requesting cutoff unmet page {page} (attempt {retry_count+1}/{retries_per_page+1})")
@@ -545,7 +547,8 @@ def get_cutoff_unmet_episodes_random_page(api_url: str, api_key: str, api_timeou
     params = {
         "page": 1,
         "pageSize": 1,
-        "includeSeries": "true"  # Include series info for filtering
+        "includeSeries": "true",  # Include series info for filtering
+        "monitored": monitored_only
     }
     url = f"{api_url}/api/v3/{endpoint}"
     
@@ -576,7 +579,8 @@ def get_cutoff_unmet_episodes_random_page(api_url: str, api_key: str, api_timeou
         params = {
             "page": random_page,
             "pageSize": page_size,
-            "includeSeries": "true"
+            "includeSeries": "true",
+            "monitored": monitored_only
         }
         
         response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout)
@@ -640,7 +644,8 @@ def get_missing_episodes_random_page(api_url: str, api_key: str, api_timeout: in
     params = {
         "page": 1,
         "pageSize": 1,
-        "includeSeries": "true"  # Include series info for filtering
+        "includeSeries": "true",  # Include series info for filtering
+        "monitored": monitored_only
     }
     url = f"{api_url}/api/v3/{endpoint}"
     
@@ -682,7 +687,8 @@ def get_missing_episodes_random_page(api_url: str, api_key: str, api_timeout: in
                 params = {
                     "page": random_page,
                     "pageSize": page_size,
-                    "includeSeries": "true"
+                    "includeSeries": "true",
+                    "monitored": monitored_only
                 }
                 
                 if series_id is not None:
@@ -930,7 +936,8 @@ def get_cutoff_unmet_episodes_for_series(api_url: str, api_key: str, api_timeout
                 "includeSeries": "true", # Include series info for filtering
                 "sortKey": "airDateUtc",
                 "sortDir": "asc",
-                "seriesId": series_id  # Filter by series ID - this limits results to only this series
+                "seriesId": series_id,  # Filter by series ID - this limits results to only this series
+                "monitored": monitored_only
             }
             url = f"{api_url}/api/v3/{endpoint}"
             sonarr_logger.debug(f"Requesting cutoff unmet page {page} for series {series_id} (attempt {retry_count+1}/{retries_per_page+1})")
