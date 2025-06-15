@@ -4,9 +4,9 @@ Database-based log routes for Huntarr web interface
 Replaces file-based log reading with database queries
 """
 
-from flask import Blueprint, jsonify, request
-from src.primary.utils.logs_database import get_logs_database
+from flask import Blueprint, jsonify, request, current_app
 from src.primary.utils.logger import get_logger
+from src.primary.utils.database import get_logs_database
 from datetime import datetime
 import pytz
 

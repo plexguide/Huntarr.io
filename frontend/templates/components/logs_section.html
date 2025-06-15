@@ -1084,51 +1084,78 @@ if (logsNextPage) logsNextPage.disabled = true;
 let pageSize = 20; // Default page size
 let currentPage = 1;
 
-// Function to reset logs section to default values
-function resetLogsToDefaults() {
-    // Reset app filter to "all"
-    const logAppSelect = document.getElementById('logAppSelect');
-    if (logAppSelect) {
-        logAppSelect.value = 'all';
-        // Trigger change event to update the UI
-        logAppSelect.dispatchEvent(new Event('change'));
+// Load saved logs settings from localStorage
+function loadLogsSettings() {
+    try {
+        const savedSettings = localStorage.getItem('huntarr-logs-settings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            
+            // Restore page size
+            if (settings.pageSize) {
+                pageSize = settings.pageSize;
+                const logsPageSize = document.getElementById('logsPageSize');
+                if (logsPageSize) {
+                    logsPageSize.value = settings.pageSize.toString();
+                }
+            }
+            
+            // Restore log level
+            if (settings.logLevel) {
+                const logLevelSelect = document.getElementById('logLevelSelect');
+                if (logLevelSelect) {
+                    logLevelSelect.value = settings.logLevel;
+                }
+            }
+            
+            // Restore app filter
+            if (settings.appFilter) {
+                const logAppSelect = document.getElementById('logAppSelect');
+                if (logAppSelect) {
+                    logAppSelect.value = settings.appFilter;
+                }
+            }
+            
+            console.log('[LogsSection] Restored settings:', settings);
+        }
+    } catch (e) {
+        console.warn('[LogsSection] Failed to load saved settings:', e);
     }
-    
-    // Reset log level to "info"
-    const logLevelSelect = document.getElementById('logLevelSelect');
-    if (logLevelSelect) {
-        logLevelSelect.value = 'info';
-        // Trigger change event to update filtering
-        logLevelSelect.dispatchEvent(new Event('change'));
-    }
-    
-    // Reset page size to 20
-    const logsPageSize = document.getElementById('logsPageSize');
-    if (logsPageSize) {
-        logsPageSize.value = '20';
-        pageSize = 20;
-    }
-    
-    // Reset to first page
-    currentPage = 1;
-    
-    // Update pagination display
-    setTimeout(() => {
-        updateLogsPagination();
-    }, 100);
-    
-    console.log('[LogsSection] Reset to defaults: All apps, INFO level, 20 entries per page');
 }
 
-// Watch for when logs section becomes active and reset to defaults
+// Save logs settings to localStorage
+function saveLogsSettings() {
+    try {
+        const logLevelSelect = document.getElementById('logLevelSelect');
+        const logAppSelect = document.getElementById('logAppSelect');
+        const logsPageSize = document.getElementById('logsPageSize');
+        
+        const settings = {
+            pageSize: pageSize,
+            logLevel: logLevelSelect ? logLevelSelect.value : 'info',
+            appFilter: logAppSelect ? logAppSelect.value : 'all'
+        };
+        
+        localStorage.setItem('huntarr-logs-settings', JSON.stringify(settings));
+        console.log('[LogsSection] Saved settings:', settings);
+    } catch (e) {
+        console.warn('[LogsSection] Failed to save settings:', e);
+    }
+}
+
+// Watch for when logs section becomes active and restore settings
 const observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
             const logsSection = document.getElementById('logsSection');
             if (logsSection && logsSection.classList.contains('active')) {
-                // Small delay to ensure all elements are ready
+                // Small delay to ensure all elements are ready, then restore settings
                 setTimeout(() => {
-                    resetLogsToDefaults();
+                    loadLogsSettings();
+                    // Update pagination after restoring settings
+                    setTimeout(() => {
+                        updateLogsPagination();
+                    }, 100);
                 }, 200);
             }
         }
@@ -1201,6 +1228,7 @@ function handlePageSizeChange() {
         pageSize = parseInt(logsPageSize.value);
         currentPage = 1; // Reset to first page
         updateLogsPagination();
+        saveLogsSettings(); // Save settings when page size changes
     }
 }
 
@@ -1252,6 +1280,7 @@ if (logLevelSelect) {
         setTimeout(() => {
             updateLogsPagination();
         }, 300);
+        saveLogsSettings(); // Save settings when log level changes
     });
 }
 
@@ -1264,6 +1293,7 @@ if (logAppSelect) {
         setTimeout(() => {
             updateLogsPagination();
         }, 300);
+        saveLogsSettings(); // Save settings when app filter changes
     });
 }
 

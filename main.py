@@ -128,15 +128,6 @@ try:
     setup_clean_logging()
     huntarr_logger.info("Clean logging system initialized for frontend consumption.")
     
-    # Initialize database logging system
-    try:
-        from primary.utils.logs_database import get_logs_database, schedule_log_cleanup
-        logs_db = get_logs_database()
-        schedule_log_cleanup()
-        huntarr_logger.info("Database logging system initialized with scheduled cleanup.")
-    except Exception as e:
-        huntarr_logger.warning(f"Failed to initialize database logging: {e}")
-    
     huntarr_logger.info("Successfully imported application components.")
     # Main function startup message removed to reduce log spam
 except ImportError as e:
@@ -337,19 +328,14 @@ def main():
         initialize_database()
         huntarr_logger.info("Main database initialization completed successfully")
         
-        # Initialize manager database and migrate history if needed
-        from src.primary.utils.manager_database import get_manager_database
-        from src.primary.utils.database import get_database
-        manager_db = get_manager_database()
-        
-        # Attempt to migrate history from huntarr.db if it exists
-        main_db = get_database()
-        if hasattr(main_db, 'db_path'):
-            try:
-                manager_db.migrate_from_huntarr_db(main_db.db_path)
-                huntarr_logger.info("Hunt Manager database initialized and migration completed")
-            except Exception as migration_error:
-                huntarr_logger.warning(f"History migration completed with warnings: {migration_error}")
+        # Initialize database logging system (now uses main huntarr.db)
+        try:
+            from primary.utils.database import get_logs_database, schedule_log_cleanup
+            logs_db = get_logs_database()
+            schedule_log_cleanup()
+            huntarr_logger.info("Database logging system initialized with scheduled cleanup.")
+        except Exception as e:
+            huntarr_logger.warning(f"Failed to initialize database logging: {e}")
         
         # Refresh sponsors from manifest.json on startup
         try:

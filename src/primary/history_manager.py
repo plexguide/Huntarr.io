@@ -14,7 +14,7 @@ from typing import Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 # Import manager database
-from src.primary.utils.manager_database import get_manager_database
+from src.primary.utils.database import get_manager_database
 
 # Lock to prevent race conditions during database operations
 history_locks = {

@@ -9,7 +9,7 @@ import json
 import sqlite3
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Set
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import time
 
@@ -21,6 +21,16 @@ class HuntarrDatabase:
     def __init__(self):
         self.db_path = self._get_database_path()
         self.ensure_database_exists()
+    
+    def execute_query(self, query: str, params: tuple = None) -> List[tuple]:
+        """Execute a raw SQL query and return results"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            return cursor.fetchall()
     
     def _get_database_path(self) -> Path:
         """Get database path - use /config for Docker, local data directory for development"""
@@ -211,6 +221,35 @@ class HuntarrDatabase:
                 )
             ''')
             
+            # Create logs table for all application logs
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp DATETIME NOT NULL,
+                    level TEXT NOT NULL,
+                    app_type TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    logger_name TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create hunt_history table for tracking processed media history
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS hunt_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
+                    media_id TEXT NOT NULL,
+                    processed_info TEXT NOT NULL,
+                    operation_type TEXT DEFAULT 'missing',
+                    discovered BOOLEAN DEFAULT FALSE,
+                    date_time INTEGER NOT NULL,
+                    date_time_readable TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             # Add temp_2fa_secret column if it doesn't exist (for existing databases)
             try:
                 conn.execute('ALTER TABLE users ADD COLUMN temp_2fa_secret TEXT')
@@ -245,6 +284,15 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_state_data_app_type ON state_data(app_type, state_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_swaparr_state_app_name ON swaparr_state(app_name, state_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_sponsors_login ON sponsors(login)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_type ON logs(app_type)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_level ON logs(level)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_level ON logs(app_type, level)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_app_instance ON hunt_history(app_type, instance_name)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_date_time ON hunt_history(date_time)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_media_id ON hunt_history(media_id)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_operation_type ON hunt_history(operation_type)')
             
             conn.commit()
             logger.info(f"Database initialized at: {self.db_path}")
@@ -1189,6 +1237,268 @@ class HuntarrDatabase:
                 sponsor_data.get('category', 'past')
             ))
 
+    # Logs Database Methods
+    def insert_log(self, timestamp: datetime, level: str, app_type: str, message: str, logger_name: str = None):
+        """Insert a new log entry"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute('''
+                    INSERT INTO logs (timestamp, level, app_type, message, logger_name)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (timestamp.isoformat(), level, app_type, message, logger_name))
+                conn.commit()
+        except Exception as e:
+            logger.error(f"Error inserting log entry: {e}")
+    
+    def get_logs(self, app_type: str = None, level: str = None, limit: int = 100, offset: int = 0, search: str = None) -> List[Dict[str, Any]]:
+        """Get logs with optional filtering"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                
+                # Build query with filters
+                query = "SELECT * FROM logs WHERE 1=1"
+                params = []
+                
+                if app_type:
+                    query += " AND app_type = ?"
+                    params.append(app_type)
+                
+                if level:
+                    query += " AND level = ?"
+                    params.append(level)
+                
+                if search:
+                    query += " AND message LIKE ?"
+                    params.append(f"%{search}%")
+                
+                query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+                params.extend([limit, offset])
+                
+                cursor = conn.execute(query, params)
+                rows = cursor.fetchall()
+                
+                return [dict(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Error getting logs: {e}")
+            return []
+    
+    def get_log_count(self, app_type: str = None, level: str = None, search: str = None) -> int:
+        """Get total count of logs matching filters"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                query = "SELECT COUNT(*) FROM logs WHERE 1=1"
+                params = []
+                
+                if app_type:
+                    query += " AND app_type = ?"
+                    params.append(app_type)
+                
+                if level:
+                    query += " AND level = ?"
+                    params.append(level)
+                
+                if search:
+                    query += " AND message LIKE ?"
+                    params.append(f"%{search}%")
+                
+                cursor = conn.execute(query, params)
+                return cursor.fetchone()[0]
+        except Exception as e:
+            logger.error(f"Error getting log count: {e}")
+            return 0
+    
+    def cleanup_old_logs(self, days_to_keep: int = 30, max_entries_per_app: int = 10000):
+        """Clean up old logs based on age and count limits"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                # Time-based cleanup
+                cutoff_date = datetime.now() - timedelta(days=days_to_keep)
+                cursor = conn.execute(
+                    "DELETE FROM logs WHERE timestamp < ?",
+                    (cutoff_date.isoformat(),)
+                )
+                deleted_by_age = cursor.rowcount
+                
+                # Count-based cleanup per app type
+                app_types = ['system', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr']
+                total_deleted_by_count = 0
+                
+                for app_type in app_types:
+                    cursor = conn.execute('''
+                        DELETE FROM logs 
+                        WHERE app_type = ? AND id NOT IN (
+                            SELECT id FROM logs 
+                            WHERE app_type = ? 
+                            ORDER BY timestamp DESC 
+                            LIMIT ?
+                        )
+                    ''', (app_type, app_type, max_entries_per_app))
+                    total_deleted_by_count += cursor.rowcount
+                
+                conn.commit()
+                
+                if deleted_by_age > 0 or total_deleted_by_count > 0:
+                    logger.info(f"Cleaned up logs: {deleted_by_age} by age, {total_deleted_by_count} by count")
+                
+                return deleted_by_age + total_deleted_by_count
+        except Exception as e:
+            logger.error(f"Error cleaning up logs: {e}")
+            return 0
+    
+    def get_app_types_from_logs(self) -> List[str]:
+        """Get list of all app types that have logs"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.execute("SELECT DISTINCT app_type FROM logs ORDER BY app_type")
+                return [row[0] for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error getting app types from logs: {e}")
+            return []
+    
+    def get_log_levels(self) -> List[str]:
+        """Get list of all log levels that exist"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.execute("SELECT DISTINCT level FROM logs ORDER BY level")
+                return [row[0] for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error getting log levels: {e}")
+            return []
+    
+    def clear_logs(self, app_type: str = None):
+        """Clear logs for a specific app type or all logs"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                if app_type:
+                    cursor = conn.execute("DELETE FROM logs WHERE app_type = ?", (app_type,))
+                else:
+                    cursor = conn.execute("DELETE FROM logs")
+                
+                deleted_count = cursor.rowcount
+                conn.commit()
+                
+                logger.info(f"Cleared {deleted_count} logs" + (f" for {app_type}" if app_type else ""))
+                return deleted_count
+        except Exception as e:
+            logger.error(f"Error clearing logs: {e}")
+            return 0
+
+    # Hunt History/Manager Database Methods
+    def add_hunt_history_entry(self, app_type: str, instance_name: str, media_id: str, 
+                         processed_info: str, operation_type: str = "missing", 
+                         discovered: bool = False, date_time: int = None) -> Dict[str, Any]:
+        """Add a new hunt history entry to the database"""
+        if date_time is None:
+            date_time = int(time.time())
+        
+        date_time_readable = datetime.fromtimestamp(date_time).strftime('%Y-%m-%d %H:%M:%S')
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute('''
+                INSERT INTO hunt_history 
+                (app_type, instance_name, media_id, processed_info, operation_type, discovered, date_time, date_time_readable)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (app_type, instance_name, media_id, processed_info, operation_type, discovered, date_time, date_time_readable))
+            
+            entry_id = cursor.lastrowid
+            conn.commit()
+            
+            # Return the created entry
+            entry = {
+                "id": entry_id,
+                "app_type": app_type,
+                "instance_name": instance_name,
+                "media_id": media_id,
+                "processed_info": processed_info,
+                "operation_type": operation_type,
+                "discovered": discovered,
+                "date_time": date_time,
+                "date_time_readable": date_time_readable
+            }
+            
+            logger.info(f"Added hunt history entry for {app_type}-{instance_name}: {processed_info}")
+            return entry
+    
+    def get_hunt_history(self, app_type: str = None, search_query: str = None, 
+                   page: int = 1, page_size: int = 20) -> Dict[str, Any]:
+        """Get hunt history entries with pagination and filtering"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            
+            # Build WHERE clause
+            where_conditions = []
+            params = []
+            
+            if app_type and app_type != "all":
+                where_conditions.append("app_type = ?")
+                params.append(app_type)
+            
+            if search_query:
+                where_conditions.append("(processed_info LIKE ? OR media_id LIKE ?)")
+                params.extend([f"%{search_query}%", f"%{search_query}%"])
+            
+            where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+            
+            # Get total count
+            count_query = f"SELECT COUNT(*) FROM hunt_history {where_clause}"
+            cursor = conn.execute(count_query, params)
+            total_entries = cursor.fetchone()[0]
+            
+            # Calculate pagination
+            total_pages = max(1, (total_entries + page_size - 1) // page_size)
+            offset = (page - 1) * page_size
+            
+            # Get entries
+            entries_query = f"""
+                SELECT * FROM hunt_history {where_clause}
+                ORDER BY date_time DESC
+                LIMIT ? OFFSET ?
+            """
+            cursor = conn.execute(entries_query, params + [page_size, offset])
+            
+            entries = []
+            current_time = int(time.time())
+            
+            for row in cursor.fetchall():
+                entry = dict(row)
+                # Calculate "how long ago"
+                seconds_ago = current_time - entry["date_time"]
+                entry["how_long_ago"] = self._format_time_ago(seconds_ago)
+                entries.append(entry)
+            
+            return {
+                "entries": entries,
+                "total_entries": total_entries,
+                "total_pages": total_pages,
+                "current_page": page
+            }
+
+    def clear_hunt_history(self, app_type: str = None):
+        """Clear hunt history entries"""
+        with sqlite3.connect(self.db_path) as conn:
+            if app_type and app_type != "all":
+                conn.execute("DELETE FROM hunt_history WHERE app_type = ?", (app_type,))
+                logger.info(f"Cleared hunt history for {app_type}")
+            else:
+                conn.execute("DELETE FROM hunt_history")
+                logger.info("Cleared all hunt history")
+            conn.commit()
+
+    def _format_time_ago(self, seconds_ago: int) -> str:
+        """Format seconds into human-readable time ago string"""
+        if seconds_ago < 60:
+            return f"{seconds_ago} seconds ago"
+        elif seconds_ago < 3600:
+            minutes = seconds_ago // 60
+            return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+        elif seconds_ago < 86400:
+            hours = seconds_ago // 3600
+            return f"{hours} hour{'s' if hours != 1 else ''} ago"
+        else:
+            days = seconds_ago // 86400
+            return f"{days} day{'s' if days != 1 else ''} ago"
+
 # Global database instance
 _database_instance = None
 
@@ -1197,4 +1507,36 @@ def get_database() -> HuntarrDatabase:
     global _database_instance
     if _database_instance is None:
         _database_instance = HuntarrDatabase()
-    return _database_instance 
+    return _database_instance
+
+# Logs Database Functions (consolidated from logs_database.py)
+def get_logs_database() -> HuntarrDatabase:
+    """Get the database instance for logs operations"""
+    return get_database()
+
+def schedule_log_cleanup():
+    """Schedule periodic log cleanup - call this from background tasks"""
+    import threading
+    import time
+    
+    def cleanup_worker():
+        """Background worker to clean up logs periodically"""
+        while True:
+            try:
+                time.sleep(3600)  # Run every hour
+                db = get_database()
+                deleted_count = db.cleanup_old_logs(days_to_keep=30, max_entries_per_app=10000)
+                if deleted_count > 0:
+                    logger.info(f"Scheduled cleanup removed {deleted_count} old log entries")
+            except Exception as e:
+                logger.error(f"Error in scheduled log cleanup: {e}")
+    
+    # Start cleanup thread
+    cleanup_thread = threading.Thread(target=cleanup_worker, daemon=True)
+    cleanup_thread.start()
+    logger.info("Scheduled log cleanup thread started")
+
+# Manager Database Functions (consolidated from manager_database.py)
+def get_manager_database() -> HuntarrDatabase:
+    """Get the database instance for manager operations"""
+    return get_database() 

@@ -113,7 +113,7 @@ class DatabaseLogHandler(logging.Handler):
     def logs_db(self):
         """Lazy load the logs database instance"""
         if self._logs_db is None:
-            from src.primary.utils.logs_database import get_logs_database
+            from src.primary.utils.database import get_logs_database
             self._logs_db = get_logs_database()
         return self._logs_db
     
