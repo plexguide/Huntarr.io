@@ -24,13 +24,30 @@ class HuntarrDatabase:
     
     def execute_query(self, query: str, params: tuple = None) -> List[tuple]:
         """Execute a raw SQL query and return results"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.cursor()
             if params:
                 cursor.execute(query, params)
             else:
                 cursor.execute(query)
             return cursor.fetchall()
+    
+    def _configure_connection(self, conn):
+        """Configure SQLite connection with Synology NAS compatible settings"""
+        conn.execute('PRAGMA foreign_keys = ON')
+        conn.execute('PRAGMA journal_mode = WAL')
+        conn.execute('PRAGMA synchronous = NORMAL')
+        conn.execute('PRAGMA cache_size = 10000')
+        conn.execute('PRAGMA temp_store = MEMORY')
+        conn.execute('PRAGMA mmap_size = 268435456')
+        conn.execute('PRAGMA wal_autocheckpoint = 1000')
+        conn.execute('PRAGMA busy_timeout = 30000')
+    
+    def get_connection(self):
+        """Get a configured SQLite connection with Synology NAS compatibility"""
+        conn = sqlite3.connect(self.db_path)
+        self._configure_connection(conn)
+        return conn
     
     def _get_database_path(self) -> Path:
         """Get database path - use /config for Docker, local data directory for development"""
@@ -50,8 +67,7 @@ class HuntarrDatabase:
     
     def ensure_database_exists(self):
         """Create database and all tables if they don't exist"""
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute('PRAGMA foreign_keys = ON')
+        with self.get_connection() as conn:
             
             # Create app_configs table for all app settings
             conn.execute('''
@@ -299,7 +315,7 @@ class HuntarrDatabase:
     
     def get_app_config(self, app_type: str) -> Optional[Dict[str, Any]]:
         """Get app configuration from database"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute(
                 'SELECT config_data FROM app_configs WHERE app_type = ?',
                 (app_type,)
@@ -318,7 +334,7 @@ class HuntarrDatabase:
         """Save app configuration to database"""
         config_json = json.dumps(config_data, indent=2)
         
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO app_configs (app_type, config_data, updated_at)
                 VALUES (?, ?, CURRENT_TIMESTAMP)
@@ -328,7 +344,7 @@ class HuntarrDatabase:
     
     def get_general_settings(self) -> Dict[str, Any]:
         """Get all general settings as a dictionary"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
                 'SELECT setting_key, setting_value, setting_type FROM general_settings'
@@ -359,7 +375,7 @@ class HuntarrDatabase:
     
     def save_general_settings(self, settings: Dict[str, Any]):
         """Save general settings to database"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             for key, value in settings.items():
                 # Determine type and convert value
                 if isinstance(value, bool):
@@ -389,7 +405,7 @@ class HuntarrDatabase:
     
     def get_general_setting(self, key: str, default: Any = None) -> Any:
         """Get a specific general setting"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute(
                 'SELECT setting_value, setting_type FROM general_settings WHERE setting_key = ?',
                 (key,)
@@ -435,7 +451,7 @@ class HuntarrDatabase:
             setting_type = 'string'
             setting_value = str(value)
         
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO general_settings 
                 (setting_key, setting_value, setting_type, updated_at)
@@ -446,7 +462,7 @@ class HuntarrDatabase:
     
     def get_all_app_types(self) -> List[str]:
         """Get list of all app types in database"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('SELECT app_type FROM app_configs ORDER BY app_type')
             return [row[0] for row in cursor.fetchall()]
     
@@ -481,7 +497,7 @@ class HuntarrDatabase:
     
     def get_stateful_lock_info(self) -> Dict[str, Any]:
         """Get stateful management lock information"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('SELECT created_at, expires_at FROM stateful_lock WHERE id = 1')
             row = cursor.fetchone()
             
@@ -494,7 +510,7 @@ class HuntarrDatabase:
     
     def set_stateful_lock_info(self, created_at: int, expires_at: int):
         """Set stateful management lock information"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO stateful_lock (id, created_at, expires_at, updated_at)
                 VALUES (1, ?, ?, CURRENT_TIMESTAMP)
@@ -504,7 +520,7 @@ class HuntarrDatabase:
     
     def get_processed_ids(self, app_type: str, instance_name: str) -> Set[str]:
         """Get processed media IDs for a specific app instance"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('''
                 SELECT media_id FROM stateful_processed_ids 
                 WHERE app_type = ? AND instance_name = ?
@@ -515,7 +531,7 @@ class HuntarrDatabase:
     def add_processed_id(self, app_type: str, instance_name: str, media_id: str) -> bool:
         """Add a processed media ID for a specific app instance"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     INSERT OR IGNORE INTO stateful_processed_ids 
                     (app_type, instance_name, media_id)
@@ -530,7 +546,7 @@ class HuntarrDatabase:
     
     def is_processed(self, app_type: str, instance_name: str, media_id: str) -> bool:
         """Check if a media ID has been processed for a specific app instance"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('''
                 SELECT 1 FROM stateful_processed_ids 
                 WHERE app_type = ? AND instance_name = ? AND media_id = ?
@@ -540,7 +556,7 @@ class HuntarrDatabase:
     
     def clear_all_stateful_data(self):
         """Clear all stateful management data (for reset)"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             # Clear processed IDs
             conn.execute('DELETE FROM stateful_processed_ids')
             # Clear lock info
@@ -560,7 +576,7 @@ class HuntarrDatabase:
     
     def get_media_stats(self, app_type: str = None) -> Dict[str, Any]:
         """Get media statistics for an app or all apps"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             if app_type:
                 cursor = conn.execute(
                     'SELECT stat_type, stat_value FROM media_stats WHERE app_type = ?',
@@ -578,7 +594,7 @@ class HuntarrDatabase:
     
     def set_media_stat(self, app_type: str, stat_type: str, value: int):
         """Set a media statistic value"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO media_stats (app_type, stat_type, stat_value, updated_at)
                 VALUES (?, ?, ?, CURRENT_TIMESTAMP)
@@ -587,7 +603,7 @@ class HuntarrDatabase:
     
     def increment_media_stat(self, app_type: str, stat_type: str, increment: int = 1):
         """Increment a media statistic"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO media_stats (app_type, stat_type, stat_value, updated_at)
                 VALUES (?, ?, COALESCE((SELECT stat_value FROM media_stats WHERE app_type = ? AND stat_type = ?), 0) + ?, CURRENT_TIMESTAMP)
@@ -596,7 +612,7 @@ class HuntarrDatabase:
     
     def get_hourly_caps(self) -> Dict[str, Dict[str, int]]:
         """Get hourly API caps for all apps"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('SELECT app_type, api_hits, last_reset_hour FROM hourly_caps')
             return {
                 row[0]: {"api_hits": row[1], "last_reset_hour": row[2]}
@@ -609,7 +625,7 @@ class HuntarrDatabase:
             import datetime
             last_reset_hour = datetime.datetime.now().hour
         
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO hourly_caps (app_type, api_hits, last_reset_hour, updated_at)
                 VALUES (?, ?, ?, CURRENT_TIMESTAMP)
@@ -619,7 +635,7 @@ class HuntarrDatabase:
     def increment_hourly_cap(self, app_type: str, increment: int = 1):
         """Increment hourly API usage for an app"""
         import datetime
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO hourly_caps (app_type, api_hits, last_reset_hour, updated_at)
                 VALUES (?, COALESCE((SELECT api_hits FROM hourly_caps WHERE app_type = ?), 0) + ?, 
@@ -632,7 +648,7 @@ class HuntarrDatabase:
         import datetime
         current_hour = datetime.datetime.now().hour
         
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 UPDATE hourly_caps SET api_hits = 0, last_reset_hour = ?, updated_at = CURRENT_TIMESTAMP
             ''', (current_hour,))
@@ -640,7 +656,7 @@ class HuntarrDatabase:
     
     def get_sleep_data(self, app_type: str = None) -> Dict[str, Any]:
         """Get sleep/cycle data for an app or all apps"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             if app_type:
                 cursor = conn.execute('''
                     SELECT next_cycle_time, cycle_lock, last_cycle_start, last_cycle_end 
@@ -673,7 +689,7 @@ class HuntarrDatabase:
     def set_sleep_data(self, app_type: str, next_cycle_time: str = None, cycle_lock: bool = None, 
                        last_cycle_start: str = None, last_cycle_end: str = None):
         """Set sleep/cycle data for an app"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             # Get current data
             cursor = conn.execute('''
                 SELECT next_cycle_time, cycle_lock, last_cycle_start, last_cycle_end 
@@ -704,13 +720,13 @@ class HuntarrDatabase:
     
     def get_swaparr_stats(self) -> Dict[str, int]:
         """Get Swaparr statistics"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('SELECT stat_key, stat_value FROM swaparr_stats')
             return {row[0]: row[1] for row in cursor.fetchall()}
     
     def set_swaparr_stat(self, stat_key: str, value: int):
         """Set a Swaparr statistic value"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO swaparr_stats (stat_key, stat_value, updated_at)
                 VALUES (?, ?, CURRENT_TIMESTAMP)
@@ -719,7 +735,7 @@ class HuntarrDatabase:
     
     def increment_swaparr_stat(self, stat_key: str, increment: int = 1):
         """Increment a Swaparr statistic"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO swaparr_stats (stat_key, stat_value, updated_at)
                 VALUES (?, COALESCE((SELECT stat_value FROM swaparr_stats WHERE stat_key = ?), 0) + ?, CURRENT_TIMESTAMP)
@@ -731,7 +747,7 @@ class HuntarrDatabase:
     # Scheduler methods
     def get_schedules(self, app_type: str = None) -> Dict[str, List[Dict[str, Any]]]:
         """Get all schedules, optionally filtered by app type"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
             
             if app_type:
@@ -771,7 +787,7 @@ class HuntarrDatabase:
     
     def save_schedules(self, schedules_data: Dict[str, List[Dict[str, Any]]]):
         """Save all schedules to database (replaces existing schedules)"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             # Clear existing schedules
             conn.execute('DELETE FROM schedules')
             
@@ -834,7 +850,7 @@ class HuntarrDatabase:
         # Convert days to JSON string
         days_json = json.dumps(schedule_data.get('days', []))
         
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO schedules 
                 (id, app_type, action, time_hour, time_minute, days, app_instance, enabled, updated_at)
@@ -856,7 +872,7 @@ class HuntarrDatabase:
     
     def delete_schedule(self, schedule_id: str):
         """Delete a schedule from database"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('DELETE FROM schedules WHERE id = ?', (schedule_id,))
             conn.commit()
             
@@ -867,7 +883,7 @@ class HuntarrDatabase:
     
     def update_schedule_enabled(self, schedule_id: str, enabled: bool):
         """Update the enabled status of a schedule"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('''
                 UPDATE schedules 
                 SET enabled = ?, updated_at = CURRENT_TIMESTAMP 
@@ -883,7 +899,7 @@ class HuntarrDatabase:
     # State Management Methods
     def get_state_data(self, app_type: str, state_type: str) -> Any:
         """Get state data for a specific app type and state type"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute(
                 'SELECT state_data FROM state_data WHERE app_type = ? AND state_type = ?',
                 (app_type, state_type)
@@ -901,7 +917,7 @@ class HuntarrDatabase:
     def set_state_data(self, app_type: str, state_type: str, data: Any):
         """Set state data for a specific app type and state type"""
         data_json = json.dumps(data)
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute(
                 '''INSERT OR REPLACE INTO state_data 
                    (app_type, state_type, state_data, updated_at) 
@@ -948,7 +964,7 @@ class HuntarrDatabase:
     # Swaparr State Management Methods
     def get_swaparr_state_data(self, app_name: str, state_type: str) -> Any:
         """Get Swaparr state data for a specific app name and state type"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute(
                 'SELECT state_data FROM swaparr_state WHERE app_name = ? AND state_type = ?',
                 (app_name, state_type)
@@ -966,7 +982,7 @@ class HuntarrDatabase:
     def set_swaparr_state_data(self, app_name: str, state_type: str, data: Any):
         """Set Swaparr state data for a specific app name and state type"""
         data_json = json.dumps(data)
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute(
                 '''INSERT OR REPLACE INTO swaparr_state 
                    (app_name, state_type, state_data, updated_at) 
@@ -999,7 +1015,7 @@ class HuntarrDatabase:
     def create_reset_request(self, app_type: str) -> bool:
         """Create a reset request for an app (replaces creating .reset files)"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     INSERT OR REPLACE INTO reset_requests (app_type, timestamp, processed)
                     VALUES (?, ?, 0)
@@ -1013,7 +1029,7 @@ class HuntarrDatabase:
     
     def get_pending_reset_request(self, app_type: str) -> Optional[int]:
         """Check if there's a pending reset request for an app (replaces checking .reset files)"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('''
                 SELECT timestamp FROM reset_requests 
                 WHERE app_type = ? AND processed = 0
@@ -1025,7 +1041,7 @@ class HuntarrDatabase:
     def mark_reset_request_processed(self, app_type: str) -> bool:
         """Mark a reset request as processed (replaces deleting .reset files)"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     UPDATE reset_requests 
                     SET processed = 1, processed_at = CURRENT_TIMESTAMP
@@ -1041,14 +1057,14 @@ class HuntarrDatabase:
     # User Management Methods
     def user_exists(self) -> bool:
         """Check if any user exists in the database"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('SELECT COUNT(*) FROM users')
             count = cursor.fetchone()[0]
             return count > 0
     
     def get_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
         """Get user data by username"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
                 'SELECT * FROM users WHERE username = ?',
@@ -1069,7 +1085,7 @@ class HuntarrDatabase:
     
     def get_first_user(self) -> Optional[Dict[str, Any]]:
         """Get the first user from the database (for bypass modes)"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
                 'SELECT * FROM users ORDER BY created_at ASC LIMIT 1'
@@ -1094,7 +1110,7 @@ class HuntarrDatabase:
         try:
             plex_data_json = json.dumps(plex_user_data) if plex_user_data else None
             
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     INSERT INTO users (username, password, two_fa_enabled, two_fa_secret, 
                                      plex_token, plex_user_data, created_at, updated_at)
@@ -1110,7 +1126,7 @@ class HuntarrDatabase:
     def update_user_password(self, username: str, new_password: str) -> bool:
         """Update user password"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP 
                     WHERE username = ?
@@ -1125,7 +1141,7 @@ class HuntarrDatabase:
     def update_user_username(self, old_username: str, new_username: str) -> bool:
         """Update username"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     UPDATE users SET username = ?, updated_at = CURRENT_TIMESTAMP 
                     WHERE username = ?
@@ -1140,7 +1156,7 @@ class HuntarrDatabase:
     def update_user_2fa(self, username: str, two_fa_enabled: bool, two_fa_secret: str = None) -> bool:
         """Update user 2FA settings"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     UPDATE users SET two_fa_enabled = ?, two_fa_secret = ?, 
                                    updated_at = CURRENT_TIMESTAMP 
@@ -1156,7 +1172,7 @@ class HuntarrDatabase:
     def update_user_temp_2fa_secret(self, username: str, temp_2fa_secret: str = None) -> bool:
         """Update user temporary 2FA secret"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     UPDATE users SET temp_2fa_secret = ?, updated_at = CURRENT_TIMESTAMP 
                     WHERE username = ?
@@ -1174,7 +1190,7 @@ class HuntarrDatabase:
         try:
             plex_data_json = json.dumps(plex_user_data) if plex_user_data else None
             
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     UPDATE users SET plex_token = ?, plex_user_data = ?, 
                                    updated_at = CURRENT_TIMESTAMP 
@@ -1189,7 +1205,7 @@ class HuntarrDatabase:
 
     def get_sponsors(self) -> List[Dict[str, Any]]:
         """Get all sponsors from database"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute('''
                 SELECT login, name, avatar_url, url, tier, monthly_amount, category, updated_at
@@ -1200,7 +1216,7 @@ class HuntarrDatabase:
     
     def save_sponsors(self, sponsors_data: List[Dict[str, Any]]):
         """Save sponsors data to database, replacing existing data"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             # Clear existing sponsors
             conn.execute('DELETE FROM sponsors')
             
@@ -1223,7 +1239,7 @@ class HuntarrDatabase:
     
     def add_sponsor(self, sponsor_data: Dict[str, Any]):
         """Add or update a single sponsor"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO sponsors (login, name, avatar_url, url, tier, monthly_amount, category)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -1241,7 +1257,7 @@ class HuntarrDatabase:
     def insert_log(self, timestamp: datetime, level: str, app_type: str, message: str, logger_name: str = None):
         """Insert a new log entry"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     INSERT INTO logs (timestamp, level, app_type, message, logger_name)
                     VALUES (?, ?, ?, ?, ?)
@@ -1253,7 +1269,7 @@ class HuntarrDatabase:
     def get_logs(self, app_type: str = None, level: str = None, limit: int = 100, offset: int = 0, search: str = None) -> List[Dict[str, Any]]:
         """Get logs with optional filtering"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 conn.row_factory = sqlite3.Row
                 
                 # Build query with filters
@@ -1286,7 +1302,7 @@ class HuntarrDatabase:
     def get_log_count(self, app_type: str = None, level: str = None, search: str = None) -> int:
         """Get total count of logs matching filters"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 query = "SELECT COUNT(*) FROM logs WHERE 1=1"
                 params = []
                 
@@ -1311,7 +1327,7 @@ class HuntarrDatabase:
     def cleanup_old_logs(self, days_to_keep: int = 30, max_entries_per_app: int = 10000):
         """Clean up old logs based on age and count limits"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 # Time-based cleanup
                 cutoff_date = datetime.now() - timedelta(days=days_to_keep)
                 cursor = conn.execute(
@@ -1349,7 +1365,7 @@ class HuntarrDatabase:
     def get_app_types_from_logs(self) -> List[str]:
         """Get list of all app types that have logs"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 cursor = conn.execute("SELECT DISTINCT app_type FROM logs ORDER BY app_type")
                 return [row[0] for row in cursor.fetchall()]
         except Exception as e:
@@ -1359,7 +1375,7 @@ class HuntarrDatabase:
     def get_log_levels(self) -> List[str]:
         """Get list of all log levels that exist"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 cursor = conn.execute("SELECT DISTINCT level FROM logs ORDER BY level")
                 return [row[0] for row in cursor.fetchall()]
         except Exception as e:
@@ -1369,7 +1385,7 @@ class HuntarrDatabase:
     def clear_logs(self, app_type: str = None):
         """Clear logs for a specific app type or all logs"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self.get_connection() as conn:
                 if app_type:
                     cursor = conn.execute("DELETE FROM logs WHERE app_type = ?", (app_type,))
                 else:
@@ -1394,7 +1410,7 @@ class HuntarrDatabase:
         
         date_time_readable = datetime.fromtimestamp(date_time).strftime('%Y-%m-%d %H:%M:%S')
         
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             cursor = conn.execute('''
                 INSERT INTO hunt_history 
                 (app_type, instance_name, media_id, processed_info, operation_type, discovered, date_time, date_time_readable)
@@ -1423,7 +1439,7 @@ class HuntarrDatabase:
     def get_hunt_history(self, app_type: str = None, search_query: str = None, 
                    page: int = 1, page_size: int = 20) -> Dict[str, Any]:
         """Get hunt history entries with pagination and filtering"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
             
             # Build WHERE clause
@@ -1476,7 +1492,7 @@ class HuntarrDatabase:
 
     def clear_hunt_history(self, app_type: str = None):
         """Clear hunt history entries"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self.get_connection() as conn:
             if app_type and app_type != "all":
                 conn.execute("DELETE FROM hunt_history WHERE app_type = ?", (app_type,))
                 logger.info(f"Cleared hunt history for {app_type}")
