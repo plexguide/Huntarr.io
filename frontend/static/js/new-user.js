@@ -299,7 +299,7 @@
             requestData.two_factor_code = twoFactorCode;
         }
         
-        HuntarrUtils.fetchWithTimeout('./api/user/recovery-key/generate', {
+        HuntarrUtils.fetchWithTimeout('./auth/recovery-key/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestData)
