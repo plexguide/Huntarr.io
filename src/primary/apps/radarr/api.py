@@ -127,6 +127,59 @@ def get_download_queue_size(api_url: str, api_key: str, api_timeout: int) -> int
         radarr_logger.error(f"An unexpected error occurred while getting Radarr queue size: {e}")
         return -1
 
+def get_quality_profiles(api_url: str, api_key: str, api_timeout: int) -> Optional[List[Dict]]:
+    """
+    Get all quality profiles configured in Radarr.
+
+    Args:
+        api_url: The base URL of the Radarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+
+    Returns:
+        A list of quality profile objects, or None if the request failed.
+        Each profile contains: id, name, upgradeAllowed, cutoff, items, etc.
+    """
+    try:
+        radarr_logger.debug("Fetching quality profiles from Radarr...")
+        
+        # Use the qualityProfile endpoint - this doesn't count toward API limits since it's configuration data
+        profiles = arr_request(api_url, api_key, api_timeout, "qualityProfile", count_api=False)
+        
+        if profiles is None:
+            radarr_logger.error("Failed to retrieve quality profiles from Radarr API.")
+            return None
+        
+        radarr_logger.debug(f"Found {len(profiles)} quality profiles in Radarr")
+        
+        # Log profile names for debugging
+        profile_names = [profile.get('name', 'Unknown') for profile in profiles]
+        radarr_logger.debug(f"Quality profiles: {', '.join(profile_names)}")
+        
+        return profiles
+        
+    except Exception as e:
+        radarr_logger.error(f"Error retrieving quality profiles: {str(e)}")
+        return None
+
+def get_quality_profile_names(api_url: str, api_key: str, api_timeout: int) -> List[str]:
+    """
+    Get a simple list of quality profile names for UI dropdowns.
+
+    Args:
+        api_url: The base URL of the Radarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+
+    Returns:
+        A list of quality profile names, or empty list if the request failed.
+    """
+    profiles = get_quality_profiles(api_url, api_key, api_timeout)
+    if profiles is None:
+        return []
+    
+    return [profile.get('name', 'Unknown') for profile in profiles]
+
 def get_movies_with_missing(api_url: str, api_key: str, api_timeout: int, monitored_only: bool) -> Optional[List[Dict]]:
     """
     Get a list of movies with missing files (not downloaded/available).

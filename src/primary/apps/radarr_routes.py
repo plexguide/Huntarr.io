@@ -130,3 +130,46 @@ def test_connection():
         error_msg = f"Connection test failed: {str(e)}"
         radarr_logger.error(error_msg)
         return jsonify({"success": False, "message": error_msg}), 500
+
+@radarr_bp.route('/quality-profiles', methods=['POST'])
+def get_quality_profiles():
+    """Get quality profiles from a Radarr API instance"""
+    data = request.json
+    api_url = data.get('api_url')
+    api_key = data.get('api_key')
+    api_timeout = data.get('api_timeout', 30)
+    
+    if not api_url or not api_key:
+        return jsonify({"success": False, "message": "API URL and API Key are required"}), 400
+        
+    radarr_logger.info(f"Fetching quality profiles from Radarr API at {api_url}")
+    
+    # Auto-correct URL if missing http(s) scheme
+    if not (api_url.startswith('http://') or api_url.startswith('https://')):
+        api_url = f"http://{api_url}"
+        radarr_logger.debug(f"Auto-correcting URL to: {api_url}")
+    
+    try:
+        # Import the quality profiles function from the API module
+        from src.primary.apps.radarr.api import get_quality_profiles
+        
+        # Fetch quality profiles
+        profiles = get_quality_profiles(api_url, api_key, api_timeout)
+        
+        if profiles is None:
+            error_msg = "Failed to fetch quality profiles - check connection and API key"
+            radarr_logger.error(error_msg)
+            return jsonify({"success": False, "message": error_msg}), 500
+        
+        radarr_logger.info(f"Successfully fetched {len(profiles)} quality profiles from Radarr")
+        
+        return jsonify({
+            "success": True,
+            "message": f"Found {len(profiles)} quality profiles",
+            "profiles": profiles
+        })
+        
+    except Exception as e:
+        error_msg = f"Error fetching quality profiles: {str(e)}"
+        radarr_logger.error(error_msg)
+        return jsonify({"success": False, "message": error_msg}), 500

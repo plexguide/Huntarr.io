@@ -322,23 +322,34 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                             <label for="radarr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about Radarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                            <input type="text" id="radarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Radarr (e.g., http://localhost:7878)">
+                            <input type="text" id="radarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Radarr (e.g., http://localhost:7878)" data-instance-index="${index}">
                             <p class="setting-help">Base URL for Radarr (e.g., http://localhost:7878)</p>
                         </div>
                         <div class="setting-item">
                             <label for="radarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about finding your Radarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                            <input type="text" id="radarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Radarr">
+                            <input type="text" id="radarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Radarr" data-instance-index="${index}">
                             <p class="setting-help">API key for Radarr</p>
                         </div>
+
                         <div class="setting-item">
                             <label for="radarr-hunt-missing-movies-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#search-settings" class="info-icon" title="Learn more about missing movies search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <input type="number" id="radarr-hunt-missing-movies-${index}" name="hunt_missing_movies" min="0" value="${instance.hunt_missing_movies !== undefined ? instance.hunt_missing_movies : 1}">
-                            <p class="setting-help">Number of missing movies to search per cycle (0 to disable)</p>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="number" id="radarr-hunt-missing-movies-${index}" name="hunt_missing_movies" min="0" value="${instance.hunt_missing_movies !== undefined ? instance.hunt_missing_movies : 1}" style="width: 80px;">
+                                <select id="radarr-missing-quality-profile-${index}" name="missing_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.missing_quality_profile || ''}">
+                                    <option value="">All Quality Profiles</option>
+                                </select>
+                            </div>
+                            <p class="setting-help">Number of missing movies to search per cycle (0 to disable). Select a quality profile to only process movies using that profile.</p>
                         </div>
                         <div class="setting-item">
                             <label for="radarr-hunt-upgrade-movies-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#search-settings" class="info-icon" title="Learn more about upgrading movies for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <input type="number" id="radarr-hunt-upgrade-movies-${index}" name="hunt_upgrade_movies" min="0" value="${instance.hunt_upgrade_movies !== undefined ? instance.hunt_upgrade_movies : 0}">
-                            <p class="setting-help">Number of movies to search for quality upgrades per cycle (0 to disable)</p>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="number" id="radarr-hunt-upgrade-movies-${index}" name="hunt_upgrade_movies" min="0" value="${instance.hunt_upgrade_movies !== undefined ? instance.hunt_upgrade_movies : 0}" style="width: 80px;">
+                                <select id="radarr-upgrade-quality-profile-${index}" name="upgrade_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.upgrade_quality_profile || ''}">
+                                    <option value="">All Quality Profiles</option>
+                                </select>
+                            </div>
+                            <p class="setting-help">Number of movies to search for quality upgrades per cycle (0 to disable). Select a quality profile to only process movies using that profile.</p>
                         </div>
                         <div class="setting-item">
                             <label for="radarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -1993,6 +2004,10 @@ const SettingsForms = {
                 const huntMissingItemsInput = instance.querySelector('input[name="hunt_missing_items"]') || instance.querySelector('input[name="hunt_missing_movies"]');
                 const huntUpgradeItemsInput = instance.querySelector('input[name="hunt_upgrade_items"]') || instance.querySelector('input[name="hunt_upgrade_movies"]');
                 
+                // Get quality profile selectors for Radarr
+                const missingQualityProfileInput = instance.querySelector('select[name="missing_quality_profile"]');
+                const upgradeQualityProfileInput = instance.querySelector('select[name="upgrade_quality_profile"]');
+                
                 const name = nameInput ? nameInput.value : null;
                 const url = urlInput ? urlInput.value : null;
                 const key = keyInput ? keyInput.value : null;
@@ -2002,6 +2017,10 @@ const SettingsForms = {
                 // Get per-instance hunt values (default: missing=1, upgrade=0)
                 const huntMissingItems = huntMissingItemsInput ? parseInt(huntMissingItemsInput.value) || 0 : 1;
                 const huntUpgradeItems = huntUpgradeItemsInput ? parseInt(huntUpgradeItemsInput.value) || 0 : 0;
+                
+                // Get quality profile selections (empty string means "All Quality Profiles")
+                const missingQualityProfile = missingQualityProfileInput ? missingQualityProfileInput.value : '';
+                const upgradeQualityProfile = upgradeQualityProfileInput ? upgradeQualityProfileInput.value : '';
                 
                 if (!name || !url || !key) {
                     console.warn(`Instance ${index} is missing required fields`);
@@ -2022,6 +2041,8 @@ const SettingsForms = {
                 } else if (appType === 'radarr') {
                     instanceObj.hunt_missing_movies = huntMissingItems;
                     instanceObj.hunt_upgrade_movies = huntUpgradeItems;
+                    instanceObj.missing_quality_profile = missingQualityProfile;
+                    instanceObj.upgrade_quality_profile = upgradeQualityProfile;
                 } else if (appType === 'lidarr') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
@@ -2056,6 +2077,8 @@ const SettingsForms = {
                 } else if (appType === 'radarr') {
                     defaultInstance.hunt_missing_movies = 1;
                     defaultInstance.hunt_upgrade_movies = 0;
+                    defaultInstance.missing_quality_profile = '';
+                    defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'lidarr') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
@@ -2761,7 +2784,49 @@ const SettingsForms = {
             form.setAttribute('data-app-type', appType);
         }
         
-        // Add listeners for test connection buttons
+
+        // Add auto-fetch listeners for URL and API key inputs (Radarr only)
+        if (appType === 'radarr') {
+            const urlInputs = container.querySelectorAll('input[name="api_url"]');
+            const apiKeyInputs = container.querySelectorAll('input[name="api_key"]');
+            
+            urlInputs.forEach(input => {
+                if (input.hasAttribute('data-instance-index')) {
+                    const instanceIndex = input.getAttribute('data-instance-index');
+                    input.addEventListener('input', () => {
+                        SettingsForms.checkAndAutoFetchQualityProfiles(appType, instanceIndex);
+                    });
+                    input.addEventListener('blur', () => {
+                        SettingsForms.checkAndAutoFetchQualityProfiles(appType, instanceIndex);
+                    });
+                }
+            });
+            
+            apiKeyInputs.forEach(input => {
+                if (input.hasAttribute('data-instance-index')) {
+                    const instanceIndex = input.getAttribute('data-instance-index');
+                    input.addEventListener('input', () => {
+                        SettingsForms.checkAndAutoFetchQualityProfiles(appType, instanceIndex);
+                    });
+                    input.addEventListener('blur', () => {
+                        SettingsForms.checkAndAutoFetchQualityProfiles(appType, instanceIndex);
+                    });
+                }
+            });
+            
+            // Initial check for existing data when form loads
+            setTimeout(() => {
+                urlInputs.forEach(input => {
+                    if (input.hasAttribute('data-instance-index')) {
+                        const instanceIndex = input.getAttribute('data-instance-index');
+                        SettingsForms.checkAndAutoFetchQualityProfiles(appType, instanceIndex);
+                    }
+                });
+            }, 500);
+        }
+
+         
+         // Add listeners for test connection buttons
         const testButtons = container.querySelectorAll('.test-connection-btn');
         testButtons.forEach(button => {
             button.addEventListener('click', (e) => {
@@ -2850,6 +2915,12 @@ const SettingsForms = {
                         
                         // Alert the user of success
                         alert(successMessage);
+                        
+                        // For Radarr, also populate quality profile dropdowns
+                        if (appType === 'radarr') {
+                            SettingsForms.populateQualityProfileDropdowns(appType, button.getAttribute('data-instance'), url, apiKey);
+                        }
+
                         
                         // Reset button after delay
                         setTimeout(() => {
@@ -3269,6 +3340,12 @@ const SettingsForms = {
                 // Show success message
                 statusElement.textContent = successMessage;
                 statusElement.style.color = 'green';
+                
+                // For Radarr, also populate quality profile dropdowns
+                if (app === 'radarr') {
+                    SettingsForms.populateQualityProfileDropdowns(app, buttonElement.getAttribute('data-instance'), url, apiKey);
+                }
+
             } else {
                 // Failure
                 buttonElement.innerHTML = '<i class="fas fa-plug"></i> Test Connection';
@@ -3307,6 +3384,111 @@ const SettingsForms = {
             window.huntarrUI.suppressUnsavedChangesCheck = false;
         }
         window._suppressUnsavedChangesDialog = false;
+    },
+    
+    // Check if both URL and API key are filled and automatically fetch quality profiles
+    checkAndAutoFetchQualityProfiles: function(app, instanceIndex) {
+        if (app !== 'radarr') return; // Only for Radarr for now
+        
+        const urlInput = document.getElementById(`${app}-url-${instanceIndex}`);
+        const apiKeyInput = document.getElementById(`${app}-key-${instanceIndex}`);
+        
+        if (!urlInput || !apiKeyInput) return;
+        
+        const url = urlInput.value.trim();
+        const apiKey = apiKeyInput.value.trim();
+        
+        // Only proceed if both fields have substantial content
+        if (url.length > 10 && apiKey.length > 20) {
+            console.log(`Auto-detecting quality profiles for ${app} instance ${instanceIndex}`);
+            
+            // Delay to avoid spamming API calls while typing
+            clearTimeout(this._autoFetchTimeout);
+            this._autoFetchTimeout = setTimeout(() => {
+                this.populateQualityProfileDropdowns(app, instanceIndex, url, apiKey);
+            }, 1000); // Wait 1 second after user stops typing
+        }
+    },
+    
+    // Populate quality profile dropdown selectors for Radarr
+    populateQualityProfileDropdowns: function(app, instanceIndex, url, apiKey) {
+        console.log(`Populating quality profile dropdowns for ${app} instance ${instanceIndex}`);
+        
+        // Make API request to fetch quality profiles
+        HuntarrUtils.fetchWithTimeout(`./api/${app}/quality-profiles`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                api_url: url,
+                api_key: apiKey
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`Quality profiles response for dropdowns:`, data);
+            
+            if (data.success && data.profiles && data.profiles.length > 0) {
+                // Success - populate the dropdowns
+                const missingSelect = document.getElementById(`${app}-missing-quality-profile-${instanceIndex}`);
+                const upgradeSelect = document.getElementById(`${app}-upgrade-quality-profile-${instanceIndex}`);
+                
+                if (!missingSelect || !upgradeSelect) {
+                    console.log('Quality profile dropdowns not found for instance', instanceIndex);
+                    return;
+                }
+                
+                // Clear existing options (except "All Quality Profiles")
+                [missingSelect, upgradeSelect].forEach(select => {
+                    // Keep the first option ("All Quality Profiles")
+                    while (select.children.length > 1) {
+                        select.removeChild(select.lastChild);
+                    }
+                });
+                
+                // Add profile options
+                data.profiles.forEach(profile => {
+                    const profileName = profile.name || 'Unknown';
+                    const profileId = profile.id || 'unknown';
+                    
+                    // Create option for missing search dropdown
+                    const missingOption = document.createElement('option');
+                    missingOption.value = profileId;
+                    missingOption.textContent = profileName;
+                    missingSelect.appendChild(missingOption);
+                    
+                    // Create option for upgrade search dropdown
+                    const upgradeOption = document.createElement('option');
+                    upgradeOption.value = profileId;
+                    upgradeOption.textContent = profileName;
+                    upgradeSelect.appendChild(upgradeOption);
+                });
+                
+                // Set the selected values from saved configuration
+                const savedMissingProfile = missingSelect.getAttribute('data-selected-value');
+                const savedUpgradeProfile = upgradeSelect.getAttribute('data-selected-value');
+                
+                if (savedMissingProfile) {
+                    missingSelect.value = savedMissingProfile;
+                }
+                if (savedUpgradeProfile) {
+                    upgradeSelect.value = savedUpgradeProfile;
+                }
+                
+                console.log(`Populated quality profile dropdowns for ${app} instance ${instanceIndex} with ${data.profiles.length} profiles`);
+            } else {
+                console.log(`No quality profiles found for ${app} instance ${instanceIndex}`);
+            }
+        })
+        .catch(error => {
+            console.error(`Quality profiles fetch error for dropdowns:`, error);
+        });
     },
     
     // Update disabled state of Swaparr fields in all app forms based on global Swaparr setting
