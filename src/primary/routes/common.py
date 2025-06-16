@@ -528,10 +528,20 @@ def reset_password_with_recovery_key():
 
         # Reset the password using database method directly
         if db.update_user_password(username, new_password):
+            # Disable 2FA since user needed recovery key (likely lost 2FA device)
+            two_fa_disabled = db.update_user_2fa(username, two_fa_enabled=False, two_fa_secret=None)
+            if two_fa_disabled:
+                logger.info(f"Disabled 2FA for user '{username}' after password reset via recovery key")
+            else:
+                logger.warning(f"Failed to disable 2FA for user '{username}' after password reset")
+            
             # Clear the recovery key after successful password reset
             db.clear_recovery_key(username)
             logger.info(f"Password reset successfully using recovery key for user: {username}")
-            return jsonify({"success": True, "message": "Password reset successfully"})
+            
+            # Update message to inform user that 2FA has been disabled
+            message = "Password reset successfully. Two-factor authentication has been disabled for security - you can re-enable it in your account settings."
+            return jsonify({"success": True, "message": message})
         else:
             logger.error(f"Failed to reset password for user: {username}")
             return jsonify({"success": False, "error": "Failed to reset password"}), 500
