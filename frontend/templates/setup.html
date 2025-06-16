@@ -710,10 +710,7 @@
                                 <li style="margin-bottom: 5px;"><strong>Account Recovery:</strong> Reset your password without external help</li>
                                 <li style="margin-bottom: 5px;"><strong>2FA Bypass:</strong> Regain access if 2FA device is lost</li>
                             </ul>
-                            <p style="margin-top: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">
-                                <i class="fas fa-exclamation-triangle" style="margin-right: 5px; color: #ffc107;"></i>
-                                Store this recovery key safely - it will only be shown once!
-                            </p>
+
                         </div>
                     </div>
                 </div>
@@ -742,15 +739,15 @@
                         </div>
                         
                         <div id="confirmationSection" style="margin: 20px 0; display: none;">
-                            <div style="background-color: rgba(52, 152, 219, 0.2); border-radius: 8px; padding: 15px; border: 1px solid #3498db;">
-                                <p style="color: #3498db; font-weight: bold; margin-bottom: 15px;">
+                            <div style="background-color: rgba(52, 152, 219, 0.2); border-radius: 8px; padding: 15px; border: 1px solid #3498db; box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);">
+                                <p style="color: #3498db; font-weight: bold; margin-bottom: 15px; font-size: 18px; text-shadow: 0 0 10px rgba(52, 152, 219, 0.6);">
                                     <i class="fas fa-question-circle"></i> Have you copied your recovery key?
                                 </p>
                                 <div style="display: flex; gap: 10px; justify-content: center;">
-                                    <button type="button" id="confirmCopiedButton" class="next-button" style="background: linear-gradient(135deg, #28a745 0%, #34ce57 100%);">
+                                    <button type="button" id="confirmCopiedButton" class="next-button" style="background: linear-gradient(135deg, #28a745 0%, #34ce57 100%); box-shadow: 0 0 15px rgba(40, 167, 69, 0.4); font-size: 16px;">
                                         <i class="fas fa-check"></i> Yes, I've copied it
                                     </button>
-                                    <button type="button" id="needMoreTimeButton" class="back-button">
+                                    <button type="button" id="needMoreTimeButton" class="back-button" style="box-shadow: 0 0 15px rgba(108, 117, 125, 0.4); font-size: 16px;">
                                         <i class="fas fa-clock"></i> No, give me more time
                                     </button>
                                 </div>
@@ -765,12 +762,6 @@
                 </div>
                 
                 <div id="recoveryKeyStatus" class="error-message" style="display: none;"></div>
-                
-                <div class="form-actions">
-                    <button type="button" id="skipRecoveryKeyButton" class="back-button">
-                        <i class="fas fa-arrow-right"></i> Skip Recovery Key
-                    </button>
-                </div>
             </div>
             
             <div id="setupComplete" class="setup-section">
@@ -1417,7 +1408,6 @@
             });
             
             // Recovery key setup navigation
-            const skipRecoveryKeyButton = document.getElementById('skipRecoveryKeyButton');
             const copyRecoveryKeyButton = document.getElementById('copyRecoveryKeyButton');
             const confirmCopiedButton = document.getElementById('confirmCopiedButton');
             const needMoreTimeButton = document.getElementById('needMoreTimeButton');
@@ -1499,12 +1489,7 @@
                 startCountdown();
             });
             
-            skipRecoveryKeyButton.addEventListener('click', function() {
-                if (countdownInterval) {
-                    clearInterval(countdownInterval);
-                }
-                showStep(6);
-            });
+
             
             function showRecoveryKeyStatus(message, type) {
                 const statusElement = document.getElementById('recoveryKeyStatus');
