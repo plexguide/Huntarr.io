@@ -596,9 +596,10 @@
                             <i class="fas fa-shield-alt" style="margin-right: 8px; color: #4a90e2;"></i>
                             <span>Verification Code</span>
                         </label>
-                        <input type="text" id="verificationCode" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; width: 60%; max-width: 300px;">
+                        <input type="text" id="verificationCode" placeholder="Enter 6-digit code" maxlength="6" autocomplete="off" style="text-align: center; width: 60%; max-width: 300px;">
                     </div>
                     
+                    <div class="error-message" id="twoFactorErrorMessage" style="display: none;"></div>
                     <div class="form-actions">
                         <button type="button" id="twoFactorNextButton" class="next-button" style="margin-right: 10px;">
                             <i class="fas fa-check"></i> Verify & Continue
@@ -1098,6 +1099,12 @@
             const skip2FALink = document.getElementById('skip2FALink');
             const twoFactorNextButton = document.getElementById('twoFactorNextButton');
             
+            // Clear verification code field on page load
+            if (verificationCodeInput) {
+                verificationCodeInput.value = '';
+                console.log('Cleared verification code field on page load');
+            }
+            
             // Auth Mode setup elements
             const authModeSelect = document.getElementById('auth_mode');
             const authModeNextButton = document.getElementById('authModeNextButton');
@@ -1150,6 +1157,11 @@
                     document.getElementById('authModeSetup').classList.remove('active');
                     document.getElementById('recoveryKeySetup').classList.remove('active');
                     document.getElementById('setupComplete').classList.remove('active');
+                    // Clear verification code field when entering 2FA step
+                    if (verificationCodeInput) {
+                        verificationCodeInput.value = '';
+                        console.log('Cleared verification code field');
+                    }
                 } else if (step === 3) {
                     document.getElementById('accountSetup').classList.remove('active');
                     document.getElementById('twoFactorSetup').classList.remove('active');
@@ -1187,13 +1199,33 @@
             
             // Show error message
             function showError(message) {
+                console.log('showError called with:', message);
+                console.log('errorMessage element:', errorMessage);
                 errorMessage.textContent = message;
                 errorMessage.style.display = 'block';
+                console.log('Error message displayed:', errorMessage.textContent, 'visible:', errorMessage.style.display);
                 
                 // Hide after 5 seconds
                 setTimeout(() => {
                     errorMessage.style.display = 'none';
                 }, 5000);
+            }
+            
+            // Show error message for 2FA section
+            function show2FAError(message) {
+                const twoFactorErrorMessage = document.getElementById('twoFactorErrorMessage');
+                console.log('show2FAError called with:', message);
+                console.log('twoFactorErrorMessage element:', twoFactorErrorMessage);
+                if (twoFactorErrorMessage) {
+                    twoFactorErrorMessage.textContent = message;
+                    twoFactorErrorMessage.style.display = 'block';
+                    console.log('2FA Error message displayed:', twoFactorErrorMessage.textContent, 'visible:', twoFactorErrorMessage.style.display);
+                    
+                    // Hide after 5 seconds
+                    setTimeout(() => {
+                        twoFactorErrorMessage.style.display = 'none';
+                    }, 5000);
+                }
             }
 
             // Password validation function
@@ -1336,7 +1368,7 @@
             twoFactorNextButton.addEventListener('click', function() {
                 const code = verificationCodeInput.value;
                 if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
-                    showError('Please enter a valid 6-digit verification code');
+                    show2FAError('Please enter a valid 6-digit verification code');
                     return;
                 }
                 
@@ -1347,18 +1379,23 @@
                     },
                     body: JSON.stringify({ code: code })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        twoFactorEnabled = true;
-                        showStep(3); // Go to Plex Setup step
-                    } else {
-                        showError(data.message || 'Invalid verification code');
-                    }
-                })
+                                .then(response => {
+                     return response.json().then(data => {
+                         console.log('2FA verify response:', { status: response.status, ok: response.ok, data: data });
+                         if (response.ok && data.success) {
+                             twoFactorEnabled = true;
+                             showStep(3); // Go to Plex Setup step
+                         } else {
+                             // Handle both HTTP errors and application errors
+                             const errorMsg = data.error || data.message || 'Invalid verification code';
+                             console.log('2FA error:', errorMsg);
+                             show2FAError(errorMsg);
+                         }
+                     });
+                 })
                 .catch(error => {
                     console.error('Error verifying 2FA code:', error);
-                    showError('Failed to verify code');
+                    show2FAError('Failed to verify code');
                 });
             });
             
@@ -1417,7 +1454,7 @@
             function autoGenerateRecoveryKey() {
                 if (recoveryKeyGenerated) return; // Don't generate twice
                 
-                HuntarrUtils.fetchWithTimeout('/api/user/recovery-key/generate', {
+                HuntarrUtils.fetchWithTimeout('/auth/recovery-key/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ password: userData.password })
