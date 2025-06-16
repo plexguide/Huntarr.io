@@ -708,8 +708,7 @@
                             </p>
                             <ul style="color: rgba(255, 255, 255, 0.8); margin: 10px 0; padding-left: 20px;">
                                 <li style="margin-bottom: 5px;"><strong>Account Recovery:</strong> Reset your password without external help</li>
-                                <li style="margin-bottom: 5px;"><strong>2FA Bypass:</strong> Regain access even if you lose your authenticator device</li>
-                                <li style="margin-bottom: 5px;"><strong>Secure Format:</strong> Human-readable format like "ocean-light-tower-51"</li>
+                                <li style="margin-bottom: 5px;"><strong>2FA Bypass:</strong> Regain access if 2FA device is lost</li>
                             </ul>
                             <p style="margin-top: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">
                                 <i class="fas fa-exclamation-triangle" style="margin-right: 5px; color: #ffc107;"></i>
@@ -719,30 +718,48 @@
                     </div>
                 </div>
                 
-                <div id="recoveryKeyGeneration">
-                    <div style="text-align: center; margin: 25px 0;">
-                        <button type="button" id="generateRecoveryKeyButton" class="next-button" style="background: linear-gradient(135deg, #ffc107 0%, #ffcd39 100%); color: #000; box-shadow: 0 4px 10px rgba(255, 193, 7, 0.3);">
-                            <i class="fas fa-key"></i> Generate Recovery Key
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="recoveryKeyDisplay" style="display: none;">
+                <div id="recoveryKeyDisplay">
                     <div style="background-color: rgba(40, 167, 69, 0.2); border-radius: 10px; padding: 20px; border: 1px solid #28a745; margin: 20px 0; text-align: center;">
                         <h3 style="color: #28a745; margin-bottom: 15px;">
-                            <i class="fas fa-check-circle"></i> Recovery Key Generated
+                            <i class="fas fa-key"></i> Your Recovery Key
                         </h3>
                         <div style="background-color: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin: 15px 0;">
                             <div style="font-family: 'Courier New', monospace; font-size: 24px; font-weight: bold; color: #ffc107; letter-spacing: 2px;" id="recoveryKeyValue">
-                                <!-- Recovery key will be displayed here -->
+                                Generating...
                             </div>
                         </div>
                         <button type="button" id="copyRecoveryKeyButton" class="copy-button" style="margin: 10px 0;">
                             <i class="fas fa-copy"></i> Copy Recovery Key
                         </button>
+                        
+                        <div id="countdownSection" style="margin: 20px 0; display: none;">
+                            <div style="background-color: rgba(255, 193, 7, 0.2); border-radius: 8px; padding: 15px; border: 1px solid #ffc107;">
+                                <p style="color: #ffc107; font-weight: bold; margin-bottom: 10px;">
+                                    <i class="fas fa-clock"></i> Time remaining to copy your key
+                                </p>
+                                <div style="font-size: 36px; font-weight: bold; color: #ffc107;" id="countdownTimer">10</div>
+                            </div>
+                        </div>
+                        
+                        <div id="confirmationSection" style="margin: 20px 0; display: none;">
+                            <div style="background-color: rgba(52, 152, 219, 0.2); border-radius: 8px; padding: 15px; border: 1px solid #3498db;">
+                                <p style="color: #3498db; font-weight: bold; margin-bottom: 15px;">
+                                    <i class="fas fa-question-circle"></i> Have you copied your recovery key?
+                                </p>
+                                <div style="display: flex; gap: 10px; justify-content: center;">
+                                    <button type="button" id="confirmCopiedButton" class="next-button" style="background: linear-gradient(135deg, #28a745 0%, #34ce57 100%);">
+                                        <i class="fas fa-check"></i> Yes, I've copied it
+                                    </button>
+                                    <button type="button" id="needMoreTimeButton" class="back-button">
+                                        <i class="fas fa-clock"></i> No, give me more time
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <p style="color: #dc3545; font-weight: bold; margin-top: 15px;">
                             <i class="fas fa-exclamation-triangle"></i> 
-                            Save this key immediately - it will not be shown again!
+                            Save this key safely - it will not be shown again!
                         </p>
                     </div>
                 </div>
@@ -750,9 +767,6 @@
                 <div id="recoveryKeyStatus" class="error-message" style="display: none;"></div>
                 
                 <div class="form-actions">
-                    <button type="button" id="recoveryKeyNextButton" class="next-button" style="display: none;">
-                        <i class="fas fa-arrow-right"></i> Continue to Finish
-                    </button>
                     <button type="button" id="skipRecoveryKeyButton" class="back-button">
                         <i class="fas fa-arrow-right"></i> Skip Recovery Key
                     </button>
@@ -1168,6 +1182,8 @@
                     document.getElementById('authModeSetup').classList.remove('active');
                     document.getElementById('recoveryKeySetup').classList.add('active');
                     document.getElementById('setupComplete').classList.remove('active');
+                    // Auto-generate recovery key when entering this step
+                    setTimeout(() => autoGenerateRecoveryKey(), 500);
                 } else if (step === 6) {
                     document.getElementById('accountSetup').classList.remove('active');
                     document.getElementById('twoFactorSetup').classList.remove('active');
@@ -1401,15 +1417,17 @@
             });
             
             // Recovery key setup navigation
-            const generateRecoveryKeyButton = document.getElementById('generateRecoveryKeyButton');
-            const recoveryKeyNextButton = document.getElementById('recoveryKeyNextButton');
             const skipRecoveryKeyButton = document.getElementById('skipRecoveryKeyButton');
             const copyRecoveryKeyButton = document.getElementById('copyRecoveryKeyButton');
+            const confirmCopiedButton = document.getElementById('confirmCopiedButton');
+            const needMoreTimeButton = document.getElementById('needMoreTimeButton');
             
-            generateRecoveryKeyButton.addEventListener('click', function() {
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-                this.disabled = true;
+            let countdownInterval = null;
+            let recoveryKeyGenerated = false;
+            
+            // Auto-generate recovery key when entering step 5
+            function autoGenerateRecoveryKey() {
+                if (recoveryKeyGenerated) return; // Don't generate twice
                 
                 HuntarrUtils.fetchWithTimeout('/api/user/recovery-key/generate', {
                     method: 'POST',
@@ -1420,14 +1438,8 @@
                 .then(data => {
                     if (data.success) {
                         document.getElementById('recoveryKeyValue').textContent = data.recovery_key;
-                        document.getElementById('recoveryKeyDisplay').style.display = 'block';
-                        document.getElementById('recoveryKeyGeneration').style.display = 'none';
-                        document.getElementById('recoveryKeyNextButton').style.display = 'inline-block';
-                        
-                        // Auto-hide after 5 minutes for security
-                        setTimeout(() => {
-                            document.getElementById('recoveryKeyDisplay').style.display = 'none';
-                        }, 300000);
+                        recoveryKeyGenerated = true;
+                        startCountdown();
                     } else {
                         showRecoveryKeyStatus(data.error || 'Failed to generate recovery key', 'error');
                     }
@@ -1435,17 +1447,30 @@
                 .catch(error => {
                     console.error('Error generating recovery key:', error);
                     showRecoveryKeyStatus('Error generating recovery key: ' + error.message, 'error');
-                })
-                .finally(() => {
-                    this.innerHTML = originalText;
-                    this.disabled = false;
                 });
-            });
+            }
+            
+            function startCountdown() {
+                let timeLeft = 10;
+                document.getElementById('countdownSection').style.display = 'block';
+                document.getElementById('confirmationSection').style.display = 'none';
+                
+                countdownInterval = setInterval(() => {
+                    document.getElementById('countdownTimer').textContent = timeLeft;
+                    timeLeft--;
+                    
+                    if (timeLeft < 0) {
+                        clearInterval(countdownInterval);
+                        document.getElementById('countdownSection').style.display = 'none';
+                        document.getElementById('confirmationSection').style.display = 'block';
+                    }
+                }, 1000);
+            }
             
             copyRecoveryKeyButton.addEventListener('click', function() {
                 const recoveryKey = document.getElementById('recoveryKeyValue').textContent;
                 
-                if (navigator.clipboard) {
+                if (recoveryKey && recoveryKey !== 'Generating...' && navigator.clipboard) {
                     navigator.clipboard.writeText(recoveryKey).then(() => {
                         const originalText = this.innerHTML;
                         this.innerHTML = '<i class="fas fa-check"></i> Copied!';
@@ -1460,11 +1485,24 @@
                 }
             });
             
-            recoveryKeyNextButton.addEventListener('click', function() {
+            confirmCopiedButton.addEventListener('click', function() {
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
                 showStep(6);
             });
             
+            needMoreTimeButton.addEventListener('click', function() {
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
+                startCountdown();
+            });
+            
             skipRecoveryKeyButton.addEventListener('click', function() {
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
                 showStep(6);
             });
             
@@ -1510,12 +1548,12 @@
                         linkPlexButton.click();
                     } else if (currentStep === 4 && document.activeElement !== authModeNextButton) {
                         authModeNextButton.click();
-                    } else if (currentStep === 5 && document.activeElement !== generateRecoveryKeyButton && document.activeElement !== recoveryKeyNextButton) {
-                        if (document.getElementById('recoveryKeyNextButton').style.display !== 'none') {
-                            recoveryKeyNextButton.click();
-                        } else {
-                            generateRecoveryKeyButton.click();
+                    } else if (currentStep === 5) {
+                        // Check which section is visible and act accordingly
+                        if (document.getElementById('confirmationSection').style.display !== 'none') {
+                            confirmCopiedButton.click();
                         }
+                        // No action needed during countdown or auto-generation
                     } else if (currentStep === 6 && document.activeElement !== finishSetupButton) {
                         finishSetupButton.click();
                     }
