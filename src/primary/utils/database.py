@@ -217,7 +217,8 @@ class HuntarrDatabase:
                     two_fa_secret TEXT,
                     temp_2fa_secret TEXT,
                     plex_token TEXT,
-                    plex_user_data TEXT
+                    plex_user_data TEXT,
+                    recovery_key TEXT
                 )
             ''')
             
@@ -270,6 +271,14 @@ class HuntarrDatabase:
             try:
                 conn.execute('ALTER TABLE users ADD COLUMN temp_2fa_secret TEXT')
                 logger.info("Added temp_2fa_secret column to users table")
+            except sqlite3.OperationalError:
+                # Column already exists
+                pass
+            
+            # Add recovery_key column if it doesn't exist (for existing databases)
+            try:
+                conn.execute('ALTER TABLE users ADD COLUMN recovery_key TEXT')
+                logger.info("Added recovery_key column to users table")
             except sqlite3.OperationalError:
                 # Column already exists
                 pass
@@ -1201,6 +1210,82 @@ class HuntarrDatabase:
                 return True
         except Exception as e:
             logger.error(f"Error updating Plex settings for user {username}: {e}")
+            return False
+
+    # Recovery Key Methods
+    def generate_recovery_key(self, username: str) -> Optional[str]:
+        """Generate a new recovery key for a user"""
+        import hashlib
+        import secrets
+        import random
+        
+        # Word lists for generating human-readable recovery keys
+        adjectives = ['ocean', 'storm', 'frost', 'light', 'dark', 'swift', 'calm', 'wild', 'bright', 'deep']
+        nouns = ['tower', 'bridge', 'quest', 'dream', 'flame', 'river', 'mountain', 'crystal', 'shadow', 'star']
+        
+        try:
+            # Generate a human-readable recovery key like "ocean-light-tower-51"
+            adj = random.choice(adjectives)
+            noun1 = random.choice(nouns)
+            noun2 = random.choice(nouns)
+            number = random.randint(10, 99)
+            recovery_key = f"{adj}-{noun1}-{noun2}-{number}"
+            
+            # Hash the recovery key for secure storage
+            recovery_key_hash = hashlib.sha256(recovery_key.encode()).hexdigest()
+            
+            with self.get_connection() as conn:
+                conn.execute('''
+                    UPDATE users SET recovery_key = ?, updated_at = CURRENT_TIMESTAMP 
+                    WHERE username = ?
+                ''', (recovery_key_hash, username))
+                conn.commit()
+                logger.info(f"Generated new recovery key for user: {username}")
+                
+                # Return the plain text recovery key (only time it's shown)
+                return recovery_key
+        except Exception as e:
+            logger.error(f"Error generating recovery key for user {username}: {e}")
+            return None
+    
+    def verify_recovery_key(self, recovery_key: str) -> Optional[str]:
+        """Verify a recovery key and return the username if valid"""
+        import hashlib
+        
+        try:
+            # Hash the provided recovery key
+            recovery_key_hash = hashlib.sha256(recovery_key.encode()).hexdigest()
+            
+            with self.get_connection() as conn:
+                cursor = conn.execute(
+                    'SELECT username FROM users WHERE recovery_key = ?',
+                    (recovery_key_hash,)
+                )
+                row = cursor.fetchone()
+                
+                if row:
+                    logger.info(f"Recovery key verified for user: {row[0]}")
+                    return row[0]
+                else:
+                    logger.warning(f"Invalid recovery key attempted")
+                    return None
+        except Exception as e:
+            logger.error(f"Error verifying recovery key: {e}")
+            return None
+    
+    def clear_recovery_key(self, username: str) -> bool:
+        """Clear the recovery key for a user (after password reset)"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute('''
+                    UPDATE users SET recovery_key = NULL, updated_at = CURRENT_TIMESTAMP 
+                    WHERE username = ?
+                ''', (username,))
+                conn.commit()
+                logger.info(f"Cleared recovery key for user: {username}")
+                return True
+        except Exception as e:
+            logger.error(f"Error clearing recovery key for user {username}: {e}")
             return False
 
     def get_sponsors(self) -> List[Dict[str, Any]]:

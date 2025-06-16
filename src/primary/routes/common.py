@@ -16,7 +16,8 @@ from ..auth import (
     verify_user, create_session, get_username_from_session, SESSION_COOKIE_NAME,
     change_username as auth_change_username, change_password as auth_change_password,
     validate_password_strength, logout, verify_session, disable_2fa_with_password_and_otp,
-    user_exists, create_user, generate_2fa_secret, verify_2fa_code, is_2fa_enabled # Add missing auth imports
+    user_exists, create_user, generate_2fa_secret, verify_2fa_code, is_2fa_enabled, # Add missing auth imports
+    hash_password # Add hash_password import for recovery key reset
 )
 from ..utils.logger import logger # Ensure logger is imported
 from .. import settings_manager # Import settings_manager
@@ -412,9 +413,132 @@ def disable_2fa_route():
     else:
         # Reason logged in disable_2fa_with_password_and_otp
         logger.warning(f"Failed to disable 2FA for user '{username}' using password and OTP. Check logs.")
-        # Provide a more specific error if possible, otherwise generic
         # The auth function should log the specific reason (bad pass, bad otp)
         return jsonify({"success": False, "error": "Failed to disable 2FA. Invalid password or OTP code."}), 400
+
+# --- Recovery Key Management API Routes --- #
+
+@common_bp.route('/api/user/recovery-key/generate', methods=['POST'])
+def generate_recovery_key():
+    """Generate a new recovery key for the authenticated user"""
+    # Get username handling bypass modes
+    username = get_user_for_request()
+
+    if not username:
+        logger.warning("Recovery key generation attempt failed: Not authenticated and not in bypass mode.")
+        return jsonify({"error": "Not authenticated"}), 401
+
+    try:
+        data = request.json or {}
+        current_password = data.get('password')
+        two_factor_code = data.get('two_factor_code')
+
+        # Require current password for security
+        if not current_password:
+            logger.warning(f"Recovery key generation for '{username}' failed: No password provided.")
+            return jsonify({"success": False, "error": "Current password is required"}), 400
+
+        # Verify current password
+        if not verify_user(username, current_password):
+            logger.warning(f"Recovery key generation for '{username}' failed: Invalid password.")
+            return jsonify({"success": False, "error": "Invalid current password"}), 400
+
+        # Check if 2FA is enabled and verify if needed
+        if is_2fa_enabled(username):
+            if not two_factor_code:
+                logger.warning(f"Recovery key generation for '{username}' failed: 2FA code required.")
+                return jsonify({"success": False, "error": "Two-factor authentication code is required"}), 400
+            
+            if not verify_2fa_code(username, two_factor_code):
+                logger.warning(f"Recovery key generation for '{username}' failed: Invalid 2FA code.")
+                return jsonify({"success": False, "error": "Invalid two-factor authentication code"}), 400
+
+        # Generate the recovery key
+        from ..utils.database import get_database
+        db = get_database()
+        recovery_key = db.generate_recovery_key(username)
+
+        if recovery_key:
+            logger.info(f"Recovery key generated successfully for user: {username}")
+            return jsonify({
+                "success": True, 
+                "recovery_key": recovery_key,
+                "message": "Recovery key generated successfully. Please save this key securely - it will not be shown again."
+            })
+        else:
+            logger.error(f"Failed to generate recovery key for user: {username}")
+            return jsonify({"success": False, "error": "Failed to generate recovery key"}), 500
+
+    except Exception as e:
+        logger.error(f"Error generating recovery key for user '{username}': {e}", exc_info=True)
+        return jsonify({"success": False, "error": "An internal error occurred"}), 500
+
+@common_bp.route('/auth/recovery-key/verify', methods=['POST'])
+def verify_recovery_key():
+    """Verify a recovery key (no authentication required)"""
+    try:
+        data = request.json or {}
+        recovery_key = data.get('recovery_key', '').strip()
+
+        if not recovery_key:
+            return jsonify({"success": False, "error": "Recovery key is required"}), 400
+
+        # Verify the recovery key
+        from ..utils.database import get_database
+        db = get_database()
+        username = db.verify_recovery_key(recovery_key)
+
+        if username:
+            logger.info(f"Recovery key verified successfully for user: {username}")
+            return jsonify({"success": True, "username": username})
+        else:
+            logger.warning("Invalid recovery key verification attempted")
+            return jsonify({"success": False, "error": "Invalid recovery key"}), 400
+
+    except Exception as e:
+        logger.error(f"Error verifying recovery key: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "An internal error occurred"}), 500
+
+@common_bp.route('/auth/recovery-key/reset', methods=['POST'])
+def reset_password_with_recovery_key():
+    """Reset password using recovery key (no authentication required)"""
+    try:
+        data = request.json or {}
+        recovery_key = data.get('recovery_key', '').strip()
+        new_password = data.get('new_password', '').strip()
+
+        if not recovery_key or not new_password:
+            return jsonify({"success": False, "error": "Recovery key and new password are required"}), 400
+
+        # Validate password strength
+        password_error = validate_password_strength(new_password)
+        logger.debug(f"Password validation for '{new_password}': {repr(password_error)}")
+        if password_error:
+            logger.debug(f"Password validation failed with error: {password_error}")
+            return jsonify({"success": False, "error": password_error}), 400
+
+        # Verify the recovery key
+        from ..utils.database import get_database
+        db = get_database()
+        username = db.verify_recovery_key(recovery_key)
+
+        if not username:
+            logger.warning("Password reset attempted with invalid recovery key")
+            return jsonify({"success": False, "error": "Invalid recovery key"}), 400
+
+        # Reset the password using database method directly
+        if db.update_user_password(username, new_password):
+            # Clear the recovery key after successful password reset
+            db.clear_recovery_key(username)
+            logger.info(f"Password reset successfully using recovery key for user: {username}")
+            return jsonify({"success": True, "message": "Password reset successfully"})
+        else:
+            logger.error(f"Failed to reset password for user: {username}")
+            return jsonify({"success": False, "error": "Failed to reset password"}), 500
+
+    except Exception as e:
+        logger.error(f"Error resetting password with recovery key: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "An internal error occurred"}), 500
 
 # --- Theme Setting Route ---
 @common_bp.route('/api/settings/theme', methods=['POST'])

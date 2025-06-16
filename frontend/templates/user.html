@@ -197,6 +197,41 @@
             box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
         }
         
+        .recovery-key-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(28, 36, 54, 0.6);
+            border: 1px solid rgba(90, 109, 137, 0.2);
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+        
+        .recovery-key-value {
+            flex: 1;
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+        
+        .copy-button {
+            background: linear-gradient(135deg, #4a7deb 0%, #6491fa 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .copy-button:hover {
+            background: linear-gradient(135deg, #5a8dfb 0%, #74a1ff 100%);
+            transform: translateY(-1px);
+        }
+        
         .modal {
             position: fixed;
             z-index: 1000;
@@ -553,6 +588,47 @@
                         </div>
                         <div id="disableStatus" class="status-message" style="display: none;"></div>
                     </div>
+                </div>
+                
+                <div class="user-card">
+                    <h3><i class="fas fa-life-ring"></i> Recovery Key</h3>
+                    <div class="form-group">
+                        <label>Account Recovery:</label>
+                        <p class="help-text">Generate a recovery key to reset your password if you get locked out. Keep it safe!</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="currentPasswordForRecovery">Current Password:</label>
+                        <input type="password" id="currentPasswordForRecovery" class="form-control" placeholder="Enter your current password" required>
+                    </div>
+                    
+                    <div id="recoveryTwoFactorSection" style="display: none;">
+                        <div class="form-group">
+                            <label for="recoveryTwoFactorCode">2FA Code:</label>
+                            <input type="text" id="recoveryTwoFactorCode" class="form-control" placeholder="000000" maxlength="6">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button id="generateRecoveryKey" class="action-button primary-button">
+                            <i class="fas fa-key"></i> Generate Recovery Key
+                        </button>
+                    </div>
+                    
+                    <div id="recoveryKeyDisplay" style="display: none; margin-top: 15px;">
+                        <div class="form-group">
+                            <label>Your Recovery Key:</label>
+                            <div class="recovery-key-container">
+                                <div id="recoveryKeyValue" class="recovery-key-value"></div>
+                                <button id="copyRecoveryKey" class="copy-button">Copy</button>
+                            </div>
+                            <p class="help-text" style="color: #ff9966; font-weight: 600;">
+                                <i class="fas fa-exclamation-triangle"></i> Save this key securely! It will only be shown once.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div id="recoveryStatus" class="status-message" style="display: none;"></div>
                 </div>
                 
                 <div class="user-card">

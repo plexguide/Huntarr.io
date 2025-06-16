@@ -63,6 +63,17 @@
         if (disableTwoFactorBtn) {
             disableTwoFactorBtn.addEventListener('click', handleDisableTwoFactor);
         }
+        
+        // Recovery key handlers
+        const generateRecoveryKeyBtn = document.getElementById('generateRecoveryKey');
+        if (generateRecoveryKeyBtn) {
+            generateRecoveryKeyBtn.addEventListener('click', handleGenerateRecoveryKey);
+        }
+        
+        const copyRecoveryKeyBtn = document.getElementById('copyRecoveryKey');
+        if (copyRecoveryKeyBtn) {
+            copyRecoveryKeyBtn.addEventListener('click', handleCopyRecoveryKey);
+        }
     }
     
     // Username change handler
@@ -266,6 +277,118 @@
             console.error('Error disabling 2FA:', error);
             showStatus(disableStatusElement, 'Error disabling 2FA: ' + error.message, 'error');
         });
+    }
+    
+    // Recovery key generation handler
+    function handleGenerateRecoveryKey() {
+        const currentPassword = document.getElementById('currentPasswordForRecovery').value;
+        const twoFactorCode = document.getElementById('recoveryTwoFactorCode').value;
+        const statusElement = document.getElementById('recoveryStatus');
+        
+        if (!currentPassword) {
+            showStatus(statusElement, 'Please enter your current password', 'error');
+            return;
+        }
+        
+        const requestData = {
+            password: currentPassword
+        };
+        
+        // Add 2FA code if provided (required if 2FA is enabled)
+        if (twoFactorCode) {
+            requestData.two_factor_code = twoFactorCode;
+        }
+        
+        HuntarrUtils.fetchWithTimeout('./api/user/recovery-key/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Display the recovery key
+                const recoveryKeyValue = document.getElementById('recoveryKeyValue');
+                const recoveryKeyDisplay = document.getElementById('recoveryKeyDisplay');
+                
+                if (recoveryKeyValue && recoveryKeyDisplay) {
+                    recoveryKeyValue.textContent = data.recovery_key;
+                    recoveryKeyDisplay.style.display = 'block';
+                }
+                
+                showStatus(statusElement, data.message, 'success');
+                
+                // Clear form fields
+                document.getElementById('currentPasswordForRecovery').value = '';
+                document.getElementById('recoveryTwoFactorCode').value = '';
+                
+                // Auto-hide the recovery key after 5 minutes
+                setTimeout(() => {
+                    if (recoveryKeyDisplay) {
+                        recoveryKeyDisplay.style.display = 'none';
+                    }
+                }, 300000); // 5 minutes
+                
+            } else {
+                showStatus(statusElement, data.error || 'Failed to generate recovery key', 'error');
+                
+                // Show 2FA field if required
+                if (data.error && data.error.includes('Two-factor authentication')) {
+                    const twoFactorSection = document.getElementById('recoveryTwoFactorSection');
+                    if (twoFactorSection) {
+                        twoFactorSection.style.display = 'block';
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error generating recovery key:', error);
+            showStatus(statusElement, 'Error generating recovery key: ' + error.message, 'error');
+        });
+    }
+    
+    // Recovery key copy handler
+    function handleCopyRecoveryKey() {
+        const recoveryKeyValue = document.getElementById('recoveryKeyValue');
+        if (!recoveryKeyValue) return;
+        
+        const text = recoveryKeyValue.textContent;
+        
+        // Copy to clipboard
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Update button text briefly
+                const copyBtn = document.getElementById('copyRecoveryKey');
+                if (copyBtn) {
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                    }, 2000);
+                }
+            }).catch(err => {
+                console.error('Failed to copy to clipboard:', err);
+                // Fallback to text selection
+                selectText(recoveryKeyValue);
+            });
+        } else {
+            // Fallback for older browsers
+            selectText(recoveryKeyValue);
+        }
+    }
+    
+    // Helper function to select text (fallback for copy)
+    function selectText(element) {
+        if (document.selection) {
+            const range = document.body.createTextRange();
+            range.moveToElementText(element);
+            range.select();
+        } else if (window.getSelection) {
+            const range = document.createRange();
+            range.selectNode(element);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+        }
     }
     
     // Helper function for validation
