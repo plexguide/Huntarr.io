@@ -4,19 +4,43 @@ Missing Movies Processing for Radarr
 Handles searching for missing movies in Radarr
 """
 
+import os
 import time
 import random
 import datetime
 from typing import List, Dict, Any, Set, Callable
 from src.primary.utils.logger import get_logger
 from src.primary.apps.radarr import api as radarr_api
-from src.primary.stats_manager import increment_stat_only
+from src.primary.stats_manager import increment_stat_only, check_hourly_cap_exceeded
 from src.primary.stateful_manager import is_processed, add_processed_id
 from src.primary.utils.history_utils import log_processed_media
 from src.primary.settings_manager import load_settings, get_advanced_setting
 
 # Get logger for the app
 radarr_logger = get_logger("radarr")
+
+def parse_date(date_str):
+    """Parse date string, handling various ISO formats from Radarr API"""
+    if not date_str:
+        return None
+    
+    try:
+        # Handle milliseconds (e.g., "2024-01-01T00:00:00.000Z")
+        clean_date_str = date_str
+        if '.' in clean_date_str and 'Z' in clean_date_str:
+            clean_date_str = clean_date_str.split('.')[0] + 'Z'
+        
+        # Handle different timezone formats
+        if clean_date_str.endswith('Z'):
+            clean_date_str = clean_date_str[:-1] + '+00:00'
+        elif '+' not in clean_date_str and '-' not in clean_date_str[-6:]:
+            # No timezone info, assume UTC
+            clean_date_str += '+00:00'
+        
+        # Parse the release date
+        return datetime.datetime.fromisoformat(clean_date_str)
+    except (ValueError, TypeError):
+        return None
 
 def process_missing_movies(
     app_settings: Dict[str, Any],
@@ -37,6 +61,10 @@ def process_missing_movies(
     # Get instance name - check for instance_name first, fall back to legacy "name" key if needed
     instance_name = app_settings.get("instance_name", app_settings.get("name", "Radarr Default"))
     
+    # Load settings to check if tagging is enabled
+    radarr_settings = load_settings("radarr")
+    tag_processed_items = radarr_settings.get("tag_processed_items", True)
+    
     # Log important settings
     radarr_logger.info("=== Radarr Missing Movies Settings ===")
     radarr_logger.debug(f"Instance Name: {instance_name}")
@@ -44,31 +72,17 @@ def process_missing_movies(
     # Extract necessary settings
     api_url = app_settings.get("api_url", "").strip()
     api_key = app_settings.get("api_key", "").strip()
-    api_timeout = get_advanced_setting("api_timeout", 120)  # Use general.json value
+    api_timeout = get_advanced_setting("api_timeout", 120)  # Use database value
     monitored_only = app_settings.get("monitored_only", True)
     skip_future_releases = app_settings.get("skip_future_releases", True)
     # skip_movie_refresh setting removed as it was a performance bottleneck
     hunt_missing_movies = app_settings.get("hunt_missing_movies", 0)
     
-    # Use advanced settings from general.json for command operations
+    # Use advanced settings from database for command operations
     command_wait_delay = get_advanced_setting("command_wait_delay", 1)
     command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
-    release_type = app_settings.get("release_type", "physical")
     
-    radarr_logger.info(f"Hunt Missing Movies: {hunt_missing_movies}")
-    radarr_logger.info(f"Monitored Only: {monitored_only}")
-    radarr_logger.info(f"Skip Future Releases: {skip_future_releases}")
-    # Skip Movie Refresh setting has been removed
-    radarr_logger.info(f"Release Type for Future Status: {release_type}")
-    
-    release_type_field = 'physicalRelease'
-    if release_type == 'digital':
-        release_type_field = 'digitalRelease'
-    elif release_type == 'cinema':
-        release_type_field = 'inCinemas'
-        
-    radarr_logger.info(f"Using {release_type_field} date to determine future releases")
-    radarr_logger.info("=======================================")
+    # Configuration logging removed to reduce log spam
     
     radarr_logger.info("Starting missing movies processing cycle for Radarr.")
     
@@ -88,7 +102,10 @@ def process_missing_movies(
     
     # Get missing movies 
     radarr_logger.info("Retrieving movies with missing files...")
-    missing_movies = radarr_api.get_movies_with_missing(api_url, api_key, api_timeout, monitored_only) 
+    # Use efficient random page selection instead of fetching all movies
+    missing_movies = radarr_api.get_movies_with_missing_random_page(
+        api_url, api_key, api_timeout, monitored_only, hunt_missing_movies * 2
+    ) 
     
     if missing_movies is None: # API call failed
         radarr_logger.error("Failed to retrieve missing movies from Radarr API.")
@@ -98,25 +115,56 @@ def process_missing_movies(
         radarr_logger.info("No missing movies found.")
         return False
     
-    # Check for stop signal after retrieving movies
-    if stop_check():
-        radarr_logger.info("Stop requested after retrieving missing movies. Aborting...")
-        return False
+    radarr_logger.info(f"Retrieved {len(missing_movies)} missing movies from random page selection.")
     
-    radarr_logger.info(f"Found {len(missing_movies)} movies with missing files.")
-    
-    # Filter out future releases if configured
+    # Skip future releases if enabled
     if skip_future_releases:
+        radarr_logger.info("Filtering out future releases...")
         now = datetime.datetime.now(datetime.timezone.utc)
-        original_count = len(missing_movies)
         
-        missing_movies = [
-            movie for movie in missing_movies
-            if movie.get(release_type_field) and datetime.datetime.fromisoformat(movie[release_type_field].replace('Z', '+00:00')) < now
-        ]
-        skipped_count = original_count - len(missing_movies)
-        if skipped_count > 0:
-            radarr_logger.info(f"Skipped {skipped_count} future movie releases based on {release_type} release date.")
+        filtered_movies = []
+        skipped_count = 0
+        no_date_count = 0
+        for movie in missing_movies:
+            movie_id = movie.get('id')
+            movie_title = movie.get('title', 'Unknown Title')
+            release_date_str = movie.get('releaseDate')
+            
+            if release_date_str:
+                release_date = parse_date(release_date_str)
+                if release_date:
+                    if release_date > now:
+                        # Movie has a future release date, skip it
+                        radarr_logger.debug(f"Skipping future movie ID {movie_id} ('{movie_title}') - releaseDate is in the future: {release_date}")
+                        skipped_count += 1
+                        continue
+                    else:
+                        # Movie release date is in the past, include it
+                        radarr_logger.debug(f"Movie ID {movie_id} ('{movie_title}') releaseDate is in the past: {release_date}, including in search")
+                        filtered_movies.append(movie)
+                else:
+                    # Could not parse release date, treat as no date
+                    radarr_logger.debug(f"Movie ID {movie_id} ('{movie_title}') has unparseable releaseDate '{release_date_str}' - treating as no release date")
+                    if app_settings.get('process_no_release_dates', False):
+                        radarr_logger.debug(f"Movie ID {movie_id} ('{movie_title}') has no valid release date but process_no_release_dates is enabled - including in search")
+                        filtered_movies.append(movie)
+                    else:
+                        radarr_logger.debug(f"Skipping movie ID {movie_id} ('{movie_title}') - no valid release date and process_no_release_dates is disabled")
+                        no_date_count += 1
+            else:
+                # No release date available at all
+                if app_settings.get('process_no_release_dates', False):
+                    radarr_logger.debug(f"Movie ID {movie_id} ('{movie_title}') has no releaseDate field but process_no_release_dates is enabled - including in search")
+                    filtered_movies.append(movie)
+                else:
+                    radarr_logger.debug(f"Skipping movie ID {movie_id} ('{movie_title}') - no releaseDate field and process_no_release_dates is disabled")
+                    no_date_count += 1
+        
+        radarr_logger.info(f"Filtered out {skipped_count} future releases and {no_date_count} movies with no release dates")
+        radarr_logger.debug(f"After filtering: {len(filtered_movies)} movies remaining from {len(missing_movies)} original")
+        missing_movies = filtered_movies
+    else:
+        radarr_logger.info("Skip future releases is disabled - processing all movies regardless of release date")
 
     if not missing_movies:
         radarr_logger.info("No missing movies left to process after filtering future releases.")
@@ -163,6 +211,15 @@ def process_missing_movies(
         if stop_check():
             radarr_logger.info("Stop requested during processing. Aborting...")
             break
+        
+        # Check API limit before processing each movie
+        try:
+            if check_hourly_cap_exceeded("radarr"):
+                radarr_logger.warning(f"🛑 Radarr API hourly limit reached - stopping missing movies processing after {movies_processed} movies")
+                break
+        except Exception as e:
+            radarr_logger.error(f"Error checking hourly API cap: {e}")
+            # Continue processing if cap check fails - safer than stopping
             
         movie_id = movie.get("id")
         movie_title = movie.get("title", "Unknown Title")
@@ -175,6 +232,17 @@ def process_missing_movies(
         
         if search_success:
             radarr_logger.info(f"Successfully triggered search for movie '{movie_title}'")
+            
+            # Tag the movie if enabled
+            if tag_processed_items:
+                from src.primary.settings_manager import get_custom_tag
+                custom_tag = get_custom_tag("radarr", "missing", "huntarr-missing")
+                try:
+                    radarr_api.tag_processed_movie(api_url, api_key, api_timeout, movie_id, custom_tag)
+                    radarr_logger.debug(f"Tagged movie {movie_id} with '{custom_tag}'")
+                except Exception as e:
+                    radarr_logger.warning(f"Failed to tag movie {movie_id} with '{custom_tag}': {e}")
+            
             # Immediately add to processed IDs to prevent duplicate processing
             success = add_processed_id("radarr", instance_name, str(movie_id))
             radarr_logger.debug(f"Added processed ID: {movie_id}, success: {success}")

@@ -7,13 +7,16 @@
       "enabled": true
     }
   ],
+  "search_mode": "movie",
   "hunt_missing_items": 1,
   "hunt_upgrade_items": 0,
   "sleep_duration": 900,
   "monitored_only": true,
-
   "skip_future_releases": true,
-
-  "search_mode": "movie",
-  "hourly_cap": 20
+  "hourly_cap": 20,
+  "tag_processed_items": true,
+  "custom_tags": {
+    "missing": "huntarr-missing",
+    "upgrade": "huntarr-upgrade"
+  }
 }

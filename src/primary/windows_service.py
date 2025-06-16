@@ -157,7 +157,7 @@ class HuntarrService(win32serviceutil.ServiceFramework):
                 # Create basic directories as fallback
                 try:
                     app_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-                    for dir_name in ['config', 'logs', 'config/stateful']:
+                    for dir_name in ['config', 'logs']:
                         os.makedirs(os.path.join(app_root, dir_name), exist_ok=True)
                     logger.info("Created basic directories as fallback")
                 except Exception as e2:

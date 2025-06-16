@@ -6,14 +6,24 @@ window.justCompletedStatefulReset = false;
 // Keep track of the current stateful hours value to detect real changes
 window.lastStatefulHoursValue = null;
 
-// Run this code as soon as this script is loaded
+// Run this code as soon as this script is loaded, but only on settings page
 (function() {
+    // Exit early if not on settings page
+    function isOnSettingsPage() {
+        return window.location.hash === '#settings' || window.location.pathname.includes('/settings');
+    }
+    
+    // Don't run any of this code unless we're on the settings page
+    if (!isOnSettingsPage()) {
+        return;
+    }
+    
     function insertDirectResetButton() {
         // Look for the stateful header row
         const headerRow = document.querySelector('.stateful-header-row');
         
         if (!headerRow) {
-            // If we can't find it, try again soon
+            // If we can't find it, try again soon (we're already on settings page)
             console.log('Stateful header not found, will try again in 1 second');
             setTimeout(insertDirectResetButton, 1000);
             return;
@@ -53,7 +63,7 @@ window.lastStatefulHoursValue = null;
                 window.justCompletedStatefulReset = true;
                 
                 // Make direct API call
-                HuntarrUtils.fetchWithTimeout('/api/stateful/reset', {
+                HuntarrUtils.fetchWithTimeout('./api/stateful/reset', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -114,7 +124,7 @@ window.lastStatefulHoursValue = null;
     // And again when everything is fully loaded
     window.addEventListener('load', insertDirectResetButton);
 
-    // Also check periodically to make sure the button exists
+    // Also check periodically to make sure the button exists (we're already on settings page)
     setInterval(function() {
         const headerRow = document.querySelector('.stateful-header-row');
         if (headerRow && !document.getElementById('emergency_reset_btn')) {

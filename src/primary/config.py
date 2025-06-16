@@ -31,6 +31,10 @@ def get_debug_mode():
 # Determine the hunt mode for a specific app
 def determine_hunt_mode(app_name: str) -> str:
     """Determine the hunt mode for a specific app based on its settings."""
+    # Swaparr is not a hunting app, it doesn't have hunt modes
+    if app_name == "swaparr":
+        return "N/A (monitoring app)"
+    
     # Fetch settings directly for the given app
     hunt_missing = 0
     hunt_upgrade = 0
@@ -111,56 +115,9 @@ def configure_logging(app_name: str = None):
 # Log the configuration for a specific app
 def log_configuration(app_name: str):
     """Log the current configuration settings for a specific app."""
-    log = get_logger(app_name) # Use the specific app's logger
-    settings = settings_manager.load_settings(app_name) # Corrected function name
-
-    if not settings:
-        log.error(f"Could not load settings for app: {app_name}. Cannot log configuration.")
-        return
-
-    api_url = settings.get("api_url", "")
-    api_key = settings.get("api_key", "")
-    debug_mode = settings.get("debug_mode", False)
-    sleep_duration = settings.get("sleep_duration", 900)
-    # Get state reset interval
-    state_reset_interval = settings_manager.get_advanced_setting("stateful_management_hours", 168)
-    monitored_only = settings.get("monitored_only", True)
-    min_queue_size = settings.get("minimum_download_queue_size", -1)
-
-    log.info(f"--- Configuration for {app_name} ---")
-    log.info(f"Debug Mode: {debug_mode}")
-    log.info(f"Hunt Mode: {determine_hunt_mode(app_name)}")
-    log.info(f"Sleep Duration: {sleep_duration} seconds")
-    log.info(f"State Reset Interval: {state_reset_interval} hours")
-    log.info(f"Monitored Only: {monitored_only}")
-    log.info(f"Maximum Download Queue Size: {settings.get('minimum_download_queue_size', -1)}")
-
-    # App-specific settings logging
-    if app_name == "sonarr":
-        log.info(f"Hunt Missing Items: {settings.get('hunt_missing_items', 0)}")
-        log.info(f"Hunt Upgrade Items: {settings.get('hunt_upgrade_items', 0)}")
-        log.info(f"Skip Future Episodes: {settings.get('skip_future_episodes', True)}")
-        log.info(f"Skip Series Refresh: {settings.get('skip_series_refresh', False)}")
-    elif app_name == "radarr":
-        log.info(f"Hunt Missing Movies: {settings.get('hunt_missing_movies', 0)}")
-        log.info(f"Hunt Upgrade Movies: {settings.get('hunt_upgrade_movies', 0)}")
-        log.info(f"Skip Future Releases: {settings.get('skip_future_releases', True)}")
-        log.info(f"Skip Movie Refresh: {settings.get('skip_movie_refresh', False)}")
-    elif app_name.lower() == 'lidarr':
-        log.info(f"Mode: {settings.get('hunt_missing_mode', 'artist')}")
-        log.info(f"Hunt Missing Items: {settings.get('hunt_missing_items', 0)}")
-        # Use hunt_upgrade_items
-        log.info(f"Hunt Upgrade Items: {settings.get('hunt_upgrade_items', 0)}") 
-        log.info(f"Sleep Duration: {settings.get('sleep_duration', 900)} seconds")
-        log.info(f"State Reset Interval: {state_reset_interval} hours")
-        log.info(f"Monitored Only: {settings.get('monitored_only', True)}")
-        log.info(f"Maximum Download Queue Size: {settings.get('minimum_download_queue_size', -1)}")
-    elif app_name == "readarr":
-        log.info(f"Hunt Missing Books: {settings.get('hunt_missing_books', 0)}")
-        log.info(f"Hunt Upgrade Books: {settings.get('hunt_upgrade_books', 0)}")
-        log.info(f"Skip Future Releases: {settings.get('skip_future_releases', True)}")
-        log.info(f"Skip Author Refresh: {settings.get('skip_author_refresh', False)}")
-    log.info(f"--- End Configuration for {app_name} ---")
+    # Configuration logging has been disabled to reduce log spam
+    # Settings are loaded and used internally without verbose logging
+    pass
 
 # Removed refresh_settings function - settings are loaded dynamically by settings_manager
 

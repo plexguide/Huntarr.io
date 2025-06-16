@@ -22,7 +22,7 @@ eros_logger = get_logger("eros")
 # Use a session for better performance
 session = requests.Session()
 
-def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, method: str = "GET",  data: Optional[Dict] = None, params: Optional[Dict] = None) -> Any:
+def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, method: str = "GET", count_api: bool = True, data: Optional[Dict] = None, params: Optional[Dict] = None) -> Any:
     """
     Make a request to the Eros API.
     
@@ -50,7 +50,7 @@ def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, met
         # Construct the full URL properly
         full_url = f"{api_url.rstrip('/')}/api/v3/{endpoint.lstrip('/')}"
         
-        eros_logger.debug(f"Making {method} request to: {full_url}")
+    
         
         # Set up headers with User-Agent to identify Huntarr
         headers = {
@@ -81,6 +81,15 @@ def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, met
             # Check if the request was successful
             try:
                 response.raise_for_status()
+                
+                # Increment API counter only if count_api is True and request was successful
+                if count_api:
+                    try:
+                        from src.primary.stats_manager import increment_hourly_cap
+                        increment_hourly_cap("eros")
+                    except Exception as e:
+                        eros_logger.warning(f"Failed to increment API counter for eros: {e}")
+                        
             except requests.exceptions.HTTPError as e:
                 eros_logger.error(f"Error during {method} request to {endpoint}: {e}, Status Code: {response.status_code}")
                 eros_logger.debug(f"Response content: {response.text[:200]}")
@@ -118,7 +127,7 @@ def get_download_queue_size(api_url: str, api_key: str, api_timeout: int) -> int
     Returns:
         The number of items in the download queue, or -1 if the request failed
     """
-    response = arr_request(api_url, api_key, api_timeout, "queue")
+    response = arr_request(api_url, api_key, api_timeout, "queue", count_api=False)
     
     if response is None:
         return -1
@@ -153,7 +162,7 @@ def get_items_with_missing(api_url: str, api_key: str, api_timeout: int, monitor
             # In movie mode, we get all movies and filter for ones without files
             endpoint = "movie"
             
-            response = arr_request(api_url, api_key, api_timeout, endpoint)
+            response = arr_request(api_url, api_key, api_timeout, endpoint, count_api=False)
             
             if response is None:
                 return None
@@ -172,7 +181,7 @@ def get_items_with_missing(api_url: str, api_key: str, api_timeout: int, monitor
             # First check if the movie-scene endpoint exists
             endpoint = "scene/missing?pageSize=1000"
             
-            response = arr_request(api_url, api_key, api_timeout, endpoint)
+            response = arr_request(api_url, api_key, api_timeout, endpoint, count_api=False)
             
             if response is None:
                 # Fallback to regular movie filtering if scene endpoint doesn't exist
@@ -222,7 +231,7 @@ def get_cutoff_unmet_items(api_url: str, api_key: str, api_timeout: int, monitor
         # Endpoint
         endpoint = "wanted/cutoff?pageSize=1000&sortKey=airDateUtc&sortDirection=descending"
         
-        response = arr_request(api_url, api_key, api_timeout, endpoint)
+        response = arr_request(api_url, api_key, api_timeout, endpoint, count_api=False)
         
         if response is None:
             return None
@@ -268,7 +277,7 @@ def get_quality_upgrades(api_url: str, api_key: str, api_timeout: int, monitored
             # In movie mode, we get all movies and filter for ones that have files but need quality upgrades
             endpoint = "movie"
             
-            response = arr_request(api_url, api_key, api_timeout, endpoint)
+            response = arr_request(api_url, api_key, api_timeout, endpoint, count_api=False)
             
             if response is None:
                 return None
@@ -286,7 +295,7 @@ def get_quality_upgrades(api_url: str, api_key: str, api_timeout: int, monitored
             # In scene mode, try to use scene-specific endpoints
             endpoint = "scene/cutoff?pageSize=1000"
             
-            response = arr_request(api_url, api_key, api_timeout, endpoint)
+            response = arr_request(api_url, api_key, api_timeout, endpoint, count_api=False)
             
             if response is None:
                 # Fallback to regular movie filtering if scene endpoint doesn't exist
@@ -348,6 +357,17 @@ def item_search(api_url: str, api_key: str, api_timeout: int, item_ids: List[int
     Returns:
         The command ID if the search command was triggered successfully, None otherwise
     """
+    
+    # Check API limit before making request
+    try:
+        from src.primary.stats_manager import check_hourly_cap_exceeded
+        if check_hourly_cap_exceeded("eros"):
+            eros_logger.warning(f"🛑 Eros API hourly limit reached - skipping item search for {len(item_ids)} items")
+            return None
+    except Exception as e:
+        eros_logger.error(f"Error checking hourly API cap: {e}")
+        # Continue with request if cap check fails - safer than skipping
+    
     try:
         if not item_ids:
             eros_logger.warning("No movie IDs provided for search.")
@@ -357,58 +377,11 @@ def item_search(api_url: str, api_key: str, api_timeout: int, item_ids: List[int
 
         # Try several possible command formats, as the API might be in flux
         possible_commands = [
-            # Format 1: MoviesSearch with integer IDs (Radarr-like) and no auto-refresh
-            {
-                "name": "MoviesSearch",
-                "movieIds": item_ids,
-                "updateScheduledTask": False,
-                "runRefreshAfterSearch": False,
-                "sendUpdatesToClient": False
-            },
-            # Format 2: MovieSearch with integer IDs and no auto-refresh
-            {
-                "name": "MovieSearch",
-                "movieIds": item_ids,
-                "updateScheduledTask": False,
-                "runRefreshAfterSearch": False,
-                "sendUpdatesToClient": False
-            },
-            # Format 3: MoviesSearch with string IDs and no auto-refresh
-            {
-                "name": "MoviesSearch",
-                "movieIds": [str(id) for id in item_ids],
-                "updateScheduledTask": False,
-                "runRefreshAfterSearch": False,
-                "sendUpdatesToClient": False
-            },
-            # Format 4: MovieSearch with string IDs and no auto-refresh
-            {
-                "name": "MovieSearch",
-                "movieIds": [str(id) for id in item_ids],
-                "updateScheduledTask": False,
-                "runRefreshAfterSearch": False,
-                "sendUpdatesToClient": False
-            },
-            # Fallback to original formats if the above don't work
-            {
-                "name": "MoviesSearch",
-                "movieIds": item_ids
-            },
-            {
-                "name": "MovieSearch",
-                "movieIds": item_ids
-            },
-            {
-                "name": "MoviesSearch",
-                "movieIds": [str(id) for id in item_ids]
-            },
-            {
-                "name": "MovieSearch",
-                "movieIds": [str(id) for id in item_ids]
-            }
+            {"name": "MoviesSearch", "movieIds": item_ids},  # Standard movie search
+            {"name": "MovieSearch", "movieIds": item_ids},   # Alternative format
+            {"name": "EpisodeSearch", "episodeIds": item_ids}  # Fallback to episode format
         ]
         
-        # Command endpoint
         command_endpoint = "command"
         
         # Try each command format until one works
@@ -421,6 +394,15 @@ def item_search(api_url: str, api_key: str, api_timeout: int, item_ids: List[int
             if response and "id" in response:
                 command_id = response["id"]
                 eros_logger.debug(f"Search command format {i+1} succeeded with ID {command_id}")
+                
+                # Increment API counter after successful request
+                try:
+                    from src.primary.stats_manager import increment_hourly_cap
+                    increment_hourly_cap("eros", 1)
+                    eros_logger.debug(f"Incremented Eros hourly API cap for item search ({len(item_ids)} items)")
+                except Exception as cap_error:
+                    eros_logger.error(f"Failed to increment hourly API cap for item search: {cap_error}")
+                
                 return command_id
                 
         # If we've tried all formats and none worked:
@@ -452,7 +434,7 @@ def get_command_status(api_url: str, api_key: str, api_timeout: int, command_id:
         command_endpoint = f"command/{command_id}"
         
         # Make the API request
-        result = arr_request(api_url, api_key, api_timeout, command_endpoint)
+        result = arr_request(api_url, api_key, api_timeout, command_endpoint, count_api=False)
         
         if result:
             eros_logger.debug(f"Command {command_id} status: {result.get('status', 'unknown')}")
@@ -482,7 +464,7 @@ def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
         eros_logger.debug(f"Checking connection to Whisparr V3 instance at {api_url}")
         
         endpoint = "system/status"
-        response = arr_request(api_url, api_key, api_timeout, endpoint)
+        response = arr_request(api_url, api_key, api_timeout, endpoint, count_api=False)
         
         if response is not None:
             # Get the version information if available
@@ -502,4 +484,120 @@ def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
             
     except Exception as e:
         eros_logger.error(f"Error checking connection to Whisparr V3 API: {str(e)}")
+        return False
+
+def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
+    """
+    Get existing tag ID or create a new tag in Eros.
+    
+    Args:
+        api_url: The base URL of the Eros API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        tag_label: The label/name of the tag to create or find
+        
+    Returns:
+        The tag ID if successful, None otherwise
+    """
+    try:
+        # First, check if the tag already exists
+        response = arr_request(api_url, api_key, api_timeout, "tag", count_api=False)
+        if response:
+            for tag in response:
+                if tag.get('label') == tag_label:
+                    tag_id = tag.get('id')
+                    eros_logger.debug(f"Found existing tag '{tag_label}' with ID: {tag_id}")
+                    return tag_id
+        
+        # Tag doesn't exist, create it
+        tag_data = {"label": tag_label}
+        response = arr_request(api_url, api_key, api_timeout, "tag", method="POST", data=tag_data, count_api=False)
+        if response and 'id' in response:
+            tag_id = response['id']
+            eros_logger.info(f"Created new tag '{tag_label}' with ID: {tag_id}")
+            return tag_id
+        else:
+            eros_logger.error(f"Failed to create tag '{tag_label}'. Response: {response}")
+            return None
+            
+    except Exception as e:
+        eros_logger.error(f"Error managing tag '{tag_label}': {e}")
+        return None
+
+def add_tag_to_movie(api_url: str, api_key: str, api_timeout: int, movie_id: int, tag_id: int) -> bool:
+    """
+    Add a tag to a movie in Eros.
+    
+    Args:
+        api_url: The base URL of the Eros API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        movie_id: The ID of the movie to tag
+        tag_id: The ID of the tag to add
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        # First get the current movie data
+        movie_data = arr_request(api_url, api_key, api_timeout, f"movie/{movie_id}", count_api=False)
+        if not movie_data:
+            eros_logger.error(f"Failed to get movie data for ID: {movie_id}")
+            return False
+        
+        # Check if the tag is already present
+        current_tags = movie_data.get('tags', [])
+        if tag_id in current_tags:
+            eros_logger.debug(f"Tag {tag_id} already exists on movie {movie_id}")
+            return True
+        
+        # Add the new tag to the list
+        current_tags.append(tag_id)
+        movie_data['tags'] = current_tags
+        
+        # Update the movie with the new tags
+        response = arr_request(api_url, api_key, api_timeout, f"movie/{movie_id}", method="PUT", data=movie_data, count_api=False)
+        if response:
+            eros_logger.debug(f"Successfully added tag {tag_id} to movie {movie_id}")
+            return True
+        else:
+            eros_logger.error(f"Failed to update movie {movie_id} with tag {tag_id}")
+            return False
+            
+    except Exception as e:
+        eros_logger.error(f"Error adding tag {tag_id} to movie {movie_id}: {e}")
+        return False
+
+def tag_processed_movie(api_url: str, api_key: str, api_timeout: int, movie_id: int, tag_label: str = "huntarr-missing") -> bool:
+    """
+    Tag a movie in Eros with the specified tag.
+    
+    Args:
+        api_url: The base URL of the Eros API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        movie_id: The ID of the movie to tag
+        tag_label: The tag to apply (huntarr-missing, huntarr-upgraded)
+        
+    Returns:
+        True if the tagging was successful, False otherwise
+    """
+    try:
+        # Get or create the tag
+        tag_id = get_or_create_tag(api_url, api_key, api_timeout, tag_label)
+        if tag_id is None:
+            eros_logger.error(f"Failed to get or create tag '{tag_label}' in Eros")
+            return False
+            
+        # Add the tag to the movie
+        success = add_tag_to_movie(api_url, api_key, api_timeout, movie_id, tag_id)
+        if success:
+            eros_logger.debug(f"Successfully tagged Eros movie {movie_id} with '{tag_label}'")
+            return True
+        else:
+            eros_logger.error(f"Failed to add tag '{tag_label}' to Eros movie {movie_id}")
+            return False
+            
+    except Exception as e:
+        eros_logger.error(f"Error tagging Eros movie {movie_id} with '{tag_label}': {e}")
         return False

@@ -8,6 +8,7 @@ import logging
 import sys
 import os
 import pathlib
+import time
 from typing import Dict, Optional
 
 # Use the centralized path configuration
@@ -27,54 +28,93 @@ APP_LOG_FILES = {
     "readarr": LOG_DIR / "readarr.log", # Updated filename
     "whisparr": LOG_DIR / "whisparr.log", # Added Whisparr
     "eros": LOG_DIR / "eros.log",      # Added Eros for Whisparr V3
-    "swaparr": LOG_DIR / "swaparr.log",  # Added Swaparr
-    "hunting": LOG_DIR / "hunting.log"  # Added Hunt Manager - fixed key
+    "swaparr": LOG_DIR / "swaparr.log",  # Added Swaparr for stalled download management
 }
 
 # Global logger instances
 logger: Optional[logging.Logger] = None
 app_loggers: Dict[str, logging.Logger] = {}
 
-def setup_main_logger(debug_mode=None):
+# Custom formatter that uses user's selected timezone instead of UTC
+class LocalTimeFormatter(logging.Formatter):
+    """Custom formatter that uses user's selected timezone for log timestamps"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.converter = time.localtime  # Still use local time as fallback
+    
+    def _get_user_timezone(self):
+        """Get the user's selected timezone from general settings"""
+        try:
+            from src.primary.utils.timezone_utils import get_user_timezone
+            return get_user_timezone()
+        except Exception:
+            # Final fallback if timezone_utils can't be imported
+            import pytz
+            return pytz.UTC
+    
+    def formatTime(self, record, datefmt=None):
+        try:
+            # Try to use user's selected timezone
+            user_tz = self._get_user_timezone()
+            import datetime
+            ct = datetime.datetime.fromtimestamp(record.created, tz=user_tz)
+            
+            if datefmt:
+                s = ct.strftime(datefmt)
+            else:
+                # Use timezone-aware format
+                s = ct.strftime("%Y-%m-%d %H:%M:%S")
+                
+            # Add timezone information for clarity
+            timezone_name = str(user_tz)
+            s += f" {timezone_name}"
+            
+            return s
+        except Exception:
+            # Fallback to system local time if timezone handling fails
+            ct = self.converter(record.created)
+            if datefmt:
+                s = time.strftime(datefmt, ct)
+            else:
+                s = time.strftime("%Y-%m-%d %H:%M:%S", ct)
+                
+            # Add timezone information to help identify which timezone logs are in
+            tz_name = time.tzname[time.daylight] if time.daylight else time.tzname[0]
+            if tz_name:
+                s += f" {tz_name}"
+                
+            return s
+
+def setup_main_logger():
     """Set up the main Huntarr logger."""
     global logger
     log_name = "huntarr"
     log_file = MAIN_LOG_FILE
 
-    # Determine debug mode safely
-    use_debug_mode = False
-    if debug_mode is None:
-        try:
-            # Use the get_debug_mode function to check general settings
-            from src.primary.config import get_debug_mode
-            use_debug_mode = get_debug_mode()
-        except (ImportError, AttributeError):
-            pass # Default to False
-    else:
-        use_debug_mode = debug_mode
+    # Always use DEBUG level - let frontend filter what users see
+    use_log_level = logging.DEBUG
 
     # Get or create the main logger instance
     current_logger = logging.getLogger(log_name)
 
-    # Reset handlers each time setup is called to avoid duplicates
-    # This is important if setup might be called again (e.g., config reload)
-    for handler in current_logger.handlers[:]:
-        current_logger.removeHandler(handler)
-
-    current_logger.propagate = False # Prevent propagation to root logger
-    current_logger.setLevel(logging.DEBUG if use_debug_mode else logging.INFO)
+    # Reset handlers to avoid duplicates
+    current_logger.handlers.clear()
+    current_logger.setLevel(use_log_level)
+    
+    # Prevent propagation to root logger to avoid duplicate messages
+    current_logger.propagate = False
 
     # Create console handler
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.DEBUG if use_debug_mode else logging.INFO)
+    console_handler.setLevel(use_log_level)
 
     # Create file handler
     file_handler = logging.FileHandler(log_file)
-    file_handler.setLevel(logging.DEBUG if use_debug_mode else logging.INFO)
+    file_handler.setLevel(use_log_level)
 
     # Set format for the main logger
     log_format = "%(asctime)s - huntarr - %(levelname)s - %(message)s"
-    formatter = logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
+    formatter = LocalTimeFormatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
     console_handler.setFormatter(formatter)
     file_handler.setFormatter(formatter)
 
@@ -82,8 +122,7 @@ def setup_main_logger(debug_mode=None):
     current_logger.addHandler(console_handler)
     current_logger.addHandler(file_handler)
 
-    if use_debug_mode:
-        current_logger.debug("Debug logging enabled for main logger")
+    current_logger.debug("Debug logging enabled for main logger")
 
     logger = current_logger # Assign to the global variable
     return current_logger
@@ -119,14 +158,10 @@ def get_logger(app_type: str) -> logging.Logger:
     # Prevent propagation to the main 'huntarr' logger or root logger
     app_logger.propagate = False
     
-    # Determine debug mode setting safely
-    try:
-        from src.primary.config import get_debug_mode
-        debug_mode = get_debug_mode()
-    except ImportError:
-        debug_mode = False
+    # Always use DEBUG level - let frontend filter what users see
+    log_level = logging.DEBUG
         
-    app_logger.setLevel(logging.DEBUG if debug_mode else logging.INFO)
+    app_logger.setLevel(log_level)
     
     # Reset handlers in case this logger existed before but wasn't cached
     # (e.g., across restarts without clearing logging._handlers)
@@ -135,16 +170,16 @@ def get_logger(app_type: str) -> logging.Logger:
 
     # Create console handler
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.DEBUG if debug_mode else logging.INFO)
+    console_handler.setLevel(logging.DEBUG)
     
     # Create file handler for the specific app log file
     log_file = APP_LOG_FILES[app_type]
     file_handler = logging.FileHandler(log_file)
-    file_handler.setLevel(logging.DEBUG if debug_mode else logging.INFO)
+    file_handler.setLevel(logging.DEBUG)
     
     # Set a distinct format for this app log
     log_format = f"%(asctime)s - huntarr.{app_type} - %(levelname)s - %(message)s"
-    formatter = logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
+    formatter = LocalTimeFormatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
     
     console_handler.setFormatter(formatter)
     file_handler.setFormatter(formatter)
@@ -156,52 +191,54 @@ def get_logger(app_type: str) -> logging.Logger:
     # Cache the configured logger
     app_loggers[log_name] = app_logger
 
-    if debug_mode:
-        app_logger.debug(f"Debug logging enabled for {app_type} logger")
+    app_logger.debug(f"Debug logging enabled for {app_type} logger")
         
     return app_logger
 
-def update_logging_levels(debug_mode=None):
+def update_logging_levels():
     """
-    Update all logger levels based on the current debug mode setting.
-    Call this after settings are changed in the UI to apply changes immediately.
-    
-    Args:
-        debug_mode: Force a specific debug mode, or None to read from settings
+    Update all logger levels to DEBUG level.
+    This function is kept for compatibility but now always sets DEBUG level.
     """
-    # Determine debug mode from settings if not specified
-    if debug_mode is None:
-        try:
-            from src.primary.config import get_debug_mode
-            debug_mode = get_debug_mode()
-        except (ImportError, AttributeError):
-            debug_mode = False
+    # Always use DEBUG level - let frontend filter what users see
+    level = logging.DEBUG
     
     # Set level for main logger
-    level = logging.DEBUG if debug_mode else logging.INFO
     if logger:
         logger.setLevel(level)
-        for handler in logger.handlers:
-            handler.setLevel(level)
     
     # Set level for all app loggers
-    for app_type, app_logger in app_loggers.items():
+    for app_logger in app_loggers.values():
         app_logger.setLevel(level)
-        for handler in app_logger.handlers:
-            handler.setLevel(level)
     
-    # Set root logger level too
-    root_logger = logging.getLogger()
-    root_logger.setLevel(level)
-    for handler in root_logger.handlers:
-        handler.setLevel(level)
+    print(f"[Logger] Updated all logger levels to {logging.getLevelName(level)}")
 
-    # Force Python's logging module to respect the log level for all existing loggers
-    for name, logger_instance in logging.Logger.manager.loggerDict.items():
-        if isinstance(logger_instance, logging.Logger):
-            logger_instance.setLevel(level)
+def refresh_timezone_formatters():
+    """
+    Force refresh of all logger formatters to use updated timezone settings.
+    This should be called when the timezone setting changes.
+    """
+    print("[Logger] Refreshing timezone formatters for all loggers")
     
-    return debug_mode
+    # Create new formatter with updated timezone handling
+    log_format = "%(asctime)s - huntarr - %(levelname)s - %(message)s"
+    new_formatter = LocalTimeFormatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
+    
+    # Update main logger handlers
+    if logger:
+        for handler in logger.handlers:
+            handler.setFormatter(new_formatter)
+    
+    # Update all app logger handlers
+    for app_name, app_logger in app_loggers.items():
+        app_type = app_name.split('.')[-1] if '.' in app_name else app_name
+        app_format = f"%(asctime)s - huntarr.{app_type} - %(levelname)s - %(message)s"
+        app_formatter = LocalTimeFormatter(app_format, datefmt="%Y-%m-%d %H:%M:%S")
+        
+        for handler in app_logger.handlers:
+            handler.setFormatter(app_formatter)
+    
+    print("[Logger] Timezone formatters refreshed for all loggers")
 
 def debug_log(message: str, data: object = None, app_type: Optional[str] = None) -> None:
     """
@@ -215,19 +252,22 @@ def debug_log(message: str, data: object = None, app_type: Optional[str] = None)
     current_logger = get_logger(app_type) if app_type else logger
     
     if current_logger.level <= logging.DEBUG:
-        current_logger.debug(f"{message}")
         if data is not None:
             try:
                 import json
                 as_json = json.dumps(data)
                 if len(as_json) > 500:
                     as_json = as_json[:500] + "..."
-                current_logger.debug(as_json)
+                # Combine message and data in single log entry to prevent fragmentation
+                current_logger.debug(f"{message} | Data: {as_json}")
             except:
                 data_str = str(data)
                 if len(data_str) > 500:
                     data_str = data_str[:500] + "..."
-                current_logger.debug(data_str)
+                # Combine message and data in single log entry to prevent fragmentation
+                current_logger.debug(f"{message} | Data: {data_str}")
+        else:
+            current_logger.debug(f"{message}")
 
 # Initialize the main logger instance when the module is imported
 logger = setup_main_logger()

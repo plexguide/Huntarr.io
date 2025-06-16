@@ -94,4 +94,32 @@
         text-align: center;
         justify-content: center;
     }
+    
+    /* SWAPARR MOBILE RESPONSIVE FIX - Force vertical layout on mobile */
+    .app-stats-card.swaparr .stats-numbers {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: repeat(4, auto) !important;
+        gap: 10px !important;
+        max-width: 300px !important;
+        margin: 0 auto 20px auto !important;
+        flex-direction: initial !important;
+        justify-content: initial !important;
+    }
+    
+    .app-stats-card.swaparr .stat-box {
+        padding: 15px !important;
+        background: rgba(26, 32, 44, 0.5) !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(120, 140, 180, 0.2) !important;
+        transition: all 0.3s ease !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .app-stats-card.swaparr .stat-box:hover {
+        transform: translateY(-2px) !important;
+        border-color: rgba(120, 140, 180, 0.4) !important;
+        background: rgba(26, 32, 44, 0.7) !important;
+    }
 }

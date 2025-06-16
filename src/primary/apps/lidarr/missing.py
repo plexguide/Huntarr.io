@@ -12,11 +12,11 @@ import json
 from typing import Dict, Any, Callable
 from src.primary.utils.logger import get_logger
 from src.primary.apps.lidarr import api as lidarr_api
-from src.primary.stats_manager import increment_stat
+from src.primary.stats_manager import increment_stat, check_hourly_cap_exceeded
 from src.primary.stateful_manager import is_processed, add_processed_id
 from src.primary.utils.history_utils import log_processed_media
 from src.primary.settings_manager import load_settings, get_advanced_setting
-from src.primary.state import get_state_file_path, check_state_reset
+from src.primary.state import check_state_reset
 import json
 import os
 
@@ -43,7 +43,7 @@ def process_missing_albums(
     instance_name = app_settings.get("instance_name", "Default")
     api_url = app_settings.get("api_url", "").strip()
     api_key = app_settings.get("api_key", "").strip()
-    api_timeout = get_advanced_setting("api_timeout", 120)  # Use general.json value
+    api_timeout = get_advanced_setting("api_timeout", 120)  # Use database value
     monitored_only = app_settings.get("monitored_only", True)
     skip_future_releases = app_settings.get("skip_future_releases", False)
     hunt_missing_items = app_settings.get("hunt_missing_items", 0)
@@ -74,72 +74,57 @@ def process_missing_albums(
     processed_any = False
     processed_artists_or_albums = set()
     total_items_to_process = hunt_missing_items
+    
+    # Load settings to check if tagging is enabled
+    lidarr_settings = load_settings("lidarr")
+    tag_processed_items = lidarr_settings.get("tag_processed_items", True)
 
     try:
-        # Fetch all missing albums first
-        lidarr_logger.info(f"Fetching all missing albums for {instance_name}...")
-        missing_items = lidarr_api.get_missing_albums(
-            api_url,
-            api_key,
-            monitored_only=monitored_only,
-            api_timeout=api_timeout
-        )
-
-        if missing_items is None: # API call failed or returned None
-            lidarr_logger.error(f"Failed to get missing items from Lidarr API for {instance_name}.")
-            return False
-
-        if not missing_items:
-            lidarr_logger.info(f"No missing albums found for {instance_name} after initial fetch and filtering.")
-            return False
-
-        lidarr_logger.info(f"Found {len(missing_items)} potentially missing albums for {instance_name} after initial fetch.")
-
-        # --- Filter Future Releases --- #
-        original_count = len(missing_items)
-        if skip_future_releases:
-            now = datetime.datetime.now(datetime.timezone.utc)
-            valid_missing_items = []
-            skipped_count = 0
-            for item in missing_items:
-                release_date_str = item.get('releaseDate')
-                if release_date_str:
-                    try:
-                        # Lidarr dates often include 'Z' for UTC
-                        release_date = datetime.datetime.fromisoformat(release_date_str.replace('Z', '+00:00'))
-                        if release_date <= now:
-                            valid_missing_items.append(item)
-                        else:
-                            # lidarr_logger.debug(f"Skipping future album ID {item.get('id')} ('{item.get('title')}') release: {release_date_str}")
-                            skipped_count += 1
-                    except ValueError as e:
-                        lidarr_logger.warning(f"Could not parse release date '{release_date_str}' for album ID {item.get('id')}. Error: {e}. Including it.")
-                        valid_missing_items.append(item) # Keep if date is invalid
-                else:
-                    valid_missing_items.append(item) # Keep if no release date
+        # Get missing albums or artists data based on the hunt_missing_mode
+        if hunt_missing_mode == "album":
+            lidarr_logger.info("Retrieving missing albums for album-based processing...")
+            # Use efficient random page selection instead of fetching all albums
+            missing_albums_data = lidarr_api.get_missing_albums_random_page(
+                api_url, api_key, api_timeout, monitored_only, total_items_to_process * 2
+            )
             
-            missing_items = valid_missing_items # Replace with filtered list
-            if skipped_count > 0:
-                lidarr_logger.info(f"Skipped {skipped_count} future albums based on release date. {len(missing_items)} remaining.")
-        else:
-             lidarr_logger.debug("Skipping future release filtering as 'skip_future_releases' is False.")
-        
-        # Check if any items remain after filtering
-        if not missing_items:
-            lidarr_logger.info(f"No missing albums left after filtering future releases for {instance_name}.")
-            return False
+            if missing_albums_data is None:
+                lidarr_logger.error("Failed to retrieve missing albums from Lidarr API.")
+                return False
+            
+            if not missing_albums_data:
+                lidarr_logger.info("No missing albums found.")
+                return False
+            
+            lidarr_logger.info(f"Retrieved {len(missing_albums_data)} missing albums from random page selection.")
+            
+            # Convert to the expected format for album processing
+            unprocessed_entities = []
+            for album in missing_albums_data:
+                album_id = str(album.get("id"))
+                if not is_processed("lidarr", instance_name, album_id):
+                    unprocessed_entities.append(album_id)
+            
+            search_entity_type = "album"
+            
+        elif hunt_missing_mode == "artist":
+            # For artist mode, we still need to get all missing albums to group by artist
+            lidarr_logger.info("Retrieving missing albums for artist-based processing...")
+            missing_albums_data = lidarr_api.get_missing_albums(api_url, api_key, api_timeout, monitored_only)
+            
+            if missing_albums_data is None:
+                lidarr_logger.error("Failed to retrieve missing albums from Lidarr API.")
+                return False
+            
+            if not missing_albums_data:
+                lidarr_logger.info("No missing albums found.")
+                return False
+            
+            lidarr_logger.info(f"Retrieved {len(missing_albums_data)} missing albums.")
 
-        # Process based on mode
-        lidarr_logger.info(f"Processing missing items in '{hunt_missing_mode}' mode.")
-
-        target_entities = []
-        search_entity_type = "album" # Default to album
-
-        if hunt_missing_mode == "artist":
-            search_entity_type = "artist"
             # Group by artist ID
             items_by_artist = {}
-            for item in missing_items: # Use the potentially filtered missing_items list
+            for item in missing_albums_data: # Use the potentially filtered missing_items list
                 artist_id = item.get('artistId')
                 lidarr_logger.debug(f"Missing album item: {item.get('title')} by artistId: {artist_id}")
                 if artist_id:
@@ -157,9 +142,10 @@ def process_missing_albums(
                                    if not is_processed("lidarr", instance_name, str(eid))]
             
             lidarr_logger.info(f"Found {len(unprocessed_entities)} unprocessed artists out of {len(target_entities)} total")
+            search_entity_type = "artist"
         else:
             # In album mode, directly track album IDs
-            target_entities = [item['id'] for item in missing_items]
+            target_entities = [item['id'] for item in missing_albums_data]
             
             # Filter out processed albums
             lidarr_logger.info(f"Found {len(target_entities)} missing albums before filtering")
@@ -228,6 +214,15 @@ def process_missing_albums(
                 if stop_check(): # Use the new stop_check function
                     lidarr_logger.warning("Shutdown requested during artist search trigger.")
                     break
+                
+                # Check API limit before processing each artist
+                try:
+                    if check_hourly_cap_exceeded("lidarr"):
+                        lidarr_logger.warning(f"🛑 Lidarr API hourly limit reached - stopping artist processing after {processed_count} artists")
+                        break
+                except Exception as e:
+                    lidarr_logger.error(f"Error checking hourly API cap: {e}")
+                    # Continue processing if cap check fails - safer than stopping
 
                 # Get artist name from cached details or first album
                 artist_name = f"Artist ID {artist_id}" # Default if name not found
@@ -256,6 +251,16 @@ def process_missing_albums(
                     processed_count += 1  # Count successful searches
                     processed_artists_or_albums.add(artist_id)
                 
+                    # Tag the artist if enabled
+                    if tag_processed_items:
+                        from src.primary.settings_manager import get_custom_tag
+                        custom_tag = get_custom_tag("lidarr", "missing", "huntarr-missing")
+                        try:
+                            lidarr_api.tag_processed_artist(api_url, api_key, api_timeout, artist_id, custom_tag)
+                            lidarr_logger.debug(f"Tagged artist {artist_id} with '{custom_tag}'")
+                        except Exception as e:
+                            lidarr_logger.warning(f"Failed to tag artist {artist_id} with '{custom_tag}': {e}")
+                
                 # Also mark all albums from this artist as processed
                 if artist_id in items_by_artist:
                     for album in items_by_artist[artist_id]:
@@ -278,7 +283,7 @@ def process_missing_albums(
             # Prepare descriptive list for logging
             album_details_log = []
             # Create a dict for quick lookup based on album ID
-            missing_items_dict = {item['id']: item for item in missing_items if 'id' in item}
+            missing_items_dict = {item['id']: item for item in missing_albums_data if 'id' in item}
             
             # First, fetch additional album details for better logging if needed
             album_details = {}
@@ -331,6 +336,23 @@ def process_missing_albums(
                 increment_stat("lidarr", "hunted") # Changed from "missing" to "hunted"
                 processed_count += len(album_ids_to_search) # Count albums searched
                 processed_artists_or_albums.update(album_ids_to_search)
+                
+                # Tag artists if enabled (from albums)
+                if tag_processed_items:
+                    from src.primary.settings_manager import get_custom_tag
+                    custom_tag = get_custom_tag("lidarr", "missing", "huntarr-missing")
+                    tagged_artists = set()  # Track which artists we've already tagged
+                    for album_id in album_ids_to_search:
+                        album_info = missing_items_dict.get(album_id)
+                        if album_info:
+                            artist_id = album_info.get('artistId')
+                            if artist_id and artist_id not in tagged_artists:
+                                try:
+                                    lidarr_api.tag_processed_artist(api_url, api_key, api_timeout, artist_id, custom_tag)
+                                    lidarr_logger.debug(f"Tagged artist {artist_id} with '{custom_tag}'")
+                                    tagged_artists.add(artist_id)
+                                except Exception as e:
+                                    lidarr_logger.warning(f"Failed to tag artist {artist_id} with '{custom_tag}': {e}")
                 
                 # Log to history system
                 for album_id in album_ids_to_search:

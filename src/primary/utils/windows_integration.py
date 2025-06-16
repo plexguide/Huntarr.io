@@ -139,16 +139,14 @@ def prepare_windows_environment():
             logger.info(f"Logging Windows startup info to: {error_log_path}")
         
         # Ensure key directories exist
-        from src.primary.utils.config_paths import CONFIG_DIR, LOG_DIR, USER_DIR, SETTINGS_DIR
+        from src.primary.utils.config_paths import CONFIG_DIR, LOG_DIR
         
         # Double-check that directories were created correctly
         os.makedirs(CONFIG_DIR, exist_ok=True)
         os.makedirs(LOG_DIR, exist_ok=True)
-        os.makedirs(USER_DIR, exist_ok=True)
-        os.makedirs(SETTINGS_DIR, exist_ok=True)
         
         # Test write permissions
-        for directory in [CONFIG_DIR, LOG_DIR, USER_DIR, SETTINGS_DIR]:
+        for directory in [CONFIG_DIR, LOG_DIR]:
             test_file = os.path.join(directory, f"windows_test.tmp")
             try:
                 with open(test_file, "w") as f:

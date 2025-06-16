@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate - Huntarr.io Documentation</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/main.js" defer></script>
+    <style>
+        .donate-hero {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px 40px;
+            margin: -40px -40px 20px -40px;
+            text-align: center;
+            border-radius: 0 0 15px 15px;
+        }
+        
+        .donate-hero h1 {
+            font-size: 2.8em;
+            margin: 0 0 20px 0;
+            font-weight: 300;
+        }
+        
+        .donate-hero p {
+            font-size: 1.2em;
+            margin: 0;
+            opacity: 0.95;
+        }
+        
+        .donation-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .donation-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+        
+        .donation-card:hover {
+            background: var(--card-hover-bg);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .donation-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .github-sponsors .donation-icon {
+            color: #ea4aaa;
+        }
+        
+        .paypal .donation-icon {
+            color: #0070ba;
+        }
+        
+        .crypto .donation-icon {
+            color: #f7931a;
+        }
+        
+        .donation-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: var(--text-color);
+        }
+        
+        .donation-card p {
+            margin-bottom: 25px;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+        
+        .donate-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+        
+        .github-btn {
+            background: #ea4aaa;
+            color: white;
+        }
+        
+        .github-btn:hover {
+            background: #d63384;
+            transform: translateY(-2px);
+        }
+        
+        .paypal-btn {
+            background: #0070ba;
+            color: white;
+        }
+        
+        .paypal-btn:hover {
+            background: #005ea6;
+            transform: translateY(-2px);
+        }
+        
+        .crypto-btn {
+            background: #f7931a;
+            color: white;
+        }
+        
+        .crypto-btn:hover {
+            background: #e6850e;
+            transform: translateY(-2px);
+        }
+        
+        .support-message {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        /* Crypto Selection Styles */
+        .crypto-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .crypto-option {
+            background: var(--primary-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .crypto-option:hover {
+            border-color: var(--highlight-color);
+            background: var(--secondary-bg);
+        }
+        
+        .crypto-option i {
+            font-size: 2em;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .crypto-option .bitcoin-color {
+            color: #f7931a;
+        }
+        
+        .crypto-option .ethereum-color {
+            color: #627eea;
+        }
+        
+        .crypto-option .dogecoin-color {
+            color: #c2a633;
+        }
+        
+        .crypto-option h4 {
+            margin: 0;
+            font-size: 1.1em;
+        }
+        
+        /* Bitcoin Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        
+        .modal-content {
+            background-color: var(--content-bg);
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 20px;
+            top: 15px;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: #fff;
+        }
+        
+        .bitcoin-address {
+            background: var(--primary-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+            word-break: break-all;
+            border: 1px solid var(--border-color);
+        }
+        
+        .copy-btn {
+            background: #f7931a;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .copy-btn:hover {
+            background: #e6850e;
+        }
+        
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .donation-methods {
+                grid-template-columns: 1fr;
+            }
+            
+            .donate-hero {
+                padding: 20px 20px;
+                margin: -40px -20px 20px -20px;
+            }
+            
+            .donate-hero h1 {
+                font-size: 2.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <img src="images/huntarr-logo.png" alt="Huntarr Logo">
+            <h2>Huntarr.io</h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Getting Started</h3>
+                <ul>
+                    <li class="active"><a href="donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
+                    <li><a href="getting-started/installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Core</h3>
+                <ul>
+                    <li><a href="index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg> Home</a></li>
+                    <li><a href="apps/index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"></path></svg> Apps</a></li>
+                    <li><a href="settings/settings.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg> Settings</a></li>
+                    <li><a href="features/index.html"><i class="fas fa-star" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Features</a></li>
+                    <li><a href="faq.html"><i class="fas fa-question-circle" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> FAQ</a></li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Resources</h3>
+                <ul>
+                    <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg> GitHub</a></li>
+                    <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
+                    <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="content-container">
+            <div class="donate-hero">
+                <h1><i class="fas fa-heart" style="margin-right: 15px;"></i>Awww, We love you too!</h1>
+            </div>
+
+            <div class="support-message">
+                <h2><i class="fas fa-graduation-cap" style="margin-right: 10px; color: #3498db;"></i>Supporting My Daughter's College Fund</h2>
+                <p>Thank you for considering sponsorship of Huntarr! 100% of all donations go directly toward my daughter's college fund, ensuring both the continued development of tools you rely on and investing in the next generation's education.</p>
+            </div>
+
+            <div class="donation-methods">
+                <div class="donation-card paypal">
+                    <i class="fab fa-paypal donation-icon"></i>
+                    <h3>PayPal</h3>
+                    <p>Make a one-time donation via PayPal. Quick, secure, and supports multiple currencies worldwide.</p>
+                    <a href="https://donate.plex.one" target="_blank" class="donate-btn paypal-btn">
+                        <i class="fas fa-credit-card" style="margin-right: 8px;"></i>Donate with PayPal
+                    </a>
+                </div>
+
+                <div class="donation-card github-sponsors">
+                    <i class="fab fa-github donation-icon"></i>
+                    <h3>GitHub Sponsors</h3>
+                    <p>Monthly or one-time donations through GitHub's secure platform.</p>
+                    <a href="https://github.com/sponsors/plexguide" target="_blank" class="donate-btn github-btn">
+                        <i class="fas fa-heart" style="margin-right: 8px;"></i>Sponsor on GitHub
+                    </a>
+                </div>
+
+                <div class="donation-card crypto">
+                    <i class="fas fa-coins donation-icon"></i>
+                    <h3>CryptoCurrency</h3>
+                    <p>Support us with cryptocurrency. Crypto donations are secure, private, and processed directly without third parties.</p>
+                    <button id="cryptoBtn" class="donate-btn crypto-btn">
+                        <i class="fas fa-coins" style="margin-right: 8px;"></i>Donate Crypto
+                    </button>
+                </div>
+            </div>
+
+            <div class="support-message">
+                <h2><i class="fas fa-users" style="margin-right: 10px; color: #2ecc71;"></i>Other Ways to Support</h2>
+                <p>Can't donate? No problem! There are many other ways to support the Huntarr project:</p>
+                <ul style="margin-top: 15px;">
+                    <li><strong>Star the project</strong> on <a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a></li>
+                    <li><strong>Share Huntarr</strong> with friends who use *arr applications</li>
+                    <li><strong>Report bugs</strong> and suggest improvements</li>
+                    <li><strong>Contribute code</strong> or documentation</li>
+                    <li><strong>Join our community</strong> on <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crypto Selection Modal -->
+    <div id="cryptoSelectionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 style="text-align: center; margin-bottom: 20px;">
+                <i class="fas fa-coins" style="color: #f7931a; margin-right: 10px;"></i>
+                Choose CryptoCurrency
+            </h2>
+            <p style="text-align: center; margin-bottom: 20px;">Select your preferred cryptocurrency:</p>
+            
+            <div class="crypto-selection">
+                <div class="crypto-option" onclick="showCryptoModal('bitcoin')">
+                    <i class="fab fa-bitcoin bitcoin-color"></i>
+                    <h4>Bitcoin</h4>
+                </div>
+                <div class="crypto-option" onclick="showCryptoModal('ethereum')">
+                    <i class="fab fa-ethereum ethereum-color"></i>
+                    <h4>Ethereum</h4>
+                </div>
+                <div class="crypto-option" onclick="showCryptoModal('dogecoin')">
+                    <i class="fas fa-dog dogecoin-color"></i>
+                    <h4>DogeCoin</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bitcoin Modal -->
+    <div id="bitcoinModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 style="text-align: center; margin-bottom: 20px;">
+                <i class="fab fa-bitcoin" style="color: #f7931a; margin-right: 10px;"></i>
+                Bitcoin Donation
+            </h2>
+            <p style="text-align: center; margin-bottom: 20px;">Send Bitcoin to the address below:</p>
+            
+            <div class="bitcoin-address" id="bitcoinAddress">
+                37aoWfTwXXmZXD4ezBJNDDUmchEPvipwvK
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="copy-btn" onclick="copyAddress('bitcoin')">
+                    <i class="fas fa-copy" style="margin-right: 5px;"></i>
+                    Copy Address
+                </button>
+            </div>
+            
+            <div class="qr-code">
+                <p style="margin-bottom: 15px; opacity: 0.8;">Or scan this QR code:</p>
+                <div style="background: white; padding: 20px; border-radius: 8px; display: inline-block;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=37aoWfTwXXmZXD4ezBJNDDUmchEPvipwvK" alt="Bitcoin QR Code" style="display: block;">
+                </div>
+            </div>
+            
+            <p style="text-align: center; margin-top: 20px; opacity: 0.8; font-size: 0.9em;">
+                Please double-check the address before sending. Crypto transactions are irreversible.
+            </p>
+        </div>
+    </div>
+
+    <!-- Ethereum Modal -->
+    <div id="ethereumModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 style="text-align: center; margin-bottom: 20px;">
+                <i class="fab fa-ethereum" style="color: #627eea; margin-right: 10px;"></i>
+                Ethereum Donation
+            </h2>
+            <p style="text-align: center; margin-bottom: 20px;">Send Ethereum to the address below:</p>
+            
+            <div class="bitcoin-address" id="ethereumAddress">
+                0xb7147D900f2531880e538E0fa7f860557E2DbEC1
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="copy-btn" onclick="copyAddress('ethereum')">
+                    <i class="fas fa-copy" style="margin-right: 5px;"></i>
+                    Copy Address
+                </button>
+            </div>
+            
+            <div class="qr-code">
+                <p style="margin-bottom: 15px; opacity: 0.8;">Or scan this QR code:</p>
+                <div style="background: white; padding: 20px; border-radius: 8px; display: inline-block;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=0xb7147D900f2531880e538E0fa7f860557E2DbEC1" alt="Ethereum QR Code" style="display: block;">
+                </div>
+            </div>
+            
+            <p style="text-align: center; margin-top: 20px; opacity: 0.8; font-size: 0.9em;">
+                Please double-check the address before sending. Crypto transactions are irreversible.
+            </p>
+        </div>
+    </div>
+
+    <!-- DogeCoin Modal -->
+    <div id="dogecoinModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 style="text-align: center; margin-bottom: 20px;">
+                <i class="fas fa-dog" style="color: #c2a633; margin-right: 10px;"></i>
+                DogeCoin Donation
+            </h2>
+            <p style="text-align: center; margin-bottom: 20px;">Send DogeCoin to the address below:</p>
+            
+            <div class="bitcoin-address" id="dogecoinAddress">
+                D6L71CR7aioExLodvrADM7WER7xXU67HY2
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="copy-btn" onclick="copyAddress('dogecoin')">
+                    <i class="fas fa-copy" style="margin-right: 5px;"></i>
+                    Copy Address
+                </button>
+            </div>
+            
+            <div class="qr-code">
+                <p style="margin-bottom: 15px; opacity: 0.8;">Or scan this QR code:</p>
+                <div style="background: white; padding: 20px; border-radius: 8px; display: inline-block;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=D6L71CR7aioExLodvrADM7WER7xXU67HY2" alt="DogeCoin QR Code" style="display: block;">
+                </div>
+            </div>
+            
+            <p style="text-align: center; margin-top: 20px; opacity: 0.8; font-size: 0.9em;">
+                Please double-check the address before sending. Crypto transactions are irreversible.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Modal elements
+        const cryptoSelectionModal = document.getElementById('cryptoSelectionModal');
+        const bitcoinModal = document.getElementById('bitcoinModal');
+        const ethereumModal = document.getElementById('ethereumModal');
+        const dogecoinModal = document.getElementById('dogecoinModal');
+        const cryptoBtn = document.getElementById('cryptoBtn');
+        const closeButtons = document.getElementsByClassName('close');
+
+        // Show crypto selection modal
+        cryptoBtn.onclick = function() {
+            cryptoSelectionModal.style.display = 'block';
+        }
+
+        // Close modals when clicking X
+        Array.from(closeButtons).forEach(function(closeBtn) {
+            closeBtn.onclick = function() {
+                cryptoSelectionModal.style.display = 'none';
+                bitcoinModal.style.display = 'none';
+                ethereumModal.style.display = 'none';
+                dogecoinModal.style.display = 'none';
+            }
+        });
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target == cryptoSelectionModal) {
+                cryptoSelectionModal.style.display = 'none';
+            }
+            if (event.target == bitcoinModal) {
+                bitcoinModal.style.display = 'none';
+            }
+            if (event.target == ethereumModal) {
+                ethereumModal.style.display = 'none';
+            }
+            if (event.target == dogecoinModal) {
+                dogecoinModal.style.display = 'none';
+            }
+        }
+
+        // Show specific crypto modal
+        function showCryptoModal(cryptoType) {
+            cryptoSelectionModal.style.display = 'none';
+            
+            switch(cryptoType) {
+                case 'bitcoin':
+                    bitcoinModal.style.display = 'block';
+                    break;
+                case 'ethereum':
+                    ethereumModal.style.display = 'block';
+                    break;
+                case 'dogecoin':
+                    dogecoinModal.style.display = 'block';
+                    break;
+            }
+        }
+
+        // Copy address function
+        function copyAddress(cryptoType) {
+            let address;
+            let addressElementId;
+            
+            switch(cryptoType) {
+                case 'bitcoin':
+                    addressElementId = 'bitcoinAddress';
+                    break;
+                case 'ethereum':
+                    addressElementId = 'ethereumAddress';
+                    break;
+                case 'dogecoin':
+                    addressElementId = 'dogecoinAddress';
+                    break;
+            }
+            
+            address = document.getElementById(addressElementId).textContent;
+            
+            navigator.clipboard.writeText(address).then(function() {
+                const btn = event.target.closest('.copy-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check" style="margin-right: 5px;"></i>Copied!';
+                btn.style.background = '#2ecc71';
+                
+                setTimeout(function() {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '#f7931a';
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+                alert('Could not copy address. Please copy manually: ' + address);
+            });
+        }
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                cryptoSelectionModal.style.display = 'none';
+                bitcoinModal.style.display = 'none';
+                ethereumModal.style.display = 'none';
+                dogecoinModal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -7,7 +7,7 @@
     <!-- Inline script to prevent theme flashing -->
     <script>
         // Always use dark mode for setup page
-        document.documentElement.classList.add('dark-theme');
+        document.documentElement.classList.add('dark-mode');
         document.write('<style>body, html { background-color: #1a1d24 !important; color: #f8f9fa !important; } .login-container { background-color: #252a34 !important; } .login-header { background-color: #121212 !important; }</style>');
     </script>
     <!-- Preload logo -->
@@ -58,6 +58,17 @@
             animation: logo-glow 10s infinite ease-in-out;
             transition: all 0.3s ease;
             margin-bottom: 5px;
+        }
+        
+        /* Spinner animation for Plex status */
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
     <link rel="icon" href="./static/logo/16.png">
@@ -360,12 +371,74 @@
             width: 64px;
             height: 64px;
             margin: 0 auto 15px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .qr-code:hover {
+            transform: scale(1.05);
         }
         
         .qr-code img {
             width: 100%;
             height: 100%;
             display: block;
+        }
+        
+        /* QR Code Modal for enlargement */
+        .qr-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            cursor: pointer;
+        }
+        
+        .qr-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+        
+        .qr-modal img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            min-width: 256px;
+            min-height: 256px;
+        }
+        
+        .qr-modal-close {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .qr-modal-close:hover {
+            background: #c82333;
         }
         
         /* Responsive QR code for mobile */
@@ -376,6 +449,13 @@
             }
         }
         
+        .secret-key-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
         .secret-key {
             font-family: monospace;
             padding: 10px 15px;
@@ -383,8 +463,7 @@
             border-radius: 8px;
             border: 1px solid rgba(90, 109, 137, 0.3);
             color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 15px;
-            width: 100%;
+            flex: 1;
             text-align: center;
             font-size: 14px;
             user-select: all;
@@ -456,8 +535,9 @@
             <div class="setup-steps">
                 <div id="step1" class="step active">1. Create Account</div>
                 <div id="step2" class="step">2. Setup 2FA</div>
-                <div id="step3" class="step">3. Auth Mode</div>
-                <div id="step4" class="step">4. Finish</div>
+                <div id="step3" class="step">3. Plex Setup</div>
+                <div id="step4" class="step">4. Auth Mode</div>
+                <div id="step5" class="step">5. Finish</div>
             </div>
             
             <div id="accountSetup" class="setup-section active">
@@ -498,11 +578,17 @@
                 <h2>Setup Two-Factor Authentication</h2>
                 <div class="qr-container">
                     <p>Scan this QR code with your auth app:</p>
-                    <div class="qr-code" id="qrCode">
+                    <div class="qr-code" id="qrCode" title="Click to enlarge">
                         <img src="" alt="QR Code" style="display: none;"> <!-- Add img tag, initially hidden -->
                     </div>
+                    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-top: -10px;">Click QR code to enlarge</p>
                     <p>Or enter this code manually in your app:</p>
-                    <div class="secret-key" id="secretKey">Generating...</div>
+                    <div class="secret-key-container">
+                        <div class="secret-key" id="secretKey">Generating...</div>
+                        <button class="copy-button" onclick="copySecretKeySetup()">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
                     
                     <div class="form-group" style="display: flex; flex-direction: column; align-items: center; margin: 20px 0;">
                         <label for="verificationCode" style="display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
@@ -521,6 +607,48 @@
                         </button>
                     </div>
                 </div>
+            </div>
+            
+            <div id="plexSetup" class="setup-section">
+                <h2>Link Plex Account (Optional)</h2>
+                <div style="background-color: rgba(28, 36, 54, 0.8); border-radius: 10px; padding: 20px; border: 1px solid rgba(65, 105, 225, 0.3); margin-bottom: 20px;">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div style="margin-right: 15px; margin-top: 5px;">
+                            <i class="fas fa-tv" style="color: #e69500; font-size: 24px;"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 18px;">Connect Your Plex Account</h3>
+                            <p style="margin-bottom: 12px; color: rgba(255, 255, 255, 0.9); line-height: 1.5;">
+                                Link your Plex account to enable seamless authentication. Once linked, you can:
+                            </p>
+                            <ul style="color: rgba(255, 255, 255, 0.8); margin: 10px 0; padding-left: 20px;">
+                                <li style="margin-bottom: 5px;"><strong>Login with Plex:</strong> Use your Plex credentials instead of your local username/password</li>
+                                <li style="margin-bottom: 5px;"><strong>Single Sign-On:</strong> Streamlined access across your media ecosystem</li>
+                                <li style="margin-bottom: 5px;"><strong>Enhanced Security:</strong> Leverage Plex's secure authentication system</li>
+                            </ul>
+                            <p style="margin-top: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">
+                                <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+                                This is completely optional - you can always link your Plex account later in the user settings.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin: 25px 0;">
+                    <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 20px; font-size: 16px;">
+                        Would you like to link your Plex account now?
+                    </p>
+                    <div class="form-actions" style="justify-content: center; gap: 15px;">
+                        <button type="button" id="linkPlexButton" class="next-button" style="background: linear-gradient(135deg, #e69500 0%, #f4a942 100%); box-shadow: 0 4px 10px rgba(230, 149, 0, 0.3);">
+                            <i class="fas fa-link"></i> Yes, Link Plex Account
+                        </button>
+                        <button type="button" id="skipPlexButton" class="back-button">
+                            <i class="fas fa-arrow-right"></i> Skip for Now
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="plexLinkStatus" class="error-message" style="display: none; background-color: rgba(40, 167, 69, 0.2); color: #2ecc71; border-left-color: #28a745;"></div>
             </div>
             
             <div id="authModeSetup" class="setup-section">
@@ -592,11 +720,296 @@
         </div>
     </div>
 
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="qr-modal">
+        <div class="qr-modal-content">
+            <button class="qr-modal-close" onclick="closeQRModal()">&times;</button>
+            <img id="qrModalImage" src="" alt="Enlarged QR Code">
+        </div>
+    </div>
+
+    <!-- Plex Link Modal -->
+    <div class="modal" id="plexLinkModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);">
+        <div class="modal-content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95)); border-radius: 15px; padding: 30px; width: 400px; max-width: 90%; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); border: 1px solid rgba(90, 109, 137, 0.15); color: #f8f9fa;">
+            <div class="modal-header" style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 40px; color: #e69500; margin-bottom: 10px;">
+                    <i class="fas fa-tv"></i>
+                </div>
+                <h2>Link Plex Account</h2>
+            </div>
+            <div class="plex-pin-display" style="background: rgba(90, 109, 137, 0.1); border: 2px solid rgba(204, 123, 25, 0.5); border-radius: 10px; padding: 20px; text-align: center; margin: 20px 0;">
+                <p>PIN Code:</p>
+                <p id="plexLinkPinCode" style="font-size: 13px; font-weight: bold; color: #e69500; letter-spacing: 2px; margin: 10px 0; word-wrap: break-word; word-break: break-all; line-height: 1.4;"></p>
+            </div>
+            <div class="plex-status waiting" id="plexLinkStatusModal" style="margin: 15px 0; padding: 10px; border-radius: 8px; text-align: center; background: rgba(255, 193, 7, 0.2); border: 1px solid rgba(255, 193, 7, 0.3); color: #ffc107; display: block;">
+                <i class="fas fa-hourglass-half"></i> Initializing Plex authentication...
+            </div>
+        </div>
+    </div>
+
     <!-- Pass base URL configuration to JavaScript -->
     <script>window.HUNTARR_BASE_URL = '{{ base_url|default("", true) }}';</script>
     <!-- Pass global scripts -->
     {% include 'components/scripts.html' %}
     <script>
+        // Global variables - accessible from anywhere
+        let currentPlexPinId = null;
+        let plexPinCheckInterval = null;
+        let userData = {
+            username: '',
+            password: ''
+        };
+        
+        // Global Plex linking functions
+        function startPlexLinking() {
+            const modal = document.getElementById('plexLinkModal');
+            const pinCode = document.getElementById('plexLinkPinCode');
+            
+            modal.style.display = 'block';
+            pinCode.textContent = '';
+            setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Preparing Plex authentication...');
+            
+            // Create Plex PIN
+            HuntarrUtils.fetchWithTimeout('/api/auth/plex/pin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ setup_mode: true })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentPlexPinId = data.pin_id;
+                    
+                    // Extract PIN code from auth URL
+                    const hashPart = data.auth_url.split('#')[1];
+                    if (hashPart) {
+                        const urlParams = new URLSearchParams(hashPart.substring(1));
+                        const pinCodeValue = urlParams.get('code');
+                        pinCode.textContent = pinCodeValue || 'PIN-' + currentPlexPinId;
+                    } else {
+                        pinCode.textContent = 'PIN-' + currentPlexPinId;
+                    }
+                    
+                    setPlexLinkStatus('waiting', '<i class="fas fa-external-link-alt"></i> You will be redirected to Plex to sign in. After authentication, you will be brought back here automatically.');
+                    
+                    // Store PIN ID for when we return
+                    localStorage.setItem('huntarr-plex-pin-id', currentPlexPinId);
+                    localStorage.setItem('huntarr-plex-linking', 'true');
+                    localStorage.setItem('huntarr-plex-setup-mode', 'true');
+                    
+                    // Redirect to Plex authentication
+                    setTimeout(() => {
+                        setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Redirecting to Plex...');
+                        setTimeout(() => {
+                            window.location.href = data.auth_url;
+                        }, 1000);
+                    }, 2000);
+                } else {
+                    setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Failed to create Plex PIN: ' + (data.error || 'Unknown error. Please try again.'));
+                }
+            })
+            .catch(error => {
+                console.error('Error creating Plex PIN:', error);
+                setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Network error: Unable to connect to Plex. Please check your internet connection and try again.');
+            });
+        }
+        
+        function setPlexLinkStatus(type, message) {
+            const plexLinkStatusModal = document.getElementById('plexLinkStatusModal');
+            const plexLinkStatus = document.getElementById('plexLinkStatus');
+            
+            if (plexLinkStatusModal) {
+                plexLinkStatusModal.className = `plex-status ${type}`;
+                plexLinkStatusModal.innerHTML = message;
+                plexLinkStatusModal.style.display = 'block';
+            }
+            
+            // Update page status too
+            if (plexLinkStatus) {
+                plexLinkStatus.innerHTML = message;
+                plexLinkStatus.style.display = 'block';
+                
+                if (type === 'success') {
+                    plexLinkStatus.style.backgroundColor = 'rgba(40, 167, 69, 0.2)';
+                    plexLinkStatus.style.color = '#2ecc71';
+                    plexLinkStatus.style.borderLeftColor = '#28a745';
+                } else if (type === 'error') {
+                    plexLinkStatus.style.backgroundColor = 'rgba(220, 53, 69, 0.2)';
+                    plexLinkStatus.style.color = '#ff6b6b';
+                    plexLinkStatus.style.borderLeftColor = '#dc3545';
+                }
+            }
+        }
+        
+        function startPlexPinChecking() {
+            console.log('startPlexPinChecking called with PIN ID:', currentPlexPinId);
+            
+            // Clear any existing interval
+            if (plexPinCheckInterval) {
+                console.log('Clearing existing interval');
+                clearInterval(plexPinCheckInterval);
+                plexPinCheckInterval = null;
+            }
+            
+            if (!currentPlexPinId) {
+                console.error('No PIN ID available for checking');
+                setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> No PIN ID available. Please try again.');
+                return;
+            }
+            
+            setPlexLinkStatus('waiting', '<i class="fas fa-hourglass-half"></i> Checking authentication status...');
+            
+            plexPinCheckInterval = setInterval(() => {
+                console.log('Checking PIN status for:', currentPlexPinId);
+                
+                HuntarrUtils.fetchWithTimeout(`/api/auth/plex/check/${currentPlexPinId}`)
+                    .then(response => {
+                        console.log('PIN check response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('PIN check data:', data);
+                        if (data.success && data.claimed) {
+                            console.log('PIN claimed, linking account');
+                            setPlexLinkStatus('success', '<i class="fas fa-link"></i> Plex account successfully linked!');
+                            stopPlexLinking(); // Stop checking immediately
+                            linkWithPlexToken(data.token); // This will also call stopPlexLinking in finally
+                        } else if (data.success && !data.claimed) {
+                            console.log('PIN not yet claimed, continuing to check');
+                            setPlexLinkStatus('waiting', '<i class="fas fa-hourglass-half"></i> Waiting for Plex authentication to complete...');
+                        } else {
+                            console.error('PIN check failed:', data);
+                            setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Authentication check failed: ' + (data.error || 'Please try again.'));
+                            stopPlexLinking();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking PIN:', error);
+                        setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Network error: Unable to verify authentication status. Please try again.');
+                        stopPlexLinking();
+                    });
+            }, 2000);
+            
+            // Stop checking after 10 minutes
+            setTimeout(() => {
+                if (plexPinCheckInterval) {
+                    console.log('PIN check timeout reached');
+                    stopPlexLinking();
+                    setPlexLinkStatus('error', '<i class="fas fa-clock"></i> Authentication timeout: PIN expired after 10 minutes. Please try linking your account again.');
+                }
+            }, 600000);
+        }
+        
+        function linkWithPlexToken(token) {
+            console.log('Linking with Plex token');
+            setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Finalizing account link...');
+            
+            // Get username from multiple sources
+            let username = '';
+            const usernameInput = document.getElementById('username');
+            if (usernameInput && usernameInput.value) {
+                username = usernameInput.value.trim();
+            } else if (userData && userData.username) {
+                username = userData.username;
+            } else {
+                // Try to get from localStorage if available
+                const storedUsername = localStorage.getItem('huntarr-setup-username');
+                if (storedUsername) {
+                    username = storedUsername;
+                }
+            }
+            
+            console.log('Using username for linking:', username);
+            
+            if (!username) {
+                console.error('No username available for linking');
+                setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Setup error: Username not found. Please refresh and try again.');
+                stopPlexLinking(); // Stop the interval if username is missing
+                return;
+            }
+            
+            HuntarrUtils.fetchWithTimeout('/api/auth/plex/link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: username,
+                    token: token,
+                    setup_mode: true
+                })
+            })
+            .then(response => {
+                console.log('Link response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Link response data:', data);
+                if (data.success) {
+                    setPlexLinkStatus('success', '<i class="fas fa-check-circle"></i> Plex account successfully linked!');
+                    setTimeout(() => {
+                        const modal = document.getElementById('plexLinkModal');
+                        if (modal) modal.style.display = 'none';
+                        
+                        // Call showStep function from the main context
+                        if (typeof showStep === 'function') {
+                            showStep(4); // Go to Auth Mode step
+                        } else {
+                            // Fallback: manually trigger step 4
+                            document.getElementById('plexSetup').classList.remove('active');
+                            document.getElementById('authModeSetup').classList.add('active');
+                            // Update step indicators
+                            const steps = document.querySelectorAll('.step');
+                            steps.forEach((s, index) => {
+                                if (index + 1 < 4) {
+                                    s.classList.remove('active');
+                                    s.classList.add('completed');
+                                } else if (index + 1 === 4) {
+                                    s.classList.add('active');
+                                    s.classList.remove('completed');
+                                } else {
+                                    s.classList.remove('active');
+                                    s.classList.remove('completed');
+                                }
+                            });
+                        }
+                    }, 2000);
+                } else {
+                    setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Account linking failed: ' + (data.error || 'Unknown error occurred. Please try again.'));
+                }
+            })
+            .catch(error => {
+                console.error('Error linking Plex account:', error);
+                setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Network error: Unable to complete account linking. Please check your connection and try again.');
+            })
+            .finally(() => {
+                // Always stop the PIN checking interval when linking completes (success or failure)
+                console.log('linkWithPlexToken completed, stopping PIN checking');
+                stopPlexLinking();
+            });
+        }
+        
+        function stopPlexLinking() {
+            console.log('stopPlexLinking called');
+            if (plexPinCheckInterval) {
+                clearInterval(plexPinCheckInterval);
+                plexPinCheckInterval = null;
+                console.log('Cleared PIN check interval');
+            }
+            currentPlexPinId = null;
+        }
+        
+        // QR Code Modal Functions
+        function openQRModal(imageSrc) {
+            const modal = document.getElementById('qrModal');
+            const modalImage = document.getElementById('qrModalImage');
+            modalImage.src = imageSrc;
+            modal.style.display = 'block';
+        }
+        
+        function closeQRModal() {
+            const modal = document.getElementById('qrModal');
+            modal.style.display = 'none';
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Elements
             const steps = document.querySelectorAll('.step');
@@ -621,6 +1034,14 @@
             const authModeNextButton = document.getElementById('authModeNextButton');
             const authModeErrorMessage = document.getElementById('authModeErrorMessage');
             
+            // Plex setup elements
+            const linkPlexButton = document.getElementById('linkPlexButton');
+            const skipPlexButton = document.getElementById('skipPlexButton');
+            const plexLinkStatus = document.getElementById('plexLinkStatus');
+            const plexLinkModal = document.getElementById('plexLinkModal');
+            const plexLinkPinCode = document.getElementById('plexLinkPinCode');
+            const plexLinkStatusModal = document.getElementById('plexLinkStatusModal');
+            
             // Complete setup elements
             const finishSetupButton = document.getElementById('finishSetupButton');
             
@@ -629,14 +1050,9 @@
             let accountCreated = false;
             let twoFactorEnabled = false;
             
-            // Store user data
-            let userData = {
-                username: '',
-                password: ''
-            };
-            
-            // Show a specific step
-            function showStep(step) {
+            // Show a specific step - make this global
+            window.showStep = function(step) {
+                console.log('showStep called with step:', step);
                 steps.forEach((s, index) => {
                     if (index + 1 < step) {
                         s.classList.remove('active');
@@ -650,31 +1066,41 @@
                     }
                 });
                 
-                // For the four sections: Account, 2FA, Auth Mode, Complete
+                // Updated order: Account, 2FA, Plex Setup, Auth Mode, Complete
                 if (step === 1) {
                     document.getElementById('accountSetup').classList.add('active');
                     document.getElementById('twoFactorSetup').classList.remove('active');
+                    document.getElementById('plexSetup').classList.remove('active');
                     document.getElementById('authModeSetup').classList.remove('active');
                     document.getElementById('setupComplete').classList.remove('active');
                 } else if (step === 2) {
                     document.getElementById('accountSetup').classList.remove('active');
                     document.getElementById('twoFactorSetup').classList.add('active');
+                    document.getElementById('plexSetup').classList.remove('active');
                     document.getElementById('authModeSetup').classList.remove('active');
                     document.getElementById('setupComplete').classList.remove('active');
                 } else if (step === 3) {
                     document.getElementById('accountSetup').classList.remove('active');
                     document.getElementById('twoFactorSetup').classList.remove('active');
-                    document.getElementById('authModeSetup').classList.add('active');
+                    document.getElementById('plexSetup').classList.add('active');
+                    document.getElementById('authModeSetup').classList.remove('active');
                     document.getElementById('setupComplete').classList.remove('active');
                 } else if (step === 4) {
                     document.getElementById('accountSetup').classList.remove('active');
                     document.getElementById('twoFactorSetup').classList.remove('active');
+                    document.getElementById('plexSetup').classList.remove('active');
+                    document.getElementById('authModeSetup').classList.add('active');
+                    document.getElementById('setupComplete').classList.remove('active');
+                } else if (step === 5) {
+                    document.getElementById('accountSetup').classList.remove('active');
+                    document.getElementById('twoFactorSetup').classList.remove('active');
+                    document.getElementById('plexSetup').classList.remove('active');
                     document.getElementById('authModeSetup').classList.remove('active');
                     document.getElementById('setupComplete').classList.add('active');
                 }
                 
                 currentStep = step;
-            }
+            };
             
             // Show error message
             function showError(message) {
@@ -701,7 +1127,6 @@
                 const username = usernameInput.value.trim(); // Trim whitespace
                 const password = passwordInput.value;
                 const confirmPassword = confirmPasswordInput.value;
-                // No longer needed here - will be captured in step 3
                 
                 if (!username || !password || !confirmPassword) {
                     showError('All fields are required');
@@ -737,55 +1162,51 @@
                 }
                 
                 // Create user account with improved error handling
-                HuntarrUtils.fetchWithTimeout('/setup', { // Corrected endpoint from /api/setup to /setup
+                HuntarrUtils.fetchWithTimeout('/setup', {
                     method: 'POST',
-                    redirect: 'error', // Add this line to prevent following redirects
+                    redirect: 'error',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         username: username,
                         password: password,
-                        confirm_password: confirmPassword // Keep confirm_password if backend expects it, otherwise remove
+                        confirm_password: confirmPassword
                     })
                 })
                 .then(response => {
-                    // Check if response is ok before parsing JSON
                     if (!response.ok) {
-                        // Check content type to see if it's likely JSON
                         const contentType = response.headers.get("content-type");
                         if (contentType && contentType.indexOf("application/json") !== -1) {
-                            // If it seems like JSON, try to parse it for an error message
                             return response.json().then(data => {
-                                // Use data.error first, then data.message as fallback
                                 throw new Error(data.error || data.message || `Server error: ${response.status}`);
                             });
                         } else {
-                            // If not JSON (e.g., HTML error page), throw a generic HTTP error
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                     }
-                    // If response is ok, parse the JSON body
                     return response.json();
                 })
-                .then(data => { // This block only runs if response.ok was true and response.json() succeeded
+                .then(data => {
                     if (data.success) {
                         accountCreated = true;
+                        // Store the created username for later use
+                        if (usernameInput && usernameInput.value) {
+                            localStorage.setItem('huntarr-setup-username', usernameInput.value.trim());
+                            console.log('Stored username for setup:', usernameInput.value.trim());
+                        }
                         console.log('Account created successfully. User credentials should be saved to credentials.json');
                         
-                        // Generate 2FA setup - Use the correct endpoint and method
-                        HuntarrUtils.fetchWithTimeout('/api/user/2fa/setup', { method: 'POST' }) // Specify POST method
+                        // Generate 2FA setup
+                        HuntarrUtils.fetchWithTimeout('/api/user/2fa/setup', { method: 'POST' })
                             .then(response => {
-                                // Check for unauthorized specifically
                                 if (response.status === 401) {
                                     throw new Error('Unauthorized - Session likely not established yet.');
                                 }
                                 if (!response.ok) {
-                                    // Try to parse error from JSON response
                                     return response.json().then(errData => {
                                         throw new Error(errData.error || `Server error: ${response.status}`);
                                     }).catch(() => {
-                                        // Fallback if response is not JSON
                                         throw new Error(`Server error: ${response.status}`);
                                     });
                                 }
@@ -793,47 +1214,50 @@
                             })
                             .then(twoFactorData => {
                                 if (twoFactorData.success) {
-                                    // Use the correct property 'qr_code_url' and set the img src directly
-                                    const qrCodeImg = qrCodeElement.querySelector('img'); // Find the img tag within the div
+                                    const qrCodeImg = qrCodeElement.querySelector('img');
                                     if (qrCodeImg) {
-                                         qrCodeImg.src = twoFactorData.qr_code_url; // Set src directly
-                                         qrCodeImg.style.display = 'block'; // Ensure it's visible
+                                         qrCodeImg.src = twoFactorData.qr_code_url;
+                                         qrCodeImg.style.display = 'block';
+                                         
+                                         qrCodeElement.addEventListener('click', function() {
+                                             openQRModal(twoFactorData.qr_code_url);
+                                         });
                                     } else {
-                                        // Fallback if img tag wasn't there initially
                                         qrCodeElement.innerHTML = `<img src="${twoFactorData.qr_code_url}" alt="QR Code" style="display: block; max-width: 100%; height: auto;">`;
+                                        
+                                        qrCodeElement.addEventListener('click', function() {
+                                            openQRModal(twoFactorData.qr_code_url);
+                                        });
                                     }
                                     secretKeyElement.textContent = twoFactorData.secret;
                                     showStep(2);
                                 } else {
-                                    // Use .error if available, otherwise provide a default
                                     showError('Failed to generate 2FA setup: ' + (twoFactorData.error || 'Unknown error'));
                                 }
                             })
                             .catch(error => {
                                 console.error('Error generating 2FA:', error);
-                                // Display the specific error message caught
                                 showError('Failed to generate 2FA setup: ' + error.message);
                             });
                     } else {
-                        showError(data.error || 'Failed to create account'); // Use .error
+                        showError(data.error || 'Account creation failed. Please try again.');
                     }
                 })
-                .catch(error => { // Catches errors thrown from the .then blocks above or network errors
+                .catch(error => {
                     console.error('Setup error:', error);
-                    showError('Error: ' + error.message); // Display the error message
+                    showError('Error: ' + error.message);
                 });
             });
             
             // 2FA setup navigation
             twoFactorNextButton.addEventListener('click', function() {
                 const code = verificationCodeInput.value;
-                if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) { // Add validation
+                if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
                     showError('Please enter a valid 6-digit verification code');
                     return;
                 }
                 
-                // Verify 2FA code - Use the correct endpoint
-                HuntarrUtils.fetchWithTimeout('/api/user/2fa/verify', { // Corrected endpoint
+                HuntarrUtils.fetchWithTimeout('/api/user/2fa/verify', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -844,7 +1268,7 @@
                 .then(data => {
                     if (data.success) {
                         twoFactorEnabled = true;
-                        showStep(3); // Go to Auth Mode step
+                        showStep(3); // Go to Plex Setup step
                     } else {
                         showError(data.message || 'Invalid verification code');
                     }
@@ -857,15 +1281,13 @@
             
             // Skip 2FA setup
             skip2FALink.addEventListener('click', function() {
-                showStep(3); // Go to Auth Mode step
+                showStep(3); // Go to Plex Setup step
             });
             
             // Auth Mode setup navigation
             authModeNextButton.addEventListener('click', function() {
-                // Get the selected auth mode
                 const selectedAuthMode = authModeSelect.value;
                 
-                // Save the authentication mode settings
                 HuntarrUtils.fetchWithTimeout('/api/settings/general', {
                     method: 'POST',
                     headers: {
@@ -887,37 +1309,51 @@
                     return response.json();
                 })
                 .then(data => {
-                    // Proceed to the finish step
-                    showStep(4);
+                    showStep(5);
                 })
                 .catch(error => {
                     console.error('Error saving auth mode settings:', error);
                     authModeErrorMessage.textContent = error.message || 'Error saving authentication settings';
                     authModeErrorMessage.style.display = 'block';
                     
-                    // Hide after 5 seconds
                     setTimeout(() => {
                         authModeErrorMessage.style.display = 'none';
                     }, 5000);
                 });
             });
             
+            // Plex setup navigation
+            linkPlexButton.addEventListener('click', function() {
+                startPlexLinking();
+            });
+            
+            skipPlexButton.addEventListener('click', function() {
+                showStep(4); // Go to Auth Mode step
+            });
+            
             // Complete setup navigation
             finishSetupButton.addEventListener('click', function() {
+                localStorage.removeItem('huntarr-setup-username');
+                localStorage.removeItem('huntarr-plex-linking');
+                localStorage.removeItem('huntarr-plex-pin-id');
+                console.log('Setup completed, cleaned up localStorage');
+                
                 window.location.href = './';
             });
             
             // Allow pressing Enter to continue
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
-                    e.preventDefault(); // Prevent form submission
+                    e.preventDefault();
                     if (currentStep === 1 && document.activeElement !== accountNextButton) {
                         accountNextButton.click();
                     } else if (currentStep === 2 && document.activeElement !== twoFactorNextButton) {
                         twoFactorNextButton.click();
-                    } else if (currentStep === 3 && document.activeElement !== authModeNextButton) {
+                    } else if (currentStep === 3 && document.activeElement !== linkPlexButton) {
+                        linkPlexButton.click();
+                    } else if (currentStep === 4 && document.activeElement !== authModeNextButton) {
                         authModeNextButton.click();
-                    } else if (currentStep === 4 && document.activeElement !== finishSetupButton) {
+                    } else if (currentStep === 5 && document.activeElement !== finishSetupButton) {
                         finishSetupButton.click();
                     }
                 }
@@ -926,7 +1362,94 @@
             // Always use dark mode
             document.body.classList.add('dark-mode');
             localStorage.setItem('huntarr-dark-mode', 'true');
+            
+            // Check if we're returning from Plex authentication during setup
+            const plexLinking = localStorage.getItem('huntarr-plex-linking');
+            const plexPinId = localStorage.getItem('huntarr-plex-pin-id');
+            
+            if (plexLinking === 'true' && plexPinId) {
+                console.log('Detected return from Plex authentication, PIN ID:', plexPinId);
+                
+                // Clear the flags
+                localStorage.removeItem('huntarr-plex-linking');
+                localStorage.removeItem('huntarr-plex-pin-id');
+                
+                // Show step 3 (Plex setup) and modal
+                showStep(3);
+                const modal = document.getElementById('plexLinkModal');
+                const pinCodeElement = document.getElementById('plexLinkPinCode');
+                
+                modal.style.display = 'block';
+                
+                // Extract PIN code for display
+                const pinCodeValue = plexPinId.substring(0, 4) + '-' + plexPinId.substring(4);
+                pinCodeElement.textContent = pinCodeValue;
+                
+                // Set global PIN ID and start checking
+                currentPlexPinId = plexPinId;
+                setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Completing Plex authentication and linking your account...');
+                
+                console.log('Starting PIN checking for returned user');
+                startPlexPinChecking();
+            }
+            
+            // Close modal when clicking outside of it
+            document.addEventListener('click', function(event) {
+                const modal = document.getElementById('qrModal');
+                if (event.target === modal) {
+                    closeQRModal();
+                }
+            });
+            
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeQRModal();
+                }
+            });
         });
+        
+        // Copy secret key to clipboard function for setup page
+        function copySecretKeySetup() {
+            const secretKey = document.getElementById('secretKey').textContent;
+            if (secretKey && secretKey !== 'Generating...') {
+                navigator.clipboard.writeText(secretKey).then(function() {
+                    const copyButton = document.querySelector('.copy-button');
+                    const originalText = copyButton.innerHTML;
+                    
+                    copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    copyButton.style.color = '#28a745';
+                    
+                    setTimeout(function() {
+                        copyButton.innerHTML = originalText;
+                        copyButton.style.color = '';
+                    }, 2000);
+                }).catch(function(err) {
+                    console.error('Failed to copy text: ', err);
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = secretKey;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        const copyButton = document.querySelector('.copy-button');
+                        const originalText = copyButton.innerHTML;
+                        
+                        copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                        copyButton.style.color = '#28a745';
+                        
+                        setTimeout(function() {
+                            copyButton.innerHTML = originalText;
+                            copyButton.style.color = '';
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Fallback copy failed: ', err);
+                    }
+                    document.body.removeChild(textArea);
+                });
+            }
+        }
     </script>
 </body>
 </html>

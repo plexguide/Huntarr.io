@@ -13,53 +13,25 @@ from datetime import datetime
 # Import the scheduler engine to get execution history
 from src.primary.scheduler_engine import get_execution_history
 
+# Import database
+from src.primary.utils.database import get_database
+
 # Create logger
 scheduler_logger = logging.getLogger("scheduler")
 
 # Create blueprint
 scheduler_api = Blueprint('scheduler_api', __name__)
 
-# No longer using instance list generator
-
-# Configuration file path
-# Use the centralized path configuration
-from src.primary.utils.config_paths import SCHEDULER_DIR
-
-# Convert Path object to string for compatibility with os.path functions
-CONFIG_DIR = str(SCHEDULER_DIR)
-SCHEDULE_FILE = os.path.join(CONFIG_DIR, "schedule.json")
-
-def ensure_config_dir():
-    """Ensure the config directory exists"""
-    if not os.path.exists(CONFIG_DIR):
-        os.makedirs(CONFIG_DIR, exist_ok=True)
-        scheduler_logger.info(f"Created config directory: {CONFIG_DIR}")
+# No longer using instance list generator or file system operations
 
 @scheduler_api.route('/api/scheduler/load', methods=['GET'])
 def load_schedules():
-    """Load schedules from the JSON file"""
+    """Load schedules from the database"""
     try:
-        ensure_config_dir()
+        db = get_database()
+        schedules = db.get_schedules()
         
-        # Default empty schedules
-        schedules = {
-            "global": [],
-            "sonarr": [],
-            "radarr": [],
-            "lidarr": [],
-            "readarr": []
-        }
-        
-        # Load from file if it exists
-        if os.path.exists(SCHEDULE_FILE):
-            with open(SCHEDULE_FILE, 'r') as f:
-                loaded_data = json.load(f)
-                if loaded_data and isinstance(loaded_data, dict):
-                    # Update with data from file, keeping default structure
-                    schedules.update(loaded_data)
-            scheduler_logger.info(f"Loaded schedules from {SCHEDULE_FILE}")
-        else:
-            scheduler_logger.info(f"No schedule file found at {SCHEDULE_FILE}, returning empty schedules")
+        scheduler_logger.info(f"Loaded {sum(len(s) for s in schedules.values())} schedules from database")
         
         # Add CORS headers
         response = Response(json.dumps(schedules))
@@ -68,7 +40,7 @@ def load_schedules():
         return response
     
     except Exception as e:
-        error_msg = f"Error loading schedules: {str(e)}"
+        error_msg = f"Error loading schedules from database: {str(e)}"
         scheduler_logger.error(error_msg)
         return jsonify({"error": error_msg}), 500
         
@@ -96,28 +68,27 @@ def get_scheduler_history():
 
 @scheduler_api.route('/api/scheduler/save', methods=['POST'])
 def save_schedules():
-    """Save schedules to the JSON file"""
+    """Save schedules to the database"""
     try:
-        ensure_config_dir()
-        
         # Get schedule data from request
         schedules = request.json
         
         if not schedules or not isinstance(schedules, dict):
             return jsonify({"error": "Invalid schedule data format"}), 400
         
-        # Save to file
-        with open(SCHEDULE_FILE, 'w') as f:
-            json.dump(schedules, f, indent=2)
+        # Save to database
+        db = get_database()
+        db.save_schedules(schedules)
         
-        scheduler_logger.info(f"Saved schedules to {SCHEDULE_FILE}")
+        total_schedules = sum(len(s) for s in schedules.values())
+        scheduler_logger.info(f"Saved {total_schedules} schedules to database")
         
         # Add timestamp to response
         response_data = {
             "success": True,
             "message": "Schedules saved successfully",
             "timestamp": datetime.now().isoformat(),
-            "file": SCHEDULE_FILE
+            "count": total_schedules
         }
         
         # Add CORS headers
@@ -127,6 +98,6 @@ def save_schedules():
         return response
     
     except Exception as e:
-        error_msg = f"Error saving schedules: {str(e)}"
+        error_msg = f"Error saving schedules to database: {str(e)}"
         scheduler_logger.error(error_msg)
         return jsonify({"error": error_msg}), 500

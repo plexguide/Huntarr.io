@@ -20,7 +20,7 @@ from ..auth import (
 )
 from ..utils.logger import logger # Ensure logger is imported
 from .. import settings_manager # Import settings_manager
-from ..cycle_tracker import _SLEEP_DATA_PATH # Import sleep data path
+
 
 common_bp = Blueprint('common', __name__)
 
@@ -43,24 +43,33 @@ def logo_files(filename):
 
 @common_bp.route('/api/sleep.json', methods=['GET'])
 def api_get_sleep_json():
-    """API endpoint to directly serve the sleep.json file for frontend access"""
+    """API endpoint to serve sleep/cycle data from the database for frontend access"""
     try:
-        if os.path.exists(_SLEEP_DATA_PATH):
-            # Add CORS headers to allow any origin to access this resource
-            response = send_file(_SLEEP_DATA_PATH, mimetype='application/json')
-            response.headers.add('Access-Control-Allow-Origin', '*')
-            return response
-        else:
-            # If file doesn't exist, create it and return empty object
-            logger.info(f"[API] sleep.json not found at {_SLEEP_DATA_PATH}, creating it")
-            os.makedirs(os.path.dirname(_SLEEP_DATA_PATH), exist_ok=True)
-            with open(_SLEEP_DATA_PATH, 'w') as f:
-                json.dump({}, f, indent=2)
-            return jsonify({}), 200
+        from src.primary.utils.database import get_database
+        
+        db = get_database()
+        sleep_data = db.get_sleep_data()
+        
+        # Convert database format to frontend format
+        frontend_data = {}
+        for app_type, data in sleep_data.items():
+            frontend_data[app_type] = {
+                "next_cycle": data.get("next_cycle_time"),
+                "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
+                "cyclelock": data.get("cycle_lock", True)
+            }
+        
+        # Add CORS headers to allow any origin to access this resource
+        response = jsonify(frontend_data)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+        
     except Exception as e:
-        logger.error(f"Error serving sleep.json from {_SLEEP_DATA_PATH}: {e}")
+        logger.error(f"Error serving sleep data from database: {e}")
         # Return empty object instead of error to prevent UI breaking
-        return jsonify({}), 200
+        response = jsonify({})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
 
 # --- Authentication Routes --- #
 
@@ -88,7 +97,7 @@ def login_route():
                 session[SESSION_COOKIE_NAME] = session_token # Store token in Flask session immediately
                 response = jsonify({"success": True, "redirect": "./"}) # Add redirect URL
                 response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path='/') # Add path
-                logger.info(f"User '{username}' logged in successfully.")
+                logger.debug(f"User '{username}' logged in successfully.")
                 return response
             elif needs_2fa:
                 # Authentication failed *because* 2FA was required (or code was invalid)
@@ -145,12 +154,16 @@ def logout_route():
 
 @common_bp.route('/setup', methods=['GET', 'POST'])
 def setup():
-    if user_exists(): # This function should now be defined via import
-        # If a user already exists, redirect to login or home
-        logger.info("Setup page accessed but user already exists. Redirecting to login.")
-        return redirect(url_for('common.login_route'))
-
+    # Allow setup page access even if user exists - setup might be in progress
+    # The authentication middleware will handle proper authentication checks
+    # This handles cases like returning from Plex authentication during setup
+    
     if request.method == 'POST':
+        # For POST requests, check if user exists to prevent duplicate creation
+        if user_exists():
+            logger.warning("Attempted to create user during setup but user already exists")
+            return jsonify({"success": False, "error": "User already exists"}), 400
+            
         username = None # Initialize username for logging in case of early failure
         try: # Add try block to catch potential errors during user creation
             data = request.json
@@ -195,7 +208,7 @@ def setup():
                         logger.error(f"Error saving proxy auth bypass setting: {e}", exc_info=True)
                 
                 # Automatically log in the user after setup
-                logger.info(f"User '{username}' created successfully during setup. Creating session.")
+                logger.debug(f"User '{username}' created successfully during setup. Creating session.")
                 session_token = create_session(username)
                 # Explicitly set username in Flask session - might not be needed if using token correctly
                 # session['username'] = username
@@ -219,14 +232,41 @@ def setup():
 
 # --- User Management API Routes --- #
 
+def get_user_for_request():
+    """Get username for the current request, handling bypass modes"""
+    # First try to get username from session
+    session_token = request.cookies.get(SESSION_COOKIE_NAME)
+    username = get_username_from_session(session_token)
+    
+    if username:
+        return username
+    
+    # If no session username, check if we're in bypass mode
+    try:
+        from src.primary.settings_manager import load_settings
+        settings = load_settings("general")
+        local_access_bypass = settings.get("local_access_bypass", False)
+        proxy_auth_bypass = settings.get("proxy_auth_bypass", False)
+        
+        if proxy_auth_bypass or local_access_bypass:
+            # In bypass mode, get the first user from database
+            from src.primary.utils.database import get_database
+            db = get_database()
+            first_user = db.get_first_user()
+            if first_user:
+                return first_user.get('username')
+    except Exception as e:
+        logger.error(f"Error checking bypass mode for user request: {e}")
+    
+    return None
+
 @common_bp.route('/api/user/info', methods=['GET'])
 def get_user_info_route():
-    # Use session token to get username
-    session_token = request.cookies.get(SESSION_COOKIE_NAME)
-    username = get_username_from_session(session_token) # Use auth function
+    # Get username handling bypass modes
+    username = get_user_for_request()
 
     if not username:
-        logger.debug("Attempt to get user info failed: Not authenticated (no valid session).")
+        logger.debug("Attempt to get user info failed: Not authenticated and not in bypass mode.")
         return jsonify({"error": "Not authenticated"}), 401
 
     # Pass username to is_2fa_enabled
@@ -236,12 +276,11 @@ def get_user_info_route():
 
 @common_bp.route('/api/user/change-username', methods=['POST'])
 def change_username_route():
-    # Use session token to get username
-    session_token = request.cookies.get(SESSION_COOKIE_NAME)
-    current_username = get_username_from_session(session_token)
+    # Get username handling bypass modes
+    current_username = get_user_for_request()
 
     if not current_username:
-        logger.warning("Username change attempt failed: Not authenticated.")
+        logger.warning("Username change attempt failed: Not authenticated and not in bypass mode.")
         return jsonify({"error": "Not authenticated"}), 401
 
     data = request.json
@@ -271,12 +310,11 @@ def change_username_route():
 
 @common_bp.route('/api/user/change-password', methods=['POST'])
 def change_password_route():
-    # Use session token to get username - needed? change_password might not need it if single user
-    session_token = request.cookies.get(SESSION_COOKIE_NAME)
-    username = get_username_from_session(session_token) # Get username for logging
+    # Get username handling bypass modes
+    username = get_user_for_request()
 
-    if not username: # Check if session is valid even if function doesn't need username
-         logger.warning("Password change attempt failed: Not authenticated.")
+    if not username:
+         logger.warning("Password change attempt failed: Not authenticated and not in bypass mode.")
          return jsonify({"error": "Not authenticated"}), 401
 
     data = request.json
@@ -300,12 +338,11 @@ def change_password_route():
 
 @common_bp.route('/api/user/2fa/setup', methods=['POST'])
 def setup_2fa():
-    # Use session token to get username
-    session_token = request.cookies.get(SESSION_COOKIE_NAME)
-    username = get_username_from_session(session_token)
+    # Get username handling bypass modes
+    username = get_user_for_request()
 
     if not username:
-        logger.warning("2FA setup attempt failed: No username in session.") # Add logging
+        logger.warning("2FA setup attempt failed: Not authenticated and not in bypass mode.")
         return jsonify({"error": "Not authenticated"}), 401
 
     try:
@@ -322,12 +359,11 @@ def setup_2fa():
 
 @common_bp.route('/api/user/2fa/verify', methods=['POST'])
 def verify_2fa():
-    # Use session token to get username
-    session_token = request.cookies.get(SESSION_COOKIE_NAME)
-    username = get_username_from_session(session_token)
+    # Get username handling bypass modes
+    username = get_user_for_request()
 
     if not username:
-        logger.warning("2FA verify attempt failed: No username in session.") # Add logging
+        logger.warning("2FA verify attempt failed: Not authenticated and not in bypass mode.")
         return jsonify({"error": "Not authenticated"}), 401
 
     data = request.json
@@ -349,11 +385,11 @@ def verify_2fa():
 
 @common_bp.route('/api/user/2fa/disable', methods=['POST'])
 def disable_2fa_route():
-    session_token = request.cookies.get(SESSION_COOKIE_NAME)
-    username = get_username_from_session(session_token)
+    # Get username handling bypass modes
+    username = get_user_for_request()
 
     if not username:
-        logger.warning("2FA disable attempt failed: Not authenticated.")
+        logger.warning("2FA disable attempt failed: Not authenticated and not in bypass mode.")
         return jsonify({"error": "Not authenticated"}), 401
 
     data = request.json
@@ -383,10 +419,11 @@ def disable_2fa_route():
 # --- Theme Setting Route ---
 @common_bp.route('/api/settings/theme', methods=['POST'])
 def set_theme():
-    # Authentication check
-    session_token = request.cookies.get(SESSION_COOKIE_NAME)
-    if not verify_session(session_token):
-         logger.warning("Theme setting attempt failed: Not authenticated.")
+    # Get username handling bypass modes
+    username = get_user_for_request()
+    
+    if not username:
+         logger.warning("Theme setting attempt failed: Not authenticated and not in bypass mode.")
          return jsonify({"error": "Unauthorized"}), 401
 
     try:
@@ -399,7 +436,6 @@ def set_theme():
 
         # Here you would typically save this preference to a user profile or global setting
         # For now, just log it. A real implementation would persist this.
-        username = get_username_from_session(session_token) # Get username for logging
         logger.info(f"User '{username}' set dark mode preference to: {dark_mode}")
 
         # Example: Saving to a hypothetical global config (replace with actual persistence)

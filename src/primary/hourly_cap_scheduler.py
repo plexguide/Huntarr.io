@@ -44,11 +44,11 @@ def check_and_reset_caps():
         
         # Only reset at the top of the hour (minute 0)
         if current_time.minute == 0:
-            logger.info(f"Hourly reset triggered at {current_time.hour}:00")
+            logger.debug(f"Hourly reset triggered at {current_time.hour}:00")
             try:
                 success = reset_hourly_caps()
                 if success:
-                    logger.info(f"Successfully reset hourly API caps at {current_time.hour}:00")
+                    logger.debug(f"Successfully reset hourly API caps at {current_time.hour}:00")
                 else:
                     logger.error(f"Failed to reset hourly API caps at {current_time.hour}:00")
             except Exception as e:

@@ -2,8 +2,8 @@
 
 from flask import Blueprint, request, jsonify
 import datetime, os, requests
-from src.primary import keys_manager
-from src.primary.state import get_state_file_path, reset_state_file
+# keys_manager import removed - using settings_manager instead
+from src.primary.state import reset_state_file
 from src.primary.utils.logger import get_logger
 from src.primary.settings_manager import get_ssl_verify_setting
 import traceback
@@ -13,9 +13,7 @@ from urllib.parse import urlparse
 lidarr_bp = Blueprint('lidarr', __name__)
 lidarr_logger = get_logger("lidarr")
 
-# Make sure we're using the correct state files
-PROCESSED_MISSING_FILE = get_state_file_path("lidarr", "processed_missing") 
-PROCESSED_UPGRADES_FILE = get_state_file_path("lidarr", "processed_upgrades")
+# State management now handled directly through database calls
 
 @lidarr_bp.route('/test-connection', methods=['POST'])
 def test_connection():
@@ -30,11 +28,11 @@ def test_connection():
         
     lidarr_logger.info(f"Testing connection to Lidarr API at {api_url}")
     
-    # Validate URL format
+    # Auto-correct URL if missing http(s) scheme
     if not (api_url.startswith('http://') or api_url.startswith('https://')):
-        error_msg = "API URL must start with http:// or https://"
-        lidarr_logger.error(error_msg)
-        return jsonify({"success": False, "message": error_msg}), 400
+        lidarr_logger.warning(f"API URL missing http(s) scheme: {api_url}")
+        api_url = f"http://{api_url}"
+        lidarr_logger.debug(f"Auto-correcting URL to: {api_url}")
     
     # Try to establish a socket connection first to check basic connectivity
     parsed_url = urlparse(api_url)

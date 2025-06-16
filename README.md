@@ -4,8 +4,8 @@
   <img src="frontend/static/logo/128.png" alt="Huntarr Logo" width="100" height="100">
 </p>
 
-<a href="https://github.com/sponsors/plexguide">
-  <img src="https://img.shields.io/github/sponsors/plexguide?style=flat&logo=github&logoColor=white&label=sponsors&color=blue" alt="GitHub Sponsors" />
+<a href="https://plexguide.github.io/Huntarr.io/donate.html">
+  <img src="https://img.shields.io/github/sponsors/plexguide?style=flat&logo=github&logoColor=white&label=Support%20Huntarr&color=blue" alt="Support Huntarr" />
 </a>
 
 ---

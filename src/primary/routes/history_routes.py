@@ -20,7 +20,7 @@ def get_app_history(app_type):
             page_size = 20
         
         # Validate app_type
-        valid_app_types = ["all", "sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr"]
+        valid_app_types = ["all", "sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
         if app_type not in valid_app_types:
             return jsonify({"error": f"Invalid app type: {app_type}"}), 400
         
@@ -36,7 +36,7 @@ def clear_app_history(app_type):
     """Clear history for a specific app or all apps"""
     try:
         # Validate app_type
-        valid_app_types = ["all", "sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr"]
+        valid_app_types = ["all", "sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
         if app_type not in valid_app_types:
             return jsonify({"error": f"Invalid app type: {app_type}"}), 400
         

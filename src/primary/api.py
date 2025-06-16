@@ -78,8 +78,13 @@ def check_connection(app_type: str = None) -> bool:
     current_app_type = app_type or APP_TYPE
     
     # Get API credentials for the specified app type
-    from primary import keys_manager
-    api_url, api_key = keys_manager.get_api_keys(current_app_type)
+    from src.primary.settings_manager import load_settings
+    settings = load_settings(current_app_type)
+    if settings:
+        api_url = settings.get('url', '')
+        api_key = settings.get('api_key', '')
+    else:
+        api_url, api_key = '', ''
     
     # First explicitly check if API URL and Key are configured
     if not api_url:

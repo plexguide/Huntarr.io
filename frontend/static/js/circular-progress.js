@@ -5,7 +5,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     // Create and inject SVG progress indicators for API counts
-    const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+    const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
     
     // App-specific colors matching your existing design
     const appColors = {

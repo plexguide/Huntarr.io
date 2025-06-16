@@ -7,15 +7,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial load of hourly cap data
     loadHourlyCapData();
     
-    // Set up polling to refresh the hourly cap data every 30 seconds
-    setInterval(loadHourlyCapData, 30000);
+    // Set up polling to refresh the hourly cap data every 2 minutes (reduced from 30 seconds)
+    setInterval(loadHourlyCapData, 120000);
 });
 
 /**
  * Load hourly API cap data from the server
  */
 function loadHourlyCapData() {
-    HuntarrUtils.fetchWithTimeout('/api/hourly-caps')
+    HuntarrUtils.fetchWithTimeout('./api/hourly-caps')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -42,7 +42,7 @@ function loadHourlyCapData() {
  */
 function updateHourlyCapDisplay(caps, limits) {
     // Update each app's API cap indicator
-    const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+    const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
     
     apps.forEach(app => {
         // If we have data for this app

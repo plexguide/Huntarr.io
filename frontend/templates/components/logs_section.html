@@ -1,21 +1,43 @@
 <section id="logsSection" class="content-section">
     <div class="section-header">
-        <!-- Replace Log Tabs with Dropdown -->
-        <div class="log-dropdown-container">
+        <!-- Replace Log Tabs with Styled Dropdown -->
+        <div class="log-app-filter">
+            <label for="logAppSelect">
+                <i class="fas fa-layer-group"></i>
+                <span>App:</span>
+            </label>
             <select id="logAppSelect" class="styled-select">
-                <option value="all">All</option>
+                <option value="all" selected>All</option>
                 <option value="sonarr">Sonarr</option>
                 <option value="radarr">Radarr</option>
                 <option value="lidarr">Lidarr</option>
                 <option value="readarr">Readarr</option>
-                <option value="whisparr">Whisparr V2</option>
-                <option value="eros">Whisparr V3</option>
+                <option value="whisparr">Whisparr</option>
+                <option value="eros">Eros</option>
                 <option value="swaparr">Swaparr</option>
-                <option value="huntarr.hunting">Hunt Manager</option>
                 <option value="system">System</option>
             </select>
         </div>
         <div class="log-controls">
+            <!-- Log Level Filter - Moved to the left -->
+            <div class="log-level-filter">
+                <label for="logLevelSelect">
+                    <i class="fas fa-filter"></i>
+                    <span>Level:</span>
+                </label>
+                <select id="logLevelSelect" class="styled-select">
+                    <option value="all">All Levels</option>
+                    <option value="debug">DEBUG</option>
+                    <option value="info" selected>INFO</option>
+                    <option value="warning">WARNING</option>
+                    <option value="error">ERROR</option>
+                </select>
+            </div>
+            
+            <div class="connection-status">
+                Status: <span id="logConnectionStatus" class="status-disconnected">Disconnected</span>
+            </div>
+            
             <!-- Add search functionality -->  
             <div class="log-search">
                 <div class="search-results-info" id="logSearchResults"></div>
@@ -26,10 +48,6 @@
                 <button id="clearSearchButton" class="clear-search-button" style="display: none;">
                     <i class="fas fa-times"></i>
                 </button>
-            </div>
-            
-            <div class="connection-status">
-                Status: <span id="logConnectionStatus" class="status-disconnected">Disconnected</span>
             </div>
             
             <div class="log-options">
@@ -44,10 +62,62 @@
         </div>
     </div>
     
+    <!-- Pagination controls like history section -->
+    <div class="pagination-controls">
+        <button id="logsPrevPage" class="pagination-button"><i class="fas fa-chevron-left"></i> Previous</button>
+        <span id="logsPageInfo">Page <span id="logsCurrentPage">1</span> of <span id="logsTotalPages">1</span></span>
+        <button id="logsNextPage" class="pagination-button">Next <i class="fas fa-chevron-right"></i></button>
+        
+        <div class="page-size-selector">
+            <label for="logsPageSize">Show:</label>
+            <select id="logsPageSize">
+                <option value="20" selected>20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+            </select>
+        </div>
+    </div>
+    
     <div id="logsContainer" class="logs"></div>
 </section>
 
 <style>
+    /* CRITICAL: Override sticky positioning from apps-double-scroll-fix.css for logs section */
+    #logsSection .section-header {
+        position: static !important;
+        top: auto !important;
+        z-index: auto !important;
+        background-color: transparent !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    
+    /* CRITICAL: Make logs container flow naturally instead of fixed height with internal scrolling */
+    #logsSection .logs {
+        height: auto; /* Changed from fixed calc() height to auto */
+        min-height: 400px; /* Minimum height to ensure container isn't too small */
+        max-height: calc(100vh - 250px); /* Maximum height to prevent overflow */
+        overflow-y: auto;
+        background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
+        border-radius: 10px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(90, 109, 137, 0.15);
+        padding: 15px;
+        font-family: 'Fira Code', 'Courier New', monospace;
+        font-size: 12px;
+        line-height: 1.4;
+        padding-bottom: 70px; /* Extra padding at bottom to ensure content isn't cut off */
+        position: relative; /* For accent line positioning */
+        z-index: 1; /* Ensure it's below the header */
+        margin-top: 2px; /* Reduced from 5px to match header spacing reduction */
+        
+        /* Flex properties for better content alignment - REMOVED column-reverse */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start; /* Start from top to show newest entries first */
+    }
+    
     /* Modern Logs Section Styling */
     #logsSection {
         padding: 20px;
@@ -357,7 +427,9 @@
     
     /* Logs container styling with modern gradient */
     .logs {
-        height: calc(100vh - 250px); /* Increased to account for header height */
+        height: auto; /* Changed from fixed calc() height to auto */
+        min-height: 400px; /* Minimum height to ensure container isn't too small */
+        max-height: calc(100vh - 250px); /* Maximum height to prevent overflow */
         overflow-y: auto;
         background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
         border-radius: 10px;
@@ -373,22 +445,20 @@
         position: relative; /* For accent line positioning */
         z-index: 1; /* Ensure it's below the header */
         margin-top: 2px; /* Reduced from 5px to match header spacing reduction */
+        
+        /* Flex properties for better content alignment */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start; /* Start from top when there are few logs */
     }
     
     .logs::-webkit-scrollbar {
         width: 10px;
     }
     
-    /* Add subtle colored accent to the logs container */
+    /* Remove the colored accent line from the logs container */
     .logs::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, rgba(52, 152, 219, 0.5), rgba(155, 89, 182, 0.5)); /* Sonarr blue to Whisparr purple */
-        z-index: 1;
+        display: none !important;
     }
     
     .logs::-webkit-scrollbar-track {
@@ -557,7 +627,7 @@
             align-items: flex-start;
         }
         
-        .log-dropdown-container, .log-controls {
+        .log-app-filter, .log-controls {
             width: 100%;
         }
         
@@ -594,6 +664,19 @@
             display: none !important;
         }
         
+        /* Keep log level filter and app filter visible on mobile but adjust styling */
+        .log-level-filter, .log-app-filter {
+            width: 100%;
+            justify-content: space-between;
+            padding: 8px 12px;
+        }
+        
+        .log-level-filter select, .log-app-filter select {
+            min-width: 120px;
+            font-size: 14px; /* Prevent zoom on iOS */
+            padding: 6px 10px;
+        }
+        
         /* Mobile specific log container styling */
         .logs {
             height: calc(100vh - 300px); /* Adjusted height for mobile + account for header */
@@ -604,6 +687,20 @@
         /* Make space for fixed elements at bottom on mobile */
         #logsSection {
             padding-bottom: 80px;
+        }
+        
+        /* Mobile pagination controls */
+        .pagination-controls {
+            flex-wrap: wrap;
+            justify-content: flex-start !important;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 0;
+        }
+        
+        .page-size-selector {
+            margin-left: 0;
+            margin-top: 5px;
         }
     }
     
@@ -616,4 +713,656 @@
             margin-bottom: 5px;
         }
     }
+    
+    /* Log Level Filter Styling - COMPLETELY INDEPENDENT, NO GLOWING RING */
+    .log-level-filter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(30, 39, 56, 0.6) 0%, rgba(14, 20, 32, 0.6) 100%);
+        border: 1px solid rgba(90, 109, 137, 0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: static !important; /* Remove any positioning context */
+    }
+    
+    /* COMPLETELY remove any ::before pseudo-element from log level filter */
+    .log-level-filter::before {
+        display: none !important;
+        content: none !important;
+        position: static !important;
+        background: none !important;
+        animation: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+    
+    /* ENSURE no glowing ring in any mode */
+    body:not(.low-usage-mode) .log-level-filter::before,
+    body.low-usage-mode .log-level-filter::before,
+    .log-level-filter::before,
+    .log-level-filter:before {
+        display: none !important;
+        content: none !important;
+        position: static !important;
+        background: none !important;
+        animation: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        z-index: -9999 !important;
+    }
+    
+    .log-level-filter:hover {
+        background: linear-gradient(135deg, rgba(40, 49, 66, 0.7) 0%, rgba(24, 30, 42, 0.7) 100%);
+        border-color: rgba(90, 109, 137, 0.5);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    }
+    
+    .log-level-filter label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .log-level-filter label i {
+        color: rgba(52, 152, 219, 0.8);
+        font-size: 12px;
+    }
+    
+    .log-level-filter select {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.9) 100%);
+        border: 1px solid rgba(52, 152, 219, 0.6);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.95);
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.3s ease;
+        min-width: 90px;
+        /* Add dropdown arrow */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+        padding-right: 28px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+    
+    .log-level-filter select:hover {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.9) 0%, rgba(41, 128, 185, 1.0) 100%);
+        border-color: rgba(52, 152, 219, 0.8);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        /* Maintain dropdown arrow on hover */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+    }
+    
+    .log-level-filter select:focus {
+        border-color: rgba(52, 152, 219, 1.0);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        /* Maintain dropdown arrow on focus */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+    }
+    
+    .log-level-filter select option {
+        background: #1a1e2a;
+        color: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+    }
+
+    /* Log App Filter Styling - NO GLOWING RING */
+    .log-app-filter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(30, 39, 56, 0.6) 0%, rgba(14, 20, 32, 0.6) 100%);
+        border: 1px solid rgba(90, 109, 137, 0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .log-app-filter:hover {
+        background: linear-gradient(135deg, rgba(40, 49, 66, 0.7) 0%, rgba(24, 30, 42, 0.7) 100%);
+        border-color: rgba(90, 109, 137, 0.5);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    }
+    
+    .log-app-filter label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .log-app-filter label i {
+        color: rgba(52, 152, 219, 0.8);
+        font-size: 12px;
+    }
+    
+    .log-app-filter select {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.9) 100%);
+        border: 1px solid rgba(52, 152, 219, 0.6);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.95);
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.3s ease;
+        min-width: 120px;
+        /* Add dropdown arrow */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+        padding-right: 28px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+    
+    .log-app-filter select:hover {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.9) 0%, rgba(41, 128, 185, 1.0) 100%);
+        border-color: rgba(52, 152, 219, 0.8);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        /* Maintain dropdown arrow on hover */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+    }
+    
+    .log-app-filter select:focus {
+        border-color: rgba(52, 152, 219, 1.0);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        /* Maintain dropdown arrow on focus */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+    }
+    
+    .log-app-filter select option {
+        background: #1a1e2a;
+        color: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+    }
+    
+    /* DISABLE GLOWING RING ANIMATIONS - Logs Section */
+    #logAppSelect.styled-select,
+    #logLevelSelect.styled-select,
+    #logsSection .styled-select {
+        animation: none !important;
+        box-shadow: none !important;
+    }
+    
+    #logAppSelect.styled-select:focus,
+    #logAppSelect.styled-select:hover,
+    #logLevelSelect.styled-select:focus,
+    #logLevelSelect.styled-select:hover,
+    #logsSection .styled-select:focus,
+    #logsSection .styled-select:hover {
+        animation: none !important;
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.2) !important;
+        transform: none !important;
+    }
+    
+    /* Pagination controls styling to match history section */
+    .pagination-controls {
+        display: flex;
+        justify-content: flex-start !important;
+        align-items: center;
+        gap: 15px;
+        margin: 20px 0;
+        padding: 0;
+    }
+    
+    .pagination-button {
+        background: linear-gradient(135deg, rgba(30, 39, 56, 0.8) 0%, rgba(14, 20, 32, 0.8) 100%);
+        border: 1px solid rgba(90, 109, 137, 0.3);
+        border-radius: 6px;
+        color: rgba(255, 255, 255, 0.9);
+        padding: 8px 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .pagination-button:hover:not(:disabled) {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.9) 100%);
+        border-color: rgba(52, 152, 219, 0.6);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+    }
+    
+    .pagination-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    #logsPageInfo {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 14px;
+        font-weight: 500;
+        padding: 0 10px;
+    }
+    
+    .page-size-selector {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 20px;
+    }
+    
+    .page-size-selector label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .page-size-selector select {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.9) 100%);
+        border: 1px solid rgba(52, 152, 219, 0.6);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.95);
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.3s ease;
+        min-width: 60px;
+    }
+    
+    .page-size-selector select:hover {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.9) 0%, rgba(41, 128, 185, 1.0) 100%);
+        border-color: rgba(52, 152, 219, 0.8);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+    }
+    
+    .page-size-selector select option {
+        background: #1a1e2a;
+        color: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+    }
 </style>
+
+<script>
+// Fix auto-scroll to work with natural page flow
+document.addEventListener('DOMContentLoaded', function() {
+    const autoScrollCheckbox = document.getElementById('autoScrollCheckbox');
+    const logsContainer = document.getElementById('logsContainer');
+    
+    // Simple pagination controls (non-functional for now to not interfere with streaming)
+    const logsPrevPage = document.getElementById('logsPrevPage');
+    const logsNextPage = document.getElementById('logsNextPage');
+    const logsCurrentPage = document.getElementById('logsCurrentPage');
+    const logsTotalPages = document.getElementById('logsTotalPages');
+    const logsPageSize = document.getElementById('logsPageSize');
+    
+    // Set default values
+    if (logsCurrentPage) logsCurrentPage.textContent = '1';
+    if (logsTotalPages) logsTotalPages.textContent = '1';
+    if (logsPrevPage) logsPrevPage.disabled = true;
+    if (logsNextPage) logsNextPage.disabled = true;
+    
+    if (autoScrollCheckbox) {
+        // Simple auto-scroll behavior for natural page flow - don't interfere with streaming
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    // Check if new log entries were added
+                    const hasLogEntry = Array.from(mutation.addedNodes).some(node => 
+                        node.nodeType === Node.ELEMENT_NODE && 
+                        (node.classList?.contains('log-entry') || node.querySelector?.('.log-entry'))
+                    );
+                    
+                    if (hasLogEntry && autoScrollCheckbox.checked) {
+                        // Auto-scroll to top of page since logs are in reverse order (newest first)
+                        setTimeout(() => {
+                            window.scrollTo({
+                                top: 0,
+                                behavior: 'smooth'
+                            });
+                        }, 100);
+                    }
+                }
+            });
+        });
+        
+        // Observe the logs container for new entries
+        if (logsContainer) {
+            observer.observe(logsContainer, {
+                childList: true,
+                subtree: true
+            });
+        }
+    }
+});
+
+// Set default values
+if (logsCurrentPage) logsCurrentPage.textContent = '1';
+if (logsTotalPages) logsTotalPages.textContent = '1';
+if (logsPrevPage) logsPrevPage.disabled = true;
+if (logsNextPage) logsNextPage.disabled = true;
+
+// Simple pagination functionality that works with displayed logs
+let pageSize = 20; // Default page size
+let currentPage = 1;
+
+// Load saved logs settings from localStorage
+function loadLogsSettings() {
+    try {
+        const savedSettings = localStorage.getItem('huntarr-logs-settings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            
+            // Restore page size
+            if (settings.pageSize) {
+                pageSize = settings.pageSize;
+                const logsPageSize = document.getElementById('logsPageSize');
+                if (logsPageSize) {
+                    logsPageSize.value = settings.pageSize.toString();
+                }
+            }
+            
+            // Restore log level
+            if (settings.logLevel) {
+                const logLevelSelect = document.getElementById('logLevelSelect');
+                if (logLevelSelect) {
+                    logLevelSelect.value = settings.logLevel;
+                }
+            }
+            
+            // Restore app filter
+            if (settings.appFilter) {
+                const logAppSelect = document.getElementById('logAppSelect');
+                if (logAppSelect) {
+                    logAppSelect.value = settings.appFilter;
+                }
+            }
+            
+            console.log('[LogsSection] Restored settings:', settings);
+        }
+    } catch (e) {
+        console.warn('[LogsSection] Failed to load saved settings:', e);
+    }
+}
+
+// Save logs settings to localStorage
+function saveLogsSettings() {
+    try {
+        const logLevelSelect = document.getElementById('logLevelSelect');
+        const logAppSelect = document.getElementById('logAppSelect');
+        const logsPageSize = document.getElementById('logsPageSize');
+        
+        const settings = {
+            pageSize: pageSize,
+            logLevel: logLevelSelect ? logLevelSelect.value : 'info',
+            appFilter: logAppSelect ? logAppSelect.value : 'all'
+        };
+        
+        localStorage.setItem('huntarr-logs-settings', JSON.stringify(settings));
+        console.log('[LogsSection] Saved settings:', settings);
+    } catch (e) {
+        console.warn('[LogsSection] Failed to save settings:', e);
+    }
+}
+
+// Watch for when logs section becomes active and restore settings
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            const logsSection = document.getElementById('logsSection');
+            if (logsSection && logsSection.classList.contains('active')) {
+                // Small delay to ensure all elements are ready, then restore settings
+                setTimeout(() => {
+                    loadLogsSettings();
+                    // Update pagination after restoring settings
+                    setTimeout(() => {
+                        updateLogsPagination();
+                    }, 100);
+                }, 200);
+            }
+        }
+    });
+});
+
+// Start observing the logs section for class changes
+const logsSection = document.getElementById('logsSection');
+if (logsSection) {
+    observer.observe(logsSection, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
+}
+
+function updateLogsPagination() {
+    if (!logsContainer) return;
+    
+    // First, clear any pagination hiding to see what's naturally visible  
+    const allLogEntries = logsContainer.querySelectorAll('.log-entry');
+    allLogEntries.forEach(entry => {
+        if (entry.hasAttribute('data-hidden-by-pagination')) {
+            entry.removeAttribute('data-hidden-by-pagination');
+            // Only restore display if it wasn't hidden by log level filtering
+            if (!entry.hasAttribute('data-hidden-by-filter')) {
+                entry.style.display = '';
+            }
+        }
+    });
+    
+    // Get entries that are visible after log level filtering
+    // Check both computed style AND our filter attribute to avoid race conditions
+    const visibleLogEntries = Array.from(allLogEntries).filter(entry => {
+        // Skip if explicitly hidden by log level filter
+        if (entry.hasAttribute('data-hidden-by-filter')) {
+            return false;
+        }
+        
+        // Also check computed style as fallback
+        const style = window.getComputedStyle(entry);
+        return style.display !== 'none';
+    });
+    
+    const totalLogs = visibleLogEntries.length;
+    const totalPages = Math.max(1, Math.ceil(totalLogs / pageSize));
+    
+    // Update pagination display
+    if (logsCurrentPage) logsCurrentPage.textContent = currentPage;
+    if (logsTotalPages) logsTotalPages.textContent = totalPages;
+    
+    // Update button states
+    if (logsPrevPage) logsPrevPage.disabled = currentPage <= 1;
+    if (logsNextPage) logsNextPage.disabled = currentPage >= totalPages;
+    
+    // Apply pagination to visible entries only
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    
+    visibleLogEntries.forEach((logEntry, index) => {
+        if (index < startIndex || index >= endIndex) {
+            logEntry.style.display = 'none';
+            logEntry.setAttribute('data-hidden-by-pagination', 'true');
+        }
+    });
+}
+
+// Handle page size change
+function handlePageSizeChange() {
+    if (logsPageSize) {
+        pageSize = parseInt(logsPageSize.value);
+        currentPage = 1; // Reset to first page
+        updateLogsPagination();
+        saveLogsSettings(); // Save settings when page size changes
+    }
+}
+
+// Handle page navigation
+function goToLogsPage(page) {
+    if (!logsContainer) return;
+    
+    const allLogEntries = logsContainer.querySelectorAll('.log-entry');
+    
+    // Only count entries not hidden by log level filtering
+    const visibleLogEntries = Array.from(allLogEntries).filter(entry => {
+        return !entry.hasAttribute('data-hidden-by-filter');
+    });
+    
+    const totalLogs = visibleLogEntries.length;
+    const totalPages = Math.max(1, Math.ceil(totalLogs / pageSize));
+    
+    if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        updateLogsPagination();
+        
+        // Scroll to top when changing pages
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+}
+
+// Event listeners for pagination
+if (logsPrevPage) {
+    logsPrevPage.addEventListener('click', () => goToLogsPage(currentPage - 1));
+}
+
+if (logsNextPage) {
+    logsNextPage.addEventListener('click', () => goToLogsPage(currentPage + 1));
+}
+
+if (logsPageSize) {
+    logsPageSize.addEventListener('change', handlePageSizeChange);
+}
+
+// Add event listener to log level selector to update pagination when filter changes
+const logLevelSelect = document.getElementById('logLevelSelect');
+if (logLevelSelect) {
+    logLevelSelect.addEventListener('change', function() {
+        currentPage = 1; // Reset to first page when filter changes
+        // Use a longer delay to let the filtering complete before updating pagination
+        setTimeout(() => {
+            updateLogsPagination();
+        }, 300);
+        saveLogsSettings(); // Save settings when log level changes
+    });
+}
+
+// Add event listener to app selector to update pagination when filter changes
+const logAppSelect = document.getElementById('logAppSelect');
+if (logAppSelect) {
+    logAppSelect.addEventListener('change', function() {
+        currentPage = 1; // Reset to first page when filter changes
+        // Use a longer delay to let the filtering complete before updating pagination
+        setTimeout(() => {
+            updateLogsPagination();
+        }, 300);
+        saveLogsSettings(); // Save settings when app filter changes
+    });
+}
+
+// Add event listeners for search functionality
+const logSearchInput = document.getElementById('logSearchInput');
+const logSearchButton = document.getElementById('logSearchButton');
+const clearSearchButton = document.getElementById('clearSearchButton');
+
+if (logSearchInput) {
+    logSearchInput.addEventListener('input', function() {
+        currentPage = 1; // Reset to first page when search changes
+        setTimeout(() => {
+            updateLogsPagination();
+        }, 300);
+    });
+}
+
+if (logSearchButton) {
+    logSearchButton.addEventListener('click', function() {
+        currentPage = 1; // Reset to first page when search is performed
+        setTimeout(() => {
+            updateLogsPagination();
+        }, 300);
+    });
+}
+
+if (clearSearchButton) {
+    clearSearchButton.addEventListener('click', function() {
+        currentPage = 1; // Reset to first page when search is cleared
+        setTimeout(() => {
+            updateLogsPagination();
+        }, 300);
+    });
+}
+
+// Update pagination whenever new logs are added
+const logObserver = new MutationObserver(function(mutations) {
+    let hasNewLogs = false;
+    
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            const hasLogEntry = Array.from(mutation.addedNodes).some(node => 
+                node.nodeType === Node.ELEMENT_NODE && 
+                node.classList?.contains('log-entry')
+            );
+            if (hasLogEntry) {
+                hasNewLogs = true;
+            }
+        }
+    });
+    
+    if (hasNewLogs) {
+        // Use a delay to avoid interfering with real-time log streaming
+        setTimeout(() => {
+            updateLogsPagination();
+        }, 500);
+    }
+});
+
+// Observe logs container for new entries
+if (logsContainer) {
+    logObserver.observe(logsContainer, {
+        childList: true,
+        subtree: true
+    });
+}
+
+// Initial pagination update
+setTimeout(() => {
+    updateLogsPagination();
+}, 1000);
+</script>

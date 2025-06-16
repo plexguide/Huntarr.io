@@ -18,6 +18,7 @@
             <div class="sidebar-section">
                 <h3 class="sidebar-section-title">Getting Started</h3>
                 <ul>
+                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
                     <li><a href="../getting-started/installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
                 </ul>
             </div>
@@ -39,7 +40,7 @@
                     <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg> GitHub</a></li>
                     <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
                     <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
-                    <li><a href="https://donate.plex.one" target="_blank"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
+
                 </ul>
             </div>
         </nav>
@@ -56,9 +57,11 @@
                 <ul>
                     <li><a href="#system-settings">System Settings</a>
                         <ul>
+                            <li><a href="#timezone">Timezone</a></li>
                             <li><a href="#check-for-updates">Check for Updates</a></li>
                             <li><a href="#debug-mode">Debug Mode</a></li>
                             <li><a href="#display-resources">Display Resources</a></li>
+                            <li><a href="#low-usage-mode">Low Usage Mode</a></li>
                         </ul>
                     </li>
                     <li><a href="#notifications">Notifications</a>
@@ -91,6 +94,7 @@
                             <li><a href="#cmd-wait-attempts">CMD Wait Attempts</a></li>
                             <li><a href="#max-dl-queue-size">Max DL Queue Size</a></li>
                             <li><a href="#log-refresh-interval">Log Refresh Interval</a></li>
+                            <li><a href="#base-url">Base URL</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -99,6 +103,33 @@
             <section id="system-settings">
                 <h2>System Settings</h2>
                 <p>These settings control basic functionality and appearance of your Huntarr.io instance.</p>
+                
+                <h3 id="timezone"><a href="#timezone" class="info-icon"><i class="fas fa-info-circle"></i></a> Timezone</h3>
+                <p>Set your timezone for accurate time display in logs, scheduling, and all time-related features throughout Huntarr.</p>
+                
+                <p>This setting controls how timestamps are displayed in the following areas:</p>
+                <ul>
+                    <li><strong>Log timestamps:</strong> All log entries will show the correct local time</li>
+                    <li><strong>Scheduling displays:</strong> Schedule times will be shown in your local timezone</li>
+                    <li><strong>Stateful management:</strong> Reset times and state information will use your timezone</li>
+                    <li><strong>Cycle tracking:</strong> Cycle start/end times will be in your local time</li>
+                </ul>
+                
+                <p>When running in Docker, Huntarr will automatically detect your timezone from the <code>TZ</code> environment variable if set. You can override this setting through the web interface at any time.</p>
+                
+                <p><strong>Supported timezones include:</strong></p>
+                <ul>
+                    <li>UTC (Coordinated Universal Time)</li>
+                    <li>North American timezones (Eastern, Central, Mountain, Pacific, Hawaii)</li>
+                    <li>Canadian timezones (Eastern and Pacific Canada)</li>
+                    <li>European timezones (UK, Central Europe, Germany, Netherlands, Italy, Spain)</li>
+                    <li>Asian timezones (Japan, China, India)</li>
+                    <li>Australian and Pacific timezones (Sydney, Perth, Auckland)</li>
+                </ul>
+                
+                <p><strong>Docker Example:</strong> Set <code>TZ=Pacific/Honolulu</code> in your docker-compose.yml environment variables for Hawaii time.</p>
+                
+                <p>Changes to this setting take effect immediately and will update all logging and display times throughout the application.</p>
                 
                 <h3 id="check-for-updates"><a href="#check-for-updates" class="info-icon"><i class="fas fa-info-circle"></i></a> Check for Updates</h3>
                 <p>When enabled, Huntarr will automatically check for new versions and notify you when updates are available.</p>
@@ -120,6 +151,27 @@
                 <p>The Resources section displays helpful links like documentation, GitHub repository, and community forums. You may want to hide this once you're familiar with Huntarr to optimize screen space.</p>
                 
                 <p>New users should keep this enabled as it provides quick access to documentation and support resources. More experienced users might prefer to hide this section to focus on the core functionality of Huntarr.</p>
+                
+                <h3 id="low-usage-mode"><a href="#low-usage-mode" class="info-icon"><i class="fas fa-info-circle"></i></a> Low Usage Mode</h3>
+                <p>Reduces CPU and GPU usage by disabling animations and visual effects, making Huntarr more suitable for older devices or systems with limited resources.</p>
+                
+                <p>When enabled, this setting will:</p>
+                <ul>
+                    <li><strong>Disable animations:</strong> Removes smooth transitions and loading animations</li>
+                    <li><strong>Reduce visual effects:</strong> Simplifies the user interface to use fewer system resources</li>
+                    <li><strong>Optimize rendering:</strong> Uses more efficient rendering techniques for slower devices</li>
+                    <li><strong>Lower CPU usage:</strong> Reduces background processing for UI elements</li>
+                </ul>
+                
+                <p>This mode is particularly useful for:</p>
+                <ul>
+                    <li>Older computers or single-board computers like Raspberry Pi</li>
+                    <li>Systems with limited RAM or processing power</li>
+                    <li>Remote access scenarios where bandwidth is limited</li>
+                    <li>Users who prefer a more responsive, simplified interface</li>
+                </ul>
+                
+                <p>The setting takes effect immediately and doesn't require a restart. You can toggle it on and off as needed depending on your current usage requirements.</p>
             </section>
             
             <section id="notifications">
@@ -352,6 +404,45 @@
                     <li><strong>30 seconds:</strong> Default, good balance for most users</li>
                     <li><strong>60 seconds:</strong> For systems with limited resources or when logs aren't frequently needed</li>
                 </ul>
+                
+                <h3 id="base-url"><a href="#base-url" class="info-icon"><i class="fas fa-info-circle"></i></a> Base URL</h3>
+                <p>Base URL path for reverse proxy configurations (e.g., '/huntarr'). Leave empty for root path deployment.</p>
+                
+                <p>This setting is essential when running Huntarr behind a reverse proxy server like Nginx, Apache, or Cloudflare Tunnel where you want to host Huntarr at a subpath rather than the root domain.</p>
+                
+                <p><strong>Example configurations:</strong></p>
+                <ul>
+                    <li><strong>Root path:</strong> Leave empty to access Huntarr at <code>https://yourdomain.com/</code></li>
+                    <li><strong>Subpath:</strong> Set to <code>/huntarr</code> to access at <code>https://yourdomain.com/huntarr/</code></li>
+                    <li><strong>Multiple services:</strong> Set to <code>/media/huntarr</code> for <code>https://yourdomain.com/media/huntarr/</code></li>
+                </ul>
+                
+                <p><strong>Reverse proxy configuration examples:</strong></p>
+                
+                <p><strong>Nginx:</strong></p>
+                <pre><code>location /huntarr {
+    proxy_pass http://huntarr:9705;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}</code></pre>
+                
+                <p><strong>Cloudflare Tunnel:</strong></p>
+                <pre><code>ingress:
+  - hostname: yourdomain.com
+    path: /huntarr
+    service: http://huntarr:9705</code></pre>
+                
+                <p><strong>Important notes:</strong></p>
+                <ul>
+                    <li>Always include the leading slash (e.g., <code>/huntarr</code> not <code>huntarr</code>)</li>
+                    <li>Do not include trailing slashes</li>
+                    <li>Requires container restart to take effect</li>
+                    <li>Ensure your reverse proxy is configured to forward requests to this path</li>
+                </ul>
+                
+                <p>Credit to <a href="https://github.com/scr4tchy" target="_blank">scr4tchy</a> for implementing this feature.</p>
             </section>
             
             <div class="section-nav">

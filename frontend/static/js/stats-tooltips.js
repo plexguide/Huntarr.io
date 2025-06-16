@@ -136,8 +136,7 @@ function showStatsTooltip(e) {
         'lidarr': { name: 'Lidarr', color: '#2ecc71', description: type === 'hunted' ? 'Album searches triggered' : 'Albums upgraded to better quality' },
         'readarr': { name: 'Readarr', color: '#e74c3c', description: type === 'hunted' ? 'Book searches triggered' : 'Books upgraded to better quality' },
         'whisparr': { name: 'Whisparr', color: '#9b59b6', description: type === 'hunted' ? 'Adult video searches triggered' : 'Adult videos upgraded to better quality' },
-        'eros': { name: 'Eros', color: '#1abc9c', description: type === 'hunted' ? 'Audio searches triggered' : 'Audio files upgraded to better quality' },
-        'swaparr': { name: 'Swaparr', color: '#e67e22', description: type === 'hunted' ? 'Content swap operations' : 'Content swap upgrades' }
+        'eros': { name: 'Eros', color: '#1abc9c', description: type === 'hunted' ? 'Audio searches triggered' : 'Audio files upgraded to better quality' }
     };
     
     const detail = appDetails[app] || { name: app, color: '#95a5a6', description: type === 'hunted' ? 'Searches triggered' : 'Content upgraded' };

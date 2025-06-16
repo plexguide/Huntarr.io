@@ -44,6 +44,11 @@ def build_exe():
     run_command([sys.executable, "-m", "pip", "install", "-r", str(ROOT_DIR / "requirements.txt")])
     run_command([sys.executable, "-m", "pip", "install", "pywin32"])
     
+    # Explicitly install apprise and its dependencies to ensure they're available
+    run_command([sys.executable, "-m", "pip", "install", "apprise==1.6.0"])
+    run_command([sys.executable, "-m", "pip", "install", "markdown==3.4.3"])
+    run_command([sys.executable, "-m", "pip", "install", "pyyaml==6.0"])
+    
     # Build using the spec file
     spec_file = SCRIPT_DIR / "huntarr.spec"
     
@@ -59,7 +64,8 @@ def build_exe():
     # Make sure we're in the project root directory when running PyInstaller
     # This helps with finding relative paths
     # Add the -y option to force overwrite of the output directory
-    result = run_command([sys.executable, "-m", "PyInstaller", "-y", str(spec_file)], cwd=str(ROOT_DIR))
+    # Add --collect-all apprise to bundle all apprise data files and dependencies
+    result = run_command([sys.executable, "-m", "PyInstaller", "-y", "--collect-all", "apprise", str(spec_file)], cwd=str(ROOT_DIR))
     
     if not result:
         print("ERROR: PyInstaller failed to build the executable")

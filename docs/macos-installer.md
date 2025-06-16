@@ -44,7 +44,7 @@ The macOS application functions similarly to the Docker version with a few key d
 
 If you encounter issues:
 
-1. Check the log files in `~/Library/Application Support/Huntarr/config/logs/`
+1. Check the logs database at `~/Library/Application Support/Huntarr/config/logs.db`
 2. Ensure proper permissions for the application folders
 3. Verify your macOS version is compatible (macOS 10.15 Catalina or newer recommended)
 

@@ -14,7 +14,7 @@ from src.primary.utils.logger import get_logger
 from src.primary.apps.eros import api as eros_api
 from src.primary.settings_manager import load_settings, get_advanced_setting
 from src.primary.stateful_manager import is_processed, add_processed_id
-from src.primary.stats_manager import increment_stat
+from src.primary.stats_manager import increment_stat, check_hourly_cap_exceeded
 from src.primary.utils.history_utils import log_processed_media
 from src.primary.state import check_state_reset
 
@@ -41,10 +41,14 @@ def process_cutoff_upgrades(
     # Reset state files if enough time has passed
     check_state_reset("eros")
     
+    # Load settings to check if tagging is enabled
+    eros_settings = load_settings("eros")
+    tag_processed_items = eros_settings.get("tag_processed_items", True)
+    
     # Extract necessary settings
     api_url = app_settings.get("api_url", "").strip()
     api_key = app_settings.get("api_key", "").strip()
-    api_timeout = get_advanced_setting("api_timeout", 120)  # Use general.json value
+    api_timeout = get_advanced_setting("api_timeout", 120)  # Use database value
     instance_name = app_settings.get("instance_name", "Eros Default")
     
     # Load general settings to get centralized timeout
@@ -59,7 +63,7 @@ def process_cutoff_upgrades(
     # Use the new hunt_upgrade_items parameter name, falling back to hunt_upgrade_scenes for backwards compatibility
     hunt_upgrade_items = app_settings.get("hunt_upgrade_items", app_settings.get("hunt_upgrade_scenes", 0))
     
-    # Use advanced settings from general.json for command operations
+    # Use advanced settings from database for command operations
     command_wait_delay = get_advanced_setting("command_wait_delay", 1)
     command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
     state_reset_interval_hours = get_advanced_setting("stateful_management_hours", 168)  
@@ -122,6 +126,15 @@ def process_cutoff_upgrades(
         if stop_check():
             eros_logger.info("Stop requested during item processing. Aborting...")
             break
+        
+        # Check API limit before processing each item
+        try:
+            if check_hourly_cap_exceeded("eros"):
+                eros_logger.warning(f"🛑 Eros API hourly limit reached - stopping upgrade processing after {items_processed} items")
+                break
+        except Exception as e:
+            eros_logger.error(f"Error checking hourly API cap: {e}")
+            # Continue processing if cap check fails - safer than stopping
             
         # Re-check limit in case it changed
         current_limit = app_settings.get("hunt_upgrade_items", app_settings.get("hunt_upgrade_scenes", 1))
@@ -170,6 +183,16 @@ def process_cutoff_upgrades(
         search_command_id = eros_api.item_search(api_url, api_key, api_timeout, [item_id])
         if search_command_id:
             eros_logger.info(f"Triggered search command {search_command_id}. Assuming success for now.")
+            
+            # Tag the movie if enabled
+            if tag_processed_items:
+                from src.primary.settings_manager import get_custom_tag
+                custom_tag = get_custom_tag("eros", "upgrade", "huntarr-upgraded")
+                try:
+                    eros_api.tag_processed_movie(api_url, api_key, api_timeout, item_id, custom_tag)
+                    eros_logger.debug(f"Tagged movie {item_id} with '{custom_tag}'")
+                except Exception as e:
+                    eros_logger.warning(f"Failed to tag movie {item_id} with '{custom_tag}': {e}")
             
             # Log to history so the upgrade appears in the history UI
             log_processed_media("eros", item_info, item_id, instance_name, "upgrade")

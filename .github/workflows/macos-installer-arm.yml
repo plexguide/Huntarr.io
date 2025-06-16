@@ -319,17 +319,37 @@ jobs:
           
           block_cipher = None
           
+          # Add apprise data files to fix attachment directory error
+          datas = [
+              ('frontend', 'frontend'),
+              ('version.txt', '.'),
+              ('README.md', '.'),
+              ('LICENSE', '.'),
+              ('src', 'src'),
+          ]
+          
+          # Add apprise data files
+          try:
+              import apprise
+              apprise_path = os.path.dirname(apprise.__file__)
+              apprise_attachment_path = os.path.join(apprise_path, 'attachment')
+              apprise_plugins_path = os.path.join(apprise_path, 'plugins')
+              apprise_config_path = os.path.join(apprise_path, 'config')
+              
+              if os.path.exists(apprise_attachment_path):
+                  datas.append((apprise_attachment_path, 'apprise/attachment'))
+              if os.path.exists(apprise_plugins_path):
+                  datas.append((apprise_plugins_path, 'apprise/plugins'))
+              if os.path.exists(apprise_config_path):
+                  datas.append((apprise_config_path, 'apprise/config'))
+          except ImportError:
+              print("Warning: apprise not found, skipping apprise data files")
+          
           a = Analysis(
               ['app_launcher.py'],
               pathex=['.'],
               binaries=[],
-              datas=[
-                  ('frontend', 'frontend'),
-                  ('version.txt', '.'),
-                  ('README.md', '.'),
-                  ('LICENSE', '.'),
-                  ('src', 'src'),
-              ],
+              datas=datas,
               hiddenimports=[
                   'flask',
                   'flask.json',
@@ -342,6 +362,26 @@ jobs:
                   'qrcode.image.pil',
                   'routes',
                   'main',
+                  # Apprise notification support
+                  'apprise',
+                  'apprise.common', 
+                  'apprise.conversion',
+                  'apprise.decorators',
+                  'apprise.locale',
+                  'apprise.logger',
+                  'apprise.manager',
+                  'apprise.utils',
+                  'apprise.URLBase',
+                  'apprise.AppriseAsset',
+                  'apprise.AppriseAttachment',
+                  'apprise.AppriseConfig',
+                  'apprise.cli',
+                  'apprise.config',
+                  'apprise.attachment',
+                  'apprise.plugins',
+                  'markdown',
+                  'yaml',
+                  'cryptography',
               ],
               hookspath=['hooks'],
               hooksconfig={},
@@ -417,10 +457,7 @@ jobs:
           
           # Create config directory in user's Application Support
           mkdir -p "$HOME/Library/Application Support/Huntarr/config"
-          mkdir -p "$HOME/Library/Application Support/Huntarr/config/settings"
-          mkdir -p "$HOME/Library/Application Support/Huntarr/config/stateful"
-          mkdir -p "$HOME/Library/Application Support/Huntarr/config/user"
-          mkdir -p "$HOME/Library/Application Support/Huntarr/config/logs"
+          # Logs are now stored in database only
           
           # Set permissions
           chmod -R 755 "$HOME/Library/Application Support/Huntarr"

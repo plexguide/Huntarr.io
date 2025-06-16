@@ -51,7 +51,7 @@ def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, met
         # Construct the full URL properly
         full_url = f"{api_url.rstrip('/')}/api/v3/{endpoint.lstrip('/')}"
         
-        radarr_logger.debug(f"Making {method} request to: {full_url}")
+    
         
         # Set up headers with the API key
         headers = {
@@ -422,3 +422,227 @@ def wait_for_command(api_url: str, api_key: str, api_timeout: int, command_id: i
         attempts += 1
     radarr_logger.warning(f"Timed out waiting for command {command_id} to complete")
     return False
+
+def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
+    """
+    Get existing tag ID or create a new tag in Radarr.
+    
+    Args:
+        api_url: The base URL of the Radarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        tag_label: The label/name of the tag to create or find
+        
+    Returns:
+        The tag ID if successful, None otherwise
+    """
+    try:
+        # First, check if the tag already exists
+        response = arr_request(api_url, api_key, api_timeout, "tag", count_api=False)
+        if response:
+            for tag in response:
+                if tag.get('label') == tag_label:
+                    tag_id = tag.get('id')
+                    radarr_logger.debug(f"Found existing tag '{tag_label}' with ID: {tag_id}")
+                    return tag_id
+        
+        # Tag doesn't exist, create it
+        tag_data = {"label": tag_label}
+        response = arr_request(api_url, api_key, api_timeout, "tag", method="POST", data=tag_data, count_api=False)
+        if response and 'id' in response:
+            tag_id = response['id']
+            radarr_logger.info(f"Created new tag '{tag_label}' with ID: {tag_id}")
+            return tag_id
+        else:
+            radarr_logger.error(f"Failed to create tag '{tag_label}'. Response: {response}")
+            return None
+            
+    except Exception as e:
+        radarr_logger.error(f"Error managing tag '{tag_label}': {e}")
+        return None
+
+def add_tag_to_movie(api_url: str, api_key: str, api_timeout: int, movie_id: int, tag_id: int) -> bool:
+    """
+    Add a tag to a movie in Radarr.
+    
+    Args:
+        api_url: The base URL of the Radarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        movie_id: The ID of the movie to tag
+        tag_id: The ID of the tag to add
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        # First get the current movie data
+        movie_data = arr_request(api_url, api_key, api_timeout, f"movie/{movie_id}", count_api=False)
+        if not movie_data:
+            radarr_logger.error(f"Failed to get movie data for ID: {movie_id}")
+            return False
+        
+        # Check if the tag is already present
+        current_tags = movie_data.get('tags', [])
+        if tag_id in current_tags:
+            radarr_logger.debug(f"Tag {tag_id} already exists on movie {movie_id}")
+            return True
+        
+        # Add the new tag to the list
+        current_tags.append(tag_id)
+        movie_data['tags'] = current_tags
+        
+        # Update the movie with the new tags
+        response = arr_request(api_url, api_key, api_timeout, f"movie/{movie_id}", method="PUT", data=movie_data, count_api=False)
+        if response:
+            radarr_logger.debug(f"Successfully added tag {tag_id} to movie {movie_id}")
+            return True
+        else:
+            radarr_logger.error(f"Failed to update movie {movie_id} with tag {tag_id}")
+            return False
+            
+    except Exception as e:
+        radarr_logger.error(f"Error adding tag {tag_id} to movie {movie_id}: {e}")
+        return False
+
+def tag_processed_movie(api_url: str, api_key: str, api_timeout: int, movie_id: int, tag_label: str = "huntarr-missing") -> bool:
+    """
+    Tag a movie in Radarr with the specified tag.
+    
+    Args:
+        api_url: The base URL of the Radarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        movie_id: The ID of the movie to tag
+        tag_label: The tag to apply (huntarr-missing, huntarr-upgraded)
+        
+    Returns:
+        True if the tagging was successful, False otherwise
+    """
+    try:
+        # Get or create the tag
+        tag_id = get_or_create_tag(api_url, api_key, api_timeout, tag_label)
+        if tag_id is None:
+            radarr_logger.error(f"Failed to get or create tag '{tag_label}' in Radarr")
+            return False
+            
+        # Add the tag to the movie
+        success = add_tag_to_movie(api_url, api_key, api_timeout, movie_id, tag_id)
+        if success:
+            radarr_logger.debug(f"Successfully tagged Radarr movie {movie_id} with '{tag_label}'")
+            return True
+        else:
+            radarr_logger.error(f"Failed to add tag '{tag_label}' to Radarr movie {movie_id}")
+            return False
+            
+    except Exception as e:
+        radarr_logger.error(f"Error tagging Radarr movie {movie_id} with '{tag_label}': {e}")
+        return False
+
+def get_movies_with_missing_random_page(api_url: str, api_key: str, api_timeout: int, monitored_only: bool, count: int) -> Optional[List[Dict]]:
+    """
+    Get a random sample of missing movies by using the wanted/missing endpoint with random page selection.
+    This is much more efficient than fetching all movies for very large libraries.
+    
+    Args:
+        api_url: The base URL of the Radarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        monitored_only: If True, only return monitored movies
+        count: Maximum number of movies to return
+        
+    Returns:
+        A list of movie objects with missing files, or None if the request failed
+    """
+    import random
+    
+    radarr_logger.debug(f"Fetching random sample of missing movies (monitored_only={monitored_only}, count={count})...")
+    
+    # Use Radarr's wanted/missing endpoint with pagination
+    endpoint = "wanted/missing"
+    page_size = 100  # Smaller page size for better performance
+    retries = 2
+    retry_delay = 3
+    
+    # First, make a request to get just the total record count (page 1 with size=1)
+    params = {
+        'page': 1,
+        'pageSize': 1,
+        'monitored': monitored_only
+    }
+    
+    for attempt in range(retries + 1):
+        try:
+            # Get total record count from a minimal query
+            radarr_logger.debug(f"Getting missing movies count (attempt {attempt+1}/{retries+1})")
+            response = arr_request(api_url, api_key, api_timeout, endpoint, params=params, count_api=False)
+            
+            if not response or not isinstance(response, dict):
+                radarr_logger.warning(f"Invalid response when getting missing count (attempt {attempt+1})")
+                if attempt < retries:
+                    time.sleep(retry_delay)
+                    continue
+                return None
+                
+            total_records = response.get('totalRecords', 0)
+            
+            if total_records == 0:
+                radarr_logger.info("No missing movies found in Radarr.")
+                return []
+                
+            # Calculate total pages with our desired page size
+            total_pages = (total_records + page_size - 1) // page_size
+            radarr_logger.info(f"📊 Found {total_records} total missing movies across {total_pages} pages")
+            
+            if total_pages == 0:
+                return []
+                
+            # Select a random page
+            random_page = random.randint(1, total_pages)
+            radarr_logger.info(f"🎲 Randomly selected page {random_page} of {total_pages} for missing movies")
+            
+            # Get movies from the random page
+            params = {
+                'page': random_page,
+                'pageSize': page_size,
+                'monitored': monitored_only
+            }
+            
+            response = arr_request(api_url, api_key, api_timeout, endpoint, params=params, count_api=False)
+            
+            if not response or not isinstance(response, dict):
+                radarr_logger.warning(f"Invalid response when getting missing movies page {random_page}")
+                return None
+                
+            records = response.get('records', [])
+            radarr_logger.info(f"📄 Retrieved {len(records)} missing movies from page {random_page}")
+            
+            # Apply monitored filter if requested (though the API should handle this)
+            if monitored_only:
+                filtered_records = [
+                    movie for movie in records
+                    if movie.get('monitored', False)
+                ]
+                radarr_logger.debug(f"Filtered to {len(filtered_records)} monitored missing movies")
+                records = filtered_records
+            
+            # Select random movies from this page
+            if len(records) > count:
+                selected_records = random.sample(records, count)
+                radarr_logger.info(f"🎯 Randomly selected {len(selected_records)} missing movies from page {random_page}")
+                return selected_records
+            else:
+                # If we have fewer movies than requested, return all of them
+                radarr_logger.info(f"✅ Returning all {len(records)} missing movies from page {random_page} (fewer than requested {count})")
+                return records
+                
+        except Exception as e:
+            radarr_logger.error(f"Error getting missing movies from Radarr (attempt {attempt+1}): {str(e)}")
+            if attempt < retries:
+                time.sleep(retry_delay)
+                continue
+            return None
+    
+    # If we get here, all retries failed
+    radarr_logger.error("All attempts to get missing movies failed")
+    return None

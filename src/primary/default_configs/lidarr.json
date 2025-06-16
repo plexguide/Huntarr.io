@@ -7,11 +7,16 @@
       "enabled": true
     }
   ],
-  "hunt_missing_mode": "artist",
+  "hunt_missing_mode": "album",
   "hunt_missing_items": 1,
   "hunt_upgrade_items": 0,
   "sleep_duration": 900,
   "monitored_only": true,
   "hourly_cap": 20,
-  "skip_future_releases": true
+  "skip_future_releases": true,
+  "tag_processed_items": true,
+  "custom_tags": {
+    "missing": "huntarr-missing",
+    "upgrade": "huntarr-upgrade"
+  }
 }

@@ -2,9 +2,13 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies including net-tools for health checks
+# Install system dependencies including net-tools for health checks and tzdata for timezone support
 RUN apt-get update && apt-get install -y --no-install-recommends \
     net-tools \
+    curl \
+    wget \
+    nano \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Install required packages from the root requirements file
@@ -15,11 +19,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app/
 
 # Create necessary directories
-RUN mkdir -p /config/settings /config/stateful /config/user /config/logs
-RUN chmod -R 755 /config
+# Log files are now stored in database only
+RUN mkdir -p /config && chmod -R 755 /config
 
 # Set environment variables
 ENV PYTHONPATH=/app
+ENV TZ=UTC
 # ENV APP_TYPE=sonarr # APP_TYPE is likely managed via config now, remove if not needed
 
 # Expose port

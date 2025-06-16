@@ -6,10 +6,10 @@ services:
     container_name: huntarr
     ports:
       - "9705:9705"
-    volumes:
+    volumes: 
       - huntarr-config:/config
     environment:
-      - TZ=America/New_York
+      - TZ=${TZ:-UTC}
     restart: unless-stopped
 
 volumes:

@@ -26,26 +26,29 @@ def get_configured_instances():
     if "instances" in settings and isinstance(settings["instances"], list) and settings["instances"]:
         # lidarr_logger.info(f"Found 'instances' list with {len(settings['instances'])} items. Processing...") # Removed verbose log
         for idx, instance in enumerate(settings["instances"]):
-            lidarr_logger.debug(f"Checking instance #{idx}: {instance}")
+    
             # Enhanced validation
             api_url = instance.get("api_url", "").strip()
             api_key = instance.get("api_key", "").strip()
 
             # Enhanced URL validation - ensure URL has proper scheme
             if api_url and not (api_url.startswith('http://') or api_url.startswith('https://')):
-                lidarr_logger.warning(f"Instance '{instance.get('name', 'Unnamed')}' has URL without http(s) scheme: {api_url}")
+                lidarr_logger.debug(f"Instance '{instance.get('name', 'Unnamed')}' has URL without http(s) scheme: {api_url}")
                 api_url = f"http://{api_url}"
-                lidarr_logger.warning(f"Auto-correcting URL to: {api_url}")
+                lidarr_logger.debug(f"Auto-correcting URL to: {api_url}")
 
             is_enabled = instance.get("enabled", True)
 
             # Only include properly configured instances
             if is_enabled and api_url and api_key:
-                # Return only essential instance details
+                # Return only essential instance details including per-instance hunt values
                 instance_data = {
                     "instance_name": instance.get("name", "Default"),
                     "api_url": api_url,
                     "api_key": api_key,
+                    "swaparr_enabled": instance.get("swaparr_enabled", False),
+                    "hunt_missing_items": instance.get("hunt_missing_items", 1),  # Per-instance missing hunt value
+                    "hunt_upgrade_items": instance.get("hunt_upgrade_items", 0),  # Per-instance upgrade hunt value
                 }
                 instances.append(instance_data)
                 # lidarr_logger.info(f"Added valid instance: {instance_data}") # Removed verbose log
@@ -56,7 +59,7 @@ def get_configured_instances():
                 instance_name = instance.get('name', 'Unnamed')
                 if instance_name == 'Default':
                     # Use debug level for default instances to avoid log spam on new installations
-                    lidarr_logger.debug(f"Skipping instance '{instance_name}' due to missing API URL or key (URL: '{api_url}', Key Set: {bool(api_key)})")
+                    pass
                 else:
                     # Still log warnings for non-default instances
                     lidarr_logger.warning(f"Skipping instance '{instance_name}' due to missing API URL or key (URL: '{api_url}', Key Set: {bool(api_key)})")
@@ -78,6 +81,9 @@ def get_configured_instances():
                 "instance_name": "Default",
                 "api_url": api_url,
                 "api_key": api_key,
+                "swaparr_enabled": settings.get("swaparr_enabled", False),
+                "hunt_missing_items": settings.get("hunt_missing_items", 1),  # Legacy missing hunt value
+                "hunt_upgrade_items": settings.get("hunt_upgrade_items", 0),  # Legacy upgrade hunt value
             }
             instances.append(instance_data)
             # lidarr_logger.info(f"Added valid legacy instance: {instance_data}") # Removed verbose log
@@ -85,7 +91,6 @@ def get_configured_instances():
             lidarr_logger.warning("No API URL or key found in legacy configuration")
 
     # Use debug level to avoid spamming logs, especially with 0 instances
-    lidarr_logger.debug(f"Found {len(instances)} configured and enabled Lidarr instances")
     return instances
 
 __all__ = ["process_missing_albums", "process_cutoff_upgrades", "get_configured_instances"]

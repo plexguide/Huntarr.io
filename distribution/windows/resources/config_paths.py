@@ -72,21 +72,11 @@ except Exception as e:
     except Exception:
         pass
 
-# Create standard directories
+# Create standard directories - only the ones we actually use
 LOG_DIR = CONFIG_PATH / "logs"
-SETTINGS_DIR = CONFIG_PATH / "settings"
-USER_DIR = CONFIG_PATH / "user"
-STATEFUL_DIR = CONFIG_PATH / "stateful"
-HISTORY_DIR = CONFIG_PATH / "history"
-SCHEDULER_DIR = CONFIG_PATH / "scheduler"
-RESET_DIR = CONFIG_PATH / "reset"  # Add reset directory
-TALLY_DIR = CONFIG_PATH / "tally"  # Add tally directory for stats
-SWAPARR_DIR = CONFIG_PATH / "swaparr"  # Add Swaparr directory
-EROS_DIR = CONFIG_PATH / "eros"  # Add Eros directory
 
 # Create all directories with enhanced error reporting
-for dir_path in [LOG_DIR, SETTINGS_DIR, USER_DIR, STATEFUL_DIR, HISTORY_DIR, 
-                SCHEDULER_DIR, RESET_DIR, TALLY_DIR, SWAPARR_DIR, EROS_DIR]:
+for dir_path in [LOG_DIR]:
     try:
         dir_path.mkdir(parents=True, exist_ok=True)
         
@@ -105,25 +95,12 @@ for dir_path in [LOG_DIR, SETTINGS_DIR, USER_DIR, STATEFUL_DIR, HISTORY_DIR,
 # Set environment variables for backwards compatibility
 os.environ["HUNTARR_CONFIG_DIR"] = str(CONFIG_PATH)
 os.environ["CONFIG_DIR"] = str(CONFIG_PATH)  # For backward compatibility
-os.environ["STATEFUL_DIR"] = str(STATEFUL_DIR)
+
 
 # Helper functions to get paths
 def get_path(*args):
     """Get a path relative to the config directory"""
     return CONFIG_PATH.joinpath(*args)
 
-def get_app_config_path(app_type):
-    """Get the path to an app's config file"""
-    return CONFIG_PATH / f"{app_type}.json"
-
-def get_reset_path(app_type):
-    """Get the path to an app's reset file"""
-    return RESET_DIR / f"{app_type}.reset"
-
-def get_swaparr_state_path():
-    """Get the Swaparr state directory"""
-    return SWAPARR_DIR
-
-def get_eros_config_path():
-    """Get the Eros config file path"""
-    return CONFIG_PATH / "eros.json"
+# Legacy JSON config path functions removed - all settings now stored in database
+# Reset file functions removed - all reset requests now stored in database

@@ -174,6 +174,171 @@
             box-shadow: 0 2px 8px rgba(58, 113, 228, 0.3);
         }
         
+        .plex-login-section {
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(90, 109, 137, 0.2);
+            text-align: center;
+        }
+        
+        .plex-login-button {
+            background: linear-gradient(135deg, #cc7b19 0%, #e69500 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(204, 123, 25, 0.3);
+        }
+        
+        .plex-login-button:hover {
+            background: linear-gradient(135deg, #d68725 0%, #f0a500 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(204, 123, 25, 0.4);
+        }
+        
+        .plex-login-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(204, 123, 25, 0.3);
+        }
+        
+        .auth-divider {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .auth-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(90, 109, 137, 0.3), transparent);
+        }
+        
+        .auth-divider span {
+            background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
+            padding: 0 15px;
+            font-size: 14px;
+        }
+        
+        .plex-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        
+        .plex-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
+            border-radius: 15px;
+            padding: 30px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(90, 109, 137, 0.15);
+            color: #f8f9fa;
+        }
+        
+        .plex-modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .plex-logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 10px;
+        }
+        
+        .plex-pin-display {
+            background: rgba(90, 109, 137, 0.1);
+            border: 2px solid rgba(204, 123, 25, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .plex-pin-code {
+            font-size: 13px;
+            font-weight: bold;
+            color: #e69500;
+            letter-spacing: 2px;
+            margin: 10px 0;
+            word-wrap: break-word;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+        
+        .plex-status {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .plex-status.waiting {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+        }
+        
+        .plex-status.success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            color: #28a745;
+        }
+        
+        .plex-status.error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            color: #fff;
+        }
+        
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         .additional-options {
             text-align: center;
             margin-top: 25px;
@@ -249,6 +414,28 @@
                     <i class="fas fa-sign-in-alt"></i> Log In
                 </button>
             </form>
+        </div>
+        <div class="plex-login-section">
+            <button class="plex-login-button" id="plexLoginButton">
+                <i class="fas fa-tv"></i> Log in with Plex
+            </button>
+        </div>
+    </div>
+    <div class="plex-modal" id="plexModal">
+        <div class="plex-modal-content">
+            <div class="plex-modal-header">
+                <div class="plex-logo">
+                    <i class="fas fa-tv" style="font-size: 60px; color: #e69500;"></i>
+                </div>
+                <h2>Plex Login</h2>
+            </div>
+            <div class="plex-pin-display">
+                <p id="plexPinCode" class="plex-pin-code"></p>
+            </div>
+            <div class="plex-status" id="plexStatus"></div>
+            <button class="modal-close" id="plexModalClose">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
     </div>
 
@@ -338,7 +525,7 @@
                 
                 if (status === 200 && body.success) {
                     // Login successful
-                    window.location.href = body.redirect || '/';
+                                                window.location.href = body.redirect || './';
                 } else if (status === 401 && requires2FA) {
                     // 2FA is required
                     console.log('2FA required, showing 2FA input field');
@@ -398,6 +585,217 @@
         function showError(message) {
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
+        }
+        
+        const plexLoginButton = document.getElementById('plexLoginButton');
+        const plexModal = document.getElementById('plexModal');
+        const plexModalClose = document.getElementById('plexModalClose');
+        const plexPinCode = document.getElementById('plexPinCode');
+        const plexStatus = document.getElementById('plexStatus');
+        
+        let currentPinId = null;
+        let pinCheckInterval = null;
+        
+        // Check if we're returning from Plex authentication
+        const plexLogin = localStorage.getItem('huntarr-plex-login');
+        const plexPinId = localStorage.getItem('huntarr-plex-pin-id');
+        
+        if (plexLogin === 'true' && plexPinId) {
+            // Clear the flags
+            localStorage.removeItem('huntarr-plex-login');
+            localStorage.removeItem('huntarr-plex-pin-id');
+            
+            // Show modal and continue PIN checking
+            plexModal.style.display = 'block';
+            
+            // Extract PIN code for display (but hide it since user already authenticated)
+            const pinCodeValue = plexPinId.substring(0, 4) + '-' + plexPinId.substring(4);
+            plexPinCode.textContent = pinCodeValue;
+            
+            currentPinId = plexPinId;
+            setPlexStatus('waiting', 'Completing authentication...');
+            startPinChecking();
+        }
+        
+        plexLoginButton.addEventListener('click', function() {
+            startPlexAuthentication();
+        });
+        
+        plexModalClose.addEventListener('click', function() {
+            stopPlexAuthentication();
+            plexModal.style.display = 'none';
+        });
+        
+        // Close modal when clicking outside
+        plexModal.addEventListener('click', function(e) {
+            if (e.target === plexModal) {
+                stopPlexAuthentication();
+                plexModal.style.display = 'none';
+            }
+        });
+        
+        function startPlexAuthentication() {
+            // Show modal and set loading state
+            plexModal.style.display = 'block';
+            plexPinCode.textContent = '';
+            setPlexStatus('waiting', '<i class="fas fa-spinner spinner"></i> Creating Plex PIN...');
+            
+            // Create Plex PIN
+            HuntarrUtils.fetchWithTimeout('/api/auth/plex/pin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ login_mode: true })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || `Server error: ${response.status}`);
+                    }).catch(() => {
+                        throw new Error(`HTTP error: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    currentPinId = data.pin_id;
+                    
+                    // Extract PIN code from auth URL
+                    const hashPart = data.auth_url.split('#')[1];
+                    if (hashPart) {
+                        const urlParams = new URLSearchParams(hashPart.substring(1)); // Remove the '?' after '#'
+                        const pinCode = urlParams.get('code');
+                        plexPinCode.textContent = pinCode || 'PIN-' + currentPinId;
+                    } else {
+                        plexPinCode.textContent = 'PIN-' + currentPinId;
+                    }
+                    
+                    setPlexStatus('waiting', 'You will be redirected to Plex to sign in. After signing in, you will be brought back here automatically.');
+                    
+                    // Store PIN ID in localStorage for when we return
+                    localStorage.setItem('huntarr-plex-pin-id', currentPinId);
+                    localStorage.setItem('huntarr-plex-login', 'true');
+                    
+                    // Redirect to Plex authentication instead of popup
+                    setTimeout(() => {
+                        window.location.href = data.auth_url;
+                    }, 2000); // 2 second delay to show the message
+                } else {
+                    setPlexStatus('error', 'Failed to create Plex PIN: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error creating Plex PIN:', error);
+                setPlexStatus('error', 'Failed to create Plex PIN: ' + error.message);
+            });
+        }
+        
+        function startPinChecking() {
+            if (pinCheckInterval) {
+                clearInterval(pinCheckInterval);
+            }
+            
+            pinCheckInterval = setInterval(() => {
+                if (!currentPinId) return;
+                
+                HuntarrUtils.fetchWithTimeout(`/api/auth/plex/check/${currentPinId}`, {
+                    method: 'GET'
+                })
+                .then(response => {
+                    // Check response status before parsing JSON
+                    if (response.ok) {
+                        return response.json().then(data => ({ data, status: response.status }));
+                    } else {
+                        return response.json().then(data => ({ data, status: response.status }));
+                    }
+                })
+                .then(({ data, status }) => {
+                    if (data.success) {
+                        if (data.claimed) {
+                            // PIN was claimed, now login with the token
+                            setPlexStatus('success', '<i class="fas fa-check"></i> Plex authenticated! Logging in...');
+                            loginWithPlexToken(data.token, data.user_data);
+                        }
+                        // If not claimed yet, keep checking
+                    } else {
+                        setPlexStatus('error', 'Error checking PIN: ' + (data.error || 'Unknown error'));
+                        stopPlexAuthentication();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking PIN:', error);
+                    setPlexStatus('error', 'Network error checking PIN status');
+                    stopPlexAuthentication();
+                });
+            }, 2000); // Check every 2 seconds
+            
+            // Stop checking after 10 minutes
+            setTimeout(() => {
+                if (pinCheckInterval) {
+                    stopPlexAuthentication();
+                    setPlexStatus('error', 'PIN expired. Please try again.');
+                }
+            }, 600000);
+        }
+        
+        function loginWithPlexToken(token, userData) {
+            HuntarrUtils.fetchWithTimeout('/api/auth/plex/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    token: token
+                })
+            })
+            .then(response => {
+                // Check response status before parsing JSON
+                if (response.ok) {
+                    return response.json().then(data => ({ data, status: response.status }));
+                } else {
+                    return response.json().then(data => ({ data, status: response.status }));
+                }
+            })
+            .then(({ data, status }) => {
+                if (data.success) {
+                    setPlexStatus('success', '<i class="fas fa-check"></i> Login successful! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = './';
+                    }, 1500);
+                } else {
+                    if (status === 409) {
+                        // Local user exists, show linking option
+                        setPlexStatus('error', 'Local user exists. Please link your Plex account in user settings.');
+                    } else if (status === 403) {
+                        // Plex account not linked to this instance
+                        setPlexStatus('error', 'This Plex account is not linked to this Huntarr instance. Please link your account in user settings first.');
+                    } else {
+                        setPlexStatus('error', 'Login failed: ' + (data.error || 'Unknown error'));
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error during Plex login:', error);
+                setPlexStatus('error', 'Network error during login');
+            })
+            .finally(() => {
+                stopPlexAuthentication();
+            });
+        }
+        
+        function stopPlexAuthentication() {
+            if (pinCheckInterval) {
+                clearInterval(pinCheckInterval);
+                pinCheckInterval = null;
+            }
+            currentPinId = null;
+        }
+        
+        function setPlexStatus(type, message) {
+            plexStatus.className = `plex-status ${type}`;
+            plexStatus.innerHTML = message;
         }
     </script>
 </body>

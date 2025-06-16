@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>User Settings - Huntarr</title>
+    <title>User - Huntarr</title>
     {% include 'components/head.html' %}
     <style>
         .user-section {
-            padding: 15px;
-            max-width: 1200px;
+            padding: 18px;
+            max-width: 1440px;
             margin: 0 auto;
         }
         
@@ -15,11 +15,11 @@
             .user-section {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 20px;
+                gap: 24px;
             }
             
             .user-card {
-                flex: 1 1 250px; /* Base width, but allow growth and shrinking */
+                flex: 1 1 300px;
             }
         }
         
@@ -40,7 +40,7 @@
             background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
             border-radius: 10px;
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-            padding: 18px;
+            padding: 22px;
             border: 1px solid rgba(90, 109, 137, 0.15);
             overflow: hidden;
             display: flex;
@@ -50,7 +50,7 @@
         /* Add bottom margin only when cards are stacked (mobile view) */
         @media (max-width: 991px) {
             .user-card {
-                margin-bottom: 15px;
+                margin-bottom: 18px;
             }
         }
         
@@ -58,7 +58,7 @@
             display: flex;
             align-items: center;
             margin-top: 0;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             font-size: 16px;
             font-weight: 600;
             color: #fff;
@@ -71,13 +71,13 @@
         }
         
         .form-group {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             position: relative;
         }
         
         /* Additional styling to compact the 2FA card */
         .user-card:last-child .form-group {
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
         
         #twoFactorEnabled {
@@ -86,29 +86,29 @@
         }
         
         #enableTwoFactorSection, #setupTwoFactorSection, #disableTwoFactorSection {
-            margin-top: 8px;
+            margin-top: 10px;
         }
         
         .form-group label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 7px;
             color: rgba(255, 255, 255, 0.9);
             font-weight: 500;
             font-size: 13px;
         }
         
         .current-value {
-            padding: 8px 10px;
+            padding: 10px 12px;
             background: rgba(28, 36, 54, 0.6);
             border-radius: 6px;
-            color: rgba(255, 255, 255, 0.8);
             border: 1px solid rgba(90, 109, 137, 0.2);
+            color: rgba(255, 255, 255, 0.8);
             font-size: 14px;
         }
         
         .form-control {
             width: 100%;
-            padding: 8px 10px;
+            padding: 10px 12px;
             border: 1px solid rgba(90, 109, 137, 0.2);
             border-radius: 6px;
             background-color: rgba(28, 36, 54, 0.6);
@@ -143,13 +143,13 @@
         }
         
         .form-actions {
-            margin-top: 10px;
+            margin-top: 12px;
             display: flex;
-            gap: 7px;
+            gap: 8px;
         }
         
         .action-button {
-            padding: 8px 15px;
+            padding: 10px 18px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
@@ -197,6 +197,97 @@
             box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
         }
         
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
+            border-radius: 15px;
+            padding: 30px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(90, 109, 137, 0.15);
+            color: #f8f9fa;
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .plex-pin-display {
+            background: rgba(90, 109, 137, 0.1);
+            border: 2px solid rgba(204, 123, 25, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .plex-pin-code {
+            font-size: 13px;
+            font-weight: bold;
+            color: #e69500;
+            letter-spacing: 2px;
+            margin: 10px 0;
+            word-wrap: break-word;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+        
+        .plex-status {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .plex-status.waiting {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+        }
+        
+        .plex-status.success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            color: #28a745;
+        }
+        
+        .plex-status.error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+        }
+        
+        .modal-actions {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         .status-message {
             margin-top: 12px;
             padding: 8px;
@@ -240,18 +331,18 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 14px 0;
+            margin: 17px 0;
         }
         
         .qr-code {
             background: white;
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 10px;
+            width: 77px;
+            height: 77px;
+            margin: 0 auto 12px;
         }
         
         .qr-code img {
@@ -263,7 +354,7 @@
         /* Responsive QR code for mobile */
         @media (max-width: 768px) {
             .qr-code {
-                width: 30%;
+                width: 36%;
                 height: auto;
             }
         }
@@ -271,13 +362,14 @@
         .secret-key-container {
             display: flex;
             align-items: center;
-            gap: 7px;
-            margin-bottom: 7px;
+            gap: 8px;
+            margin-bottom: 8px;
+            width: 100%;
         }
         
         .secret-key {
             font-family: monospace;
-            padding: 7px 10px;
+            padding: 8px 12px;
             background: rgba(28, 36, 54, 0.8);
             border-radius: 6px;
             border: 1px solid rgba(90, 109, 137, 0.3);
@@ -285,13 +377,15 @@
             flex: 1;
             font-size: 12px;
             user-select: all;
+            word-break: break-all;
+            overflow-wrap: break-word;
         }
         
         .copy-button {
             background: transparent;
             border: 1px solid rgba(90, 109, 137, 0.3);
             color: rgba(255, 255, 255, 0.8);
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-radius: 4px;
             cursor: pointer;
             display: flex;
@@ -299,6 +393,8 @@
             gap: 4px;
             font-size: 12px;
             transition: all 0.2s ease;
+            white-space: nowrap;
+            min-width: fit-content;
         }
         
         .copy-button:hover {
@@ -307,10 +403,16 @@
             color: white;
         }
         
+        .copy-button.copied {
+            background: rgba(40, 167, 69, 0.2);
+            border-color: rgba(40, 167, 69, 0.5);
+            color: #28a745;
+        }
+        
         .help-text {
             font-size: 11px;
             color: rgba(255, 255, 255, 0.6);
-            margin-top: 4px;
+            margin-top: 5px;
         }
         
         .verification-code {
@@ -321,7 +423,7 @@
         
         @media (max-width: 768px) {
             .user-card {
-                padding: 15px;
+                padding: 18px; /* Increased from 15px by 20% */
             }
             
             .form-actions {
@@ -336,10 +438,18 @@
             .secret-key-container {
                 flex-direction: column;
                 align-items: stretch;
+                gap: 8px; /* Maintain consistent gap */
             }
             
             .copy-button {
-                margin-top: 7px;
+                margin-top: 8px; /* Increased from 7px by 20% */
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .secret-key {
+                width: 100%;
+                text-align: center;
             }
         }
     </style>
@@ -444,14 +554,75 @@
                         <div id="disableStatus" class="status-message" style="display: none;"></div>
                     </div>
                 </div>
+                
+                <div class="user-card">
+                    <h3><i class="fas fa-tv"></i> Plex Account</h3>
+                    <div class="form-group">
+                        <label>Status:</label>
+                        <span id="plexAccountStatus" class="status-badge" style="display: none;">Loading...</span>
+                    </div>
+                    
+                    <div id="plexNotLinkedSection" style="display: none;">
+                        <p class="help-text">Link your Plex account to enable Plex login and additional features.</p>
+                        <div class="form-actions">
+                            <button id="linkPlexAccount" class="action-button primary-button">
+                                <i class="fas fa-link"></i> Link Plex Account
+                            </button>
+                        </div>
+                        <div id="plexMainPageStatus" class="status-message" style="display: none;"></div>
+                    </div>
+                    
+                    <div id="plexLinkedSection" style="display: none;">
+                        <div class="form-group">
+                            <label>Plex Username:</label>
+                            <span id="plexUsername" class="current-value"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>Plex Email:</label>
+                            <span id="plexEmail" class="current-value"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>Linked At:</label>
+                            <span id="plexLinkedAt" class="current-value"></span>
+                        </div>
+                        <div class="form-actions">
+                            <button id="unlinkPlexAccount" class="action-button danger-button">
+                                <i class="fas fa-unlink"></i> Unlink Plex Account
+                            </button>
+                        </div>
+                        <div id="plexUnlinkStatus" class="status-message" style="display: none;"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
+    
+    <!-- Plex Link Modal -->
+    <div class="modal" id="plexLinkModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="font-size: 40px; color: #e69500; margin-bottom: 10px;">
+                    <i class="fas fa-tv"></i>
+                </div>
+                <h2>Link Plex Account</h2>
+            </div>
+            <div class="plex-pin-display">
+                <p>PIN Code:</p>
+                <p id="plexLinkPinCode" class="plex-pin-code"></p>
+            </div>
+            <!-- Ensure status is always visible -->
+            <div class="plex-status waiting" id="plexLinkStatus" style="display: block;">
+                <i class="fas fa-hourglass-half"></i> Initializing Plex authentication...
+            </div>
+        </div>
+    </div>
+    
     <!-- Pass base URL configuration to JavaScript -->
     <script>window.HUNTARR_BASE_URL = '{{ base_url|default("", true) }}';</script>
     <!-- Pass global scripts -->
     {% include 'components/scripts.html' %}
+    <!-- Add main JavaScript for features like GitHub stars -->
+    <script src="./static/js/new-main.js"></script>
     <!-- Add specific reference to new-user.js -->
     <script src="./static/js/new-user.js"></script>
     <script>
@@ -460,6 +631,11 @@
             // Apply dark theme
             document.body.classList.add('dark-theme');
             localStorage.setItem('huntarr-dark-mode', 'true');
+            
+            // Initialize GitHub stars and other main features
+            if (typeof huntarrUI !== 'undefined' && huntarrUI.loadGitHubStarCount) {
+                huntarrUI.loadGitHubStarCount();
+            }
             
             // Update server setting to dark mode
             HuntarrUtils.fetchWithTimeout('/api/settings/theme', {
@@ -478,6 +654,420 @@
                 return 'Password must be at least 8 characters long.';
             }
             return null; // Password is valid
+        }
+        
+        // Plex account management
+        let currentPlexPinId = null;
+        let plexPinCheckInterval = null;
+        
+        // Load Plex account status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPlexAccountStatus();
+            setupPlexEventListeners();
+            setupCopyButtons(); // Add copy button functionality
+            
+            // Check if we're returning from Plex authentication
+            const plexLinking = localStorage.getItem('huntarr-plex-linking');
+            const plexPinId = localStorage.getItem('huntarr-plex-pin-id');
+            
+            if (plexLinking === 'true' && plexPinId) {
+                // Clear the flags
+                localStorage.removeItem('huntarr-plex-linking');
+                localStorage.removeItem('huntarr-plex-pin-id');
+                localStorage.removeItem('huntarr-plex-setup-mode'); // Explicitly clear setup mode flag
+                
+                // Show modal and continue PIN checking
+                const modal = document.getElementById('plexLinkModal');
+                const pinCode = document.getElementById('plexLinkPinCode');
+                const status = document.getElementById('plexLinkStatus');
+                modal.style.display = 'block';
+                
+                // Extract PIN code for display (but hide it since user already authenticated)
+                const pinCodeValue = plexPinId.substring(0, 4) + '-' + plexPinId.substring(4);
+                pinCode.textContent = pinCodeValue;
+                
+                // Ensure status is visible and show completion message
+                status.style.display = 'block';
+                currentPlexPinId = plexPinId;
+                setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Completing Plex authentication and linking your account...');
+                startPlexPinChecking();
+            }
+        });
+        
+        function loadPlexAccountStatus() {
+            HuntarrUtils.fetchWithTimeout('/api/auth/plex/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updatePlexAccountDisplay(data);
+                    } else {
+                        showPlexStatus('error', 'Failed to load Plex account status');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading Plex status:', error);
+                    showPlexStatus('error', 'Network error loading Plex status');
+                });
+        }
+        
+        function updatePlexAccountDisplay(data) {
+            const statusBadge = document.getElementById('plexAccountStatus');
+            const notLinkedSection = document.getElementById('plexNotLinkedSection');
+            const linkedSection = document.getElementById('plexLinkedSection');
+            
+            statusBadge.style.display = 'inline-block';
+            
+            if (data.plex_linked || data.auth_type === 'plex') {
+                statusBadge.textContent = 'Linked';
+                statusBadge.className = 'status-badge enabled';
+                notLinkedSection.style.display = 'none';
+                linkedSection.style.display = 'block';
+                
+                // Update Plex info
+                document.getElementById('plexUsername').textContent = data.plex_username || 'N/A';
+                document.getElementById('plexEmail').textContent = data.plex_email || 'N/A';
+                
+                if (data.plex_linked_at) {
+                    const linkedDate = new Date(data.plex_linked_at * 1000);
+                    document.getElementById('plexLinkedAt').textContent = linkedDate.toLocaleDateString();
+                }
+            } else {
+                statusBadge.textContent = 'Not Linked';
+                statusBadge.className = 'status-badge disabled';
+                notLinkedSection.style.display = 'block';
+                linkedSection.style.display = 'none';
+            }
+        }
+        
+        function setupPlexEventListeners() {
+            const linkButton = document.getElementById('linkPlexAccount');
+            const unlinkButton = document.getElementById('unlinkPlexAccount');
+            const modal = document.getElementById('plexLinkModal');
+            
+            linkButton.addEventListener('click', function() {
+                startPlexLinking();
+            });
+            
+            unlinkButton.addEventListener('click', function() {
+                // Ask for confirmation first
+                if (!confirm('Are you sure you want to unlink your Plex account? You will need to use your local username and password to log in.')) {
+                    return;
+                }
+                
+                // Show loading state
+                const unlinkBtn = document.getElementById('unlinkPlexAccount');
+                const originalText = unlinkBtn.textContent;
+                unlinkBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Unlinking...';
+                unlinkBtn.disabled = true;
+                
+                // Send request without username - backend gets it from session
+                fetch('./api/auth/plex/unlink', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('plexUnlinkStatus', 'success', 'Plex account unlinked successfully');
+                        // Instead of reloading the page, update the display immediately
+                        setTimeout(() => {
+                            // Update the Plex account display to show unlinked state
+                            const statusBadge = document.getElementById('plexAccountStatus');
+                            const notLinkedSection = document.getElementById('plexNotLinkedSection');
+                            const linkedSection = document.getElementById('plexLinkedSection');
+                            
+                            // Update status badge
+                            statusBadge.textContent = 'Not Linked';
+                            statusBadge.className = 'status-badge disabled';
+                            
+                            // Show/hide appropriate sections
+                            notLinkedSection.style.display = 'block';
+                            linkedSection.style.display = 'none';
+                            
+                            // Hide the success message after showing the updated state
+                            setTimeout(() => {
+                                document.getElementById('plexUnlinkStatus').style.display = 'none';
+                            }, 3000);
+                        }, 1000);
+                    } else {
+                        showMessage('plexUnlinkStatus', 'error', data.error || 'Failed to unlink Plex account');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error unlinking Plex account:', error);
+                    showMessage('plexUnlinkStatus', 'error', 'Failed to connect to server');
+                })
+                .finally(() => {
+                    // Restore button state
+                    unlinkBtn.innerHTML = originalText;
+                    unlinkBtn.disabled = false;
+                });
+            });
+            
+            // Close modal when clicking outside
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    stopPlexLinking();
+                    modal.style.display = 'none';
+                }
+            });
+        }
+        
+        function startPlexLinking() {
+            const modal = document.getElementById('plexLinkModal');
+            const pinCode = document.getElementById('plexLinkPinCode');
+            const status = document.getElementById('plexLinkStatus');
+            
+            modal.style.display = 'block';
+            pinCode.textContent = '';
+            
+            // Ensure status is visible and show initial message
+            status.style.display = 'block';
+            setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Preparing Plex authentication...');
+            
+            // Create Plex PIN
+            HuntarrUtils.fetchWithTimeout('/api/auth/plex/pin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_mode: true })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentPlexPinId = data.pin_id;
+                    
+                    // Extract PIN code from auth URL
+                    // New format: https://app.plex.tv/auth#?clientID=...&code=PIN123456...
+                    const hashPart = data.auth_url.split('#')[1];
+                    if (hashPart) {
+                        const urlParams = new URLSearchParams(hashPart.substring(1)); // Remove the '?' after '#'
+                        const pinCodeValue = urlParams.get('code');
+                        pinCode.textContent = pinCodeValue || 'PIN-' + currentPlexPinId;
+                    } else {
+                        pinCode.textContent = 'PIN-' + currentPlexPinId;
+                    }
+                    
+                    // Show informative message about what's happening next
+                    setPlexLinkStatus('waiting', '<i class="fas fa-external-link-alt"></i> You will be redirected to Plex to sign in. After authentication, you will be brought back here automatically.');
+                    
+                    // Store PIN ID for when we return - no password needed
+                    localStorage.setItem('huntarr-plex-pin-id', currentPlexPinId);
+                    localStorage.setItem('huntarr-plex-linking', 'true');
+                    localStorage.removeItem('huntarr-plex-setup-mode'); // Explicitly clear setup mode flag
+                    
+                    // Redirect to Plex authentication instead of popup
+                    setTimeout(() => {
+                        setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Redirecting to Plex...');
+                        setTimeout(() => {
+                            window.location.href = data.auth_url;
+                        }, 1000);
+                    }, 2000); // 2 second delay to show the message
+                } else {
+                    setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Failed to create Plex PIN: ' + (data.error || 'Unknown error. Please try again.'));
+                }
+            })
+            .catch(error => {
+                console.error('Error creating Plex PIN:', error);
+                setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Network error: Unable to connect to Plex. Please check your internet connection and try again.');
+            });
+        }
+        
+        function startPlexPinChecking() {
+            if (plexPinCheckInterval) {
+                clearInterval(plexPinCheckInterval);
+            }
+            
+            // Show initial checking status
+            setPlexLinkStatus('waiting', '<i class="fas fa-hourglass-half"></i> Checking authentication status...');
+            
+            plexPinCheckInterval = setInterval(() => {
+                if (!currentPlexPinId) return;
+                
+                HuntarrUtils.fetchWithTimeout(`/api/auth/plex/check/${currentPlexPinId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.claimed) {
+                            // PIN was claimed, now link the account
+                            setPlexLinkStatus('success', '<i class="fas fa-link"></i> Plex account successfully linked!');
+                            linkWithPlexToken(data.token);
+                        }
+                        // If not claimed yet, show waiting status
+                        else if (data.success && !data.claimed) {
+                            setPlexLinkStatus('waiting', '<i class="fas fa-hourglass-half"></i> Waiting for Plex authentication to complete...');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking PIN:', error);
+                        setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Network error: Unable to verify authentication status. Please try again.');
+                        stopPlexLinking();
+                    });
+            }, 2000);
+            
+            // Stop checking after 10 minutes
+            setTimeout(() => {
+                if (plexPinCheckInterval) {
+                    stopPlexLinking();
+                    setPlexLinkStatus('error', '<i class="fas fa-clock"></i> Authentication timeout: PIN expired after 10 minutes. Please try linking your account again.');
+                }
+            }, 600000);
+        }
+        
+        function linkWithPlexToken(token) {
+            setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Finalizing account link...');
+            
+            HuntarrUtils.fetchWithTimeout('/api/auth/plex/link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: token
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    setPlexLinkStatus('success', '<i class="fas fa-check-circle"></i> Plex account successfully linked!');
+                    setTimeout(() => {
+                        document.getElementById('plexLinkModal').style.display = 'none';
+                        loadPlexAccountStatus(); // Refresh the display
+                    }, 2000);
+                } else {
+                    setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Account linking failed: ' + (data.error || 'Unknown error occurred. Please try again.'));
+                }
+            })
+            .catch(error => {
+                console.error('Error linking Plex account:', error);
+                setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Network error: Unable to complete account linking. Please check your connection and try again.');
+            })
+            .finally(() => {
+                stopPlexLinking();
+            });
+        }
+        
+        function stopPlexLinking() {
+            if (plexPinCheckInterval) {
+                clearInterval(plexPinCheckInterval);
+            }
+            currentPlexPinId = null;
+        }
+        
+        function setPlexLinkStatus(type, message) {
+            const status = document.getElementById('plexLinkStatus');
+            if (status) {
+                status.className = `plex-status ${type}`;
+                status.innerHTML = message;
+                status.style.display = 'block'; // Ensure it's always visible
+            }
+        }
+        
+        // Add missing showMessage function for status messages
+        function showMessage(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.className = `status-message ${type}`;
+                element.innerHTML = message;
+                element.style.display = 'block';
+                
+                // Auto-hide success messages after 5 seconds
+                if (type === 'success') {
+                    setTimeout(() => {
+                        element.style.display = 'none';
+                    }, 5000);
+                }
+            }
+        }
+        
+        // Add missing showPlexStatus function for general Plex status
+        function showPlexStatus(type, message) {
+            const statusBadge = document.getElementById('plexAccountStatus');
+            if (statusBadge) {
+                statusBadge.textContent = message;
+                statusBadge.className = `status-badge ${type === 'error' ? 'disabled' : 'enabled'}`;
+                statusBadge.style.display = 'inline-block';
+            }
+        }
+        
+        function setupCopyButtons() {
+            // Set up copy functionality for all copy buttons
+            const copyButtons = document.querySelectorAll('.copy-button');
+            copyButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Find the secret key element (sibling of the copy button)
+                    const secretKeyElement = this.parentElement.querySelector('.secret-key');
+                    if (secretKeyElement) {
+                        const textToCopy = secretKeyElement.textContent;
+                        
+                        // Use the modern clipboard API if available
+                        if (navigator.clipboard && window.isSecureContext) {
+                            navigator.clipboard.writeText(textToCopy).then(() => {
+                                showCopySuccess(this);
+                            }).catch(err => {
+                                console.error('Failed to copy text: ', err);
+                                // Fallback to older method
+                                fallbackCopyTextToClipboard(textToCopy, this);
+                            });
+                        } else {
+                            // Fallback for older browsers or non-secure contexts
+                            fallbackCopyTextToClipboard(textToCopy, this);
+                        }
+                    }
+                });
+            });
+        }
+        
+        function fallbackCopyTextToClipboard(text, button) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            
+            // Avoid scrolling to bottom
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess(button);
+                } else {
+                    console.error('Fallback: Unable to copy');
+                    showCopyError(button);
+                }
+            } catch (err) {
+                console.error('Fallback: Unable to copy', err);
+                showCopyError(button);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        function showCopySuccess(button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.add('copied');
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('copied');
+            }, 2000);
+        }
+        
+        function showCopyError(button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-times"></i> Failed';
+            button.style.color = '#dc3545';
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.color = '';
+            }, 2000);
         }
     </script>
 </body>

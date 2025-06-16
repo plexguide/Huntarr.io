@@ -223,7 +223,7 @@ const appsModule = {
         appPanel.innerHTML = '<div class="loading-panel"><i class="fas fa-spinner fa-spin"></i> Loading settings...</div>';
         
         // Fetch settings for this app
-        HuntarrUtils.fetchWithTimeout(`/api/settings/${app}`)
+        HuntarrUtils.fetchWithTimeout(`./api/settings/${app}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -282,6 +282,12 @@ const appsModule = {
         
         // Function to handle form element changes
         const handleChange = () => {
+            // Skip if test connection suppression is active
+            if (window._suppressUnsavedChangesDialog === true) {
+                console.log('Change detection suppressed due to test connection');
+                return;
+            }
+            
             if (this.hasFormChanges(form)) {
                 console.log('Form changed, enabling save button');
                 this.markAppsAsChanged();
@@ -291,10 +297,16 @@ const appsModule = {
         };
         
         // Add listeners to all form inputs, selects, and textareas
-        const formElements = form.querySelectorAll('input, select, textarea');
+        const formElements = form.querySelectorAll('input, select, textarea, button');
         formElements.forEach(element => {
-            // Skip buttons
-            if (element.type === 'button' || element.type === 'submit') return;
+            // Skip buttons and test-related elements
+            if (element.type === 'button' || 
+                element.type === 'submit' || 
+                element.tagName.toLowerCase() === 'button' ||
+                element.classList.contains('test-connection-btn') ||
+                element.id && element.id.includes('test-')) {
+                return;
+            }
             
             // Remove any existing change listeners to avoid duplicates
             element.removeEventListener('change', handleChange);
@@ -327,11 +339,50 @@ const appsModule = {
                     // Check for elements added or removed
                     if (mutation.type === 'childList' && 
                        (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) {
-                        shouldUpdate = true;
+                        
+                        // Check if the changes are test-related elements that we should ignore
+                        let isTestRelated = false;
+                        
+                        // Check added nodes
+                        mutation.addedNodes.forEach(node => {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                if (node.classList && (
+                                    node.classList.contains('connection-message') ||
+                                    node.classList.contains('test-status') ||
+                                    node.classList.contains('test-result')
+                                )) {
+                                    isTestRelated = true;
+                                }
+                            }
+                        });
+                        
+                        // Check removed nodes
+                        mutation.removedNodes.forEach(node => {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                if (node.classList && (
+                                    node.classList.contains('connection-message') ||
+                                    node.classList.contains('test-status') ||
+                                    node.classList.contains('test-result')
+                                )) {
+                                    isTestRelated = true;
+                                }
+                            }
+                        });
+                        
+                        // Only mark as changed if it's not test-related
+                        if (!isTestRelated) {
+                            shouldUpdate = true;
+                        }
                     }
                 });
                 
                 if (shouldUpdate) {
+                    // Skip if test connection suppression is active
+                    if (window._suppressUnsavedChangesDialog === true) {
+                        console.log('MutationObserver suppressed due to test connection');
+                        return;
+                    }
+                    
                     console.log('Instances container changed - checking for form changes');
                     if (this.hasFormChanges(form)) {
                         console.log('Form changed, enabling save button');
@@ -451,25 +502,7 @@ const appsModule = {
         }
         if (!selectedApp || selectedApp === this.currentApp) return;
         
-        // Special case for Cleanuperr - it's an information page, not a settings page
-        if (selectedApp === 'cleanuperr') {
-            // Hide apps section and show Cleanuperr section
-            document.getElementById('appsSection').classList.remove('active');
-            document.getElementById('cleanuperrSection').classList.add('active');
-            
-            // Update the page title
-            if (huntarrUI && typeof huntarrUI.switchSection === 'function') {
-                huntarrUI.currentSection = 'cleanuparr';
-                // We're not calling the full switchSection as that would alter navigation
-                // Just update the title
-                const pageTitleElement = document.getElementById('currentPageTitle');
-                if (pageTitleElement) {
-                    pageTitleElement.textContent = 'Cleanuperr';
-                }
-            }
-            
-            return;
-        }
+
         
         // Check for unsaved changes
         if (this.settingsChanged) {
@@ -595,7 +628,7 @@ const appsModule = {
             console.log('Apprise URLs being sent:', settings.apprise_urls);
         }
         
-        HuntarrUtils.fetchWithTimeout(`/api/settings/${appType}`, {
+        HuntarrUtils.fetchWithTimeout(`./api/settings/${appType}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

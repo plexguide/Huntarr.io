@@ -20,6 +20,7 @@
             <div class="sidebar-section">
                 <h3 class="sidebar-section-title">Getting Started</h3>
                 <ul>
+                    <li><a href="donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
                     <li><a href="getting-started/installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
                 </ul>
             </div>
@@ -41,7 +42,7 @@
                     <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg> GitHub</a></li>
                     <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
                     <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
-                    <li><a href="https://donate.plex.one" target="_blank"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
+
                 </ul>
             </div>
         </nav>
@@ -52,742 +53,557 @@
             <h1>Frequently Asked Questions</h1>
             
             <section class="faq-overview">
-                <p>This comprehensive FAQ covers common questions and issues that users encounter when setting up and using Huntarr. Use the table of contents below to quickly find answers to your questions.</p>
+                <p>This FAQ addresses the most common real-world issues that new Huntarr users face. These are based on actual support requests and community discussions.</p>
+                
+                <div class="alert alert-info">
+                    <strong>💡 Quick Tip:</strong> Most issues are Docker-related or configuration problems. Start with the <strong>Installation & First Setup</strong> section if you're just getting started.
+                </div>
             </section>
             
             <section id="toc" class="toc">
                 <h3>Table of Contents</h3>
                 <ul>
-                    <li><a href="#installation">Installation & Setup</a></li>
-                    <li><a href="#configuration">Configuration & API Connections</a></li>
-                    <li><a href="#troubleshooting">Troubleshooting</a></li>
-                    <li><a href="#features">Features & Functionality</a></li>
-                    <li><a href="#performance">Performance & Optimization</a></li>
-                    <li><a href="#security">Security & Authentication</a></li>
-                    <li><a href="#compatibility">Compatibility & Requirements</a></li>
+                    <li><a href="#first-setup">🚀 Installation & First Setup</a></li>
+                    <li><a href="#common-errors">❌ Common Error Messages</a></li>
+                    <li><a href="#docker-issues">🐳 Docker Problems</a></li>
+                    <li><a href="#connection-problems">🔗 Connection Issues</a></li>
+                    <li><a href="#not-finding-content">🔍 "It's Not Finding Anything"</a></li>
+                    <li><a href="#performance-issues">⚡ Performance & Speed</a></li>
+                    <li><a href="#security-locked-out">🔒 Locked Out / Security</a></li>
                 </ul>
             </section>
 
-            <section id="installation" class="installation-methods">
-                <h2><i class="fas fa-download" style="margin-right: 10px; color: #3498db;"></i>Installation & Setup</h2>
+            <section id="first-setup" class="installation-methods">
+                <h2><i class="fas fa-rocket" style="margin-right: 10px; color: #3498db;"></i>Installation & First Setup</h2>
 
-                <h3>What are the different ways to install Huntarr?</h3>
-                <p>Huntarr can be installed using several methods:</p>
-                <ul>
-                    <li><strong>Docker (Recommended):</strong> Most reliable and consistent across platforms</li>
-                    <li><strong>Windows Installer:</strong> Native .exe installer for Windows users</li>
-                    <li><strong>macOS Installer:</strong> Native .pkg installer for Intel and Apple Silicon Macs</li>
-                    <li><strong>Unraid:</strong> Available through Community Applications</li>
-                    <li><strong>From Source:</strong> For advanced users and development</li>
-                </ul>
-                <div class="alert alert-info">
-                    <strong>Recommendation:</strong> Docker is the primary supported method and ensures the most consistent experience across all platforms.
+                <div class="faq-item">
+                    <div class="faq-question">I'm completely new to Huntarr. What exactly does it do?</div>
+                    <div class="faq-answer">
+                        Huntarr automatically searches for missing content in your Sonarr, Radarr, Lidarr, Readarr, and Whisparr applications. Think of it as a "search assistant" that runs constantly to find missing episodes, movies, music, and books.
+                        
+                        <div class="alert alert-success">
+                            <strong>What it does:</strong> Finds missing content, upgrades quality, manages download queues
+                            <br><strong>What it doesn't do:</strong> Replace your *arr apps, download content directly, or manage files
+                        </div>
+                        
+                        <strong>Prerequisites:</strong>
+                        <ul>
+                            <li>At least one *arr application (Sonarr, Radarr, etc.) already installed and working</li>
+                            <li>Indexers configured in your *arr apps</li>
+                            <li>Download client (qBittorrent, Deluge, etc.) configured</li>
+                        </ul>
+                    </div>
                 </div>
 
-                <h3>How do I install Huntarr using Docker?</h3>
-                <p>The simplest Docker installation command is:</p>
-                <pre class="terminal"><code>docker run -d --name huntarr \
-  --restart always \
+                <div class="faq-item">
+                    <div class="faq-question">What's the easiest way to install Huntarr?</div>
+                    <div class="faq-answer">
+                        <strong>Docker is strongly recommended</strong> for all platforms. Here's the simplest setup:
+
+                        <pre class="terminal"><code>docker run -d --name huntarr \
+  --restart unless-stopped \
   -p 9705:9705 \
-  -v /your-path/huntarr:/config \
+  -v /path/to/huntarr/config:/config \
   -e TZ=America/New_York \
   huntarr/huntarr:latest</code></pre>
-                
-                <p>For Docker Compose, add this to your <code>docker-compose.yml</code>:</p>
-                <pre class="terminal"><code>services:
+
+                        <div class="alert alert-warning">
+                            <strong>Replace:</strong> 
+                            <ul>
+                                <li><code>/path/to/huntarr/config</code> with your actual path (e.g., <code>/opt/huntarr</code>)</li>
+                                <li><code>America/New_York</code> with your timezone</li>
+                            </ul>
+                        </div>
+
+                        <strong>After installation:</strong>
+                        <ol>
+                            <li>Open <code>http://YOUR_IP:9705</code></li>
+                            <li>Create admin account</li>
+                            <li>Add your *arr applications in Settings</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Windows Defender is blocking the installer - is this safe?</div>
+                    <div class="faq-answer">
+                        This is normal for open-source software that isn't Microsoft-signed. The installer is safe, but Windows shows warnings.
+
+                        <strong>To install on Windows:</strong>
+                        <ol>
+                            <li>When Windows SmartScreen appears, click <strong>"More info"</strong></li>
+                            <li>Click <strong>"Run anyway"</strong> at the bottom</li>
+                            <li>Allow through Windows Firewall when prompted</li>
+                        </ol>
+
+                        <div class="alert alert-info">
+                            <strong>Alternative:</strong> Use Docker Desktop on Windows to avoid these security warnings entirely.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Can't access Huntarr at http://localhost:9705</div>
+                    <div class="faq-answer">
+                        Common causes and solutions:
+
+                        <ul>
+                            <li><strong>Wrong IP:</strong> Try <code>http://YOUR_SERVER_IP:9705</code> instead of localhost</li>
+                            <li><strong>Port conflict:</strong> Another app is using port 9705</li>
+                            <li><strong>Firewall:</strong> Port 9705 is blocked</li>
+                            <li><strong>Container not running:</strong> Check with <code>docker ps | grep huntarr</code></li>
+                        </ul>
+
+                        <strong>Quick troubleshooting:</strong>
+                        <pre class="terminal"><code># Check if Huntarr is running
+docker ps | grep huntarr
+
+# Check the logs
+docker logs huntarr
+
+# Restart if needed
+docker restart huntarr</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="common-errors" class="installation-methods">
+                <h2><i class="fas fa-exclamation-triangle" style="margin-right: 10px; color: #e74c3c;"></i>Common Error Messages</h2>
+
+                <div class="faq-item">
+                    <div class="faq-question">"Failed to connect to API" or "Connection timeout"</div>
+                    <div class="faq-answer">
+                        This means Huntarr can't reach your *arr applications.
+
+                        <strong>Check these in order:</strong>
+                        <ol>
+                            <li><strong>URL format:</strong> Use <code>http://IP:PORT</code> (e.g., <code>http://192.168.1.10:8989</code>)</li>
+                            <li><strong>Remove trailing slash:</strong> Don't use <code>http://IP:PORT/</code></li>
+                            <li><strong>Test manually:</strong> Can you access the *arr app in your browser?</li>
+                            <li><strong>Network access:</strong> Can Huntarr's container reach your *arr apps?</li>
+                        </ol>
+
+                        <div class="alert alert-warning">
+                            <strong>Docker networking tip:</strong> If both Huntarr and your *arr apps are in Docker, they need to be on the same network or use host networking.
+                        </div>
+
+                        <strong>Quick test:</strong>
+                        <pre class="terminal"><code># Test from inside Huntarr container
+docker exec -it huntarr wget -qO- http://YOUR_ARR_IP:PORT/api/v3/system/status</code></pre>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">"Invalid API key" or "401 Unauthorized"</div>
+                    <div class="faq-answer">
+                        Your API key is wrong or missing.
+
+                        <strong>To get the correct API key:</strong>
+                        <ol>
+                            <li>Open your *arr application (Sonarr, Radarr, etc.)</li>
+                            <li>Go to <strong>Settings → General</strong></li>
+                            <li>Look for <strong>"API Key"</strong> section</li>
+                            <li>Copy the entire key (usually 32 characters)</li>
+                            <li>Paste it exactly into Huntarr settings</li>
+                        </ol>
+
+                        <div class="alert alert-info">
+                            <strong>Note:</strong> Each *arr application has its own unique API key. Don't use the same key for different apps.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">"Permission denied" or file/folder errors</div>
+                    <div class="faq-answer">
+                        This is usually a Docker volume permission issue.
+
+                        <strong>Fix permissions:</strong>
+                        <pre class="terminal"><code># Stop Huntarr
+docker stop huntarr
+
+# Fix ownership (replace with your actual path)
+sudo chown -R 1000:1000 /path/to/huntarr/config
+
+# Start Huntarr
+docker start huntarr</code></pre>
+
+                        <div class="alert alert-warning">
+                            <strong>Prevention:</strong> Create the config directory and set permissions before running Huntarr for the first time.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">"No items found" or "Nothing to process"</div>
+                    <div class="faq-answer">
+                        This usually means your content is not marked as "Monitored" in your *arr apps.
+
+                        <strong>Check this:</strong>
+                        <ol>
+                            <li>Open your *arr application</li>
+                            <li>Look at your movies/shows/music</li>
+                            <li>Ensure items are marked as <strong>"Monitored"</strong> (usually a toggle or checkbox)</li>
+                            <li>Check that you have <strong>missing</strong> content (red icons in *arr apps)</li>
+                        </ol>
+
+                        <div class="alert alert-info">
+                            <strong>In Huntarr settings:</strong> Make sure "Monitored Only" is enabled if you only want to search for monitored content.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="docker-issues" class="installation-methods">
+                <h2><i class="fab fa-docker" style="margin-right: 10px; color: #2496ed;"></i>Docker Problems</h2>
+
+                <div class="faq-item">
+                    <div class="faq-question">Huntarr container keeps restarting or crashing</div>
+                    <div class="faq-answer">
+                        <strong>Check the logs first:</strong>
+                        <pre class="terminal"><code>docker logs huntarr</code></pre>
+
+                        <strong>Common causes:</strong>
+                        <ul>
+                            <li><strong>Permission issues:</strong> Config directory not writable</li>
+                            <li><strong>Port conflict:</strong> Port 9705 already in use</li>
+                            <li><strong>Memory limits:</strong> Not enough RAM allocated</li>
+                            <li><strong>Corrupted config:</strong> Bad configuration files</li>
+                        </ul>
+
+                        <strong>Reset if needed:</strong>
+                        <pre class="terminal"><code># Stop and remove container
+docker stop huntarr && docker rm huntarr
+
+# Clear config (backup first!)
+rm -rf /path/to/huntarr/config/*
+
+# Recreate container
+docker run -d --name huntarr ...</code></pre>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Can't reach *arr apps from Huntarr container</div>
+                    <div class="faq-answer">
+                        This is a Docker networking issue.
+
+                        <strong>Solution 1 - Use host networking:</strong>
+                        <pre class="terminal"><code>docker run -d --name huntarr \
+  --network host \
+  --restart unless-stopped \
+  -v /path/to/huntarr/config:/config \
+  huntarr/huntarr:latest</code></pre>
+
+                        <strong>Solution 2 - Use Docker bridge with correct IPs:</strong>
+                        <ul>
+                            <li>Find your host's Docker IP: <code>ip route show default</code></li>
+                            <li>Use that IP in Huntarr settings instead of localhost</li>
+                            <li>Example: <code>http://172.17.0.1:8989</code> instead of <code>http://localhost:8989</code></li>
+                        </ul>
+
+                        <div class="alert alert-success">
+                            <strong>Tip:</strong> Host networking is usually the easiest for beginners.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Docker-compose setup</div>
+                    <div class="faq-answer">
+                        Here's a complete docker-compose.yml example:
+
+                        <pre class="terminal"><code>version: '3.8'
+services:
   huntarr:
     image: huntarr/huntarr:latest
     container_name: huntarr
-    restart: always
+    restart: unless-stopped
     ports:
       - "9705:9705"
     volumes:
-      - /your-path/huntarr:/config
+      - ./huntarr-config:/config
     environment:
-      - TZ=America/New_York</code></pre>
+      - TZ=America/New_York
+      - PUID=1000
+      - PGID=1000</code></pre>
 
-                <h3>Why does Windows Defender block the installer?</h3>
-                <p>Windows Defender SmartScreen may show a warning because the installer isn't signed by Microsoft. This is normal for many open-source applications.</p>
-                <div class="alert alert-warning">
-                    <strong>To proceed:</strong> Click "More info" in the upper left corner of the SmartScreen dialog, then click "Run anyway" to continue with installation.
+                        <strong>Run with:</strong>
+                        <pre class="terminal"><code>docker-compose up -d</code></pre>
+                    </div>
                 </div>
-                <p>The Docker version doesn't have this issue and is the recommended installation method.</p>
+            </section>
+
+            <section id="connection-problems" class="installation-methods">
+                <h2><i class="fas fa-plug" style="margin-right: 10px; color: #f39c12;"></i>Connection Issues</h2>
 
                 <div class="faq-item">
-                    <div class="faq-question">How do I handle macOS security warnings?</div>
+                    <div class="faq-question">Settings won't save or keep resetting</div>
                     <div class="faq-answer">
-                        macOS may show a security warning because the app isn't signed by Apple. To install:
+                        This indicates a file permission problem.
+
+                        <strong>Fix it:</strong>
                         <ol>
-                            <li>Download the appropriate installer (.pkg) for your Mac (Intel or Apple Silicon)</li>
-                            <li>When you see the security warning, go to <strong>System Settings → Privacy & Security</strong></li>
-                            <li>Scroll down to the security section and click <strong>"Open Anyway"</strong></li>
+                            <li>Stop Huntarr: <code>docker stop huntarr</code></li>
+                            <li>Check directory ownership: <code>ls -la /path/to/huntarr/</code></li>
+                            <li>Fix permissions: <code>sudo chown -R 1000:1000 /path/to/huntarr/</code></li>
+                            <li>Start Huntarr: <code>docker start huntarr</code></li>
                         </ol>
-                        <div class="alert alert-info">
-                            The installer will create configuration directories at: <code>~/Library/Application Support/Huntarr/config/</code>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="faq-item">
-                    <div class="faq-question">What port does Huntarr use and can I change it?</div>
-                    <div class="faq-answer">
-                        Huntarr uses port <strong>9705</strong> by default. You can access the web interface at <code>http://YOUR_SERVER_IP:9705</code>
-                        
                         <div class="alert alert-warning">
-                            <strong>Changing the port:</strong> If port 9705 is already in use, you can change it in your Docker run command or docker-compose.yml file by modifying the port mapping (e.g., <code>-p 8080:9705</code>).
+                            <strong>Make sure:</strong> The config directory exists and is writable before starting Huntarr.
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <section id="configuration" class="installation-methods">
-                <h2><i class="fas fa-cogs" style="margin-right: 10px; color: #9b59b6;"></i>Configuration & API Connections</h2>
 
                 <div class="faq-item">
-                    <div class="faq-question">How do I connect Huntarr to my *arr applications?</div>
+                    <div class="faq-question">Web interface loads but settings pages are blank</div>
                     <div class="faq-answer">
-                        After installation, access the web interface and navigate to Settings:
+                        Usually a browser caching issue or JavaScript error.
+
+                        <strong>Try these in order:</strong>
                         <ol>
-                            <li>Go to the specific app settings (Sonarr, Radarr, etc.)</li>
-                            <li>Enter your app's URL (e.g., <code>http://10.10.10.1:8989</code>)</li>
-                            <li>Enter your API key (found in your app's Settings → General)</li>
-                            <li>Test the connection</li>
+                            <li><strong>Hard refresh:</strong> Ctrl+F5 (Windows) or Cmd+Shift+R (Mac)</li>
+                            <li><strong>Clear browser cache</strong> for the Huntarr site</li>
+                            <li><strong>Try incognito/private mode</strong></li>
+                            <li><strong>Try a different browser</strong></li>
+                            <li><strong>Check browser console</strong> for JavaScript errors (F12)</li>
                         </ol>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Important:</strong> Omit the trailing slash (/) at the end of URLs. Use <code>http://10.10.10.1:8989</code> instead of <code>http://10.10.10.1:8989/</code>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="faq-item">
-                    <div class="faq-question">What applications does Huntarr support?</div>
-                    <div class="faq-answer">
-                        Currently supported applications:
-                        <ul>
-                            <li>✅ <strong>Sonarr</strong> - TV Shows</li>
-                            <li>✅ <strong>Radarr</strong> - Movies</li>
-                            <li>✅ <strong>Lidarr</strong> - Music</li>
-                            <li>✅ <strong>Readarr</strong> - Books</li>
-                            <li>✅ <strong>Whisparr v2 & v3</strong> - Adult content</li>
-                            <li>❌ <strong>Bazarr</strong> - Not yet supported</li>
-                        </ul>
-                        
                         <div class="alert alert-info">
-                            Huntarr is actively developed, and support for additional applications may be added in future releases.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">How do I configure search intervals and batch sizes?</div>
-                    <div class="faq-answer">
-                        In the web interface settings, you can configure:
-                        <ul>
-                            <li><strong>Sleep Duration:</strong> Time between search cycles (default: 900 seconds)</li>
-                            <li><strong>Hunt Missing:</strong> Number of missing items to search per cycle</li>
-                            <li><strong>Hunt Upgrades:</strong> Number of upgrade searches per cycle</li>
-                            <li><strong>Minimum Download Queue Size:</strong> Pause searching when queue exceeds this number</li>
-                        </ul>
-                        
-                        <div class="alert alert-success">
-                            <strong>Tip:</strong> Start with conservative values and adjust based on your indexer's rate limits and system performance.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">What are the recommended settings for indexer protection?</div>
-                    <div class="faq-answer">
-                        To protect your indexers from rate limiting:
-                        <ul>
-                            <li>Set reasonable hourly API caps in settings</li>
-                            <li>Use longer sleep durations (15+ minutes) between cycles</li>
-                            <li>Limit batch sizes for missing items and upgrades</li>
-                            <li>Enable "Skip Future Items" to avoid searching unreleased content</li>
-                            <li>Enable "Skip Series/Movie/Artist Refresh" to reduce API calls</li>
-                        </ul>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Remember:</strong> Huntarr uses consistent 120-second timeouts and identifies itself to all *arr applications to ensure reliable operation.
+                            <strong>Common cause:</strong> Browser extensions or ad blockers interfering with the interface.
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section id="troubleshooting" class="installation-methods">
-                <h2><i class="fas fa-wrench" style="margin-right: 10px; color: #f39c12;"></i>Troubleshooting</h2>
+            <section id="not-finding-content" class="installation-methods">
+                <h2><i class="fas fa-search" style="margin-right: 10px; color: #2ecc71;"></i>"It's Not Finding Anything"</h2>
 
                 <div class="faq-item">
-                    <div class="faq-question">Huntarr won't start or the web interface isn't loading</div>
+                    <div class="faq-question">Huntarr says it's running but not finding missing content</div>
                     <div class="faq-answer">
-                        Common solutions:
+                        <strong>Checklist to verify:</strong>
+                        
                         <ol>
-                            <li><strong>Check if the container is running:</strong> <code>docker ps | grep huntarr</code></li>
-                            <li><strong>Check the logs:</strong> <code>docker logs huntarr</code></li>
-                            <li><strong>Verify port mapping:</strong> Ensure port 9705 isn't blocked by firewall</li>
-                            <li><strong>Check volume permissions:</strong> Ensure the <code>/config</code> volume has correct permissions</li>
+                            <li><strong>Content is monitored:</strong> Check your *arr apps - items must be marked "Monitored"</li>
+                            <li><strong>Content is actually missing:</strong> Look for red indicators in your *arr apps</li>
+                            <li><strong>Indexers are working:</strong> Test manual search in your *arr apps</li>
+                            <li><strong>Download queue isn't full:</strong> Check your download client</li>
+                            <li><strong>Huntarr settings:</strong> Verify hunt missing/upgrade limits aren't 0</li>
                         </ol>
-                        
-                        <div class="alert alert-info">
-                            If using Docker, try rebuilding the container: <code>docker-compose down && docker-compose up -d --build</code>
+
+                        <div class="alert alert-success">
+                            <strong>Easy test:</strong> In your *arr app, manually search for a missing episode/movie. If that doesn't find anything, the problem isn't with Huntarr.
                         </div>
+
+                        <strong>Check Huntarr's processing:</strong>
+                        Look at the dashboard counters - they should increase over time if content is being processed.
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <div class="faq-question">API connection errors or timeouts</div>
+                    <div class="faq-question">Why are the search counters not increasing?</div>
                     <div class="faq-answer">
-                        If you're experiencing API connection issues:
+                        <strong>Most common reasons:</strong>
+
                         <ul>
-                            <li>Verify your API key is correct (copy from your *arr app settings)</li>
-                            <li>Check the URL format (include <code>http://</code> or <code>https://</code>)</li>
-                            <li>Remove trailing slashes from URLs</li>
-                            <li>Ensure your *arr applications are accessible from Huntarr's network</li>
-                            <li>Check if your *arr apps are running and responsive</li>
+                            <li><strong>No missing content:</strong> Everything is already downloaded</li>
+                            <li><strong>Content not monitored:</strong> Items aren't marked as monitored in *arr apps</li>
+                            <li><strong>Future releases:</strong> "Skip Future Episodes/Movies" is enabled and content isn't released yet</li>
+                            <li><strong>Download queue full:</strong> Queue size exceeds your minimum threshold</li>
+                            <li><strong>API limits reached:</strong> Hourly API cap is hit</li>
                         </ul>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Network Issues:</strong> If running in Docker, ensure Huntarr can reach your *arr applications. Consider using Docker networking or host networking if needed.
-                        </div>
-                    </div>
-                </div>
 
-                <div class="faq-item">
-                    <div class="faq-question">Authentication problems or forgot password</div>
-                    <div class="faq-answer">
-                        If you're locked out of Huntarr:
+                        <strong>Quick check:</strong>
                         <ol>
-                            <li>Stop the Huntarr container: <code>docker stop huntarr</code></li>
-                            <li>Delete the credentials file: <code>rm /your-path/huntarr/user/credentials.json</code></li>
-                            <li>Restart Huntarr: <code>docker start huntarr</code></li>
-                            <li>Access the web interface to create a new admin account</li>
+                            <li>Go to your Sonarr/Radarr wanted pages</li>
+                            <li>Verify there are missing items shown</li>
+                            <li>Check if they're marked as "Monitored"</li>
                         </ol>
-                        
-                        <div class="alert alert-info">
-                            <strong>Two-Factor Authentication:</strong> If locked out of 2FA, removing the credentials file will also reset your 2FA settings.
-                        </div>
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <div class="faq-question">Logs not showing or missing state data</div>
+                    <div class="faq-question">Searches are slow or timing out</div>
                     <div class="faq-answer">
-                        If logs aren't displaying or state data is missing:
+                        <strong>Optimize your settings:</strong>
+
                         <ul>
-                            <li>Check permissions on <code>/config/logs/</code> directory</li>
-                            <li>Verify state files exist in <code>/config/stateful/</code></li>
-                            <li>Ensure the Docker volume mount has correct ownership</li>
-                            <li>Check available disk space on the host system</li>
+                            <li><strong>Increase sleep duration:</strong> Use 15+ minutes between cycles</li>
+                            <li><strong>Reduce batch sizes:</strong> Lower "Hunt Missing" and "Hunt Upgrades" numbers</li>
+                            <li><strong>Set API limits:</strong> Use reasonable hourly caps (20-50 per app)</li>
+                            <li><strong>Check indexers:</strong> Slow indexers can cause timeouts</li>
                         </ul>
-                        
+
                         <div class="alert alert-warning">
-                            <strong>Permission Fix:</strong> You may need to adjust ownership: <code>sudo chown -R 1000:1000 /your-path/huntarr</code>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Huntarr is not finding missing items</div>
-                    <div class="faq-answer">
-                        If Huntarr isn't finding missing content:
-                        <ul>
-                            <li>Ensure items are marked as "Monitored" in your *arr applications</li>
-                            <li>Check that "Skip Future Items" is enabled to avoid unreleased content</li>
-                            <li>Verify your quality profiles and cutoff settings</li>
-                            <li>Check the download queue isn't exceeding your minimum threshold</li>
-                            <li>Review the logs for any API errors or rate limiting</li>
-                        </ul>
-                        
-                        <div class="alert alert-success">
-                            <strong>Debug Mode:</strong> Enable debug mode temporarily to see detailed API responses and understand what Huntarr is processing.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Pop-up windows are obscured or cut off</div>
-                    <div class="faq-answer">
-                        Some users experience issues where pop-up windows or dialogs appear behind other elements or are cut off at the bottom of the screen:
-                        <ul>
-                            <li>Try refreshing the page (F5 or Ctrl+R)</li>
-                            <li>Clear your browser cache and cookies for the Huntarr site</li>
-                            <li>Try using a different browser (Chrome, Firefox, Safari, Edge)</li>
-                            <li>Check your browser zoom level - try resetting to 100%</li>
-                            <li>Disable browser extensions temporarily to see if they're interfering</li>
-                        </ul>
-                        
-                        <div class="alert alert-info">
-                            This is often a browser-specific rendering issue that can be resolved by clearing cache or trying a different browser.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Statistics showing negative numbers after update</div>
-                    <div class="faq-answer">
-                        If you see negative numbers in your statistics after updating Huntarr:
-                        <ul>
-                            <li>This is usually a temporary display issue that resolves itself</li>
-                            <li>Wait for the next processing cycle to complete</li>
-                            <li>Try refreshing the web interface</li>
-                            <li>Check if the issue persists after a few hours of operation</li>
-                            <li>If the problem continues, consider using the Emergency Reset in settings</li>
-                        </ul>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Note:</strong> Statistics are recalculated during each cycle, so temporary negative values may appear during processing.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">API limits are being ignored</div>
-                    <div class="faq-answer">
-                        If Huntarr seems to be ignoring your configured API limits:
-                        <ul>
-                            <li>Verify your hourly API caps are set correctly in settings</li>
-                            <li>Check that you're not running multiple instances of Huntarr</li>
-                            <li>Ensure your *arr applications aren't performing their own searches</li>
-                            <li>Review the logs to see actual API call counts</li>
-                            <li>Consider reducing batch sizes for missing items and upgrades</li>
-                        </ul>
-                        
-                        <div class="alert alert-info">
-                            <strong>Remember:</strong> API limits are per hour, and the counter resets at the beginning of each hour.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Timers showing errors or not displaying</div>
-                    <div class="faq-answer">
-                        If countdown timers show "Error Loading" or don't display properly:
-                        <ul>
-                            <li>Check that Huntarr has proper permissions to write to the config directory</li>
-                            <li>Verify the timer files exist in the stateful directory</li>
-                            <li>Restart the Huntarr container: <code>docker restart huntarr</code></li>
-                            <li>Check the logs for any file permission errors</li>
-                            <li>Ensure sufficient disk space is available</li>
-                        </ul>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Common Cause:</strong> This often occurs when running on bare metal installations where Docker paths don't exist.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">History shows the same movie/show multiple times</div>
-                    <div class="faq-answer">
-                        If you see duplicate entries in your history:
-                        <ul>
-                            <li>This can happen when Huntarr processes the same item multiple times</li>
-                            <li>Check if you have multiple quality profiles that might trigger re-processing</li>
-                            <li>Verify your cutoff settings aren't causing repeated upgrade attempts</li>
-                            <li>Consider adjusting your state reset interval in settings</li>
-                            <li>Review your indexer settings to avoid duplicate releases</li>
-                        </ul>
-                        
-                        <div class="alert alert-success">
-                            <strong>Normal Behavior:</strong> Some duplication is normal when Huntarr finds better quality versions or when items are re-monitored.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Huntarr downloads unknown quality ignoring profiles</div>
-                    <div class="faq-answer">
-                        If Huntarr seems to ignore your quality profiles:
-                        <ul>
-                            <li>Verify your quality profiles are correctly configured in your *arr apps</li>
-                            <li>Check that the cutoff quality is set appropriately</li>
-                            <li>Ensure your indexers are providing accurate quality information</li>
-                            <li>Review the logs to see what quality Huntarr thinks it's requesting</li>
-                            <li>Consider updating your *arr applications to the latest versions</li>
-                        </ul>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Important:</strong> Huntarr relies on your *arr applications' quality profiles - it doesn't override them.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Cannot save Apprise URL for notifications</div>
-                    <div class="faq-answer">
-                        If you're having trouble saving Apprise notification URLs:
-                        <ul>
-                            <li>Verify the Apprise URL format is correct for your service</li>
-                            <li>Check that there are no special characters causing parsing issues</li>
-                            <li>Try saving one URL at a time instead of multiple URLs</li>
-                            <li>Ensure the notification service is accessible from your network</li>
-                            <li>Test the URL manually using the Apprise documentation</li>
-                        </ul>
-                        
-                        <div class="alert alert-info">
-                            <strong>Tip:</strong> Use the Apprise documentation to verify your URL format: <a href="https://github.com/caronc/apprise#supported-notifications" target="_blank">Apprise Supported Services</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Weird or excessive Docker logs</div>
-                    <div class="faq-answer">
-                        If you notice unusual or excessive logging in your Docker logs:
-                        <ul>
-                            <li>Check if debug mode is enabled and disable it if not needed</li>
-                            <li>Review your log refresh interval settings</li>
-                            <li>Ensure your *arr applications are responding properly</li>
-                            <li>Check for network connectivity issues</li>
-                            <li>Consider adjusting your sleep duration to reduce API calls</li>
-                        </ul>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Performance Impact:</strong> Excessive logging can impact performance and fill up disk space quickly.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Low FPS or lag in the web interface</div>
-                    <div class="faq-answer">
-                        If the Huntarr web interface feels slow or laggy:
-                        <ul>
-                            <li>Try using a different browser or clearing browser cache</li>
-                            <li>Check if your system is under heavy load</li>
-                            <li>Reduce the log refresh interval in settings</li>
-                            <li>Close other browser tabs or applications</li>
-                            <li>Ensure your network connection is stable</li>
-                            <li>Try accessing from a different device to isolate the issue</li>
-                        </ul>
-                        
-                        <div class="alert alert-success">
-                            <strong>Optimization:</strong> Increasing the log refresh interval from 30 to 60 seconds can improve performance.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Critical security vulnerabilities in dependencies</div>
-                    <div class="faq-answer">
-                        If you receive notifications about security vulnerabilities:
-                        <ul>
-                            <li>Update to the latest version of Huntarr immediately</li>
-                            <li>Check the GitHub releases page for security updates</li>
-                            <li>Enable automatic updates if available in your environment</li>
-                            <li>Monitor the project's security advisories</li>
-                            <li>Consider using Watchtower for automatic Docker image updates</li>
-                        </ul>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Security:</strong> Always keep Huntarr updated to the latest version to ensure you have the latest security patches.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Timezone mismatch in stateful management</div>
-                    <div class="faq-answer">
-                        If you notice timing issues or incorrect timestamps:
-                        <ul>
-                            <li>Verify your timezone is correctly set in the Docker environment</li>
-                            <li>Check the <code>TZ</code> environment variable in your docker-compose.yml</li>
-                            <li>Ensure your host system timezone is correct</li>
-                            <li>Restart the container after timezone changes</li>
-                            <li>Check if your *arr applications have matching timezones</li>
-                        </ul>
-                        
-                        <div class="alert alert-info">
-                            <strong>Example:</strong> Set <code>TZ=America/New_York</code> in your Docker environment variables to match your local timezone.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">State reset not happening automatically</div>
-                    <div class="faq-answer">
-                        If the automatic state reset isn't working as expected:
-                        <ul>
-                            <li>Check your state reset interval setting in the web interface</li>
-                            <li>Verify the state files exist in <code>/config/stateful/</code></li>
-                            <li>Ensure Huntarr has write permissions to the config directory</li>
-                            <li>Check the logs for any errors related to state management</li>
-                            <li>Consider manually triggering an emergency reset if needed</li>
-                        </ul>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Manual Reset:</strong> Use the Emergency Reset button in settings if automatic resets aren't working properly.
+                            <strong>Remember:</strong> Huntarr is designed to run continuously. It doesn't need to be aggressive - slow and steady is better for indexer health.
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section id="features" class="installation-methods">
-                <h2><i class="fas fa-star" style="margin-right: 10px; color: #e74c3c;"></i>Features & Functionality</h2>
+            <section id="performance-issues" class="installation-methods">
+                <h2><i class="fas fa-tachometer-alt" style="margin-right: 10px; color: #9b59b6;"></i>Performance & Speed</h2>
 
                 <div class="faq-item">
-                    <div class="faq-question">What does Huntarr actually do?</div>
+                    <div class="faq-question">Huntarr is using too much CPU/memory</div>
                     <div class="faq-answer">
-                        Huntarr is a specialized utility that:
+                        <strong>Reduce resource usage:</strong>
+
                         <ul>
-                            <li><strong>Finds Missing Content:</strong> Identifies missing episodes, movies, albums, or books in your library</li>
-                            <li><strong>Quality Upgrades:</strong> Searches for better quality versions of existing content below your cutoff</li>
-                            <li><strong>Automated Searching:</strong> Continuously runs searches in manageable batches</li>
-                            <li><strong>Indexer Protection:</strong> Respects rate limits and prevents overloading your indexers</li>
-                            <li><strong>Queue Management:</strong> Pauses searching when download queues are full</li>
+                            <li><strong>Increase sleep duration:</strong> 20-30 minutes between cycles</li>
+                            <li><strong>Lower batch sizes:</strong> Process fewer items per cycle</li>
+                            <li><strong>Set stricter API limits:</strong> Prevent overloading</li>
+                            <li><strong>Enable "Skip Future Items":</strong> Avoid unnecessary processing</li>
                         </ul>
-                        
+
                         <div class="alert alert-info">
-                            <strong>Example:</strong> If you have 5,000 shows in Sonarr and 1,700 are missing episodes, Huntarr will systematically work through them over time to complete your collection.
+                            <strong>Normal behavior:</strong> CPU usage spikes during processing cycles, then returns to low levels during sleep periods.
                         </div>
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <div class="faq-question">How does Huntarr protect my indexers?</div>
+                    <div class="faq-question">Getting rate-limited by indexers</div>
                     <div class="faq-answer">
-                        Huntarr includes several indexer protection features:
-                        <ul>
-                            <li><strong>Hourly API Caps:</strong> Configurable limits prevent excessive API calls</li>
-                            <li><strong>Batch Processing:</strong> Searches limited numbers of items per cycle</li>
-                            <li><strong>Sleep Intervals:</strong> Configurable delays between search cycles</li>
-                            <li><strong>Universal Timeouts:</strong> Consistent 120-second timeouts prevent hanging requests</li>
-                            <li><strong>Queue Monitoring:</strong> Automatically pauses when download queues are full</li>
-                        </ul>
-                        
-                        <div class="alert alert-success">
-                            <strong>Smart Design:</strong> Huntarr identifies itself to all *arr applications and uses consistent headers for reliable operation.
-                        </div>
-                    </div>
-                </div>
+                        <strong>Protect your indexers:</strong>
 
-                <div class="faq-item">
-                    <div class="faq-question">Can I run Huntarr alongside other automation tools?</div>
-                    <div class="faq-answer">
-                        Yes! Huntarr is designed to complement your existing media stack:
-                        <ul>
-                            <li><strong>Works with *arr apps:</strong> Integrates seamlessly with Sonarr, Radarr, etc.</li>
-                            <li><strong>Pairs with Cleanuperr:</strong> Huntarr finds content, Cleanuperr keeps downloads clean</li>
-                            <li><strong>Respects existing settings:</strong> Uses your quality profiles and preferences</li>
-                            <li><strong>Non-intrusive:</strong> Doesn't modify your existing configurations</li>
-                        </ul>
-                        
-                        <div class="alert alert-info">
-                            <strong>Perfect Pair:</strong> Huntarr + Cleanuperr creates a powerful, self-sufficient media automation stack.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">What notifications does Huntarr support?</div>
-                    <div class="faq-answer">
-                        Huntarr supports notifications through Apprise, which includes:
-                        <ul>
-                            <li>Discord webhooks</li>
-                            <li>Slack notifications</li>
-                            <li>Email alerts</li>
-                            <li>Telegram messages</li>
-                            <li>Pushover notifications</li>
-                            <li>And many more services supported by Apprise</li>
-                        </ul>
-                        
-                        <div class="alert alert-success">
-                            Configure Apprise URLs in the settings to receive alerts when media is processed or when issues occur.
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="performance" class="installation-methods">
-                <h2><i class="fas fa-tachometer-alt" style="margin-right: 10px; color: #2ecc71;"></i>Performance & Optimization</h2>
-
-                <div class="faq-item">
-                    <div class="faq-question">How can I optimize Huntarr's performance?</div>
-                    <div class="faq-answer">
-                        To optimize Huntarr's performance:
-                        <ul>
-                            <li><strong>Enable Skip Refresh:</strong> Reduces disk I/O and database load significantly</li>
-                            <li><strong>Adjust Batch Sizes:</strong> Start small and increase based on system capacity</li>
-                            <li><strong>Monitor Resource Usage:</strong> Check CPU and memory usage during operation</li>
-                            <li><strong>Optimize Sleep Duration:</strong> Balance between responsiveness and system load</li>
-                            <li><strong>Use SSD Storage:</strong> Faster storage improves database operations</li>
-                        </ul>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Resource Impact:</strong> Larger batch sizes and shorter sleep intervals will increase system load and API usage.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">What system resources does Huntarr require?</div>
-                    <div class="faq-answer">
-                        Huntarr has modest system requirements:
-                        <ul>
-                            <li><strong>CPU:</strong> Low usage, occasional spikes during processing</li>
-                            <li><strong>Memory:</strong> Typically 100-500MB depending on library size</li>
-                            <li><strong>Storage:</strong> Minimal for application, logs, and state files</li>
-                            <li><strong>Network:</strong> API calls to *arr applications and indexers</li>
-                        </ul>
-                        
-                        <div class="alert alert-info">
-                            <strong>Scaling:</strong> Resource usage scales with library size and configured batch sizes. Larger libraries may require more memory and processing time.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">How do I monitor Huntarr's activity?</div>
-                    <div class="faq-answer">
-                        Monitor Huntarr through several methods:
-                        <ul>
-                            <li><strong>Web Interface:</strong> Real-time dashboard with statistics and progress</li>
-                            <li><strong>Live Logs:</strong> Built-in log viewer shows current activity</li>
-                            <li><strong>Docker Logs:</strong> <code>docker logs huntarr</code> for container output</li>
-                            <li><strong>State Files:</strong> Track processed items in <code>/config/stateful/</code></li>
-                            <li><strong>Notifications:</strong> Configure Apprise for activity alerts</li>
-                        </ul>
-                        
-                        <div class="alert alert-success">
-                            <strong>Real-time Monitoring:</strong> The web interface provides live updates on hunt progress and API usage.
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="security" class="installation-methods">
-                <h2><i class="fas fa-shield-alt" style="margin-right: 10px; color: #e67e22;"></i>Security & Authentication</h2>
-
-                <div class="faq-item">
-                    <div class="faq-question">How do I secure my Huntarr installation?</div>
-                    <div class="faq-answer">
-                        Security best practices for Huntarr:
-                        <ul>
-                            <li><strong>Enable Authentication:</strong> Create an admin account on first setup</li>
-                            <li><strong>Use 2FA:</strong> Enable two-factor authentication for additional security</li>
-                            <li><strong>Secure API Keys:</strong> Keep your *arr application API keys private</li>
-                            <li><strong>Network Security:</strong> Use firewalls and VPNs as appropriate</li>
-                            <li><strong>Regular Updates:</strong> Keep Huntarr updated to the latest version</li>
-                        </ul>
-                        
-                        <div class="alert alert-warning">
-                            <strong>Important:</strong> Never expose Huntarr directly to the internet without proper authentication and security measures.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">How does two-factor authentication work?</div>
-                    <div class="faq-answer">
-                        Huntarr supports 2FA for enhanced security:
                         <ol>
-                            <li>Enable 2FA during initial account setup or in settings</li>
-                            <li>Scan the QR code with your authenticator app (Google Authenticator, Authy, etc.)</li>
-                            <li>Enter the verification code to complete setup</li>
-                            <li>Future logins will require your password + authenticator code</li>
+                            <li><strong>Set hourly API caps:</strong> 20-50 requests per hour per app</li>
+                            <li><strong>Increase sleep duration:</strong> 20+ minutes between cycles</li>
+                            <li><strong>Lower batch sizes:</strong> 5-10 missing items, 2-5 upgrades per cycle</li>
+                            <li><strong>Enable monitored-only:</strong> Don't search for unmonitored content</li>
                         </ol>
-                        
-                        <div class="alert alert-info">
-                            <strong>Recovery:</strong> If locked out of 2FA, delete the credentials file and restart Huntarr to reset authentication.
-                        </div>
-                    </div>
-                </div>
 
-                <div class="faq-item">
-                    <div class="faq-question">Where are credentials and sensitive data stored?</div>
-                    <div class="faq-answer">
-                        Huntarr stores sensitive data securely:
-                        <ul>
-                            <li><strong>Credentials:</strong> <code>/config/user/credentials.json</code></li>
-                            <li><strong>API Keys:</strong> Encrypted in configuration files</li>
-                            <li><strong>Settings:</strong> <code>/config/settings/</code> directory</li>
-                            <li><strong>Logs:</strong> <code>/config/logs/</code> (may contain API responses)</li>
-                        </ul>
-                        
                         <div class="alert alert-warning">
-                            <strong>Backup Security:</strong> Ensure your config directory backups are stored securely as they contain API keys and authentication data.
+                            <strong>Important:</strong> Rate limits protect both you and the indexer community. Don't try to bypass them.
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section id="compatibility" class="installation-methods">
-                <h2><i class="fas fa-check-circle" style="margin-right: 10px; color: #27ae60;"></i>Compatibility & Requirements</h2>
+            <section id="security-locked-out" class="installation-methods">
+                <h2><i class="fas fa-lock" style="margin-right: 10px; color: #e74c3c;"></i>Locked Out / Security</h2>
 
                 <div class="faq-item">
-                    <div class="faq-question">What platforms does Huntarr support?</div>
+                    <div class="faq-question">Forgot my Huntarr password</div>
                     <div class="faq-answer">
-                        Huntarr supports multiple platforms:
-                        <ul>
-                            <li><strong>Docker:</strong> Linux, Windows, macOS (recommended)</li>
-                            <li><strong>Windows:</strong> Native installer for Windows 10/11</li>
-                            <li><strong>macOS:</strong> Native installer for Intel and Apple Silicon</li>
-                            <li><strong>Unraid:</strong> Available through Community Applications</li>
-                            <li><strong>Linux:</strong> Docker or from source</li>
-                        </ul>
-                        
-                        <div class="alert alert-success">
-                            <strong>Cross-Platform:</strong> Docker ensures consistent behavior across all platforms and is the recommended deployment method.
+                        <strong>Reset authentication:</strong>
+
+                        <pre class="terminal"><code># Stop Huntarr
+docker stop huntarr
+
+# Remove credentials file
+                # Credentials are now stored in the database at /config/huntarr.db (Docker) or /path/to/huntarr/data/huntarr.db (local)
+                # To reset credentials, delete the database file or use the web interface
+
+# Start Huntarr
+docker start huntarr</code></pre>
+
+                        Now you can access the web interface and create a new admin account.
+
+                        <div class="alert alert-warning">
+                            <strong>Note:</strong> This also resets any two-factor authentication settings.
                         </div>
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <div class="faq-question">What are the minimum system requirements?</div>
+                    <div class="faq-question">2FA is not working or lost my device</div>
                     <div class="faq-answer">
-                        Minimum requirements for Huntarr:
+                        Same solution as password reset - remove the credentials file:
+
+                        <pre class="terminal"><code># Credentials are now stored in the database at /config/huntarr.db (Docker) or /path/to/huntarr/data/huntarr.db (local)
+# To reset credentials, delete the database file or use the web interface</code></pre>
+
+                        This will reset both password and 2FA settings.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Should I expose Huntarr to the internet?</div>
+                    <div class="faq-answer">
+                        <strong>Generally not recommended</strong> unless you need remote access.
+
+                        <strong>If you must expose it:</strong>
                         <ul>
-                            <li><strong>Docker:</strong> Docker 1.27 or newer</li>
-                            <li><strong>Python:</strong> 3.9+ (for source installation)</li>
-                            <li><strong>Memory:</strong> 512MB RAM minimum, 1GB+ recommended</li>
-                            <li><strong>Storage:</strong> 100MB for application, additional for logs/state</li>
-                            <li><strong>Network:</strong> Internet access for API calls to *arr apps and indexers</li>
+                            <li>Enable strong authentication</li>
+                            <li>Use 2FA</li>
+                            <li>Use a reverse proxy with SSL</li>
+                            <li>Consider VPN access instead</li>
                         </ul>
-                        
+
                         <div class="alert alert-info">
-                            <strong>Scaling:</strong> Requirements increase with library size and number of configured applications.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Can I run Huntarr on a NAS or low-power device?</div>
-                    <div class="faq-answer">
-                        Yes! Huntarr works well on low-power devices:
-                        <ul>
-                            <li><strong>Synology/QNAP NAS:</strong> Use Docker or Container Station</li>
-                            <li><strong>Raspberry Pi:</strong> ARM Docker images available</li>
-                            <li><strong>Unraid:</strong> Dedicated template in Community Applications</li>
-                            <li><strong>TrueNAS:</strong> Use Docker or jail deployment</li>
-                        </ul>
-                        
-                        <div class="alert alert-success">
-                            <strong>Efficiency:</strong> Huntarr is designed to be lightweight and efficient, making it perfect for NAS and low-power deployments.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question">Does Huntarr work with reverse proxies?</div>
-                    <div class="faq-answer">
-                        Yes, Huntarr supports reverse proxy deployments:
-                        <ul>
-                            <li><strong>Subpath Support:</strong> Works with paths like <code>/huntarr/</code></li>
-                            <li><strong>Popular Proxies:</strong> Nginx, Apache, Traefik, Caddy</li>
-                            <li><strong>SSL/TLS:</strong> HTTPS termination at proxy level</li>
-                            <li><strong>Authentication:</strong> Can work with proxy-level auth</li>
-                        </ul>
-                        
-                        <div class="alert alert-info">
-                            <strong>Configuration:</strong> Ensure your reverse proxy passes the correct headers and handles WebSocket connections for real-time features.
+                            <strong>Best practice:</strong> Keep Huntarr on your local network and use VPN for remote access.
                         </div>
                     </div>
                 </div>
             </section>
 
+            <section class="installation-methods">
+                <h2><i class="fas fa-question" style="margin-right: 10px; color: #3498db;"></i>Still Need Help?</h2>
+                
+                <div class="alert alert-info">
+                    <strong>Before asking for help, please:</strong>
+                    <ol>
+                        <li>Check that your *arr apps work correctly on their own</li>
+                        <li>Verify you can manually search for content in your *arr apps</li>
+                        <li>Note the exact error messages you're seeing</li>
+                        <li>Check the Docker logs: <code>docker logs huntarr</code></li>
+                    </ol>
+                </div>
+
+                <div class="app-cards-grid">
+                    <div class="app-card">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" style="background-color: #5865F2;">
+                                <i class="fab fa-discord" style="font-size: 24px;"></i>
+                            </div>
+                            <h3 class="app-card-title">Discord Community</h3>
+                        </div>
+                        <div class="app-card-content">
+                            <p>Get real-time help from the community and developers.</p>
+                        </div>
+                        <div class="app-card-footer">
+                            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Join Discord →</a>
+                        </div>
+                    </div>
+
+                    <div class="app-card">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" style="background-color: #333;">
+                                <i class="fab fa-github" style="font-size: 24px;"></i>
+                            </div>
+                            <h3 class="app-card-title">GitHub Issues</h3>
+                        </div>
+                        <div class="app-card-content">
+                            <p>Report bugs or request features on GitHub.</p>
+                        </div>
+                        <div class="app-card-footer">
+                            <a href="https://github.com/plexguide/Huntarr.io/issues" target="_blank">Open Issue →</a>
+                        </div>
+                    </div>
+
+                    <div class="app-card">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" style="background-color: #FF4500;">
+                                <i class="fab fa-reddit-alien" style="font-size: 24px;"></i>
+                            </div>
+                            <h3 class="app-card-title">Reddit Community</h3>
+                        </div>
+                        <div class="app-card-content">
+                            <p>Discuss with other users and share experiences.</p>
+                        </div>
+                        <div class="app-card-footer">
+                            <a href="https://www.reddit.com/r/huntarr/" target="_blank">Visit Subreddit →</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
             <footer>
-                Huntarr.io | Frequently Asked Questions | Thanks 4 Using Huntarr - Admin9705
+                Huntarr.io | FAQ | Updated for real-world usage - Admin9705
             </footer>
         </div>
     </div>

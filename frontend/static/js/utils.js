@@ -26,10 +26,16 @@ const HuntarrUtils = {
         const timeoutId = setTimeout(() => controller.abort(), apiTimeout);
         
         // Merge options with signal from AbortController
+        // Only include credentials for internal API calls (not external URLs)
         const fetchOptions = {
             ...options,
             signal: controller.signal
         };
+        
+        // Add credentials only for internal API calls
+        if (url && typeof url === 'string' && !url.startsWith('http') && !url.startsWith('//')) {
+            fetchOptions.credentials = 'include';
+        }
         
         // Process URL to handle base URL for reverse proxy subpaths
         let processedUrl = url;

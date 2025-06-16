@@ -14,6 +14,7 @@ from src.primary.utils.logger import get_logger
 # Import load_settings
 from src.primary.settings_manager import load_settings, get_ssl_verify_setting
 import importlib
+import random
 
 # Get app-specific logger
 logger = get_logger("readarr")
@@ -46,7 +47,6 @@ def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
             "X-Api-Key": api_key,
             "User-Agent": "Huntarr/1.0 (https://github.com/plexguide/Huntarr.io)"
         }
-        logger.debug(f"Using User-Agent: {headers['User-Agent']}")
         
         response = requests.get(full_url, headers=headers, timeout=api_timeout, verify=get_ssl_verify_setting())
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
@@ -95,7 +95,7 @@ def get_download_queue_size(api_url: str = None, api_key: str = None, timeout: i
             return 0
         else:
             # Use the arr_request function if API URL and key aren't provided
-            response = arr_request("queue")
+            response = arr_request("queue", count_api=False)
             if response and "totalRecords" in response:
                 return response["totalRecords"]
             return 0
@@ -105,7 +105,7 @@ def get_download_queue_size(api_url: str = None, api_key: str = None, timeout: i
 
 def arr_request(endpoint: str, method: str = "GET", data: Dict = None, app_type: str = "readarr",
                 api_url: str = None, api_key: str = None, api_timeout: int = None, 
-                params: Dict = None, instance_data: Dict = None) -> Any:
+                params: Dict = None, instance_data: Dict = None, count_api: bool = True) -> Any:
     """
     Make a request to the Readarr API.
     
@@ -215,6 +215,14 @@ def arr_request(endpoint: str, method: str = "GET", data: Dict = None, app_type:
         # Check for errors
         response.raise_for_status()
         
+        # Increment API counter only if count_api is True and request was successful
+        if count_api:
+            try:
+                from src.primary.stats_manager import increment_hourly_cap
+                increment_hourly_cap("readarr")
+            except Exception as e:
+                logger.warning(f"Failed to increment API counter for readarr: {e}")
+        
         # Parse JSON response
         if response.text:
             return response.json()
@@ -232,7 +240,7 @@ def get_books_with_missing_files() -> List[Dict]:
         A list of book objects with missing files
     """
     # First, get all books
-    books = arr_request("book")
+    books = arr_request("book", count_api=False)
     if not books:
         return []
     
@@ -261,7 +269,7 @@ def get_cutoff_unmet_books(api_url: Optional[str] = None, api_key: Optional[str]
     # The cutoffUnmet endpoint in Readarr
     params = "cutoffUnmet=true"
     # Pass credentials to arr_request
-    books = arr_request(f"wanted/cutoff?{params}", api_url=api_url, api_key=api_key, api_timeout=api_timeout)
+    books = arr_request(f"wanted/cutoff?{params}", api_url=api_url, api_key=api_key, api_timeout=api_timeout, count_api=False)
     if not books or "records" not in books:
         return []
     
@@ -297,7 +305,6 @@ def get_wanted_missing_books(api_url: str, api_key: str, api_timeout: int, monit
         "User-Agent": "Huntarr/1.0 (https://github.com/plexguide/Huntarr.io)",
         "Content-Type": "application/json"
     }
-    logger.debug(f"Using User-Agent: {headers['User-Agent']}")
 
     while True:
         params = {
@@ -336,6 +343,148 @@ def get_wanted_missing_books(api_url: str, api_key: str, api_timeout: int, monit
 
     logger.info(f"Successfully fetched {len(all_missing_books)} missing books from Readarr.")
     return all_missing_books
+
+def get_wanted_missing_books_random_page(api_url: str, api_key: str, api_timeout: int, monitored_only: bool, count: int) -> List[Dict]:
+    """
+    Get a specified number of random missing books by selecting a random page.
+    This is much more efficient for very large libraries.
+    
+    Args:
+        api_url: The base URL of the Readarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        monitored_only: Whether to include only monitored books
+        count: How many books to return
+        
+    Returns:
+        A list of randomly selected missing books, up to the requested count
+    """
+    endpoint = "wanted/missing"
+    page_size = 100  # Smaller page size for better performance
+    retries = 2
+    retry_delay = 3
+    
+    # Ensure api_url is properly formatted
+    if not (api_url.startswith('http://') or api_url.startswith('https://')):
+        logger.error(f"Invalid URL format: {api_url}")
+        return []
+    base_url = api_url.rstrip('/')
+    url = f"{base_url}/api/v1/{endpoint.lstrip('/')}"
+    
+    # Add User-Agent header to identify Huntarr
+    headers = {
+        "X-Api-Key": api_key,
+        "User-Agent": "Huntarr/1.0 (https://github.com/plexguide/Huntarr.io)",
+        "Content-Type": "application/json"
+    }
+    
+    # First, make a request to get just the total record count (page 1 with size=1)
+    params = {
+        'page': 1,
+        'pageSize': 1
+    }
+    
+    for attempt in range(retries + 1):
+        try:
+            # Get total record count from a minimal query
+            logger.debug(f"Getting missing books count (attempt {attempt+1}/{retries+1})")
+            response = requests.get(url, headers=headers, params=params, timeout=api_timeout)
+            response.raise_for_status()
+            
+            if not response.content:
+                logger.warning(f"Empty response when getting missing count (attempt {attempt+1})")
+                if attempt < retries:
+                    time.sleep(retry_delay)
+                    continue
+                return []
+                
+            try:
+                data = response.json()
+                total_records = data.get('totalRecords', 0)
+                
+                if total_records == 0:
+                    logger.info("No missing books found in Readarr.")
+                    return []
+                    
+                # Calculate total pages with our desired page size
+                total_pages = (total_records + page_size - 1) // page_size
+                logger.info(f"Found {total_records} total missing books across {total_pages} pages")
+                
+                if total_pages == 0:
+                    return []
+                    
+                # Select a random page
+                random_page = random.randint(1, total_pages)
+                logger.info(f"Selected random page {random_page} of {total_pages} for missing books")
+                
+                # Get books from the random page
+                params = {
+                    'page': random_page,
+                    'pageSize': page_size
+                }
+                
+                response = requests.get(url, headers=headers, params=params, timeout=api_timeout)
+                response.raise_for_status()
+                
+                if not response.content:
+                    logger.warning(f"Empty response when getting missing books page {random_page}")
+                    return []
+                    
+                try:
+                    data = response.json()
+                    records = data.get('records', [])
+                    logger.info(f"Retrieved {len(records)} missing books from page {random_page}")
+                    
+                    # Apply monitored filter if requested (Readarr API may not support this directly)
+                    if monitored_only:
+                        filtered_records = [
+                            book for book in records
+                            if book.get('monitored', False)
+                        ]
+                        logger.debug(f"Filtered to {len(filtered_records)} monitored missing books")
+                        records = filtered_records
+                    
+                    # Select random books from this page
+                    if len(records) > count:
+                        selected_records = random.sample(records, count)
+                        logger.debug(f"Randomly selected {len(selected_records)} missing books from page {random_page}")
+                        return selected_records
+                    else:
+                        # If we have fewer books than requested, return all of them
+                        logger.debug(f"Returning all {len(records)} missing books from page {random_page} (fewer than requested {count})")
+                        return records
+                        
+                except json.JSONDecodeError as jde:
+                    logger.error(f"Failed to decode JSON response for missing books page {random_page}: {str(jde)}")
+                    if attempt < retries:
+                        time.sleep(retry_delay)
+                        continue
+                    return []
+                    
+            except json.JSONDecodeError as jde:
+                logger.error(f"Failed to decode JSON response for missing books count: {str(jde)}")
+                if attempt < retries:
+                    time.sleep(retry_delay)
+                    continue
+                return []
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error getting missing books from Readarr (attempt {attempt+1}): {str(e)}")
+            if attempt < retries:
+                time.sleep(retry_delay)
+                continue
+            return []
+            
+        except Exception as e:
+            logger.error(f"Unexpected error getting missing books (attempt {attempt+1}): {str(e)}", exc_info=True)
+            if attempt < retries:
+                time.sleep(retry_delay)
+                continue
+            return []
+    
+    # If we get here, all retries failed
+    logger.error("All attempts to get missing books failed")
+    return []
 
 def refresh_author(author_id: int, api_url: Optional[str] = None, api_key: Optional[str] = None, api_timeout: Optional[int] = None) -> bool:
     """
@@ -376,7 +525,7 @@ def book_search(book_ids: List[int], api_url: Optional[str] = None, api_key: Opt
     }
     
     # Pass credentials to arr_request
-    response = arr_request(endpoint, method="POST", data=data, api_url=api_url, api_key=api_key, api_timeout=api_timeout)
+    response = arr_request(endpoint, method="POST", data=data, api_url=api_url, api_key=api_key, api_timeout=api_timeout, count_api=False)
     # Return the response object (contains command ID) instead of just True/False
     # The calling function expects the command object now.
     return response 
@@ -400,6 +549,17 @@ def get_author_details(api_url: str, api_key: str, author_id: int, api_timeout: 
 
 def search_books(api_url: str, api_key: str, book_ids: List[int], api_timeout: int = 120) -> Optional[Dict]:
     """Triggers a search for specific book IDs in Readarr."""
+    
+    # Check API limit before making request
+    try:
+        from src.primary.stats_manager import check_hourly_cap_exceeded
+        if check_hourly_cap_exceeded("readarr"):
+            logger.warning(f"🛑 Readarr API hourly limit reached - skipping book search for {len(book_ids)} books")
+            return None
+    except Exception as e:
+        logger.error(f"Error checking hourly API cap: {e}")
+        # Continue with request if cap check fails - safer than skipping
+    
     endpoint = f"{api_url}/api/v1/command" # This uses the full URL, not arr_request
     headers = {'X-Api-Key': api_key}
     payload = {
@@ -413,6 +573,15 @@ def search_books(api_url: str, api_key: str, book_ids: List[int], api_timeout: i
         command_data = response.json()
         command_id = command_data.get('id')
         logger.info(f"Successfully triggered BookSearch command for book IDs: {book_ids}. Command ID: {command_id}")
+        
+        # Increment API counter after successful request
+        try:
+            from src.primary.stats_manager import increment_hourly_cap
+            increment_hourly_cap("readarr", 1)
+            logger.debug(f"Incremented Readarr hourly API cap for book search ({len(book_ids)} books)")
+        except Exception as cap_error:
+            logger.error(f"Failed to increment hourly API cap for book search: {cap_error}")
+        
         return command_data # Return the full command object which includes the ID
     except requests.exceptions.RequestException as e:
         logger.error(f"Error triggering BookSearch command for book IDs {book_ids} via {endpoint}: {e}")
@@ -420,3 +589,119 @@ def search_books(api_url: str, api_key: str, book_ids: List[int], api_timeout: i
     except Exception as e:
         logger.error(f"An unexpected error occurred triggering BookSearch for book IDs {book_ids}: {e}")
         return None
+
+def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
+    """
+    Get existing tag ID or create a new tag in Readarr.
+    
+    Args:
+        api_url: The base URL of the Readarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        tag_label: The label/name of the tag to create or find
+        
+    Returns:
+        The tag ID if successful, None otherwise
+    """
+    try:
+        # First, check if the tag already exists
+        response = arr_request("tag", api_url=api_url, api_key=api_key, api_timeout=api_timeout, count_api=False)
+        if response:
+            for tag in response:
+                if tag.get('label') == tag_label:
+                    tag_id = tag.get('id')
+                    logger.debug(f"Found existing tag '{tag_label}' with ID: {tag_id}")
+                    return tag_id
+        
+        # Tag doesn't exist, create it
+        tag_data = {"label": tag_label}
+        response = arr_request("tag", method="POST", data=tag_data, api_url=api_url, api_key=api_key, api_timeout=api_timeout, count_api=False)
+        if response and 'id' in response:
+            tag_id = response['id']
+            logger.info(f"Created new tag '{tag_label}' with ID: {tag_id}")
+            return tag_id
+        else:
+            logger.error(f"Failed to create tag '{tag_label}'. Response: {response}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error managing tag '{tag_label}': {e}")
+        return None
+
+def add_tag_to_author(api_url: str, api_key: str, api_timeout: int, author_id: int, tag_id: int) -> bool:
+    """
+    Add a tag to an author in Readarr.
+    
+    Args:
+        api_url: The base URL of the Readarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        author_id: The ID of the author to tag
+        tag_id: The ID of the tag to add
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        # First get the current author data
+        author_data = arr_request(f"author/{author_id}", api_url=api_url, api_key=api_key, api_timeout=api_timeout, count_api=False)
+        if not author_data:
+            logger.error(f"Failed to get author data for ID: {author_id}")
+            return False
+        
+        # Check if the tag is already present
+        current_tags = author_data.get('tags', [])
+        if tag_id in current_tags:
+            logger.debug(f"Tag {tag_id} already exists on author {author_id}")
+            return True
+        
+        # Add the new tag to the list
+        current_tags.append(tag_id)
+        author_data['tags'] = current_tags
+        
+        # Update the author with the new tags
+        response = arr_request(f"author/{author_id}", method="PUT", data=author_data, api_url=api_url, api_key=api_key, api_timeout=api_timeout, count_api=False)
+        if response:
+            logger.debug(f"Successfully added tag {tag_id} to author {author_id}")
+            return True
+        else:
+            logger.error(f"Failed to update author {author_id} with tag {tag_id}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error adding tag {tag_id} to author {author_id}: {e}")
+        return False
+
+def tag_processed_author(api_url: str, api_key: str, api_timeout: int, author_id: int, tag_label: str = "huntarr-missing") -> bool:
+    """
+    Tag an author in Readarr with the specified tag.
+    
+    Args:
+        api_url: The base URL of the Readarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        author_id: The ID of the author to tag
+        tag_label: The tag to apply (huntarr-missing, huntarr-upgraded)
+        
+    Returns:
+        True if the tagging was successful, False otherwise
+    """
+    try:
+        # Get or create the tag
+        tag_id = get_or_create_tag(api_url, api_key, api_timeout, tag_label)
+        if tag_id is None:
+            logger.error(f"Failed to get or create tag '{tag_label}' in Readarr")
+            return False
+            
+        # Add the tag to the author
+        success = add_tag_to_author(api_url, api_key, api_timeout, author_id, tag_id)
+        if success:
+            logger.debug(f"Successfully tagged Readarr author {author_id} with '{tag_label}'")
+            return True
+        else:
+            logger.error(f"Failed to add tag '{tag_label}' to Readarr author {author_id}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error tagging Readarr author {author_id} with '{tag_label}': {e}")
+        return False

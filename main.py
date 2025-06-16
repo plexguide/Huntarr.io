@@ -9,6 +9,8 @@ import threading
 import sys
 import signal
 import logging # Use standard logging for initial setup
+import atexit
+import time
 
 # Import path configuration early to set up environment
 try:
@@ -25,7 +27,21 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src'
 # --- Early Logging Setup (Before importing app components) ---
 # Basic logging to capture early errors during import or setup
 log_level = logging.DEBUG if os.environ.get('DEBUG', 'false').lower() == 'true' else logging.INFO
-logging.basicConfig(level=log_level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+# Create a custom formatter that uses local time
+class LocalTimeFormatter(logging.Formatter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.converter = time.localtime  # Use local time instead of UTC
+
+# Disable basic logging to prevent duplicates - we use custom loggers
+# logging.basicConfig(level=log_level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+# Apply local time converter to all existing handlers
+for handler in logging.root.handlers:
+    if hasattr(handler, 'formatter') and handler.formatter:
+        handler.formatter.converter = time.localtime
+
 root_logger = logging.getLogger("HuntarrRoot") # Specific logger for this entry point
 root_logger.info("--- Huntarr Main Process Starting ---")
 root_logger.info(f"Python sys.path: {sys.path}")
@@ -95,10 +111,25 @@ try:
     import logging
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
     from primary.utils.logger import setup_main_logger, get_logger
+    from primary.utils.clean_logger import setup_clean_logging
     
     # Initialize main logger
     huntarr_logger = setup_main_logger()
+    
+    # Initialize timezone from TZ environment variable
+    try:
+        from primary.settings_manager import initialize_timezone_from_env
+        initialize_timezone_from_env()
+        huntarr_logger.info("Timezone initialization completed.")
+    except Exception as e:
+        huntarr_logger.warning(f"Failed to initialize timezone from environment: {e}")
+    
+    # Initialize clean logging for frontend consumption
+    setup_clean_logging()
+    huntarr_logger.info("Clean logging system initialized for frontend consumption.")
+    
     huntarr_logger.info("Successfully imported application components.")
+    # Main function startup message removed to reduce log spam
 except ImportError as e:
     root_logger.critical(f"Fatal Error: Failed to import application components: {e}", exc_info=True)
     root_logger.critical("Please ensure the application structure is correct, dependencies are installed (`pip install -r requirements.txt`), and the script is run from the project root.")
@@ -107,6 +138,40 @@ except Exception as e:
     root_logger.critical(f"Fatal Error: An unexpected error occurred during initial imports: {e}", exc_info=True)
     sys.exit(1)
 
+# Global variables for server management
+waitress_server = None
+shutdown_requested = threading.Event()
+
+def refresh_sponsors_on_startup():
+    """Refresh sponsors database from manifest.json on startup"""
+    import os
+    import json
+    
+    try:
+        # Get database instance
+        from src.primary.utils.database import get_database
+        db = get_database()
+        
+        # Path to manifest.json
+        manifest_path = os.path.join(os.path.dirname(__file__), 'manifest.json')
+        
+        if os.path.exists(manifest_path):
+            with open(manifest_path, 'r') as f:
+                manifest_data = json.load(f)
+            
+            sponsors_list = manifest_data.get('sponsors', [])
+            if sponsors_list:
+                # Clear existing sponsors and save new ones
+                db.save_sponsors(sponsors_list)
+                huntarr_logger.debug(f"Refreshed {len(sponsors_list)} sponsors from manifest.json")
+            else:
+                huntarr_logger.warning("No sponsors found in manifest.json")
+        else:
+            huntarr_logger.warning(f"manifest.json not found at {manifest_path}")
+            
+    except Exception as e:
+        huntarr_logger.error(f"Error refreshing sponsors on startup: {e}")
+        raise
 
 def run_background_tasks():
     """Runs the Huntarr background processing."""
@@ -121,12 +186,32 @@ def run_background_tasks():
 
 def run_web_server():
     """Runs the Flask web server using Waitress in production."""
+    global waitress_server
     web_logger = get_logger("WebServer") # Use app's logger
     debug_mode = os.environ.get('DEBUG', 'false').lower() == 'true'
     host = os.environ.get('FLASK_HOST', '0.0.0.0')
     port = int(os.environ.get('PORT', 9705)) # Use PORT for consistency
 
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
+
+    # Log the current authentication mode once at startup
+    try:
+        import sys
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+        from primary.settings_manager import load_settings
+        
+        settings = load_settings("general")
+        local_access_bypass = settings.get("local_access_bypass", False)
+        proxy_auth_bypass = settings.get("proxy_auth_bypass", False)
+        
+        if proxy_auth_bypass:
+            web_logger.info("🔓 Authentication Mode: NO LOGIN MODE (Proxy authentication bypass enabled)")
+        elif local_access_bypass:
+            web_logger.info("🏠 Authentication Mode: LOCAL ACCESS BYPASS (Local network authentication bypass enabled)")
+        else:
+            web_logger.info("🔐 Authentication Mode: STANDARD (Full authentication required)")
+    except Exception as e:
+        web_logger.warning(f"Could not determine authentication mode at startup: {e}")
 
     if debug_mode:
         # Use Flask's development server for debugging (less efficient, auto-reloads)
@@ -140,12 +225,49 @@ def run_web_server():
             if not stop_event.is_set():
                 stop_event.set()
     else:
-        # Use Waitress for production
+        # Use Waitress for production with proper signal handling
         try:
             from waitress import serve
+            from waitress.server import create_server
+            import time
             web_logger.info("Running with Waitress production server.")
-            # Adjust threads as needed, default is 4
-            serve(app, host=host, port=port, threads=8)
+            
+            # Create the server instance so we can shut it down gracefully
+            waitress_server = create_server(app, host=host, port=port, threads=8)
+            
+            web_logger.info("Waitress server starting...")
+            
+            # Start the server in a separate thread
+            server_thread = threading.Thread(target=waitress_server.run, daemon=True)
+            server_thread.start()
+            
+            # Monitor for shutdown signal in the main thread
+            while not shutdown_requested.is_set() and not stop_event.is_set():
+                try:
+                    # Check both shutdown events
+                    if shutdown_requested.wait(timeout=0.5) or stop_event.wait(timeout=0.5):
+                        break
+                except KeyboardInterrupt:
+                    break
+            
+            # Shutdown sequence
+            web_logger.info("Shutdown signal received. Stopping Waitress server...")
+            try:
+                waitress_server.close()
+                web_logger.info("Waitress server close() called.")
+                
+                # Wait for server thread to finish
+                server_thread.join(timeout=3.0)
+                if server_thread.is_alive():
+                    web_logger.warning("Server thread did not stop within timeout.")
+                else:
+                    web_logger.info("Server thread stopped successfully.")
+                    
+            except Exception as e:
+                web_logger.exception(f"Error during Waitress server shutdown: {e}")
+            
+            web_logger.info("Waitress server has stopped.")
+            
         except ImportError:
             web_logger.error("Waitress not found. Falling back to Flask development server (NOT recommended for production).")
             web_logger.error("Install waitress ('pip install waitress') for production use.")
@@ -165,8 +287,29 @@ def run_web_server():
 def main_shutdown_handler(signum, frame):
     """Gracefully shut down the application."""
     huntarr_logger.info(f"Received signal {signum}. Initiating graceful shutdown...")
+    
+    # Set both shutdown events
     if not stop_event.is_set():
         stop_event.set()
+    if not shutdown_requested.is_set():
+        shutdown_requested.set()
+    
+    # Also shutdown the Waitress server directly if it exists
+    global waitress_server
+    if waitress_server:
+        try:
+            huntarr_logger.info("Signaling Waitress server to shutdown...")
+            waitress_server.close()
+        except Exception as e:
+            huntarr_logger.warning(f"Error closing Waitress server: {e}")
+
+def cleanup_handler():
+    """Cleanup function called at exit"""
+    huntarr_logger.info("Exit cleanup handler called")
+    if not stop_event.is_set():
+        stop_event.set()
+    if not shutdown_requested.is_set():
+        shutdown_requested.set()
 
 def main():
     """Main entry point function for Huntarr application.
@@ -175,6 +318,36 @@ def main():
     # Register signal handlers for graceful shutdown in the main process
     signal.signal(signal.SIGINT, main_shutdown_handler)
     signal.signal(signal.SIGTERM, main_shutdown_handler)
+    
+    # Register cleanup handler
+    atexit.register(cleanup_handler)
+    
+    # Initialize databases with default configurations
+    try:
+        from primary.settings_manager import initialize_database
+        initialize_database()
+        huntarr_logger.info("Main database initialization completed successfully")
+        
+        # Initialize database logging system (now uses main huntarr.db)
+        try:
+            from primary.utils.database import get_logs_database, schedule_log_cleanup
+            logs_db = get_logs_database()
+            schedule_log_cleanup()
+            huntarr_logger.info("Database logging system initialized with scheduled cleanup.")
+        except Exception as e:
+            huntarr_logger.warning(f"Failed to initialize database logging: {e}")
+        
+        # Refresh sponsors from manifest.json on startup
+        try:
+            refresh_sponsors_on_startup()
+            huntarr_logger.info("Sponsors database refreshed from manifest.json")
+        except Exception as sponsor_error:
+            huntarr_logger.warning(f"Failed to refresh sponsors on startup: {sponsor_error}")
+        
+    except Exception as e:
+        huntarr_logger.error(f"Failed to initialize databases: {e}")
+        huntarr_logger.error("Application may not function correctly without database")
+        # Continue anyway - the app might still work with defaults
 
     background_thread = None
     try:
@@ -192,10 +365,14 @@ def main():
         huntarr_logger.info("KeyboardInterrupt received in main thread. Shutting down...")
         if not stop_event.is_set():
             stop_event.set()
+        if not shutdown_requested.is_set():
+            shutdown_requested.set()
     except Exception as e:
         huntarr_logger.exception(f"An unexpected error occurred in the main execution block: {e}")
         if not stop_event.is_set():
             stop_event.set() # Ensure shutdown is triggered on unexpected errors
+        if not shutdown_requested.is_set():
+            shutdown_requested.set()
     finally:
         # --- Cleanup ---
         huntarr_logger.info("Web server has stopped. Initiating final shutdown sequence...")
@@ -208,7 +385,7 @@ def main():
         # Wait for the background thread to finish cleanly
         if background_thread and background_thread.is_alive():
             huntarr_logger.info("Waiting for background tasks to complete...")
-            background_thread.join(timeout=30) # Wait up to 30 seconds
+            background_thread.join(timeout=5) # Reduced timeout for faster shutdown
 
             if background_thread.is_alive():
                 huntarr_logger.warning("Background thread did not stop gracefully within the timeout.")

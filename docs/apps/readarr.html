@@ -19,6 +19,7 @@
             <div class="sidebar-section">
                 <h3 class="sidebar-section-title">Getting Started</h3>
                 <ul>
+                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
                     <li><a href="../getting-started/installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
                 </ul>
             </div>
@@ -40,7 +41,7 @@
                     <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg> GitHub</a></li>
                     <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
                     <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
-                    <li><a href="https://donate.plex.one" target="_blank"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
+
                 </ul>
             </div>
         </nav>
@@ -54,9 +55,38 @@
                 <img src="../images/arrs/readarr.png" alt="Readarr Logo" style="width: 80px; height: 80px; object-fit: contain;">
             </div>
             
-            <p>Readarr is an automated book and audiobook downloading and management application. Huntarr integrates with your existing Readarr instance to automatically search for missing books and quality upgrades that Readarr doesn't actively hunt for.</p>
+            <div class="alert alert-info" style="margin: 20px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
+                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Readarr?</strong> 
+                Readarr is an automated book and audiobook downloading and management application. It monitors for new books, searches indexers, and automatically downloads content using your preferred download clients.
+            </div>
             
-            <h2 id="readarr-instance-setup">Readarr Instance Setup</h2>
+            <p>Readarr automates the process of monitoring and downloading books and audiobooks. It integrates with popular download clients and uses indexers to search for and download content automatically, making it easy to build and maintain an organized digital library.</p>
+            
+            <h2 id="overview">Overview</h2>
+            
+            <h3><i class="fas fa-download" style="margin-right: 10px; color: #3498db;"></i>What Readarr Does</h3>
+            <p>Readarr provides automated content management for books and audiobooks by:</p>
+            <ul>
+                <li><strong>Automatic Searching:</strong> Monitors for new books and searches configured indexers</li>
+                <li><strong>Quality Management:</strong> Downloads content based on your quality preferences (EPUB, PDF, MP3, etc.)</li>
+                <li><strong>Library Organization:</strong> Automatically organizes downloaded books in your media library</li>
+                <li><strong>Upgrade Management:</strong> Can upgrade existing books to better quality when available</li>
+                <li><strong>Download Client Integration:</strong> Works with popular download clients like qBittorrent, Deluge, etc.</li>
+            </ul>
+            
+            <h3><i class="fas fa-cogs" style="margin-right: 10px; color: #e67e22;"></i>How Huntarr Enhances Readarr</h3>
+            <p>Huntarr adds intelligent automation on top of Readarr:</p>
+            <ul>
+                <li><strong>Smart Search Timing:</strong> Prevents overwhelming indexers with too many requests</li>
+                <li><strong>Missing Book Detection:</strong> Identifies and prioritizes missing books and audiobooks</li>
+                <li><strong>Upgrade Intelligence:</strong> Finds better quality versions of existing books</li>
+                <li><strong>Rate Limiting:</strong> Respects API limits to prevent bans or throttling</li>
+                <li><strong>Multi-Instance Support:</strong> Manage multiple Readarr instances from one interface</li>
+            </ul>
+            
+            <h2 id="connection-settings">Instance Configuration</h2>
+            
+            <p>Configure your Readarr instances to connect Huntarr with your Readarr installation(s).</p>
             
             <h3>Adding Your Readarr Instance</h3>
             <p>To connect your existing Readarr instance to Huntarr:</p>
@@ -166,10 +196,10 @@
             <h3 id="additional-options"><i class="fas fa-cogs" style="margin-right: 10px; color: #9b59b6;"></i>Additional Options</h3>
             <p>Fine-tune Huntarr's behavior with these additional settings:</p>
             
-            <h4><i class="fas fa-eye" style="margin-right: 8px; color: #8b4513;"></i>Monitored Only</h4>
-            <p>When enabled, Huntarr will only search for books that are marked as "Monitored" in Readarr. This prevents searches for authors or books you've intentionally unmonitored.</p>
-            
-            <h4><i class="fas fa-calendar" style="margin-right: 8px; color: #e74c3c;"></i>Skip Future Releases</h4>
+                    <h4 id="monitored-only"><i class="fas fa-eye" style="margin-right: 8px; color: #8b4513;"></i>Monitored Only</h4>
+        <p>When enabled, Huntarr will only search for books that are marked as "Monitored" in Readarr. This prevents searches for authors or books you've intentionally unmonitored.</p>
+
+        <h4 id="skip-future-releases"><i class="fas fa-calendar" style="margin-right: 8px; color: #e74c3c;"></i>Skip Future Releases</h4>
             <p>When enabled, Huntarr will skip books with future release dates. This prevents unnecessary searches for content that hasn't been published yet.</p>
             
             <h4><i class="fas fa-book" style="margin-right: 8px; color: #f39c12;"></i>Book Types</h4>
@@ -182,6 +212,34 @@
             
             <h4><i class="fas fa-user" style="margin-right: 8px; color: #9b59b6;"></i>Author Monitoring</h4>
             <p>When enabled, Huntarr will respect your author monitoring settings in Readarr, only searching for books from authors you're actively monitoring.</p>
+            
+            <h2 id="swaparr-integration">Swaparr Integration</h2>
+            
+            <p>Enable Swaparr monitoring for this Readarr instance to automatically clean up stalled downloads.</p>
+            
+            <div class="alert alert-info" style="margin: 15px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
+                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Swaparr?</strong> 
+                Swaparr monitors your download queues and automatically removes stalled, failed, or problematic downloads to keep your automation running smoothly. 
+                <a href="swaparr.html" style="color: #0dcaf0;">Learn more about Swaparr configuration</a>.
+            </div>
+            
+            <h3><i class="fas fa-broom" style="margin-right: 8px; color: #e67e22;"></i>When to Enable Swaparr</h3>
+            <ul>
+                <li>You frequently have stalled book or audiobook downloads</li>
+                <li>Your download queue gets clogged with failed downloads</li>
+                <li>You want hands-off automation for your digital library</li>
+                <li>You use public trackers where availability varies</li>
+                <li>You download large audiobook collections that sometimes fail</li>
+            </ul>
+            
+            <h3><i class="fas fa-exclamation-triangle" style="margin-right: 8px; color: #f39c12;"></i>When to Be Cautious</h3>
+            <ul>
+                <li>You use private book trackers with strict ratio requirements</li>
+                <li>You prefer manual control over your book downloads</li>
+                <li>You have very slow internet where downloads take a long time</li>
+                <li>You're building ratio on specific book torrents</li>
+                <li>You collect rare or out-of-print books that shouldn't be removed</li>
+            </ul>
             
             <h2 id="troubleshooting">Troubleshooting</h2>
             

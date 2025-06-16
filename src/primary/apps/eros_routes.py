@@ -2,36 +2,29 @@
 
 from flask import Blueprint, request, jsonify
 import datetime, os, requests
-from src.primary import keys_manager
-from src.primary.state import get_state_file_path, reset_state_file
+# keys_manager import removed - using settings_manager instead
+from src.primary.state import reset_state_file
 from src.primary.utils.logger import get_logger, APP_LOG_FILES
 from src.primary.settings_manager import load_settings, get_ssl_verify_setting
 import traceback
 import socket
 from urllib.parse import urlparse
 from src.primary.apps.eros import api as eros_api
+from src.primary.apps.eros import get_configured_instances
 # Import centralized path configuration
 from src.primary.utils.config_paths import CONFIG_PATH
 
 eros_bp = Blueprint('eros', __name__)
 eros_logger = get_logger("eros")
 
-# Make sure we're using the correct state files
-PROCESSED_MISSING_FILE = get_state_file_path("eros", "processed_missing") 
-PROCESSED_UPGRADES_FILE = get_state_file_path("eros", "processed_upgrades")
-
-def get_configured_instances():
-    # Load Eros settings
-    settings = load_settings("eros")
-    instances = settings.get("instances", [])
-    return instances
+# State management now handled directly through database calls
 
 def test_connection(url, api_key):
     # Validate URL format
     if not (url.startswith('http://') or url.startswith('https://')):
-        error_msg = "API URL must start with http:// or https://"
-        eros_logger.error(error_msg)
-        return {"success": False, "message": error_msg}
+        eros_logger.warning(f"API URL missing http(s) scheme: {url}")
+        url = f"http://{url}"
+        eros_logger.debug(f"Auto-correcting URL to: {url}")
     
     # Try to establish a socket connection first to check basic connectivity
     parsed_url = urlparse(url)
@@ -180,41 +173,30 @@ def test_connection_endpoint():
         
     eros_logger.info(f"Testing connection to Eros API at {api_url}")
     
+    # Auto-correct URL if missing http(s) scheme
+    if not (api_url.startswith('http://') or api_url.startswith('https://')):
+        eros_logger.warning(f"API URL missing http(s) scheme: {api_url}")
+        api_url = f"http://{api_url}"
+        eros_logger.debug(f"Auto-correcting URL to: {api_url}")
+    
     return test_connection(api_url, api_key)
 
 @eros_bp.route('/test-settings', methods=['GET'])
 def test_eros_settings():
-    """Debug endpoint to test Eros settings loading"""
+    """Debug endpoint to test Eros settings loading from database"""
     try:
-        # Directly read the settings file to bypass any potential caching
-        import json
-        import os
-        
-        # Check all possible settings locations using centralized config
-        possible_locations = [
-            os.path.join(str(CONFIG_PATH), "eros.json"),  # Cross-platform main config path
-            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "config", "eros.json")  # Relative path fallback
-        ]
-        
         results = {}
         
-        # Try all locations
-        for location in possible_locations:
-            results[location] = {"exists": os.path.exists(location)}
-            if os.path.exists(location):
-                try:
-                    with open(location, 'r') as f:
-                        results[location]["content"] = json.load(f)
-                except Exception as e:
-                    results[location]["error"] = str(e)
-        
-        # Also try loading via settings_manager
+        # Load settings from database via settings_manager
         try:
             from src.primary.settings_manager import load_settings
             settings = load_settings("eros")
-            results["settings_manager"] = settings
+            results["database_settings"] = settings
+            results["configured"] = bool(settings.get("url") and settings.get("api_key"))
         except Exception as e:
-            results["settings_manager_error"] = str(e)
+            results["database_error"] = str(e)
+            
+        results["note"] = "Settings are now stored in database. Legacy JSON files are no longer used."
             
         return jsonify(results)
     except Exception as e:

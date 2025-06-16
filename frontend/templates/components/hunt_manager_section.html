@@ -1,0 +1,116 @@
+<section id="huntManagerSection" class="content-section">
+    <div class="section-header">
+        <!-- App Filter - matching logs page style -->
+        <div class="log-app-filter">
+            <label for="huntManagerAppSelect">
+                <i class="fas fa-crosshairs"></i>
+                <span>App:</span>
+            </label>
+            <select id="huntManagerAppSelect" class="styled-select">
+                <option value="all">All Apps</option>
+                <option value="sonarr">Sonarr</option>
+                <option value="radarr">Radarr</option>
+                <option value="lidarr">Lidarr</option>
+                <option value="readarr">Readarr</option>
+                <option value="whisparr">Whisparr V2</option>
+                <option value="eros">Whisparr V3</option>
+            </select>
+        </div>
+        
+        <div class="log-controls">
+            <!-- Search functionality -->  
+            <div class="log-search">
+                <input type="text" id="huntManagerSearchInput" placeholder="Search hunt data...">
+                <button id="huntManagerSearchButton">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            
+            <div class="log-options">
+                <button id="clearHuntManagerButton" class="clear-button">
+                    <i class="fas fa-trash-alt"></i> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination controls -->
+    <div class="pagination-controls">
+        <button id="huntManagerPrevPage" class="pagination-button"><i class="fas fa-chevron-left"></i> Previous</button>
+        <span id="huntManagerPageInfo">Page <span id="huntManagerCurrentPage">1</span> of <span id="huntManagerTotalPages">1</span></span>
+        <button id="huntManagerNextPage" class="pagination-button">Next <i class="fas fa-chevron-right"></i></button>
+        
+        <div class="page-size-selector">
+            <label for="huntManagerPageSize">Show:</label>
+            <select id="huntManagerPageSize">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="30">30</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="250">250</option>
+                <option value="1000">1000</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="history-container">
+        <!-- Table view -->
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>PROCESSED INFORMATION</th>
+                    <th>OPERATION</th>
+                    <th>ID NUMBER</th>
+                    <th>APP INSTANCE</th>
+                    <th>HOW LONG AGO</th>
+                </tr>
+            </thead>
+            <tbody id="huntManagerTableBody">
+                <!-- Hunt Manager items will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="huntManagerEmptyState" class="empty-state-message">
+        <i class="fas fa-crosshairs fa-3x"></i>
+        <p>No hunt data found. Items will appear here when media is processed.</p>
+    </div>
+
+    <div id="huntManagerLoading" class="loading-indicator">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading hunt manager...</p>
+    </div>
+</section>
+
+<style>
+/* Hunt Manager clickable link styling */
+.hunt-item-link {
+    color: var(--accent-color, #4a9eff) !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+}
+
+.hunt-item-link:hover {
+    color: #3a8eef !important;
+    border-bottom-color: #3a8eef;
+    text-decoration: none;
+}
+
+.hunt-item-link:active {
+    color: #2a7edf !important;
+}
+
+/* Discovery badge styling */
+.discovery-badge {
+    background: rgba(74, 158, 255, 0.2);
+    color: #4a9eff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    margin-left: 8px;
+    border: 1px solid rgba(74, 158, 255, 0.3);
+}
+</style> 

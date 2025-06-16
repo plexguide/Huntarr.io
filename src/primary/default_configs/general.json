@@ -1,6 +1,6 @@
 {
-  "debug_mode": false,
   "display_community_resources": true,
+  "display_huntarr_support": true,
   "log_refresh_interval_seconds": 30,
   "ui_theme": "dark",
   "check_for_updates": true,

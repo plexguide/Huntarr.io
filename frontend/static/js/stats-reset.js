@@ -61,7 +61,7 @@ function resetStatsAPI(appType = null) {
     const requestBody = appType ? { app_type: appType } : {};
     
     // Use the public endpoint that doesn't require authentication
-    return HuntarrUtils.fetchWithTimeout('/api/stats/reset_public', {
+    return HuntarrUtils.fetchWithTimeout('./api/stats/reset_public', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

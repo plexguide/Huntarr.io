@@ -41,6 +41,27 @@ datas = [
     (str(project_dir / 'src'), 'src'),
 ]
 
+# Add apprise data files to fix attachment directory error
+try:
+    import apprise
+    import os
+    apprise_path = os.path.dirname(apprise.__file__)
+    # Add apprise's attachment, plugins, and config directories
+    apprise_attachment_path = os.path.join(apprise_path, 'attachment')
+    apprise_plugins_path = os.path.join(apprise_path, 'plugins')
+    apprise_config_path = os.path.join(apprise_path, 'config')
+    
+    if os.path.exists(apprise_attachment_path):
+        datas.append((apprise_attachment_path, 'apprise/attachment'))
+    if os.path.exists(apprise_plugins_path):
+        datas.append((apprise_plugins_path, 'apprise/plugins'))
+    if os.path.exists(apprise_config_path):
+        datas.append((apprise_config_path, 'apprise/config'))
+        
+    print(f"Added apprise data directories from: {apprise_path}")
+except ImportError:
+    print("Warning: apprise not found, skipping apprise data files")
+
 # Add tools directory if it exists
 if os.path.exists(str(project_dir / 'tools')):
     datas.append((str(project_dir / 'tools'), 'tools'))
@@ -122,6 +143,39 @@ a = Analysis(
         'uuid',
         'pathlib',
         'concurrent.futures',
+        # Apprise notification support
+        'apprise',
+        'apprise.common', 
+        'apprise.conversion',
+        'apprise.decorators',
+        'apprise.locale',
+        'apprise.logger',
+        'apprise.manager',
+        'apprise.utils',
+        'apprise.URLBase',
+        'apprise.AppriseAsset',
+        'apprise.AppriseAttachment',
+        'apprise.AppriseConfig',
+        'apprise.cli',
+        'apprise.config',
+        'apprise.attachment',
+        'apprise.plugins',
+        'apprise.plugins.NotifyEmail',
+        'apprise.plugins.NotifyDiscord',
+        'apprise.plugins.NotifySlack',
+        'apprise.plugins.NotifyTelegram',
+        'apprise.plugins.NotifyWebhookJSON',
+        'apprise.plugins.NotifyWebhookXML',
+        'markdown',
+        'yaml',
+        'cryptography',
+        'cryptography.fernet',
+        'cryptography.hazmat',
+        'cryptography.hazmat.primitives',
+        'cryptography.hazmat.primitives.hashes',
+        'cryptography.hazmat.primitives.ciphers',
+        'cryptography.hazmat.backends',
+        'cryptography.hazmat.backends.openssl',
     ],
     hookspath=[],
     hooksconfig={},

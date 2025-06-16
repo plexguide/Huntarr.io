@@ -34,8 +34,5 @@ def initialize_app(app_type):
 def load_general_settings():
     """Load general settings without treating it as a regular app"""
     settings = load_settings("general")
-    logger.info("--- Configuration for general ---")
-    # Log the settings as needed
-    # ...
-    logger.info("--- End Configuration for general ---")
+    # Configuration logging removed to reduce log spam
     return settings

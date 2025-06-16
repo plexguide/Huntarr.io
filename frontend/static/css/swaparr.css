@@ -1,0 +1,348 @@
+/* Enhanced Swaparr-specific styling */
+
+.swaparr-panel {
+    background: linear-gradient(135deg, rgba(30, 39, 56, 0.9) 0%, rgba(14, 20, 32, 0.9) 100%);
+    border: 1px solid rgba(90, 109, 137, 0.3);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.swaparr-config h3 {
+    color: #3498db;
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.swaparr-config h3 i {
+    color: #e74c3c;
+}
+
+.swaparr-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-left: 10px;
+}
+
+.swaparr-badge-warning {
+    background-color: #f39c12;
+    color: #fff;
+}
+
+.swaparr-config-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.config-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+}
+
+.config-item i {
+    color: #3498db;
+    width: 16px;
+    text-align: center;
+}
+
+.config-item strong {
+    color: #fff;
+}
+
+/* Statistics Panel */
+.swaparr-statistics h4 {
+    color: #2ecc71;
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 12px 8px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.stat-item i {
+    color: #3498db;
+    font-size: 14px;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.stat-value {
+    display: block;
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.stat-label {
+    display: block;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stats-apps {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(90, 109, 137, 0.3);
+}
+
+.app-stat {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.stats-footer {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(90, 109, 137, 0.2);
+    text-align: center;
+}
+
+.stats-footer small {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Table View */
+.swaparr-table {
+    background: linear-gradient(135deg, rgba(30, 39, 56, 0.9) 0%, rgba(14, 20, 32, 0.9) 100%);
+    border: 1px solid rgba(90, 109, 137, 0.3);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.swaparr-table-header {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, rgba(41, 128, 185, 0.2) 100%);
+    border-bottom: 1px solid rgba(90, 109, 137, 0.3);
+}
+
+.swaparr-table-header h4 {
+    color: #3498db;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.swaparr-downloads-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+}
+
+.swaparr-downloads-table thead th {
+    background: linear-gradient(135deg, rgba(40, 49, 66, 0.8) 0%, rgba(24, 30, 42, 0.8) 100%);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(90, 109, 137, 0.3);
+}
+
+.swaparr-downloads-table thead th i {
+    margin-right: 5px;
+    color: #3498db;
+}
+
+.swaparr-downloads-table tbody tr {
+    border-bottom: 1px solid rgba(90, 109, 137, 0.2);
+    transition: background-color 0.2s ease;
+}
+
+.swaparr-downloads-table tbody tr:hover {
+    background: rgba(52, 152, 219, 0.1);
+}
+
+.swaparr-downloads-table tbody td {
+    padding: 12px 15px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Status-specific row styling */
+.swaparr-status-striked {
+    background: rgba(243, 156, 18, 0.1);
+    border-left: 3px solid #f39c12;
+}
+
+.swaparr-status-removed {
+    background: rgba(231, 76, 60, 0.1);
+    border-left: 3px solid #e74c3c;
+}
+
+.swaparr-status-pending {
+    background: rgba(230, 126, 34, 0.1);
+    border-left: 3px solid #e67e22;
+}
+
+.swaparr-status-normal {
+    background: rgba(46, 204, 113, 0.1);
+    border-left: 3px solid #2ecc71;
+}
+
+.swaparr-status-ignored {
+    background: rgba(149, 165, 166, 0.1);
+    border-left: 3px solid #95a5a6;
+}
+
+.swaparr-status-dry-run {
+    background: rgba(155, 89, 182, 0.1);
+    border-left: 3px solid #9b59b6;
+}
+
+/* Badge styling */
+.strikes-badge {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-striked {
+    background: #f39c12;
+    color: white;
+}
+
+.status-removed {
+    background: #e74c3c;
+    color: white;
+}
+
+.status-pending {
+    background: #e67e22;
+    color: white;
+}
+
+.status-normal {
+    background: #2ecc71;
+    color: white;
+}
+
+.status-ignored {
+    background: #95a5a6;
+    color: white;
+}
+
+.status-dry-run {
+    background: #9b59b6;
+    color: white;
+}
+
+/* Empty state */
+.swaparr-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.swaparr-empty-state i {
+    font-size: 48px;
+    color: #3498db;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.swaparr-empty-state h4 {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 0 10px 0;
+    font-size: 18px;
+}
+
+.swaparr-empty-state p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .swaparr-config-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .swaparr-downloads-table {
+        font-size: 12px;
+    }
+    
+    .swaparr-downloads-table tbody td {
+        padding: 8px 10px;
+        max-width: 150px;
+    }
+    
+    .swaparr-table-header h4 {
+        font-size: 14px;
+    }
+    
+    .swaparr-panel {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .config-item {
+        font-size: 13px;
+    }
+    
+    .swaparr-downloads-table tbody td {
+        max-width: 120px;
+    }
+} 

@@ -1,643 +1,837 @@
-# Huntarr Development Instructions
+# Huntarr Development Guidelines
 
-This document serves as a constant reminder and reference for common development tasks, debugging procedures, and fix patterns in the Huntarr codebase.
+Quick reference for development patterns, common issues, and critical requirements.
 
-## 🚀 Version Update Workflow
+## 🚨 CRITICAL RULES
 
-**When making changes:**
+### 🚫 NO AUTO-COMMITTING
+**NEVER automatically commit changes without explicit user approval.**
+- Present fixes to user first
+- Get explicit approval before committing  
+- Let user decide when to commit
 
-2. **ALWAYS rebuild and test with this command:**
-   ```bash
-   cd /Users/home/Huntarr/Huntarr.io && docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build
-   ```
-3. **Check logs for errors related to your changes:**
-   ```bash
-   docker logs huntarr
-   ```
-4. **Test cross-platform compatibility** (Windows, Mac, Docker, Linux bare metal)
-5. **Test subpath reverse proxy scenarios** (e.g., `/huntarr/` prefix)
-6. Create memory entry for significant fixes
+### 🔄 MANDATORY TESTING WORKFLOW
+```bash
+# ALWAYS rebuild and test changes
+cd /Users/home/Huntarr/Huntarr.io && docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build
 
-## 🐛 Common Issue Patterns & Solutions
+# Check logs for errors
+docker logs huntarr
+```
 
-### 1. Frontend Log Regex Issues (Logs Not Showing for Specific Apps)
+### 🌐 CROSS-PLATFORM REQUIREMENTS
+- **NEVER use hard-coded absolute paths** (e.g., `/config/file.json`)
+- **ALWAYS use `os.path.join()`** for path construction
+- **ALWAYS use relative URLs** in frontend (e.g., `./api/` not `/api/`)
+- **ALWAYS test**: Docker, Windows, Mac, Linux, subpaths (`domain.com/huntarr/`)
 
-**Symptoms:**
-- Logs are being generated and written to log files correctly
-- Backend log streaming endpoint serves logs properly (e.g., `/logs?app=huntarr.hunting`, `/logs?app=sonarr`, etc.)
-- Frontend shows "Connected" status but no logs appear when specific app is selected
-- Other app logs work fine, but one or more specific apps show no logs
-- Issue affects any app type (huntarr.hunting, sonarr, radarr, new custom apps, etc.)
+## 🐛 COMMON ISSUE PATTERNS
 
-**Root Cause:**
-- Malformed regex pattern in frontend JavaScript with double backslashes
-- Regex fails to parse log messages, preventing proper app type categorization
-- Logs exist but aren't displayed due to failed pattern matching
-- Affects any app whose logs don't match the broken regex pattern
-
-**Debugging Steps:**
-1. **Check if logs exist in container for the affected app:**
-   ```bash
-   # Replace 'hunting' with the actual app log file name
-   docker exec huntarr cat /config/logs/hunting.log
-   docker exec huntarr cat /config/logs/sonarr.log
-   docker exec huntarr cat /config/logs/[app_name].log
-   ```
-
-2. **Test backend log streaming for the affected app:**
-   ```bash
-   # Test with the specific app parameter that's not working
-   curl -N -s "http://localhost:9705/logs?app=huntarr.hunting" | head -10
-   curl -N -s "http://localhost:9705/logs?app=sonarr" | head -10
-   curl -N -s "http://localhost:9705/logs?app=[app_name]" | head -10
-   ```
-
-3. **Check browser console** for JavaScript regex errors
-
-4. **Test log format compatibility:**
-   ```bash
-   # Check the actual log format to ensure it matches expected pattern
-   docker exec huntarr tail -5 /config/logs/[app_name].log
-   ```
-
-**Fix Pattern:**
+### 1. Frontend Log Regex Issues
+**Symptoms:** Logs generated but not displayed for specific apps
+**Root Cause:** Malformed regex with double backslashes
+**Fix:**
 ```javascript
-// ❌ BROKEN - Double backslashes break regex matching for ALL apps
+// ❌ BROKEN
 const logRegex = /^(?:\\[(\\w+)\\]\\s)?([\\d\\-]+\\s[\\d:]+)\\s-\\s([\\w\\.]+)\\s-\\s(\\w+)\\s-\\s(.*)$/;
 
-// ✅ FIXED - Proper regex escaping works for ALL app log formats
+// ✅ FIXED  
 const logRegex = /^(?:\[(\w+)\]\s)?([^\s]+\s[^\s]+)\s-\s([\w\.]+)\s-\s(\w+)\s-\s(.*)$/;
 ```
+**File:** `/frontend/static/js/new-main.js` - `connectEventSource()` method
 
-**Files to Check:**
-- `/frontend/static/js/new-main.js` - `connectEventSource()` method
-- Look for `logRegex` variable and `logString.match(logRegex)` usage
-- Check app type categorization logic in the same function
-
-**App Type Categorization Check:**
-Ensure the affected app is included in the categorization logic:
+### 2. DEBUG Log Filtering Race Condition
+**Symptoms:** DEBUG logs appear in wrong filters (Info, Warning, Error)
+**Root Cause:** EventSource adds logs without checking current filter
+**Fix:** Apply filter to new entries as they arrive
 ```javascript
-// Verify the app is in the known apps list
-if (['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr', 'hunting', 'your_new_app'].includes(possibleApp)) {
-    logAppType = possibleApp;
+// In EventSource onmessage handler, after appendChild:
+const currentLogLevel = this.elements.logLevelSelect ? this.elements.logLevelSelect.value : 'all';
+if (currentLogLevel !== 'all') {
+    this.applyFilterToSingleEntry(logEntry, currentLogLevel);
 }
-
-// And in the pattern matching for system logs
-const patterns = {
-    'sonarr': ['episode', 'series', 'tv show', 'sonarr'],
-    'radarr': ['movie', 'film', 'radarr'],
-    'lidarr': ['album', 'artist', 'track', 'music', 'lidarr'],
-    'readarr': ['book', 'author', 'readarr'],
-    'whisparr': ['scene', 'adult', 'whisparr'],
-    'eros': ['eros', 'whisparr v3', 'whisparrv3'],
-    'swaparr': ['added strike', 'max strikes reached', 'swaparr'],
-    'hunting': ['hunt manager', 'discovery tracker', 'hunting', 'hunt'],
-    'your_new_app': ['keyword1', 'keyword2', 'your_new_app']  // Add patterns for new apps
-};
 ```
+**File:** `/frontend/static/js/new-main.js` - `connectEventSource()` method
 
-**Verification:**
-1. Rebuild container: `docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
-2. Check frontend logs display correctly for ALL app types
-3. Verify log categorization works (logs appear when each specific app is selected)
-4. Test with multiple apps to ensure the fix is universal
-
-**LESSON LEARNED:** Always test regex patterns with actual log data from ALL app types. Double backslashes in JavaScript regex literals cause pattern matching failures that silently prevent log categorization without obvious error messages. This issue can affect any app (existing or newly added) whose logs don't match the malformed regex pattern. When adding new apps, always verify their logs display correctly in the frontend.
-
-### 2. Timer Loading Errors ("Error Loading" on Dashboard)
-
-**Symptoms:**
-- Countdown timers show "Error Loading" 
-- Occurs on bare metal installations
-- Works fine in Docker
-
-**Root Cause:**
-- Hard-coded Docker paths (`/config/tally/sleep.json`) don't exist on bare metal
-
-**Fix Pattern:**
+### 3. Database Connection Issues
+**Symptoms:** "Database error", "No such table", settings not persisting
+**Root Cause:** Database path issues or missing tables
+**Fix:** Use DatabaseManager with environment detection
 ```python
-# In cycle_tracker.py - Add environment detection
+# ❌ BROKEN - Direct SQLite calls with hardcoded paths
+import sqlite3
+conn = sqlite3.connect('/config/huntarr.db')
+
+# ✅ FIXED - Use DatabaseManager with auto-detection
+from src.primary.utils.database import DatabaseManager
+db = DatabaseManager()
+db.get_setting('sonarr', 'api_key')
+```
+**Debug Steps:**
+1. Check database exists: `docker exec huntarr ls -la /config/huntarr.db`
+2. Verify tables: `docker exec huntarr sqlite3 /config/huntarr.db ".tables"`
+3. Check environment detection: Look for `/config` directory existence
+4. Test local vs Docker paths: `./data/huntarr.db` vs `/config/huntarr.db`
+
+### 4. Hard-Coded Path Issues (Legacy)
+**Symptoms:** "Error Loading" on bare metal, works in Docker
+**Root Cause:** Hard-coded Docker paths don't exist on bare metal
+**Fix:** Environment detection pattern (now handled by DatabaseManager)
+```python
+# ❌ LEGACY - Old JSON file approach
 def _detect_environment():
-    """Detect if we're running in Docker or bare metal environment"""
     return os.path.exists('/config') and os.path.exists('/app')
 
 def _get_paths():
-    """Get appropriate paths based on environment"""
     if _detect_environment():
-        # Docker environment
-        return {
-            'sleep_data': '/config/tally/sleep.json',
-            'cycle_data': '/config/settings/cycle_data.json'
-        }
+        return {'data': '/config/tally/sleep.json'}
     else:
-        # Bare metal environment
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        return {
-            'sleep_data': os.path.join(base_dir, 'data', 'tally', 'sleep.json'),
-            'cycle_data': os.path.join(base_dir, 'data', 'settings', 'cycle_data.json')
-        }
+        return {'data': os.path.join(base_dir, 'data', 'tally', 'sleep.json')}
+
+# ✅ NEW - Database approach
+from src.primary.utils.database import DatabaseManager
+db = DatabaseManager()  # Automatically detects environment and uses correct database path
 ```
 
-**Files to Check:**
-- `/src/primary/cycle_tracker.py` - Path constants
-- `/src/routes.py` - API error handling
-
-### 3. JavaScript "Variable Not Defined" Errors in Settings
-
-**Symptoms:**
-- Error: `ReferenceError: searchSettingsHtml is not defined`
-- Settings page fails to load for specific apps
-
-**Root Cause:**
-- Missing variable declarations in settings form generation functions
-
-**Fix Pattern:**
+### 4. JavaScript Variable Undefined Errors
+**Symptoms:** `ReferenceError: variableName is not defined` in settings
+**Root Cause:** Missing variable declarations in form generation
+**Fix:** Ensure all variables are declared before use
 ```javascript
-// In settings_forms.js - Each app form needs this pattern:
 generateAppForm: function(container, settings = {}) {
-    // 1. Create instancesHtml variable
     let instancesHtml = `...`;
-    
-    // 2. Create searchSettingsHtml variable (CRITICAL!)
-    let searchSettingsHtml = `...`;
-    
-    // 3. Combine them
+    let searchSettingsHtml = `...`;  // CRITICAL - must declare
     container.innerHTML = instancesHtml + searchSettingsHtml;
 }
 ```
+**File:** `/frontend/static/js/settings_forms.js`
 
-**Files to Check:**
-- `/frontend/static/js/settings_forms.js` - All `generate*Form` functions
-
-### 4. Settings Save Issues
-
-**Symptoms:**
-- Settings appear to save but don't persist
-- "Save successful" message but values reset
-
-**Root Cause:**
-- `getFormSettings()` method doesn't handle specific app types properly
-
-**Fix Pattern:**
+### 5. Subpath Compatibility Breaks
+**Symptoms:** Works at root domain but fails in subdirectories
+**Root Cause:** Absolute URLs in JavaScript/templates
+**Fix:** Use relative URLs everywhere
 ```javascript
-// In new-main.js - Add special case handling
-getFormSettings: function() {
-    // Special handling for general settings
-    if (app === 'general') {
-        // Collect all form inputs specifically
-        // Handle special fields like apprise_urls
-    }
-    // Handle other app types...
-}
+// ❌ BROKEN
+window.location.href = '/';
+fetch('/api/endpoint');
+
+// ✅ FIXED
+window.location.href = './';
+fetch('./api/endpoint');
 ```
 
-**Files to Check:**
-- `/frontend/static/js/new-main.js` - `getFormSettings()` method
-- `/frontend/static/js/settings_forms.js` - Form generation
-
-### 5. UI Element Visibility Issues
-
-**Symptoms:**
-- Buttons cut off at bottom of screen
-- Elements not visible on small screens
-- Browser-specific rendering issues
-
-**Fix Pattern:**
+### 6. CSS Loading Order/Specificity Issues
+**Symptoms:** Inline component CSS styles not applying, especially mobile responsive changes
+**Root Cause:** External CSS files (`responsive-fix.css`, `new-style.css`) load after component templates and override inline styles
+**Fix:** Add critical responsive CSS to external files with higher specificity
 ```css
-/* Add proper positioning and safe areas */
-.element {
-    position: fixed;
-    bottom: 0;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    z-index: 1000;
-    background: rgba(0,0,0,0.8);
-    backdrop-filter: blur(10px);
+/* ❌ BROKEN - Inline component CSS gets overridden */
+<!-- In component template -->
+<style>
+.app-stats-card.swaparr .stats-numbers {
+    grid-template-columns: 1fr !important;
 }
+</style>
 
-/* Firefox-specific fixes */
-@-moz-document url-prefix() {
-    .element {
-        /* Firefox-specific styles */
+/* ✅ FIXED - Add to external CSS file */
+/* File: frontend/static/css/responsive-fix.css */
+@media (max-width: 768px) {
+    .app-stats-card.swaparr .stats-numbers {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        /* Debug border for testing */
+        border: 2px solid lime !important;
     }
 }
 ```
+**Debugging Technique:** Use colored debug borders to confirm CSS is loading
+**Files:** `/frontend/static/css/responsive-fix.css`, `/frontend/static/css/new-style.css`
 
-**Files to Check:**
-- Template files in `/frontend/templates/components/`
-- CSS in template `<style>` sections
+### 7. Info Icon Documentation Link Issues
+**Symptoms:** Info icons (i) linking to wrong domains, localhost, or broken forum links
+**Root Cause:** Hard-coded old links instead of GitHub documentation links
+**Fix:** Use proper GitHub documentation pattern with specific anchors
+```javascript
+// ❌ BROKEN - Old forum or localhost links
+<label><a href="https://huntarr.io/threads/name-field.18/" class="info-icon">
+<label><a href="/Huntarr.io/docs/#/configuration" class="info-icon">
+<label><a href="#" class="info-icon">
 
-## 🔍 Hard-Coded Path Detection & Systematic Hunting
+// ✅ FIXED - GitHub documentation with anchors
+<label><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon">
+<label><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#skip-future-movies" class="info-icon">
+<label><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#enable-swaparr" class="info-icon">
+```
+**Pattern:** `https://plexguide.github.io/Huntarr.io/apps/[app-name].html#[anchor]`
+**Requirements:**
+- Always use `https://plexguide.github.io/Huntarr.io/` domain
+- Include `target="_blank" rel="noopener"` attributes
+- Use specific anchors that match documentation headers
+- Ensure documentation anchors exist before linking
+**File:** `/frontend/static/js/settings_forms.js`
 
-**LESSON LEARNED:** Even after fixing some hard-coded paths, others can remain hidden and cause cross-platform issues. Use this systematic approach:
+### 8. GitHub API Rate Limiting & Timeout Issues
+**Symptoms:** Sponsor sections showing timeouts, empty data, or rate limit errors
+**Root Cause:** Direct GitHub API calls from each installation hitting rate limits
+**Fix:** Use GitHub Actions + static manifest approach (Matthieu's solution)
+```python
+# ❌ BROKEN - Direct API calls from each installation
+response = requests.post('https://api.github.com/graphql', json={'query': query}, headers=headers)
 
-### Step 1: Comprehensive Path Search
+# ✅ FIXED - Fetch from static manifest updated by GitHub Actions
+response = requests.get("https://plexguide.github.io/Huntarr.io/manifest.json", timeout=10)
+manifest_data = response.json()
+sponsors = manifest_data.get('sponsors', [])
+```
+**Solution Pattern:**
+1. **GitHub Action** runs on releases + daily schedule
+2. **Fetches sponsors** using authenticated GraphQL API  
+3. **Publishes manifest.json** to GitHub Pages with sponsors + version data
+4. **Installations fetch** from static manifest (no authentication needed)
+5. **No rate limits** since only the GitHub Action hits the API
+
+**Benefits:**
+- Each installation doesn't need GitHub API access
+- No rate limiting issues for users
+- Faster response times (static file vs API call)
+- Automatic updates via GitHub Actions
+- Fallback to cached data if manifest unavailable
+
+**Files:** 
+- `.github/workflows/update-manifest.yml` - GitHub Action workflow
+- `src/primary/web_server.py` - Backend API endpoint
+- GitHub Pages serves `manifest.json` automatically
+
+## 🗄️ DATABASE ARCHITECTURE (SQLite Migration Complete)
+
+### Overview
+**Huntarr has migrated from JSON files to SQLite database for all persistent data storage.**
+
+**Database Location:**
+- **Docker:** `/config/huntarr.db` (persistent volume)
+- **Local Development:** `{project_root}/data/huntarr.db`
+- **Auto-detection:** Uses environment detection to choose correct path
+
+### Database Tables & Schema
+```sql
+-- Settings storage (replaces settings.json)
+CREATE TABLE settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_name TEXT NOT NULL,
+    setting_key TEXT NOT NULL,
+    setting_value TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(app_name, setting_key)
+);
+
+-- Stateful management (replaces stateful.json)
+CREATE TABLE stateful_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_name TEXT NOT NULL UNIQUE,
+    data TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tally/sleep data (replaces tally/sleep.json files)
+CREATE TABLE tally_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_name TEXT NOT NULL UNIQUE,
+    data TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- History tracking (replaces history.json)
+CREATE TABLE history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_name TEXT NOT NULL,
+    action TEXT NOT NULL,
+    details TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Scheduler data (replaces scheduler.json)
+CREATE TABLE scheduler_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_name TEXT NOT NULL UNIQUE,
+    data TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- State management (replaces state.json)
+CREATE TABLE state_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_name TEXT NOT NULL UNIQUE,
+    data TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Reset requests (replaces reset_requests.json)
+CREATE TABLE reset_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_name TEXT NOT NULL,
+    request_data TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Database Manager (`src/primary/utils/database.py`)
+**Core database operations with automatic environment detection:**
+
+```python
+class DatabaseManager:
+    def _get_database_path(self):
+        """Auto-detect environment and return appropriate database path"""
+        if os.path.exists('/config'):  # Docker environment
+            return '/config/huntarr.db'
+        else:  # Local development
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            return os.path.join(project_root, 'data', 'huntarr.db')
+    
+    def get_setting(self, app_name, setting_key, default=None)
+    def set_setting(self, app_name, setting_key, setting_value)
+    def get_stateful_data(self, app_name, default=None)
+    def set_stateful_data(self, app_name, data)
+    # ... other methods for each table
+```
+
+### Local Development Setup
 ```bash
-# Search for ALL potential hard-coded path patterns
-grep -r "/config" src/ --include="*.py"
-grep -r "/app" src/ --include="*.py" 
-grep -r "/data" src/ --include="*.py"
-grep -r "/tmp" src/ --include="*.py"
-grep -r "C:\\" src/ --include="*.py"
+# 1. Set up Python virtual environment
+cd /Users/home/Huntarr/Huntarr.io
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Database will be auto-created at: ./data/huntarr.db
+# 4. Run locally for development
+python main.py
+
+# 5. For Docker testing
+docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build
 ```
 
-### Step 2: Validate Each Result
-For each result, determine if it's:
-- ✅ **Legitimate:** Comments, environment detection logic, or Flask routes
-- ❌ **Problem:** Actual file/directory paths that should use `config_paths.py`
+### Migration Status
+**✅ COMPLETED MIGRATIONS:**
+- Settings management (settings.json → settings table)
+- Stateful data (stateful.json → stateful_data table)
+- Tally/sleep data (tally/*.json → tally_data table)
+- History tracking (history.json → history table)
+- Scheduler data (scheduler.json → scheduler_data table)
+- State management (state.json → state_data table)
+- Reset requests (reset_requests.json → reset_requests table)
 
-### Step 3: Priority File Checklist
-**CRITICAL FILES** that commonly contain hard-coded paths:
-- [ ] `cycle_tracker.py` - Timer functionality (HIGH IMPACT)
-- [ ] `history_manager.py` - Data storage
-- [ ] `web_server.py` - Cache directories
-- [ ] `settings_manager.py` - Configuration files
-- [ ] Any app-specific routes (`*_routes.py`)
+**🗑️ REMOVED FILES:**
+- All JSON files in `/data/` directory
+- Migration utilities (`db_manager.py`, `migrate_configs.py`)
+- Test files for migration process
 
-### Step 4: Fix Pattern
-Replace hard-coded paths with centralized utilities:
+### Database Debugging Commands
+```bash
+# Access database in Docker container
+docker exec -it huntarr sqlite3 /config/huntarr.db
 
-**❌ WRONG:**
+# Common queries for debugging
+.tables                                    # List all tables
+.schema settings                          # Show table schema
+SELECT * FROM settings WHERE app_name='sonarr';  # Check app settings
+SELECT COUNT(*) FROM history;             # Check history entries
+SELECT app_name, COUNT(*) FROM settings GROUP BY app_name;  # Settings per app
+
+# Check database file size and location
+docker exec huntarr ls -la /config/huntarr.db
+docker exec huntarr du -h /config/huntarr.db
+```
+
+### Database Best Practices
+1. **Always use DatabaseManager class** - Never direct SQLite calls
+2. **Environment detection is automatic** - Don't hardcode paths
+3. **JSON data stored as TEXT** - Complex data serialized as JSON strings
+4. **Timestamps are automatic** - created_at/updated_at handled by database
+5. **Unique constraints prevent duplicates** - app_name combinations are unique
+6. **Transactions for consistency** - DatabaseManager handles commit/rollback
+
+## 🔧 DEVELOPMENT WORKFLOW
+
+### Before Any Changes
+- [ ] Check current working directory: `/Users/home/Huntarr/Huntarr.io`
+- [ ] Ensure you're on correct branch
+- [ ] Review .github/listen.md for latest patterns
+- [ ] **NEW:** Activate venv for local development: `source venv/bin/activate`
+
+### Making Changes
+- [ ] Edit source code (never modify inside container)
+- [ ] **For local testing:** `python main.py` (uses ./data/huntarr.db)
+- [ ] **For Docker testing:** `docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
+- [ ] Check logs: `docker logs huntarr`
+- [ ] **NEW:** Verify database operations work in both environments
+- [ ] Test functionality
+
+### Before Committing
+- [ ] Test in Docker environment (database at /config/huntarr.db)
+- [ ] Test in local environment (database at ./data/huntarr.db)
+- [ ] Test cross-platform compatibility
+- [ ] Test subpath scenarios (`domain.com/huntarr/`)
+- [ ] Check browser console for errors
+- [ ] **NEW:** Verify database persistence across container restarts
+- [ ] Get user approval before committing
+
+### Proactive Violation Scanning
+**Run these before every release to catch violations early:**
+```bash
+# 1. Absolute URL violations (most critical for subpath deployment)
+echo "=== SCANNING FOR ABSOLUTE URL VIOLATIONS ==="
+grep -r "fetch('/api/" frontend/ --include="*.js" | wc -l | xargs echo "fetch() absolute URLs:"
+grep -r "window.location.href.*= '/" frontend/ --include="*.js" --include="*.html" | wc -l | xargs echo "redirect absolute URLs:"
+
+# 2. Documentation link violations  
+echo "=== SCANNING FOR DOCUMENTATION LINK VIOLATIONS ==="
+grep -r "href.*plexguide.github.io" frontend/ --include="*.js" | grep -v "plexguide.github.io/Huntarr.io" | wc -l | xargs echo "wrong domain links:"
+
+# 3. Hard-coded path violations
+echo "=== SCANNING FOR HARD-CODED PATH VIOLATIONS ==="
+grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path" | wc -l | xargs echo "hard-coded /config paths:"
+grep -r "/app" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path" | wc -l | xargs echo "hard-coded /app paths:"
+
+# 4. Frontend-docs alignment check
+echo "=== CHECKING FRONTEND-DOCS ALIGNMENT ==="
+echo "Frontend anchor references:"
+grep -r "href.*plexguide\.github\.io.*#" frontend/static/js/ | grep -o "#[^\"]*" | sort | uniq | wc -l
+echo "Documentation anchors available:"
+grep -r 'id="[^"]*"' docs/apps/ | grep -o 'id="[^"]*"' | sort | uniq | wc -l
+```
+
+### Database & Path Hunting Commands
+```bash
+# Search for database violations
+grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py"
+grep -r "\.json\|json.load\|json.dump" src/ --include="*.py" | grep -v "requests.*json\|response.json\|Content-Type.*json"
+grep -r "/config/.*\.db\|/app/.*\.db" src/ --include="*.py" | grep -v "DatabaseManager\|_get_database_path"
+
+# Search for legacy hard-coded paths
+grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager"
+grep -r "/app" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager"
+
+# Search for frontend URL violations
+grep -r "href=\"/" frontend/
+grep -r "window.location.href = '/" frontend/
+grep -r "fetch('/api/" frontend/ --include="*.js"
+```
+
+## 📁 KEY FILE LOCATIONS
+
+### Backend Core
+- `/src/routes.py` - API endpoints
+- `/src/primary/cycle_tracker.py` - Timer functionality
+- `/src/primary/utils/logger.py` - Logging configuration
+- `/src/primary/utils/database.py` - **NEW:** DatabaseManager class (replaces settings_manager.py)
+
+### Frontend Core  
+- `/frontend/static/js/new-main.js` - Main UI logic
+- `/frontend/static/js/settings_forms.js` - Settings forms
+- `/frontend/templates/components/` - UI components
+
+### Database & Storage
+- `/config/huntarr.db` - **Docker:** Main database file (persistent)
+- `./data/huntarr.db` - **Local:** Main database file (development)
+- `/src/primary/utils/database.py` - DatabaseManager with auto-detection
+- **REMOVED:** All JSON files (settings.json, stateful.json, etc.)
+
+### Critical Files for Cross-Platform
+- `/src/primary/utils/database.py` - **NEW:** Database operations with environment detection
+- `/src/primary/cycle_tracker.py` - Timer functionality (now uses database)
+- Any `*_routes.py` files
+
+## 🎯 DEBUGGING QUICK REFERENCE
+
+### Systematic Issue Discovery
+**When things don't work, don't guess - scan systematically:**
+```bash
+# 1. Check for violation patterns first
+./violation_scan.sh  # From proactive practices above
+
+# 2. Specific issue hunting
+grep -r "EXACT_ERROR_TEXT" frontend/ src/ --include="*.js" --include="*.py"
+grep -r "functionName\|variableName" frontend/ --include="*.js"
+```
+
+### Subpath Deployment Issues
+**Symptoms:** Works on localhost, fails on domain.com/huntarr/
+**Root Cause:** Absolute URLs that don't work in subdirectories
+**Debug Process:**
+1. Check browser network tab for 404s on absolute URLs
+2. Search for absolute patterns: `grep -r "fetch('/api" frontend/`
+3. Check redirects: `grep -r "window.location.href.*= '/" frontend/`
+4. Verify all URLs are relative: `./api/` not `/api/`
+
+### Frontend-Documentation Link Issues  
+**Symptoms:** Info icons (i) lead to 404 or wrong pages
+**Root Cause:** Mismatched frontend links vs documentation anchors
+**Debug Process:**
+1. Extract frontend anchor references: `grep -r "href.*#" frontend/static/js/ | grep -o "#[^\"]*"`
+2. Extract doc anchors: `grep -r 'id="[^"]*"' docs/ | grep -o 'id="[^"]*"'`
+3. Compare lists to find mismatches
+4. Add missing anchors or fix links
+
+### Log Issues
+1. Check logs in database: `docker exec huntarr python3 -c "import sys; sys.path.insert(0, '/app/src'); from primary.utils.logs_database import get_logs_database; db = get_logs_database(); logs = db.get_logs(limit=10); [print(f'{log[\"timestamp\"]} - {log[\"app_type\"]} - {log[\"level\"]} - {log[\"message\"]}') for log in logs]"`
+2. Test backend streaming: `curl -N -s "http://localhost:9705/logs?app=[app]"`
+3. Check browser console for JavaScript errors
+4. Verify regex patterns in `new-main.js`
+
+### Database Issues
+1. **Check database exists and is accessible:**
+   ```bash
+   # Docker environment
+   docker exec huntarr ls -la /config/huntarr.db
+   docker exec huntarr sqlite3 /config/huntarr.db ".tables"
+   
+   # Local environment
+   ls -la ./data/huntarr.db
+   sqlite3 ./data/huntarr.db ".tables"
+   ```
+
+2. **Verify table schemas and data:**
+   ```bash
+   # Check specific table structure
+   docker exec huntarr sqlite3 /config/huntarr.db ".schema settings"
+   
+   # Check data exists
+   docker exec huntarr sqlite3 /config/huntarr.db "SELECT COUNT(*) FROM settings;"
+   docker exec huntarr sqlite3 /config/huntarr.db "SELECT app_name, COUNT(*) FROM settings GROUP BY app_name;"
+   ```
+
+3. **Test DatabaseManager operations:**
+   ```python
+   # In Python console or test script
+   from src.primary.utils.database import DatabaseManager
+   db = DatabaseManager()
+   
+   # Test basic operations
+   db.set_setting('test_app', 'test_key', 'test_value')
+   result = db.get_setting('test_app', 'test_key')
+   print(f"Database test result: {result}")
+   ```
+
+4. **Check environment detection:**
+   ```python
+   import os
+   print(f"Docker environment detected: {os.path.exists('/config')}")
+   print(f"Database path would be: {'/config/huntarr.db' if os.path.exists('/config') else './data/huntarr.db'}")
+   ```
+
+5. **Database migration verification:**
+   ```bash
+   # Ensure no old JSON files exist
+   find . -name "*.json" -path "./data/*" 2>/dev/null || echo "No JSON files found (good)"
+   
+   # Check database size (should be > 0 if data exists)
+   docker exec huntarr du -h /config/huntarr.db
+   ```
+
+### Path Issues (Legacy)
+1. Check environment detection logic
+2. Verify paths exist in target environment  
+3. Test with both Docker and bare metal
+4. Check file permissions
+5. **LEGACY:** Scan for hard-coded paths: `grep -r "/config\|/app" src/ | grep -v "_detect_environment"`
+6. **NEW:** Use DatabaseManager instead of direct file operations
+
+### JavaScript Issues
+1. Check browser console for errors
+2. Search for undefined variables: `grep -r "variableName" frontend/`
+3. Verify HTML structure matches selectors
+4. Compare with working functions
+5. **NEW:** Check for absolute URL patterns causing 404s in subpaths
+
+### CSS Issues
+1. Check browser console for errors
+2. Add debug borders: `border: 2px solid lime !important;`
+3. Verify CSS loading order (external files vs inline)
+4. Test specificity with `!important` declarations
+5. Search for conflicting rules: `grep -r "className" frontend/static/css/`
+
+### Settings Issues
+1. Check form generation functions
+2. Verify `getFormSettings()` method
+3. Test save/load cycle
+4. Check API endpoints
+5. **NEW:** Verify info icon links point to existing documentation anchors
+
+### Documentation Issues
+**Symptoms:** Broken links, 404s, outdated information
+**Debug Process:**
+1. Test all links manually or with link checker
+2. Verify features mentioned actually exist in codebase
+3. Check frontend alignment with documentation
+4. Audit FAQ against real support requests
+
+## 📊 RECENT IMPROVEMENTS
+
+### Systematic Code Violation Fixes (2024-12)
+**Issue:** 71 systematic code violations discovered through comprehensive codebase analysis
+**Root Cause:** Lack of proactive violation scanning and systematic fixing approach
+**Solution:** Implemented systematic approach to finding and fixing violations
+
+**Fixed Violations:**
+1. **51 absolute fetch URLs** - All `/api/` calls converted to `./api/` for subpath compatibility
+2. **15 outdated documentation links** - Fixed old domain references in settings_forms.js
+3. **5 window.location.href absolute URLs** - Converted `/` redirects to `./` 
+4. **Missing documentation anchors** - Added proper IDs to all referenced doc sections
+
+**Key Files Modified:**
+- `/frontend/static/js/settings_forms.js` - Documentation links and form generation
+- `/frontend/static/js/new-main.js` - URL handling and redirects
+- `/frontend/static/js/apps.js` - API calls and fetch operations
+- All documentation files - Added missing anchor IDs
+
+**Prevention Strategy:** Use systematic grep searches to catch violations early:
+```bash
+# Catch absolute URLs before they become problems
+grep -r "fetch('/api/" frontend/ --include="*.js"
+grep -r "window.location.href.*= '/" frontend/ --include="*.js" --include="*.html"
+grep -r "href.*plexguide.github.io" frontend/ --include="*.js" | grep -v "plexguide.github.io/Huntarr.io"
+```
+
+### Documentation Reality Check & User Experience (2024-12)
+**Issue:** Documentation promised features that didn't exist (standalone logs/history pages)
+**Root Cause:** Feature documentation grew organically without reality checks
+**Solution:** Systematic audit of promised vs actual features
+
+**Changes:**
+- Removed broken links to non-existent logs.html and history.html
+- Updated features page to reflect actual functionality (Swaparr, Search Automation)
+- Completely rewrote FAQ with real-world Docker problems and practical solutions
+- Added prominent community help section on homepage with proper user flow
+
+**Lessons Learned:**
+- **Document what exists, not what's planned** - Only link to documentation that actually exists
+- **FAQ should solve real problems** - Base content on actual support requests, not theoretical issues
+- **User journey matters** - Help → Explanation → Setup → Community is better than promotional content
+
+### Frontend-Documentation Alignment System (2024-12)
+**Issue:** Frontend info icons linked to anchors that didn't exist in documentation
+**Root Cause:** No systematic checking of frontend links against actual documentation
+**Solution:** Implemented verification system for frontend→docs alignment
+
+**Process:**
+1. Extract all documentation links from frontend: `grep -r "plexguide.github.io.*#" frontend/`
+2. Extract all anchor IDs from docs: `grep -r 'id="[^"]*"' docs/`
+3. Cross-reference and fix mismatches
+4. Add missing anchor IDs where content exists but ID missing
+
+**Prevention:** Before any documentation changes, verify link alignment:
+```bash
+# Extract frontend links
+grep -r "href.*plexguide\.github\.io.*#" frontend/static/js/ | grep -o "#[^\"]*" | sort | uniq
+
+# Extract doc anchors  
+grep -r 'id="[^"]*"' docs/apps/ | grep -o 'id="[^"]*"' | sort | uniq
+
+# Compare results to catch mismatches
+```
+
+### Radarr Release Date Consistency (2024-12)
+**Issue:** Missing movie searches respected `skip_future_releases` setting, but upgrade searches ignored it
+**Solution:** Made upgrade behavior consistent with missing movie logic
+**Changes:**
+- Updated `src/primary/apps/radarr/upgrade.py` to check release dates
+- Both missing and upgrade searches now respect `skip_future_releases` and `process_no_release_dates`
+- Documentation updated to clarify behavior affects both search types
+- Frontend info icons fixed to use GitHub documentation links
+
+**User Benefit:** Consistent behavior - no more unexpected future movie upgrades
+
+### Complete Database Migration (2024-12)
+**Issue:** JSON file-based storage caused data loss, concurrency issues, and deployment complexity
+**Root Cause:** Multiple JSON files scattered across filesystem with no transactional consistency
+**Solution:** Complete migration to SQLite database with automatic environment detection
+
+**Migration Scope:**
+- **Settings:** `settings.json` → `settings` table (7 tables total)
+- **Stateful Data:** `stateful.json` → `stateful_data` table  
+- **Tally/Sleep:** `tally/*.json` → `tally_data` table
+- **History:** `history.json` → `history` table
+- **Scheduler:** `scheduler.json` → `scheduler_data` table
+- **State:** `state.json` → `state_data` table
+- **Reset Requests:** `reset_requests.json` → `reset_requests` table
+
+**Key Improvements:**
+- **Persistent Storage:** Database survives container updates/rebuilds
+- **Environment Detection:** Auto-detects Docker vs local development
+- **Transactional Consistency:** ACID compliance prevents data corruption
+- **Simplified Deployment:** Single database file instead of multiple JSON files
+- **Better Performance:** SQLite indexing and query optimization
+- **Automatic Timestamps:** created_at/updated_at handled by database
+
+**Database Locations:**
+- **Docker:** `/config/huntarr.db` (persistent volume)
+- **Local:** `{project_root}/data/huntarr.db`
+- **Auto-detection:** Uses `/config` directory existence to choose path
+
+**Development Impact:**
+- **Local Setup:** Added `venv` requirement for Python dependencies
+- **Testing:** Must verify both Docker and local database operations
+- **Debugging:** New SQLite commands for data inspection
+- **No Backward Compatibility:** JSON files completely removed
+
+**Files Modified:**
+- `src/primary/utils/database.py` - New DatabaseManager class
+- All app modules updated to use DatabaseManager instead of JSON
+- Development workflow updated for dual-environment testing
+- Removed migration utilities after completion
+
+**User Benefits:**
+- ✅ No more data loss on container recreation
+- ✅ Faster application startup (no JSON parsing)
+- ✅ Consistent data across app restarts
+- ✅ Better error handling and recovery
+- ✅ Simplified backup (single database file)
+
+## ⚠️ ANTI-PATTERNS TO AVOID
+
+1. **❌ Direct SQLite calls:** Use DatabaseManager class, never `sqlite3.connect()` directly
+2. **❌ Hard-coded database paths:** `/config/huntarr.db` - Use DatabaseManager auto-detection
+3. **❌ JSON file operations:** All data storage must use database tables
+4. **❌ Absolute URLs in frontend:** `/api/endpoint`, `window.location.href = '/'`
+5. **❌ Modifying files inside containers**
+6. **❌ Creating temporary/helper files instead of fixing source**
+7. **❌ Auto-committing without approval**
+8. **❌ Double backslashes in regex patterns**
+9. **❌ Testing only in Docker (must test bare metal with local database)**
+10. **❌ Adding responsive CSS to component templates (use external CSS files)**
+11. **❌ Not using debug borders to test CSS loading**
+12. **❌ Inconsistent behavior between missing/upgrade logic** - Always check both implement same filtering
+13. **❌ Reactive violation fixing** - Don't wait for problems to appear, scan proactively
+14. **❌ Documentation that promises non-existent features** - Only document what actually exists
+15. **❌ Frontend links without verifying documentation anchors exist** - Always cross-check
+16. **❌ Organic feature growth without reality checks** - Audit promised vs actual features regularly
+17. **❌ Theoretical FAQ content** - Base FAQ on real user problems and support requests
+18. **❌ Skipping venv activation** - Always use virtual environment for local development
+19. **❌ Not testing database persistence** - Verify data survives container restarts
+
+## 🚨 PROACTIVE DEVELOPMENT PRACTICES
+
+### Pre-Commit Violation Scanning
+**ALWAYS run before any commit to catch violations early:**
+```bash
+# Create violation_scan.sh for easy reuse
+echo "=== HUNTARR VIOLATION SCAN ==="
+echo "1. Absolute URL violations (breaks subpath deployment):"
+echo "   fetch() absolute URLs: $(grep -r "fetch('/api/" frontend/ --include="*.js" | wc -l)"
+echo "   redirect absolute URLs: $(grep -r "window.location.href.*= '/" frontend/ --include="*.js" --include="*.html" | wc -l)"
+echo ""
+echo "2. Documentation violations:"
+echo "   Wrong domain links: $(grep -r "href.*plexguide.github.io" frontend/ --include="*.js" | grep -v "plexguide.github.io/Huntarr.io" | wc -l)"
+echo ""
+echo "3. Database violations:"
+echo "   Direct SQLite calls: $(grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py" | wc -l)"
+echo "   JSON file operations: $(grep -r "\.json\|json.load\|json.dump" src/ --include="*.py" | grep -v "requests.*json\|response.json\|Content-Type.*json" | wc -l)"
+echo "   Hard-coded DB paths: $(grep -r "/config/.*\.db\|/app/.*\.db" src/ --include="*.py" | grep -v "DatabaseManager\|_get_database_path" | wc -l)"
+echo ""
+echo "4. Legacy path violations:"
+echo "   /config paths: $(grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager" | wc -l)"
+echo "   /app paths: $(grep -r "/app" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager" | wc -l)"
+echo ""
+echo "5. Frontend-docs alignment:"
+echo "   Frontend anchors: $(grep -r "href.*plexguide\.github\.io.*#" frontend/static/js/ 2>/dev/null | grep -o "#[^\"]*" | sort | uniq | wc -l)"
+echo "   Doc anchors: $(grep -r 'id="[^"]*"' docs/apps/ 2>/dev/null | grep -o 'id="[^"]*"' | sort | uniq | wc -l)"
+echo "=== SCAN COMPLETE ==="
+```
+
+### Documentation Reality Audit Process
+**Before any documentation changes:**
+1. **Verify features exist**: Don't document planned features, only existing ones
+2. **Check all links work**: Test every link in documentation
+3. **Verify frontend alignment**: Ensure info icons point to existing anchors
+4. **FAQ reality check**: Base content on actual support requests, not theoretical issues
+
+**Commands to audit documentation:**
+```bash
+# 1. Find all links in documentation
+grep -r "href=" docs/ | grep -v "^#" | cut -d'"' -f2 | sort | uniq
+
+# 2. Find all frontend documentation links
+grep -r "plexguide.github.io" frontend/static/js/ | grep -o "https://[^\"]*"
+
+# 3. Check anchor mismatches
+diff <(grep -r "href.*#" frontend/static/js/ | grep -o "#[^\"]*" | sort | uniq) \
+     <(grep -r 'id="[^"]*"' docs/ | grep -o 'id="[^"]*"' | sed 's/id="//' | sed 's/"$//' | sort | uniq)
+```
+
+### User Experience Validation
+**Before major UI changes:**
+1. **Test user journey**: Help → Explanation → Setup → Community
+2. **Verify community links work**: Discord, GitHub Issues, Reddit
+3. **Check mobile responsiveness**: Test all breakpoints
+4. **Validate against real user problems**: Base features on actual use cases
+
+## 🚀 DATABASE-FIRST DEVELOPMENT PATTERN
+
+**Use DatabaseManager for all data operations - no direct file operations needed:**
+
 ```python
-CACHE_DIR = '/config/settings/sponsor'
-data_path = '/config/tally/sleep.json'
+# ✅ CORRECT - Use DatabaseManager (handles environment detection automatically)
+from src.primary.utils.database import DatabaseManager
+
+db = DatabaseManager()  # Auto-detects Docker vs local environment
+
+# Settings operations
+db.set_setting('sonarr', 'api_key', 'your_api_key')
+api_key = db.get_setting('sonarr', 'api_key')
+
+# Stateful data operations  
+db.set_stateful_data('sonarr', {'last_run': '2024-12-25'})
+state = db.get_stateful_data('sonarr', {})
+
+# History operations
+db.add_history('sonarr', 'search_completed', 'Found 5 missing episodes')
+history = db.get_history('sonarr', limit=10)
 ```
 
-**✅ CORRECT:**
-```python
-from src.primary.utils.config_paths import get_path
-CACHE_DIR = get_path('settings', 'sponsor')
-data_path = get_path('tally', 'sleep.json')
-```
-
-### Step 5: Post-Fix Verification
-2. Rebuild: `docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
-3. Check logs: `docker logs huntarr`
-4. Verify path resolution in logs shows correct environment detection
-
-## 🌐 Cross-Platform Compatibility Requirements
-
-**CRITICAL: All paths must work on Windows, Docker, and Mac with subpaths**
-
-### Path Handling Rules:
-1. **NEVER use hard-coded absolute paths** (e.g., `/config/file.json`)
-2. **ALWAYS use `os.path.join()`** for cross-platform compatibility
-3. **ALWAYS use relative paths from project root** when possible
-4. **Support reverse proxy subpaths** (e.g., `domain.com/huntarr/`)
-
-### Environment Detection Pattern:
+**Legacy Environment Detection (for non-database operations only):**
 ```python
 import os
 
 def _detect_environment():
-    """Detect if we're running in Docker or bare metal environment"""
-    return os.path.exists('/config') and os.path.exists('/app')
+    """Detect if running in Docker or bare metal"""
+    return os.path.exists('/config')  # Simplified - just check /config
 
-def _get_cross_platform_paths():
-    """Get appropriate paths based on environment - CROSS-PLATFORM SAFE"""
+def _get_cross_platform_path(relative_path):
+    """Get appropriate path based on environment (for logs, temp files only)"""
     if _detect_environment():
-        # Docker environment (Linux containers)
-        return {
-            'sleep_data': os.path.join('/config', 'tally', 'sleep.json'),
-            'cycle_data': os.path.join('/config', 'settings', 'cycle_data.json'),
-            'web_accessible': '/config/tally/'  # For web serving
-        }
+        # Docker environment
+        return os.path.join('/config', relative_path)
     else:
-        # Bare metal environment (Windows/Mac/Linux)
-        # Get project root dynamically
+        # Bare metal environment  
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        data_dir = os.path.join(project_root, 'data')
-        
-        return {
-            'sleep_data': os.path.join(data_dir, 'tally', 'sleep.json'),
-            'cycle_data': os.path.join(data_dir, 'settings', 'cycle_data.json'),
-            'web_accessible': os.path.join(data_dir, 'tally')  # For web serving
-        }
+        return os.path.join(project_root, 'data', relative_path)
 ```
 
-### Subpath Support Pattern:
-```python
-# For web routes - support reverse proxy subpaths
-@app.route('/api/sleep.json', methods=['GET'])
-@app.route('/<path:subpath>/api/sleep.json', methods=['GET'])  # Subpath support
-def api_get_sleep_json(subpath=None):
-    """Serve sleep.json with subpath support"""
-    # Handle both direct and subpath access
-    pass
-```
+**Note:** Only use legacy pattern for non-database files (logs, temp files). All persistent data should use DatabaseManager.
 
-### Frontend URL Pattern:
-```javascript
-// ALWAYS use relative URLs for API calls to support subpaths
-function fetchData() {
-    // ✅ GOOD - Works with subpaths
-    fetch('./api/sleep.json')
-    
-    // ❌ BAD - Breaks with subpaths
-    fetch('/api/sleep.json')
-}
-```
-
-## 🚨 CRITICAL: Subpath Compatibility Lessons (PR #527)
-
-**PROBLEM:** Huntarr broke when deployed in subdirectories (e.g., `domain.com/huntarr/`) due to absolute URL references that failed in subpath environments.
-
-**SYMPTOMS:**
-- Application works at root domain (`domain.com`) but fails in subdirectories
-- Navigation redirects break (redirect to wrong URLs)
-- CSS/JS resources fail to load
-- API calls return 404 errors
-- Setup process gets stuck
-
-### 🔧 Critical Fix Patterns from PR #527
-
-#### 1. JavaScript Navigation URLs - HIGH PRIORITY
-**❌ BROKEN:**
-```javascript
-// Absolute URLs break in subpaths
-window.location.href = '/';  // Redirects to domain.com instead of domain.com/huntarr/
-```
-
-**✅ FIXED:**
-```javascript
-// Relative URLs work in all environments
-window.location.href = './';  // Correctly redirects to current subpath
-```
-
-**Files to Check:**
-- `/frontend/static/js/new-main.js` - Settings save redirects
-- `/frontend/templates/setup.html` - Setup completion redirects
-- Any JavaScript with `window.location.href = '/'`
-
-#### 2. CSS Resource Loading - HIGH PRIORITY
-**❌ BROKEN:**
-```html
-<!-- Multiple CSS files with incorrect names -->
-<link rel="stylesheet" href="./static/css/variables.css">
-<link rel="stylesheet" href="./static/css/styles.css">
-```
-
-**✅ FIXED:**
-```html
-<!-- Single consolidated CSS file -->
-<link rel="stylesheet" href="./static/css/style.css">
-```
-
-**Files to Check:**
-- `/frontend/templates/base.html` - Main CSS references
-- `/frontend/templates/components/head.html` - Head CSS includes
-- Any template with CSS `<link>` tags
-
-#### 3. API Endpoint URLs
-**✅ GOOD PATTERN (Already implemented):**
-```javascript
-// Relative API calls work in subpaths
-fetch('./api/sleep.json')  // ✅ Works
-fetch('/api/sleep.json')   // ❌ Breaks in subpaths
-```
-
-### 🔍 Subpath Testing Checklist
-
-**MANDATORY before any frontend changes:**
-- [ ] Test navigation from every page (all redirects work)
-- [ ] Test CSS/JS resources load correctly
-- [ ] Test API calls work from all pages
-- [ ] Test setup process completion
-- [ ] Test authentication flow redirects
-- [ ] Test with reverse proxy configuration: `domain.com/huntarr/`
-
-### 🚨 Subpath Anti-Patterns to AVOID
-
-1. **❌ NEVER use absolute URLs in JavaScript:**
-   ```javascript
-   window.location.href = '/';           // BREAKS subpaths
-   window.location.href = '/settings';   // BREAKS subpaths
-   fetch('/api/endpoint');               // BREAKS subpaths
-   ```
-
-2. **❌ NEVER hardcode root paths in templates:**
-   ```html
-   <link href="/static/css/style.css">   <!-- BREAKS subpaths -->
-   <script src="/static/js/app.js">      <!-- BREAKS subpaths -->
-   ```
-
-3. **❌ NEVER assume root deployment:**
-   ```python
-   redirect('/')  # BREAKS in Flask routes with subpaths
-   ```
-
-### 🎯 Subpath Prevention Strategy
-
-**Before committing any frontend changes:**
-
-1. **Search for absolute URL patterns:**
-   ```bash
-   grep -r "href=\"/" frontend/
-   grep -r "src=\"/" frontend/
-   grep -r "window.location.href = '/" frontend/
-   grep -r "fetch('/" frontend/
-   ```
-
-2. **Test deployment scenarios:**
-   - Root deployment: `http://localhost:9705/`
-   - Subpath deployment: `http://localhost:9705/huntarr/`
-   - Reverse proxy: `https://domain.com/huntarr/`
-
-3. **Verify all navigation works:**
-   - Home → Settings → Home
-   - Setup flow completion
-   - Authentication redirects
-   - Error page redirects
-
-**LESSON LEARNED:** Subpath compatibility issues are SILENT FAILURES that only surface in production reverse proxy environments. Always test with subpath configurations before deploying.
-
-## 🔧 Development Workflows
-
-### Environment Testing Checklist
-
-**Before marking issue as resolved:**
-- [ ] Test in Docker environment
-- [ ] Test on Linux bare metal
-- [ ] Test on Windows bare metal  
-- [ ] Test on macOS bare metal
-- [ ] Verify API endpoints work
-- [ ] Check browser console for errors
-- [ ] Test with different screen sizes
-
-### Debugging JavaScript Issues
-
-1. **Check browser console** for error messages
-2. **Search for undefined variables** in codebase:
-   ```bash
-   grep -r "variableName" frontend/static/js/
-   ```
-3. **Compare with working functions** in same file
-4. **Verify HTML structure** matches JavaScript selectors
-
-### Debugging Path Issues
-
-1. **Check if paths exist** in target environment
-2. **Verify environment detection** logic
-3. **Test with both absolute and relative paths**
-4. **Check file permissions** on bare metal
-
-### Memory Creation Guidelines
+## 📝 MEMORY GUIDELINES
 
 **Create memories for:**
-- ✅ Legitimate bug fixes with root cause analysis
-- ✅ New feature implementations
-- ✅ Configuration changes that affect user experience
+- ✅ Bug fixes with root cause analysis
+- ✅ New features
 - ✅ Cross-platform compatibility fixes
+- ✅ Performance improvements
 
-**Memory format:**
+**Format:**
 ```
-Title: Brief description of what was fixed/implemented
-Content: 
-- Root cause analysis
-- Files modified
-- Solution approach
-- Testing notes
-Tags: ["bug_fix", "feature", "frontend", "backend", etc.]
-```
-
-## 📁 Key File Locations
-
-### Backend Files
-- `/src/routes.py` - API endpoints
-- `/src/primary/cycle_tracker.py` - Timer and cycle management
-- `/src/primary/` - Core application logic
-
-### Frontend Files
-- `/frontend/static/js/settings_forms.js` - Settings page forms
-- `/frontend/static/js/new-main.js` - Main UI logic
-- `/frontend/templates/components/` - UI components
-
-### Configuration Files
-- `/version.txt` - Application version
-- `/docker-compose.yml` - Docker configuration
-- `/.github/` - Development documentation
-
-## 🔄 Standard Commands
-
-```bash
-# MANDATORY: Rebuild and restart Docker when testing changes
-cd /Users/home/Huntarr/Huntarr.io && docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build
-
-# Check logs for errors (ALWAYS do this after rebuild)
-docker logs huntarr
-
-# Search for code patterns
-grep -r "pattern" src/
-grep -r "pattern" frontend/
-
-# Check running containers
-docker ps
-
-# Follow logs in real-time
-docker logs -f huntarr
-```
-
-## ⚠️ Important Reminders
-
-1. **NEVER use hard-coded absolute paths** - Must work on Windows, Mac, Docker, Linux
-2. **ALWAYS use `os.path.join()`** for cross-platform path compatibility
-3. **ALWAYS test cross-platform** - Docker vs bare metal behavior differs significantly
-4. **ALWAYS test subpath scenarios** - Reverse proxy setups (e.g., `/huntarr/` prefix)
-5. **Use relative URLs in frontend** - Avoid absolute `/api/` paths, use `./api/` instead
-6. **Hunt for ALL hard-coded paths** - Use `grep -r "/config\|/app\|/data" src/` before any release
-7. **Fix the actual file, don't create new ones** - When fixing bugs, modify the source file directly instead of creating correction/wrapper files
-8. **ALWAYS test in Docker, never execute local code** - Use Docker containers for all testing and development
-9. **Don't create local configs** - Check configurations inside the Docker container instead
-10. **Never modify files inside Docker container** - Update codebase then rebuild Docker to test changes
-11. **Always rebuild container to test changes** - `docker-compose down && docker-compose up --build`
-12. **Don't add to new-main.js** - Create new JS files and organize in subfolders for better structure
-13. **Don't add to main.css** - Create page-specific CSS files instead of modifying the main stylesheet
-14. **Check for undefined variables** in JavaScript before deploying
-15. **Use environment detection** instead of hard-coded paths
-16. **Create memories** for significant fixes and features
-17. **DO NOT update version.txt automatically** - Version numbers are manually managed by the user during publishing
-18. **Test API endpoints** after backend changes
-19. **Verify UI responsiveness** across different screen sizes
-20. **Check logs after every rebuild** - `docker logs huntarr`
-21. **For docs branches (docs-*):** Automatically commit and publish changes when working on documentation updates
-
-## 📚 Documentation Branch Workflow
-
-**When working on branches that start with `docs-`:**
-
-1. **Auto-commit and publish** - Changes to documentation should be committed and published automatically
-2. **Branch naming convention** - Use `docs-[issue-number]` or `docs-[feature-name]` format
-3. **Scope** - Documentation branches are for `/docs` directory changes only
-4. **Publishing** - Push changes to GitHub Pages automatically after commit
-
-**Example workflow:**
-```bash
-# Working on docs-106 branch (current)
-git add docs/
-git commit -m "Add comprehensive FAQ with categorized sections and return-to-top functionality"
-git push origin docs-106
+Title: Brief description
+Content: Root cause, files modified, solution approach, testing notes
+Tags: ["bug_fix", "feature", "frontend", "backend"]
 ```
 
 ---
 
-*This document should be referenced before starting any development work and updated when new patterns are discovered.*
-
-## Docker Development Workflow
-
-When making changes to the codebase, follow this workflow:
-
-1. **Make your changes** to the source code
-2. **Rebuild the container** with baking enabled:
-   ```bash
-   docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build
-   ```
-3. **Test your changes** by checking logs and functionality
-4. **Check logs** if needed:
-   ```bash
-   docker logs huntarr -f
-   ```
-
-## Debugging Patterns
-
-### Log Streaming Issues
-If logs aren't showing in the frontend dropdown:
-1. Check the log file mapping in `KNOWN_LOG_FILES` (web_server.py)
-2. Verify the frontend regex patterns in `new-main.js` 
-3. **Important**: Avoid double backslashes in regex patterns - they break pattern matching
-4. Test with: `curl http://localhost:9705/api/logs/stream/huntarr.hunting`
-
-### Dashboard Flash Issue (FOUC)
-If the home page shows a flash of all apps before organizing correctly:
-1. **Root cause**: Dashboard grid starts with `opacity: 0` to prevent flash, but JavaScript doesn't make it visible
-2. **Solution**: Call `showDashboard()` in `huntarrUI.init()` to set `opacity: 1` after initialization
-3. **Location**: `frontend/static/js/new-main.js` - add `this.showDashboard()` after setup is complete
-4. **Key principle**: Always make hidden elements visible after JavaScript initialization is complete
-
-### Cycle State Management
-The smart `cyclelock` system provides reliable cycle state tracking:
-1. **cyclelock: true** = App is running a cycle (shows "Running Cycle")
-2. **cyclelock: false** = App is waiting (shows countdown timer)  
-3. **Default on startup**: `cyclelock: true` (assumes cycles start immediately)
-4. **Reset behavior**: Sets `cyclelock: true` to trigger immediate cycle start
-5. **Automatic updates**: `start_cycle()` and `end_cycle()` functions manage state transitions
-6. **Data preservation**: `_save_cycle_data()` preserves cyclelock when updating sleep.json
-
-## Lessons Learned
-
-1. **Regex patterns**: Double backslashes in JavaScript regex break pattern matching
-2. **Timezone handling**: Always use UTC for consistent datetime calculations across containers
-3. **State management**: Explicit state fields (like cyclelock) are more reliable than inferring state from timestamps
-4. **FOUC prevention**: Hidden elements need explicit JavaScript to make them visible after initialization
-5. **Log level optimization**: Move ALL verbose authentication, log streaming, and stats increment messages to DEBUG level to reduce log noise and improve readability. This includes:
-   - Authentication messages: "Local Bypass Mode is DISABLED", "Request IP address", "Direct IP is a local network IP"
-   - Log streaming messages: "Starting log stream", "Client disconnected", "Log stream generator finished"  
-   - Stats messages: "STATS ONLY INCREMENT", "STATS INCREMENT", "Successfully incremented and verified", "Successfully wrote stats to file"
-   - "Attempt to get user info failed: Not authenticated" messages in `routes/common.py`
-6. **Logger name formatting consistency**: Use lowercase for logger name prefixes in log streaming. Change `name.upper()` to `name.lower()` in `web_server.py` log stream generator to ensure consistent formatting (e.g., "huntarr.hunting" instead of "HUNTARR.HUNTING").
-7. **Sidebar content sizing**: When resizing sidebar elements, reduce all related dimensions proportionally (fonts, padding, margins, icon containers) while preserving key elements like logo icons. For 20% reduction: reduce font-size from 14px to 11px, padding from 12px to 10px, icon wrapper from 38px to 30px, etc. Always maintain visual hierarchy and usability while achieving the desired size reduction.
-8. **Low Usage Mode Indicator Removal**:
-   - Completely removed the visual indicator that appeared when Low Usage Mode was enabled
-   - Modified `showIndicator()` function in `low-usage-mode.js` to not create any DOM elements
-   - Updated `applyLowUsageMode()` function in `new-main.js` to remove indicator creation logic
-   - Removed CSS styles for `#low-usage-mode-indicator` from `low-usage-mode.css`
-   - Low Usage Mode now runs silently without any visual indicator for a cleaner interface
-   - All performance optimizations (animation disabling, timer throttling) still work as intended
+*Quick reference for Huntarr development. Update when new patterns are discovered.*

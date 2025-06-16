@@ -41,6 +41,9 @@ window.huntarrSchedules = window.huntarrSchedules || {
         
         // Load app instances dynamically
         loadAppInstances();
+        
+        // Load server timezone and display current time
+        loadServerTimezone();
     });
 
 /**
@@ -58,18 +61,8 @@ function initScheduler() {
     // Set up event listeners
     setupEventListeners();
     
-    // Initialize time inputs with current time
-    const now = new Date();
-    const hour = now.getHours();
-    const minute = Math.floor(now.getMinutes() / 5) * 5; // Round to nearest 5 minutes
-    
-    const hourSelect = document.getElementById('scheduleHour');
-    const minuteSelect = document.getElementById('scheduleMinute');
-    
-    if (hourSelect && minuteSelect) {
-        hourSelect.value = hour;
-        minuteSelect.value = minute;
-    }
+    // Initialize time inputs with server current time (will be updated once timezone loads)
+    initializeTimeInputs();
     
     // Make sure schedule containers are visible
     setTimeout(() => {
@@ -100,20 +93,18 @@ function initScheduler() {
  * Set up event listeners for the scheduler UI
  */
 function setupEventListeners() {
-    // Add Schedule button (edit functionality removed for simplicity)
-    const addScheduleButton = document.getElementById('addScheduleButton');
-    if (addScheduleButton) {
-        addScheduleButton.addEventListener('click', function() {
-            // Always treat as a new schedule - edit functionality removed
-            addSchedule();
-        });
-    }
-    
-    // Save button functionality removed since we're using auto-save
-    
-    // Only set up the event handler during initialization, not on every page render
-    // Use a closure to ensure event listener is registered only once
+    // Only set up the event handlers during initialization, not on every page render
+    // Use a closure to ensure event listeners are registered only once
     if (!window.huntarrSchedulerInitialized) {
+        // Add Schedule button (edit functionality removed for simplicity)
+        const addScheduleButton = document.getElementById('addScheduleButton');
+        if (addScheduleButton) {
+            addScheduleButton.addEventListener('click', function() {
+                // Always treat as a new schedule - edit functionality removed
+                addSchedule();
+            });
+        }
+        
         // Document level listener to catch delete actions regardless of when items are added
         document.addEventListener('click', function(e) {
             // Only react to delete buttons
@@ -147,7 +138,7 @@ async function fetchAppInstances() {
     console.debug('Fetching app instances from list.json for scheduler dropdown'); // DEBUG level per user preference
     
     // Define the app types we support (for fallback)
-    const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'bazarr'];
+    const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr', 'bazarr'];
     const instances = {};
     
     // Initialize all app types with empty arrays
@@ -320,7 +311,7 @@ function loadSchedules() {
     console.debug('Loading schedules from server'); // DEBUG level per user preference
     
     // Make API call to get schedules
-    HuntarrUtils.fetchWithTimeout('/api/scheduler/load')
+    HuntarrUtils.fetchWithTimeout('./api/scheduler/load')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to load schedules');
@@ -463,7 +454,7 @@ function saveSchedules() {
         console.debug('Saving processed schedules:', schedulesCopy);
         
         // Make API call to save schedules
-        HuntarrUtils.fetchWithTimeout('/api/scheduler/save', {
+        HuntarrUtils.fetchWithTimeout('./api/scheduler/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -710,6 +701,144 @@ function renderSchedules() {
 }
 
 /**
+ * Check if we're on a mobile device
+ */
+function isMobileDevice() {
+    return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+/**
+ * Update timezone display for mobile/desktop
+ */
+function updateTimezoneDisplay(serverTimezone) {
+    const timezoneLabel = document.querySelector('.timezone-label');
+    const timezoneSpan = document.getElementById('serverTimezone');
+    const timezoneSeparator = document.querySelector('.timezone-separator');
+    
+    if (timezoneLabel && timezoneSpan) {
+        if (isMobileDevice()) {
+            // Hide the "Server Time:" label on mobile
+            timezoneLabel.style.display = 'none';
+            // Hide the timezone name on mobile, show only clock and time
+            timezoneSpan.style.display = 'none';
+            // Hide the separator pipe on mobile
+            if (timezoneSeparator) {
+                timezoneSeparator.style.display = 'none';
+            }
+        } else {
+            // Show the label and timezone on desktop
+            timezoneLabel.style.display = 'inline';
+            timezoneSpan.style.display = 'inline';
+            // Show the separator pipe on desktop
+            if (timezoneSeparator) {
+                timezoneSeparator.style.display = 'inline';
+            }
+            
+            // Format timezone for display
+            const displayTimezone = serverTimezone.replace('_', ' ');
+            timezoneSpan.textContent = displayTimezone;
+        }
+    }
+}
+
+/**
+ * Load server timezone from API and update display
+ */
+function loadServerTimezone() {
+    console.debug('Loading server timezone from settings API');
+    
+    HuntarrUtils.fetchWithTimeout('./api/settings')
+        .then(response => response.json())
+        .then(data => {
+            const serverTimezone = data.general?.timezone || 'UTC';
+            console.debug('Server timezone loaded:', serverTimezone);
+            
+            // Update timezone display with mobile handling
+            updateTimezoneDisplay(serverTimezone);
+            
+            // Update current time in server timezone
+            updateServerTime(serverTimezone);
+            
+            // Update time inputs to show server current time
+            updateTimeInputsWithServerTime(serverTimezone);
+            
+            // Update time every minute
+            setInterval(() => updateServerTime(serverTimezone), 60000);
+            
+            // Handle window resize to adjust mobile/desktop display
+            window.addEventListener('resize', () => {
+                updateTimezoneDisplay(serverTimezone);
+            });
+        })
+        .catch(error => {
+            console.error('Failed to load server timezone:', error);
+            updateTimezoneDisplay('UTC');
+            updateServerTime('UTC');
+        });
+}
+
+/**
+ * Update the displayed current server time
+ */
+function updateServerTime(timezone) {
+    const currentTimeSpan = document.getElementById('serverCurrentTime');
+    if (!currentTimeSpan) return;
+    
+    try {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', {
+            timeZone: timezone,
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        currentTimeSpan.textContent = timeString;
+    } catch (error) {
+        console.error('Error formatting server time:', error);
+        currentTimeSpan.textContent = '--:--';
+    }
+}
+
+/**
+ * Update time inputs with server current time
+ */
+function updateTimeInputsWithServerTime(timezone) {
+    const hourSelect = document.getElementById('scheduleHour');
+    const minuteSelect = document.getElementById('scheduleMinute');
+    
+    if (hourSelect && minuteSelect) {
+        try {
+            const now = new Date();
+            const serverTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+            const hour = serverTime.getHours();
+            const minute = serverTime.getMinutes();
+            
+            hourSelect.value = hour;
+            minuteSelect.value = minute;
+        } catch (error) {
+            console.error('Error updating time inputs with server time:', error);
+        }
+    }
+}
+
+/**
+ * Initialize time inputs with server current time (will be updated once timezone loads)
+ */
+function initializeTimeInputs() {
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = Math.floor(now.getMinutes() / 5) * 5; // Round to nearest 5 minutes
+    
+    const hourSelect = document.getElementById('scheduleHour');
+    const minuteSelect = document.getElementById('scheduleMinute');
+    
+    if (hourSelect && minuteSelect) {
+        hourSelect.value = hour;
+        minuteSelect.value = minute;
+    }
+}
+
+/**
  * Add a new schedule
  */
 function addSchedule() {
@@ -743,13 +872,8 @@ function addSchedule() {
     }
     
     if (!anyDaySelected) {
-        // Assuming huntarrUI is globally available
-        if (window.huntarrUI && typeof window.huntarrUI.showNotification === 'function') {
-            huntarrUI.showNotification('Please select at least one day to save the schedule.', 'error');
-        } else {
-            alert('Please select at least one day to save the schedule.'); // Fallback
-        }
-        console.error('Validation Error: No day selected for the new schedule.');
+        // Validation is now handled by button state management - no need for warnings
+        console.debug('No day selected - this should be prevented by disabled button state');
         return; 
     }
     
@@ -797,11 +921,9 @@ function addSchedule() {
     // Update UI
     renderSchedules();
     
-    // Reset day checkboxes
-    resetDayCheckboxes();
+    // Don't reset day checkboxes - let user add multiple schedules with same days if needed
+    // resetDayCheckboxes(); // Removed to prevent automatic unchecking
 }
-
-// Execution history functionality has been removed as requested
 
 /**
  * Format days from internal format to API format (array of day names)
@@ -819,11 +941,6 @@ function formatDaysForAPI(days) {
     
     return apiDays;
 }
-
-/**
- * Edit functionality has been removed for simplicity
- * Users can now only add new schedules or delete existing ones
- */
 
 /**
  * Delete a schedule (no confirmations to prevent multiple dialog issues)
@@ -873,6 +990,18 @@ function resetDayCheckboxes() {
     document.getElementById('day-friday').checked = false;
     document.getElementById('day-saturday').checked = false;
     document.getElementById('day-sunday').checked = false;
+    
+    // Also reset the Daily checkbox and its visual state
+    const dailyInput = document.getElementById('day-daily');
+    const dailyCheckboxDiv = document.querySelector('.daily-checkbox');
+    
+    if (dailyInput) {
+        dailyInput.checked = false;
+    }
+    
+    if (dailyCheckboxDiv) {
+        dailyCheckboxDiv.classList.remove('checked');
+    }
 }
 
 // Close the IIFE that wraps the script

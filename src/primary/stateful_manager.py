@@ -2,12 +2,10 @@
 """
 Stateful Manager for Huntarr
 Handles storing and retrieving processed media IDs to prevent reprocessing
+Now uses SQLite database instead of JSON files for better performance and reliability.
 """
 
-import os
-import json
 import time
-import pathlib
 import datetime
 import logging
 from typing import Dict, Any, List, Optional, Set
@@ -16,35 +14,21 @@ from typing import Dict, Any, List, Optional, Set
 stateful_logger = logging.getLogger("stateful_manager")
 
 # Constants
-# Use the centralized path configuration
-from src.primary.utils.config_paths import STATEFUL_DIR
-LOCK_FILE = STATEFUL_DIR / "lock.json"
 DEFAULT_HOURS = 168  # Default 7 days (168 hours)
 
-# Ensure the stateful directory exists
-try:
-    STATEFUL_DIR.mkdir(parents=True, exist_ok=True)
-    stateful_logger.info(f"Stateful directory created/confirmed at {STATEFUL_DIR}")
-except Exception as e:
-    stateful_logger.error(f"Error creating stateful directory: {e}")
-
-# Create app directories
+# App types
 APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
-for app_type in APP_TYPES:
-    (STATEFUL_DIR / app_type).mkdir(exist_ok=True)
 
-# Add import for get_advanced_setting
+# Import database
+from src.primary.utils.database import get_database
 from src.primary.settings_manager import get_advanced_setting
 
 def initialize_lock_file() -> None:
     """Initialize the lock file with the current timestamp if it doesn't exist."""
-    # Ensure directory exists - we don't need to log this again
-    try:
-        STATEFUL_DIR.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        stateful_logger.error(f"Error creating stateful directory: {e}")
-        
-    if not LOCK_FILE.exists():
+    db = get_database()
+    lock_info = db.get_stateful_lock_info()
+    
+    if not lock_info:
         try:
             current_time = int(time.time())
             # Get the expiration hours setting
@@ -52,41 +36,43 @@ def initialize_lock_file() -> None:
             
             expires_at = current_time + (expiration_hours * 3600)
             
-            with open(LOCK_FILE, 'w') as f:
-                json.dump({
-                    "created_at": current_time,
-                    "expires_at": expires_at
-                }, f, indent=2)
-            stateful_logger.info(f"Initialized lock file at {LOCK_FILE} with expiration in {expiration_hours} hours")
+            db.set_stateful_lock_info(current_time, expires_at)
+            stateful_logger.info(f"Initialized stateful lock in database with expiration in {expiration_hours} hours")
         except Exception as e:
-            stateful_logger.error(f"Error initializing lock file: {e}")
+            stateful_logger.error(f"Error initializing stateful lock: {e}")
             
 def get_lock_info() -> Dict[str, Any]:
     """Get the current lock information."""
     initialize_lock_file()
+    db = get_database()
+    
     try:
-        with open(LOCK_FILE, 'r') as f:
-            lock_info = json.load(f)
+        lock_info = db.get_stateful_lock_info()
         
         # Validate the structure and ensure required fields exist
-        if not isinstance(lock_info, dict):
-            raise ValueError("Lock info is not a dictionary")
+        if not lock_info or "created_at" not in lock_info:
+            current_time = int(time.time())
+            expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
+            expires_at = current_time + (expiration_hours * 3600)
             
-        if "created_at" not in lock_info:
-            lock_info["created_at"] = int(time.time())
+            lock_info = {
+                "created_at": current_time,
+                "expires_at": expires_at
+            }
+            db.set_stateful_lock_info(current_time, expires_at)
             
         if "expires_at" not in lock_info or lock_info["expires_at"] is None:
             # Recalculate expiration if missing
             expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
-            lock_info["expires_at"] = lock_info["created_at"] + (expiration_hours * 3600)
+            expires_at = lock_info["created_at"] + (expiration_hours * 3600)
+            lock_info["expires_at"] = expires_at
             
             # Save the updated info
-            with open(LOCK_FILE, 'w') as f:
-                json.dump(lock_info, f, indent=2)
+            db.set_stateful_lock_info(lock_info["created_at"], expires_at)
             
         return lock_info
     except Exception as e:
-        stateful_logger.error(f"Error reading lock file: {e}")
+        stateful_logger.error(f"Error reading lock info from database: {e}")
         # Return default values if there's an error
         current_time = int(time.time())
         expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
@@ -108,11 +94,9 @@ def update_lock_expiration(hours: int = None) -> bool:
     created_at = lock_info.get("created_at", int(time.time()))
     expires_at = created_at + (expiration_hours * 3600)
     
-    lock_info["expires_at"] = expires_at
-    
     try:
-        with open(LOCK_FILE, 'w') as f:
-            json.dump(lock_info, f, indent=2)
+        db = get_database()
+        db.set_stateful_lock_info(created_at, expires_at)
         stateful_logger.info(f"Updated lock expiration to {datetime.datetime.fromtimestamp(expires_at)}")
         return True
     except Exception as e:
@@ -126,38 +110,25 @@ def reset_stateful_management() -> bool:
     This involves:
     1. Creating a new lock file with the current timestamp and a calculated expiration time
        based on the 'stateful_management_hours' setting.
-    2. Deleting all stored processed ID files (*.json) within each app-specific
-       subdirectory under the STATEFUL_DIR.
+    2. Deleting all stored processed ID data from the database.
 
     Returns:
         bool: True if the reset was successful, False otherwise.
     """
     try:
-        # Get the expiration hours setting BEFORE writing the lock file
+        db = get_database()
+        
+        # Get the expiration hours setting BEFORE writing the lock info
         expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
         
-        # Create new lock file with calculated expiration
+        # Create new lock info with calculated expiration
         current_time = int(time.time())
         expires_at = current_time + (expiration_hours * 3600)
         
-        with open(LOCK_FILE, 'w') as f:
-            json.dump({
-                "created_at": current_time,
-                "expires_at": expires_at # Write the calculated expiration time directly
-            }, f, indent=2)
+        # Clear all stateful data and set new lock info
+        db.clear_all_stateful_data()
+        db.set_stateful_lock_info(current_time, expires_at)
         
-        # Delete all stored IDs
-        for app_type in APP_TYPES:
-            app_dir = STATEFUL_DIR / app_type
-            if app_dir.exists():
-                for json_file in app_dir.glob("*.json"):
-                    try:
-                        json_file.unlink()
-                        stateful_logger.debug(f"Deleted {json_file}")
-                    except Exception as e:
-                        stateful_logger.error(f"Error deleting {json_file}: {e}")
-        
-        # No need to call update_lock_expiration() again as we wrote it directly
         stateful_logger.info(f"Successfully reset stateful management. New expiration: {datetime.datetime.fromtimestamp(expires_at)}")
         return True
     except Exception as e:
@@ -204,24 +175,13 @@ def get_processed_ids(app_type: str, instance_name: str) -> Set[str]:
         stateful_logger.warning(f"Unknown app type: {app_type}")
         return set()
     
-    # Create safe filename from instance name
-    safe_instance_name = "".join([c if c.isalnum() else "_" for c in instance_name])
-    
-    file_path = STATEFUL_DIR / app_type / f"{safe_instance_name}.json"
-    stateful_logger.debug(f"[get_processed_ids] Checking file: {file_path} for {app_type}/{instance_name}") # DEBUG LOG
-    
-    if not file_path.exists():
-        stateful_logger.debug(f"[get_processed_ids] File not found: {file_path}") # DEBUG LOG
-        return set()
-    
     try:
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-            processed_ids_set = set(data.get("processed_ids", [])) # Convert list to set
-            stateful_logger.debug(f"[get_processed_ids] Read {len(processed_ids_set)} IDs from {file_path}: {processed_ids_set}") # DEBUG LOG
-            return processed_ids_set
+        db = get_database()
+        processed_ids_set = db.get_processed_ids(app_type, instance_name)
+        stateful_logger.debug(f"[get_processed_ids] Read {len(processed_ids_set)} IDs from database for {app_type}/{instance_name}: {processed_ids_set}")
+        return processed_ids_set
     except Exception as e:
-        stateful_logger.error(f"Error reading processed IDs for {instance_name} from {file_path}: {e}") # Updated log
+        stateful_logger.error(f"Error reading processed IDs for {instance_name} from database: {e}")
         return set()
 
 def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
@@ -240,38 +200,22 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
         stateful_logger.warning(f"Unknown app type: {app_type}")
         return False
     
-    # Create safe filename from instance name
-    safe_instance_name = "".join([c if c.isalnum() else "_" for c in instance_name])
-    
-    file_path = STATEFUL_DIR / app_type / f"{safe_instance_name}.json"
-    
-    # Get existing processed IDs using the get function (which includes logging)
-    current_processed_ids_set = get_processed_ids(app_type, instance_name)
-    
-    # Convert set back to list for appending and saving
-    processed_ids_list = list(current_processed_ids_set)
-    
-    # Add the new ID if it's not already there
-    if media_id not in current_processed_ids_set:
-        processed_ids_list.append(media_id)
-        stateful_logger.debug(f"[add_processed_id] Adding ID {media_id} to list for {app_type}/{instance_name}") # DEBUG LOG
-    else:
-        stateful_logger.debug(f"[add_processed_id] ID {media_id} already in list for {app_type}/{instance_name}") # DEBUG LOG
-        # No need to write if the ID is already present
-        return True
-        
-    # Write the updated list back to the file
-    stateful_logger.debug(f"[add_processed_id] Writing {len(processed_ids_list)} IDs to {file_path}: {processed_ids_list}") # DEBUG LOG
     try:
-        with open(file_path, 'w') as f:
-            json.dump({
-                "processed_ids": processed_ids_list,
-                "last_updated": int(time.time())
-            }, f, indent=2)
-        # Removed redundant log here, previous debug log is sufficient
-        return True
+        db = get_database()
+        
+        # Check if already processed
+        if db.is_processed(app_type, instance_name, media_id):
+            stateful_logger.debug(f"[add_processed_id] ID {media_id} already in database for {app_type}/{instance_name}")
+            return True
+        
+        # Add the new ID
+        success = db.add_processed_id(app_type, instance_name, media_id)
+        if success:
+            stateful_logger.debug(f"[add_processed_id] Added ID {media_id} to database for {app_type}/{instance_name}")
+        
+        return success
     except Exception as e:
-        stateful_logger.error(f"Error adding media ID {media_id} to {file_path}: {e}")
+        stateful_logger.error(f"Error adding media ID {media_id} to database: {e}")
         return False
 
 def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
@@ -286,21 +230,23 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
     Returns:
         bool: True if already processed, False otherwise
     """
-    # Create safe filename for logging
-    safe_instance = "".join([c if c.isalnum() else "_" for c in instance_name])
-    file_path = STATEFUL_DIR / app_type / f"{safe_instance}.json"
-    
-    # Get processed IDs for this app/instance
-    processed_ids = get_processed_ids(app_type, instance_name)
-    
-    # Log what we're checking and the result
-    # Converting media_id to string since some callers might pass an integer
-    media_id_str = str(media_id)
-    is_in_set = media_id_str in processed_ids
-    
-    stateful_logger.info(f"is_processed check: {app_type}/{instance_name}, ID:{media_id_str}, Found:{is_in_set}, File:{file_path}, Total IDs:{len(processed_ids)}")
-    
-    return is_in_set
+    try:
+        db = get_database()
+        
+        # Converting media_id to string since some callers might pass an integer
+        media_id_str = str(media_id)
+        is_in_db = db.is_processed(app_type, instance_name, media_id_str)
+        
+        # Get total count for logging
+        processed_ids = db.get_processed_ids(app_type, instance_name)
+        total_count = len(processed_ids)
+        
+        stateful_logger.info(f"is_processed check: {app_type}/{instance_name}, ID:{media_id_str}, Found:{is_in_db}, Total IDs:{total_count}")
+        
+        return is_in_db
+    except Exception as e:
+        stateful_logger.error(f"Error checking if processed for {app_type}/{instance_name}, ID:{media_id}: {e}")
+        return False
 
 def get_stateful_management_info() -> Dict[str, Any]:
     """Get information about the stateful management system."""
@@ -317,42 +263,121 @@ def get_stateful_management_info() -> Dict[str, Any]:
         "interval_hours": expiration_hours
     }
 
+def get_state_management_summary(app_type: str, instance_name: str) -> Dict[str, Any]:
+    """
+    Get a summary of stateful management for an app instance.
+    
+    Args:
+        app_type: The type of app (sonarr, radarr, etc.)
+        instance_name: The name of the instance
+        
+    Returns:
+        Dict containing processed count, next reset time, and other useful info
+    """
+    try:
+        # Get processed IDs count
+        processed_ids = get_processed_ids(app_type, instance_name)
+        processed_count = len(processed_ids)
+        
+        # Get next reset time
+        next_reset_time = get_next_reset_time()
+        
+        # Get expiration hours setting
+        expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
+        
+        return {
+            "processed_count": processed_count,
+            "next_reset_time": next_reset_time,
+            "expiration_hours": expiration_hours,
+            "has_processed_items": processed_count > 0
+        }
+    except Exception as e:
+        stateful_logger.error(f"Error getting state management summary for {app_type}/{instance_name}: {e}")
+        return {
+            "processed_count": 0,
+            "next_reset_time": None,
+            "expiration_hours": DEFAULT_HOURS,
+            "has_processed_items": False
+        }
+
+def _get_user_timezone():
+    """Get the user's selected timezone from general settings"""
+    try:
+        from src.primary.utils.timezone_utils import get_user_timezone
+        return get_user_timezone()
+    except Exception as e:
+        stateful_logger.warning(f"Could not get user timezone, defaulting to UTC: {e}")
+        import pytz
+        return pytz.UTC
+
+def get_next_reset_time() -> Optional[str]:
+    """
+    Get the next state management reset time as a formatted string in user's timezone.
+    
+    Returns:
+        Formatted reset time string or None if unable to calculate
+    """
+    try:
+        # Import here to avoid circular imports
+        from src.primary.state import get_last_reset_time
+        
+        # Get user's timezone
+        user_tz = _get_user_timezone()
+        
+        # Get reset interval in hours
+        reset_interval = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
+        
+        # Get last reset time and calculate next reset
+        last_reset = get_last_reset_time()  # This returns a naive datetime
+        
+        # Check if last_reset is valid (not Unix epoch or too old)
+        unix_epoch = datetime.datetime(1970, 1, 1)
+        one_year_ago = datetime.datetime.now() - datetime.timedelta(days=365)
+        
+        if last_reset and last_reset > one_year_ago and last_reset != unix_epoch:
+            # Convert last reset to user timezone (assuming it was stored in UTC)
+            import pytz
+            last_reset_utc = pytz.UTC.localize(last_reset) if last_reset.tzinfo is None else last_reset
+            next_reset_user_tz = last_reset_utc.astimezone(user_tz) + datetime.timedelta(hours=reset_interval)
+            return next_reset_user_tz.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            # If no valid last reset time, calculate from now
+            stateful_logger.info("No valid last reset time found, calculating next reset from current time")
+            now_user_tz = datetime.datetime.now(user_tz)
+            next_reset = now_user_tz + datetime.timedelta(hours=reset_interval)
+            return next_reset.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception as e:
+        stateful_logger.error(f"Error calculating next reset time: {e}")
+        return None
+
 def initialize_stateful_system():
     """Perform a complete initialization of the stateful management system."""
     stateful_logger.info("Initializing stateful management system")
     
-    # Ensure all required directories exist
-    try:
-        STATEFUL_DIR.mkdir(parents=True, exist_ok=True)
-        for app_type in APP_TYPES:
-            (STATEFUL_DIR / app_type).mkdir(exist_ok=True)
-        stateful_logger.info(f"Stateful directory structure created at {STATEFUL_DIR}")
-    except Exception as e:
-        stateful_logger.error(f"Failed to create stateful directories: {e}")
-    
-    # Initialize the lock file with proper expiration
+    # Initialize the database and lock info
     try:
         initialize_lock_file()
         # Update expiration time
         expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
         update_lock_expiration(expiration_hours)
-        stateful_logger.info(f"Stateful lock file initialized with {expiration_hours} hour expiration")
+        stateful_logger.info(f"Stateful lock initialized in database with {expiration_hours} hour expiration")
     except Exception as e:
-        stateful_logger.error(f"Failed to initialize lock file: {e}")
+        stateful_logger.error(f"Failed to initialize stateful lock: {e}")
     
-    # Check for existing processed IDs
+    # Check for existing processed IDs in database
     try:
+        db = get_database()
         total_ids = 0
         for app_type in APP_TYPES:
-            app_dir = STATEFUL_DIR / app_type
-            if app_dir.exists():
-                files = list(app_dir.glob("*.json"))
-                total_ids += len(files)
+            # Get a sample of instance names to count processed IDs
+            # This is a rough count since we don't track instance names separately
+            processed_ids = db.get_processed_ids(app_type, "Default")  # Check default instance
+            total_ids += len(processed_ids)
         
         if total_ids > 0:
-            stateful_logger.info(f"Found {total_ids} existing processed ID files")
+            stateful_logger.info(f"Found {total_ids} existing processed IDs in database")
         else:
-            stateful_logger.info("No existing processed ID files found")
+            stateful_logger.info("No existing processed IDs found in database")
     except Exception as e:
         stateful_logger.error(f"Failed to check for existing processed IDs: {e}")
     

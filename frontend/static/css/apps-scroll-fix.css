@@ -28,7 +28,7 @@
 
 /* Reduce excessive padding in various containers */
 #sonarrApps, #radarrApps, #lidarrApps, #readarrApps, 
-#whisparrApps, #erosApps, #swaparrApps, #cleanuperrApps {
+#whisparrApps, #erosApps, #cleanuperrApps {
     padding-bottom: 50px !important;
     margin-bottom: 20px !important;
     overflow: visible !important;
@@ -81,7 +81,6 @@ body #lidarrApps,
 body #readarrApps,
 body #whisparrApps, 
 body #erosApps, 
-body #swaparrApps,
 body #cleanuperrApps {
     overflow: visible !important; 
     max-height: none !important;
@@ -105,7 +104,7 @@ body #cleanuperrApps {
     
     /* Reduce bottom spacing on mobile */
     #sonarrApps, #radarrApps, #lidarrApps, #readarrApps,
-    #whisparrApps, #erosApps, #swaparrApps, #cleanuperrApps,
+    #whisparrApps, #erosApps, #cleanuperrApps,
     .additional-options, .skip-series-refresh {
         margin-bottom: 50px !important;
         padding-bottom: 30px !important;

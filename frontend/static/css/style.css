@@ -718,11 +718,12 @@ input:checked + .slider:before {
 }
 
 .settings-group {
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    border: 2px solid rgba(90, 109, 137, 0.3);
+    border-radius: 12px;
     padding: 20px;
-    margin-bottom: 20px;
+    margin: 15px 0 25px 0;
+    box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     position: relative;
 }
 
@@ -1446,12 +1447,138 @@ label .info-icon ~ text {
     border: none !important;
 }
 
-.instance-panel {
+.instance-panel, .instance-item {
     background-color: var(--bg-secondary, #2c2c2c);
-    border-radius: 4px;
+    border: 1px solid var(--border-color, #3c3c3c);
+    border-radius: 8px;
     padding: 15px;
     margin-bottom: 15px;
-    border: 1px solid var(--border-color, #3c3c3c);
+}
+
+/* Tag input system for malicious file detection */
+.tag-input-container {
+    background: #1f2937;
+    border: 1px solid rgba(90, 109, 137, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    min-height: 100px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+    min-height: 32px;
+}
+
+.tag-item {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    border: 1px solid rgba(90, 109, 137, 0.4);
+    border-radius: 6px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e5e7eb;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.tag-item:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+    border-color: rgba(90, 109, 137, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tag-remove {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.tag-remove:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    transform: scale(1.1);
+}
+
+.tag-input-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.tag-input {
+    flex: 1;
+    background: #374151;
+    border: 1px solid rgba(90, 109, 137, 0.2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: #e5e7eb;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.tag-input:focus {
+    border-color: rgba(90, 109, 137, 0.5);
+    background: #4b5563;
+    box-shadow: 0 0 0 3px rgba(90, 109, 137, 0.1);
+}
+
+.tag-input::placeholder {
+    color: #9ca3af;
+}
+
+.tag-add-btn {
+    background: linear-gradient(135deg, #065f46 0%, #059669 100%);
+    border: 1px solid rgba(90, 109, 137, 0.3);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: #d1fae5;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    transition: all 0.2s ease;
+}
+
+.tag-add-btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+    border-color: rgba(90, 109, 137, 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tag-add-btn:active {
+    transform: translateY(0);
+}
+
+/* Empty state for tag lists */
+.tag-list:empty::before {
+    content: "No items added yet";
+    color: #6b7280;
+    font-style: italic;
+    font-size: 13px;
+    padding: 8px 0;
+    display: block;
 }
 
 .instance-header {
@@ -1519,13 +1646,15 @@ label .info-icon ~ text {
     background-color: #dc3545;
     color: white;
     border: none;
-    width: 30px;
-    height: 30px;
+    padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
+    gap: 5px;
+    font-size: 13px;
+    margin-top: 5px;
+    transition: background-color 0.2s;
 }
 
 .remove-instance-btn:hover {

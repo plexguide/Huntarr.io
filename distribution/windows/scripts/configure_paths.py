@@ -52,7 +52,6 @@ def setup_config_directories(base_dir=None):
         config_path / "scheduler",
         config_path / "reset",
         config_path / "tally",
-        config_path / "swaparr",
         config_path / "eros"
     ]
     

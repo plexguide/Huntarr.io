@@ -9,11 +9,16 @@
   ],
   "hunt_missing_items": 1,
   "hunt_upgrade_items": 0,
-  "upgrade_mode": "episodes",
-  "hunt_missing_mode": "episodes",
+  "upgrade_mode": "seasons_packs",
+  "hunt_missing_mode": "seasons_packs",
   "sleep_duration": 900,
   "monitored_only": true,
   "skip_future_episodes": true,
-
+  "tag_processed_items": true,
+  "custom_tags": {
+    "missing": "huntarr-missing",
+    "upgrade": "huntarr-upgrade",
+    "shows_missing": "huntarr-shows-missing"
+  },
   "hourly_cap": 20
 }

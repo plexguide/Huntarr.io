@@ -111,7 +111,7 @@ var
   i: Integer;
 begin
   // Define all required configuration directories
-  SetArrayLength(ConfigDirs, 14);
+  SetArrayLength(ConfigDirs, 13);
   ConfigDirs[0] := '\config';
   ConfigDirs[1] := '\config\logs';
   ConfigDirs[2] := '\config\stateful';
@@ -121,11 +121,10 @@ begin
   ConfigDirs[6] := '\config\scheduler';
   ConfigDirs[7] := '\config\reset';
   ConfigDirs[8] := '\config\tally';
-  ConfigDirs[9] := '\config\swaparr';
-  ConfigDirs[10] := '\config\eros';
-  ConfigDirs[11] := '\logs';
-  ConfigDirs[12] := '\frontend\templates';
-  ConfigDirs[13] := '\frontend\static';
+  ConfigDirs[9] := '\config\eros';
+  ConfigDirs[10] := '\logs';
+  ConfigDirs[11] := '\frontend\templates';
+  ConfigDirs[12] := '\frontend\static';
   
   // Create all necessary configuration directories with explicit permissions
   for i := 0 to GetArrayLength(ConfigDirs) - 1 do
@@ -302,7 +301,7 @@ begin
     begin
       Log('Non-admin installation - attempting to ensure directories are writable...');
       
-      SetArrayLength(Permissions, 14);
+      SetArrayLength(Permissions, 13);
       Permissions[0] := '\config';
       Permissions[1] := '\config\logs';
       Permissions[2] := '\config\stateful';
@@ -312,11 +311,10 @@ begin
       Permissions[6] := '\config\scheduler';
       Permissions[7] := '\config\reset';
       Permissions[8] := '\config\tally';
-      Permissions[9] := '\config\swaparr';
-      Permissions[10] := '\config\eros';
-      Permissions[11] := '\logs';
-      Permissions[12] := '\frontend\templates';
-      Permissions[13] := '\frontend\static';
+      Permissions[9] := '\config\eros';
+      Permissions[10] := '\logs';
+      Permissions[11] := '\frontend\templates';
+      Permissions[12] := '\frontend\static';
       
       for i := 0 to GetArrayLength(Permissions) - 1 do
       begin

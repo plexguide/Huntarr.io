@@ -39,8 +39,14 @@ function setupErosForm() {
     testErosButton.addEventListener('click', function() {
         console.log("[eros.js] Testing Eros connection...");
         
+        // Temporarily suppress change detection to prevent the unsaved changes dialog
+        window._suppressUnsavedChangesDialog = true;
+        
         // Basic validation
         if (!apiUrlInput.value || !apiKeyInput.value) {
+            // Reset suppression flag
+            window._suppressUnsavedChangesDialog = false;
+            
             if (typeof huntarrUI !== 'undefined') {
                 huntarrUI.showNotification('Please enter both API URL and API Key for Eros', 'error');
             } else {
@@ -57,7 +63,7 @@ function setupErosForm() {
         }
         
         // Call API to test connection
-        HuntarrUtils.fetchWithTimeout('/api/eros/test-connection', {
+        HuntarrUtils.fetchWithTimeout('./api/eros/test-connection', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -72,6 +78,11 @@ function setupErosForm() {
         .then(data => {
             // Enable the button again
             testErosButton.disabled = false;
+            
+            // Reset suppression flag after a short delay
+            setTimeout(() => {
+                window._suppressUnsavedChangesDialog = false;
+            }, 500);
             
             if (erosStatusIndicator) {
                 if (data.success) {
@@ -95,6 +106,9 @@ function setupErosForm() {
         .catch(error => {
             console.error('[eros.js] Error testing connection:', error);
             testErosButton.disabled = false;
+            
+            // Reset suppression flag
+            window._suppressUnsavedChangesDialog = false;
             
             if (erosStatusIndicator) {
                 erosStatusIndicator.className = 'connection-status failure';
@@ -134,7 +148,7 @@ function getErosVersion() {
     }
     
     // Endpoint to get version info - using the test endpoint since it returns version
-    HuntarrUtils.fetchWithTimeout('/api/eros/test-connection', {
+    HuntarrUtils.fetchWithTimeout('./api/eros/test-connection', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -164,7 +178,7 @@ function getErosVersion() {
  */
 function refreshErosStatusAndVersion() {
     // Try to get current connection status from the server
-    HuntarrUtils.fetchWithTimeout('/api/eros/status')
+    HuntarrUtils.fetchWithTimeout('./api/eros/status')
         .then(response => response.json())
         .then(data => {
             const panel = document.getElementById('erosSettings');

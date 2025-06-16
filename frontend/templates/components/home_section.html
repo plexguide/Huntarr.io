@@ -69,11 +69,34 @@
         .stats-card .card-header {
             padding: 8px 20px !important; /* 50% reduction from original 16px */
             min-height: 0 !important;
+            /* Firefox-specific fix for text blurriness on hover */
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            -moz-transform: translateZ(0);
+            will-change: auto;
+            text-rendering: geometricPrecision;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         .stats-card .card-header h3 {
             font-size: 16px !important; /* Slightly smaller font size */
             line-height: 1.2 !important; /* Tighter line height */
+            /* Additional Firefox text clarity fixes */
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            -moz-transform: translateZ(0);
+            text-rendering: geometricPrecision;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            /* Prevent inheritance of child transform effects */
+            isolation: isolate;
         }
         
         .stats-card .card-header .action-button {
@@ -221,9 +244,9 @@
 
     </style>
     <!-- Add initially hidden class to prevent flickering before JS initializes -->  
-    <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.3s ease;">
+    <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.15s ease;">
         <!-- Enhanced Support Links with Modern Design -->
-        <div class="card support-links-card">
+        <div class="card support-links-card" id="huntarr-support-section" style="display: none;">
             <div class="support-links-container">
                 <div class="support-links-grid">
                     <a href="https://github.com/plexguide/huntarr" target="_blank" class="support-link github">
@@ -243,14 +266,14 @@
                             <!-- Initially hidden until content is loaded -->
                         </div>
                         <div class="link-details">
-                            <a href="https://github.com/sponsors/plexguide" target="_blank" class="sponsor-title-link full-title">Daughter's College Sponsors</a>
+                            <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" class="sponsor-title-link full-title">Daughter's College Sponsors</a>
                             <span id="rotating-sponsor-content" class="link-description" style="visibility: hidden;">
                                 <!-- JavaScript will inject sponsor name here -->
                                 <!-- Initially hidden until content is loaded -->
                             </span>
                         </div>
                     </div>
-                    <a href="https://github.com/sponsors/plexguide" target="_blank" class="support-link donate">
+                    <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" class="support-link donate">
                         <div class="icon-container donate-icon">
                             <i class="fas fa-heart"></i>
                         </div>
@@ -264,7 +287,7 @@
         </div>
         
         <!-- Community & Resources Hub (redesigned links section) -->
-        <div class="card community-hub-card">
+        <div class="card community-hub-card" style="display: none;">
             <div class="card-header">
                 <h3>Resources</h3>
             </div>
@@ -317,15 +340,15 @@
         <!-- Updated statistics card with new layout -->
         <div class="card stats-card">
             <div class="card-header">
-                <h3>Live Hunts Executed</h3>
+                <h3><i class="fas fa-crosshairs"></i> Live Hunts Executed</h3>
                 <button id="reset-stats" class="action-button danger"><i class="fas fa-trash"></i> Reset</button>
             </div>
             <div class="media-stats-container">
                 <div class="app-stats-grid">
                     <!-- Sonarr Card -->
-                    <div class="app-stats-card sonarr">
-                        <div class="status-container">
-                            <span id="sonarrHomeStatus" class="status-badge loading"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
+                    <div class="app-stats-card sonarr" style="display: none;">
+                        <div class="status-container" style="display: none;">
+                            <span id="sonarrHomeStatus" class="status-badge"></span>
                         </div>
                         <div class="hourly-cap-container">
                             <div class="hourly-cap-status" id="sonarr-hourly-cap">
@@ -355,9 +378,9 @@
                     </div>
                     
                     <!-- Radarr Card -->
-                    <div class="app-stats-card radarr">
-                        <div class="status-container">
-                            <span id="radarrHomeStatus" class="status-badge loading"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
+                    <div class="app-stats-card radarr" style="display: none;">
+                        <div class="status-container" style="display: none;">
+                            <span id="radarrHomeStatus" class="status-badge"></span>
                         </div>
                         <div class="hourly-cap-container">
                             <div class="hourly-cap-status" id="radarr-hourly-cap">
@@ -387,9 +410,9 @@
                     </div>
                     
                     <!-- Lidarr Card -->
-                    <div class="app-stats-card lidarr">
-                        <div class="status-container">
-                            <span id="lidarrHomeStatus" class="status-badge loading"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
+                    <div class="app-stats-card lidarr" style="display: none;">
+                        <div class="status-container" style="display: none;">
+                            <span id="lidarrHomeStatus" class="status-badge"></span>
                         </div>
                         <div class="hourly-cap-container">
                             <div class="hourly-cap-status" id="lidarr-hourly-cap">
@@ -419,9 +442,9 @@
                     </div>
                     
                     <!-- Readarr Card -->
-                    <div class="app-stats-card readarr">
-                        <div class="status-container">
-                            <span id="readarrHomeStatus" class="status-badge loading"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
+                    <div class="app-stats-card readarr" style="display: none;">
+                        <div class="status-container" style="display: none;">
+                            <span id="readarrHomeStatus" class="status-badge"></span>
                         </div>
                         <div class="hourly-cap-container">
                             <div class="hourly-cap-status" id="readarr-hourly-cap">
@@ -451,9 +474,9 @@
                     </div>
                     
                     <!-- Whisparr Card -->
-                    <div class="app-stats-card whisparr">
-                        <div class="status-container">
-                            <span id="whisparrHomeStatus" class="status-badge loading"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
+                    <div class="app-stats-card whisparr" style="display: none;">
+                        <div class="status-container" style="display: none;">
+                            <span id="whisparrHomeStatus" class="status-badge"></span>
                         </div>
                         <div class="hourly-cap-container">
                             <div class="hourly-cap-status" id="whisparr-hourly-cap">
@@ -483,9 +506,9 @@
                     </div>
                     
                     <!-- Eros Card -->
-                    <div class="app-stats-card eros">
-                        <div class="status-container">
-                            <span id="erosHomeStatus" class="status-badge loading"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
+                    <div class="app-stats-card eros" style="display: none;">
+                        <div class="status-container" style="display: none;">
+                            <span id="erosHomeStatus" class="status-badge"></span>
                         </div>
                         <div class="hourly-cap-container">
                             <div class="hourly-cap-status" id="eros-hourly-cap">
@@ -511,6 +534,46 @@
                         </div>
                         <div class="reset-button-container">
                             <button class="cycle-reset-button" data-app="eros"><i class="fas fa-sync-alt"></i> Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Swaparr Status Card (only shows when Swaparr is enabled) -->
+        <div class="card stats-card" id="swaparrStatusCard" style="display: none;">
+            <div class="card-header">
+                <h3><i class="fas fa-download"></i> Swaparr Status</h3>
+                <button id="reset-swaparr-data" class="action-button danger"><i class="fas fa-trash"></i> Reset</button>
+            </div>
+            <div class="media-stats-container">
+                <div class="swaparr-stats-grid">
+                    <!-- Swaparr Stats Card -->
+                    <div class="app-stats-card swaparr">
+                        <div class="stats-numbers">
+                            <div class="stat-box">
+                                <div class="stat-number" id="swaparr-processed">0</div>
+                                <div class="stat-label">Session Processed</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="swaparr-strikes">0</div>
+                                <div class="stat-label">Session Strikes</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="swaparr-removals">0</div>
+                                <div class="stat-label">Session Removals</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="swaparr-ignored">0</div>
+                                <div class="stat-label">Session Ignored</div>
+                            </div>
+                        </div>
+                        <div class="reset-button-container">
+                            <button id="reset-swaparr-cycle-inline" class="cycle-reset-button" data-app="swaparr"><i class="fas fa-sync-alt"></i> Reset</button>
+                            <div id="swaparrCycleTimer" class="cycle-timer">
+                                <i class="fas fa-clock"></i>
+                                <span class="timer-value">--:--:--</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -950,6 +1013,13 @@
         -webkit-text-fill-color: transparent;
     }
     
+    .app-stats-card.swaparr .stat-number {
+        background: linear-gradient(to bottom right, #3498db, #2980b9);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
     .stat-label {
         font-size: 11px;
         color: rgba(160, 168, 184, 0.9);
@@ -1014,6 +1084,170 @@
         background: linear-gradient(145deg, rgba(231, 76, 60, 0.15), rgba(192, 57, 43, 0.05));
         color: #e74c3c;
         border: 1px solid rgba(231, 76, 60, 0.3);
+    
+    /* Swaparr Status Card Styling */
+    .swaparr-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+
+    
+    .swaparr-status-container {
+        padding: 20px !important;
+        background-color: rgba(15, 18, 24, 0.4) !important;
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .swaparr-stats-horizontal {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 15px !important;
+        margin-bottom: 25px !important;
+        width: 100% !important;
+    }
+    
+    .swaparr-action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 10px;
+    }
+    
+    @media (max-width: 600px) {
+        .swaparr-action-buttons {
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+    
+    .swaparr-stat-box {
+        background: linear-gradient(145deg, rgba(26, 32, 44, 0.9), rgba(20, 24, 33, 0.8)) !important;
+        border-radius: 8px !important;
+        padding: 15px !important;
+        text-align: center !important;
+        border: 1px solid rgba(120, 140, 180, 0.15) !important;
+        transition: all 0.3s ease !important;
+        backdrop-filter: blur(5px) !important;
+        min-height: 80px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .swaparr-stat-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        border-color: rgba(120, 140, 180, 0.3);
+    }
+    
+    .swaparr-stat-box .stat-label {
+        font-size: 11px !important;
+        color: rgba(160, 168, 184, 0.9) !important;
+        font-weight: 600 !important;
+        letter-spacing: 1px !important;
+        text-transform: uppercase !important;
+        margin-bottom: 8px !important;
+        margin-top: 0 !important;
+        line-height: 1.2 !important;
+    }
+    
+    .swaparr-stat-box .stat-value {
+        font-size: 28px !important;
+        font-weight: 700 !important;
+        color: #fff !important;
+        background: linear-gradient(to bottom right, #3498db, #2980b9) !important;
+        -webkit-background-clip: text !important;
+        background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+        margin: 0 !important;
+        line-height: 1 !important;
+    }
+    
+    .swaparr-countdown-section {
+        text-align: center;
+    }
+    
+    .swaparr-countdown-section h4 {
+        margin: 0 0 15px 0;
+        color: #e0e6ed;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    .countdown-timer-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .countdown-display {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 24px;
+        font-weight: 600;
+        color: #3498db;
+    }
+    
+    .countdown-display i {
+        font-size: 20px;
+    }
+    
+    .timer-value {
+        font-family: 'Courier New', monospace;
+        background: linear-gradient(to bottom right, #3498db, #2980b9);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .swaparr-action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 10px;
+    }
+    
+    .swaparr-action-buttons .action-button {
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .swaparr-action-buttons .action-button.danger {
+        background-color: #e74c3c;
+        color: white;
+    }
+    
+    .swaparr-action-buttons .action-button.danger:hover {
+        background-color: #c0392b;
+        transform: translateY(-1px);
+    }
+    
+    .swaparr-action-buttons .action-button.secondary {
+        background-color: #3498db;
+        color: white;
+    }
+    
+    .swaparr-action-buttons .action-button.secondary:hover {
+        background-color: #2980b9;
+        transform: translateY(-1px);
+    }
         box-shadow: 0 3px 10px rgba(231, 76, 60, 0.1);
     }
     
@@ -1223,8 +1457,8 @@
     }
 
     .action-button.danger:active {
-        transform: translateY(0);
         background: linear-gradient(145deg, rgba(229, 57, 53, 0.9), rgba(244, 67, 54, 0.8));
+        transform: translateY(0);
     }
 
     /* Responsive adjustments */
@@ -1676,12 +1910,60 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Set a small timeout to allow all DOM elements to initialize
+    // Load cached stats immediately to prevent flashing
+    (function() {
+        try {
+            const cachedStats = localStorage.getItem('huntarr-stats-cache');
+            if (cachedStats) {
+                const statsData = JSON.parse(cachedStats);
+                const cacheAge = Date.now() - (statsData.timestamp || 0);
+                
+                // Use cache if less than 5 minutes old
+                if (cacheAge < 300000 && statsData.stats) {
+                    const stats = statsData.stats;
+                    const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+                    const statTypes = ['hunted', 'upgraded'];
+                    
+                    // Immediately populate stats with cached values
+                    apps.forEach(app => {
+                        if (stats[app]) {
+                            statTypes.forEach(type => {
+                                const element = document.getElementById(`${app}-${type}`);
+                                if (element) {
+                                    const value = Math.max(0, parseInt(stats[app][type]) || 0);
+                                    element.textContent = formatLargeNumber(value);
+                                }
+                            });
+                        }
+                    });
+                    console.log('[HomeOptimization] Loaded cached stats immediately');
+                }
+            }
+        } catch (e) {
+            console.log('[HomeOptimization] Failed to load cached stats');
+        }
+        
+        // Helper function for number formatting (simplified version)
+        function formatLargeNumber(num) {
+            if (num < 1000) return num.toString();
+            else if (num < 10000) return (num / 1000).toFixed(1) + 'K';
+            else if (num < 100000) return (num / 1000).toFixed(1) + 'K';
+            else if (num < 1000000) return Math.floor(num / 1000) + 'K';
+            else if (num < 10000000) return (num / 1000000).toFixed(1) + 'M';
+            else if (num < 100000000) return (num / 1000000).toFixed(1) + 'M';
+            else if (num < 1000000000) return Math.floor(num / 1000000) + 'M';
+            else if (num < 1000000000000) return (num / 1000000000).toFixed(1) + 'B';
+            else return (num / 1000000000000).toFixed(1) + 'T';
+        }
+    })();
+    
     setTimeout(function() {
         // Show the dashboard after initialization
         document.querySelector('.dashboard-grid').style.opacity = '1';
-    }, 100);
+    }, 25);
     const sponsorContainer = document.getElementById('rotating-sponsor-content');
     let sponsors = [];
+    let weightedSponsorPool = [];
     let currentSponsorIndex = 0;
     let intervalId = null;
 
@@ -1719,21 +2001,52 @@ document.addEventListener('DOMContentLoaded', function() {
     // Make the container visible immediately
     document.getElementById('sponsor-widget-container').style.visibility = 'visible';
     
-    // Function to get a random sponsor different from the current one
-    function getRandomSponsor() {
-        if (sponsors.length === 0) return null;
+    // Function to create weighted sponsor pool based on category
+    function createWeightedPool(sponsors) {
+        const pool = [];
         
-        // If only one sponsor, just return it
+        sponsors.forEach(sponsor => {
+            let weight;
+            switch(sponsor.category) {
+                case 'featured': weight = 1.5; break; // 50% more selections
+                case 'past': weight = 0.5; break;     // 50% fewer selections  
+                default: weight = 1.0; break;         // Normal selections for active/others
+            }
+            
+            // Add sponsor to pool multiple times based on weight
+            const entries = Math.round(weight * 10); // Multiply by 10 for better granularity
+            for (let i = 0; i < entries; i++) {
+                pool.push(sponsor);
+            }
+        });
+        
+        return shuffleArray(pool);
+    }
+    
+    // Function to get a weighted random sponsor (avoiding immediate repeats)
+    function getNextSponsor() {
+        if (weightedSponsorPool.length === 0) return null;
+        
+        // If only one unique sponsor, just return it
         if (sponsors.length === 1) return sponsors[0];
         
-        // Generate a random index different from the current one
-        let newIndex;
-        do {
-            newIndex = Math.floor(Math.random() * sponsors.length);
-        } while (newIndex === currentSponsorIndex);
+        let attempts = 0;
+        let selectedSponsor;
         
-        currentSponsorIndex = newIndex;
-        return sponsors[currentSponsorIndex];
+        // Try to avoid showing the same sponsor twice in a row
+        do {
+            const randomIndex = Math.floor(Math.random() * weightedSponsorPool.length);
+            selectedSponsor = weightedSponsorPool[randomIndex];
+            attempts++;
+        } while (attempts < 10 && selectedSponsor && selectedSponsor.login === 
+                (sponsors[currentSponsorIndex] && sponsors[currentSponsorIndex].login));
+        
+        // Update current sponsor index for next comparison
+        if (selectedSponsor) {
+            currentSponsorIndex = sponsors.findIndex(s => s.login === selectedSponsor.login);
+        }
+        
+        return selectedSponsor;
     }
     
     // Display the sponsor information in the UI
@@ -1763,19 +2076,36 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Helper function to update sponsor content
     function updateSponsorContent(sponsor, avatarContainer, descContainer) {
-        // Update avatar with enhanced styling
-        avatarContainer.innerHTML = `
-            <a href="${sponsor.url || '#'}" target="_blank" title="Visit ${sponsor.name}'s GitHub profile">
-                <img src="${sponsor.avatarUrl}" alt="${sponsor.name}'s avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;">
-            </a>
-        `;
+        // Create elements without href to prevent prefetching, add click handlers instead
+        const avatarDiv = document.createElement('div');
+        avatarDiv.style.cssText = 'width: 100%; height: 100%; cursor: pointer; border-radius: 50%;';
+        avatarDiv.title = `Visit ${sponsor.name}'s GitHub profile`;
+        avatarDiv.onclick = function(e) {
+            e.preventDefault();
+            window.open(sponsor.url || '#', '_blank', 'noopener,noreferrer');
+        };
         
-        // Update name in the description area
-        descContainer.innerHTML = `
-            <a href="${sponsor.url || '#'}" target="_blank" title="Visit ${sponsor.name}'s GitHub profile">
-                ${sponsor.name}
-            </a>
-        `;
+        const avatarImg = document.createElement('img');
+        avatarImg.src = sponsor.avatarUrl;
+        avatarImg.alt = `${sponsor.name}'s avatar`;
+        avatarImg.style.cssText = 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;';
+        
+        avatarDiv.appendChild(avatarImg);
+        avatarContainer.innerHTML = '';
+        avatarContainer.appendChild(avatarDiv);
+        
+        // Create name element without href to prevent prefetching
+        const nameDiv = document.createElement('div');
+        nameDiv.textContent = sponsor.name;
+        nameDiv.style.cssText = 'cursor: pointer; color: inherit;';
+        nameDiv.title = `Visit ${sponsor.name}'s GitHub profile`;
+        nameDiv.onclick = function(e) {
+            e.preventDefault();
+            window.open(sponsor.url || '#', '_blank', 'noopener,noreferrer');
+        };
+        
+        descContainer.innerHTML = '';
+        descContainer.appendChild(nameDiv);
         
         // Add sponsor-icon class
         avatarContainer.classList.add('sponsor-icon');
@@ -1787,35 +2117,47 @@ document.addEventListener('DOMContentLoaded', function() {
         descContainer.style.opacity = '1';
     }
     
-    // Function to rotate to a new random sponsor
+    // Function to rotate to the next weighted random sponsor
     function rotateSponsor() {
-        const sponsor = getRandomSponsor();
-        displaySponsor(sponsor);
+        const sponsor = getNextSponsor();
+        if (sponsor) {
+            displaySponsor(sponsor);
+        }
     }
 
     // Create a placeholder sponsor while loading
     function displayPlaceholderSponsor() {
         const placeholderSponsor = {
             name: "Daughter's College Fund",
-            url: "https://github.com/sponsors/plexguide"
+            url: "https://plexguide.github.io/Huntarr.io/donate.html"
         };
         
         // Style the container directly and apply the styling immediately
         document.getElementById('sponsor-widget-container').style.visibility = 'visible';
         
-        // Create a solid orange-red circle with gold border exactly like image #2
-        avatarContainer.innerHTML = `
-            <a href="${placeholderSponsor.url}" target="_blank" title="Support ${placeholderSponsor.name}" class="sponsor-icon">
-                <div style="width: 100%; height: 100%; border-radius: 50%; background-color: #FF6347; border: 3px solid #ffb700; box-sizing: border-box;">
-                </div>
-            </a>
-        `;
+        // Create a solid orange-red circle with gold border exactly like image #2 (no href to prevent prefetching)
+        const placeholderDiv = document.createElement('div');
+        placeholderDiv.style.cssText = 'width: 100%; height: 100%; border-radius: 50%; background-color: #FF6347; border: 3px solid #ffb700; box-sizing: border-box; cursor: pointer;';
+        placeholderDiv.title = `Support ${placeholderSponsor.name}`;
+        placeholderDiv.onclick = function(e) {
+            e.preventDefault();
+            window.open(placeholderSponsor.url, '_blank', 'noopener,noreferrer');
+        };
         
-        descContainer.innerHTML = `
-            <a href="${placeholderSponsor.url}" target="_blank" title="Support us">
-                ${placeholderSponsor.name}
-            </a>
-        `;
+        avatarContainer.innerHTML = '';
+        avatarContainer.appendChild(placeholderDiv);
+        
+        const placeholderNameDiv = document.createElement('div');
+        placeholderNameDiv.textContent = placeholderSponsor.name;
+        placeholderNameDiv.style.cssText = 'cursor: pointer; color: inherit;';
+        placeholderNameDiv.title = 'Support us';
+        placeholderNameDiv.onclick = function(e) {
+            e.preventDefault();
+            window.open(placeholderSponsor.url, '_blank', 'noopener,noreferrer');
+        };
+        
+        descContainer.innerHTML = '';
+        descContainer.appendChild(placeholderNameDiv);
         
         // Add sponsor-icon class and show immediately
         avatarContainer.classList.add('sponsor-icon');
@@ -1840,25 +2182,20 @@ document.addEventListener('DOMContentLoaded', function() {
             sponsors = await response.json();
             
             if (sponsors && sponsors.length > 0) {
-                // Limit to 10 sponsors if there are more
-                if (sponsors.length > 10) {
-                    sponsors = sponsors.slice(0, 10);
-                }
+                // Create weighted pool where featured sponsors appear more often
+                weightedSponsorPool = createWeightedPool(sponsors);
                 
-                // Shuffle sponsors for randomness
-                sponsors = shuffleArray([...sponsors]);
-                
-                // Choose a random sponsor for initial display
-                currentSponsorIndex = Math.floor(Math.random() * sponsors.length);
-                
-                // Show almost immediately with minimal delay
+                // Show first weighted random sponsor almost immediately
                 setTimeout(() => {
-                    displaySponsor(sponsors[currentSponsorIndex]);
+                    const firstSponsor = getNextSponsor();
+                    if (firstSponsor) {
+                        displaySponsor(firstSponsor);
+                        
+                        // Set up regular rotation every 17 seconds
+                        if (intervalId) clearInterval(intervalId);
+                        intervalId = setInterval(rotateSponsor, 17000);
+                    }
                 }, 100); // Very short delay to avoid visual glitches
-                
-                // Set up rotation every 15 seconds
-                if (intervalId) clearInterval(intervalId);
-                intervalId = setInterval(rotateSponsor, 15000);
             } else {
                 // If no sponsors, show a fallback message
                 sponsorContainer.textContent = 'Support us on GitHub!';

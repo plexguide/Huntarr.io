@@ -1,14 +1,18 @@
 <section id="historySection" class="content-section">
     <div class="section-header">
-        <!-- History App Dropdown -->
-        <div class="history-dropdown-container">
+        <!-- Replace basic dropdown with styled app filter matching logs -->
+        <div class="history-app-filter">
+            <label for="historyAppSelect">
+                <i class="fas fa-layer-group"></i>
+                <span>App:</span>
+            </label>
             <select id="historyAppSelect" class="styled-select">
                 <option value="all">All</option>
                 <option value="sonarr">Sonarr</option>
                 <option value="radarr">Radarr</option>
                 <option value="lidarr">Lidarr</option>
                 <option value="readarr">Readarr</option>
-                <option value="whisparr">Whisparr</option>
+                <option value="whisparr">Whisparr V2</option>
                 <option value="eros">Whisparr V3</option>
             </select>
         </div>
@@ -41,8 +45,15 @@
         </div>
     </div>
     
+    <!-- Pagination controls - moved above table -->
+    <div class="pagination-controls pagination-above-table">
+        <button id="historyPrevPage" class="pagination-button"><i class="fas fa-chevron-left"></i> Previous</button>
+        <span id="historyPageInfo">Page <span id="historyCurrentPage">1</span> of <span id="historyTotalPages">1</span></span>
+        <button id="historyNextPage" class="pagination-button">Next <i class="fas fa-chevron-right"></i></button>
+    </div>
+    
     <div class="history-container">
-        <div class="modern-table-wrapper force-scrollbar">
+        <div class="modern-table-wrapper">
             <table class="modern-table history-table">
                 <thead>
                     <tr>
@@ -71,16 +82,27 @@
             <p>Loading history...</p>
         </div>
     </div>
-    
-    <!-- Pagination controls -->
-    <div class="pagination-controls mobile-sticky">
-        <button id="historyPrevPage" class="pagination-button"><i class="fas fa-chevron-left"></i> Previous</button>
-        <span id="historyPageInfo">Page <span id="historyCurrentPage">1</span> of <span id="historyTotalPages">1</span></span>
-        <button id="historyNextPage" class="pagination-button">Next <i class="fas fa-chevron-right"></i></button>
-    </div>
 </section>
 
 <style>
+    /* CRITICAL: Override sticky positioning from apps-double-scroll-fix.css for history section */
+    #historySection .section-header {
+        position: static !important;
+        top: auto !important;
+        z-index: auto !important;
+        background-color: transparent !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    
+    /* CRITICAL: Make table header part of the natural page flow instead of sticky */
+    #historySection .modern-table thead,
+    #historySection .history-table thead {
+        position: static !important;
+        top: auto !important;
+        z-index: auto !important;
+    }
+    
     /* Scope all styles to this section only */
     #historySection {
         width: 100%;
@@ -157,6 +179,110 @@
     .history-dropdown {
         position: relative;
         display: inline-block;
+    }
+    
+    /* App Filter Styling - NO GLOWING RING */
+    .history-app-filter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(30, 39, 56, 0.6) 0%, rgba(14, 20, 32, 0.6) 100%);
+        border: 1px solid rgba(90, 109, 137, 0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .history-app-filter:hover {
+        background: linear-gradient(135deg, rgba(40, 49, 66, 0.7) 0%, rgba(24, 30, 42, 0.7) 100%);
+        border-color: rgba(90, 109, 137, 0.5);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    }
+    
+    .history-app-filter label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .history-app-filter label i {
+        color: rgba(52, 152, 219, 0.8);
+        font-size: 12px;
+    }
+    
+    .history-app-filter select {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.9) 100%);
+        border: 1px solid rgba(52, 152, 219, 0.6);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.95);
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.3s ease;
+        min-width: 120px;
+        /* Add dropdown arrow */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+        padding-right: 28px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+    
+    .history-app-filter select:hover {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.9) 0%, rgba(41, 128, 185, 1.0) 100%);
+        border-color: rgba(52, 152, 219, 0.8);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        /* Maintain dropdown arrow on hover */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+    }
+    
+    .history-app-filter select:focus {
+        border-color: rgba(52, 152, 219, 1.0);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        /* Maintain dropdown arrow on focus */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+    }
+    
+    .history-app-filter select option {
+        background: #1a1e2a;
+        color: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+    }
+    
+    /* DISABLE GLOWING RING ANIMATIONS - History Section */
+    #historyAppSelect.styled-select,
+    #historySection .styled-select {
+        animation: none !important;
+        box-shadow: none !important;
+    }
+    
+    #historyAppSelect.styled-select:focus,
+    #historyAppSelect.styled-select:hover,
+    #historySection .styled-select:focus,
+    #historySection .styled-select:hover {
+        animation: none !important;
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.2) !important;
+        transform: none !important;
     }
     
     .history-dropdown-btn {
@@ -347,13 +473,9 @@
     /* Modern-table-wrapper for scrollable tables - using the same approach as logs */
     .modern-table-wrapper {
         width: 100%;
-        height: calc(100vh - 200px); /* Same method used in logs section */
-        overflow-y: auto;
-        overflow-x: auto;
         position: relative;
         border-radius: 8px;
         box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
-        padding-right: 5px;
         background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
         border: 1px solid rgba(90, 109, 137, 0.15);
         /* Add gradient glow border effect */
@@ -654,6 +776,44 @@
         margin-top: 2px; /* Align with the first line of text */
     }
     
+    /* History direct link styling */
+    .history-direct-link {
+        color: #2185d0;
+        text-decoration: none;
+        transition: color 0.2s ease;
+        cursor: pointer;
+        border-bottom: 1px dotted transparent;
+    }
+    
+    .history-direct-link:hover {
+        color: #1e7bb8;
+        text-decoration: none;
+        border-bottom: 1px dotted #1e7bb8;
+    }
+    
+    .history-direct-link:visited {
+        color: #8e44ad;
+    }
+    
+    .history-direct-link:visited:hover {
+        color: #7d3c98;
+        border-bottom: 1px dotted #7d3c98;
+    }
+    
+    /* Add subtle icon to indicate external link */
+    .history-direct-link::after {
+        content: " \f35d";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 0.75em;
+        opacity: 0.6;
+        margin-left: 4px;
+    }
+    
+    .history-direct-link:hover::after {
+        opacity: 1;
+    }
+    
     /* Ensure the first column allows wrapping */
     .modern-table td:first-child, .history-table td:first-child {
         white-space: normal;
@@ -690,10 +850,8 @@
         justify-content: center;
         align-items: center;
         gap: 15px;
-        margin-top: 20px;
-        padding: 10px;
-        background: rgba(22, 26, 34, 0.9);
-        z-index: 1000;
+        margin: 20px 0;
+        padding: 0;
     }
     
     /* Mobile-specific styling */
@@ -769,8 +927,20 @@
             align-items: flex-start;
         }
         
-        .history-dropdown-container, .history-controls {
+        .history-app-filter, .history-controls {
             width: 100%;
+        }
+        
+        .history-controls {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .history-app-filter select {
+            min-width: 120px;
+            font-size: 14px; /* Prevent zoom on iOS */
+            padding: 6px 10px;
         }
         
         .history-search {
@@ -779,12 +949,10 @@
         
         .pagination-controls {
             flex-wrap: wrap;
-            margin: 0;
-            display: flex;
             justify-content: center;
-            width: 100%;
-            padding: 10px 30px; /* Add horizontal padding to move buttons inward */
-            z-index: 1000;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 0;
         }
         
         .pagination-button {
@@ -800,18 +968,6 @@
         
         /* Ensure the table wrapper doesn't overflow in mobile */
         .modern-table-wrapper {
-            max-height: calc(100vh - 300px);
-            padding-bottom: 60px; /* Add padding to ensure content isn't hidden under pagination */
-        }
-        
-        /* Fix for small screen height */
-        @media (max-height: 700px) {
-            .pagination-controls {
-                position: fixed !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-            }
         }
     }
 </style>
@@ -819,77 +975,13 @@
 <script>
     // Fixes for formatting the history items
     document.addEventListener('DOMContentLoaded', function() {
-        // Simplified scrollbar setup for history section - matches logs approach
-        const fixHistoryScrolling = function() {
-            // Apply minimal CSS needed for proper table scrolling
-            const style = document.createElement('style');
-            style.id = 'history-scrollbar-fix';
-            style.innerHTML = `
-                /* Ensure the history container allows proper scrolling */
-                .history-container {
-                    overflow: visible !important;
-                }
-                
-                /* Ensure the table wrapper has proper scrolling */
-                .modern-table-wrapper {
-                    height: calc(100vh - 200px) !important;
-                    overflow-y: auto !important;
-                    overflow-x: auto !important;
-                }
-                
-                /* Prevent text from wrapping in table cells except for the second column */
-                .modern-table td:not(:nth-child(2)), .history-table td:not(:nth-child(2)) {
-                    white-space: nowrap !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                }
-            `;
-            document.head.appendChild(style);
-            
-            // Keep the table wrapper reference for potential future use
-            const tableWrapper = document.querySelector('.modern-table-wrapper');
-            if (tableWrapper) {
-                // Remove any inline styles that could be interfering
-                tableWrapper.style.removeProperty('overflow-y');
-                tableWrapper.style.removeProperty('overflow-x');
-                tableWrapper.style.removeProperty('height');
-                tableWrapper.style.removeProperty('max-height');
-                tableWrapper.style.removeProperty('min-height');
-                
-                // Let the CSS handle the scrollbar
-                tableWrapper.classList.remove('force-scrollbar');
-            }
-        };
-        
-        // Run immediately for history page
-        if (huntarrUI && huntarrUI.currentSection === 'history') {
-            setTimeout(fixHistoryScrolling, 100);
-        }
-        
-        // Add event listener for section changes
+        // Enhanced section switching for history
         document.addEventListener('sectionChanged', function(e) {
             if (e.detail.section === 'history') {
-                setTimeout(fixHistoryScrolling, 100);
-            } else {
-                // Remove existing style if it exists
-                const existingStyle = document.getElementById('history-scrollbar-fix');
-                if (existingStyle) {
-                    existingStyle.remove();
+                // Load history data when section becomes active
+                if (typeof historyModule !== 'undefined') {
+                    historyModule.loadHistory();
                 }
-                
-                // Force the table wrapper to have a fixed height to ensure scrollbar appears
-                const tableWrapper = document.querySelector('.modern-table-wrapper');
-                if (tableWrapper) {
-                    // Add a class to force scrollbars to be visible
-                    tableWrapper.classList.add('force-scrollbar');
-                }
-                
-                // Also clear inline styles
-                document.querySelectorAll('#app, .main-content, body, #main, .main-content > .inner, .section-content').forEach(container => {
-                    if (container) {
-                        container.style.overflow = '';
-                    }
-                });
             }
         });
         
@@ -903,7 +995,7 @@
                 originalRenderHistoryData.call(this, data);
                 
                 // After the data is rendered, format the operation status columns
-                const operationCells = document.querySelectorAll('#historyTableBody tr td:nth-child(3)');
+                const operationCells = document.querySelectorAll('#historyTableBody tr td:nth-child(2)');
                 operationCells.forEach(cell => {
                     const operationText = cell.textContent.trim();
                     const statusClass = operationText.toLowerCase() === 'success' ? 'success' : 

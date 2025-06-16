@@ -22,7 +22,7 @@ whisparr_logger = get_logger("whisparr")
 # Use a session for better performance
 session = requests.Session()
 
-def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, method: str = "GET", data: Dict = None) -> Any:
+def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, method: str = "GET", data: Dict = None, count_api: bool = True) -> Any:
     """
     Make a request to the Whisparr API.
     
@@ -50,7 +50,7 @@ def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, met
         # Construct the full URL properly
         full_url = f"{api_url.rstrip('/')}/api/v3/{endpoint.lstrip('/')}"
         
-        whisparr_logger.debug(f"Making {method} request to: {full_url}")
+    
         
         # Set up headers with User-Agent to identify Huntarr
         headers = {
@@ -97,6 +97,15 @@ def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, met
             # Check if the request was successful
             try:
                 response.raise_for_status()
+                
+                # Increment API counter only if count_api is True and request was successful
+                if count_api:
+                    try:
+                        from src.primary.stats_manager import increment_hourly_cap
+                        increment_hourly_cap("whisparr")
+                    except Exception as e:
+                        whisparr_logger.warning(f"Failed to increment API counter for whisparr: {e}")
+                        
             except requests.exceptions.HTTPError as e:
                 whisparr_logger.error(f"Error during {method} request to {endpoint}: {e}, Status Code: {response.status_code}")
                 whisparr_logger.debug(f"Response content: {response.text[:200]}")
@@ -134,7 +143,7 @@ def get_download_queue_size(api_url: str, api_key: str, api_timeout: int) -> int
     Returns:
         The number of items in the download queue, or -1 if the request failed
     """
-    response = arr_request(api_url, api_key, api_timeout, "queue")
+    response = arr_request(api_url, api_key, api_timeout, "queue", count_api=False)
     
     if response is None:
         return -1
@@ -166,7 +175,7 @@ def get_items_with_missing(api_url: str, api_key: str, api_timeout: int, monitor
         # Endpoint parameters - always use v2 format
         endpoint = "wanted/missing?pageSize=1000&sortKey=airDateUtc&sortDirection=descending"
         
-        response = arr_request(api_url, api_key, api_timeout, endpoint)
+        response = arr_request(api_url, api_key, api_timeout, endpoint, count_api=False)
         
         if response is None:
             return None
@@ -206,7 +215,7 @@ def get_cutoff_unmet_items(api_url: str, api_key: str, api_timeout: int, monitor
         # Endpoint - always use v2 format
         endpoint = "wanted/cutoff?pageSize=1000&sortKey=airDateUtc&sortDirection=descending"
         
-        response = arr_request(api_url, api_key, api_timeout, endpoint)
+        response = arr_request(api_url, api_key, api_timeout, endpoint, count_api=False)
         
         if response is None:
             return None
@@ -260,6 +269,17 @@ def item_search(api_url: str, api_key: str, api_timeout: int, item_ids: List[int
     Returns:
         The command ID if the search command was triggered successfully, None otherwise
     """
+    
+    # Check API limit before making request
+    try:
+        from src.primary.stats_manager import check_hourly_cap_exceeded
+        if check_hourly_cap_exceeded("whisparr"):
+            whisparr_logger.warning(f"🛑 Whisparr API hourly limit reached - skipping item search for {len(item_ids)} items")
+            return None
+    except Exception as e:
+        whisparr_logger.error(f"Error checking hourly API cap: {e}")
+        # Continue with request if cap check fails - safer than skipping
+    
     try:
         whisparr_logger.debug(f"Searching for items with IDs: {item_ids}")
         
@@ -278,9 +298,6 @@ def item_search(api_url: str, api_key: str, api_timeout: int, item_ids: List[int
             "X-Api-Key": api_key,
             "Content-Type": "application/json"
         }
-        verify_ssl = get_ssl_verify_setting()
-        if not verify_ssl:
-            whisparr_logger.debug("SSL verification disabled by user setting")
         
         # Try standard API path first
         whisparr_logger.debug(f"Attempting command with standard API path: {url}")
@@ -297,6 +314,15 @@ def item_search(api_url: str, api_key: str, api_timeout: int, item_ids: List[int
             if result and "id" in result:
                 command_id = result["id"]
                 whisparr_logger.debug(f"Search command triggered with ID {command_id}")
+                
+                # Increment API counter after successful request
+                try:
+                    from src.primary.stats_manager import increment_hourly_cap
+                    increment_hourly_cap("whisparr", 1)
+                    whisparr_logger.debug(f"Incremented Whisparr hourly API cap for item search ({len(item_ids)} items)")
+                except Exception as cap_error:
+                    whisparr_logger.error(f"Failed to increment hourly API cap for item search: {cap_error}")
+                
                 return command_id
             else:
                 whisparr_logger.error("Failed to trigger search command - no command ID returned")
@@ -392,7 +418,9 @@ def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
         
         # First try with standard path
         endpoint = "system/status"
-        response = arr_request(api_url, api_key, api_timeout, endpoint, verify_ssl=verify_ssl)
+        response = arr_request(api_url, api_key, api_timeout, endpoint, count_api=False)
+  
+        # If that failed, try with v3 path format
         if response is None:
             whisparr_logger.debug("Standard API path failed, trying v3 format...")
             # Try direct HTTP request to v3 endpoint without using arr_request
@@ -423,4 +451,120 @@ def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
             
     except Exception as e:
         whisparr_logger.error(f"Error checking connection to Whisparr V2 API: {str(e)}")
+        return False
+
+def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
+    """
+    Get existing tag ID or create a new tag in Whisparr.
+    
+    Args:
+        api_url: The base URL of the Whisparr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        tag_label: The label/name of the tag to create or find
+        
+    Returns:
+        The tag ID if successful, None otherwise
+    """
+    try:
+        # First, check if the tag already exists
+        response = arr_request(api_url, api_key, api_timeout, "tag", count_api=False)
+        if response:
+            for tag in response:
+                if tag.get('label') == tag_label:
+                    tag_id = tag.get('id')
+                    whisparr_logger.debug(f"Found existing tag '{tag_label}' with ID: {tag_id}")
+                    return tag_id
+        
+        # Tag doesn't exist, create it
+        tag_data = {"label": tag_label}
+        response = arr_request(api_url, api_key, api_timeout, "tag", method="POST", data=tag_data, count_api=False)
+        if response and 'id' in response:
+            tag_id = response['id']
+            whisparr_logger.info(f"Created new tag '{tag_label}' with ID: {tag_id}")
+            return tag_id
+        else:
+            whisparr_logger.error(f"Failed to create tag '{tag_label}'. Response: {response}")
+            return None
+            
+    except Exception as e:
+        whisparr_logger.error(f"Error managing tag '{tag_label}': {e}")
+        return None
+
+def add_tag_to_series(api_url: str, api_key: str, api_timeout: int, series_id: int, tag_id: int) -> bool:
+    """
+    Add a tag to a series in Whisparr.
+    
+    Args:
+        api_url: The base URL of the Whisparr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        series_id: The ID of the series to tag
+        tag_id: The ID of the tag to add
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        # First get the current series data
+        series_data = arr_request(api_url, api_key, api_timeout, f"series/{series_id}", count_api=False)
+        if not series_data:
+            whisparr_logger.error(f"Failed to get series data for ID: {series_id}")
+            return False
+        
+        # Check if the tag is already present
+        current_tags = series_data.get('tags', [])
+        if tag_id in current_tags:
+            whisparr_logger.debug(f"Tag {tag_id} already exists on series {series_id}")
+            return True
+        
+        # Add the new tag to the list
+        current_tags.append(tag_id)
+        series_data['tags'] = current_tags
+        
+        # Update the series with the new tags
+        response = arr_request(api_url, api_key, api_timeout, f"series/{series_id}", method="PUT", data=series_data, count_api=False)
+        if response:
+            whisparr_logger.debug(f"Successfully added tag {tag_id} to series {series_id}")
+            return True
+        else:
+            whisparr_logger.error(f"Failed to update series {series_id} with tag {tag_id}")
+            return False
+            
+    except Exception as e:
+        whisparr_logger.error(f"Error adding tag {tag_id} to series {series_id}: {e}")
+        return False
+
+def tag_processed_series(api_url: str, api_key: str, api_timeout: int, series_id: int, tag_label: str = "huntarr-missing") -> bool:
+    """
+    Tag a series in Whisparr with the specified tag.
+    
+    Args:
+        api_url: The base URL of the Whisparr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+        series_id: The ID of the series to tag
+        tag_label: The tag to apply (huntarr-missing, huntarr-upgraded)
+        
+    Returns:
+        True if the tagging was successful, False otherwise
+    """
+    try:
+        # Get or create the tag
+        tag_id = get_or_create_tag(api_url, api_key, api_timeout, tag_label)
+        if tag_id is None:
+            whisparr_logger.error(f"Failed to get or create tag '{tag_label}' in Whisparr")
+            return False
+            
+        # Add the tag to the series
+        success = add_tag_to_series(api_url, api_key, api_timeout, series_id, tag_id)
+        if success:
+            whisparr_logger.debug(f"Successfully tagged Whisparr series {series_id} with '{tag_label}'")
+            return True
+        else:
+            whisparr_logger.error(f"Failed to add tag '{tag_label}' to Whisparr series {series_id}")
+            return False
+            
+    except Exception as e:
+        whisparr_logger.error(f"Error tagging Whisparr series {series_id} with '{tag_label}': {e}")
         return False

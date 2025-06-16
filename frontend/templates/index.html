@@ -22,14 +22,14 @@
             <!-- Logs Section -->
             {% include 'components/logs_section.html' %}
             
-            <!-- History Section -->
-            {% include 'components/history_section.html' %}
+                    <!-- Hunt Manager Section -->
+        {% include 'components/hunt_manager_section.html' %}
             
             <!-- Apps Section -->
             {% include 'components/apps_section.html' %}
             
             <!-- Cleanuperr Section -->
-            {% include 'components/cleanuperr_section.html' %}
+    
             
             <!-- Settings Section -->
             {% include 'components/settings_section.html' %}
@@ -43,9 +43,13 @@
     {% include 'components/footer.html' %}
     
     <!-- Load settings-related scripts -->
-    <script src="./static/js/settings_forms.js"></script>
-    <!-- Load history script -->
-    <script src="./static/js/history.js"></script>
+    <script src="./static/js/settings_forms.js?v=20250615"></script>
+    <!-- Load logging module -->
+    <script src="./static/js/logs.js"></script>
+    <!-- Load main UI script -->
+    <script src="./static/js/new-main.js"></script>
+            <!-- Load hunt manager script -->
+        <script src="./static/js/hunt_manager.js"></script>
     <!-- Load apps script -->
     <script src="./static/js/apps.js"></script>
     <!-- Load scheduling script -->
@@ -60,6 +64,31 @@
     <script src="./static/js/scheduling.js"></script>
     <!-- Community Resources visibility handler -->
     <script src="./static/js/community-resources.js"></script>
+    
+    <!-- Plex authentication return handler -->
+    <script>
+        // Check if we're returning from Plex authentication
+        document.addEventListener('DOMContentLoaded', function() {
+            const plexLogin = localStorage.getItem('huntarr-plex-login');
+            const plexLinking = localStorage.getItem('huntarr-plex-linking');
+            const plexPinId = localStorage.getItem('huntarr-plex-pin-id');
+            const plexSetupMode = localStorage.getItem('huntarr-plex-setup-mode');
+            
+            if (plexLogin === 'true') {
+                // Redirect to login page to continue authentication
+                window.location.href = './login';
+            } else if (plexLinking === 'true') {
+                // Check if we're explicitly in setup mode
+                if (plexSetupMode === 'true') {
+                    // Redirect to setup page to continue setup flow
+                    window.location.href = './setup';
+                } else {
+                    // Redirect to user page to continue regular linking
+                    window.location.href = './user';
+                }
+            }
+        });
+    </script>
     
 </body>
 </html>

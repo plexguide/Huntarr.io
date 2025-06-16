@@ -10,11 +10,11 @@
 
 let huntarrUI = {
     // Current state
-    eventSources: {},
     currentSection: 'home', // Default section
-    currentLogApp: 'all', // Default log app
     currentHistoryApp: 'all', // Default history app
+    currentLogApp: 'all', // Default log app for compatibility
     autoScroll: true,
+    eventSources: {}, // Event sources for compatibility
     isLoadingStats: false, // Flag to prevent multiple simultaneous stats requests
     configuredApps: {
         sonarr: false,
@@ -22,7 +22,8 @@ let huntarrUI = {
         lidarr: false,
         readarr: false, // Added readarr
         whisparr: false, // Added whisparr
-        eros: false // Added eros
+        eros: false, // Added eros
+        swaparr: false // Added swaparr
     },
     originalSettings: {}, // Store the full original settings object
     settingsChanged: false, // Flag to track unsaved settings changes
@@ -39,6 +40,13 @@ let huntarrUI = {
     // Initialize the application
     init: function() {
         console.log('[huntarrUI] Initializing UI...');
+        
+        // Skip initialization on login page
+        const isLoginPage = document.querySelector('.login-container, #loginForm, .login-form');
+        if (isLoginPage) {
+            console.log('[huntarrUI] Login page detected, skipping full initialization');
+            return;
+        }
         
         // Cache frequently used DOM elements
         this.cacheElements();
@@ -61,9 +69,6 @@ let huntarrUI = {
             }
         });
         
-        // Remove setupStatefulResetButton references that are causing errors
-        // this.setupStatefulResetButton();
-        
         // Initial navigation based on hash
         this.handleHashNavigation(window.location.hash);
         
@@ -72,9 +77,6 @@ let huntarrUI = {
         
         // Load username
         this.loadUsername();
-        
-        // When all elements are ready, call the method
-        // this.setupStatefulResetButton();
         
         // Apply any preloaded theme immediately to avoid flashing
         const prefersDarkMode = localStorage.getItem('huntarr-dark-mode') === 'true';
@@ -91,9 +93,6 @@ let huntarrUI = {
         }
         // Ensure logo is visible immediately
         this.logoUrl = localStorage.getItem('huntarr-logo-url') || this.logoUrl;
-        
-        // Load media stats
-        // this.loadMediaStats(); // Load media statistics
         
         // Load current version
         this.loadCurrentVersion(); // Load current version
@@ -121,13 +120,16 @@ let huntarrUI = {
         // Add global event handler for unsaved changes
         this.registerGlobalUnsavedChangesHandler();
         
-        // Make dashboard visible after initialization to prevent FOUC
-        this.showDashboard();
+        // Setup Swaparr components
+        this.setupSwaparrResetCycle();
         
-        // Also call it again after a delay in case settings are loaded dynamically
+        // Setup Swaparr status polling (refresh every 30 seconds)
+        this.setupSwaparrStatusPolling();
+        
+        // Make dashboard visible after initialization to prevent FOUC
         setTimeout(() => {
-            // this.setupStatefulResetButton();
-        }, 1000);
+            this.showDashboard();
+        }, 50); // Reduced from implicit longer delay
     },
     
     // Cache DOM elements for better performance
@@ -136,7 +138,7 @@ let huntarrUI = {
         this.elements.navItems = document.querySelectorAll('.nav-item');
         this.elements.homeNav = document.getElementById('homeNav');
         this.elements.logsNav = document.getElementById('logsNav');
-        this.elements.historyNav = document.getElementById('historyNav');
+        this.elements.huntManagerNav = document.getElementById('huntManagerNav');
         this.elements.settingsNav = document.getElementById('settingsNav');
         this.elements.userNav = document.getElementById('userNav');
         
@@ -144,16 +146,9 @@ let huntarrUI = {
         this.elements.sections = document.querySelectorAll('.content-section');
         this.elements.homeSection = document.getElementById('homeSection');
         this.elements.logsSection = document.getElementById('logsSection');
-        this.elements.historySection = document.getElementById('historySection');
+        this.elements.huntManagerSection = document.getElementById('huntManagerSection');
         this.elements.settingsSection = document.getElementById('settingsSection');
         this.elements.schedulingSection = document.getElementById('schedulingSection');
-        
-        // App tabs & Settings Tabs
-        this.elements.appTabs = document.querySelectorAll('.app-tab'); // For logs section
-        this.elements.logOptions = document.querySelectorAll('.log-option'); // New: replaced logTabs with logOptions
-        this.elements.currentLogApp = document.getElementById('current-log-app'); // New: dropdown current selection text
-        this.elements.logDropdownBtn = document.querySelector('.log-dropdown-btn'); // New: dropdown toggle button
-        this.elements.logDropdownContent = document.querySelector('.log-dropdown-content'); // New: dropdown content
         
         // History dropdown elements
         this.elements.historyOptions = document.querySelectorAll('.history-option'); // History dropdown options
@@ -170,17 +165,6 @@ let huntarrUI = {
         
         this.elements.appSettingsPanels = document.querySelectorAll('.app-settings-panel');
         
-        // Logs
-        this.elements.logsContainer = document.getElementById('logsContainer');
-        this.elements.autoScrollCheckbox = document.getElementById('autoScrollCheckbox');
-        this.elements.clearLogsButton = document.getElementById('clearLogsButton');
-        this.elements.logConnectionStatus = document.getElementById('logConnectionStatus');
-        // Log search elements
-        this.elements.logSearchInput = document.getElementById('logSearchInput');
-        this.elements.logSearchButton = document.getElementById('logSearchButton');
-        this.elements.clearSearchButton = document.getElementById('clearSearchButton');
-        this.elements.logSearchResults = document.getElementById('logSearchResults');
-        
         // Settings
         this.elements.saveSettingsButton = document.getElementById('saveSettingsButton'); // Corrected ID
         
@@ -196,26 +180,12 @@ let huntarrUI = {
         this.elements.startHuntButton = document.getElementById('startHuntButton');
         this.elements.stopHuntButton = document.getElementById('stopHuntButton');
         
-        // Theme
-        // this.elements.themeToggle = document.getElementById('themeToggle'); // Removed theme toggle
-        
         // Logout
         this.elements.logoutLink = document.getElementById('logoutLink'); // Added logout link
     },
     
     // Set up event listeners
     setupEventListeners: function() {
-        // Global dropdown handling - close all dropdowns when clicking on any option
-        document.addEventListener('click', (e) => {
-            // If the clicked element is a dropdown option (has class 'log-option')
-            if (e.target.classList.contains('log-option')) {
-                // Find all dropdown content elements and close them
-                document.querySelectorAll('.log-dropdown-content').forEach(dropdown => {
-                    dropdown.classList.remove('show');
-                });
-            }
-        });
-        
         // Navigation
         document.addEventListener('click', (e) => {
             // Navigation link handling
@@ -235,86 +205,11 @@ let huntarrUI = {
             }
         });
         
-        // Log auto-scroll setting
-        if (this.elements.autoScrollCheckbox) {
-            this.elements.autoScrollCheckbox.addEventListener('change', (e) => {
-                this.autoScroll = e.target.checked;
-            });
-        }
-        
-        // Clear logs button
-        if (this.elements.clearLogsButton) {
-            this.elements.clearLogsButton.addEventListener('click', () => this.clearLogs());
-        }
-        
-        // Log search functionality
-        if (this.elements.logSearchButton) {
-            this.elements.logSearchButton.addEventListener('click', () => this.searchLogs());
-        }
-        
-        if (this.elements.logSearchInput) {
-            this.elements.logSearchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.searchLogs();
-                }
-            });
-            
-            // Clear search when input is emptied
-            this.elements.logSearchInput.addEventListener('input', (e) => {
-                if (e.target.value.trim() === '') {
-                    this.clearLogSearch();
-                }
-            });
-        }
-        
-        // Clear search button
-        if (this.elements.clearSearchButton) {
-            this.elements.clearSearchButton.addEventListener('click', () => this.clearLogSearch());
-        }
-        
-        // App tabs in logs section
-        this.elements.appTabs.forEach(tab => {
-            tab.addEventListener('click', (e) => this.handleAppTabChange(e));
-        });
-        
-        // Log options dropdown
-        this.elements.logOptions.forEach(option => {
-            option.addEventListener('click', (e) => this.handleLogOptionChange(e));
-        });
-        
-        // Log dropdown toggle
-        if (this.elements.logDropdownBtn) {
-            this.elements.logDropdownBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation(); // Prevent event bubbling
-                
-                // Close any other open dropdowns first
-                if (this.elements.historyDropdownContent && this.elements.historyDropdownContent.classList.contains('show')) {
-                    this.elements.historyDropdownContent.classList.remove('show');
-                }
-                
-                // Toggle this dropdown
-                this.elements.logDropdownContent.classList.toggle('show');
-            });
-            
-            // Close dropdown when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.log-dropdown') && this.elements.logDropdownContent.classList.contains('show')) {
-                    this.elements.logDropdownContent.classList.remove('show');
-                }
-            });
-        }
-        
         // History dropdown toggle
         if (this.elements.historyDropdownBtn) {
             this.elements.historyDropdownBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation(); // Prevent event bubbling
-                
-                // Close any other open dropdowns first
-                if (this.elements.logDropdownContent && this.elements.logDropdownContent.classList.contains('show')) {
-                    this.elements.logDropdownContent.classList.remove('show');
-                }
                 
                 // Toggle this dropdown
                 this.elements.historyDropdownContent.classList.toggle('show');
@@ -338,15 +233,6 @@ let huntarrUI = {
             this.elements.settingsDropdownBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation(); // Prevent event bubbling
-                
-                // Close any other open dropdowns first
-                if (this.elements.logDropdownContent && this.elements.logDropdownContent.classList.contains('show')) {
-                    this.elements.logDropdownContent.classList.remove('show');
-                }
-                
-                if (this.elements.historyDropdownContent && this.elements.historyDropdownContent.classList.contains('show')) {
-                    this.elements.historyDropdownContent.classList.remove('show');
-                }
                 
                 // Toggle this dropdown
                 this.elements.settingsDropdownContent.classList.toggle('show');
@@ -475,14 +361,6 @@ let huntarrUI = {
         const initialHash = window.location.hash || '#home';
         this.handleHashNavigation(initialHash);
 
-        // LOGS: Listen for change on #logAppSelect
-        const logAppSelect = document.getElementById('logAppSelect');
-        if (logAppSelect) {
-            logAppSelect.addEventListener('change', (e) => {
-                const app = e.target.value;
-                this.handleLogOptionChange(app);
-            });
-        }
         // HISTORY: Listen for change on #historyAppSelect
         const historyAppSelect = document.getElementById('historyAppSelect');
         if (historyAppSelect) {
@@ -620,6 +498,8 @@ let huntarrUI = {
             this.disconnectAllEventSources(); 
             // Check app connections when returning to home page to update status
             this.checkAppConnections();
+            // Load Swaparr status
+            this.loadSwaparrStatus();
             // Stats are already loaded, no need to reload unless data changed
             // this.loadMediaStats();
         } else if (section === 'logs' && this.elements.logsSection) {
@@ -628,23 +508,51 @@ let huntarrUI = {
             if (this.elements.logsNav) this.elements.logsNav.classList.add('active');
             newTitle = 'Logs';
             this.currentSection = 'logs';
-            this.connectToLogs();
-        } else if (section === 'history' && this.elements.historySection) {
-            this.elements.historySection.classList.add('active');
-            this.elements.historySection.style.display = 'block';
-            if (this.elements.historyNav) this.elements.historyNav.classList.add('active');
-            newTitle = 'History';
-            this.currentSection = 'history';
-            // Disconnect logs if switching away from logs
-            this.disconnectAllEventSources(); 
+            
+            // Comprehensive LogsModule debugging
+            console.log('[huntarrUI] === LOGS SECTION DEBUG START ===');
+            console.log('[huntarrUI] window object keys:', Object.keys(window).filter(k => k.includes('Log')));
+            console.log('[huntarrUI] window.LogsModule exists:', !!window.LogsModule);
+            console.log('[huntarrUI] window.LogsModule type:', typeof window.LogsModule);
+            
+            if (window.LogsModule) {
+                console.log('[huntarrUI] LogsModule methods:', Object.keys(window.LogsModule));
+                console.log('[huntarrUI] LogsModule.init type:', typeof window.LogsModule.init);
+                console.log('[huntarrUI] LogsModule.connectToLogs type:', typeof window.LogsModule.connectToLogs);
+                
+                try {
+                    console.log('[huntarrUI] Calling LogsModule.init()...');
+                    window.LogsModule.init();
+                    console.log('[huntarrUI] LogsModule.init() completed successfully');
+                    
+                    console.log('[huntarrUI] Calling LogsModule.connectToLogs()...');
+                    window.LogsModule.connectToLogs();
+                    console.log('[huntarrUI] LogsModule.connectToLogs() completed successfully');
+                } catch (error) {
+                    console.error('[huntarrUI] Error during LogsModule calls:', error);
+                }
+            } else {
+                console.error('[huntarrUI] LogsModule not found - logs functionality unavailable');
+                console.log('[huntarrUI] Available window properties:', Object.keys(window).slice(0, 20));
+            }
+            console.log('[huntarrUI] === LOGS SECTION DEBUG END ===');
+        } else if (section === 'hunt-manager' && document.getElementById('huntManagerSection')) {
+            document.getElementById('huntManagerSection').classList.add('active');
+            document.getElementById('huntManagerSection').style.display = 'block';
+            if (document.getElementById('huntManagerNav')) document.getElementById('huntManagerNav').classList.add('active');
+            newTitle = 'Hunt Manager';
+            this.currentSection = 'hunt-manager';
+            
+            // Load hunt manager data if the module exists
+            if (typeof huntManagerModule !== 'undefined') {
+                huntManagerModule.refresh();
+            }
         } else if (section === 'apps' && document.getElementById('appsSection')) {
             document.getElementById('appsSection').classList.add('active');
             document.getElementById('appsSection').style.display = 'block';
             if (document.getElementById('appsNav')) document.getElementById('appsNav').classList.add('active');
             newTitle = 'Apps';
             this.currentSection = 'apps';
-            // Disconnect logs if switching away from logs
-            this.disconnectAllEventSources();
             
             // Load apps if the apps module exists
             if (typeof appsModule !== 'undefined') {
@@ -688,9 +596,6 @@ let huntarrUI = {
             
             // Load all settings after stateful info has started loading
             this.loadAllSettings();
-            
-            // Disconnect logs if switching away from logs
-            this.disconnectAllEventSources(); 
         } else if (section === 'sponsors' && sponsorsSection) { // ADDED sponsors case
             sponsorsSection.classList.add('active');
             sponsorsSection.style.display = 'block';
@@ -700,10 +605,8 @@ let huntarrUI = {
             // Set the iframe source when switching to this section
             const sponsorsFrame = document.getElementById('sponsorsFrame');
             if (sponsorsFrame && (!sponsorsFrame.src || sponsorsFrame.src === 'about:blank')) { // Set src only if not already set or blank
-                sponsorsFrame.src = 'https://github.com/sponsors/plexguide';
+                sponsorsFrame.src = 'https://plexguide.github.io/Huntarr.io/donate.html';
             }
-            // Disconnect logs if switching away from logs
-            this.disconnectAllEventSources();
         } else if (section === 'scheduling' && this.elements.schedulingSection) {
             // Hide all sections
             this.elements.sections.forEach(s => {
@@ -728,9 +631,6 @@ let huntarrUI = {
             newTitle = 'Scheduling';
             this.currentSection = 'scheduling';
             
-            // Disconnect logs if switching away from logs
-            this.disconnectAllEventSources();
-            
             console.debug('Scheduling section activated');
         } else {
             // Default to home if section is unknown or element missing
@@ -741,8 +641,11 @@ let huntarrUI = {
             if (this.elements.homeNav) this.elements.homeNav.classList.add('active');
             newTitle = 'Home';
             this.currentSection = 'home';
-            // Disconnect logs if switching away from logs
-            this.disconnectAllEventSources(); 
+        }
+
+        // Disconnect logs when switching away from logs section
+        if (this.currentSection !== 'logs' && window.LogsModule) {
+            window.LogsModule.disconnectAllEventSources();
         }
 
         // Update the page title
@@ -752,6 +655,16 @@ let huntarrUI = {
         } else {
             console.warn("[huntarrUI] currentPageTitle element not found during section switch.");
         }
+    },
+    
+    // Simple event source disconnection for compatibility
+    disconnectAllEventSources: function() {
+        // Delegate to LogsModule if it exists
+        if (window.LogsModule && typeof window.LogsModule.disconnectAllEventSources === 'function') {
+            window.LogsModule.disconnectAllEventSources();
+        }
+        // Clear local references
+        this.eventSources = {};
     },
     
     // App tab switching
@@ -785,7 +698,7 @@ let huntarrUI = {
         let displayName = app.charAt(0).toUpperCase() + app.slice(1);
         if (app === 'whisparr') displayName = 'Whisparr V2';
         else if (app === 'eros') displayName = 'Whisparr V3';
-        else if (app === 'huntarr.hunting') displayName = 'Hunt Manager';
+
         if (this.elements.currentLogApp) this.elements.currentLogApp.textContent = displayName;
         // Switch to the selected app logs
         this.currentLogApp = app;
@@ -867,257 +780,95 @@ let huntarrUI = {
         console.log(`[huntarrUI] Switched settings tab to: ${this.currentSettingsTab}`); // Added logging
     },
     
-    // Logs handling
+    // Compatibility methods that delegate to LogsModule
     connectToLogs: function() {
-        // Disconnect any existing event sources
-        this.disconnectAllEventSources();
-        
-        // Connect to logs stream for the currentLogApp
-        this.connectEventSource(this.currentLogApp); // Pass the selected app
-        this.elements.logConnectionStatus.textContent = 'Connecting...';
-        this.elements.logConnectionStatus.className = '';
-    },
-    
-    connectEventSource: function(appType) {
-        // Close any existing event source
-        if (this.eventSources.logs) {
-            this.eventSources.logs.close();
+        if (window.LogsModule && typeof window.LogsModule.connectToLogs === 'function') {
+            window.LogsModule.connectToLogs();
         }
-        
-        try {
-            // Append the app type to the URL
-            const eventSource = new EventSource(`./logs?app=${appType}`); 
-            
-            eventSource.onopen = () => {
-                this.elements.logConnectionStatus.textContent = 'Connected';
-                this.elements.logConnectionStatus.className = 'status-connected';
-            };
-            
-            eventSource.onmessage = (event) => {
-                if (!this.elements.logsContainer) return;
-                
-                try {
-                    const logString = event.data;
-                    // Regex to parse log lines: Optional [APP], Timestamp, Logger, Level, Message
-                    // Example: [SONARR] 2024-01-01 12:00:00 - huntarr.sonarr - INFO - Message content
-                    // Example: 2024-01-01 12:00:00 - huntarr - DEBUG - System message
-                    const logRegex = /^(?:\[(\w+)\]\s)?([^\s]+\s[^\s]+)\s-\s([\w\.]+)\s-\s(\w+)\s-\s(.*)$/;
-                    const match = logString.match(logRegex);
-
-                    // First determine the app type for this log message
-                    let logAppType = 'system'; // Default to system
-                    
-                    if (match && match[1]) {
-                        // If we have a match with app tag like [SONARR], use that
-                        logAppType = match[1].toLowerCase();
-                    } else if (match && match[3]) {
-                        // Otherwise try to determine from the logger name (e.g., huntarr.sonarr)
-                        const loggerParts = match[3].split('.');
-                        if (loggerParts.length > 1) {
-                            const possibleApp = loggerParts[1].toLowerCase();
-                            if (['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr', 'hunting'].includes(possibleApp)) {
-                                logAppType = possibleApp;
-                            }
-                        }
-                    }
-                    
-                    // Special case for system logs that may contain app-specific patterns
-                    if (logAppType === 'system') {
-                        // App-specific patterns that may appear in system logs
-                        const patterns = {
-                            'sonarr': ['episode', 'series', 'tv show', 'sonarr'],
-                            'radarr': ['movie', 'film', 'radarr'],
-                            'lidarr': ['album', 'artist', 'track', 'music', 'lidarr'],
-                            'readarr': ['book', 'author', 'readarr'],
-                            'whisparr': ['scene', 'adult', 'whisparr'],
-                            'eros': ['eros', 'whisparr v3', 'whisparrv3'],
-                            'swaparr': ['added strike', 'max strikes reached', 'would have removed', 'strikes, removing download', 'processing stalled downloads', 'swaparr'],
-                            'hunting': ['hunt manager', 'discovery tracker', 'hunting', 'hunt']
-                        };
-                        
-                        // Check each app's patterns
-                        for (const [app, appPatterns] of Object.entries(patterns)) {
-                            if (appPatterns.some(pattern => logString.toLowerCase().includes(pattern))) {
-                                logAppType = app;
-                                break;
-                            }
-                        }
-                    }
-
-                    // Determine if this log should be displayed based on the selected app tab
-                    const currentApp = this.currentLogApp === 'huntarr.hunting' ? 'hunting' : this.currentLogApp;
-                    const shouldDisplay = 
-                        this.currentLogApp === 'all' || 
-                        currentApp === logAppType;
-
-                    if (!shouldDisplay) return;
-
-                    const logEntry = document.createElement('div');
-                    logEntry.className = 'log-entry';
-
-                    if (match) {
-                        const [, appName, timestamp, loggerName, level, message] = match;
-                        
-                        // Split timestamp into date and time components
-                        const timestampParts = timestamp.split(' ');
-                        const date = timestampParts[0] || '';
-                        const time = timestampParts[1] || '';
-                        
-                        // Create level badge with proper styling to match second image
-                        const levelClass = level.toLowerCase();
-                        let levelBadge = '';
-                        
-                        switch(levelClass) {
-                            case 'error':
-                                levelBadge = `<span class="log-level-badge log-level-error">Error</span>`;
-                                break;
-                            case 'warning':
-                            case 'warn':
-                                levelBadge = `<span class="log-level-badge log-level-warning">Warning</span>`;
-                                break;
-                            case 'info':
-                                levelBadge = `<span class="log-level-badge log-level-info">Information</span>`;
-                                break;
-                            case 'debug':
-                                levelBadge = `<span class="log-level-badge log-level-debug">Debug</span>`;
-                                break;
-                            case 'fatal':
-                            case 'critical':
-                                levelBadge = `<span class="log-level-badge log-level-fatal">Fatal</span>`;
-                                break;
-                            default:
-                                levelBadge = `<span class="log-level-badge log-level-info">Information</span>`;
-                        }
-                        
-                        // Determine app source for display
-                        let appSource = 'SYSTEM';
-                        if (loggerName.includes('.')) {
-                            const parts = loggerName.split('.');
-                            if (parts.length > 1) {
-                                appSource = parts[1].toUpperCase();
-                            }
-                        }
-                        
-                        logEntry.innerHTML = `
-                            <div class="log-entry-row">
-                                <span class="log-timestamp">
-                                    <span class="date">${date}</span>
-                                    <span class="time">${time}</span>
-                                </span>
-                                ${levelBadge}
-                                <span class="log-source">${appSource}</span>
-                                <span class="log-message">${message}</span>
-                            </div>
-                        `;
-                        logEntry.classList.add(`log-${levelClass}`);
-                    } else {
-                        // Fallback for lines that don't match the expected format
-                        logEntry.innerHTML = `
-                            <div class="log-entry-row">
-                                <span class="log-timestamp">
-                                    <span class="date">--</span>
-                                    <span class="time">--:--:--</span>
-                                </span>
-                                <span class="log-level-badge log-level-info">Information</span>
-                                <span class="log-source">SYSTEM</span>
-                                <span class="log-message">${logString}</span>
-                            </div>
-                        `;
-                        
-                        // Basic level detection for fallback
-                        if (logString.includes('ERROR')) logEntry.classList.add('log-error');
-                        else if (logString.includes('WARN') || logString.includes('WARNING')) logEntry.classList.add('log-warning');
-                        else if (logString.includes('DEBUG')) logEntry.classList.add('log-debug');
-                        else logEntry.classList.add('log-info');
-                    }
-                    
-                    // Add to logs container
-                    this.elements.logsContainer.appendChild(logEntry);
-                    
-                    // Special event dispatching for Swaparr logs
-                    if (logAppType === 'swaparr' && this.currentLogApp === 'swaparr') {
-                        // Dispatch a custom event for swaparr.js to process
-                        const swaparrEvent = new CustomEvent('swaparrLogReceived', {
-                            detail: {
-                                logData: match && match[5] ? match[5] : logString
-                            }
-                        });
-                        document.dispatchEvent(swaparrEvent);
-                    }
-                    
-                    // Auto-scroll to bottom if enabled
-                    if (this.autoScroll) {
-                        this.elements.logsContainer.scrollTop = this.elements.logsContainer.scrollHeight;
-                    }
-                } catch (error) {
-                    console.error('[huntarrUI] Error processing log message:', error, 'Data:', event.data);
-                }
-            };
-            
-            eventSource.onerror = (err) => {
-                console.error(`[huntarrUI] EventSource error for app ${this.currentLogApp}:`, err);
-                if (this.elements.logConnectionStatus) {
-                    this.elements.logConnectionStatus.textContent = 'Error/Disconnected';
-                    this.elements.logConnectionStatus.className = 'status-error'; // Use a specific error class
-                }
-                // Close the potentially broken connection
-                if (this.eventSources.logs) {
-                    this.eventSources.logs.close();
-                    console.log(`[huntarrUI] Closed potentially broken log EventSource for ${this.currentLogApp}.`);
-                }
-                // Attempt to reconnect after a delay, but only if still on the logs page
-                if (this.currentSection === 'logs') {
-                    console.log(`[huntarrUI] Attempting to reconnect log stream for ${this.currentLogApp} in 5 seconds...`);
-                    setTimeout(() => {
-                        // Double-check if still on logs page before reconnecting
-                        if (this.currentSection === 'logs') {
-                             console.log(`[huntarrUI] Reconnecting log stream for ${this.currentLogApp}.`);
-                             this.connectToLogs(); // Re-initiate connection
-                        } else {
-                             console.log(`[huntarrUI] Log reconnect cancelled; user navigated away from logs section.`);
-                        }
-                    }, 5000); // 5-second delay
-                }
-            }; // Added missing semicolon
-            
-            this.eventSources.logs = eventSource; // Store the reference
-        } catch (e) {
-            console.error(`[huntarrUI] Failed to create EventSource for app ${appType}:`, e);
-            if (this.elements.logConnectionStatus) {
-                this.elements.logConnectionStatus.textContent = 'Failed to connect';
-                this.elements.logConnectionStatus.className = 'status-error';
-            }
-        }
-    },
-    
-    disconnectAllEventSources: function() {
-        Object.keys(this.eventSources).forEach(key => {
-            const source = this.eventSources[key];
-            if (source) {
-                 try {
-                     if (source.readyState !== EventSource.CLOSED) {
-                         source.close();
-                         console.log(`[huntarrUI] Closed event source for ${key}.`);
-                     } else {
-                         console.log(`[huntarrUI] Event source for ${key} was already closed.`);
-                     }
-                 } catch (e) {
-                     console.error(`[huntarrUI] Error closing event source for ${key}:`, e);
-                 }
-            }
-            // Clear the reference
-            delete this.eventSources[key]; // Use delete
-        });
-         // Reset status indicator if logs aren't the active section
-         if (this.currentSection !== 'logs' && this.elements.logConnectionStatus) {
-             this.elements.logConnectionStatus.textContent = 'Disconnected';
-             this.elements.logConnectionStatus.className = 'status-disconnected';
-         }
     },
     
     clearLogs: function() {
-        if (this.elements.logsContainer) {
-            this.elements.logsContainer.innerHTML = '';
+        if (window.LogsModule && typeof window.LogsModule.clearLogs === 'function') {
+            window.LogsModule.clearLogs();
+        }
+    },
+    
+    // Insert log entry in chronological order to maintain proper reverse time sorting
+    insertLogInChronologicalOrder: function(newLogEntry) {
+        if (!this.elements.logsContainer || !newLogEntry) return;
+        
+        // Parse timestamp from the new log entry
+        const newTimestamp = this.parseLogTimestamp(newLogEntry);
+        
+        // If we can't parse the timestamp, just append to the end
+        if (!newTimestamp) {
+            this.elements.logsContainer.appendChild(newLogEntry);
+            return;
+        }
+        
+        // Get all existing log entries
+        const existingEntries = Array.from(this.elements.logsContainer.children);
+        
+        // If no existing entries, just add the new one
+        if (existingEntries.length === 0) {
+            this.elements.logsContainer.appendChild(newLogEntry);
+            return;
+        }
+        
+        // Find the correct position to insert (maintaining chronological order)
+        // Since CSS will reverse the order, we want older entries first in DOM
+        let insertPosition = null;
+        
+        for (let i = 0; i < existingEntries.length; i++) {
+            const existingTimestamp = this.parseLogTimestamp(existingEntries[i]);
+            
+            // If we can't parse existing timestamp, skip it
+            if (!existingTimestamp) continue;
+            
+            // If new log is newer than existing log, insert before it
+            if (newTimestamp > existingTimestamp) {
+                insertPosition = existingEntries[i];
+                break;
+            }
+        }
+        
+        // Insert in the correct position
+        if (insertPosition) {
+            this.elements.logsContainer.insertBefore(newLogEntry, insertPosition);
+        } else {
+            // If no position found, append to the end (oldest)
+            this.elements.logsContainer.appendChild(newLogEntry);
+        }
+    },
+    
+    // Parse timestamp from log entry DOM element
+    parseLogTimestamp: function(logEntry) {
+        if (!logEntry) return null;
+        
+        try {
+            // Look for timestamp elements
+            const dateSpan = logEntry.querySelector('.log-timestamp .date');
+            const timeSpan = logEntry.querySelector('.log-timestamp .time');
+            
+            if (!dateSpan || !timeSpan) return null;
+            
+            const dateText = dateSpan.textContent.trim();
+            const timeText = timeSpan.textContent.trim();
+            
+            // Skip invalid timestamps
+            if (!dateText || !timeText || dateText === '--' || timeText === '--:--:--') {
+                return null;
+            }
+            
+            // Combine date and time into a proper timestamp
+            const timestampString = `${dateText} ${timeText}`;
+            const timestamp = new Date(timestampString);
+            
+            // Return timestamp if valid, null otherwise
+            return isNaN(timestamp.getTime()) ? null : timestamp;
+        } catch (error) {
+            console.warn('[huntarrUI] Error parsing log timestamp:', error);
+            return null;
         }
     },
     
@@ -1179,9 +930,6 @@ let huntarrUI = {
         // Update search results info
         if (this.elements.logSearchResults) {
             let resultsText = `Found ${matchCount} matching log entries`;
-            if (remainingCount > 0) {
-                resultsText += ` (highlighting limited to first ${MAX_ENTRIES_TO_PROCESS})`;
-            }
             this.elements.logSearchResults.textContent = resultsText;
             this.elements.logSearchResults.style.display = 'block';
         }
@@ -1261,13 +1009,20 @@ let huntarrUI = {
         this.settingsChanged = false;
         
         // Get all settings to populate forms
-        HuntarrUtils.fetchWithTimeout('/api/settings')
+        HuntarrUtils.fetchWithTimeout('./api/settings')
             .then(response => response.json())
             .then(data => {
                 console.log('Loaded settings:', data);
                 
                 // Store original settings for comparison
                 this.originalSettings = data;
+                
+                // Cache settings in localStorage for timezone access
+                try {
+                    localStorage.setItem('huntarr-settings-cache', JSON.stringify(data));
+                } catch (e) {
+                    console.warn('[huntarrUI] Failed to cache settings in localStorage:', e);
+                }
                 
                 // Populate each app's settings form
                 if (data.sonarr) this.populateSettingsForm('sonarr', data.sonarr);
@@ -1276,13 +1031,23 @@ let huntarrUI = {
                 if (data.readarr) this.populateSettingsForm('readarr', data.readarr);
                 if (data.whisparr) this.populateSettingsForm('whisparr', data.whisparr);
                 if (data.eros) this.populateSettingsForm('eros', data.eros);
-                if (data.swaparr) this.populateSettingsForm('swaparr', data.swaparr);
+                if (data.swaparr) {
+                    // Cache Swaparr settings globally for instance visibility logic
+                    window.swaparrSettings = data.swaparr;
+                    this.populateSettingsForm('swaparr', data.swaparr);
+                }
                 if (data.general) this.populateSettingsForm('general', data.general);
                 
                 // Update duration displays (like sleep durations)
                 if (typeof SettingsForms !== 'undefined' && 
                     typeof SettingsForms.updateDurationDisplay === 'function') {
                     SettingsForms.updateDurationDisplay();
+                }
+                
+                // Update Swaparr instance visibility based on global setting
+                if (typeof SettingsForms !== 'undefined' && 
+                    typeof SettingsForms.updateAllSwaparrInstanceVisibility === 'function') {
+                    SettingsForms.updateAllSwaparrInstanceVisibility();
                 }
                 
                 // Load stateful info immediately, don't wait for loadAllSettings to complete
@@ -1311,6 +1076,15 @@ let huntarrUI = {
                         SettingsForms.updateDurationDisplay();
                     } catch (e) {
                         console.error(`[huntarrUI] Error updating duration display:`, e);
+                    }
+                }
+                
+                // Update Swaparr instance visibility based on global setting
+                if (typeof SettingsForms.updateAllSwaparrInstanceVisibility === 'function') {
+                    try {
+                        SettingsForms.updateAllSwaparrInstanceVisibility();
+                    } catch (e) {
+                        console.error(`[huntarrUI] Error updating Swaparr instance visibility:`, e);
                     }
                 }
             } else {
@@ -1401,6 +1175,16 @@ let huntarrUI = {
             // Update original settings state with the full config returned from backend
             if (typeof savedConfig === 'object' && savedConfig !== null) {
                 this.originalSettings = JSON.parse(JSON.stringify(savedConfig));
+                
+                // Cache Swaparr settings globally if they were updated
+                if (app === 'swaparr') {
+                    // Handle both nested (savedConfig.swaparr) and direct (savedConfig) formats
+                    const swaparrData = savedConfig.swaparr || (savedConfig && !savedConfig.sonarr && !savedConfig.radarr ? savedConfig : null);
+                    if (swaparrData) {
+                        window.swaparrSettings = swaparrData;
+                        console.log('[huntarrUI] Updated Swaparr settings cache:', window.swaparrSettings);
+                    }
+                }
                 
                 // Check if low usage mode setting has changed and apply it immediately
                 if (app === 'general' && 'low_usage_mode' in settings) {
@@ -1565,17 +1349,18 @@ let huntarrUI = {
             console.log(`[huntarrUI] Found ${instanceItems.length} instance items for ${app}. Processing multi-instance mode.`);
             // Multi-instance logic (current Sonarr logic)
             instanceItems.forEach((item, index) => {
-                const instanceId = item.dataset.instanceId; // Assumes Sonarr uses data-instance-id
-                const nameInput = form.querySelector(`#${app}_instance_${instanceId}_name`);
-                const urlInput = form.querySelector(`#${app}_instance_${instanceId}_api_url`);
-                const keyInput = form.querySelector(`#${app}_instance_${instanceId}_api_key`);
-                const enabledInput = item.querySelector('.instance-enabled'); // Assumes Sonarr uses this class for enable toggle
+                const instanceId = item.dataset.instanceId; // Gets the data-instance-id
+                const nameInput = form.querySelector(`#${app}-name-${instanceId}`);
+                const urlInput = form.querySelector(`#${app}-url-${instanceId}`);
+                const keyInput = form.querySelector(`#${app}-key-${instanceId}`);
+                const enabledInput = form.querySelector(`#${app}-enabled-${instanceId}`);
 
                 if (urlInput && keyInput) { // Need URL and Key at least
                     settings.instances.push({
                         // Use nameInput value if available, otherwise generate a default
                         name: nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : `Instance ${index + 1}`,
                         api_url: this.cleanUrlString(urlInput.value),
+                        api_key: keyInput.value.trim(),
                         // Default to true if toggle doesn't exist or is checked
                         enabled: enabledInput ? enabledInput.checked : true
                     });
@@ -1615,11 +1400,10 @@ let huntarrUI = {
             instanceItems.forEach((item) => {
                 const instanceId = item.dataset.instanceId;
                 if(instanceId) {
-                    handledInstanceFieldIds.add(`${app}_instance_${instanceId}_name`);
-                    handledInstanceFieldIds.add(`${app}_instance_${instanceId}_api_url`);
-                    handledInstanceFieldIds.add(`${app}_instance_${instanceId}_api_key`);
-                    const enabledToggle = item.querySelector('.instance-enabled');
-                    if (enabledToggle && enabledToggle.id) handledInstanceFieldIds.add(enabledToggle.id);
+                    handledInstanceFieldIds.add(`${app}-name-${instanceId}`);
+                    handledInstanceFieldIds.add(`${app}-url-${instanceId}`);
+                    handledInstanceFieldIds.add(`${app}-key-${instanceId}`);
+                    handledInstanceFieldIds.add(`${app}-enabled-${instanceId}`);
                 }
             });
         } else {
@@ -1683,43 +1467,108 @@ let huntarrUI = {
         
         // Disable button and show loading
         buttonElement.disabled = true;
-        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-        statusElement.innerHTML = '<span style="color: #fbbf24;">Sending test notification...</span>';
+        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Auto-saving...';
+        statusElement.innerHTML = '<span style="color: #fbbf24;">Auto-saving settings before testing...</span>';
         
-        HuntarrUtils.fetchWithTimeout('/api/test-notification', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('[huntarrUI] Test notification response:', data);
-            
-            if (data.success) {
-                statusElement.innerHTML = '<span style="color: #10b981;">✓ Test notification sent successfully!</span>';
-                this.showNotification('Test notification sent! Check your Discord channel.', 'success');
-            } else {
-                statusElement.innerHTML = '<span style="color: #ef4444;">✗ Failed to send test notification</span>';
-                this.showNotification(data.error || 'Failed to send test notification', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('[huntarrUI] Test notification error:', error);
-            statusElement.innerHTML = '<span style="color: #ef4444;">✗ Error sending test notification</span>';
-            this.showNotification('Error sending test notification', 'error');
-        })
-        .finally(() => {
-            // Re-enable button
-            buttonElement.disabled = false;
-            buttonElement.innerHTML = '<i class="fas fa-bell"></i> Test Notification';
-            
-            // Clear status after 5 seconds
-            setTimeout(() => {
-                if (statusElement) {
-                    statusElement.innerHTML = '';
+        // Auto-save general settings before testing
+        this.autoSaveGeneralSettings()
+            .then(() => {
+                // Update button text to show we're now testing
+                buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                statusElement.innerHTML = '<span style="color: #fbbf24;">Sending test notification...</span>';
+                
+                // Now test with the saved settings
+                return HuntarrUtils.fetchWithTimeout('./api/test-notification', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('[huntarrUI] Test notification response:', data);
+                
+                if (data.success) {
+                    statusElement.innerHTML = '<span style="color: #10b981;">✓ Test notification sent successfully!</span>';
+                    this.showNotification('Test notification sent! Check your notification service.', 'success');
+                } else {
+                    statusElement.innerHTML = '<span style="color: #ef4444;">✗ Failed to send test notification</span>';
+                    this.showNotification(data.error || 'Failed to send test notification', 'error');
                 }
-            }, 5000);
+            })
+            .catch(error => {
+                console.error('[huntarrUI] Test notification error:', error);
+                statusElement.innerHTML = '<span style="color: #ef4444;">✗ Error during auto-save or testing</span>';
+                this.showNotification('Error during auto-save or testing: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Re-enable button
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = '<i class="fas fa-bell"></i> Test Notification';
+                
+                // Clear status after 5 seconds
+                setTimeout(() => {
+                    if (statusElement) {
+                        statusElement.innerHTML = '';
+                    }
+                }, 5000);
+            });
+    },
+
+    // Auto-save general settings (used by test notification)
+    autoSaveGeneralSettings: function() {
+        console.log('[huntarrUI] Auto-saving general settings...');
+        
+        return new Promise((resolve, reject) => {
+            // Find the general settings form using the correct selectors
+            const generalForm = document.querySelector('#generalSettings') ||
+                              document.querySelector('.app-settings-panel[data-app-type="general"]') ||
+                              document.querySelector('.settings-form[data-app-type="general"]') ||
+                              document.querySelector('#general');
+            
+            if (!generalForm) {
+                console.error('[huntarrUI] Could not find general settings form for auto-save');
+                console.log('[huntarrUI] Available forms:', document.querySelectorAll('.app-settings-panel, .settings-form, [id*="general"], [id*="General"]'));
+                reject(new Error('Could not find general settings form'));
+                return;
+            }
+            
+            console.log('[huntarrUI] Found general form:', generalForm);
+            
+            // Get settings from the form using the correct app parameter
+            let settings = {};
+            try {
+                settings = this.getFormSettings('general');
+                console.log('[huntarrUI] Auto-save collected settings:', settings);
+            } catch (error) {
+                console.error('[huntarrUI] Error collecting settings for auto-save:', error);
+                reject(error);
+                return;
+            }
+            
+            // Save the settings
+            HuntarrUtils.fetchWithTimeout('./api/settings/general', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success !== false) {  // API returns all settings on success, not just success:true
+                    console.log('[huntarrUI] Auto-save successful');
+                    resolve();
+                } else {
+                    console.error('[huntarrUI] Auto-save failed:', data);
+                    reject(new Error(data.error || 'Failed to auto-save settings'));
+                }
+            })
+            .catch(error => {
+                console.error('[huntarrUI] Auto-save request failed:', error);
+                reject(error);
+            });
         });
     },
     
@@ -1845,7 +1694,7 @@ let huntarrUI = {
         url = this.cleanUrlString(url);
         
         // Make the API request to test the connection
-        HuntarrUtils.fetchWithTimeout(`/api/${appName}/test-connection`, {
+        HuntarrUtils.fetchWithTimeout(`./api/${appName}/test-connection`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1940,7 +1789,7 @@ let huntarrUI = {
     },
     
     checkAppConnection: function(app) {
-        HuntarrUtils.fetchWithTimeout(`/api/status/${app}`)
+        HuntarrUtils.fetchWithTimeout(`./api/status/${app}`)
             .then(response => response.json())
             .then(data => {
                 // Pass the whole data object for all apps
@@ -1973,7 +1822,7 @@ let huntarrUI = {
         let totalConfigured = statusData?.total_configured ?? 0;
         
         // For all *arr apps, 'isConfigured' means at least one instance is configured
-        if (['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(app)) {
+        if (['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].includes(app)) {
             isConfigured = totalConfigured > 0;
             // For *arr apps, 'isConnected' means at least one instance is connected
             isConnected = isConfigured && connectedCount > 0; 
@@ -1997,7 +1846,7 @@ let huntarrUI = {
         }
 
         // --- Badge Update Logic (only runs if configured) ---
-        if (['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(app)) {
+        if (['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].includes(app)) {
             // *Arr specific badge text (already checked isConfigured)
             statusElement.innerHTML = `<i class="fas fa-plug"></i> Connected ${connectedCount}/${totalConfigured}`;
             statusElement.className = 'status-badge ' + (isConnected ? 'connected' : 'error');
@@ -2012,46 +1861,155 @@ let huntarrUI = {
             }
         }
     },
-    
-    // User actions
-    startHunt: function() {
-        HuntarrUtils.fetchWithTimeout('/api/hunt/start', { method: 'POST' })
+
+    // Load and update Swaparr status card
+    loadSwaparrStatus: function() {
+        HuntarrUtils.fetchWithTimeout('./api/swaparr/status')
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    this.showNotification('Hunt started successfully', 'success');
+                const swaparrCard = document.getElementById('swaparrStatusCard');
+                if (!swaparrCard) return;
+
+                // Show/hide card based on whether Swaparr is enabled
+                if (data.enabled && data.configured) {
+                    swaparrCard.style.display = 'block';
+                    
+                    // Update persistent statistics with large number formatting (like other apps)
+                    const persistentStats = data.persistent_statistics || {};
+                    document.getElementById('swaparr-processed').textContent = this.formatLargeNumber(persistentStats.processed || 0);
+                    document.getElementById('swaparr-strikes').textContent = this.formatLargeNumber(persistentStats.strikes || 0);
+                    document.getElementById('swaparr-removals').textContent = this.formatLargeNumber(persistentStats.removals || 0);
+                    document.getElementById('swaparr-ignored').textContent = this.formatLargeNumber(persistentStats.ignored || 0);
+                    
+                    // Setup button event handlers after content is loaded
+                    setTimeout(() => {
+                        this.setupSwaparrResetCycle();
+                    }, 100);
+                    
                 } else {
-                    this.showNotification('Failed to start hunt', 'error');
+                    swaparrCard.style.display = 'none';
                 }
             })
             .catch(error => {
-                console.error('Error starting hunt:', error);
-                this.showNotification('Error starting hunt', 'error');
+                console.error('Error loading Swaparr status:', error);
+                const swaparrCard = document.getElementById('swaparrStatusCard');
+                if (swaparrCard) {
+                    swaparrCard.style.display = 'none';
+                }
             });
+    },
+
+    // Setup Swaparr Reset buttons
+    setupSwaparrResetCycle: function() {
+        // Handle header reset data button (like Live Hunts Executed)
+        const resetDataButton = document.getElementById('reset-swaparr-data');
+        if (resetDataButton) {
+            resetDataButton.addEventListener('click', () => {
+                this.resetSwaparrData();
+            });
+        }
+
+        // Note: Inline reset cycle button is now handled automatically by CycleCountdown system
+        // via the cycle-reset-button class and data-app="swaparr" attribute
+    },
+
+    // Reset Swaparr data function
+    resetSwaparrData: function() {
+        // Prevent multiple executions
+        if (this.swaparrResetInProgress) {
+            return;
+        }
+        
+        // Show confirmation
+        if (!confirm('Are you sure you want to reset all Swaparr data? This will clear all strike counts and removed items data.')) {
+            return;
+        }
+        
+        this.swaparrResetInProgress = true;
+        
+        // Immediately update the UI first to provide immediate feedback (like Live Hunts)
+        this.updateSwaparrStatsDisplay({
+            processed: 0,
+            strikes: 0, 
+            removals: 0,
+            ignored: 0
+        });
+        
+        // Show success notification immediately
+        this.showNotification('Swaparr statistics reset successfully', 'success');
+
+        // Try to send the reset to the server, but don't depend on it for UI feedback
+        try {
+            HuntarrUtils.fetchWithTimeout('./api/swaparr/reset-stats', { method: 'POST' })
+                .then(response => {
+                    // Just log the response, don't rely on it for UI feedback
+                    if (!response.ok) {
+                        console.warn('Server responded with non-OK status for Swaparr stats reset');
+                    }
+                    return response.json().catch(() => ({}));
+                })
+                .then(data => {
+                    console.log('Swaparr stats reset response:', data);
+                })
+                .catch(error => {
+                    console.warn('Error communicating with server for Swaparr stats reset:', error);
+                })
+                .finally(() => {
+                    // Reset the flag after a delay
+                    setTimeout(() => {
+                        this.swaparrResetInProgress = false;
+                    }, 1000);
+                });
+        } catch (error) {
+            console.warn('Error in Swaparr stats reset:', error);
+            this.swaparrResetInProgress = false;
+        }
+    },
+
+    // Update Swaparr stats display with animation (like Live Hunts)
+    updateSwaparrStatsDisplay: function(stats) {
+        const elements = {
+            'processed': document.getElementById('swaparr-processed'),
+            'strikes': document.getElementById('swaparr-strikes'),
+            'removals': document.getElementById('swaparr-removals'),
+            'ignored': document.getElementById('swaparr-ignored')
+        };
+
+        for (const [key, element] of Object.entries(elements)) {
+            if (element && stats.hasOwnProperty(key)) {
+                const currentValue = this.parseFormattedNumber(element.textContent);
+                const targetValue = stats[key];
+                
+                if (currentValue !== targetValue) {
+                    // Animate the number change
+                    this.animateNumber(element, currentValue, targetValue, 500);
+                }
+            }
+        }
+    },
+
+    // Setup Swaparr status polling
+    setupSwaparrStatusPolling: function() {
+        // Load initial status
+        this.loadSwaparrStatus();
+        
+        // Set up polling to refresh Swaparr status every 30 seconds
+        // Only poll when home section is active to reduce unnecessary requests
+        setInterval(() => {
+            if (this.currentSection === 'home') {
+                this.loadSwaparrStatus();
+            }
+        }, 30000);
     },
     
-    stopHunt: function() {
-        HuntarrUtils.fetchWithTimeout('/api/hunt/stop', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    this.showNotification('Hunt stopped successfully', 'success');
-                } else {
-                    this.showNotification('Failed to stop hunt', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error stopping hunt:', error);
-                this.showNotification('Error stopping hunt', 'error');
-            });
-    },
+
     
     // User
     loadUsername: function() {
         const usernameElement = document.getElementById('username');
         if (!usernameElement) return;
         
-        HuntarrUtils.fetchWithTimeout('/api/user/info')
+        HuntarrUtils.fetchWithTimeout('./api/user/info')
             .then(response => response.json())
             .then(data => {
                 if (data.username) {
@@ -2072,7 +2030,7 @@ let huntarrUI = {
     // Check if local access bypass is enabled and update UI accordingly
     checkLocalAccessBypassStatus: function() {
         console.log("Checking local access bypass status...");
-        HuntarrUtils.fetchWithTimeout('/api/get_local_access_bypass_status') // Corrected URL
+        HuntarrUtils.fetchWithTimeout('./api/get_local_access_bypass_status') // Corrected URL
             .then(response => {
                 if (!response.ok) {
                     // Log error if response is not OK (e.g., 404, 500)
@@ -2124,12 +2082,11 @@ let huntarrUI = {
                 console.warn("  ⚠ userInfoContainer not found");
             }
             
-            // Hide user nav in sidebar
+            // Always show user nav in sidebar regardless of authentication mode
             if (userNav) {
-                userNav.style.display = 'none';
-                // Add !important inline style to ensure mobile view respects this
-                userNav.style.setProperty('display', 'none', 'important');
-                console.log("  • Hidden userNav");
+                userNav.style.display = '';
+                userNav.style.removeProperty('display'); // Remove any !important styles
+                console.log("  • User nav always visible (regardless of auth mode)");
             } else {
                 console.warn("  ⚠ userNav not found");
             }
@@ -2157,7 +2114,7 @@ let huntarrUI = {
     logout: function(e) { // Added logout function
         e.preventDefault(); // Prevent default link behavior
         console.log('[huntarrUI] Logging out...');
-        HuntarrUtils.fetchWithTimeout('/logout', { // Use the correct endpoint defined in Flask
+        HuntarrUtils.fetchWithTimeout('./logout', { // Use the correct endpoint defined in Flask
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -2167,7 +2124,7 @@ let huntarrUI = {
         .then(data => {
             if (data.success) {
                 console.log('[huntarrUI] Logout successful, redirecting to login.');
-                window.location.href = '/login'; // Redirect to login page
+                window.location.href = './login'; // Redirect to login page
             } else {
                 console.error('[huntarrUI] Logout failed:', data.message);
                 this.showNotification('Logout failed. Please try again.', 'error');
@@ -2189,13 +2146,29 @@ let huntarrUI = {
         
         this.isLoadingStats = true;
         
+        // Try to load cached stats first for immediate display
+        const cachedStats = localStorage.getItem('huntarr-stats-cache');
+        if (cachedStats) {
+            try {
+                const parsedStats = JSON.parse(cachedStats);
+                const cacheAge = Date.now() - (parsedStats.timestamp || 0);
+                // Use cache if less than 5 minutes old
+                if (cacheAge < 300000) {
+                    console.log('[huntarrUI] Using cached stats for immediate display');
+                    this.updateStatsDisplay(parsedStats.stats, true); // true = from cache
+                }
+            } catch (e) {
+                console.log('[huntarrUI] Failed to parse cached stats');
+            }
+        }
+        
         // Add loading class to stats container to hide raw JSON
         const statsContainer = document.querySelector('.media-stats-container');
         if (statsContainer) {
             statsContainer.classList.add('stats-loading');
         }
         
-        HuntarrUtils.fetchWithTimeout('/api/stats')
+        HuntarrUtils.fetchWithTimeout('./api/stats')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -2206,6 +2179,12 @@ let huntarrUI = {
                 if (data.success && data.stats) {
                     // Store raw stats data globally for tooltips to access
                     window.mediaStats = data.stats;
+                    
+                    // Cache the fresh stats with timestamp
+                    localStorage.setItem('huntarr-stats-cache', JSON.stringify({
+                        stats: data.stats,
+                        timestamp: Date.now()
+                    }));
                     
                     // Update display
                     this.updateStatsDisplay(data.stats);
@@ -2231,7 +2210,7 @@ let huntarrUI = {
             });
     },
     
-    updateStatsDisplay: function(stats) {
+    updateStatsDisplay: function(stats, isFromCache = false) {
         // Update each app's statistics
         const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
         const statTypes = ['hunted', 'upgraded'];
@@ -2239,7 +2218,8 @@ let huntarrUI = {
         // More robust low usage mode detection - check multiple sources
         const isLowUsageMode = this.isLowUsageModeEnabled();
         
-        console.log(`[huntarrUI] updateStatsDisplay - Low usage mode: ${isLowUsageMode}`);
+        
+        console.log(`[huntarrUI] updateStatsDisplay - Low usage mode: ${isLowUsageMode}, from cache: ${isFromCache}`);
         
         apps.forEach(app => {
             if (stats[app]) {
@@ -2251,8 +2231,8 @@ let huntarrUI = {
                         const currentValue = this.parseFormattedNumber(currentText);
                         const targetValue = Math.max(0, parseInt(stats[app][type]) || 0); // Ensure non-negative
                         
-                        // If low usage mode is enabled, skip animations and set values directly
-                        if (isLowUsageMode) {
+                        // If low usage mode is enabled or loading from cache, skip animations and set values directly
+                        if (isLowUsageMode || isFromCache) {
                             element.textContent = this.formatLargeNumber(targetValue);
                         } else {
                             // Only animate if values are different and both are valid
@@ -2304,7 +2284,7 @@ let huntarrUI = {
             return;
         }
         
-        const duration = 1000; // Animation duration in milliseconds
+        const duration = 600; // Animation duration in milliseconds - reduced for faster loading feel
         const startTime = performance.now();
         
         const updateNumber = (currentTime) => {
@@ -2374,8 +2354,7 @@ let huntarrUI = {
             'lidarr': {'hunted': 0, 'upgraded': 0},
             'readarr': {'hunted': 0, 'upgraded': 0},
             'whisparr': {'hunted': 0, 'upgraded': 0},
-            'eros': {'hunted': 0, 'upgraded': 0},
-            'swaparr': {'hunted': 0, 'upgraded': 0}
+            'eros': {'hunted': 0, 'upgraded': 0}
         };
         
         // Immediately update UI before even showing the confirmation
@@ -2396,7 +2375,7 @@ let huntarrUI = {
         try {
             const requestBody = appType ? { app_type: appType } : {};
             
-            HuntarrUtils.fetchWithTimeout('/api/stats/reset_public', {
+            HuntarrUtils.fetchWithTimeout('./api/stats/reset_public', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -2460,7 +2439,7 @@ let huntarrUI = {
 
     // Load current version from version.txt
     loadCurrentVersion: function() {
-        HuntarrUtils.fetchWithTimeout('/version.txt')
+        HuntarrUtils.fetchWithTimeout('./version.txt')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to load version.txt');
@@ -2567,6 +2546,25 @@ let huntarrUI = {
         const starsElement = document.getElementById('github-stars-value');
         if (!starsElement) return;
         
+        // First, try to load from cache immediately for fast display
+        const cachedData = localStorage.getItem('huntarr-github-stars');
+        if (cachedData) {
+            try {
+                const parsed = JSON.parse(cachedData);
+                if (parsed.stars !== undefined) {
+                    starsElement.textContent = parsed.stars.toLocaleString();
+                    // If cache is recent (less than 1 hour), skip API call
+                    const cacheAge = Date.now() - (parsed.timestamp || 0);
+                    if (cacheAge < 3600000) { // 1 hour = 3600000ms
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('Invalid cached star data, will fetch fresh');
+                localStorage.removeItem('huntarr-github-stars');
+            }
+        }
+        
         starsElement.textContent = 'Loading...';
         
         // GitHub API endpoint for repository information
@@ -2603,9 +2601,15 @@ let huntarrUI = {
                 if (cachedData) {
                     try {
                         const parsed = JSON.parse(cachedData);
-                        starsElement.textContent = parsed.stars.toLocaleString();
+                        if (parsed.stars !== undefined) {
+                            starsElement.textContent = parsed.stars.toLocaleString();
+                        } else {
+                            starsElement.textContent = 'N/A';
+                        }
                     } catch (e) {
+                        console.error('Failed to parse cached star data:', e);
                         starsElement.textContent = 'N/A';
+                        localStorage.removeItem('huntarr-github-stars'); // Clear bad cache
                     }
                 } else {
                     starsElement.textContent = 'N/A';
@@ -2613,7 +2617,7 @@ let huntarrUI = {
             });
     },
 
-    // Add updateHomeConnectionStatus if it doesn't exist or needs adjustment
+    // Update home connection status
     updateHomeConnectionStatus: function() {
         console.log('[huntarrUI] Updating home connection statuses...');
         // This function should ideally call checkAppConnection for all relevant apps
@@ -2676,7 +2680,7 @@ let huntarrUI = {
         }
         
         // Always fetch fresh data from the server
-        HuntarrUtils.fetchWithTimeout('/api/stateful/info', { 
+        HuntarrUtils.fetchWithTimeout('./api/stateful/info', { 
             cache: 'no-cache',
             headers: {
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -2821,8 +2825,14 @@ let huntarrUI = {
     // Format date nicely with time, day, and relative time indication
     formatDateNicely: function(date) {
         if (!(date instanceof Date) || isNaN(date)) {
+            console.warn('[formatDateNicely] Invalid date provided:', date);
             return 'Invalid date';
         }
+        
+        // Get the user's configured timezone from settings or default to UTC
+        const userTimezone = this.getUserTimezone();
+        
+        console.log(`[formatDateNicely] Formatting date ${date.toISOString()} for timezone: ${userTimezone}`);
         
         const options = { 
             weekday: 'short',
@@ -2830,10 +2840,21 @@ let huntarrUI = {
             month: 'short', 
             day: 'numeric',
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            hour12: false, // Use 24-hour format (global world time)
+            timeZone: userTimezone
         };
         
-        const formattedDate = date.toLocaleDateString(undefined, options);
+        let formattedDate;
+        try {
+            formattedDate = date.toLocaleDateString(undefined, options);
+            console.log(`[formatDateNicely] Formatted result: ${formattedDate}`);
+        } catch (error) {
+            console.error(`[formatDateNicely] Error formatting date with timezone ${userTimezone}:`, error);
+            // Fallback to UTC if timezone is invalid
+            const fallbackOptions = { ...options, timeZone: 'UTC' };
+            formattedDate = date.toLocaleDateString(undefined, fallbackOptions) + ' (UTC fallback)';
+        }
         
         // Add relative time indicator (e.g., "in 6 days" or "7 days ago")
         const now = new Date();
@@ -2850,6 +2871,51 @@ let huntarrUI = {
         }
         
         return `${formattedDate}${relativeTime}`;
+    },
+    
+    // Helper function to get the user's configured timezone from settings
+    getUserTimezone: function() {
+        // Assume UTC as default if no timezone is set
+        const defaultTimezone = 'UTC';
+        
+        // Try multiple sources for the timezone setting
+        let timezone = null;
+        
+        // 1. Try to get from originalSettings.general
+        if (this.originalSettings && this.originalSettings.general && this.originalSettings.general.timezone) {
+            timezone = this.originalSettings.general.timezone;
+        }
+        
+        // 2. Try to get from the timezone dropdown if it exists (for immediate updates)
+        if (!timezone) {
+            const timezoneSelect = document.getElementById('timezone');
+            if (timezoneSelect && timezoneSelect.value) {
+                timezone = timezoneSelect.value;
+            }
+        }
+        
+        // 3. Try to get from localStorage cache
+        if (!timezone) {
+            const cachedSettings = localStorage.getItem('huntarr-settings-cache');
+            if (cachedSettings) {
+                try {
+                    const parsed = JSON.parse(cachedSettings);
+                    if (parsed.general && parsed.general.timezone) {
+                        timezone = parsed.general.timezone;
+                    }
+                } catch (e) {
+                    console.warn('[getUserTimezone] Error parsing cached settings:', e);
+                }
+            }
+        }
+        
+        // 4. Fallback to default
+        if (!timezone) {
+            timezone = defaultTimezone;
+        }
+        
+        console.log(`[getUserTimezone] Using timezone: ${timezone}`);
+        return timezone;
     },
     
     // Reset stateful management - clear all processed IDs
@@ -2870,7 +2936,7 @@ let huntarrUI = {
         // Add debug logging
         console.log("Sending reset request to /api/stateful/reset");
         
-        HuntarrUtils.fetchWithTimeout('/api/stateful/reset', {
+        HuntarrUtils.fetchWithTimeout('./api/stateful/reset', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -2987,7 +3053,7 @@ let huntarrUI = {
         console.log(`[huntarrUI] Directly updating stateful expiration to ${hours} hours`);
         
         // Make a direct API call to update the stateful expiration
-        HuntarrUtils.fetchWithTimeout('/api/stateful/update-expiration', {
+        HuntarrUtils.fetchWithTimeout('./api/stateful/update-expiration', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -3098,7 +3164,7 @@ let huntarrUI = {
     
     // Check if Low Usage Mode is enabled in settings and apply it
     checkLowUsageMode: function() {
-        return HuntarrUtils.fetchWithTimeout('/api/settings/general', {
+        return HuntarrUtils.fetchWithTimeout('./api/settings/general', {
             method: 'GET'
         })
         .then(response => response.json())
@@ -3211,6 +3277,243 @@ let huntarrUI = {
         } else {
             console.warn('[huntarrUI] Dashboard grid not found');
         }
+    },
+
+    applyFilterToSingleEntry: function(logEntry, selectedLevel) {
+        // Apply the same filtering logic used in filterLogsByLevel to a single entry
+        const levelBadge = logEntry.querySelector('.log-level-badge, .log-level, .log-level-error, .log-level-warning, .log-level-info, .log-level-debug');
+        
+        // Clear any existing filter attribute first
+        logEntry.removeAttribute('data-hidden-by-filter');
+        
+        if (levelBadge) {
+            // Get the level from the badge text
+            let entryLevel = '';
+            
+            // Get badge text and normalize it
+            const badgeText = levelBadge.textContent.toLowerCase().trim();
+            
+            // Fixed mapping - match the actual badge text created in log entries
+            switch(badgeText) {
+                case 'information':
+                case 'info':
+                    entryLevel = 'info';
+                    break;
+                case 'warning':
+                case 'warn':
+                    entryLevel = 'warning';
+                    break;
+                case 'error':
+                    entryLevel = 'error';
+                    break;
+                case 'debug':
+                    entryLevel = 'debug';
+                    break;
+                case 'fatal':
+                case 'critical':
+                    entryLevel = 'error'; // Map fatal/critical to error for filtering
+                    break;
+                default:
+                    // Try class-based detection as secondary method
+                    if (levelBadge.classList.contains('log-level-error')) {
+                        entryLevel = 'error';
+                    } else if (levelBadge.classList.contains('log-level-warning')) {
+                        entryLevel = 'warning';
+                    } else if (levelBadge.classList.contains('log-level-info')) {
+                        entryLevel = 'info';
+                    } else if (levelBadge.classList.contains('log-level-debug')) {
+                        entryLevel = 'debug';
+                    } else {
+                        // NO FALLBACK - if we can't determine the level, hide it
+                        entryLevel = null;
+                    }
+            }
+            
+            // Show or hide based on filter match, using data attributes for pagination cooperation
+            if (entryLevel && entryLevel === selectedLevel) {
+                logEntry.style.display = '';
+            } else {
+                logEntry.style.display = 'none';
+                logEntry.setAttribute('data-hidden-by-filter', 'true');
+            }
+        } else {
+            // If no level badge found, hide the entry when filtering
+            logEntry.style.display = 'none';
+            logEntry.setAttribute('data-hidden-by-filter', 'true');
+        }
+    },
+
+    filterLogsByLevel: function(selectedLevel) {
+        if (!this.elements.logsContainer) return;
+        
+        const allLogEntries = this.elements.logsContainer.querySelectorAll('.log-entry');
+        let visibleCount = 0;
+        let totalCount = allLogEntries.length;
+        
+        console.log(`[huntarrUI] Filtering logs by level: ${selectedLevel}, total entries: ${totalCount}`);
+        
+        // Debug: Log first few badge texts to see what we're working with
+        allLogEntries.forEach((entry, index) => {
+            if (index < 5) { // Log first 5 entries for debugging
+                const levelBadge = entry.querySelector('.log-level-badge, .log-level, .log-level-error, .log-level-warning, .log-level-info, .log-level-debug');
+                if (levelBadge) {
+                    console.log(`[huntarrUI] Entry ${index}: Badge text = "${levelBadge.textContent.trim()}", Classes = ${levelBadge.className}`);
+                }
+            }
+        });
+        
+        // Clear any existing filter attributes first
+        allLogEntries.forEach(entry => {
+            entry.removeAttribute('data-hidden-by-filter');
+        });
+        
+        allLogEntries.forEach(entry => {
+            if (selectedLevel === 'all') {
+                // Show all entries - remove any filter hiding
+                entry.style.display = '';
+                visibleCount++;
+            } else {
+                // Check if this entry matches the selected level
+                const levelBadge = entry.querySelector('.log-level-badge, .log-level, .log-level-error, .log-level-warning, .log-level-info, .log-level-debug');
+                
+                if (levelBadge) {
+                    // Get the level from the badge text
+                    let entryLevel = '';
+                    
+                    // Get badge text and normalize it
+                    const badgeText = levelBadge.textContent.toLowerCase().trim();
+                    
+                    // Fixed mapping - match the actual badge text created in log entries
+                    switch(badgeText) {
+                        case 'information':
+                        case 'info':
+                            entryLevel = 'info';
+                            break;
+                        case 'warning':
+                        case 'warn':
+                            entryLevel = 'warning';
+                            break;
+                        case 'error':
+                            entryLevel = 'error';
+                            break;
+                        case 'debug':
+                            entryLevel = 'debug';
+                            break;
+                        case 'fatal':
+                        case 'critical':
+                            entryLevel = 'error'; // Map fatal/critical to error for filtering
+                            break;
+                        default:
+                            // Try class-based detection as secondary method
+                            if (levelBadge.classList.contains('log-level-error')) {
+                                entryLevel = 'error';
+                            } else if (levelBadge.classList.contains('log-level-warning')) {
+                                entryLevel = 'warning';
+                            } else if (levelBadge.classList.contains('log-level-info')) {
+                                entryLevel = 'info';
+                            } else if (levelBadge.classList.contains('log-level-debug')) {
+                                entryLevel = 'debug';
+                            } else {
+                                // Log unmapped badge text for debugging
+                                console.log(`[huntarrUI] Unmapped badge text: "${badgeText}" - hiding entry`);
+                                entryLevel = null; // Set to null to indicate unmapped
+                            }
+                    }
+                    
+                    // Show or hide based on filter match, using data attributes for pagination cooperation
+                    if (entryLevel && entryLevel === selectedLevel) {
+                        entry.style.display = '';
+                        visibleCount++;
+                    } else {
+                        entry.style.display = 'none';
+                        entry.setAttribute('data-hidden-by-filter', 'true');
+                    }
+                } else {
+                    // If no level badge found, hide the entry when filtering
+                    entry.style.display = 'none';
+                    entry.setAttribute('data-hidden-by-filter', 'true');
+                }
+            }
+        });
+        
+        // Pagination controls remain visible at all times - removed hiding logic
+        
+        // Auto-scroll to top to show newest entries (logs are in reverse order)
+        if (this.autoScroll && this.elements.autoScrollCheckbox && this.elements.autoScrollCheckbox.checked && visibleCount > 0) {
+            setTimeout(() => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        }
+        
+        console.log(`[huntarrUI] Filtered logs by level '${selectedLevel}': showing ${visibleCount}/${totalCount} entries`);
+    },
+    
+    // Helper method to detect JSON fragments that shouldn't be displayed as log entries
+    isJsonFragment: function(logString) {
+        if (!logString || typeof logString !== 'string') return false;
+        
+        const trimmed = logString.trim();
+        
+        // Check for common JSON fragment patterns
+        const jsonPatterns = [
+            /^"[^"]*":\s*"[^"]*",?$/,           // "key": "value",
+            /^"[^"]*":\s*\d+,?$/,                // "key": 123,
+            /^"[^"]*":\s*true|false,?$/,         // "key": true,
+            /^"[^"]*":\s*null,?$/,               // "key": null,
+            /^"[^"]*":\s*\[[^\]]*\],?$/,         // "key": [...],
+            /^"[^"]*":\s*\{[^}]*\},?$/,          // "key": {...},
+            /^\s*\{?\s*$/,                       // Just opening brace or whitespace
+            /^\s*\}?,?\s*$/,                     // Just closing brace
+            /^\s*\[?\s*$/,                       // Just opening bracket
+            /^\s*\]?,?\s*$/,                     // Just closing bracket
+            /^,?\s*$/,                           // Just comma or whitespace
+            /^[^"]*':\s*[^,]*,.*':/,          // Mid-object fragments like "g_items': 1, 'hunt_upgrade_items': 0"
+            /^[a-zA-Z_][a-zA-Z0-9_]*':\s*\d+,/,  // Property names starting without quotes
+            /^[a-zA-Z_][a-zA-Z0-9_]*':\s*True|False,/, // Boolean properties without opening quotes
+            /^[a-zA-Z_][a-zA-Z0-9_]*':\s*'[^']*',/, // String properties without opening quotes
+            /.*':\s*\d+,.*':\s*\d+,/,            // Multiple numeric properties in sequence
+            /.*':\s*True,.*':\s*False,/,         // Multiple boolean properties in sequence
+            /.*':\s*'[^']*',.*':\s*'[^']*',/,    // Multiple string properties in sequence
+            /^"[^"]*":\s*\[$/,                   // JSON key with opening bracket: "global": [
+            /^[a-zA-Z_][a-zA-Z0-9_\s]*:\s*\[$/,  // Property key with opening bracket: global: [
+            /^[a-zA-Z_][a-zA-Z0-9_\s]*:\s*\{$/,  // Property key with opening brace: config: {
+            /^[a-zA-Z_]+\s+(Mode|Setting|Config|Option):\s*(True|False|\d+)$/i, // Config fragments: "ug Mode: False"
+            /^[a-zA-Z_]+\s*Mode:\s*(True|False)$/i, // Mode fragments: "Debug Mode: False"
+            /^[a-zA-Z_]+\s*Setting:\s*.*$/i,     // Setting fragments
+            /^[a-zA-Z_]+\s*Config:\s*.*$/i       // Config fragments
+        ];
+        
+        return jsonPatterns.some(pattern => pattern.test(trimmed));
+    },
+    
+    // Helper method to detect other invalid log lines
+    isInvalidLogLine: function(logString) {
+        if (!logString || typeof logString !== 'string') return true;
+        
+        const trimmed = logString.trim();
+        
+        // Skip empty lines or lines with only whitespace
+        if (trimmed.length === 0) return true;
+        
+        // Skip lines that are clearly not log entries
+        if (trimmed.length < 10) return true; // Too short to be a meaningful log
+        
+        // Skip lines that look like HTTP headers or other metadata
+        if (/^(HTTP\/|Content-|Connection:|Host:|User-Agent:)/i.test(trimmed)) return true;
+        
+        // Skip partial words or fragments that don't form complete sentences
+        if (/^[a-zA-Z]{1,5}\s+(Mode|Setting|Config|Debug|Info|Error|Warning):/i.test(trimmed)) return true;
+        
+        // Skip single words that are clearly fragments
+        if (/^[a-zA-Z]{1,8}$/i.test(trimmed)) return true;
+        
+        // Skip lines that start with partial words and contain colons (config fragments)
+        if (/^[a-z]{1,8}\s*[A-Z]/i.test(trimmed) && trimmed.includes(':')) return true;
+        
+        return false;
     }
 };
 

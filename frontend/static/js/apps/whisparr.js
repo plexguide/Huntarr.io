@@ -37,10 +37,16 @@ function setupWhisparrForm() {
 
     // Test connection button
     testWhisparrButton.addEventListener('click', function() {
+        // Temporarily suppress change detection to prevent the unsaved changes dialog
+        window._suppressUnsavedChangesDialog = true;
+        
         const apiUrl = apiUrlInput ? apiUrlInput.value.trim() : '';
         const apiKey = apiKeyInput ? apiKeyInput.value.trim() : '';
         
         if (!apiUrl || !apiKey) {
+            // Reset suppression flag
+            window._suppressUnsavedChangesDialog = false;
+            
             // Use the main UI notification system if available
             if (typeof huntarrUI !== 'undefined' && huntarrUI.showNotification) {
                 huntarrUI.showNotification('Please enter both API URL and API Key for Whisparr', 'error');
@@ -57,7 +63,7 @@ function setupWhisparrForm() {
         }
         
         // Direct connection test - let the backend handle version checking
-        HuntarrUtils.fetchWithTimeout('/api/whisparr/test-connection', {
+        HuntarrUtils.fetchWithTimeout('./api/whisparr/test-connection', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -99,6 +105,11 @@ function setupWhisparrForm() {
             if (testWhisparrButton.disabled) {
                 testWhisparrButton.disabled = false;
             }
+            
+            // Reset suppression flag after a short delay
+            setTimeout(() => {
+                window._suppressUnsavedChangesDialog = false;
+            }, 500);
         });
     });
 
@@ -133,7 +144,7 @@ function setupWhisparrForm() {
 
         const wasSettingsChanged = typeof huntarrUI !== 'undefined' ? huntarrUI.settingsChanged : false;
         
-        HuntarrUtils.fetchWithTimeout('/api/whisparr/get-versions')
+        HuntarrUtils.fetchWithTimeout('./api/whisparr/get-versions')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch Whisparr version');

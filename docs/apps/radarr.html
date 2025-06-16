@@ -19,6 +19,7 @@
             <div class="sidebar-section">
                 <h3 class="sidebar-section-title">Getting Started</h3>
                 <ul>
+                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
                     <li><a href="../getting-started/installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
                 </ul>
             </div>
@@ -40,7 +41,7 @@
                     <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg> GitHub</a></li>
                     <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
                     <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
-                    <li><a href="https://donate.plex.one" target="_blank"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
+
                 </ul>
             </div>
         </nav>
@@ -54,9 +55,38 @@
                 <img src="../images/arrs/radarr.png" alt="Radarr Logo" style="width: 80px; height: 80px; object-fit: contain;">
             </div>
             
-            <p>Radarr is an automated movie downloading and management application. Huntarr integrates with your existing Radarr instance to automatically search for missing movies and quality upgrades that Radarr doesn't actively hunt for.</p>
+            <div class="alert alert-info" style="margin: 20px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
+                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Radarr?</strong> 
+                Radarr is an automated movie downloading and management application. It monitors for new movies, searches indexers, and automatically downloads content using your preferred download clients.
+            </div>
             
-            <h2 id="radarr-instance-setup">Radarr Instance Setup</h2>
+            <p>Radarr automates the process of monitoring and downloading movies. It integrates with popular download clients and uses indexers to search for and download movies automatically, making it easy to build and maintain an organized movie library.</p>
+            
+            <h2 id="overview">Overview</h2>
+            
+            <h3><i class="fas fa-download" style="margin-right: 10px; color: #3498db;"></i>What Radarr Does</h3>
+            <p>Radarr provides automated content management for movies by:</p>
+            <ul>
+                <li><strong>Automatic Searching:</strong> Monitors for new movies and searches configured indexers</li>
+                <li><strong>Quality Management:</strong> Downloads content based on your quality preferences</li>
+                <li><strong>Library Organization:</strong> Automatically organizes downloaded movies in your media library</li>
+                <li><strong>Upgrade Management:</strong> Can upgrade existing movies to better quality when available</li>
+                <li><strong>Download Client Integration:</strong> Works with popular download clients like qBittorrent, Deluge, etc.</li>
+            </ul>
+            
+            <h3><i class="fas fa-cogs" style="margin-right: 10px; color: #e67e22;"></i>How Huntarr Enhances Radarr</h3>
+            <p>Huntarr adds intelligent automation on top of Radarr:</p>
+            <ul>
+                <li><strong>Smart Search Timing:</strong> Prevents overwhelming indexers with too many requests</li>
+                <li><strong>Missing Movie Detection:</strong> Identifies and prioritizes missing movies</li>
+                <li><strong>Upgrade Intelligence:</strong> Finds better quality versions of existing movies</li>
+                <li><strong>Rate Limiting:</strong> Respects API limits to prevent bans or throttling</li>
+                <li><strong>Multi-Instance Support:</strong> Manage multiple Radarr instances from one interface</li>
+            </ul>
+            
+            <h2 id="instances">Instance Configuration</h2>
+            
+            <p>Configure your Radarr instances to connect Huntarr with your Radarr installation(s).</p>
             
             <h3>Adding Your Radarr Instance</h3>
             <p>To connect your existing Radarr instance to Huntarr:</p>
@@ -164,14 +194,180 @@
             <h3 id="additional-options"><i class="fas fa-cogs" style="margin-right: 10px; color: #9b59b6;"></i>Additional Options</h3>
             <p>Fine-tune Huntarr's behavior with these additional settings:</p>
             
-            <h4><i class="fas fa-eye" style="margin-right: 8px; color: #f1c40f;"></i>Monitored Only</h4>
+            <h4 id="monitored-only"><i class="fas fa-eye" style="margin-right: 8px; color: #f1c40f;"></i>Monitored Only</h4>
             <p>When enabled, Huntarr will only search for movies that are marked as "Monitored" in Radarr. This prevents searches for movies you've intentionally unmonitored.</p>
             
-            <h4><i class="fas fa-calendar" style="margin-right: 8px; color: #e74c3c;"></i>Skip Future Movies</h4>
-            <p>When enabled, Huntarr will skip movies with future release dates. This prevents unnecessary searches for content that hasn't been released yet.</p>
+            <h4 id="skip-future-movies"><i class="fas fa-calendar" style="margin-right: 8px; color: #e74c3c;"></i>Skip Future Movies</h4>
+            <p>When enabled, Huntarr will skip movies with future release dates (based on the Release Date field) for both missing movie searches and quality upgrades. When disabled, Huntarr will process all movies regardless of release date.</p>
+            
+            <div class="alert alert-info">
+                <strong>📋 Release Date Logic Simplified:</strong> As of Huntarr 7.6.0+, we've simplified release date filtering to only use the <strong>Release Date</strong> field from Radarr. This field is the most reliable and consistently populated date field in the Radarr API.
+            </div>
+            
+
+            
+            <h5>Why We Simplified Release Date Detection</h5>
+            <p>Previous versions of Huntarr used complex fallback logic that checked multiple date fields (Physical Release, Digital Release, In Cinemas) with confusing priority rules. This approach had several problems:</p>
+            <ul>
+                <li><strong>Inconsistent Results:</strong> Movies with partial date information would sometimes be processed incorrectly</li>
+                <li><strong>Complex Logic:</strong> The fallback system was difficult to understand and debug</li>
+                <li><strong>User Confusion:</strong> Users couldn't predict which date field would determine future status</li>
+                <li><strong>API Reliability:</strong> Not all date fields are consistently populated by metadata providers</li>
+            </ul>
+            
+            <p>The new simplified approach uses only the <strong>Release Date</strong> field because:</p>
+            <ul>
+                <li><strong>Always Present:</strong> This field is consistently populated in the Radarr UI and API</li>
+                <li><strong>User Visible:</strong> It's the date you see in the main movie list in Radarr</li>
+                <li><strong>Predictable:</strong> Users can easily see which movies will be skipped</li>
+                <li><strong>Reliable:</strong> Represents the general availability date for the movie</li>
+            </ul>
+            
+            <h5>Release Date Logic Flow</h5>
+            <p>The simplified logic works as follows for both missing movie searches and quality upgrades:</p>
+            <ul>
+                <li><strong>Skip Future Releases = OFF:</strong> Process all movies regardless of release date (useful if you want cam rips, theater recordings, etc.)</li>
+                <li><strong>Skip Future Releases = ON:</strong> Only process movies with past release dates, with optional control over movies with missing dates</li>
+            </ul>
+            
+
+            
+            <div class="mermaid">
+                graph TD
+                    A["🎬 Radarr Movie"] --> B["Check Skip Future Releases Setting"]
+                    B -->|Disabled| H["✅ Process All Movies<br/>(May Include Future/Theater Releases)"]
+                    B -->|Enabled| D["Check Release Date Field"]
+                    D -->|Missing/Invalid| E["Check Process No Release Dates"]
+                    D -->|Valid Date| F["Date in Past?"]
+                    F -->|Yes| J["✅ Include in Search"]
+                    F -->|No| K["⏭️ Skip Future Movie"]
+                    E -->|Enabled| L["⚠️ Process Movie<br/>(Unknown Quality Risk)"]
+                    E -->|Disabled| M["⏭️ Skip No Date Movie"]
+                    
+                    style A fill:#e3f2fd
+                    style H fill:#fff3e0
+                    style J fill:#c8e6c9
+                    style K fill:#ffcdd2
+                    style L fill:#ffecb3
+                    style M fill:#ffcdd2
+            </div>
+            
+            <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+            <script>mermaid.initialize({startOnLoad:true});</script>
+            
+            <h4 id="process-no-release-dates"><i class="fas fa-question-circle" style="margin-right: 8px; color: #ff6b35;"></i>Process No Release Dates</h4>
+            <p>In rare cases, some movies in your Radarr library may have missing or invalid release date information. By default, Huntarr will <strong>skip</strong> these movies for both missing searches and quality upgrades to avoid potentially downloading unknown or poor quality content.</p>
+            
+            <p>When this option is enabled, Huntarr will process movies that have:</p>
+            <ul>
+                <li><strong>Completely missing Release Date field</strong></li>
+                <li><strong>Invalid or unparseable release dates</strong></li>
+                <li><strong>Corrupted date metadata</strong></li>
+            </ul>
+            
+            <p><strong style="color: #ff6b35;">Risks of enabling this option:</strong></p>
+            <ul>
+                <li><strong>Unknown quality:</strong> Movies without release dates may be unreleased, beta, or test content</li>
+                <li><strong>Metadata issues:</strong> Missing dates often indicate other metadata problems</li>
+                <li><strong>Unpredictable results:</strong> Hard to determine what quality or type of content will be found</li>
+                <li><strong>Waste of resources:</strong> May download content you don't actually want</li>
+            </ul>
+            
+            <div class="alert alert-warning">
+                <strong>⚠️ Rare Case Warning:</strong> This situation is uncommon but can occur with:<br>
+                • Manually added movies with incomplete metadata<br>
+                • Movies from unreliable metadata sources<br>
+                • Test or development content in your library<br>
+                <br>
+                <strong>Recommended:</strong> Keep this disabled unless you specifically need to process movies with missing release date information. Check the <a href="#release-date-troubleshooting">troubleshooting section</a> below for better solutions.
+            </div>
             
             <h4><i class="fas fa-star" style="margin-right: 8px; color: #f39c12;"></i>Minimum Availability</h4>
             <p>Respects Radarr's minimum availability setting. Huntarr will only search for movies that meet your configured availability requirements (Announced, In Cinemas, Released, etc.).</p>
+            
+            <h2 id="release-date-troubleshooting">Release Date Troubleshooting</h2>
+            
+            <h3>Movies with Missing Release Dates</h3>
+            <p>If you have movies in your library with missing or invalid release dates, here are better solutions than enabling "Process No Release Dates":</p>
+            
+            <h4>1. Refresh Movie Metadata</h4>
+            <p>In Radarr, select the movie(s) and use "Refresh Metadata" to fetch updated information from metadata providers.</p>
+            
+            <h4>2. Check Metadata Sources</h4>
+            <p>Verify your metadata provider settings in Radarr Settings > Metadata. TMDb is generally the most reliable source.</p>
+            
+            <h4>3. Manual Correction</h4>
+            <p>For manually added movies, edit the movie details in Radarr and set a proper release date.</p>
+            
+            <h4>4. Remove Invalid Entries</h4>
+            <p>If movies consistently have metadata issues, consider removing them and re-adding from a more reliable source.</p>
+            
+            <h3>Understanding Release Date Types</h3>
+            <p>While Huntarr now only uses the main "Release Date" field, understanding the different dates in Radarr can help you manage your library:</p>
+            
+            <table>
+                <tr>
+                    <th>Date Type</th>
+                    <th>Description</th>
+                    <th>Huntarr Usage</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>Release Date</td>
+                    <td>General release date for the movie</td>
+                    <td><strong>Used for filtering</strong></td>
+                    <td>Primary field that appears in movie lists</td>
+                </tr>
+                <tr>
+                    <td>In Cinemas</td>
+                    <td>Theatrical release date</td>
+                    <td>Not used</td>
+                    <td>Often earlier than home video release</td>
+                </tr>
+                <tr>
+                    <td>Physical Release</td>
+                    <td>DVD/Blu-ray release date</td>
+                    <td>Not used</td>
+                    <td>May be months after theatrical release</td>
+                </tr>
+                <tr>
+                    <td>Digital Release</td>
+                    <td>VOD/streaming platform release</td>
+                    <td>Not used</td>
+                    <td>Usually between cinema and physical</td>
+                </tr>
+            </table>
+            
+            <div class="alert alert-info">
+                <strong>💡 Pro Tip:</strong> If you need more granular control over release dates, consider using multiple Radarr instances with different configurations rather than relying on complex filtering rules.
+            </div>
+            
+            <h2 id="swaparr-integration">Swaparr Integration</h2>
+            
+            <p>Enable Swaparr monitoring for this Radarr instance to automatically clean up stalled downloads.</p>
+            
+            <div class="alert alert-info" style="margin: 15px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
+                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Swaparr?</strong> 
+                Swaparr monitors your download queues and automatically removes stalled, failed, or problematic downloads to keep your automation running smoothly. 
+                <a href="swaparr.html" style="color: #0dcaf0;">Learn more about Swaparr configuration</a>.
+            </div>
+            
+            <h3><i class="fas fa-broom" style="margin-right: 8px; color: #e67e22;"></i>When to Enable Swaparr</h3>
+            <ul>
+                <li>You frequently have stalled movie downloads</li>
+                <li>Your download queue gets clogged with failed movie downloads</li>
+                <li>You want hands-off automation for your movie library</li>
+                <li>You use public trackers where quality varies</li>
+                <li>You download large movie files that sometimes fail</li>
+            </ul>
+            
+            <h3><i class="fas fa-exclamation-triangle" style="margin-right: 8px; color: #f39c12;"></i>When to Be Cautious</h3>
+            <ul>
+                <li>You use private trackers with strict ratio requirements</li>
+                <li>You prefer manual control over your movie downloads</li>
+                <li>You have very slow internet where downloads take a long time</li>
+                <li>You're building ratio on specific movie torrents</li>
+            </ul>
             
             <h2 id="troubleshooting">Troubleshooting</h2>
             
@@ -193,7 +389,28 @@
                 <li>Ensure "Monitored Only" is configured correctly for your needs</li>
                 <li>Check that movies are marked as "Monitored" in Radarr</li>
                 <li>Verify "Skip Future Movies" isn't preventing searches for available content</li>
+                <li>Check if "Process No Release Dates" needs to be enabled for movies with missing metadata</li>
                 <li>Review your minimum availability settings in both Radarr and Huntarr</li>
+            </ul>
+            
+            <h4>Movies Being Skipped Unexpectedly</h4>
+            <p>If movies you expect to be processed are being skipped:</p>
+            <ul>
+                <li>Check the Huntarr logs for specific skip reasons (future release, no release date, etc.)</li>
+                <li>Verify the Release Date field is properly populated in Radarr for those movies</li>
+                <li>Ensure the Release Date is in the past if "Skip Future Movies" is enabled</li>
+                <li>For movies with missing release dates, consider enabling "Process No Release Dates" temporarily</li>
+                <li>Use Radarr's "Refresh Metadata" to update movie information</li>
+            </ul>
+            
+            <h4>Poor Quality Downloads</h4>
+            <p>If you're getting low quality releases (cam rips, theater recordings):</p>
+            <ul>
+                <li>Enable "Skip Future Movies" - this prevents processing movies still in theaters</li>
+                <li>Disable "Process No Release Dates" - movies without dates often have quality issues</li>
+                <li>Review your Radarr quality profiles and cutoff settings</li>
+                <li>Check that your indexers support the quality levels you want</li>
+                <li>Consider waiting longer after release dates before enabling searches</li>
             </ul>
             
             <h4>Large File Downloads</h4>
@@ -209,10 +426,12 @@
             <p>If Huntarr isn't finding the right quality:</p>
             <ul>
                 <li>Verify your quality profiles are properly configured in Radarr</li>
-                <li>Check that your indexers support the quality levels you're seeking</li>
-                <li>Review cutoff settings to ensure upgrades are allowed</li>
-                <li>Consider adjusting your upgrade search frequency</li>
+                <li>Check that your cutoff settings in Radarr match your expectations</li>
+                <li>Ensure your indexers support the quality levels you want</li>
             </ul>
+            
+
+
             
             <div class="section-nav">
                 <a href="sonarr.html">← Sonarr Documentation</a>

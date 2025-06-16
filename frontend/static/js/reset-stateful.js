@@ -51,7 +51,7 @@
             this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
             
             // Make API call
-            HuntarrUtils.fetchWithTimeout('/api/stateful/reset', {
+            HuntarrUtils.fetchWithTimeout('./api/stateful/reset', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

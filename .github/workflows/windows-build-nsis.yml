@@ -45,6 +45,10 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller==5.13.0
         pip install pywin32
+        # Explicitly install apprise and its dependencies for Windows build
+        pip install apprise==1.6.0
+        pip install markdown==3.4.3
+        pip install pyyaml==6.0
 
     - name: Create directories
       run: |
@@ -60,6 +64,8 @@ jobs:
         # Use the dedicated build script from the distribution directory
         python -m pip install -r requirements.txt
         python -m pip install pywin32
+        
+        # Build with apprise support (apprise data files are included in the spec file)
         pyinstaller -y distribution/windows/huntarr.spec
         
         # Display contents of dist/Huntarr

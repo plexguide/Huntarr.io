@@ -632,7 +632,7 @@ select.form-control {
     overflow: auto !important; /* Allow scrolling when content is tall */
     opacity: 1;
     z-index: 1;
-    padding: 20px;
+    padding: 10px 20px; /* Reduced vertical padding by 50% (from 20px to 10px) while keeping horizontal padding at 20px */
 }
 
 /* Cards */
@@ -870,7 +870,7 @@ select.form-control {
     background: none !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 15px 0 !important;
+    padding: 7px 0 !important; /* Reduced from 15px to 7px (50% reduction) */
 }
 
 .section-header {
@@ -1750,104 +1750,6 @@ input:checked + .toggle-slider:before {
     color: var(--accent-color);
 }
 
-/* Swaparr specific styles */
-.swaparr-panel {
-    margin-bottom: 15px;
-    border-radius: 8px;
-    background-color: var(--bg-secondary);
-    border-left: 4px solid var(--accent-color);
-}
-
-.swaparr-config {
-    padding: 12px;
-}
-
-.swaparr-config h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: var(--accent-color);
-}
-
-.swaparr-config-content {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.swaparr-config-content span {
-    background-color: var(--bg-tertiary);
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-family: monospace;
-}
-
-.swaparr-table {
-    width: 100%;
-    overflow-x: auto;
-    margin-bottom: 15px;
-}
-
-.swaparr-table table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: var(--bg-secondary);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.swaparr-table th {
-    background-color: var(--bg-tertiary);
-    padding: 10px;
-    text-align: left;
-    color: var(--text-secondary);
-}
-
-.swaparr-table td {
-    padding: 10px;
-    border-bottom: 1px solid var(--bg-tertiary);
-}
-
-.swaparr-status-striked {
-    background-color: rgba(255, 193, 7, 0.1);
-}
-
-.swaparr-status-pending {
-    background-color: rgba(13, 110, 253, 0.1);
-}
-
-.swaparr-status-ignored {
-    background-color: rgba(108, 117, 125, 0.1);
-}
-
-.swaparr-status-normal {
-    background-color: rgba(25, 135, 84, 0.1);
-}
-
-.swaparr-status-removed {
-    background-color: rgba(220, 53, 69, 0.1);
-}
-
-/* When in dark mode */
-.dark-theme .swaparr-status-striked {
-    background-color: rgba(255, 193, 7, 0.2);
-}
-
-.dark-theme .swaparr-status-pending {
-    background-color: rgba(13, 110, 253, 0.2);
-}
-
-.dark-theme .swaparr-status-ignored {
-    background-color: rgba(108, 117, 125, 0.2);
-}
-
-.dark-theme .swaparr-status-normal {
-    background-color: rgba(25, 135, 84, 0.2);
-}
-
-.dark-theme .swaparr-status-removed {
-    background-color: rgba(220, 53, 69, 0.2);
-}
-
 /* Log Dropdown Styles */
 .log-dropdown-container {
     position: relative;
@@ -2081,8 +1983,8 @@ input:checked + .toggle-slider:before {
 /* History Table Styles */
 .history-container {
     position: relative;
-    height: calc(100% - 120px); /* Adjust based on header and pagination height */
-    overflow: auto;
+    height: calc(85vh - 160px); /* Use fixed viewport height like logs page instead of percentage */
+    overflow-y: auto; /* Only vertical scrolling like logs page */
     background-color: var(--bg-secondary);
     border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -2126,7 +2028,7 @@ input:checked + .toggle-slider:before {
 
 /* Operation Type Styles in History Table */
 .operation-missing {
-    background-color: #005a9e;
+    background-color: #8b1538;
     color: white;
     padding: 3px 8px;
     border-radius: 4px;
@@ -2263,14 +2165,14 @@ input:checked + .toggle-slider:before {
     }
 }
 
-/* Define color-shifting animation */
+/* Define color-shifting animation with 50% reduced glow */
 @keyframes glowing-ring {
-  0% { box-shadow: 0 0 15px #3498db, 0 0 5px rgba(52, 152, 219, 0.4); } /* Sonarr blue */
-  20% { box-shadow: 0 0 15px #f1c40f, 0 0 5px rgba(241, 196, 15, 0.4); } /* Radarr yellow */
-  40% { box-shadow: 0 0 15px #2ecc71, 0 0 5px rgba(46, 204, 113, 0.4); } /* Lidarr green */
-  60% { box-shadow: 0 0 15px #e74c3c, 0 0 5px rgba(231, 76, 60, 0.4); } /* Readarr red */
-  80% { box-shadow: 0 0 15px #9b59b6, 0 0 5px rgba(155, 89, 182, 0.4); } /* Whisparr purple */
-  100% { box-shadow: 0 0 15px #3498db, 0 0 5px rgba(52, 152, 219, 0.4); } /* Back to Sonarr blue */
+  0% { box-shadow: 0 0 7.5px #3498db, 0 0 2.5px rgba(52, 152, 219, 0.4); } /* Sonarr blue */
+  20% { box-shadow: 0 0 7.5px #f1c40f, 0 0 2.5px rgba(241, 196, 15, 0.4); } /* Radarr yellow */
+  40% { box-shadow: 0 0 7.5px #2ecc71, 0 0 2.5px rgba(46, 204, 113, 0.4); } /* Lidarr green */
+  60% { box-shadow: 0 0 7.5px #e74c3c, 0 0 2.5px rgba(231, 76, 60, 0.4); } /* Readarr red */
+  80% { box-shadow: 0 0 7.5px #9b59b6, 0 0 2.5px rgba(155, 89, 182, 0.4); } /* Whisparr purple */
+  100% { box-shadow: 0 0 7.5px #3498db, 0 0 2.5px rgba(52, 152, 219, 0.4); } /* Back to Sonarr blue */
 }
 
 .styled-select {
@@ -2305,14 +2207,14 @@ input:checked + .toggle-slider:before {
   padding: 8px 12px;
 }
 
-/* Define faster glowing animation for hover state */
+/* Define faster glowing animation for hover state with 50% reduced glow */
 @keyframes glowing-ring-hover {
-  0% { box-shadow: 0 0 20px #3498db, 0 0 10px rgba(52, 152, 219, 0.6); } /* Sonarr blue */
-  20% { box-shadow: 0 0 20px #f1c40f, 0 0 10px rgba(241, 196, 15, 0.6); } /* Radarr yellow */
-  40% { box-shadow: 0 0 20px #2ecc71, 0 0 10px rgba(46, 204, 113, 0.6); } /* Lidarr green */
-  60% { box-shadow: 0 0 20px #e74c3c, 0 0 10px rgba(231, 76, 60, 0.6); } /* Readarr red */
-  80% { box-shadow: 0 0 20px #9b59b6, 0 0 10px rgba(155, 89, 182, 0.6); } /* Whisparr purple */
-  100% { box-shadow: 0 0 20px #3498db, 0 0 10px rgba(52, 152, 219, 0.6); } /* Back to Sonarr blue */
+  0% { box-shadow: 0 0 10px #3498db, 0 0 5px rgba(52, 152, 219, 0.6); } /* Sonarr blue */
+  20% { box-shadow: 0 0 10px #f1c40f, 0 0 5px rgba(241, 196, 15, 0.6); } /* Radarr yellow */
+  40% { box-shadow: 0 0 10px #2ecc71, 0 0 5px rgba(46, 204, 113, 0.6); } /* Lidarr green */
+  60% { box-shadow: 0 0 10px #e74c3c, 0 0 5px rgba(231, 76, 60, 0.6); } /* Readarr red */
+  80% { box-shadow: 0 0 10px #9b59b6, 0 0 5px rgba(155, 89, 182, 0.6); } /* Whisparr purple */
+  100% { box-shadow: 0 0 10px #3498db, 0 0 5px rgba(52, 152, 219, 0.6); } /* Back to Sonarr blue */
 }
 
 .styled-select:focus, .styled-select:hover {
@@ -2478,4 +2380,21 @@ input#stateful_management_hours {
     min-width: 55px !important;
     max-width: 55px !important;
     font-size: 0.9rem;
+}
+
+/* Pagination controls above table - left aligned and compact */
+.pagination-controls.pagination-above-table {
+    display: flex;
+    justify-content: flex-start; /* Align to left instead of center */
+    align-items: center;
+    padding: 10px 0; /* Reduced padding for more compact spacing */
+    gap: 15px;
+    margin-bottom: 15px; /* Add margin below to separate from table */
+}
+
+/* Fix for Swaparr toggle alignment in instances (diagnostic) */
+.instance-item .setting-item.swaparr-instance-toggle label:not(.toggle-switch) {
+    width: 250px !important; /* Extremely large width for testing */
+    min-width: 250px !important;
+    flex-shrink: 0 !important;
 }

@@ -107,7 +107,6 @@ Section "Huntarr Application (required)" SecCore
   CreateDirectory "$INSTDIR\config\scheduler"
   CreateDirectory "$INSTDIR\config\reset"
   CreateDirectory "$INSTDIR\config\tally"
-  CreateDirectory "$INSTDIR\config\swaparr"
   CreateDirectory "$INSTDIR\config\eros"
   CreateDirectory "$INSTDIR\logs"
   CreateDirectory "$INSTDIR\frontend\templates"

@@ -27,16 +27,19 @@ from flask import Flask, render_template, request, jsonify, Response, send_from_
 # Use only settings_manager
 from src.primary import settings_manager
 from src.primary.utils.logger import setup_main_logger, get_logger, LOG_DIR, update_logging_levels # Import get_logger, LOG_DIR, and update_logging_levels
+# Clean logging is now database-only
 from src.primary.auth import (
     authenticate_request, user_exists, create_user, verify_user, create_session,
     logout, SESSION_COOKIE_NAME, is_2fa_enabled, generate_2fa_secret,
-    verify_2fa_code, disable_2fa, change_username, change_password
+    verify_2fa_code, disable_2fa, change_username, change_password,
+    create_plex_pin, check_plex_pin, verify_plex_token, create_user_with_plex,
+    link_plex_account, verify_plex_user
 )
 # Import blueprint for common routes
 from src.primary.routes.common import common_bp
-
+from src.primary.routes.plex_auth_routes import plex_auth_bp
 # Import blueprints for each app from the centralized blueprints module
-from src.primary.apps.blueprints import sonarr_bp, radarr_bp, lidarr_bp, readarr_bp, whisparr_bp, swaparr_bp, eros_bp
+from src.primary.apps.blueprints import sonarr_bp, radarr_bp, lidarr_bp, readarr_bp, whisparr_bp, eros_bp, swaparr_bp
 
 # Import stateful blueprint
 from src.primary.stateful_routes import stateful_api
@@ -46,6 +49,9 @@ from src.primary.routes.history_routes import history_blueprint
 
 # Import scheduler blueprint
 from src.primary.routes.scheduler_routes import scheduler_api
+
+# Import log routes blueprint
+from src.primary.routes.log_routes import log_routes_bp
 
 # Import background module to trigger manual cycle resets
 from src.primary import background
@@ -255,6 +261,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev_key_for_sessions')
 
 # Register blueprints
 app.register_blueprint(common_bp)
+app.register_blueprint(plex_auth_bp)
 app.register_blueprint(sonarr_bp, url_prefix='/api/sonarr')
 app.register_blueprint(radarr_bp, url_prefix='/api/radarr')
 app.register_blueprint(lidarr_bp, url_prefix='/api/lidarr')
@@ -263,8 +270,9 @@ app.register_blueprint(whisparr_bp, url_prefix='/api/whisparr')
 app.register_blueprint(eros_bp, url_prefix='/api/eros')
 app.register_blueprint(swaparr_bp, url_prefix='/api/swaparr')
 app.register_blueprint(stateful_api, url_prefix='/api/stateful')
-app.register_blueprint(history_blueprint, url_prefix='/api/history')
+app.register_blueprint(history_blueprint, url_prefix='/api/hunt-manager')
 app.register_blueprint(scheduler_api)
+app.register_blueprint(log_routes_bp)
 
 # Register the authentication check to run before requests
 app.before_request(authenticate_request)
@@ -280,22 +288,7 @@ def inject_base_url():
 # Lock for accessing the log files
 log_lock = Lock()
 
-# Define known log files based on logger config
-KNOWN_LOG_FILES = {
-    "sonarr": APP_LOG_FILES.get("sonarr"),
-    "radarr": APP_LOG_FILES.get("radarr"),
-    "lidarr": APP_LOG_FILES.get("lidarr"),
-    "readarr": APP_LOG_FILES.get("readarr"),
-    "whisparr": APP_LOG_FILES.get("whisparr"),
-    "eros": APP_LOG_FILES.get("eros"),  # Added Eros to known log files
-    "swaparr": APP_LOG_FILES.get("swaparr"),  # Added Swaparr to known log files
-    "huntarr.hunting": APP_LOG_FILES.get("hunting"),  # Added Hunt Manager to known log files - fixed key
-    "system": MAIN_LOG_FILE, # Map 'system' to the main huntarr log
-}
-# Filter out None values if an app log file doesn't exist
-KNOWN_LOG_FILES = {k: v for k, v in KNOWN_LOG_FILES.items() if v}
-
-ALL_APP_LOG_FILES = list(KNOWN_LOG_FILES.values()) # List of all individual log file paths
+# Log files are now handled by database-only logging system
 
 # Handle both root path and base URL root path
 @app.route('/')
@@ -314,8 +307,7 @@ def user():
 # Removed /settings and /logs routes if handled by index.html and JS routing
 # Keep /logs if it's the actual SSE endpoint
 
-@app.route('/logs')
-def logs_stream():
+# Old file-based logs route removed - using database-based logs now
     """
     Event stream for logs.
     Filter logs by app type using the 'app' query parameter.
@@ -385,9 +377,7 @@ def logs_stream():
             # Determine which log files to follow
             log_files_to_follow = []
             if app_type == 'all':
-                # Follow all log files for 'all' type
                 log_files_to_follow = list(KNOWN_LOG_FILES.items())
-                web_logger.debug(f"Following all log files for 'all' type")
             elif app_type == 'system':
                 # For system, only follow main log
                 system_log = KNOWN_LOG_FILES.get('system')
@@ -558,6 +548,9 @@ def logs_stream():
     response.headers['X-Accel-Buffering'] = 'no'  # Disable nginx buffering if using nginx
     return response
 
+# Legacy file-based logs route removed - now using database-based log routes in log_routes.py
+# The frontend should use /api/logs endpoints instead
+
 @app.route('/api/settings', methods=['GET'])
 def api_settings():
     if request.method == 'GET':
@@ -576,9 +569,10 @@ def save_general_settings():
     
     data = request.json
     
-    # Debug: Log the incoming data to see if apprise_urls is present
-    general_logger.info(f"Received general settings data: {data}")
-    general_logger.info(f"Apprise URLs in request: {data.get('apprise_urls', 'NOT_FOUND')}")
+    # Debug: Log the incoming data to see if timezone is present
+    general_logger.debug(f"Received general settings data: {data}")
+    if 'timezone' in data:
+        general_logger.info(f"Timezone setting found: {data.get('timezone')}")
     
     # Ensure auth_mode and bypass flags are consistent
     auth_mode = data.get('auth_mode')
@@ -595,10 +589,49 @@ def save_general_settings():
             data['local_access_bypass'] = False
             data['proxy_auth_bypass'] = False
     
+    # Handle timezone changes automatically with validation
+    timezone_changed = False
+    if 'timezone' in data:
+        # Get current timezone setting to check if it changed
+        current_settings = settings_manager.load_settings('general')
+        current_timezone = current_settings.get('timezone', 'UTC')
+        new_timezone = data.get('timezone', 'UTC')
+        
+        # Validate the new timezone
+        safe_timezone = settings_manager.get_safe_timezone(new_timezone)
+        if safe_timezone != new_timezone:
+            general_logger.warning(f"Invalid timezone '{new_timezone}' provided, using '{safe_timezone}' instead")
+            data['timezone'] = safe_timezone  # Update the data to save the safe timezone
+            new_timezone = safe_timezone
+        
+        if current_timezone != new_timezone:
+            timezone_changed = True
+            general_logger.info(f"Timezone changed from {current_timezone} to {new_timezone}")
+    
     # Save general settings
     success = settings_manager.save_settings('general', data)
     
     if success:
+        # Apply timezone change if needed
+        if timezone_changed:
+            try:
+                general_logger.info(f"Applying timezone change to {new_timezone}")
+                timezone_success = settings_manager.apply_timezone(new_timezone)
+                if timezone_success:
+                    general_logger.info(f"Successfully applied timezone {new_timezone}")
+                    # Refresh all logger formatters to use the new timezone
+                    try:
+                        from src.primary.utils.logger import refresh_timezone_formatters
+                        refresh_timezone_formatters()
+                        general_logger.info("Timezone formatters refreshed for all loggers")
+                    except Exception as e:
+                        general_logger.warning(f"Failed to refresh timezone formatters: {e}")
+                else:
+                    general_logger.warning(f"Failed to apply timezone {new_timezone}, but settings saved")
+            except Exception as e:
+                general_logger.error(f"Error applying timezone: {e}")
+                # Continue anyway - settings were still saved
+        
         # Update expiration timing from general settings if applicable
         try:
             new_hours = int(data.get('stateful_management_hours'))
@@ -621,26 +654,71 @@ def save_general_settings():
 
 @app.route('/api/test-notification', methods=['POST'])
 def test_notification():
-    """Test notification endpoint"""
+    """Test notification endpoint with enhanced Windows debugging"""
+    import platform
+    web_logger = get_logger("web_server")
     
     try:
-        from src.primary.notification_manager import send_notification
+        from src.primary.notification_manager import send_notification, get_notification_config, apprise_import_error
         
-        # Send a test notification
+        # Enhanced debugging for Windows issues
+        system_info = {
+            "platform": platform.system(),
+            "platform_release": platform.release(),
+            "python_version": platform.python_version(),
+            "apprise_available": apprise_import_error is None
+        }
+        
+        web_logger.info(f"Test notification requested on {system_info}")
+        
+        # Check for Apprise import issues first (common Windows problem)
+        if apprise_import_error:
+            error_msg = f"Apprise library not available: {apprise_import_error}"
+            if platform.system() == "Windows":
+                error_msg += " (Common on Windows - try: pip install apprise)"
+            web_logger.error(error_msg)
+            return jsonify({
+                "success": False, 
+                "error": error_msg,
+                "system_info": system_info
+            }), 500, {'Content-Type': 'application/json'}
+        
+        # Get the user's configured notification level
+        config = get_notification_config()
+        user_level = config.get('level', 'info')
+        
+        # Send a test notification using the user's configured level
         success = send_notification(
             title="🧪 Huntarr Test Notification",
             message="This is a test notification to verify your Apprise configuration is working correctly! If you see this, your notifications are set up properly. 🎉",
-            level="info"
+            level=user_level
         )
         
         if success:
+            web_logger.info(f"Test notification sent successfully on {platform.system()}")
             return jsonify({"success": True, "message": "Test notification sent successfully!"}), 200, {'Content-Type': 'application/json'}
         else:
-            return jsonify({"success": False, "error": "Failed to send test notification. Check your Apprise URLs and settings."}), 500, {'Content-Type': 'application/json'}
+            error_msg = "Failed to send test notification. Check your Apprise URLs and settings."
+            if platform.system() == "Windows":
+                error_msg += " On Windows, ensure Apprise is properly installed and all dependencies are available."
+            web_logger.warning(f"Test notification failed: {error_msg}")
+            return jsonify({
+                "success": False, 
+                "error": error_msg,
+                "system_info": system_info
+            }), 500, {'Content-Type': 'application/json'}
             
     except Exception as e:
-        general_logger.error(f"Error sending test notification: {e}")
-        return jsonify({"success": False, "error": f"Error sending test notification: {str(e)}"}), 500, {'Content-Type': 'application/json'}
+        error_msg = f"Error sending test notification: {str(e)}"
+        web_logger.error(f"{error_msg} | System: {platform.system()}")
+        return jsonify({
+            "success": False, 
+            "error": error_msg,
+            "system_info": {
+                "platform": platform.system(),
+                "python_version": platform.python_version()
+            }
+        }), 500, {'Content-Type': 'application/json'}
 
 @app.route('/api/settings/<app_name>', methods=['GET', 'POST'])
 def handle_app_settings(app_name):
@@ -687,7 +765,7 @@ def handle_app_settings(app_name):
 
 @app.route('/api/settings/theme', methods=['GET', 'POST'])
 def api_theme():
-    # Theme settings are handled separately, potentially in /config/ui.json
+    # Theme settings are handled separately, stored in database
     if request.method == 'GET':
         dark_mode = settings_manager.get_setting("ui", "dark_mode", False)
         return jsonify({"dark_mode": dark_mode})
@@ -855,41 +933,11 @@ def api_app_status(app_name):
         # Return a valid response even on error to prevent UI issues
         return jsonify({"configured": False, "connected": False, "error": "Internal error"}), 200
 
-# --- Add Hunt Control Endpoints --- #
-# These might need adjustment depending on how start/stop is managed now
-# If main.py handles threads based on config, these might not be needed,
-# or they could modify a global 'enabled' setting per app.
-# For now, keep them simple placeholders.
 
-@app.route('/api/hunt/start', methods=['POST'])
-def api_start_hunt():
-    # Placeholder: In the new model, threads start based on config.
-    # This might enable all configured apps or toggle a global flag.
-    # Or it could modify an 'enabled' setting per app.
-    # settings_manager.update_setting('global', 'hunt_enabled', True)
-    return jsonify({"success": True, "message": "Hunt control endpoint (start) - functionality may change."})
-
-@app.route('/api/hunt/stop', methods=['POST'])
-def api_stop_hunt():
-    # Placeholder: Signal main thread to stop?
-    # Or disable all apps?
-    # settings_manager.update_setting('global', 'hunt_enabled', False)
-    # Or send SIGTERM/SIGINT to the main process?
-    # pid = get_main_process_pid() # Need a way to get PID if not self
-    # if pid: os.kill(pid, signal.SIGTERM)
-    return jsonify({"success": True, "message": "Hunt control endpoint (stop) - functionality may change."})
 
 @app.route('/api/settings/apply-timezone', methods=['POST'])
 def apply_timezone_setting():
     """Apply timezone setting to the container."""
-    # This functionality has been disabled as per user request
-    return jsonify({
-        "success": False, 
-        "message": "Timezone settings have been disabled. This feature may be available in future updates."
-    })
-    
-    # Original implementation commented out
-    '''
     data = request.json
     timezone = data.get('timezone')
     web_logger = get_logger("web_server")
@@ -911,7 +959,6 @@ def apply_timezone_setting():
         return jsonify({"success": True, "message": f"Timezone set to {timezone}. Container restart may be required for full effect."})
     else:
         return jsonify({"success": False, "error": f"Failed to apply timezone {timezone}"}), 500
-    '''
 
 @app.route('/api/hourly-caps', methods=['GET'])
 def api_get_hourly_caps():
@@ -933,8 +980,6 @@ def api_get_hourly_caps():
         for app in apps:
             app_settings = load_settings(app)
             app_limits[app] = app_settings.get('hourly_cap', 20)  # Default to 20 if not set
-        
-        web_logger.debug(f"Serving hourly caps data with app-specific limits: {app_limits}")
         
         return jsonify({
             "success": True,
@@ -999,6 +1044,30 @@ def version_txt():
         web_logger.error(f"Error serving version.txt: {e}")
         return "5.3.1", 200, {'Content-Type': 'text/plain', 'Cache-Control': 'no-cache'}
 
+@app.route('/api/cycle/status', methods=['GET'])
+def api_get_all_cycle_status():
+    """API endpoint to get cycle status for all apps."""
+    try:
+        from src.primary.cycle_tracker import get_cycle_status
+        status = get_cycle_status()
+        return jsonify(status), 200
+    except Exception as e:
+        web_logger = get_logger("web_server")
+        web_logger.error(f"Error getting cycle status: {e}")
+        return jsonify({"error": "Failed to retrieve cycle status information."}), 500
+
+@app.route('/api/cycle/status/<app_name>', methods=['GET'])
+def api_get_app_cycle_status(app_name):
+    """API endpoint to get cycle status for a specific app."""
+    try:
+        from src.primary.cycle_tracker import get_cycle_status
+        status = get_cycle_status(app_name)
+        return jsonify(status), 200
+    except Exception as e:
+        web_logger = get_logger("web_server")
+        web_logger.error(f"Error getting cycle status for {app_name}: {e}")
+        return jsonify({"error": f"Failed to retrieve cycle status for {app_name}."}), 500
+
 @app.route('/api/cycle/reset/<app_name>', methods=['POST'])
 def reset_app_cycle(app_name):
     """
@@ -1015,42 +1084,45 @@ def reset_app_cycle(app_name):
     web_logger.info(f"Manual cycle reset requested for {app_name} via API")
     
     # Check if app name is valid
-    if app_name not in ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros']:
+    if app_name not in ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr']:
         return jsonify({
             'success': False,
             'error': f"Invalid app name: {app_name}"
         }), 400
     
-    # Check if the app is configured
-    configured_apps = settings_manager.get_configured_apps()
-    if app_name not in configured_apps:
-        return jsonify({
-            'success': False,
-            'error': f"{app_name} is not configured"
-        }), 400
+    # Check if the app is configured (special handling for Swaparr)
+    if app_name == 'swaparr':
+        # For Swaparr, check if it's enabled in settings
+        from src.primary.settings_manager import load_settings
+        swaparr_settings = load_settings("swaparr")
+        if not swaparr_settings or not swaparr_settings.get("enabled", False):
+            return jsonify({
+                'success': False,
+                'error': f"{app_name} is not enabled"
+            }), 400
+    else:
+        # For other apps, use the standard configured apps check
+        configured_apps = settings_manager.get_configured_apps()
+        if app_name not in configured_apps:
+            return jsonify({
+                'success': False,
+                'error': f"{app_name} is not configured"
+            }), 400
         
     try:
-        # Trigger cycle reset for the app using a file-based approach
-        # Use cross-platform paths
-        from src.primary.utils.config_paths import RESET_DIR
-        import os
+        # Trigger cycle reset using database
+        from src.primary.utils.database import get_database
         
-        # Convert Path object to string for compatibility
-        reset_dir = str(RESET_DIR)
-        os.makedirs(reset_dir, exist_ok=True)
+        db = get_database()
+        success = db.create_reset_request(app_name)
         
-        # Create the reset file
-        reset_file = os.path.join(reset_dir, f"{app_name}.reset")
-        with open(reset_file, 'w') as f:
-            f.write(str(int(time.time())))  # Write current timestamp
-        
-        web_logger.info(f"Created reset file for {app_name} at {reset_file}")
-        success = True
+        if success:
+            web_logger.info(f"Created reset request for {app_name}")
+        else:
+            web_logger.error(f"Failed to create reset request for {app_name}")
     except Exception as e:
-        web_logger.error(f"Error creating reset file for {app_name}: {e}", exc_info=True)
-        # Even if there's an error creating the file, the cycle reset might still work
-        # as it's being detected in the background process, so we'll return success
-        success = True  # Changed from False to True to prevent 500 errors
+        web_logger.error(f"Error creating reset request for {app_name}: {e}", exc_info=True)
+        success = False
 
     if success:
         return jsonify({
@@ -1075,123 +1147,85 @@ def health_check():
     logger.debug("Health check endpoint accessed")
     return jsonify({"status": "OK"})
 
+@app.route('/api/health', methods=['GET'])
+def api_health_check():
+    """
+    API health check endpoint that bypasses authentication.
+    Returns a status OK response to indicate the application is running properly.
+    This endpoint is useful for monitoring tools and load balancers.
+    """
+    logger = get_logger("system")
+    logger.debug("API health check endpoint accessed")
+    return jsonify({"status": "OK", "message": "Huntarr is running"})
+
 @app.route('/api/github_sponsors', methods=['GET'])
 def get_github_sponsors():
-    # API access configuration
-    api_config = "1a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Nk9" 
-    auth_token = api_config[2:-3]  # Format for API usage
-    
-    # Setup cache directories - use cross-platform path configuration
-    from src.primary.utils.config_paths import get_path
-    CACHE_DIR = get_path('settings', 'sponsor')
-    SPONSORS_CACHE_FILE = os.path.join(CACHE_DIR, 'cache.json')
-    
-    # Ensure cache directory exists
-    try:
-        os.makedirs(CACHE_DIR, exist_ok=True)
-        current_app.logger.info(f"Created or verified cache directory: {CACHE_DIR}")
-    except Exception as e:
-        current_app.logger.error(f"Failed to create cache directory {CACHE_DIR}: {e}")
-        # Continue anyway - we'll handle file write errors later
-    
-    # Check if valid cache exists
-    try:
-        if os.path.exists(SPONSORS_CACHE_FILE):
-            with open(SPONSORS_CACHE_FILE, 'r') as f:
-                cache_data = json.load(f)
-                
-            # Check if the cache is still valid based on its expiration
-            cached_time = datetime.fromisoformat(cache_data.get('timestamp', ''))
-            expiry_days = cache_data.get('expiry_days', 1)  # Default to 1 day if not set
-            
-            if datetime.datetime.now() - cached_time < timedelta(days=expiry_days):
-                current_app.logger.info(f"Returning cached GitHub sponsors data (expires in {expiry_days} days from {cached_time})")
-                return jsonify(cache_data.get('sponsors', []))
-            else:
-                current_app.logger.info(f"Cache expired after {expiry_days} days. Fetching fresh GitHub sponsors data.")
-    except Exception as e:
-        current_app.logger.error(f"Error reading sponsors cache: {e}")
-    
-    # Set up GraphQL query and headers
-    headers = {
-        'Authorization': f'bearer {auth_token}',
-        'Content-Type': 'application/json',
-    }
-
-    query = """
-    query {
-      organization(login: "plexguide") {
-        sponsorshipsAsMaintainer(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) {
-          totalCount
-          edges {
-            node {
-              sponsorEntity {
-                ... on User {
-                  login
-                  avatarUrl
-                  name
-                  url
-                }
-                ... on Organization {
-                  login
-                  avatarUrl
-                  name
-                  url
-                }
-              }
-            }
-          }
-        }
-      }
-    }
     """
-
+    Get sponsors from database. If database is empty, try to populate from manifest or GitHub.
+    """
+    from src.primary.utils.database import get_database
+    
     try:
-        # Fetch data from GitHub GraphQL API
-        response = requests.post('https://api.github.com/graphql', json={'query': query}, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-
-        if 'errors' in data:
-            current_app.logger.error(f"GitHub API errors: {data['errors']}")
-            return jsonify({'error': 'Failed to fetch sponsors from GitHub API', 'details': data['errors']}), 500
-
-        # Process the response data
-        sponsors_data = data.get('data', {}).get('organization', {}).get('sponsorshipsAsMaintainer', {}).get('edges', [])
+        db = get_database()
         
-        sponsors_list = []
-        for edge in sponsors_data:
-            sponsor_node = edge.get('node', {}).get('sponsorEntity', {})
-            if sponsor_node:
-                sponsors_list.append({
-                    'login': sponsor_node.get('login'),
-                    'avatarUrl': sponsor_node.get('avatarUrl'),  # Changed to match what frontend expects
-                    'name': sponsor_node.get('name') or sponsor_node.get('login'),
-                    'url': sponsor_node.get('url')
+        # Try to get sponsors from database first
+        sponsors = db.get_sponsors()
+        
+        if sponsors:
+            # Format sponsors for frontend (convert avatar_url to avatarUrl for consistency)
+            formatted_sponsors = []
+            for sponsor in sponsors:
+                # Use the avatar URL as-is from the database (it's already correct from GitHub)
+                formatted_sponsors.append({
+                    'login': sponsor.get('login', ''),
+                    'avatarUrl': sponsor.get('avatar_url', ''),
+                    'name': sponsor.get('name', sponsor.get('login', 'Unknown')),
+                    'url': sponsor.get('url', '#'),
+                    'category': sponsor.get('category', 'past'),
+                    'tier': sponsor.get('tier', 'Supporter'),
+                    'monthlyAmount': sponsor.get('monthly_amount', 0)
                 })
-        
-        # Generate a random expiration period between 4-7 days
-        import random  # Import here to ensure it's available
-        expiry_days = random.randint(4, 7)
-        
-        # Save to cache with timestamp and expiration
-        with open(SPONSORS_CACHE_FILE, 'w') as f:
-            cache_data = {
-                'timestamp': datetime.datetime.now().isoformat(),
-                'expiry_days': expiry_days,
-                'sponsors': sponsors_list
-            }
-            json.dump(cache_data, f)
             
-        current_app.logger.info(f"Cached fresh GitHub sponsors data with {expiry_days} day expiration.")
-        return jsonify(sponsors_list)
+            current_app.logger.debug(f"Returning {len(formatted_sponsors)} sponsors from database")
+            return jsonify(formatted_sponsors)
+        
+        # If no sponsors in database, try to populate from manifest
+        current_app.logger.debug("No sponsors in database, attempting to populate from manifest")
+        
+        # Try to use local manifest.json first, then fallback to GitHub
+        local_manifest_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'manifest.json')
+        
+        manifest_data = None
+        if os.path.exists(local_manifest_path):
+            current_app.logger.debug(f"Using local manifest.json from {local_manifest_path}")
+            with open(local_manifest_path, 'r') as f:
+                manifest_data = json.load(f)
+        else:
+            # Fallback to GitHub raw content
+            manifest_url = "https://raw.githubusercontent.com/plexguide/Huntarr.io/main/manifest.json"
+            current_app.logger.debug(f"Local manifest not found, fetching from {manifest_url}")
+            response = requests.get(manifest_url, timeout=10)
+            response.raise_for_status()
+            manifest_data = response.json()
+        
+        if manifest_data:
+            sponsors_list = manifest_data.get('sponsors', [])
+            if sponsors_list:
+                # Save sponsors to database
+                db.save_sponsors(sponsors_list)
+                current_app.logger.debug(f"Populated database with {len(sponsors_list)} sponsors from manifest")
+                
+                # Return the sponsors (recursively call this function to get formatted data)
+                return get_github_sponsors()
+        
+        # If all else fails, return empty list
+        current_app.logger.warning("No sponsors found in database or manifest")
+        return jsonify([])
 
-    except requests.exceptions.RequestException as e:
-        current_app.logger.error(f"Error fetching GitHub sponsors: {e}")
-        return jsonify({'error': f'Could not connect to GitHub API: {e}'}), 500
     except Exception as e:
-        current_app.logger.error(f"An unexpected error occurred while fetching sponsors: {e}")
-        return jsonify({'error': 'An unexpected error occurred'}), 500
+        current_app.logger.error(f"Error fetching sponsors: {e}")
+        # Return empty list instead of 500 error to prevent UI issues
+        return jsonify([])
 
 # Start the web server in debug or production mode
 def start_web_server():

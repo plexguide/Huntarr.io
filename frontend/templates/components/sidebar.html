@@ -1,14 +1,16 @@
 <div class="sidebar" id="sidebar">
     <div class="sidebar-top-line"></div>
     <div class="logo-container">
-        <img src="./static/logo/256.png" alt="Huntarr Logo" class="logo logo-large">
-        <img src="./static/logo/32.png" alt="Huntarr Logo" class="logo logo-small">
-        <h1>Huntarr</h1>
+        <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+            <img src="./static/logo/256.png" alt="Huntarr Logo" class="logo logo-large">
+            <img src="./static/logo/32.png" alt="Huntarr Logo" class="logo logo-small">
+            <h1>Huntarr</h1>
+        </a>
     </div>
     
     <nav class="nav-menu">
         <!-- Project Sponsors Link -->
-        <a href="https://github.com/sponsors/plexguide" class="nav-item" target="_blank" rel="noopener noreferrer">
+        <a href="https://plexguide.github.io/Huntarr.io/donate.html" class="nav-item" target="_blank" rel="noopener noreferrer">
             <div class="nav-icon-wrapper heart-icon">
                 <i class="fas fa-heart"></i>
             </div>
@@ -52,11 +54,11 @@
                 </div>
                 <span>Logs</span>
             </a>
-            <a href="./#history" class="nav-item" id="historyNav">
+            <a href="./#hunt-manager" class="nav-item" id="huntManagerNav">
                 <div class="nav-icon-wrapper">
-                    <i class="fas fa-history"></i>
+                    <i class="fas fa-crosshairs"></i>
                 </div>
-                <span>History</span>
+                <span>Hunt Manager</span>
             </a>
             <a href="./user" class="nav-item" id="userNav">
                 <div class="nav-icon-wrapper">
@@ -73,7 +75,19 @@
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-film"></i>
                 </div>
-                <span>My AV1 Guide</span>
+                                <span>My AV1 Guide</span>
+            </a>
+            <a href="https://github.com/flmorg/cleanuperr" class="nav-item" target="_blank" rel="noopener noreferrer">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-broom"></i>
+                </div>
+                <span>Cleanuperr</span>
+            </a>
+            <a href="https://github.com/Wizarrrr/wizarr" class="nav-item" target="_blank" rel="noopener noreferrer">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <span>Wizarr</span>
             </a>
             <!-- Project Sponsors removed from here and placed above CORE -->
         </div>
@@ -254,7 +268,7 @@
         left: 0;
         width: 3px;
         height: 100%;
-        background: linear-gradient(to bottom, rgba(52, 152, 219, 0), rgba(52, 152, 219, 0));
+        background: linear-gradient(to bottom, rgba(52, 152, 219, 0), rgba(155, 89, 182, 0));
         transition: all 0.3s ease;
     }
     
@@ -459,10 +473,9 @@
         
         // Set the appropriate nav item as active
         const selector = currentHash === '#home' ? '#homeNav' : 
-                         currentHash === '#history' ? '#historyNav' :
+                         currentHash === '#hunt-manager' ? '#huntManagerNav' :
                          currentHash === '#logs' ? '#logsNav' :
                          currentHash === '#apps' ? '#appsNav' :
-                         currentHash === '#cleanuperr' ? '#appsNav' : // Cleanuperr uses the apps nav
                          currentHash === '#settings' ? '#settingsNav' :
                          currentHash === '#scheduling' ? '#schedulingNav' : '#homeNav';
         

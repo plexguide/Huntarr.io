@@ -82,7 +82,7 @@
             return;
         }
         
-        HuntarrUtils.fetchWithTimeout('/api/user/change-username', {
+        HuntarrUtils.fetchWithTimeout('./api/user/change-username', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -133,7 +133,7 @@
             return;
         }
         
-        HuntarrUtils.fetchWithTimeout('/api/user/change-password', {
+        HuntarrUtils.fetchWithTimeout('./api/user/change-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -161,7 +161,7 @@
     
     // 2FA setup handler
     function handleEnableTwoFactor() {
-        HuntarrUtils.fetchWithTimeout('/api/user/2fa/setup', { method: 'POST' })
+        HuntarrUtils.fetchWithTimeout('./api/user/2fa/setup', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -200,7 +200,7 @@
             return;
         }
         
-        HuntarrUtils.fetchWithTimeout('/api/user/2fa/verify', {
+        HuntarrUtils.fetchWithTimeout('./api/user/2fa/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: code })
@@ -240,7 +240,7 @@
             return;
         }
         
-        HuntarrUtils.fetchWithTimeout('/api/user/2fa/disable', {
+        HuntarrUtils.fetchWithTimeout('./api/user/2fa/disable', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -293,7 +293,7 @@
     
     // Function to fetch user information
     function fetchUserInfo() {
-        HuntarrUtils.fetchWithTimeout('/api/user/info')
+        HuntarrUtils.fetchWithTimeout('./api/user/info')
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);

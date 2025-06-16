@@ -3,24 +3,129 @@
     #appsAppSelect option {
         padding-left: 10px;
     }
+    
+    /* App Filter Styling - NO GLOWING RING */
+    .apps-app-filter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(30, 39, 56, 0.6) 0%, rgba(14, 20, 32, 0.6) 100%);
+        border: 1px solid rgba(90, 109, 137, 0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .apps-app-filter:hover {
+        background: linear-gradient(135deg, rgba(40, 49, 66, 0.7) 0%, rgba(24, 30, 42, 0.7) 100%);
+        border-color: rgba(90, 109, 137, 0.5);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    }
+    
+    .apps-app-filter label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .apps-app-filter label i {
+        color: rgba(52, 152, 219, 0.8);
+        font-size: 12px;
+    }
+    
+    .apps-app-filter select {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.9) 100%);
+        border: 1px solid rgba(52, 152, 219, 0.6);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.95);
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.3s ease;
+        min-width: 120px;
+        /* Add dropdown arrow */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+        padding-right: 28px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+    
+    .apps-app-filter select:hover {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.9) 0%, rgba(41, 128, 185, 1.0) 100%);
+        border-color: rgba(52, 152, 219, 0.8);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        /* Maintain dropdown arrow on hover */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+    }
+    
+    .apps-app-filter select:focus {
+        border-color: rgba(52, 152, 219, 1.0);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        /* Maintain dropdown arrow on focus */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+    }
+    
+    .apps-app-filter select option {
+        background: #1a1e2a;
+        color: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+    }
+    
+    /* DISABLE GLOWING RING ANIMATIONS - Apps Section */
+    #appsAppSelect.styled-select,
+    #appsSection .styled-select {
+        animation: none !important;
+        box-shadow: none !important;
+    }
+    
+    #appsAppSelect.styled-select:focus,
+    #appsAppSelect.styled-select:hover,
+    #appsSection .styled-select:focus,
+    #appsSection .styled-select:hover {
+        animation: none !important;
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.2) !important;
+        transform: none !important;
+    }
 </style>
 <section id="appsSection" class="content-section">
     <div class="section-header">
-        <div class="section-header-dropdown-container">
-            <div class="log-dropdown" style="position: relative;">
-                <select id="appsAppSelect" class="styled-select" style="padding-left: 20px !important; text-align: left !important;">
-                    <option value="sonarr" style="padding-left: 10px;">Sonarr</option>
-                    <option value="radarr" style="padding-left: 10px;">Radarr</option>
-                    <option value="lidarr" style="padding-left: 10px;">Lidarr</option>
-                    <option value="readarr" style="padding-left: 10px;">Readarr</option>
-                    <option value="whisparr" style="padding-left: 10px;">Whisparr V2</option>
-                    <option value="eros" style="padding-left: 10px;">Whisparr V3</option>
-                    <option value="swaparr" style="padding-left: 10px;">Swaparr</option>
-                    <option value="cleanuperr" style="padding-left: 10px;">Cleanuperr</option>
-                </select>
-            </div>
-
+        <div class="apps-app-filter">
+            <label for="appsAppSelect">
+                <i class="fas fa-layer-group"></i>
+                <span>App:</span>
+            </label>
+            <select id="appsAppSelect" class="styled-select">
+                <option value="sonarr">Sonarr</option>
+                <option value="radarr">Radarr</option>
+                <option value="lidarr">Lidarr</option>
+                <option value="readarr">Readarr</option>
+                <option value="whisparr">Whisparr V2</option>
+                <option value="eros">Whisparr V3</option>
+                <option value="swaparr">Swaparr</option>
+            </select>
         </div>
+
         <button id="saveAppsButton" class="save-button" disabled>
             <i class="fas fa-save"></i> Save
         </button>
@@ -43,7 +148,7 @@
             <div id="whisparrApps" class="app-apps-panel app-content-panel"></div>
             <div id="erosApps" class="app-apps-panel app-content-panel"></div>
             <div id="swaparrApps" class="app-apps-panel app-content-panel"></div>
-            <div id="cleanuperrApps" class="app-apps-panel app-content-panel"></div>
+
         </div>
     </div>
 </section>
@@ -55,18 +160,6 @@
         background-color: transparent !important;
         box-shadow: none !important;
         border: none !important;
-    }
-    .section-header-dropdown-container {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .dropdown-helper {
-        display: inline-block;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.85rem;
-        white-space: nowrap;
     }
     
     #appsSection {
@@ -134,24 +227,6 @@
         padding-bottom: 10px;
         min-height: 0;
         height: auto;
-    }
-    
-    /* Fix dropdown positioning for apps section */
-    .log-dropdown-content {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        min-width: 160px;
-        z-index: 100;
-        background: linear-gradient(135deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
-        border-radius: 8px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-        border: 1px solid rgba(90, 109, 137, 0.2);
-        margin-top: 5px;
-        transform: translateY(0);
-        max-height: 300px;
-        overflow-y: auto;
     }
     
     /* Apps container styling */
@@ -257,7 +332,7 @@
             justify-content: flex-start; /* Align grid items to the left */
         }
         
-        #appsSection .section-header-dropdown-container {
+        #appsSection .apps-app-filter {
             justify-self: start;
             margin: 0;
             padding: 0;
@@ -278,13 +353,6 @@
             transform: translateY(-50%);
         }
         
-        #appsSection .log-dropdown {
-            width: auto;
-            margin: 0;
-            padding: 0;
-            text-align: left !important;
-        }
-        
         /* Make the dropdown more aggressive with left alignment */
         #appsSection .styled-select,
         #appsSection select#appsAppSelect {
@@ -297,20 +365,21 @@
             float: left !important;
             position: relative !important;
             left: 0 !important;
+            font-size: 14px; /* Prevent zoom on iOS */
         }
         
         /* Reset any center alignment that might be applied */
         #appsSection .section-header *,
-        #appsSection .section-header-dropdown-container *,
-        #appsSection .log-dropdown * {
+        #appsSection .apps-app-filter *,
+        #appsSection .apps-app-filter label {
             text-align: left !important;
             box-sizing: border-box !important;
         }
         
         /* Override any flex or space-between properties */
-        .section-header-dropdown-container,
-        #appsSection .section-header-dropdown-container,
-        #appsSection .section-header > .section-header-dropdown-container {
+        .apps-app-filter,
+        #appsSection .apps-app-filter,
+        #appsSection .section-header > .apps-app-filter {
             display: block !important;
             justify-content: flex-start !important;
             align-items: flex-start !important;

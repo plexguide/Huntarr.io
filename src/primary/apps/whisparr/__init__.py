@@ -22,7 +22,7 @@ def get_configured_instances():
     settings = load_settings("whisparr")
     instances = []
     # Use debug level to avoid log spam on new installations
-    whisparr_logger.debug(f"Loaded Whisparr settings for instance check: {settings}")
+    # whisparr_logger.debug(f"Loaded Whisparr settings for instance check: {settings}") # Removed verbose log
 
     if not settings:
         whisparr_logger.debug("No settings found for Whisparr")
@@ -30,23 +30,23 @@ def get_configured_instances():
 
     # Always use Whisparr V2 API
     # Use debug level to avoid log spam on new installations
-    whisparr_logger.debug("Using Whisparr V2 API exclusively")
+
 
     # Check if instances are configured
     if "instances" in settings and isinstance(settings["instances"], list) and settings["instances"]:
         # Use debug level to avoid log spam on new installations
-        whisparr_logger.debug(f"Found 'instances' list with {len(settings['instances'])} items. Processing...")
+        # Instance count debug removed to reduce log spam
         for idx, instance in enumerate(settings["instances"]):
-            whisparr_logger.debug(f"Checking instance #{idx}: {instance}")
+    
             # Enhanced validation
             api_url = instance.get("api_url", "").strip()
             api_key = instance.get("api_key", "").strip()
 
             # Enhanced URL validation - ensure URL has proper scheme
             if api_url and not (api_url.startswith('http://') or api_url.startswith('https://')):
-                whisparr_logger.warning(f"Instance '{instance.get('name', 'Unnamed')}' has URL without http(s) scheme: {api_url}")
+                whisparr_logger.debug(f"Instance '{instance.get('name', 'Unnamed')}' has URL without http(s) scheme: {api_url}")
                 api_url = f"http://{api_url}"
-                whisparr_logger.warning(f"Auto-correcting URL to: {api_url}")
+                whisparr_logger.debug(f"Auto-correcting URL to: {api_url}")
 
             is_enabled = instance.get("enabled", True)
 
@@ -65,6 +65,7 @@ def get_configured_instances():
                 instance_settings["api_url"] = api_url
                 instance_settings["api_key"] = api_key
                 instance_settings["instance_name"] = instance_name
+                instance_settings["swaparr_enabled"] = instance.get("swaparr_enabled", False)
                 
                 # Add timeout setting with default if not present
                 if "api_timeout" not in instance_settings:
@@ -72,7 +73,17 @@ def get_configured_instances():
                 
                 # Use debug level to prevent log spam
                 whisparr_logger.debug(f"Adding configured Whisparr instance: {instance_name}")
-                instances.append(instance_settings)
+
+                # Return only essential instance details including per-instance hunt values
+                instance_data = {
+                    "instance_name": instance_name,
+                    "api_url": api_url,
+                    "api_key": api_key,
+                    "swaparr_enabled": instance.get("swaparr_enabled", False),
+                    "hunt_missing_items": instance.get("hunt_missing_items", 1),  # Per-instance missing hunt value
+                    "hunt_upgrade_items": instance.get("hunt_upgrade_items", 0),  # Per-instance upgrade hunt value
+                }
+                instances.append(instance_data)
             else:
                 name = instance.get("name", "Unnamed")
                 if not is_enabled:
@@ -81,7 +92,7 @@ def get_configured_instances():
                     # For brand new installations, don't spam logs with warnings about default instances
                     if name == 'Default':
                         # Use debug level for default instances to avoid log spam on new installations
-                        whisparr_logger.debug(f"Skipping instance {name} due to missing API URL or API Key")
+                        pass
                     else:
                         # Still log warnings for non-default instances
                         whisparr_logger.warning(f"Skipping instance {name} due to missing API URL or API Key")
@@ -89,7 +100,6 @@ def get_configured_instances():
         whisparr_logger.debug("No instances array found in settings or it's empty")
     
     # Use debug level to avoid spamming logs, especially with 0 instances
-    whisparr_logger.debug(f"Found {len(instances)} configured and enabled Whisparr instances")
     return instances
 
 __all__ = ["process_missing_items", "process_missing_scenes", "process_cutoff_upgrades", "get_configured_instances"]

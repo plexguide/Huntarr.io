@@ -228,3 +228,15 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Huntarr local development data
+data/
+*.db
+*.sqlite
+*.sqlite3
+huntarr.db
+/config/
+logs/
+settings/
+stateful/
+tally/

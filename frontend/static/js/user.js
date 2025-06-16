@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to load user information
     function loadUserInfo() {
-        HuntarrUtils.fetchWithTimeout('/api/user/info')
+        HuntarrUtils.fetchWithTimeout('./api/user/info')
             .then(response => response.json())
             .then(data => {
                 if (data.username) {
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to check 2FA status
     function check2FAStatus() {
-        HuntarrUtils.fetchWithTimeout('/api/user/2fa-status')
+        HuntarrUtils.fetchWithTimeout('./api/user/2fa-status')
             .then(response => response.json())
             .then(data => {
                 const enable2FACheckbox = document.getElementById('enable2FA');

@@ -19,6 +19,7 @@
             <div class="sidebar-section">
                 <h3 class="sidebar-section-title">Getting Started</h3>
                 <ul>
+                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
                     <li><a href="../getting-started/installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
                 </ul>
             </div>
@@ -41,7 +42,7 @@
 
                     <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
                     <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
-                    <li><a href="https://donate.plex.one" target="_blank"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
+
                 </ul>
             </div>
         </nav>
@@ -55,9 +56,38 @@
                 <img src="../images/arrs/sonarr.png" alt="Sonarr Logo" style="width: 80px; height: 80px; object-fit: contain;">
             </div>
             
-            <p>Sonarr is an automated TV show downloading and management application. Huntarr integrates with your existing Sonarr instance to automatically search for missing episodes and quality upgrades that Sonarr doesn't actively hunt for.</p>
+            <div class="alert alert-info" style="margin: 20px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
+                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Sonarr?</strong> 
+                Sonarr is an automated TV series downloading and management application. It monitors for new episodes, searches indexers, and automatically downloads content using your preferred download clients.
+            </div>
             
-            <h2 id="sonarr-instance-setup">Sonarr Instance Setup</h2>
+            <p>Sonarr automates the process of monitoring and downloading TV series. It integrates with popular download clients and uses indexers to search for and download episodes automatically, making it easy to build and maintain an organized TV library.</p>
+            
+            <h2 id="overview">Overview</h2>
+            
+            <h3><i class="fas fa-download" style="margin-right: 10px; color: #3498db;"></i>What Sonarr Does</h3>
+            <p>Sonarr provides automated content management for TV series by:</p>
+            <ul>
+                <li><strong>Automatic Searching:</strong> Monitors for new episodes and searches configured indexers</li>
+                <li><strong>Quality Management:</strong> Downloads content based on your quality preferences</li>
+                <li><strong>Library Organization:</strong> Automatically organizes downloaded episodes in your media library</li>
+                <li><strong>Upgrade Management:</strong> Can upgrade existing episodes to better quality when available</li>
+                <li><strong>Download Client Integration:</strong> Works with popular download clients like qBittorrent, Deluge, etc.</li>
+            </ul>
+            
+            <h3><i class="fas fa-cogs" style="margin-right: 10px; color: #e67e22;"></i>How Huntarr Enhances Sonarr</h3>
+            <p>Huntarr adds intelligent automation on top of Sonarr:</p>
+            <ul>
+                <li><strong>Smart Search Timing:</strong> Prevents overwhelming indexers with too many requests</li>
+                <li><strong>Missing Episode Detection:</strong> Identifies and prioritizes missing episodes</li>
+                <li><strong>Upgrade Intelligence:</strong> Finds better quality versions of existing episodes</li>
+                <li><strong>Rate Limiting:</strong> Respects API limits to prevent bans or throttling</li>
+                <li><strong>Multi-Instance Support:</strong> Manage multiple Sonarr instances from one interface</li>
+            </ul>
+            
+            <h2 id="connection-settings">Instance Configuration</h2>
+            
+            <p>Configure your Sonarr instances to connect Huntarr with your Sonarr installation(s).</p>
             
             <h3>Adding Your Sonarr Instance</h3>
             <p>To connect your existing Sonarr instance to Huntarr:</p>
@@ -111,16 +141,24 @@
             <h3 id="missing-search-mode"><i class="fas fa-search" style="margin-right: 10px; color: #3498db;"></i>Missing Search Mode</h3>
             <p>Determines how Huntarr searches for missing episodes:</p>
             <ul>
-                <li><strong>Season Packs:</strong> Recommended for torrent users. Searches for entire season packs first, then individual episodes</li>
-                <li><strong>Episodes:</strong> Searches for individual episodes only. Better for Usenet users or when you prefer single episode files</li>
+                <li><strong>Season Packs (Default):</strong> Recommended for all users. Searches for entire season packs first, which is more efficient and better supported by most trackers</li>
+                <li><strong>Shows:</strong> Searches for all episodes in a show at once. Useful for comprehensive searches of entire series</li>
             </ul>
+            
+            <div class="alert alert-info">
+                <strong>Huntarr 7.5.0+ Migration:</strong> The "Episodes" mode has been deprecated and automatically migrated to "Season Packs" mode for improved efficiency and reliability. Season Packs mode provides better results with fewer API calls.
+            </div>
             
             <h3 id="upgrade-mode"><i class="fas fa-arrow-up" style="margin-right: 10px; color: #2ecc71;"></i>Upgrade Mode</h3>
             <p>Controls how Huntarr handles quality upgrades:</p>
             <ul>
-                <li><strong>Episodes:</strong> Upgrades individual episodes when better quality becomes available</li>
-                <li><strong>Seasons/Shows:</strong> Upgrades entire seasons or shows at once when better quality is found</li>
+                <li><strong>Season Packs (Default):</strong> Upgrades entire seasons at once when better quality becomes available. More efficient and recommended for most users</li>
+                <li><strong>Shows:</strong> Upgrades entire shows at once when better quality is found</li>
             </ul>
+            
+            <div class="alert alert-info">
+                <strong>Huntarr 7.5.0+ Migration:</strong> The "Episodes" upgrade mode has been deprecated and automatically migrated to "Season Packs" mode. This change improves search efficiency and provides better integration with modern torrent trackers.
+            </div>
             
             <h3 id="search-limits"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Search Limits</h3>
             <p>Control how many items Huntarr processes per cycle to avoid overwhelming your indexers:</p>
@@ -165,11 +203,38 @@
             <h3 id="additional-options"><i class="fas fa-cogs" style="margin-right: 10px; color: #9b59b6;"></i>Additional Options</h3>
             <p>Fine-tune Huntarr's behavior with these additional settings:</p>
             
-            <h4><i class="fas fa-eye" style="margin-right: 8px; color: #3498db;"></i>Monitored Only</h4>
-            <p>When enabled, Huntarr will only search for content that is marked as "Monitored" in Sonarr. This prevents searches for shows you've intentionally unmonitored.</p>
-            
-            <h4><i class="fas fa-clock" style="margin-right: 8px; color: #e74c3c;"></i>Skip Future Episodes</h4>
+                    <h4 id="monitored-only"><i class="fas fa-eye" style="margin-right: 8px; color: #3498db;"></i>Monitored Only</h4>
+        <p>When enabled, Huntarr will only search for content that is marked as "Monitored" in Sonarr. This prevents searches for shows you've intentionally unmonitored.</p>
+
+        <h4 id="skip-future-episodes"><i class="fas fa-clock" style="margin-right: 8px; color: #e74c3c;"></i>Skip Future Episodes</h4>
             <p>When enabled, Huntarr will skip episodes with future air dates. This prevents unnecessary searches for content that hasn't been released yet.</p>
+            
+            <h2 id="swaparr-integration">Swaparr Integration</h2>
+            
+            <p>Enable Swaparr monitoring for this Sonarr instance to automatically clean up stalled downloads.</p>
+            
+            <div class="alert alert-info" style="margin: 15px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
+                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Swaparr?</strong> 
+                Swaparr monitors your download queues and automatically removes stalled, failed, or problematic downloads to keep your automation running smoothly. 
+                <a href="swaparr.html" style="color: #0dcaf0;">Learn more about Swaparr configuration</a>.
+            </div>
+            
+            <h3><i class="fas fa-broom" style="margin-right: 8px; color: #e67e22;"></i>When to Enable Swaparr</h3>
+            <ul>
+                <li>You frequently have stalled TV show downloads</li>
+                <li>Your download queue gets clogged with failed episode downloads</li>
+                <li>You want hands-off automation for your TV library</li>
+                <li>You use public trackers where quality varies</li>
+                <li>You download season packs that sometimes fail</li>
+            </ul>
+            
+            <h3><i class="fas fa-exclamation-triangle" style="margin-right: 8px; color: #f39c12;"></i>When to Be Cautious</h3>
+            <ul>
+                <li>You use private trackers with strict ratio requirements</li>
+                <li>You prefer manual control over your TV downloads</li>
+                <li>You have very slow internet where downloads take a long time</li>
+                <li>You're building ratio on specific torrent trackers</li>
+            </ul>
             
             <h2 id="troubleshooting">Troubleshooting</h2>
             

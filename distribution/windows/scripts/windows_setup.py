@@ -38,7 +38,6 @@ def setup_environment():
         os.path.join(config_dir, "scheduler"),
         os.path.join(config_dir, "reset"),
         os.path.join(config_dir, "tally"),
-        os.path.join(config_dir, "swaparr"),
         os.path.join(config_dir, "eros")
     ]
     

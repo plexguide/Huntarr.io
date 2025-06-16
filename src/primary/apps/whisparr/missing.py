@@ -14,7 +14,7 @@ from src.primary.utils.logger import get_logger
 from src.primary.apps.whisparr import api as whisparr_api
 from src.primary.settings_manager import load_settings, get_advanced_setting
 from src.primary.stateful_manager import is_processed, add_processed_id
-from src.primary.stats_manager import increment_stat
+from src.primary.stats_manager import increment_stat, check_hourly_cap_exceeded
 from src.primary.utils.history_utils import log_processed_media
 from src.primary.state import check_state_reset
 
@@ -41,10 +41,14 @@ def process_missing_items(
     # Reset state files if enough time has passed
     check_state_reset("whisparr")
     
+    # Load settings to check if tagging is enabled
+    whisparr_settings = load_settings("whisparr")
+    tag_processed_items = whisparr_settings.get("tag_processed_items", True)
+    
     # Extract necessary settings
     api_url = app_settings.get("api_url", "").strip()
     api_key = app_settings.get("api_key", "").strip()
-    api_timeout = get_advanced_setting("api_timeout", 120)  # Use general.json value
+    api_timeout = get_advanced_setting("api_timeout", 120)  # Use database value
     instance_name = app_settings.get("instance_name", "Whisparr Default")
     
     # Use the centralized advanced setting for stateful management hours
@@ -57,7 +61,7 @@ def process_missing_items(
     # Use the new hunt_missing_items parameter name, falling back to hunt_missing_scenes for backwards compatibility
     hunt_missing_items = app_settings.get("hunt_missing_items", app_settings.get("hunt_missing_scenes", 0))
     
-    # Use advanced settings from general.json for command operations
+    # Use advanced settings from database for command operations
     command_wait_delay = get_advanced_setting("command_wait_delay", 1)
     command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
     
@@ -95,7 +99,7 @@ def process_missing_items(
     
     # Filter out future releases if configured
     if skip_future_releases:
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
         original_count = len(missing_items)
         # Whisparr item object has 'airDateUtc' for release dates
         missing_items = [
@@ -144,6 +148,15 @@ def process_missing_items(
             whisparr_logger.info("Stop requested during item processing. Aborting...")
             break
         
+        # Check API limit before processing each item
+        try:
+            if check_hourly_cap_exceeded("whisparr"):
+                whisparr_logger.warning(f"🛑 Whisparr API hourly limit reached - stopping missing items processing after {items_processed} items")
+                break
+        except Exception as e:
+            whisparr_logger.error(f"Error checking hourly API cap: {e}")
+            # Continue processing if cap check fails - safer than stopping
+        
         # Re-check limit in case it changed
         current_limit = app_settings.get("hunt_missing_items", app_settings.get("hunt_missing_scenes", 1))
         if items_processed >= current_limit:
@@ -172,6 +185,18 @@ def process_missing_items(
         search_command_id = whisparr_api.item_search(api_url, api_key, api_timeout, [item_id])
         if search_command_id:
             whisparr_logger.info(f"Triggered search command {search_command_id}. Assuming success for now.")
+            
+            # Tag the series if enabled
+            if tag_processed_items:
+                from src.primary.settings_manager import get_custom_tag
+                custom_tag = get_custom_tag("whisparr", "missing", "huntarr-missing")
+                series_id = item.get('seriesId')
+                if series_id:
+                    try:
+                        whisparr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
+                        whisparr_logger.debug(f"Tagged series {series_id} with '{custom_tag}'")
+                    except Exception as e:
+                        whisparr_logger.warning(f"Failed to tag series {series_id} with '{custom_tag}': {e}")
             
             # Log to history system
             media_name = f"{title} - {season_episode}"
