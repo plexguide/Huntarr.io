@@ -174,6 +174,27 @@
             box-shadow: 0 2px 8px rgba(58, 113, 228, 0.3);
         }
         
+        .forgot-password-section {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .forgot-password-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+        
+        .forgot-password-link:hover {
+            color: rgba(65, 105, 225, 0.9);
+            text-decoration: underline;
+        }
+        
+        .forgot-password-link i {
+            margin-right: 5px;
+        }
+        
         .plex-login-section {
             margin-top: 30px;
             padding-top: 25px;
@@ -413,6 +434,12 @@
                 <button type="submit" class="login-button" id="loginButton">
                     <i class="fas fa-sign-in-alt"></i> Log In
                 </button>
+                
+                <div class="forgot-password-section">
+                    <a href="#" id="forgotPasswordLink" class="forgot-password-link">
+                        <i class="fas fa-question-circle"></i> Forgot Password?
+                    </a>
+                </div>
             </form>
         </div>
         <div class="plex-login-section">
@@ -434,6 +461,67 @@
             </div>
             <div class="plex-status" id="plexStatus"></div>
             <button class="modal-close" id="plexModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Recovery Modal -->
+    <div class="plex-modal" id="recoveryModal" style="display: none;">
+        <div class="plex-modal-content">
+            <div class="plex-modal-header">
+                <div class="plex-logo">
+                    <i class="fas fa-life-ring" style="font-size: 60px; color: #4a7deb;"></i>
+                </div>
+                <h2>Account Recovery</h2>
+                <p style="color: rgba(255, 255, 255, 0.7); font-size: 14px; margin: 10px 0;">Enter your recovery key to reset your password</p>
+            </div>
+            
+            <div class="recovery-form">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="recoveryKeyInput" style="color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; display: block;">
+                        <i class="fas fa-key"></i> Recovery Key
+                    </label>
+                    <input type="text" id="recoveryKeyInput" placeholder="ocean-light-tower-51" 
+                           style="width: 100%; padding: 12px 15px; border: 1px solid rgba(90, 109, 137, 0.2); 
+                                  border-radius: 8px; background-color: rgba(28, 36, 54, 0.6); 
+                                  color: #fff; font-size: 16px; font-family: 'Courier New', monospace;">
+                </div>
+                
+                <div id="newPasswordSection" style="display: none;">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="newPasswordInput" style="color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; display: block;">
+                            <i class="fas fa-lock"></i> New Password
+                        </label>
+                        <input type="password" id="newPasswordInput" 
+                               style="width: 100%; padding: 12px 15px; border: 1px solid rgba(90, 109, 137, 0.2); 
+                                      border-radius: 8px; background-color: rgba(28, 36, 54, 0.6); 
+                                      color: #fff; font-size: 16px;">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="confirmNewPasswordInput" style="color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; display: block;">
+                            <i class="fas fa-lock"></i> Confirm New Password
+                        </label>
+                        <input type="password" id="confirmNewPasswordInput" 
+                               style="width: 100%; padding: 12px 15px; border: 1px solid rgba(90, 109, 137, 0.2); 
+                                      border-radius: 8px; background-color: rgba(28, 36, 54, 0.6); 
+                                      color: #fff; font-size: 16px;">
+                    </div>
+                </div>
+                
+                <button id="verifyRecoveryKeyBtn" class="login-button" style="margin-bottom: 10px;">
+                    <i class="fas fa-check"></i> Verify Recovery Key
+                </button>
+                
+                <button id="resetPasswordBtn" class="login-button" style="display: none; background: linear-gradient(135deg, #28a745 0%, #34ce57 100%);">
+                    <i class="fas fa-save"></i> Reset Password
+                </button>
+            </div>
+            
+            <div id="recoveryStatus" style="margin: 15px 0; text-align: center; display: none;"></div>
+            
+            <button class="modal-close" id="recoveryModalClose">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -796,6 +884,158 @@
         function setPlexStatus(type, message) {
             plexStatus.className = `plex-status ${type}`;
             plexStatus.innerHTML = message;
+        }
+        
+        // Recovery functionality
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+        const recoveryModal = document.getElementById('recoveryModal');
+        const recoveryModalClose = document.getElementById('recoveryModalClose');
+        const verifyRecoveryKeyBtn = document.getElementById('verifyRecoveryKeyBtn');
+        const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+        const recoveryKeyInput = document.getElementById('recoveryKeyInput');
+        const newPasswordInput = document.getElementById('newPasswordInput');
+        const confirmNewPasswordInput = document.getElementById('confirmNewPasswordInput');
+        const newPasswordSection = document.getElementById('newPasswordSection');
+        const recoveryStatus = document.getElementById('recoveryStatus');
+        
+        let verifiedUsername = null;
+        
+        // Show recovery modal
+        forgotPasswordLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            recoveryModal.style.display = 'block';
+            recoveryKeyInput.focus();
+        });
+        
+        // Close recovery modal
+        recoveryModalClose.addEventListener('click', function() {
+            closeRecoveryModal();
+        });
+        
+        // Close modal when clicking outside
+        recoveryModal.addEventListener('click', function(e) {
+            if (e.target === recoveryModal) {
+                closeRecoveryModal();
+            }
+        });
+        
+        function closeRecoveryModal() {
+            recoveryModal.style.display = 'none';
+            resetRecoveryForm();
+        }
+        
+        function resetRecoveryForm() {
+            recoveryKeyInput.value = '';
+            newPasswordInput.value = '';
+            confirmNewPasswordInput.value = '';
+            newPasswordSection.style.display = 'none';
+            verifyRecoveryKeyBtn.style.display = 'block';
+            resetPasswordBtn.style.display = 'none';
+            recoveryStatus.style.display = 'none';
+            verifiedUsername = null;
+        }
+        
+        // Verify recovery key
+        verifyRecoveryKeyBtn.addEventListener('click', function() {
+            const recoveryKey = recoveryKeyInput.value.trim();
+            
+            if (!recoveryKey) {
+                showRecoveryStatus('Please enter your recovery key', 'error');
+                return;
+            }
+            
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            this.disabled = true;
+            
+            HuntarrUtils.fetchWithTimeout('./auth/recovery-key/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recovery_key: recoveryKey })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    verifiedUsername = data.username;
+                    showRecoveryStatus(`Recovery key verified for user: ${data.username}`, 'success');
+                    newPasswordSection.style.display = 'block';
+                    verifyRecoveryKeyBtn.style.display = 'none';
+                    resetPasswordBtn.style.display = 'block';
+                    newPasswordInput.focus();
+                } else {
+                    showRecoveryStatus(data.error || 'Invalid recovery key', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error verifying recovery key:', error);
+                showRecoveryStatus('Error verifying recovery key: ' + error.message, 'error');
+            })
+            .finally(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+        
+        // Reset password
+        resetPasswordBtn.addEventListener('click', function() {
+            const newPassword = newPasswordInput.value;
+            const confirmPassword = confirmNewPasswordInput.value;
+            const recoveryKey = recoveryKeyInput.value.trim();
+            
+            if (!newPassword || !confirmPassword) {
+                showRecoveryStatus('Please fill in all password fields', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showRecoveryStatus('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 8) {
+                showRecoveryStatus('Password must be at least 8 characters long', 'error');
+                return;
+            }
+            
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+            this.disabled = true;
+            
+            HuntarrUtils.fetchWithTimeout('./auth/recovery-key/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    recovery_key: recoveryKey,
+                    new_password: newPassword 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showRecoveryStatus('Password reset successfully! You can now log in with your new password.', 'success');
+                    setTimeout(() => {
+                        closeRecoveryModal();
+                        // Focus on username field
+                        usernameInput.focus();
+                    }, 3000);
+                } else {
+                    showRecoveryStatus(data.error || 'Failed to reset password', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error resetting password:', error);
+                showRecoveryStatus('Error resetting password: ' + error.message, 'error');
+            })
+            .finally(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+        
+        function showRecoveryStatus(message, type) {
+            recoveryStatus.textContent = message;
+            recoveryStatus.className = type === 'success' ? 'plex-status success' : 'plex-status error';
+            recoveryStatus.style.display = 'block';
         }
     </script>
 </body>

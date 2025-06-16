@@ -317,10 +317,12 @@ def authenticate_request():
             logger.debug(f"No user exists, redirecting to setup")
         return redirect(url_for("common.setup"))
     
-    # Skip authentication for login pages and Plex auth endpoints
-    if request.path.startswith((login_path, api_login_path, api_auth_plex_path)):
+    # Skip authentication for login pages, Plex auth endpoints, recovery key endpoints, and setup-related user endpoints
+    recovery_key_path = "/auth/recovery-key"
+    api_user_2fa_path = "/api/user/2fa/"
+    if request.path.startswith((login_path, api_login_path, api_auth_plex_path, recovery_key_path, api_user_2fa_path)):
         if not is_polling_endpoint:
-            logger.debug(f"Skipping authentication for login/plex path '{request.path}'")
+            logger.debug(f"Skipping authentication for login/plex/recovery/2fa path '{request.path}'")
         return None
     
     # Load general settings
