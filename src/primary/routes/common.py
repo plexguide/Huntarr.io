@@ -510,12 +510,9 @@ def reset_password_with_recovery_key():
         if not recovery_key or not new_password:
             return jsonify({"success": False, "error": "Recovery key and new password are required"}), 400
 
-        # Validate password strength
-        password_error = validate_password_strength(new_password)
-        logger.debug(f"Password validation for '{new_password}': {repr(password_error)}")
-        if password_error:
-            logger.debug(f"Password validation failed with error: {password_error}")
-            return jsonify({"success": False, "error": password_error}), 400
+        # Validate password strength - only require 8 characters minimum
+        if len(new_password) < 8:
+            return jsonify({"success": False, "error": "Password must be at least 8 characters long."}), 400
 
         # Verify the recovery key
         from ..utils.database import get_database
