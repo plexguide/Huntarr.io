@@ -418,7 +418,7 @@ def disable_2fa_route():
 
 # --- Recovery Key Management API Routes --- #
 
-@common_bp.route('/api/user/recovery-key/generate', methods=['POST'])
+@common_bp.route('/auth/recovery-key/generate', methods=['POST'])
 def generate_recovery_key():
     """Generate a new recovery key for the authenticated user"""
     # Get username handling bypass modes
@@ -432,26 +432,29 @@ def generate_recovery_key():
         data = request.json or {}
         current_password = data.get('password')
         two_factor_code = data.get('two_factor_code')
+        setup_mode = data.get('setup_mode', False)  # Check if this is during setup
 
-        # Require current password for security
-        if not current_password:
-            logger.warning(f"Recovery key generation for '{username}' failed: No password provided.")
-            return jsonify({"success": False, "error": "Current password is required"}), 400
+        # During setup mode, skip password verification
+        if not setup_mode:
+            # Require current password for security (normal operation)
+            if not current_password:
+                logger.warning(f"Recovery key generation for '{username}' failed: No password provided.")
+                return jsonify({"success": False, "error": "Current password is required"}), 400
 
-        # Verify current password
-        if not verify_user(username, current_password):
-            logger.warning(f"Recovery key generation for '{username}' failed: Invalid password.")
-            return jsonify({"success": False, "error": "Invalid current password"}), 400
+            # Verify current password
+            if not verify_user(username, current_password):
+                logger.warning(f"Recovery key generation for '{username}' failed: Invalid password.")
+                return jsonify({"success": False, "error": "Invalid current password"}), 400
 
-        # Check if 2FA is enabled and verify if needed
-        if is_2fa_enabled(username):
-            if not two_factor_code:
-                logger.warning(f"Recovery key generation for '{username}' failed: 2FA code required.")
-                return jsonify({"success": False, "error": "Two-factor authentication code is required"}), 400
-            
-            if not verify_2fa_code(username, two_factor_code):
-                logger.warning(f"Recovery key generation for '{username}' failed: Invalid 2FA code.")
-                return jsonify({"success": False, "error": "Invalid two-factor authentication code"}), 400
+            # Check if 2FA is enabled and verify if needed
+            if is_2fa_enabled(username):
+                if not two_factor_code:
+                    logger.warning(f"Recovery key generation for '{username}' failed: 2FA code required.")
+                    return jsonify({"success": False, "error": "Two-factor authentication code is required"}), 400
+                
+                if not verify_2fa_code(username, two_factor_code):
+                    logger.warning(f"Recovery key generation for '{username}' failed: Invalid 2FA code.")
+                    return jsonify({"success": False, "error": "Invalid two-factor authentication code"}), 400
 
         # Generate the recovery key
         from ..utils.database import get_database
@@ -459,7 +462,7 @@ def generate_recovery_key():
         recovery_key = db.generate_recovery_key(username)
 
         if recovery_key:
-            logger.info(f"Recovery key generated successfully for user: {username}")
+            logger.info(f"Recovery key generated successfully for user: {username} (setup_mode: {setup_mode})")
             return jsonify({
                 "success": True, 
                 "recovery_key": recovery_key,

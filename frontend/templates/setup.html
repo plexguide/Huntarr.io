@@ -1457,7 +1457,10 @@
                 HuntarrUtils.fetchWithTimeout('/auth/recovery-key/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: userData.password })
+                    body: JSON.stringify({ 
+                        password: userData.password,
+                        setup_mode: true 
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {
