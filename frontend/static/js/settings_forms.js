@@ -301,9 +301,7 @@ const SettingsForms = {
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="radarr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
@@ -2784,7 +2782,6 @@ const SettingsForms = {
             form.setAttribute('data-app-type', appType);
         }
         
-
         // Add auto-fetch listeners for URL and API key inputs (Radarr only)
         if (appType === 'radarr') {
             const urlInputs = container.querySelectorAll('input[name="api_url"]');
@@ -2825,143 +2822,10 @@ const SettingsForms = {
             }, 500);
         }
 
-         
-         // Add listeners for test connection buttons
-        const testButtons = container.querySelectorAll('.test-connection-btn');
-        testButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                // Prevent any default form submission
-                e.preventDefault();
-                
-                console.log('Test connection button clicked');
-                
-                // Get the instance panel containing this button - look for both old and new class names
-                const instancePanel = button.closest('.instance-item') || button.closest('.instance-panel');
-                if (!instancePanel) {
-                    console.error('Could not find instance panel for test button', button);
-                    alert('Error: Could not find instance panel');
-                    return;
-                }
-                
-                // Get the URL and API key inputs directly within this instance panel
-                const urlInput = instancePanel.querySelector('input[name="api_url"]');
-                const keyInput = instancePanel.querySelector('input[name="api_key"]');
-                
-                console.log('Found inputs:', urlInput, keyInput);
-                
-                if (!urlInput || !keyInput) {
-                    console.error('Could not find URL or API key inputs in panel', instancePanel);
-                    alert('Error: Could not find URL or API key inputs');
-                    return;
-                }
-                
-                const url = urlInput.value.trim();
-                const apiKey = keyInput.value.trim();
-                
-                console.log(`Testing connection for ${appType} - URL: ${url}, API Key: ${apiKey.substring(0, 5)}...`);
-                
-                if (!url) {
-                    alert('Please enter a valid URL');
-                    urlInput.focus();
-                    return;
-                }
-                
-                if (!apiKey) {
-                    alert('Please enter a valid API key');
-                    keyInput.focus();
-                    return;
-                }
-                
-                // Temporarily suppress change detection to prevent the unsaved changes dialog
-                window._suppressUnsavedChangesDialog = true;
-                
-                // Show testing status
-                const originalButtonHTML = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
-                button.disabled = true;
-                
-                // Make the API request
-                HuntarrUtils.fetchWithTimeout(`./api/${appType}/test-connection`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        api_url: url,
-                        api_key: apiKey
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log(`Test connection response:`, data);
-                    
-                    // Reset button
-                    button.disabled = false;
-                    
-                    if (data.success) {
-                        // Success
-                        button.innerHTML = '<i class="fas fa-check"></i> Connected!';
-                        button.classList.add('test-success');
-                        
-                        let successMessage = `Successfully connected to ${appType.charAt(0).toUpperCase() + appType.slice(1)}`;
-                        if (data.version) {
-                            successMessage += ` (version ${data.version})`;
-                        }
-                        
-                        // Alert the user of success
-                        alert(successMessage);
-                        
-                        // For Radarr, also populate quality profile dropdowns
-                        if (appType === 'radarr') {
-                            SettingsForms.populateQualityProfileDropdowns(appType, button.getAttribute('data-instance'), url, apiKey);
-                        }
 
-                        
-                        // Reset button after delay
-                        setTimeout(() => {
-                            button.innerHTML = originalButtonHTML;
-                            button.classList.remove('test-success');
-                            // Reset suppression flag
-                            window._suppressUnsavedChangesDialog = false;
-                        }, 3000);
-                    } else {
-                        // Failure
-                        button.innerHTML = '<i class="fas fa-times"></i> Failed';
-                        button.classList.add('test-failed');
-                        
-                        alert(`Connection failed: ${data.message || 'Unknown error'}`);
-                        
-                        setTimeout(() => {
-                            button.innerHTML = originalButtonHTML;
-                            button.classList.remove('test-failed');
-                            // Reset suppression flag
-                            window._suppressUnsavedChangesDialog = false;
-                        }, 3000);
-                    }
-                })
-                .catch(error => {
-                    console.error(`Test connection error:`, error);
-                    
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-times"></i> Error';
-                    button.classList.add('test-failed');
-                    
-                    alert(`Connection test failed: ${error.message}`);
-                    
-                    setTimeout(() => {
-                        button.innerHTML = originalButtonHTML;
-                        button.classList.remove('test-failed');
-                        // Reset suppression flag
-                        window._suppressUnsavedChangesDialog = false;
-                    }, 3000);
-                });
-            });
-        });
+
+         
+
         
         // Set up remove buttons for existing instances
         const removeButtons = container.querySelectorAll('.remove-instance-btn');
@@ -3398,17 +3262,89 @@ const SettingsForms = {
         const url = urlInput.value.trim();
         const apiKey = apiKeyInput.value.trim();
         
-        // Only proceed if both fields have substantial content
-        if (url.length > 10 && apiKey.length > 20) {
-            console.log(`Auto-detecting quality profiles for ${app} instance ${instanceIndex}`);
-            
-            // Delay to avoid spamming API calls while typing
-            clearTimeout(this._autoFetchTimeout);
-            this._autoFetchTimeout = setTimeout(() => {
-                this.populateQualityProfileDropdowns(app, instanceIndex, url, apiKey);
-            }, 1000); // Wait 1 second after user stops typing
+        // Find the status element in the instance header
+        const statusElement = document.getElementById(`radarr-status-${instanceIndex}`);
+        
+        // Clear status if fields are empty
+        if (url.length <= 10 || apiKey.length <= 20) {
+            if (statusElement) {
+                statusElement.textContent = '';
+                statusElement.style.color = '';
+            }
+            return;
         }
+        
+        // Show checking status
+        if (statusElement) {
+            statusElement.textContent = 'Checking...';
+            statusElement.style.color = '#888';
+        }
+        
+        console.log(`Auto-detecting quality profiles for ${app} instance ${instanceIndex}`);
+        
+        // Delay to avoid spamming API calls while typing
+        clearTimeout(this._autoFetchTimeout);
+        this._autoFetchTimeout = setTimeout(() => {
+            this.populateQualityProfileDropdownsAndUpdateStatus(app, instanceIndex, url, apiKey, statusElement);
+        }, 1000); // Wait 1 second after user stops typing
     },
+    
+    // Populate quality profile dropdowns and update connection status
+    populateQualityProfileDropdownsAndUpdateStatus: function(app, instanceIndex, url, apiKey, statusElement) {
+        console.log(`Populating quality profile dropdowns and checking connection for ${app} instance ${instanceIndex}`);
+        
+        // Make API request to test connection and fetch quality profiles
+        HuntarrUtils.fetchWithTimeout(`./api/${app}/test-connection`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                api_url: url,
+                api_key: apiKey
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`Connection test response for auto-detection:`, data);
+            
+            if (data.success) {
+                // Update status to connected
+                if (statusElement) {
+                    let statusText = '✓ Connected';
+                    if (data.version) {
+                        statusText += ` (v${data.version})`;
+                    }
+                    statusElement.textContent = statusText;
+                    statusElement.style.color = '#10b981';
+                }
+                
+                // Also populate quality profiles since connection succeeded
+                this.populateQualityProfileDropdowns(app, instanceIndex, url, apiKey);
+            } else {
+                // Update status to connection failed
+                if (statusElement) {
+                    statusElement.textContent = '✗ Connection failed';
+                    statusElement.style.color = '#ef4444';
+                }
+            }
+        })
+        .catch(error => {
+            console.error(`Connection test error for auto-detection:`, error);
+            
+            // Update status to error
+            if (statusElement) {
+                statusElement.textContent = '✗ Connection error';
+                statusElement.style.color = '#ef4444';
+            }
+        });
+    },
+
     
     // Populate quality profile dropdown selectors for Radarr
     populateQualityProfileDropdowns: function(app, instanceIndex, url, apiKey) {
