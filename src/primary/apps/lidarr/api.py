@@ -839,3 +839,39 @@ def get_cutoff_unmet_albums_random_page(api_url: str, api_key: str, api_timeout:
     # If we get here, all retries failed
     lidarr_logger.error("All attempts to get cutoff unmet albums failed")
     return []
+
+def get_quality_profiles(api_url: str, api_key: str, api_timeout: int) -> Optional[List[Dict]]:
+    """
+    Get all quality profiles configured in Lidarr.
+
+    Args:
+        api_url: The base URL of the Lidarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+
+    Returns:
+        A list of quality profile objects, or None if the request failed.
+        Each profile contains: id, name, upgradeAllowed, cutoff, items, etc.
+    """
+    try:
+        lidarr_logger.debug("Fetching quality profiles from Lidarr...")
+        
+        # Use the qualityProfile endpoint - this doesn't count toward API limits since it's configuration data
+        # Note: Lidarr uses API v1, not v3 like Sonarr/Radarr
+        profiles = arr_request(api_url, api_key, api_timeout, "qualityProfile", count_api=False)
+        
+        if profiles is None:
+            lidarr_logger.error("Failed to retrieve quality profiles from Lidarr API.")
+            return None
+        
+        lidarr_logger.debug(f"Found {len(profiles)} quality profiles in Lidarr")
+        
+        # Log profile names for debugging
+        profile_names = [profile.get('name', 'Unknown') for profile in profiles]
+        lidarr_logger.debug(f"Quality profiles: {', '.join(profile_names)}")
+        
+        return profiles
+        
+    except Exception as e:
+        lidarr_logger.error(f"Error retrieving quality profiles: {str(e)}")
+        return None

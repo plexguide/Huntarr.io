@@ -706,3 +706,39 @@ def tag_processed_author(api_url: str, api_key: str, api_timeout: int, author_id
     except Exception as e:
         logger.error(f"Error tagging Readarr author {author_id} with '{tag_label}': {e}")
         return False
+
+def get_quality_profiles(api_url: str, api_key: str, api_timeout: int) -> Optional[List[Dict]]:
+    """
+    Get all quality profiles configured in Readarr.
+
+    Args:
+        api_url: The base URL of the Readarr API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+
+    Returns:
+        A list of quality profile objects, or None if the request failed.
+        Each profile contains: id, name, upgradeAllowed, cutoff, items, etc.
+    """
+    try:
+        logger.debug("Fetching quality profiles from Readarr...")
+        
+        # Use the qualityProfile endpoint - this doesn't count toward API limits since it's configuration data
+        # Note: Readarr uses API v1, not v3 like Sonarr/Radarr
+        profiles = arr_request("qualityProfile", api_url=api_url, api_key=api_key, api_timeout=api_timeout, count_api=False)
+        
+        if profiles is None:
+            logger.error("Failed to retrieve quality profiles from Readarr API.")
+            return None
+        
+        logger.debug(f"Found {len(profiles)} quality profiles in Readarr")
+        
+        # Log profile names for debugging
+        profile_names = [profile.get('name', 'Unknown') for profile in profiles]
+        logger.debug(f"Quality profiles: {', '.join(profile_names)}")
+        
+        return profiles
+        
+    except Exception as e:
+        logger.error(f"Error retrieving quality profiles: {str(e)}")
+        return None
