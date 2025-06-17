@@ -3265,11 +3265,23 @@ const SettingsForms = {
         // Find the status element in the instance header
         const statusElement = document.getElementById(`radarr-status-${instanceIndex}`);
         
-        // Clear status if fields are empty
-        if (url.length <= 10 || apiKey.length <= 20) {
+        // Show appropriate status for incomplete fields
+        if (url.length <= 10 && apiKey.length <= 20) {
             if (statusElement) {
-                statusElement.textContent = '';
-                statusElement.style.color = '';
+                statusElement.textContent = 'Enter URL and API Key';
+                statusElement.style.color = '#888';
+            }
+            return;
+        } else if (url.length <= 10) {
+            if (statusElement) {
+                statusElement.textContent = 'Missing URL';
+                statusElement.style.color = '#fbbf24';
+            }
+            return;
+        } else if (apiKey.length <= 20) {
+            if (statusElement) {
+                statusElement.textContent = 'Missing API Key';
+                statusElement.style.color = '#fbbf24';
             }
             return;
         }
