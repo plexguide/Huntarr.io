@@ -3055,12 +3055,22 @@ const SettingsForms = {
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-${missingFieldName}-${newIndex}">${missingLabel}:</label>
-                                <input type="number" id="${appType}-${missingFieldName}-${newIndex}" name="${missingFieldName}" min="0" value="${missingDefault}">
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="number" id="${appType}-${missingFieldName}-${newIndex}" name="${missingFieldName}" min="0" value="${missingDefault}" style="width: 80px;">
+                                    <select id="${appType}-missing-quality-profile-${newIndex}" name="missing_quality_profile" style="flex: 1; min-width: 150px;">
+                                        <option value="">All Quality Profiles</option>
+                                    </select>
+                                </div>
                                 <p class="setting-help">Number of missing items to search per cycle (0 to disable)</p>
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-${upgradeFieldName}-${newIndex}">${upgradeLabel}:</label>
-                                <input type="number" id="${appType}-${upgradeFieldName}-${newIndex}" name="${upgradeFieldName}" min="0" value="${upgradeDefault}">
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="number" id="${appType}-${upgradeFieldName}-${newIndex}" name="${upgradeFieldName}" min="0" value="${upgradeDefault}" style="width: 80px;">
+                                    <select id="${appType}-upgrade-quality-profile-${newIndex}" name="upgrade_quality_profile" style="flex: 1; min-width: 150px;">
+                                        <option value="">All Quality Profiles</option>
+                                    </select>
+                                </div>
                                 <p class="setting-help">Number of items to search for quality upgrades per cycle (0 to disable)</p>
                             </div>
                             <div class="setting-item">
@@ -3095,6 +3105,29 @@ const SettingsForms = {
                         container.dispatchEvent(changeEvent);
                     });
                 }
+                
+                // Set up auto-detection for the new instance
+                const newUrlInput = newInstance.querySelector(`#${appType}-url-${newIndex}`);
+                const newApiKeyInput = newInstance.querySelector(`#${appType}-key-${newIndex}`);
+                
+                if (newUrlInput) {
+                    newUrlInput.addEventListener('input', function() {
+                        setTimeout(() => {
+                            SettingsForms.checkAndAutoFetchQualityProfiles(appType, newIndex);
+                        }, 1000); // 1 second delay to prevent spam while typing
+                    });
+                }
+                
+                if (newApiKeyInput) {
+                    newApiKeyInput.addEventListener('input', function() {
+                        setTimeout(() => {
+                            SettingsForms.checkAndAutoFetchQualityProfiles(appType, newIndex);
+                        }, 1000); // 1 second delay to prevent spam while typing
+                    });
+                }
+                
+                // Initial status check for the new instance
+                SettingsForms.checkAndAutoFetchQualityProfiles(appType, newIndex);
                 
                 // Update button text and trigger change event
                 updateAddButtonText();
