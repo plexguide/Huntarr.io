@@ -72,9 +72,7 @@ const SettingsForms = {
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="sonarr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
@@ -93,12 +91,12 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about Sonarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                            <input type="text" id="sonarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Sonarr (e.g., http://localhost:8989)">
+                            <input type="text" id="sonarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Sonarr (e.g., http://localhost:8989)" data-instance-index="${index}">
                             <p class="setting-help">Base URL for Sonarr (e.g., http://localhost:8989)</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about finding your Sonarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                            <input type="text" id="sonarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Sonarr">
+                            <input type="text" id="sonarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Sonarr" data-instance-index="${index}">
                             <p class="setting-help">API key for Sonarr</p>
                         </div>
                         <div class="setting-item">
@@ -511,9 +509,7 @@ const SettingsForms = {
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="lidarr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
@@ -532,12 +528,12 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                             <label for="lidarr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#connection-settings" class="info-icon" title="Learn more about Lidarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                            <input type="text" id="lidarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Lidarr (e.g., http://localhost:8686)">
+                            <input type="text" id="lidarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Lidarr (e.g., http://localhost:8686)" data-instance-index="${index}">
                             <p class="setting-help">Base URL for Lidarr (e.g., http://localhost:8686)</p>
                         </div>
                         <div class="setting-item">
                             <label for="lidarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#connection-settings" class="info-icon" title="Learn more about finding your Lidarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                            <input type="text" id="lidarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Lidarr">
+                            <input type="text" id="lidarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Lidarr" data-instance-index="${index}">
                             <p class="setting-help">API key for Lidarr</p>
                         </div>
                         <div class="setting-item">
@@ -692,18 +688,16 @@ const SettingsForms = {
         settings.instances.forEach((instance, index) => {
             instancesHtml += `
                 <div class="instance-item" data-instance-id="${index}">
-                    <div class="instance-header">
+                                        <div class="instance-header">
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="readarr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
                         <div class="setting-item">
-                <label for="readarr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
+                            <label for="readarr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                                 <input type="checkbox" id="readarr-enabled-${index}" name="enabled" ${instance.enabled !== false ? 'checked' : ''}>
                                 <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
@@ -717,12 +711,12 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                 <label for="readarr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about Readarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                <input type="text" id="readarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Readarr (e.g., http://localhost:8787)">
+                                            <input type="text" id="readarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Readarr (e.g., http://localhost:8787)" data-instance-index="${index}">
                 <p class="setting-help">Base URL for Readarr (e.g., http://localhost:8787)</p>
                 </div>
                 <div class="setting-item">
                 <label for="readarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about finding your Readarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                <input type="text" id="readarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Readarr">
+                                            <input type="text" id="readarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Readarr" data-instance-index="${index}">
                 <p class="setting-help">API key for Readarr</p>
                 </div>
                         <div class="setting-item">
@@ -870,18 +864,16 @@ const SettingsForms = {
         settings.instances.forEach((instance, index) => {
             instancesHtml += `
                 <div class="instance-item" data-instance-id="${index}">
-                    <div class="instance-header">
+                                        <div class="instance-header">
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="whisparr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
                         <div class="setting-item">
-                <label for="whisparr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
+                            <label for="whisparr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                                 <input type="checkbox" id="whisparr-enabled-${index}" name="enabled" ${instance.enabled !== false ? 'checked' : ''}>
                                 <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
@@ -895,12 +887,12 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                 <label for="whisparr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about Whisparr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                <input type="text" id="whisparr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Whisparr V2 (e.g., http://localhost:6969)">
+                                            <input type="text" id="whisparr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Whisparr V2 (e.g., http://localhost:6969)" data-instance-index="${index}">
                 <p class="setting-help">Base URL for Whisparr V2 (e.g., http://localhost:6969)</p>
                 </div>
                 <div class="setting-item">
                 <label for="whisparr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about finding your Whisparr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                <input type="text" id="whisparr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Whisparr V2">
+                                            <input type="text" id="whisparr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Whisparr V2" data-instance-index="${index}">
                 <p class="setting-help">API key for Whisparr V2</p>
                 </div>
                         <div class="setting-item">
@@ -1056,9 +1048,7 @@ const SettingsForms = {
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="eros-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
@@ -1077,12 +1067,12 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                                             <label for="eros-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-url" class="info-icon" title="Learn more about Whisparr V3 (Eros) URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                <input type="text" id="eros-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Whisparr V3 (Eros) (e.g., http://localhost:6969)">
+                <input type="text" id="eros-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Whisparr V3 (Eros) (e.g., http://localhost:6969)" data-instance-index="${index}">
                 <p class="setting-help">Base URL for Whisparr V3 (Eros) (e.g., http://localhost:6969)</p>
                         </div>
                         <div class="setting-item">
                                             <label for="eros-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-api-key" class="info-icon" title="Learn more about finding your Whisparr V3 (Eros) API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                <input type="text" id="eros-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Whisparr V3 (Eros)">
+                <input type="text" id="eros-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Whisparr V3 (Eros)" data-instance-index="${index}">
                 <p class="setting-help">API key for Whisparr V3 (Eros)</p>
                         </div>
                         <div class="setting-item">
@@ -2782,8 +2772,9 @@ const SettingsForms = {
             form.setAttribute('data-app-type', appType);
         }
         
-        // Add auto-fetch listeners for URL and API key inputs (Radarr only)
-        if (appType === 'radarr') {
+        // Add auto-fetch listeners for URL and API key inputs (for all supported apps)
+        const supportedApps = ['radarr', 'sonarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        if (supportedApps.includes(appType)) {
             const urlInputs = container.querySelectorAll('input[name="api_url"]');
             const apiKeyInputs = container.querySelectorAll('input[name="api_key"]');
             
@@ -2965,9 +2956,7 @@ const SettingsForms = {
                             <h4>Instance ${newIndex + 1}: New Instance</h4>
                             <div class="instance-actions">
                                 <button type="button" class="remove-instance-btn">Remove</button>
-                                <button type="button" class="test-connection-btn" data-instance="${newIndex}" style="margin-left: 10px;">
-                                    <i class="fas fa-plug"></i> Test Connection
-                                </button>
+                                <span class="connection-status" id="${appType}-status-${newIndex}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                             </div>
                         </div>
                         <div class="instance-content">
@@ -2986,12 +2975,12 @@ const SettingsForms = {
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-url-${newIndex}">URL:</label>
-                                <input type="text" id="${appType}-url-${newIndex}" name="api_url" value="" placeholder="Base URL for ${appType} (e.g., http://localhost:8989)">
+                                <input type="text" id="${appType}-url-${newIndex}" name="api_url" value="" placeholder="Base URL for ${appType} (e.g., http://localhost:8989)" data-instance-index="${newIndex}">
                                 <p class="setting-help">Base URL for ${appType}</p>
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-key-${newIndex}">API Key:</label>
-                                <input type="text" id="${appType}-key-${newIndex}" name="api_key" value="" placeholder="API key for ${appType}">
+                                <input type="text" id="${appType}-key-${newIndex}" name="api_key" value="" placeholder="API key for ${appType}" data-instance-index="${newIndex}">
                                 <p class="setting-help">API key for ${appType}</p>
                             </div>
                             <div class="setting-item">
@@ -3023,74 +3012,7 @@ const SettingsForms = {
                 const newInstance = instancesContainer.querySelector(`[data-instance-id="${newIndex}"]`);
                 
                 // Set up event listeners for the new instance's buttons
-                const newTestBtn = newInstance.querySelector('.test-connection-btn');
                 const newRemoveBtn = newInstance.querySelector('.remove-instance-btn');
-                
-                // Test connection button
-                if (newTestBtn) {
-                    newTestBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const instancePanel = newTestBtn.closest('.instance-item');
-                        const urlInput = instancePanel.querySelector('input[name="api_url"]');
-                        const keyInput = instancePanel.querySelector('input[name="api_key"]');
-                        
-                        if (!urlInput || !keyInput) {
-                            alert('Error: Could not find URL or API key inputs');
-                            return;
-                        }
-                        
-                        const url = urlInput.value.trim();
-                        const apiKey = keyInput.value.trim();
-                        
-                        if (!url) {
-                            alert('Please enter a valid URL');
-                            urlInput.focus();
-                            return;
-                        }
-                        
-                        if (!apiKey) {
-                            alert('Please enter a valid API key');
-                            keyInput.focus();
-                            return;
-                        }
-                        
-                        // Use the same test connection logic as existing buttons
-                        const originalButtonHTML = newTestBtn.innerHTML;
-                        newTestBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
-                        newTestBtn.disabled = true;
-                        
-                        HuntarrUtils.fetchWithTimeout(`./api/${appType}/test-connection`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ api_url: url, api_key: apiKey })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            newTestBtn.disabled = false;
-                            if (data.success) {
-                                newTestBtn.innerHTML = '<i class="fas fa-check"></i> Connected!';
-                                alert(`Successfully connected to ${appType}`);
-                                setTimeout(() => {
-                                    newTestBtn.innerHTML = originalButtonHTML;
-                                }, 3000);
-                            } else {
-                                newTestBtn.innerHTML = '<i class="fas fa-times"></i> Failed';
-                                alert(`Connection failed: ${data.message || 'Unknown error'}`);
-                                setTimeout(() => {
-                                    newTestBtn.innerHTML = originalButtonHTML;
-                                }, 3000);
-                            }
-                        })
-                        .catch(error => {
-                            newTestBtn.disabled = false;
-                            newTestBtn.innerHTML = '<i class="fas fa-times"></i> Error';
-                            alert(`Connection test failed: ${error.message}`);
-                            setTimeout(() => {
-                                newTestBtn.innerHTML = originalButtonHTML;
-                            }, 3000);
-                        });
-                    });
-                }
                 
                 // Remove button
                 if (newRemoveBtn) {
@@ -3252,7 +3174,8 @@ const SettingsForms = {
     
     // Check if both URL and API key are filled and automatically fetch quality profiles
     checkAndAutoFetchQualityProfiles: function(app, instanceIndex) {
-        if (app !== 'radarr') return; // Only for Radarr for now
+        const supportedApps = ['radarr', 'sonarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        if (!supportedApps.includes(app)) return;
         
         const urlInput = document.getElementById(`${app}-url-${instanceIndex}`);
         const apiKeyInput = document.getElementById(`${app}-key-${instanceIndex}`);
@@ -3263,7 +3186,7 @@ const SettingsForms = {
         const apiKey = apiKeyInput.value.trim();
         
         // Find the status element in the instance header
-        const statusElement = document.getElementById(`radarr-status-${instanceIndex}`);
+        const statusElement = document.getElementById(`${app}-status-${instanceIndex}`);
         
         // Show appropriate status for incomplete fields
         if (url.length <= 10 && apiKey.length <= 20) {
