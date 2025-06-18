@@ -3186,6 +3186,7 @@ const SettingsForms = {
             window.huntarrUI.suppressUnsavedChangesCheck = false;
         }
         window._suppressUnsavedChangesDialog = false;
+        window._appsSuppressChangeDetection = false;
     },
     
     // Check connection status for an instance
@@ -3204,24 +3205,34 @@ const SettingsForms = {
         // Find the status element in the instance header
         const statusElement = document.getElementById(`${app}-status-${instanceIndex}`);
         
+        // Temporarily suppress change detection to prevent the unsaved changes dialog
+        if (window.huntarrUI) {
+            window.huntarrUI.suppressUnsavedChangesCheck = true;
+        }
+        window._suppressUnsavedChangesDialog = true;
+        window._appsSuppressChangeDetection = true;
+        
         // Show appropriate status for incomplete fields
         if (url.length <= 10 && apiKey.length <= 20) {
             if (statusElement) {
                 statusElement.textContent = 'Enter URL and API Key';
                 statusElement.style.color = '#888';
             }
+            this._resetSuppressionFlags();
             return;
         } else if (url.length <= 10) {
             if (statusElement) {
                 statusElement.textContent = 'Missing URL';
                 statusElement.style.color = '#fbbf24';
             }
+            this._resetSuppressionFlags();
             return;
         } else if (apiKey.length <= 20) {
             if (statusElement) {
                 statusElement.textContent = 'Missing API Key';
                 statusElement.style.color = '#fbbf24';
             }
+            this._resetSuppressionFlags();
             return;
         }
         
@@ -3281,6 +3292,11 @@ const SettingsForms = {
                     statusElement.style.color = '#ef4444';
                 }
             }
+            
+            // Reset suppression flags after updating status
+            setTimeout(() => {
+                this._resetSuppressionFlags();
+            }, 500);
         })
         .catch(error => {
             console.error(`Connection test error:`, error);
@@ -3290,6 +3306,11 @@ const SettingsForms = {
                 statusElement.textContent = '✗ Connection error';
                 statusElement.style.color = '#ef4444';
             }
+            
+            // Reset suppression flags after updating status
+            setTimeout(() => {
+                this._resetSuppressionFlags();
+            }, 500);
         });
     },
     

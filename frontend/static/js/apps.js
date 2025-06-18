@@ -283,8 +283,8 @@ const appsModule = {
         // Function to handle form element changes
         const handleChange = () => {
             // Skip if test connection suppression is active
-            if (window._suppressUnsavedChangesDialog === true) {
-                console.log('Change detection suppressed due to test connection');
+            if (window._suppressUnsavedChangesDialog === true || window._appsSuppressChangeDetection === true) {
+                console.log('Change detection suppressed due to test connection or status updates');
                 return;
             }
             
@@ -353,6 +353,10 @@ const appsModule = {
                                 )) {
                                     isTestRelated = true;
                                 }
+                                // Also check for status elements by ID pattern
+                                if (node.id && node.id.includes('-status-')) {
+                                    isTestRelated = true;
+                                }
                             }
                         });
                         
@@ -364,6 +368,10 @@ const appsModule = {
                                     node.classList.contains('test-status') ||
                                     node.classList.contains('test-result')
                                 )) {
+                                    isTestRelated = true;
+                                }
+                                // Also check for status elements by ID pattern
+                                if (node.id && node.id.includes('-status-')) {
                                     isTestRelated = true;
                                 }
                             }
@@ -378,8 +386,8 @@ const appsModule = {
                 
                 if (shouldUpdate) {
                     // Skip if test connection suppression is active
-                    if (window._suppressUnsavedChangesDialog === true) {
-                        console.log('MutationObserver suppressed due to test connection');
+                    if (window._suppressUnsavedChangesDialog === true || window._appsSuppressChangeDetection === true) {
+                        console.log('MutationObserver suppressed due to test connection or status updates');
                         return;
                     }
                     
