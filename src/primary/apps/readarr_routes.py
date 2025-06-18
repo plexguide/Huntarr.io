@@ -25,7 +25,7 @@ def test_connection():
     if not api_url or not api_key:
         return jsonify({"success": False, "message": "API URL and API Key are required"}), 400
         
-    readarr_logger.info(f"Testing connection to Readarr API at {api_url}")
+
     
     # Auto-correct URL if missing http(s) scheme
     if not (api_url.startswith('http://') or api_url.startswith('https://')):
@@ -98,7 +98,7 @@ def test_connection():
         try:
             response_data = response.json()
             version = response_data.get('version', 'unknown')
-            readarr_logger.info(f"Successfully connected to Readarr API version: {version}")
+
             
             return jsonify({
                 "success": True,

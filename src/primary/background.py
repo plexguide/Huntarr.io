@@ -346,7 +346,7 @@ def app_specific_loop(app_type: str) -> None:
                     monitored_only = combined_settings.get("monitored_only", True)
                     skip_future_episodes = combined_settings.get("skip_future_episodes", True)
                     hunt_missing_items = hunt_missing_value  # Use per-instance value
-                    hunt_missing_mode = combined_settings.get("hunt_missing_mode", "episodes")
+                    hunt_missing_mode = instance_details.get("hunt_missing_mode", "seasons_packs")
                     command_wait_delay = combined_settings.get("command_wait_delay", 1)
                     command_wait_attempts = combined_settings.get("command_wait_attempts", 600)
                     
@@ -383,7 +383,7 @@ def app_specific_loop(app_type: str) -> None:
                         api_timeout = combined_settings.get("api_timeout", 120)
                         monitored_only = combined_settings.get("monitored_only", True)
                         hunt_upgrade_items = hunt_upgrade_value  # Use per-instance value
-                        upgrade_mode = combined_settings.get("upgrade_mode", "episodes")
+                        upgrade_mode = instance_details.get("upgrade_mode", "seasons_packs")
                         command_wait_delay = combined_settings.get("command_wait_delay", 1)
                         command_wait_attempts = combined_settings.get("command_wait_attempts", 600)
                         

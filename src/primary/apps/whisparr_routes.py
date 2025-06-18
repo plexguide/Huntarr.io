@@ -61,7 +61,7 @@ def test_connection():
     if not api_url or not api_key:
         return jsonify({"success": False, "message": "API URL and API Key are required"}), 400
         
-    whisparr_logger.info(f"Testing connection to Whisparr API at {api_url}")
+
     
     # Auto-correct URL if missing http(s) scheme
     if not (api_url.startswith('http://') or api_url.startswith('https://')):
@@ -160,7 +160,7 @@ def test_connection():
     try:
         response_data = response.json()
         version = response_data.get('version', 'unknown')
-        whisparr_logger.info(f"Successfully connected to Whisparr API version: {version} (API {detected_version})")
+        
         
         # Check if this is a v2 version
         if version and version.startswith('2'):

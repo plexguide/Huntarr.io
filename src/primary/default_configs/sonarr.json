@@ -4,13 +4,13 @@
       "name": "Default",
       "api_url": "",
       "api_key": "",
-      "enabled": true
+      "enabled": true,
+      "hunt_missing_items": 1,
+      "hunt_upgrade_items": 0,
+      "hunt_missing_mode": "seasons_packs",
+      "upgrade_mode": "seasons_packs"
     }
   ],
-  "hunt_missing_items": 1,
-  "hunt_upgrade_items": 0,
-  "upgrade_mode": "seasons_packs",
-  "hunt_missing_mode": "seasons_packs",
   "sleep_duration": 900,
   "monitored_only": true,
   "skip_future_episodes": true,

@@ -82,7 +82,7 @@ def test_connection(url, api_key):
                 # Version check - should be v3.x for Eros
                 if version.startswith('3'):
                     detected_version = "v3"
-                    eros_logger.info(f"Successfully connected to Eros API version: {version} (API {detected_version})")
+            
                     
                     # Success!
                     return {"success": True, "message": "Successfully connected to Eros API", "version": version, "api_version": detected_version}
@@ -171,7 +171,7 @@ def test_connection_endpoint():
     if not api_url or not api_key:
         return jsonify({"success": False, "message": "API URL and API Key are required"}), 400
         
-    eros_logger.info(f"Testing connection to Eros API at {api_url}")
+
     
     # Auto-correct URL if missing http(s) scheme
     if not (api_url.startswith('http://') or api_url.startswith('https://')):

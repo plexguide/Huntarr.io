@@ -52,6 +52,8 @@ def get_configured_instances():
                     "swaparr_enabled": instance.get("swaparr_enabled", False),
                     "hunt_missing_items": instance.get("hunt_missing_items", 1),  # Per-instance missing hunt value
                     "hunt_upgrade_items": instance.get("hunt_upgrade_items", 0),  # Per-instance upgrade hunt value
+                    "hunt_missing_mode": instance.get("hunt_missing_mode", "seasons_packs"),  # Per-instance missing mode
+                    "upgrade_mode": instance.get("upgrade_mode", "seasons_packs"),  # Per-instance upgrade mode
                 }
                 instances.append(instance_data)
                 # sonarr_logger.info(f"Added valid instance: {instance_data}") # Removed verbose log
@@ -67,31 +69,7 @@ def get_configured_instances():
                     # Still log warnings for non-default instances
                     sonarr_logger.warning(f"Skipping instance '{instance_name}' due to missing API URL or key (URL: '{api_url}', Key Set: {bool(api_key)})")
     else:
-        # sonarr_logger.info("No 'instances' list found or list is empty. Checking legacy config.") # Removed verbose log
-        # Fallback to legacy single-instance config
-        api_url = settings.get("api_url", "").strip()
-        api_key = settings.get("api_key", "").strip()
-
-        # Ensure URL has proper scheme
-        if api_url and not (api_url.startswith('http://') or api_url.startswith('https://')):
-            sonarr_logger.warning(f"API URL missing http(s) scheme: {api_url}")
-            api_url = f"http://{api_url}"
-            sonarr_logger.warning(f"Auto-correcting URL to: {api_url}")
-
-        if api_url and api_key:
-            # Create a clean instance_data dict for the legacy instance
-            instance_data = {
-                "instance_name": "Default",
-                "api_url": api_url,
-                "api_key": api_key,
-                "swaparr_enabled": settings.get("swaparr_enabled", False),
-                "hunt_missing_items": settings.get("hunt_missing_items", 1),  # Legacy missing hunt value
-                "hunt_upgrade_items": settings.get("hunt_upgrade_items", 0),  # Legacy upgrade hunt value
-            }
-            instances.append(instance_data)
-            sonarr_logger.info(f"Using legacy configuration with instance name: 'Default'")
-        else:
-            sonarr_logger.warning("No API URL or key found in legacy configuration")
+        sonarr_logger.debug("No instances configured")
 
     # Use debug level to avoid spamming logs, especially with 0 instances
     return instances

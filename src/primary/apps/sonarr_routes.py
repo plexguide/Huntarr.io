@@ -110,9 +110,6 @@ def test_connection():
     if not api_url or not api_key:
         return jsonify({"success": False, "message": "API URL and API Key are required"}), 400
     
-    # Log the test attempt
-    sonarr_logger.info(f"Testing connection to Sonarr API at {api_url}")
-    
     # Auto-correct URL if missing http(s) scheme
     if not (api_url.startswith('http://') or api_url.startswith('https://')):
         sonarr_logger.debug(f"Auto-correcting URL to: {api_url}")
@@ -188,8 +185,6 @@ def test_connection():
             # We no longer save keys here since we use instances
             # Legacy keys_manager call removed - settings now stored in database
             
-            sonarr_logger.info(f"Successfully connected to Sonarr API version: {response_data.get('version', 'unknown')}")
-
             # Return success with some useful information
             return jsonify({
                 "success": True,

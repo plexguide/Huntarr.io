@@ -26,8 +26,6 @@ def test_connection():
     if not api_url or not api_key:
         return jsonify({"success": False, "message": "API URL and API Key are required"}), 400
         
-    radarr_logger.info(f"Testing connection to Radarr API at {api_url}")
-    
     # Auto-correct URL if missing http(s) scheme
     if not (api_url.startswith('http://') or api_url.startswith('https://')):
         radarr_logger.warning(f"API URL missing http(s) scheme: {api_url}")
@@ -98,7 +96,6 @@ def test_connection():
         try:
             response_data = response.json()
             version = response_data.get('version', 'unknown')
-            radarr_logger.info(f"Successfully connected to Radarr API version: {version}")
             
             return jsonify({
                 "success": True,

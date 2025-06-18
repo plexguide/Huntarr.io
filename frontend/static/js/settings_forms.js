@@ -65,6 +65,8 @@ const SettingsForms = {
             // Set default values if not present
             const huntMissingItems = instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1;
             const huntUpgradeItems = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
+            const huntMissingMode = instance.hunt_missing_mode || 'seasons_packs';
+            const upgradeMode = instance.upgrade_mode || 'seasons_packs';
             
             instancesHtml += `
                 <div class="instance-item" data-instance-id="${index}">
@@ -110,6 +112,26 @@ const SettingsForms = {
                             <p class="setting-help">Number of episodes to upgrade per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
+                            <label for="sonarr-hunt-missing-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about missing search modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search Mode:</label>
+                            <select id="sonarr-hunt-missing-mode-${index}" name="hunt_missing_mode">
+                                <option value="seasons_packs" ${huntMissingMode === 'seasons_packs' ? 'selected' : ''}>Season Packs</option>
+                                <option value="shows" ${huntMissingMode === 'shows' ? 'selected' : ''}>Shows</option>
+                                <option value="episodes" ${huntMissingMode === 'episodes' ? 'selected' : ''}>Episodes</option>
+                            </select>
+                            <p class="setting-help">How to search for missing content for this instance (Season Packs recommended)</p>
+                            <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: ${huntMissingMode === 'episodes' ? 'block' : 'none'};" id="episodes-missing-warning-${index}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                        </div>
+                        <div class="setting-item">
+                            <label for="sonarr-upgrade-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Mode:</label>
+                            <select id="sonarr-upgrade-mode-${index}" name="upgrade_mode">
+                                <option value="seasons_packs" ${upgradeMode === 'seasons_packs' ? 'selected' : ''}>Season Packs</option>
+                                <option value="shows" ${upgradeMode === 'shows' ? 'selected' : ''}>Shows</option>
+                                <option value="episodes" ${upgradeMode === 'episodes' ? 'selected' : ''}>Episodes</option>
+                            </select>
+                            <p class="setting-help">How to search for upgrades for this instance (Season Packs recommended)</p>
+                            <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: ${upgradeMode === 'episodes' ? 'block' : 'none'};" id="episodes-upgrade-warning-${index}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                        </div>
+                        <div class="setting-item">
                             <label for="sonarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative; ${this.isSwaparrGloballyEnabled() ? '' : 'opacity: 0.5; pointer-events: none;'}">
                                 <input type="checkbox" id="sonarr-swaparr-${index}" name="swaparr_enabled" ${instance.swaparr_enabled === true ? 'checked' : ''} ${this.isSwaparrGloballyEnabled() ? '' : 'disabled'}>
@@ -132,29 +154,10 @@ const SettingsForms = {
             </div> <!-- settings-group -->
         `;
 
-        // Search Settings
+        // Search Settings (Global)
         let searchSettingsHtml = `
             <div class="settings-group">
-                <h3>Search Settings</h3>
-                <div class="setting-item">
-                    <label for="sonarr-hunt-missing-mode"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about missing search modes" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search Mode:</label>
-                    <select id="sonarr-hunt-missing-mode" name="hunt_missing_mode">
-                        <option value="seasons_packs" ${settings.hunt_missing_mode === 'seasons_packs' || !settings.hunt_missing_mode ? 'selected' : ''}>Season Packs</option>
-                        <option value="shows" ${settings.hunt_missing_mode === 'shows' ? 'selected' : ''}>Shows</option>
-                        <option value="episodes" ${settings.hunt_missing_mode === 'episodes' ? 'selected' : ''}>Episodes</option>
-                    </select>
-                    <p class="setting-help">How to search for missing Sonarr content (Season Packs recommended for all users)</p>
-                    <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: ${settings.hunt_missing_mode === 'episodes' ? 'block' : 'none'};" id="episodes-missing-warning">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
-                </div>
-                <div class="setting-item">
-                    <label for="sonarr-upgrade-mode"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade modes" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Mode:</label>
-                    <select id="sonarr-upgrade-mode" name="upgrade_mode">
-                        <option value="seasons_packs" ${settings.upgrade_mode === 'seasons_packs' || !settings.upgrade_mode ? 'selected' : ''}>Season Packs</option>
-                        <option value="episodes" ${settings.upgrade_mode === 'episodes' ? 'selected' : ''}>Episodes</option>
-                    </select>
-                    <p class="setting-help">How to search for Sonarr upgrades (Season Packs mode recommended)</p>
-                    <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: ${settings.upgrade_mode === 'episodes' ? 'block' : 'none'};" id="episodes-upgrade-warning">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
-                </div>
+                <h3>Global Settings</h3>
                 <div class="setting-item">
                     <label for="sonarr_sleep_duration"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about sleep duration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Sleep Duration (Minutes):</label>
                                         <input type="number" id="sonarr_sleep_duration" name="sleep_duration" min="10" value="${settings.sleep_duration !== undefined ? Math.round(settings.sleep_duration / 60) : 15}">
@@ -241,31 +244,33 @@ const SettingsForms = {
             });
         }
         
-        // Add event listeners for episode mode warnings
-        const huntMissingModeSelect = container.querySelector('#sonarr-hunt-missing-mode');
-        const upgradeModelSelect = container.querySelector('#sonarr-upgrade-mode');
-        const episodesMissingWarning = container.querySelector('#episodes-missing-warning');
-        const episodesUpgradeWarning = container.querySelector('#episodes-upgrade-warning');
-        
-        if (huntMissingModeSelect && episodesMissingWarning) {
-            huntMissingModeSelect.addEventListener('change', function() {
-                if (this.value === 'episodes') {
-                    episodesMissingWarning.style.display = 'block';
-                } else {
-                    episodesMissingWarning.style.display = 'none';
-                }
-            });
-        }
-        
-        if (upgradeModelSelect && episodesUpgradeWarning) {
-            upgradeModelSelect.addEventListener('change', function() {
-                if (this.value === 'episodes') {
-                    episodesUpgradeWarning.style.display = 'block';
-                } else {
-                    episodesUpgradeWarning.style.display = 'none';
-                }
-            });
-        }
+        // Add event listeners for per-instance episode mode warnings
+        settings.instances.forEach((instance, index) => {
+            const huntMissingModeSelect = container.querySelector(`#sonarr-hunt-missing-mode-${index}`);
+            const upgradeModelSelect = container.querySelector(`#sonarr-upgrade-mode-${index}`);
+            const episodesMissingWarning = container.querySelector(`#episodes-missing-warning-${index}`);
+            const episodesUpgradeWarning = container.querySelector(`#episodes-upgrade-warning-${index}`);
+            
+            if (huntMissingModeSelect && episodesMissingWarning) {
+                huntMissingModeSelect.addEventListener('change', function() {
+                    if (this.value === 'episodes') {
+                        episodesMissingWarning.style.display = 'block';
+                    } else {
+                        episodesMissingWarning.style.display = 'none';
+                    }
+                });
+            }
+            
+            if (upgradeModelSelect && episodesUpgradeWarning) {
+                upgradeModelSelect.addEventListener('change', function() {
+                    if (this.value === 'episodes') {
+                        episodesUpgradeWarning.style.display = 'block';
+                    } else {
+                        episodesUpgradeWarning.style.display = 'none';
+                    }
+                });
+            }
+        });
         
     },
     
@@ -1986,6 +1991,10 @@ const SettingsForms = {
                                             instance.querySelector('input[name="hunt_upgrade_movies"]') || 
                                             instance.querySelector('input[name="hunt_upgrade_books"]');
                 
+                // Get per-instance mode settings (for Sonarr)
+                const huntMissingModeInput = instance.querySelector('select[name="hunt_missing_mode"]');
+                const upgradeModeInput = instance.querySelector('select[name="upgrade_mode"]');
+                
                 // Get quality profile selectors for Radarr
                 const missingQualityProfileInput = instance.querySelector('select[name="missing_quality_profile"]');
                 const upgradeQualityProfileInput = instance.querySelector('select[name="upgrade_quality_profile"]');
@@ -2018,6 +2027,8 @@ const SettingsForms = {
                 if (appType === 'sonarr') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
+                    instanceObj.hunt_missing_mode = huntMissingModeInput ? huntMissingModeInput.value : 'seasons_packs';
+                    instanceObj.upgrade_mode = upgradeModeInput ? upgradeModeInput.value : 'seasons_packs';
                 } else if (appType === 'radarr') {
                     instanceObj.hunt_missing_movies = huntMissingItems;
                     instanceObj.hunt_upgrade_movies = huntUpgradeItems;
@@ -2052,6 +2063,8 @@ const SettingsForms = {
                 if (appType === 'sonarr') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.hunt_missing_mode = 'seasons_packs';
+                    defaultInstance.upgrade_mode = 'seasons_packs';
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'radarr') {
@@ -2088,8 +2101,6 @@ const SettingsForms = {
             
             // Add app-specific settings
             if (appType === 'sonarr') {
-                settings.hunt_missing_mode = getInputValue('#sonarr-hunt-missing-mode', 'seasons_packs');
-                settings.upgrade_mode = getInputValue('#sonarr-upgrade-mode', 'seasons_packs');
                 settings.sleep_duration = getInputValue('#sonarr_sleep_duration', 15) * 60; // Convert minutes to seconds
                 settings.hourly_cap = getInputValue('#sonarr_hourly_cap', 20);
                 settings.monitored_only = getInputValue('#sonarr_monitored_only', true);
@@ -2910,27 +2921,31 @@ const SettingsForms = {
         const addBtn = container.querySelector(`.add-${appType}-instance-btn`);
         if (addBtn) {
             // Function to update the button text with current instance count
-            const updateAddButtonText = () => {
+            const updateAddButtonText = (buttonRef = addBtn) => {
                 const instancesContainer = container.querySelector('.instances-container');
                 if (!instancesContainer) return;
                 const currentCount = instancesContainer.querySelectorAll('.instance-item').length;
-                addBtn.innerHTML = `<i class="fas fa-plus"></i> Add ${appType.charAt(0).toUpperCase() + appType.slice(1)} Instance (${currentCount}/9)`;
+                buttonRef.innerHTML = `<i class="fas fa-plus"></i> Add ${appType.charAt(0).toUpperCase() + appType.slice(1)} Instance (${currentCount}/9)`;
                 
                 // Disable button if we've reached the limit
                 if (currentCount >= 9) {
-                    addBtn.disabled = true;
-                    addBtn.title = "Maximum of 9 instances allowed";
+                    buttonRef.disabled = true;
+                    buttonRef.title = "Maximum of 9 instances allowed";
                 } else {
-                    addBtn.disabled = false;
-                    addBtn.title = "";
+                    buttonRef.disabled = false;
+                    buttonRef.title = "";
                 }
             };
             
+            // Remove any existing event listeners to prevent duplicates
+            const newAddBtn = addBtn.cloneNode(true);
+            addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+            
             // Initial button text update
-            updateAddButtonText();
+            updateAddButtonText(newAddBtn);
             
             // Add event listener for the add button
-            addBtn.addEventListener('click', function() {
+            newAddBtn.addEventListener('click', function() {
                 const instancesContainer = container.querySelector('.instances-container');
                 if (!instancesContainer) return;
                 
@@ -3050,6 +3065,28 @@ const SettingsForms = {
                                 <input type="number" id="${appType}-${upgradeFieldName}-${newIndex}" name="${upgradeFieldName}" min="0" value="${upgradeDefault}" style="width: 80px;">
                                 <p class="setting-help">Number of items to search for quality upgrades per cycle (0 to disable)</p>
                             </div>
+                            ${appType === 'sonarr' ? `
+                            <div class="setting-item">
+                                <label for="${appType}-hunt-missing-mode-${newIndex}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about missing search modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search Mode:</label>
+                                <select id="${appType}-hunt-missing-mode-${newIndex}" name="hunt_missing_mode">
+                                    <option value="seasons_packs" selected>Season Packs</option>
+                                    <option value="shows">Shows</option>
+                                    <option value="episodes">Episodes</option>
+                                </select>
+                                <p class="setting-help">How to search for missing content for this instance (Season Packs recommended)</p>
+                                <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: none;" id="episodes-missing-warning-${newIndex}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                            </div>
+                            <div class="setting-item">
+                                <label for="${appType}-upgrade-mode-${newIndex}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Mode:</label>
+                                <select id="${appType}-upgrade-mode-${newIndex}" name="upgrade_mode">
+                                    <option value="seasons_packs" selected>Season Packs</option>
+                                    <option value="shows">Shows</option>
+                                    <option value="episodes">Episodes</option>
+                                </select>
+                                <p class="setting-help">How to search for upgrades for this instance (Season Packs recommended)</p>
+                                <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: none;" id="episodes-upgrade-warning-${newIndex}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                            </div>
+                            ` : ''}
                             <div class="setting-item">
                                 <label for="${appType}-swaparr-${newIndex}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                                 <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
@@ -3103,11 +3140,39 @@ const SettingsForms = {
                     });
                 }
                 
+                // Set up mode dropdown event listeners for Sonarr instances
+                if (appType === 'sonarr') {
+                    const huntMissingModeSelect = newInstance.querySelector(`#${appType}-hunt-missing-mode-${newIndex}`);
+                    const upgradeModeSelect = newInstance.querySelector(`#${appType}-upgrade-mode-${newIndex}`);
+                    const episodesMissingWarning = newInstance.querySelector(`#episodes-missing-warning-${newIndex}`);
+                    const episodesUpgradeWarning = newInstance.querySelector(`#episodes-upgrade-warning-${newIndex}`);
+                    
+                    if (huntMissingModeSelect && episodesMissingWarning) {
+                        huntMissingModeSelect.addEventListener('change', function() {
+                            if (this.value === 'episodes') {
+                                episodesMissingWarning.style.display = 'block';
+                            } else {
+                                episodesMissingWarning.style.display = 'none';
+                            }
+                        });
+                    }
+                    
+                    if (upgradeModeSelect && episodesUpgradeWarning) {
+                        upgradeModeSelect.addEventListener('change', function() {
+                            if (this.value === 'episodes') {
+                                episodesUpgradeWarning.style.display = 'block';
+                            } else {
+                                episodesUpgradeWarning.style.display = 'none';
+                            }
+                        });
+                    }
+                }
+                
                 // Initial status check for the new instance
                 SettingsForms.checkConnectionStatus(appType, newIndex);
                 
                 // Update button text and trigger change event
-                updateAddButtonText();
+                updateAddButtonText(newAddBtn);
                 const changeEvent = new Event('change');
                 container.dispatchEvent(changeEvent);
                 
