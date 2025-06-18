@@ -1026,23 +1026,16 @@ def api_reset_stats_public():
 
 @app.route('/version.txt')
 def version_txt():
-    """Serve version.txt file directly"""
+    """Serve version from database"""
     try:
-        # Use a simpler, more direct approach to read the version
-        version_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'version.txt')
-        if os.path.exists(version_path):
-            with open(version_path, 'r') as f:
-                version = f.read().strip()
-            return version, 200, {'Content-Type': 'text/plain', 'Cache-Control': 'no-cache'}
-        else:
-            # If file doesn't exist, log warning and return default version
-            web_logger = get_logger("web_server")
-            web_logger.warning(f"version.txt not found at {version_path}, returning default version")
-            return "5.3.1", 200, {'Content-Type': 'text/plain', 'Cache-Control': 'no-cache'}
+        from src.primary.utils.database import get_database
+        db = get_database()
+        version = db.get_version()
+        return version, 200, {'Content-Type': 'text/plain', 'Cache-Control': 'no-cache'}
     except Exception as e:
         web_logger = get_logger("web_server")
-        web_logger.error(f"Error serving version.txt: {e}")
-        return "5.3.1", 200, {'Content-Type': 'text/plain', 'Cache-Control': 'no-cache'}
+        web_logger.error(f"Error serving version from database: {e}")
+        return "N/A", 200, {'Content-Type': 'text/plain', 'Cache-Control': 'no-cache'}
 
 @app.route('/api/cycle/status', methods=['GET'])
 def api_get_all_cycle_status():

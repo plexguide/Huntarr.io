@@ -469,6 +469,15 @@ class HuntarrDatabase:
             conn.commit()
             logger.debug(f"Set general setting {key} = {value}")
     
+    def get_version(self) -> str:
+        """Get the current version from database"""
+        return self.get_general_setting('current_version', 'N/A')
+    
+    def set_version(self, version: str):
+        """Set the current version in database"""
+        self.set_general_setting('current_version', version.strip())
+        logger.debug(f"Version stored in database: {version.strip()}")
+    
     def get_all_app_types(self) -> List[str]:
         """Get list of all app types in database"""
         with self.get_connection() as conn:
