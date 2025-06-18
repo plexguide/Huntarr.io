@@ -1,0 +1,231 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+---
+alwaysApply: true
+---
+
+# Huntarr Development Rules for Cursor AI
+
+## 🚨 CRITICAL MANDATORY RULES
+
+### NEVER AUTO-COMMIT
+- NEVER automatically commit changes without explicit user approval
+- Always present fixes to user first and get explicit approval before committing
+- Let user decide when to commit
+
+### MANDATORY TESTING WORKFLOW
+- ALWAYS rebuild and test changes using: `cd /Users/home/Huntarr/Huntarr.io && docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
+- ALWAYS check logs for errors: `docker logs huntarr`
+- Test in both Docker and local environments
+
+### CROSS-PLATFORM REQUIREMENTS
+- NEVER use hard-coded absolute paths (e.g., `/config/file.json`)
+- ALWAYS use `os.path.join()` for path construction
+- ALWAYS use relative URLs in frontend (e.g., `./api/` not `/api/`)
+- ALWAYS test: Docker, Windows, Mac, Linux, subpaths (`domain.com/huntarr/`)
+
+## 🗄️ DATABASE-FIRST DEVELOPMENT
+
+### ALWAYS Use DatabaseManager
+- Use `DatabaseManager` class from `src/primary/utils/database.py` for ALL data operations
+- NEVER use direct SQLite calls (`sqlite3.connect()`)
+- NEVER use JSON file operations for persistent data
+- DatabaseManager auto-detects environment (Docker vs local)
+
+### Database Locations
+- Docker: `/config/huntarr.db` (persistent volume)
+- Local: `{project_root}/data/huntarr.db`
+- Auto-detection handles path selection
+
+### Code Pattern
+```python
+# ✅ CORRECT
+from src.primary.utils.database import DatabaseManager
+db = DatabaseManager()
+db.set_setting('app', 'key', 'value')
+
+# ❌ NEVER DO THIS
+import sqlite3
+conn = sqlite3.connect('/config/huntarr.db')
+```
+
+## 🌐 FRONTEND DEVELOPMENT RULES
+
+### URL Patterns
+- ALWAYS use relative URLs: `./api/endpoint` not `/api/endpoint`
+- ALWAYS use relative redirects: `window.location.href = './'` not `'/'`
+- This ensures subpath deployment works (`domain.com/huntarr/`)
+
+### Documentation Links
+- ALWAYS use GitHub documentation domain: `https://plexguide.github.io/Huntarr.io/`
+- ALWAYS include proper anchors that exist in documentation
+- ALWAYS verify anchors exist before linking
+- Pattern: `https://plexguide.github.io/Huntarr.io/apps/[app-name].html#[anchor]`
+
+### JavaScript Patterns
+- ALWAYS declare variables before use in form generation
+- NEVER use double backslashes in regex patterns
+- ALWAYS handle undefined variables gracefully
+
+## 🐛 COMMON ISSUE PREVENTION
+
+### Log Regex Issues
+- Use clean regex patterns without double backslashes
+- Test regex patterns thoroughly
+- File: `/frontend/static/js/new-main.js` - `connectEventSource()` method
+
+### Settings Form Issues
+- Include all field name variations for different apps
+- Readarr: `hunt_missing_books`, `hunt_upgrade_books`
+- Radarr: `hunt_missing_movies`, `hunt_upgrade_movies`
+- Sonarr/Lidarr/Whisparr/Eros: `hunt_missing_items`, `hunt_upgrade_items`
+- File: `/frontend/static/js/settings_forms.js`
+
+### CSS Loading Order
+- Add responsive CSS to external files, not inline in components
+- Use debug borders to test CSS loading: `border: 2px solid lime !important;`
+- Files: `/frontend/static/css/responsive-fix.css`, `/frontend/static/css/new-style.css`
+
+## 📁 KEY FILE LOCATIONS
+
+### Backend Core
+- `/src/primary/utils/database.py` - DatabaseManager class (USE THIS)
+- `/src/primary/routes/common.py` - API endpoints
+- `/src/primary/auth.py` - Authentication logic
+
+### Frontend Core
+- `/frontend/static/js/new-main.js` - Main UI logic
+- `/frontend/static/js/settings_forms.js` - Settings forms
+- `/frontend/templates/components/` - UI components
+
+### Database Files
+- Docker: `/config/huntarr.db`
+- Local: `./data/huntarr.db`
+
+## 🔧 DEVELOPMENT WORKFLOW
+
+### Before Making Changes
+1. Check current directory: `/Users/home/Huntarr/Huntarr.io`
+2. Activate venv for local development: `source venv/bin/activate`
+3. Review these rules
+
+### Making Changes
+1. Edit source code (never modify inside container)
+2. For local testing: `python main.py` (uses ./data/huntarr.db)
+3. For Docker testing: `docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
+4. Check logs: `docker logs huntarr`
+5. Test functionality in both environments
+
+### Before Committing
+1. Test in Docker environment
+2. Test in local environment  
+3. Test cross-platform compatibility
+4. Test subpath scenarios
+5. Check browser console for errors
+6. Verify database persistence across container restarts
+7. Get user approval before committing
+
+## ⚠️ ANTI-PATTERNS TO AVOID
+
+### Database Anti-Patterns
+- ❌ Direct SQLite calls: `sqlite3.connect()`
+- ❌ Hard-coded database paths: `/config/huntarr.db`
+- ❌ JSON file operations for persistent data
+- ❌ Not testing both Docker and local database operations
+
+### Frontend Anti-Patterns
+- ❌ Absolute URLs: `/api/endpoint`, `window.location.href = '/'`
+- ❌ Wrong documentation domain links
+- ❌ Missing anchor verification
+- ❌ Double backslashes in regex
+- ❌ Inline responsive CSS in components
+
+### Development Anti-Patterns
+- ❌ Modifying files inside containers
+- ❌ Auto-committing without approval
+- ❌ Testing only in Docker
+- ❌ Not using virtual environment for local development
+- ❌ Creating temporary files instead of fixing source
+
+## 🚨 PROACTIVE VIOLATION SCANNING
+
+### Before Every Commit, Check For:
+1. Absolute URL violations: `grep -r "fetch('/api/" frontend/ --include="*.js"`
+2. Documentation violations: `grep -r "href.*plexguide.github.io" frontend/ --include="*.js" | grep -v "plexguide.github.io/Huntarr.io"`
+3. Database violations: `grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py"`
+4. Hard-coded path violations: `grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager"`
+
+## 📊 SPECIFIC BUG PATTERNS TO AVOID
+
+### GitHub Issue #626 Pattern (2FA Verification)
+- Check both `temp_2fa_secret` (setup) and `two_fa_secret` (enabled) in auth functions
+- File: `/src/primary/auth.py`
+
+### GitHub Issue #624 Pattern (Settings Persistence)
+- Include all field name variations in form collection logic
+- File: `/frontend/static/js/settings_forms.js`
+
+### GitHub Issue #629 Pattern (Windows Database Access)
+- Use DatabaseManager with proper Windows AppData support
+- Never hard-code database paths
+
+## 🎯 DEBUGGING APPROACH
+
+### Systematic Issue Discovery
+1. Don't guess - scan systematically first
+2. Use grep to find exact error patterns
+3. Check browser console for JavaScript errors
+4. Verify database operations in both environments
+5. Test cross-platform compatibility
+
+### Database Debugging
+```bash
+# Docker environment
+docker exec huntarr ls -la /config/huntarr.db
+docker exec huntarr sqlite3 /config/huntarr.db ".tables"
+
+# Local environment  
+ls -la ./data/huntarr.db
+sqlite3 ./data/huntarr.db ".tables"
+```
+
+## 📝 MEMORY CREATION GUIDELINES
+
+Create memories for:
+- ✅ Bug fixes with root cause analysis
+- ✅ New features and their implementation patterns
+- ✅ Cross-platform compatibility fixes
+- ✅ Performance improvements
+- ✅ Database migration insights
+
+## 🚀 DEPLOYMENT RULES
+
+### Branch Management
+- Work on feature branches
+- Deploy to `dev` branch first
+- Merge `dev` to `main` after testing
+- Always pull latest changes before merging
+
+### Testing Requirements
+- Test in Docker environment
+- Test in local development environment
+- Test cross-platform paths
+- Test subpath deployment scenarios
+- Verify database persistence
+
+## 📋 FOLLOW .github/listen.md GUIDELINES
+
+This file automatically enforces the patterns from `.github/listen.md`. The user should not need to remind you about:
+- Using DatabaseManager instead of direct SQLite
+- Using relative URLs instead of absolute URLs
+- Testing in both Docker and local environments
+- Following cross-platform compatibility requirements
+- Getting approval before committing changes
+- Using proper documentation links with verified anchors
+
+---
+
+**REMEMBER: These rules are automatically applied. Follow them without being reminded.**
