@@ -258,20 +258,20 @@ def plex_login():
                     'error': 'Failed to create Plex user'
                 }), 500
         else:
-            # User exists - this means they want to login with existing Plex-linked account
-            from src.primary.auth import get_user_data
-            user_data = get_user_data()
+            # User exists - check if they have Plex authentication configured
+            from src.primary.utils.database import get_database
+            db = get_database()
+            user_data = db.get_first_user()  # Get the existing user
             
-            if user_data.get('auth_type') == 'plex' or user_data.get('plex_linked'):
+            if user_data and user_data.get('plex_token'):
                 # Check if this is the same Plex user
-                if user_data.get('plex_user_id') == plex_user_data.get('id'):
+                stored_plex_data = user_data.get('plex_user_data', {})
+                if stored_plex_data.get('id') == plex_user_data.get('id'):
                     # Update token in case it changed
-                    user_data['plex_token'] = plex_token
-                    from src.primary.auth import save_user_data
-                    save_user_data(user_data)
+                    db.update_user_plex(user_data['username'], plex_token, plex_user_data)
                     
                     # Create session
-                    username = user_data.get('plex_username') or user_data.get('username', 'unknown')
+                    username = user_data['username']
                     session_id = create_session(username)
                     
                     response = jsonify({
@@ -291,7 +291,7 @@ def plex_login():
             else:
                 return jsonify({
                     'success': False,
-                    'error': 'Local user exists but Plex account is not linked. Please use account linking.'
+                    'error': 'Local user exists. Please link your Plex account in user settings.'
                 }), 409
                 
     except Exception as e:
