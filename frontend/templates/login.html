@@ -442,12 +442,15 @@
                 </div>
             </form>
         </div>
+        {% if plex_auth_enabled %}
         <div class="plex-login-section">
             <button class="plex-login-button" id="plexLoginButton">
                 <i class="fas fa-tv"></i> Log in with Plex
             </button>
         </div>
+        {% endif %}
     </div>
+    {% if plex_auth_enabled %}
     <div class="plex-modal" id="plexModal">
         <div class="plex-modal-content">
             <div class="plex-modal-header">
@@ -465,6 +468,7 @@
             </button>
         </div>
     </div>
+    {% endif %}
 
     <!-- Recovery Modal -->
     <div class="plex-modal" id="recoveryModal" style="display: none;">
@@ -675,6 +679,7 @@
             errorMessage.style.display = 'block';
         }
         
+        {% if plex_auth_enabled %}
         const plexLoginButton = document.getElementById('plexLoginButton');
         const plexModal = document.getElementById('plexModal');
         const plexModalClose = document.getElementById('plexModalClose');
@@ -885,6 +890,7 @@
             plexStatus.className = `plex-status ${type}`;
             plexStatus.innerHTML = message;
         }
+        {% endif %}
         
         // Recovery functionality
         const forgotPasswordLink = document.getElementById('forgotPasswordLink');

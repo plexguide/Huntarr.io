@@ -1282,6 +1282,19 @@ class HuntarrDatabase:
         except Exception as e:
             logger.error(f"Error updating Plex settings for user {username}: {e}")
             return False
+    
+    def has_users_with_plex(self) -> bool:
+        """Check if any users have Plex authentication configured"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT COUNT(*) FROM users WHERE plex_token IS NOT NULL AND plex_token != ''
+                ''')
+                count = cursor.fetchone()[0]
+                return count > 0
+        except Exception as e:
+            logger.error(f"Error checking for Plex users: {e}")
+            return False
 
     # Recovery Key Methods
     def generate_recovery_key(self, username: str) -> Optional[str]:

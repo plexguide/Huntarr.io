@@ -131,8 +131,18 @@ def login_route():
         if not user_exists():
              logger.info("No user exists, redirecting to setup.")
              return redirect(url_for('common.setup'))
+        
+        # Check if any users have Plex authentication configured
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            plex_auth_enabled = db.has_users_with_plex()
+        except Exception as e:
+            logger.error(f"Error checking for Plex users: {e}")
+            plex_auth_enabled = False
+        
         logger.debug("Displaying login page.")
-        return render_template('login.html')
+        return render_template('login.html', plex_auth_enabled=plex_auth_enabled)
 
 @common_bp.route('/logout', methods=['POST'])
 def logout_route():
