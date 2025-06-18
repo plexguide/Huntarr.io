@@ -634,25 +634,27 @@ def disable_2fa_with_password_and_otp(username: str, password: str, otp_code: st
 
 def change_username(current_username: str, new_username: str, password: str) -> bool:
     """Change the username for the current user"""
-    user_data = get_user_data()
+    from .utils.database import get_database
     
-    # Verify current username and password
-    current_username_hash = hash_username(current_username)
-    if user_data.get("username") != current_username_hash:
-        logger.warning(f"Username change failed: Current username '{current_username}' does not match stored hash.")
+    db = get_database()
+    
+    # Get current user data from database
+    user_data = db.get_user_by_username(current_username)
+    if not user_data:
+        logger.warning(f"Username change failed: User '{current_username}' not found in database.")
         return False
     
-    if not verify_password(user_data.get("password", ""), password):
+    # Verify current password (direct comparison as used in verify_user)
+    if user_data.get("password") != password:
         logger.warning(f"Username change failed for '{current_username}': Invalid password provided.")
         return False
     
-    # Update username
-    user_data["username"] = hash_username(new_username)
-    if save_user_data(user_data):
+    # Update username in database
+    if db.update_user_username(current_username, new_username):
         logger.info(f"Username changed successfully from '{current_username}' to '{new_username}'.")
         return True
     else:
-        logger.error(f"Failed to save user data after changing username for '{current_username}'.")
+        logger.error(f"Failed to update username in database for '{current_username}'.")
         return False
 
 def change_password(current_password: str, new_password: str) -> bool:
