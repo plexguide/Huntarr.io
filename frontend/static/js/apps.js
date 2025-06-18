@@ -254,6 +254,22 @@ const appsModule = {
                             SettingsForms.updateDurationDisplay();
                         }
                         
+                        // Explicitly ensure connection status checking is set up for all supported apps
+                        const supportedApps = ['radarr', 'sonarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+                        if (supportedApps.includes(app) && typeof SettingsForms.setupInstanceManagement === 'function') {
+                            // Find the instances container and set up connection status checking
+                            const instancesContainer = formElement.querySelector('.instances-container');
+                            if (instancesContainer) {
+                                const instanceCount = appSettings.instances ? appSettings.instances.length : 0;
+                                console.log(`[Apps] Setting up connection status checking for ${app} with ${instanceCount} instances`);
+                                SettingsForms.setupInstanceManagement(instancesContainer.parentElement, app, instanceCount);
+                            } else {
+                                console.warn(`[Apps] No instances container found for ${app}, connection status checking may not work`);
+                            }
+                        } else {
+                            console.log(`[Apps] Skipping connection status setup for ${app} (supported: ${supportedApps.includes(app)}, function available: ${typeof SettingsForms.setupInstanceManagement})`);
+                        }
+                        
                         // Store original form values after form is generated
                         this.storeOriginalFormValues(appPanel);
                         
@@ -281,18 +297,18 @@ const appsModule = {
         console.log(`Adding form change listeners to form with app type: ${form.getAttribute('data-app-type')}`);
         
         // Function to handle form element changes
-        const handleChange = () => {
+        const handleChange = (event) => {
             // Skip if test connection suppression is active
             if (window._suppressUnsavedChangesDialog === true || window._appsSuppressChangeDetection === true) {
-                console.log('Change detection suppressed due to test connection or status updates');
+                console.log(`[Apps] Change detection suppressed due to test connection or status updates (element: ${event?.target?.id || 'unknown'})`);
                 return;
             }
             
             if (this.hasFormChanges(form)) {
-                console.log('Form changed, enabling save button');
+                console.log(`[Apps] Form changed, enabling save button (triggered by: ${event?.target?.id || 'unknown'})`);
                 this.markAppsAsChanged();
             } else {
-                console.log('No actual changes, save button remains disabled');
+                console.log(`[Apps] No actual changes, save button remains disabled (event from: ${event?.target?.id || 'unknown'})`);
             }
         };
         
@@ -387,16 +403,16 @@ const appsModule = {
                 if (shouldUpdate) {
                     // Skip if test connection suppression is active
                     if (window._suppressUnsavedChangesDialog === true || window._appsSuppressChangeDetection === true) {
-                        console.log('MutationObserver suppressed due to test connection or status updates');
+                        console.log(`[Apps] MutationObserver suppressed due to test connection or status updates (flags: _suppressUnsavedChangesDialog=${window._suppressUnsavedChangesDialog}, _appsSuppressChangeDetection=${window._appsSuppressChangeDetection})`);
                         return;
                     }
                     
-                    console.log('Instances container changed - checking for form changes');
+                    console.log('[Apps] Instances container changed - checking for form changes');
                     if (this.hasFormChanges(form)) {
-                        console.log('Form changed, enabling save button');
+                        console.log('[Apps] Form changed via MutationObserver, enabling save button');
                         this.markAppsAsChanged();
                     } else {
-                        console.log('No actual changes, save button remains disabled');
+                        console.log('[Apps] No actual changes via MutationObserver, save button remains disabled');
                     }
                 }
             });

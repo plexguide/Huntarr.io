@@ -3181,12 +3181,14 @@ const SettingsForms = {
     
     // Helper method to reset unsaved changes suppression flags
     _resetSuppressionFlags: function() {
+        console.log('[ConnectionStatus] Resetting all suppression flags');
         // Reset all suppression flags
         if (window.huntarrUI) {
             window.huntarrUI.suppressUnsavedChangesCheck = false;
         }
         window._suppressUnsavedChangesDialog = false;
         window._appsSuppressChangeDetection = false;
+        console.log('[ConnectionStatus] All suppression flags reset');
     },
     
     // Check connection status for an instance
@@ -3205,6 +3207,8 @@ const SettingsForms = {
         // Find the status element in the instance header
         const statusElement = document.getElementById(`${app}-status-${instanceIndex}`);
         
+        console.log(`[ConnectionStatus] Suppressing change detection for ${app} instance ${instanceIndex}`);
+        
         // Temporarily suppress change detection to prevent the unsaved changes dialog
         if (window.huntarrUI) {
             window.huntarrUI.suppressUnsavedChangesCheck = true;
@@ -3218,21 +3222,28 @@ const SettingsForms = {
                 statusElement.textContent = 'Enter URL and API Key';
                 statusElement.style.color = '#888';
             }
-            this._resetSuppressionFlags();
+            // Longer delay for reset to ensure all changes are processed
+            setTimeout(() => {
+                this._resetSuppressionFlags();
+            }, 2000);
             return;
         } else if (url.length <= 10) {
             if (statusElement) {
                 statusElement.textContent = 'Missing URL';
                 statusElement.style.color = '#fbbf24';
             }
-            this._resetSuppressionFlags();
+            setTimeout(() => {
+                this._resetSuppressionFlags();
+            }, 2000);
             return;
         } else if (apiKey.length <= 20) {
             if (statusElement) {
                 statusElement.textContent = 'Missing API Key';
                 statusElement.style.color = '#fbbf24';
             }
-            this._resetSuppressionFlags();
+            setTimeout(() => {
+                this._resetSuppressionFlags();
+            }, 2000);
             return;
         }
         
@@ -3253,7 +3264,7 @@ const SettingsForms = {
     
     // Test connection and update status
     testConnectionAndUpdateStatus: function(app, instanceIndex, url, apiKey, statusElement) {
-        console.log(`Testing connection for ${app} instance ${instanceIndex}`);
+        console.log(`[ConnectionStatus] Testing connection for ${app} instance ${instanceIndex}`);
         
         // Make API request to test connection
         HuntarrUtils.fetchWithTimeout(`./api/${app}/test-connection`, {
@@ -3273,7 +3284,7 @@ const SettingsForms = {
             return response.json();
         })
         .then(data => {
-            console.log(`Connection test response:`, data);
+            console.log(`[ConnectionStatus] Connection test response for ${app} instance ${instanceIndex}:`, data);
             
             if (data.success) {
                 // Update status to connected
@@ -3293,13 +3304,15 @@ const SettingsForms = {
                 }
             }
             
-            // Reset suppression flags after updating status
+            // Reset suppression flags after updating status with longer delay
+            console.log(`[ConnectionStatus] Resetting suppression flags for ${app} instance ${instanceIndex} in 2 seconds`);
             setTimeout(() => {
+                console.log(`[ConnectionStatus] Suppression flags reset for ${app} instance ${instanceIndex}`);
                 this._resetSuppressionFlags();
-            }, 500);
+            }, 2000);
         })
         .catch(error => {
-            console.error(`Connection test error:`, error);
+            console.error(`[ConnectionStatus] Connection test error for ${app} instance ${instanceIndex}:`, error);
             
             // Update status to error
             if (statusElement) {
@@ -3307,10 +3320,12 @@ const SettingsForms = {
                 statusElement.style.color = '#ef4444';
             }
             
-            // Reset suppression flags after updating status
+            // Reset suppression flags after updating status with longer delay
+            console.log(`[ConnectionStatus] Resetting suppression flags for ${app} instance ${instanceIndex} in 2 seconds (error case)`);
             setTimeout(() => {
+                console.log(`[ConnectionStatus] Suppression flags reset for ${app} instance ${instanceIndex} (error case)`);
                 this._resetSuppressionFlags();
-            }, 500);
+            }, 2000);
         });
     },
     
