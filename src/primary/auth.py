@@ -278,6 +278,16 @@ def get_username_from_session(session_id: str) -> Optional[str]:
     # Return the stored username
     return active_sessions[session_id].get("username")
 
+def update_session_username(session_id: str, new_username: str) -> bool:
+    """Update the username in an existing session"""
+    if not session_id or session_id not in active_sessions:
+        return False
+    
+    # Update the username in the session
+    active_sessions[session_id]["username"] = new_username
+    logger.debug(f"Updated session {session_id} username to '{new_username}'")
+    return True
+
 def authenticate_request():
     """Flask route decorator to check if user is authenticated"""
 

@@ -15,6 +15,7 @@ from flask import Blueprint, request, jsonify, make_response, redirect, url_for,
 from ..auth import (
     verify_user, create_session, get_username_from_session, SESSION_COOKIE_NAME,
     change_username as auth_change_username, change_password as auth_change_password,
+    update_session_username,
     validate_password_strength, logout, verify_session, disable_2fa_with_password_and_otp,
     user_exists, create_user, generate_2fa_secret, verify_2fa_code, is_2fa_enabled, # Add missing auth imports
     hash_password # Add hash_password import for recovery key reset
@@ -306,14 +307,16 @@ def change_username_route():
 
     # Call the change_username function from auth.py
     if auth_change_username(current_username, new_username, password):
-        # Update session? The session stores a token, not the username directly.
-        # If the username is needed frequently, maybe re-create session or update session data if stored there.
-        # For now, assume token remains valid.
+        # Update the session to reflect the new username
+        session_token = request.cookies.get(SESSION_COOKIE_NAME)
+        if session_token:
+            if update_session_username(session_token, new_username):
+                logger.debug(f"Session updated with new username '{new_username}' for session {session_token}")
+            else:
+                logger.warning(f"Failed to update session with new username '{new_username}'")
+        
         logger.info(f"Username changed successfully for '{current_username}' to '{new_username}'.")
-        # Re-fetch username to confirm change for response? Or trust change_username?
-        # Fetch updated info to send back
-        updated_username = new_username # Assume success means it changed
-        return jsonify({"success": True, "username": updated_username}) # Return new username
+        return jsonify({"success": True, "username": new_username})
     else:
         logger.warning(f"Username change failed for '{current_username}'. Check logs in auth.py for details.")
         return jsonify({"success": False, "error": "Failed to change username. Check password or logs."}), 400
