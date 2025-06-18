@@ -442,8 +442,9 @@ def unlink_plex_account():
 def plex_status():
     """Get Plex authentication status for current user"""
     try:
-        from src.primary.auth import get_user_data
-        user_data = get_user_data()
+        from src.primary.utils.database import get_database
+        db = get_database()
+        user_data = db.get_first_user()  # Get the user from database
         
         if not user_data:
             return jsonify({
@@ -453,7 +454,7 @@ def plex_status():
         
         # Check if Plex is linked by looking for plex_token
         plex_token = user_data.get('plex_token')
-        plex_user_data = user_data.get('plex_user_data')
+        plex_user_data = user_data.get('plex_user_data', {})
         plex_linked = bool(plex_token)
         
         # Determine auth type - if user has plex_token, they can use plex auth
@@ -466,20 +467,14 @@ def plex_status():
         }
         
         if plex_linked:
-            # Parse plex_user_data if it exists
-            if plex_user_data and isinstance(plex_user_data, dict):
-                response_data.update({
-                    'plex_username': plex_user_data.get('username'),
-                    'plex_email': plex_user_data.get('email'),
-                    'plex_linked_at': plex_user_data.get('linked_at')
-                })
-            else:
-                # If plex_user_data is missing, we still know it's linked but don't have details
-                response_data.update({
-                    'plex_username': 'Unknown',
-                    'plex_email': 'Unknown',
-                    'plex_linked_at': None
-                })
+            # Get the linked timestamp from the database
+            plex_linked_at = user_data.get('plex_linked_at')
+            
+            response_data.update({
+                'plex_username': plex_user_data.get('username', 'Unknown'),
+                'plex_email': plex_user_data.get('email', 'Unknown'),
+                'plex_linked_at': plex_linked_at
+            })
         
         return jsonify(response_data)
         

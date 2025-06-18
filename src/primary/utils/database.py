@@ -345,6 +345,14 @@ class HuntarrDatabase:
                 # Column already exists
                 pass
             
+            # Add plex_linked_at column if it doesn't exist (for existing databases)
+            try:
+                conn.execute('ALTER TABLE users ADD COLUMN plex_linked_at INTEGER')
+                logger.info("Added plex_linked_at column to users table")
+            except sqlite3.OperationalError:
+                # Column already exists
+                pass
+            
             # Create reset_requests table for reset request management
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS reset_requests (
@@ -1268,14 +1276,18 @@ class HuntarrDatabase:
                         plex_user_data: Dict[str, Any] = None) -> bool:
         """Update user Plex settings"""
         try:
+            import time
             plex_data_json = json.dumps(plex_user_data) if plex_user_data else None
+            
+            # Set the linked timestamp when plex_token is provided (linking account)
+            plex_linked_at = int(time.time()) if plex_token else None
             
             with self.get_connection() as conn:
                 conn.execute('''
                     UPDATE users SET plex_token = ?, plex_user_data = ?, 
-                                   updated_at = CURRENT_TIMESTAMP 
+                                   plex_linked_at = ?, updated_at = CURRENT_TIMESTAMP 
                     WHERE username = ?
-                ''', (plex_token, plex_data_json, username))
+                ''', (plex_token, plex_data_json, plex_linked_at, username))
                 conn.commit()
                 logger.info(f"Updated Plex settings for user: {username}")
                 return True
