@@ -511,7 +511,7 @@ def generate_2fa_secret(username: str) -> Tuple[str, str]:
         raise
 
 def verify_2fa_code(username: str, code: str, enable_on_verify: bool = False) -> bool:
-    """Verify a 2FA code against the temporary secret"""
+    """Verify a 2FA code against the appropriate secret (temporary for setup, permanent for enabled 2FA)"""
     try:
         db = get_database()
         user_data = db.get_user_by_username(username)
@@ -520,6 +520,23 @@ def verify_2fa_code(username: str, code: str, enable_on_verify: bool = False) ->
             logger.warning(f"2FA verification attempt for '{username}' failed: User not found.")
             return False
         
+        # Check if 2FA is already enabled - use permanent secret
+        if user_data.get("two_fa_enabled"):
+            perm_secret = user_data.get("two_fa_secret")
+            if not perm_secret:
+                logger.warning(f"2FA verification attempt for '{username}' failed: 2FA enabled but no permanent secret found.")
+                return False
+            
+            totp = pyotp.TOTP(perm_secret)
+            # Add time window tolerance for better compatibility
+            if totp.verify(code, valid_window=1):
+                logger.info(f"2FA code verified successfully for user '{username}' using permanent secret.")
+                return True
+            else:
+                logger.warning(f"Invalid 2FA code provided by user '{username}' for permanent secret. Code: {code}")
+                return False
+        
+        # 2FA not enabled yet - use temporary secret for setup
         temp_secret = user_data.get("temp_2fa_secret")
         
         if not temp_secret:
@@ -531,7 +548,7 @@ def verify_2fa_code(username: str, code: str, enable_on_verify: bool = False) ->
         
         # Add time window tolerance for better compatibility
         if totp.verify(code, valid_window=1):
-            logger.info(f"2FA code verified successfully for user '{username}'.")
+            logger.info(f"2FA code verified successfully for user '{username}' using temporary secret.")
             if enable_on_verify:
                 # Enable 2FA permanently
                 success = db.update_user_2fa(username, True, temp_secret)
@@ -547,7 +564,7 @@ def verify_2fa_code(username: str, code: str, enable_on_verify: bool = False) ->
                     return False
             return True
         else:
-            logger.warning(f"Invalid 2FA code provided by user '{username}'. Code: {code}")
+            logger.warning(f"Invalid 2FA code provided by user '{username}' for temporary secret. Code: {code}")
             # Add debugging info
             current_code = totp.now()
             logger.debug(f"Expected current code: {current_code}")
