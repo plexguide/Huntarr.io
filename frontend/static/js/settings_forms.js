@@ -101,23 +101,13 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-hunt-missing-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about missing items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="sonarr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${huntMissingItems}" style="width: 80px;">
-                                <select id="sonarr-missing-quality-profile-${index}" name="missing_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.missing_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of missing items to search per cycle (0 to disable). Select a quality profile to only process items using that profile.</p>
+                            <input type="number" id="sonarr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${huntMissingItems}" style="width: 80px;">
+                            <p class="setting-help">Number of missing items to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-hunt-upgrade-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="sonarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${huntUpgradeItems}" style="width: 80px;">
-                                <select id="sonarr-upgrade-quality-profile-${index}" name="upgrade_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.upgrade_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of episodes to upgrade per cycle (0 to disable). Select a quality profile to only process items using that profile.</p>
+                            <input type="number" id="sonarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${huntUpgradeItems}" style="width: 80px;">
+                            <p class="setting-help">Number of episodes to upgrade per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -339,23 +329,13 @@ const SettingsForms = {
 
                         <div class="setting-item">
                             <label for="radarr-hunt-missing-movies-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#search-settings" class="info-icon" title="Learn more about missing movies search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="radarr-hunt-missing-movies-${index}" name="hunt_missing_movies" min="0" value="${instance.hunt_missing_movies !== undefined ? instance.hunt_missing_movies : 1}" style="width: 80px;">
-                                <select id="radarr-missing-quality-profile-${index}" name="missing_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.missing_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of missing movies to search per cycle (0 to disable). Select a quality profile to only process movies using that profile.</p>
+                            <input type="number" id="radarr-hunt-missing-movies-${index}" name="hunt_missing_movies" min="0" value="${instance.hunt_missing_movies !== undefined ? instance.hunt_missing_movies : 1}" style="width: 80px;">
+                            <p class="setting-help">Number of missing movies to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="radarr-hunt-upgrade-movies-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#search-settings" class="info-icon" title="Learn more about upgrading movies for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="radarr-hunt-upgrade-movies-${index}" name="hunt_upgrade_movies" min="0" value="${instance.hunt_upgrade_movies !== undefined ? instance.hunt_upgrade_movies : 0}" style="width: 80px;">
-                                <select id="radarr-upgrade-quality-profile-${index}" name="upgrade_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.upgrade_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of movies to search for quality upgrades per cycle (0 to disable). Select a quality profile to only process movies using that profile.</p>
+                            <input type="number" id="radarr-hunt-upgrade-movies-${index}" name="hunt_upgrade_movies" min="0" value="${instance.hunt_upgrade_movies !== undefined ? instance.hunt_upgrade_movies : 0}" style="width: 80px;">
+                            <p class="setting-help">Number of movies to search for quality upgrades per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="radarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -548,23 +528,13 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                             <label for="lidarr-hunt-missing-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#search-settings" class="info-icon" title="Learn more about missing items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="lidarr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}" style="width: 80px;">
-                                <select id="lidarr-missing-quality-profile-${index}" name="missing_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.missing_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of artists with missing albums to search per cycle (0 to disable). Select a quality profile to only process albums using that profile.</p>
+                            <input type="number" id="lidarr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}" style="width: 80px;">
+                            <p class="setting-help">Number of artists with missing albums to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="lidarr-hunt-upgrade-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#search-settings" class="info-icon" title="Learn more about upgrading items for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="lidarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
-                                <select id="lidarr-upgrade-quality-profile-${index}" name="upgrade_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.upgrade_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of albums to search for quality upgrades per cycle (0 to disable). Select a quality profile to only process albums using that profile.</p>
+                            <input type="number" id="lidarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
+                            <p class="setting-help">Number of albums to search for quality upgrades per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="lidarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -741,23 +711,13 @@ const SettingsForms = {
                 </div>
                         <div class="setting-item">
                             <label for="readarr-hunt-missing-books-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#search-settings" class="info-icon" title="Learn more about missing books search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="readarr-hunt-missing-books-${index}" name="hunt_missing_books" min="0" value="${instance.hunt_missing_books !== undefined ? instance.hunt_missing_books : 1}" style="width: 80px;">
-                                <select id="readarr-missing-quality-profile-${index}" name="missing_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.missing_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of missing books to search per cycle (0 to disable). Select a quality profile to only process books using that profile.</p>
+                            <input type="number" id="readarr-hunt-missing-books-${index}" name="hunt_missing_books" min="0" value="${instance.hunt_missing_books !== undefined ? instance.hunt_missing_books : 1}" style="width: 80px;">
+                            <p class="setting-help">Number of missing books to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="readarr-hunt-upgrade-books-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#search-settings" class="info-icon" title="Learn more about upgrade books search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="readarr-hunt-upgrade-books-${index}" name="hunt_upgrade_books" min="0" value="${instance.hunt_upgrade_books !== undefined ? instance.hunt_upgrade_books : 0}" style="width: 80px;">
-                                <select id="readarr-upgrade-quality-profile-${index}" name="upgrade_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.upgrade_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of books to upgrade per cycle (0 to disable). Select a quality profile to only process books using that profile.</p>
+                            <input type="number" id="readarr-hunt-upgrade-books-${index}" name="hunt_upgrade_books" min="0" value="${instance.hunt_upgrade_books !== undefined ? instance.hunt_upgrade_books : 0}" style="width: 80px;">
+                            <p class="setting-help">Number of books to upgrade per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="readarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -927,23 +887,13 @@ const SettingsForms = {
                 </div>
                         <div class="setting-item">
                             <label for="whisparr-hunt-missing-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#search-settings" class="info-icon" title="Learn more about missing items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="whisparr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}" style="width: 80px;">
-                                <select id="whisparr-missing-quality-profile-${index}" name="missing_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.missing_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of missing items to search per cycle (0 to disable). Select a quality profile to only process items using that profile.</p>
+                            <input type="number" id="whisparr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}" style="width: 80px;">
+                            <p class="setting-help">Number of missing items to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="whisparr-hunt-upgrade-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#search-settings" class="info-icon" title="Learn more about upgrade items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="whisparr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
-                                <select id="whisparr-upgrade-quality-profile-${index}" name="upgrade_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.upgrade_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of items to upgrade per cycle (0 to disable). Select a quality profile to only process items using that profile.</p>
+                            <input type="number" id="whisparr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
+                            <p class="setting-help">Number of items to upgrade per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="whisparr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -1117,23 +1067,13 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                             <label for="eros-hunt-missing-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#missing-search" class="info-icon" title="Learn more about missing items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="eros-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}" style="width: 80px;">
-                                <select id="eros-missing-quality-profile-${index}" name="missing_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.missing_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of missing items to search per cycle (0 to disable). Select a quality profile to only process items using that profile.</p>
+                            <input type="number" id="eros-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}" style="width: 80px;">
+                            <p class="setting-help">Number of missing items to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="eros-hunt-upgrade-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#upgrade-search" class="info-icon" title="Learn more about upgrade items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="eros-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
-                                <select id="eros-upgrade-quality-profile-${index}" name="upgrade_quality_profile" style="flex: 1; min-width: 150px;" data-selected-value="${instance.upgrade_quality_profile || ''}">
-                                    <option value="">All Quality Profiles</option>
-                                </select>
-                            </div>
-                            <p class="setting-help">Number of items to upgrade per cycle (0 to disable). Select a quality profile to only process items using that profile.</p>
+                            <input type="number" id="eros-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
+                            <p class="setting-help">Number of items to upgrade per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="eros-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -2056,9 +1996,7 @@ const SettingsForms = {
                 const huntMissingItems = huntMissingItemsInput ? parseInt(huntMissingItemsInput.value) || 0 : 1;
                 const huntUpgradeItems = huntUpgradeItemsInput ? parseInt(huntUpgradeItemsInput.value) || 0 : 0;
                 
-                // Get quality profile selections (empty string means "All Quality Profiles")
-                const missingQualityProfile = missingQualityProfileInput ? missingQualityProfileInput.value : '';
-                const upgradeQualityProfile = upgradeQualityProfileInput ? upgradeQualityProfileInput.value : '';
+                // Quality profile selections removed - not functional
                 
                 if (!name || !url || !key) {
                     console.warn(`Instance ${index} is missing required fields`);
@@ -2076,33 +2014,21 @@ const SettingsForms = {
                 if (appType === 'sonarr') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
-                    instanceObj.missing_quality_profile = missingQualityProfile;
-                    instanceObj.upgrade_quality_profile = upgradeQualityProfile;
                 } else if (appType === 'radarr') {
                     instanceObj.hunt_missing_movies = huntMissingItems;
                     instanceObj.hunt_upgrade_movies = huntUpgradeItems;
-                    instanceObj.missing_quality_profile = missingQualityProfile;
-                    instanceObj.upgrade_quality_profile = upgradeQualityProfile;
                 } else if (appType === 'lidarr') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
-                    instanceObj.missing_quality_profile = missingQualityProfile;
-                    instanceObj.upgrade_quality_profile = upgradeQualityProfile;
                 } else if (appType === 'readarr') {
                     instanceObj.hunt_missing_books = huntMissingItems;
                     instanceObj.hunt_upgrade_books = huntUpgradeItems;
-                    instanceObj.missing_quality_profile = missingQualityProfile;
-                    instanceObj.upgrade_quality_profile = upgradeQualityProfile;
                 } else if (appType === 'whisparr') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
-                    instanceObj.missing_quality_profile = missingQualityProfile;
-                    instanceObj.upgrade_quality_profile = upgradeQualityProfile;
                 } else if (appType === 'eros') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
-                    instanceObj.missing_quality_profile = missingQualityProfile;
-                    instanceObj.upgrade_quality_profile = upgradeQualityProfile;
                 }
                 
                 instances.push(instanceObj);
@@ -2852,10 +2778,10 @@ const SettingsForms = {
                 if (input.hasAttribute('data-instance-index')) {
                     const instanceIndex = input.getAttribute('data-instance-index');
                     input.addEventListener('input', () => {
-                        SettingsForms.checkAndAutoFetchQualityProfiles(appType, instanceIndex);
+                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
                     });
                     input.addEventListener('blur', () => {
-                        SettingsForms.checkAndAutoFetchQualityProfiles(appType, instanceIndex);
+                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
                     });
                 }
             });
@@ -2864,10 +2790,10 @@ const SettingsForms = {
                 if (input.hasAttribute('data-instance-index')) {
                     const instanceIndex = input.getAttribute('data-instance-index');
                     input.addEventListener('input', () => {
-                        SettingsForms.checkAndAutoFetchQualityProfiles(appType, instanceIndex);
+                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
                     });
                     input.addEventListener('blur', () => {
-                        SettingsForms.checkAndAutoFetchQualityProfiles(appType, instanceIndex);
+                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
                     });
                 }
             });
@@ -2877,7 +2803,7 @@ const SettingsForms = {
                 urlInputs.forEach(input => {
                     if (input.hasAttribute('data-instance-index')) {
                         const instanceIndex = input.getAttribute('data-instance-index');
-                        SettingsForms.checkAndAutoFetchQualityProfiles(appType, instanceIndex);
+                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
                     }
                 });
             }, 500);
@@ -3055,22 +2981,12 @@ const SettingsForms = {
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-${missingFieldName}-${newIndex}">${missingLabel}:</label>
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <input type="number" id="${appType}-${missingFieldName}-${newIndex}" name="${missingFieldName}" min="0" value="${missingDefault}" style="width: 80px;">
-                                    <select id="${appType}-missing-quality-profile-${newIndex}" name="missing_quality_profile" style="flex: 1; min-width: 150px;">
-                                        <option value="">All Quality Profiles</option>
-                                    </select>
-                                </div>
+                                <input type="number" id="${appType}-${missingFieldName}-${newIndex}" name="${missingFieldName}" min="0" value="${missingDefault}" style="width: 80px;">
                                 <p class="setting-help">Number of missing items to search per cycle (0 to disable)</p>
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-${upgradeFieldName}-${newIndex}">${upgradeLabel}:</label>
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <input type="number" id="${appType}-${upgradeFieldName}-${newIndex}" name="${upgradeFieldName}" min="0" value="${upgradeDefault}" style="width: 80px;">
-                                    <select id="${appType}-upgrade-quality-profile-${newIndex}" name="upgrade_quality_profile" style="flex: 1; min-width: 150px;">
-                                        <option value="">All Quality Profiles</option>
-                                    </select>
-                                </div>
+                                <input type="number" id="${appType}-${upgradeFieldName}-${newIndex}" name="${upgradeFieldName}" min="0" value="${upgradeDefault}" style="width: 80px;">
                                 <p class="setting-help">Number of items to search for quality upgrades per cycle (0 to disable)</p>
                             </div>
                             <div class="setting-item">
@@ -3113,7 +3029,7 @@ const SettingsForms = {
                 if (newUrlInput) {
                     newUrlInput.addEventListener('input', function() {
                         setTimeout(() => {
-                            SettingsForms.checkAndAutoFetchQualityProfiles(appType, newIndex);
+                            SettingsForms.checkConnectionStatus(appType, newIndex);
                         }, 1000); // 1 second delay to prevent spam while typing
                     });
                 }
@@ -3121,13 +3037,13 @@ const SettingsForms = {
                 if (newApiKeyInput) {
                     newApiKeyInput.addEventListener('input', function() {
                         setTimeout(() => {
-                            SettingsForms.checkAndAutoFetchQualityProfiles(appType, newIndex);
+                            SettingsForms.checkConnectionStatus(appType, newIndex);
                         }, 1000); // 1 second delay to prevent spam while typing
                     });
                 }
                 
                 // Initial status check for the new instance
-                SettingsForms.checkAndAutoFetchQualityProfiles(appType, newIndex);
+                SettingsForms.checkConnectionStatus(appType, newIndex);
                 
                 // Update button text and trigger change event
                 updateAddButtonText();
@@ -3230,10 +3146,7 @@ const SettingsForms = {
                 statusElement.textContent = successMessage;
                 statusElement.style.color = 'green';
                 
-                // For Radarr, also populate quality profile dropdowns
-                if (app === 'radarr') {
-                    SettingsForms.populateQualityProfileDropdowns(app, buttonElement.getAttribute('data-instance'), url, apiKey);
-                }
+                // Connection successful - no additional actions needed
 
             } else {
                 // Failure
@@ -3275,8 +3188,8 @@ const SettingsForms = {
         window._suppressUnsavedChangesDialog = false;
     },
     
-    // Check if both URL and API key are filled and automatically fetch quality profiles
-    checkAndAutoFetchQualityProfiles: function(app, instanceIndex) {
+    // Check connection status for an instance
+    checkConnectionStatus: function(app, instanceIndex) {
         const supportedApps = ['radarr', 'sonarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
         if (!supportedApps.includes(app)) return;
         
@@ -3318,20 +3231,20 @@ const SettingsForms = {
             statusElement.style.color = '#888';
         }
         
-        console.log(`Auto-detecting quality profiles for ${app} instance ${instanceIndex}`);
+        console.log(`Checking connection status for ${app} instance ${instanceIndex}`);
         
         // Delay to avoid spamming API calls while typing
         clearTimeout(this._autoFetchTimeout);
         this._autoFetchTimeout = setTimeout(() => {
-            this.populateQualityProfileDropdownsAndUpdateStatus(app, instanceIndex, url, apiKey, statusElement);
+            this.testConnectionAndUpdateStatus(app, instanceIndex, url, apiKey, statusElement);
         }, 1000); // Wait 1 second after user stops typing
     },
     
-    // Populate quality profile dropdowns and update connection status
-    populateQualityProfileDropdownsAndUpdateStatus: function(app, instanceIndex, url, apiKey, statusElement) {
-        console.log(`Populating quality profile dropdowns and checking connection for ${app} instance ${instanceIndex}`);
+    // Test connection and update status
+    testConnectionAndUpdateStatus: function(app, instanceIndex, url, apiKey, statusElement) {
+        console.log(`Testing connection for ${app} instance ${instanceIndex}`);
         
-        // Make API request to test connection and fetch quality profiles
+        // Make API request to test connection
         HuntarrUtils.fetchWithTimeout(`./api/${app}/test-connection`, {
             method: 'POST',
             headers: {
@@ -3349,7 +3262,7 @@ const SettingsForms = {
             return response.json();
         })
         .then(data => {
-            console.log(`Connection test response for auto-detection:`, data);
+            console.log(`Connection test response:`, data);
             
             if (data.success) {
                 // Update status to connected
@@ -3361,9 +3274,6 @@ const SettingsForms = {
                     statusElement.textContent = statusText;
                     statusElement.style.color = '#10b981';
                 }
-                
-                // Also populate quality profiles since connection succeeded
-                this.populateQualityProfileDropdowns(app, instanceIndex, url, apiKey);
             } else {
                 // Update status to connection failed
                 if (statusElement) {
@@ -3373,95 +3283,13 @@ const SettingsForms = {
             }
         })
         .catch(error => {
-            console.error(`Connection test error for auto-detection:`, error);
+            console.error(`Connection test error:`, error);
             
             // Update status to error
             if (statusElement) {
                 statusElement.textContent = '✗ Connection error';
                 statusElement.style.color = '#ef4444';
             }
-        });
-    },
-
-    
-    // Populate quality profile dropdown selectors for Radarr
-    populateQualityProfileDropdowns: function(app, instanceIndex, url, apiKey) {
-        console.log(`Populating quality profile dropdowns for ${app} instance ${instanceIndex}`);
-        
-        // Make API request to fetch quality profiles
-        HuntarrUtils.fetchWithTimeout(`./api/${app}/quality-profiles`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                api_url: url,
-                api_key: apiKey
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log(`Quality profiles response for dropdowns:`, data);
-            
-            if (data.success && data.profiles && data.profiles.length > 0) {
-                // Success - populate the dropdowns
-                const missingSelect = document.getElementById(`${app}-missing-quality-profile-${instanceIndex}`);
-                const upgradeSelect = document.getElementById(`${app}-upgrade-quality-profile-${instanceIndex}`);
-                
-                if (!missingSelect || !upgradeSelect) {
-                    console.log('Quality profile dropdowns not found for instance', instanceIndex);
-                    return;
-                }
-                
-                // Clear existing options (except "All Quality Profiles")
-                [missingSelect, upgradeSelect].forEach(select => {
-                    // Keep the first option ("All Quality Profiles")
-                    while (select.children.length > 1) {
-                        select.removeChild(select.lastChild);
-                    }
-                });
-                
-                // Add profile options
-                data.profiles.forEach(profile => {
-                    const profileName = profile.name || 'Unknown';
-                    const profileId = profile.id || 'unknown';
-                    
-                    // Create option for missing search dropdown
-                    const missingOption = document.createElement('option');
-                    missingOption.value = profileId;
-                    missingOption.textContent = profileName;
-                    missingSelect.appendChild(missingOption);
-                    
-                    // Create option for upgrade search dropdown
-                    const upgradeOption = document.createElement('option');
-                    upgradeOption.value = profileId;
-                    upgradeOption.textContent = profileName;
-                    upgradeSelect.appendChild(upgradeOption);
-                });
-                
-                // Set the selected values from saved configuration
-                const savedMissingProfile = missingSelect.getAttribute('data-selected-value');
-                const savedUpgradeProfile = upgradeSelect.getAttribute('data-selected-value');
-                
-                if (savedMissingProfile) {
-                    missingSelect.value = savedMissingProfile;
-                }
-                if (savedUpgradeProfile) {
-                    upgradeSelect.value = savedUpgradeProfile;
-                }
-                
-                console.log(`Populated quality profile dropdowns for ${app} instance ${instanceIndex} with ${data.profiles.length} profiles`);
-            } else {
-                console.log(`No quality profiles found for ${app} instance ${instanceIndex}`);
-            }
-        })
-        .catch(error => {
-            console.error(`Quality profiles fetch error for dropdowns:`, error);
         });
     },
     
