@@ -659,20 +659,34 @@ def change_username(current_username: str, new_username: str, password: str) -> 
 
 def change_password(current_password: str, new_password: str) -> bool:
     """Change the password for the current user"""
-    user_data = get_user_data()
+    from .utils.database import get_database
     
-    # Verify current password
-    if not verify_password(user_data.get("password", ""), current_password):
-        logger.warning("Password change failed: Invalid current password provided.")
+    # Get current username from session to identify the user
+    from .routes.common import get_user_for_request
+    username = get_user_for_request()
+    if not username:
+        logger.warning("Password change failed: No authenticated user found.")
         return False
     
-    # Update password
-    user_data["password"] = hash_password(new_password)
-    if save_user_data(user_data):
-        logger.info("Password changed successfully.")
+    db = get_database()
+    
+    # Get current user data from database
+    user_data = db.get_user_by_username(username)
+    if not user_data:
+        logger.warning(f"Password change failed: User '{username}' not found in database.")
+        return False
+    
+    # Verify current password (direct comparison as used in verify_user)
+    if user_data.get("password") != current_password:
+        logger.warning(f"Password change failed for '{username}': Invalid current password provided.")
+        return False
+    
+    # Update password in database (store new password directly, no hashing)
+    if db.update_user_password(username, new_password):
+        logger.info(f"Password changed successfully for user '{username}'.")
         return True
     else:
-        logger.error("Failed to save user data after changing password.")
+        logger.error(f"Failed to update password in database for '{username}'.")
         return False
 
 def get_app_url_and_key(app_type: str) -> Tuple[str, str]:
