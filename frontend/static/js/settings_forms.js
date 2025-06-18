@@ -2461,8 +2461,14 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                     <label for="base_url"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#base-url" class="info-icon" title="Learn more about reverse proxy base URL settings" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Base URL:</label>
-                    <input type="text" id="base_url" value="${settings.base_url || ''}" placeholder="/huntarr">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="base_url" value="${settings.base_url || ''}" placeholder="/huntarr" style="flex: 1;">
+                        <button type="button" id="detectBaseUrlBtn" class="btn btn-secondary" style="background-color: #6366f1; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; white-space: nowrap;">
+                            <i class="fas fa-search"></i> Auto-Detect
+                        </button>
+                    </div>
                     <p class="setting-help" style="margin-left: -3ch !important;">Base URL path for reverse proxy (e.g., '/huntarr'). Leave empty for root path. Requires restart. Credit <a href="https://github.com/scr4tchy" target="_blank">scr4tchy</a>.</p>
+                    <span id="detectBaseUrlStatus" style="font-size: 14px; margin-left: -3ch !important; display: block; margin-top: 5px;"></span>
                 </div>
             </div>
 
@@ -2622,6 +2628,57 @@ const SettingsForms = {
             // Add change event listener
             enableNotificationsCheckbox.addEventListener('change', function() {
                 toggleNotificationSettings(this.checked);
+            });
+        }
+
+        // Add event listener for Base URL auto-detection
+        const detectBaseUrlBtn = container.querySelector('#detectBaseUrlBtn');
+        const baseUrlInput = container.querySelector('#base_url');
+        const detectBaseUrlStatus = container.querySelector('#detectBaseUrlStatus');
+        
+        if (detectBaseUrlBtn && baseUrlInput && detectBaseUrlStatus) {
+            detectBaseUrlBtn.addEventListener('click', function() {
+                // Show loading state
+                detectBaseUrlBtn.disabled = true;
+                detectBaseUrlBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting...';
+                detectBaseUrlStatus.textContent = '';
+                detectBaseUrlStatus.style.color = '';
+                
+                // Make API call to detect base URL
+                fetch('./api/settings/detect-base-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the input field with detected URL
+                        baseUrlInput.value = data.detected_base_url;
+                        detectBaseUrlStatus.textContent = data.message;
+                        detectBaseUrlStatus.style.color = '#10b981'; // Green
+                    } else {
+                        detectBaseUrlStatus.textContent = data.message || 'No base URL detected';
+                        detectBaseUrlStatus.style.color = '#f59e0b'; // Orange
+                    }
+                })
+                .catch(error => {
+                    console.error('Error detecting base URL:', error);
+                    detectBaseUrlStatus.textContent = 'Error occurred during detection';
+                    detectBaseUrlStatus.style.color = '#ef4444'; // Red
+                })
+                .finally(() => {
+                    // Reset button state
+                    detectBaseUrlBtn.disabled = false;
+                    detectBaseUrlBtn.innerHTML = '<i class="fas fa-search"></i> Auto-Detect';
+                    
+                    // Clear status message after 10 seconds
+                    setTimeout(() => {
+                        detectBaseUrlStatus.textContent = '';
+                    }, 10000);
+                });
             });
         }
 

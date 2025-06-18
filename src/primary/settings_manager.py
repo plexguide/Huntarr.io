@@ -508,6 +508,114 @@ def initialize_database():
         settings_logger.error(f"Failed to initialize database: {e}")
         raise
 
+def auto_detect_base_url_from_request(request_obj=None):
+    """
+    Auto-detect base URL from HTTP request headers and URL analysis.
+    This allows automatic subpath detection without requiring environment variables.
+    
+    Args:
+        request_obj: Flask request object (optional, will try to get from Flask context if not provided)
+        
+    Returns:
+        str: Detected base URL (e.g., '/huntarr') or empty string if not detected
+    """
+    try:
+        # Try to get request object from Flask context if not provided
+        if request_obj is None:
+            try:
+                from flask import request as flask_request
+                request_obj = flask_request
+            except Exception:
+                settings_logger.debug("No Flask request context available for base URL detection")
+                return ''
+        
+        # Method 1: Check common reverse proxy headers
+        proxy_headers = [
+            'X-Forwarded-Path',      # Traefik, nginx
+            'X-Script-Name',         # Apache mod_wsgi
+            'X-Original-URI',        # nginx auth_request
+            'X-Forwarded-Prefix',    # Some custom setups
+        ]
+        
+        for header in proxy_headers:
+            header_value = request_obj.headers.get(header, '').strip()
+            if header_value and header_value != '/':
+                # Clean up the path
+                base_path = header_value.rstrip('/')
+                if base_path and base_path.startswith('/'):
+                    settings_logger.info(f"Auto-detected base URL from {header} header: {base_path}")
+                    return base_path
+        
+        # Method 2: Analyze the request URL path
+        try:
+            request_path = request_obj.path
+            # Look for common subpath patterns
+            if request_path and request_path != '/':
+                # Check if this looks like a subpath request (e.g., /huntarr/setup, /app/login)
+                path_parts = [part for part in request_path.split('/') if part]
+                if len(path_parts) >= 2:
+                    # If the first part is not a known Huntarr route, it might be a subpath
+                    known_routes = ['api', 'static', 'login', 'setup', 'logout', 'favicon.ico', 'version.txt']
+                    first_part = path_parts[0]
+                    if first_part not in known_routes:
+                        potential_base = f'/{first_part}'
+                        settings_logger.info(f"Auto-detected potential base URL from request path: {potential_base}")
+                        return potential_base
+        except Exception as e:
+            settings_logger.debug(f"Error analyzing request path for base URL: {e}")
+        
+        # Method 3: Check for X-Forwarded-Host with subpath
+        forwarded_host = request_obj.headers.get('X-Forwarded-Host', '').strip()
+        if forwarded_host and '/' in forwarded_host:
+            parts = forwarded_host.split('/', 1)
+            if len(parts) == 2:
+                subpath = f'/{parts[1].rstrip("/")}'
+                settings_logger.info(f"Auto-detected base URL from X-Forwarded-Host: {subpath}")
+                return subpath
+        
+        settings_logger.debug("No base URL detected from request headers or URL analysis")
+        return ''
+        
+    except Exception as e:
+        settings_logger.error(f"Error during base URL auto-detection: {e}")
+        return ''
+
+def initialize_base_url_from_request():
+    """
+    Initialize base_url setting from HTTP request auto-detection if not already set.
+    This is called during the setup process to automatically configure subpath support.
+    """
+    try:
+        # Load current general settings
+        general_settings = load_settings("general")
+        current_base_url = general_settings.get("base_url", "").strip()
+        
+        # If base_url is already set, don't override it
+        if current_base_url:
+            settings_logger.debug(f"Base URL already configured: {current_base_url}")
+            return current_base_url
+        
+        # Try to auto-detect base URL from current request
+        detected_base_url = auto_detect_base_url_from_request()
+        
+        if detected_base_url:
+            # Update the settings with the detected base_url
+            general_settings["base_url"] = detected_base_url
+            save_settings("general", general_settings)
+            settings_logger.info(f"Auto-configured base URL: {detected_base_url}")
+            
+            # Clear cache to ensure new settings are loaded
+            clear_cache("general")
+            
+            return detected_base_url
+        else:
+            settings_logger.info("No base URL detected - running at root path")
+            return ''
+            
+    except Exception as e:
+        settings_logger.error(f"Error initializing base_url from request: {e}")
+        return ''
+
 # Example usage (for testing purposes, remove later)
 if __name__ == "__main__":
     settings_logger.info(f"Known app types: {KNOWN_APP_TYPES}")
