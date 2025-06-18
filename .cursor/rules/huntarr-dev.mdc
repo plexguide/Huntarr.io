@@ -1,12 +1,8 @@
 ---
-description:
-globs:
-alwaysApply: false
----
----
+description: Huntarr development rules and patterns
+globs: ["**/*.py", "**/*.js", "**/*.html", "**/*.css", "**/*.md"]
 alwaysApply: true
 ---
-
 # Huntarr Development Rules for Cursor AI
 
 ## 🚨 CRITICAL MANDATORY RULES
@@ -89,12 +85,35 @@ conn = sqlite3.connect('/config/huntarr.db')
 - Use debug borders to test CSS loading: `border: 2px solid lime !important;`
 - Files: `/frontend/static/css/responsive-fix.css`, `/frontend/static/css/new-style.css`
 
+### Hard-Coded Path Issues
+- NEVER use hard-coded Docker paths that don't exist on bare metal
+- Use environment detection pattern with DatabaseManager
+- Test both Docker and local environments
+
+### JavaScript Variable Undefined Errors
+- Ensure all variables are declared before use in form generation
+- File: `/frontend/static/js/settings_forms.js`
+
+### Subpath Compatibility Issues
+- Works at root domain but fails in subdirectories
+- Use relative URLs everywhere: `./api/` not `/api/`
+
+### Info Icon Documentation Link Issues
+- Use proper GitHub documentation pattern with specific anchors
+- Pattern: `https://plexguide.github.io/Huntarr.io/apps/[app-name].html#[anchor]`
+- Always include `target="_blank" rel="noopener"` attributes
+
+### GitHub API Rate Limiting Issues
+- Use GitHub Actions + static manifest approach instead of direct API calls
+- Fetch from static manifest.json updated by GitHub Actions
+
 ## 📁 KEY FILE LOCATIONS
 
 ### Backend Core
 - `/src/primary/utils/database.py` - DatabaseManager class (USE THIS)
 - `/src/primary/routes/common.py` - API endpoints
 - `/src/primary/auth.py` - Authentication logic
+- `/src/primary/cycle_tracker.py` - Timer functionality
 
 ### Frontend Core
 - `/frontend/static/js/new-main.js` - Main UI logic
@@ -149,6 +168,12 @@ conn = sqlite3.connect('/config/huntarr.db')
 - ❌ Testing only in Docker
 - ❌ Not using virtual environment for local development
 - ❌ Creating temporary files instead of fixing source
+- ❌ Inconsistent behavior between missing/upgrade logic
+- ❌ Reactive violation fixing (scan proactively instead)
+- ❌ Documentation that promises non-existent features
+- ❌ Frontend links without verifying documentation anchors exist
+- ❌ Organic feature growth without reality checks
+- ❌ Theoretical FAQ content (base on real user problems)
 
 ## 🚨 PROACTIVE VIOLATION SCANNING
 
@@ -157,6 +182,17 @@ conn = sqlite3.connect('/config/huntarr.db')
 2. Documentation violations: `grep -r "href.*plexguide.github.io" frontend/ --include="*.js" | grep -v "plexguide.github.io/Huntarr.io"`
 3. Database violations: `grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py"`
 4. Hard-coded path violations: `grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager"`
+5. JSON file operations: `grep -r "\.json\|json.load\|json.dump" src/ --include="*.py" | grep -v "requests.*json\|response.json\|Content-Type.*json"`
+
+### Violation Scanning Commands
+```bash
+# Create violation_scan.sh for easy reuse
+echo "=== HUNTARR VIOLATION SCAN ==="
+echo "1. Absolute URL violations: $(grep -r "fetch('/api/" frontend/ --include="*.js" | wc -l)"
+echo "2. Documentation violations: $(grep -r "href.*plexguide.github.io" frontend/ --include="*.js" | grep -v "plexguide.github.io/Huntarr.io" | wc -l)"
+echo "3. Database violations: $(grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py" | wc -l)"
+echo "4. Hard-coded path violations: $(grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager" | wc -l)"
+```
 
 ## 📊 SPECIFIC BUG PATTERNS TO AVOID
 
@@ -171,6 +207,16 @@ conn = sqlite3.connect('/config/huntarr.db')
 ### GitHub Issue #629 Pattern (Windows Database Access)
 - Use DatabaseManager with proper Windows AppData support
 - Never hard-code database paths
+
+### Frontend Log Regex Issues
+- Malformed regex with double backslashes
+- Fix: Use clean regex patterns without double backslashes
+- File: `/frontend/static/js/new-main.js` - `connectEventSource()` method
+
+### DEBUG Log Filtering Race Condition
+- DEBUG logs appear in wrong filters (Info, Warning, Error)
+- Fix: Apply filter to new entries as they arrive in EventSource
+- File: `/frontend/static/js/new-main.js` - `connectEventSource()` method
 
 ## 🎯 DEBUGGING APPROACH
 
@@ -190,7 +236,47 @@ docker exec huntarr sqlite3 /config/huntarr.db ".tables"
 # Local environment  
 ls -la ./data/huntarr.db
 sqlite3 ./data/huntarr.db ".tables"
+
+# Test DatabaseManager operations
+python3 -c "from src.primary.utils.database import DatabaseManager; db = DatabaseManager(); print('Database path:', db.db_path)"
 ```
+
+### Subpath Deployment Debugging
+- Check browser network tab for 404s on absolute URLs
+- Search for absolute patterns: `grep -r "fetch('/api" frontend/`
+- Check redirects: `grep -r "window.location.href.*= '/" frontend/`
+- Verify all URLs are relative: `./api/` not `/api/`
+
+### Frontend-Documentation Link Debugging
+- Extract frontend anchor references: `grep -r "href.*#" frontend/static/js/ | grep -o "#[^\"]*"`
+- Extract doc anchors: `grep -r 'id="[^"]*"' docs/ | grep -o 'id="[^"]*"'`
+- Compare lists to find mismatches
+
+### Log Issues Debugging
+1. Check logs in database: `docker exec huntarr python3 -c "import sys; sys.path.insert(0, '/app/src'); from primary.utils.logs_database import get_logs_database; db = get_logs_database(); logs = db.get_logs(limit=10); [print(f'{log["timestamp"]} - {log["app_type"]} - {log["level"]} - {log["message"]}') for log in logs]"`
+2. Test backend streaming: `curl -N -s "http://localhost:9705/logs?app=[app]"`
+3. Check browser console for JavaScript errors
+4. Verify regex patterns in `new-main.js`
+
+### Settings Issues Debugging
+1. Check form generation functions
+2. Verify `getFormSettings()` method
+3. Test save/load cycle
+4. Check API endpoints
+5. Verify info icon links point to existing documentation anchors
+
+### CSS Issues Debugging
+1. Check browser console for errors
+2. Add debug borders: `border: 2px solid lime !important;`
+3. Verify CSS loading order (external files vs inline)
+4. Test specificity with `!important` declarations
+5. Search for conflicting rules: `grep -r "className" frontend/static/css/`
+
+### Documentation Issues Debugging
+1. Test all links manually or with link checker
+2. Verify features mentioned actually exist in codebase
+3. Check frontend alignment with documentation
+4. Audit FAQ against real support requests
 
 ## 📝 MEMORY CREATION GUIDELINES
 
@@ -225,6 +311,10 @@ This file automatically enforces the patterns from `.github/listen.md`. The user
 - Following cross-platform compatibility requirements
 - Getting approval before committing changes
 - Using proper documentation links with verified anchors
+- Proactive violation scanning before commits
+- Systematic debugging approaches
+- Database-first development patterns
+- Cross-platform path handling
 
 ---
 
