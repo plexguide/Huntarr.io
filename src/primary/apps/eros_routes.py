@@ -216,3 +216,5 @@ def reset_processed_state():
         error_msg = f"Error resetting Eros state: {str(e)}"
         eros_logger.error(error_msg)
         return jsonify({"success": False, "message": error_msg}), 500
+
+

@@ -2450,6 +2450,17 @@ let huntarrUI = {
                 const versionElement = document.getElementById('version-value');
                 if (versionElement) {
                     versionElement.textContent = version.trim();
+                    versionElement.style.display = 'inline'; // Show the element
+                }
+                
+                // Store in localStorage for topbar access
+                try {
+                    const versionInfo = localStorage.getItem('huntarr-version-info') || '{}';
+                    const parsedInfo = JSON.parse(versionInfo);
+                    parsedInfo.currentVersion = version.trim();
+                    localStorage.setItem('huntarr-version-info', JSON.stringify(parsedInfo));
+                } catch (e) {
+                    console.error('Error saving current version to localStorage:', e);
                 }
             })
             .catch(error => {
@@ -2457,6 +2468,7 @@ let huntarrUI = {
                 const versionElement = document.getElementById('version-value');
                 if (versionElement) {
                     versionElement.textContent = 'Error';
+                    versionElement.style.display = 'inline'; // Show the element even on error
                 }
             });
     },
@@ -2479,9 +2491,21 @@ let huntarrUI = {
                 const latestVersionElement = document.getElementById('latest-version-value');
                 if (latestVersionElement && data && data.tag_name) {
                     // Remove potential 'v' prefix for consistency if needed, or keep it
-                    latestVersionElement.textContent = data.tag_name; 
+                    latestVersionElement.textContent = data.tag_name;
+                    latestVersionElement.style.display = 'inline'; // Show the element
+                    
+                    // Store in localStorage for topbar access
+                    try {
+                        const versionInfo = localStorage.getItem('huntarr-version-info') || '{}';
+                        const parsedInfo = JSON.parse(versionInfo);
+                        parsedInfo.latestVersion = data.tag_name;
+                        localStorage.setItem('huntarr-version-info', JSON.stringify(parsedInfo));
+                    } catch (e) {
+                        console.error('Error saving latest version to localStorage:', e);
+                    }
                 } else if (latestVersionElement) {
                      latestVersionElement.textContent = 'N/A';
+                     latestVersionElement.style.display = 'inline'; // Show the element
                 }
             })
             .catch(error => {
@@ -2489,6 +2513,7 @@ let huntarrUI = {
                 const latestVersionElement = document.getElementById('latest-version-value');
                 if (latestVersionElement) {
                     latestVersionElement.textContent = error.message === 'Rate limited' ? 'Rate Limited' : 'Error';
+                    latestVersionElement.style.display = 'inline'; // Show the element even on error
                 }
             });
     },

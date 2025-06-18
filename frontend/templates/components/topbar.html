@@ -8,12 +8,12 @@
         <div class="version-bar">
             <div class="version-item">
                 <i class="fas fa-code-branch version-icon"></i>
-                <span>Version <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank"><span id="version-value">6.2.1</span></a></span>
+                <span>Version <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank"><span id="version-value" style="display: none;"></span></a></span>
             </div>
             <div class="version-divider"></div>
             <div class="version-item">
                 <i class="fas fa-cloud-download-alt version-icon"></i>
-                <span>Latest: <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank"><span id="latest-version-value">6.2.1</span></a></span>
+                <span>Latest: <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank"><span id="latest-version-value" style="display: none;"></span></a></span>
             </div>
             <div class="version-divider"></div>
             <div class="version-item">
@@ -378,14 +378,17 @@
                     const parsedInfo = JSON.parse(versionInfo);
                     if (parsedInfo.currentVersion) {
                         versionElement.textContent = parsedInfo.currentVersion;
+                        versionElement.style.display = 'inline'; // Show the element
                     }
                     if (parsedInfo.latestVersion) {
                         latestVersionElement.textContent = parsedInfo.latestVersion;
+                        latestVersionElement.style.display = 'inline'; // Show the element
                     }
                     if (parsedInfo.betaVersion) {
                         const betaVersionElement = document.getElementById('beta-version-value');
                         if (betaVersionElement) {
                             betaVersionElement.textContent = parsedInfo.betaVersion;
+                            betaVersionElement.style.display = 'inline'; // Show the element
                         }
                     }
                 }
@@ -400,8 +403,25 @@
             }
         }
         
+        // Fallback function to show N/A if data doesn't load within a reasonable time
+        function showFallbacks() {
+            setTimeout(() => {
+                if (versionElement.style.display === 'none' || !versionElement.textContent) {
+                    versionElement.textContent = 'N/A';
+                    versionElement.style.display = 'inline';
+                }
+                if (latestVersionElement.style.display === 'none' || !latestVersionElement.textContent) {
+                    latestVersionElement.textContent = 'N/A';
+                    latestVersionElement.style.display = 'inline';
+                }
+            }, 3000); // Wait 3 seconds before showing fallback
+        }
+        
         // Initial update
         updateVersionInfo();
+        
+        // Start fallback timer
+        showFallbacks();
         
         // Watch for changes (in case the home page updates values)
         window.addEventListener('storage', function(e) {

@@ -600,3 +600,38 @@ def tag_processed_movie(api_url: str, api_key: str, api_timeout: int, movie_id: 
     except Exception as e:
         eros_logger.error(f"Error tagging Eros movie {movie_id} with '{tag_label}': {e}")
         return False
+
+def get_quality_profiles(api_url: str, api_key: str, api_timeout: int) -> Optional[List[Dict]]:
+    """
+    Get all quality profiles configured in Eros.
+
+    Args:
+        api_url: The base URL of the Eros API
+        api_key: The API key for authentication
+        api_timeout: Timeout for the API request
+
+    Returns:
+        A list of quality profile objects, or None if the request failed.
+        Each profile contains: id, name, upgradeAllowed, cutoff, items, etc.
+    """
+    try:
+        eros_logger.debug("Fetching quality profiles from Eros...")
+        
+        # Use the qualityProfile endpoint - this doesn't count toward API limits since it's configuration data
+        profiles = arr_request(api_url, api_key, api_timeout, "qualityProfile", count_api=False)
+        
+        if profiles is None:
+            eros_logger.error("Failed to retrieve quality profiles from Eros API.")
+            return None
+        
+        eros_logger.debug(f"Found {len(profiles)} quality profiles in Eros")
+        
+        # Log profile names for debugging
+        profile_names = [profile.get('name', 'Unknown') for profile in profiles]
+        eros_logger.debug(f"Quality profiles: {', '.join(profile_names)}")
+        
+        return profiles
+        
+    except Exception as e:
+        eros_logger.error(f"Error retrieving quality profiles: {str(e)}")
+        return None

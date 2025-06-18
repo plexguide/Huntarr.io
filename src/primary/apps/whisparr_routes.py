@@ -333,3 +333,4 @@ def clear_processed():
         error_message = f"Error clearing Whisparr processed state: {str(e)}"
         whisparr_logger.error(error_message)
         return jsonify({"success": False, "message": error_message}), 500
+

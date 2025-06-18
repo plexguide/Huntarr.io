@@ -130,3 +130,5 @@ def test_connection():
         error_msg = f"Connection test failed: {str(e)}"
         lidarr_logger.error(error_msg)
         return jsonify({"success": False, "message": error_msg}), 500
+
+

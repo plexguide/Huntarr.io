@@ -173,6 +173,35 @@ def refresh_sponsors_on_startup():
         huntarr_logger.error(f"Error refreshing sponsors on startup: {e}")
         raise
 
+def load_version_to_database():
+    """Load current version from version.txt into database on startup"""
+    import os
+    
+    try:
+        # Get database instance
+        from src.primary.utils.database import get_database
+        db = get_database()
+        
+        # Path to version.txt
+        version_path = os.path.join(os.path.dirname(__file__), 'version.txt')
+        
+        if os.path.exists(version_path):
+            with open(version_path, 'r') as f:
+                version = f.read().strip()
+            
+            if version:
+                # Store version in database
+                db.set_version(version)
+                huntarr_logger.info(f"Version {version} loaded into database")
+            else:
+                huntarr_logger.warning("version.txt is empty")
+        else:
+            huntarr_logger.warning(f"version.txt not found at {version_path}")
+            
+    except Exception as e:
+        huntarr_logger.error(f"Error loading version to database: {e}")
+        # Don't raise - this is not critical enough to stop startup
+
 def run_background_tasks():
     """Runs the Huntarr background processing."""
     bg_logger = get_logger("HuntarrBackground") # Use app's logger
@@ -336,6 +365,12 @@ def main():
             huntarr_logger.info("Database logging system initialized with scheduled cleanup.")
         except Exception as e:
             huntarr_logger.warning(f"Failed to initialize database logging: {e}")
+        
+        # Load version from version.txt into database on startup
+        try:
+            load_version_to_database()
+        except Exception as version_error:
+            huntarr_logger.warning(f"Failed to load version to database: {version_error}")
         
         # Refresh sponsors from manifest.json on startup
         try:

@@ -72,9 +72,7 @@ const SettingsForms = {
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="sonarr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
@@ -93,23 +91,23 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about Sonarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                            <input type="text" id="sonarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Sonarr (e.g., http://localhost:8989)">
+                            <input type="text" id="sonarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Sonarr (e.g., http://localhost:8989)" data-instance-index="${index}">
                             <p class="setting-help">Base URL for Sonarr (e.g., http://localhost:8989)</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about finding your Sonarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                            <input type="text" id="sonarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Sonarr">
+                            <input type="text" id="sonarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Sonarr" data-instance-index="${index}">
                             <p class="setting-help">API key for Sonarr</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-hunt-missing-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about missing items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <input type="number" id="sonarr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${huntMissingItems}">
-                            <p class="setting-help">Number of missing items to search per cycle (0 to disable)</p>
+                            <input type="number" id="sonarr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${huntMissingItems}" style="width: 80px;">
+                            <p class="setting-help">Number of missing items to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-hunt-upgrade-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <input type="number" id="sonarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${huntUpgradeItems}">
-                            <p class="setting-help">Number of episodes to upgrade per cycle (0 to disable)</p>
+                            <input type="number" id="sonarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${huntUpgradeItems}" style="width: 80px;">
+                            <p class="setting-help">Number of episodes to upgrade per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -301,9 +299,7 @@ const SettingsForms = {
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="radarr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
@@ -322,23 +318,24 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                             <label for="radarr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about Radarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                            <input type="text" id="radarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Radarr (e.g., http://localhost:7878)">
+                            <input type="text" id="radarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Radarr (e.g., http://localhost:7878)" data-instance-index="${index}">
                             <p class="setting-help">Base URL for Radarr (e.g., http://localhost:7878)</p>
                         </div>
                         <div class="setting-item">
                             <label for="radarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about finding your Radarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                            <input type="text" id="radarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Radarr">
+                            <input type="text" id="radarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Radarr" data-instance-index="${index}">
                             <p class="setting-help">API key for Radarr</p>
                         </div>
+
                         <div class="setting-item">
                             <label for="radarr-hunt-missing-movies-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#search-settings" class="info-icon" title="Learn more about missing movies search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <input type="number" id="radarr-hunt-missing-movies-${index}" name="hunt_missing_movies" min="0" value="${instance.hunt_missing_movies !== undefined ? instance.hunt_missing_movies : 1}">
-                            <p class="setting-help">Number of missing movies to search per cycle (0 to disable)</p>
+                            <input type="number" id="radarr-hunt-missing-movies-${index}" name="hunt_missing_movies" min="0" value="${instance.hunt_missing_movies !== undefined ? instance.hunt_missing_movies : 1}" style="width: 80px;">
+                            <p class="setting-help">Number of missing movies to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="radarr-hunt-upgrade-movies-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#search-settings" class="info-icon" title="Learn more about upgrading movies for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <input type="number" id="radarr-hunt-upgrade-movies-${index}" name="hunt_upgrade_movies" min="0" value="${instance.hunt_upgrade_movies !== undefined ? instance.hunt_upgrade_movies : 0}">
-                            <p class="setting-help">Number of movies to search for quality upgrades per cycle (0 to disable)</p>
+                            <input type="number" id="radarr-hunt-upgrade-movies-${index}" name="hunt_upgrade_movies" min="0" value="${instance.hunt_upgrade_movies !== undefined ? instance.hunt_upgrade_movies : 0}" style="width: 80px;">
+                            <p class="setting-help">Number of movies to search for quality upgrades per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="radarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -502,9 +499,7 @@ const SettingsForms = {
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="lidarr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
@@ -523,23 +518,23 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                             <label for="lidarr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#connection-settings" class="info-icon" title="Learn more about Lidarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                            <input type="text" id="lidarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Lidarr (e.g., http://localhost:8686)">
+                            <input type="text" id="lidarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Lidarr (e.g., http://localhost:8686)" data-instance-index="${index}">
                             <p class="setting-help">Base URL for Lidarr (e.g., http://localhost:8686)</p>
                         </div>
                         <div class="setting-item">
                             <label for="lidarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#connection-settings" class="info-icon" title="Learn more about finding your Lidarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                            <input type="text" id="lidarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Lidarr">
+                            <input type="text" id="lidarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Lidarr" data-instance-index="${index}">
                             <p class="setting-help">API key for Lidarr</p>
                         </div>
                         <div class="setting-item">
                             <label for="lidarr-hunt-missing-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#search-settings" class="info-icon" title="Learn more about missing items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <input type="number" id="lidarr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}">
-                            <p class="setting-help">Number of artists with missing albums to search per cycle (0 to disable)</p>
+                            <input type="number" id="lidarr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}" style="width: 80px;">
+                            <p class="setting-help">Number of artists with missing albums to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="lidarr-hunt-upgrade-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#search-settings" class="info-icon" title="Learn more about upgrading items for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <input type="number" id="lidarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}">
-                            <p class="setting-help">Number of albums to search for quality upgrades per cycle (0 to disable)</p>
+                            <input type="number" id="lidarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
+                            <p class="setting-help">Number of albums to search for quality upgrades per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="lidarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -683,18 +678,16 @@ const SettingsForms = {
         settings.instances.forEach((instance, index) => {
             instancesHtml += `
                 <div class="instance-item" data-instance-id="${index}">
-                    <div class="instance-header">
+                                        <div class="instance-header">
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="readarr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
                         <div class="setting-item">
-                <label for="readarr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
+                            <label for="readarr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                                 <input type="checkbox" id="readarr-enabled-${index}" name="enabled" ${instance.enabled !== false ? 'checked' : ''}>
                                 <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
@@ -708,23 +701,23 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                 <label for="readarr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about Readarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                <input type="text" id="readarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Readarr (e.g., http://localhost:8787)">
+                                            <input type="text" id="readarr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Readarr (e.g., http://localhost:8787)" data-instance-index="${index}">
                 <p class="setting-help">Base URL for Readarr (e.g., http://localhost:8787)</p>
                 </div>
                 <div class="setting-item">
                 <label for="readarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about finding your Readarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                <input type="text" id="readarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Readarr">
+                                            <input type="text" id="readarr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Readarr" data-instance-index="${index}">
                 <p class="setting-help">API key for Readarr</p>
                 </div>
                         <div class="setting-item">
                             <label for="readarr-hunt-missing-books-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#search-settings" class="info-icon" title="Learn more about missing books search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <input type="number" id="readarr-hunt-missing-books-${index}" name="hunt_missing_books" min="0" value="${instance.hunt_missing_books !== undefined ? instance.hunt_missing_books : 1}">
-                            <p class="setting-help">Number of missing books to search per cycle (0 to disable)</p>
+                            <input type="number" id="readarr-hunt-missing-books-${index}" name="hunt_missing_books" min="0" value="${instance.hunt_missing_books !== undefined ? instance.hunt_missing_books : 1}" style="width: 80px;">
+                            <p class="setting-help">Number of missing books to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="readarr-hunt-upgrade-books-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#search-settings" class="info-icon" title="Learn more about upgrade books search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <input type="number" id="readarr-hunt-upgrade-books-${index}" name="hunt_upgrade_books" min="0" value="${instance.hunt_upgrade_books !== undefined ? instance.hunt_upgrade_books : 0}">
-                            <p class="setting-help">Number of books to upgrade per cycle (0 to disable)</p>
+                            <input type="number" id="readarr-hunt-upgrade-books-${index}" name="hunt_upgrade_books" min="0" value="${instance.hunt_upgrade_books !== undefined ? instance.hunt_upgrade_books : 0}" style="width: 80px;">
+                            <p class="setting-help">Number of books to upgrade per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="readarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -861,18 +854,16 @@ const SettingsForms = {
         settings.instances.forEach((instance, index) => {
             instancesHtml += `
                 <div class="instance-item" data-instance-id="${index}">
-                    <div class="instance-header">
+                                        <div class="instance-header">
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="whisparr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
                         <div class="setting-item">
-                <label for="whisparr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
+                            <label for="whisparr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                                 <input type="checkbox" id="whisparr-enabled-${index}" name="enabled" ${instance.enabled !== false ? 'checked' : ''}>
                                 <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
@@ -886,23 +877,23 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                 <label for="whisparr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about Whisparr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                <input type="text" id="whisparr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Whisparr V2 (e.g., http://localhost:6969)">
+                                            <input type="text" id="whisparr-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Whisparr V2 (e.g., http://localhost:6969)" data-instance-index="${index}">
                 <p class="setting-help">Base URL for Whisparr V2 (e.g., http://localhost:6969)</p>
                 </div>
                 <div class="setting-item">
                 <label for="whisparr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about finding your Whisparr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                <input type="text" id="whisparr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Whisparr V2">
+                                            <input type="text" id="whisparr-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Whisparr V2" data-instance-index="${index}">
                 <p class="setting-help">API key for Whisparr V2</p>
                 </div>
                         <div class="setting-item">
                             <label for="whisparr-hunt-missing-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#search-settings" class="info-icon" title="Learn more about missing items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <input type="number" id="whisparr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}">
-                            <p class="setting-help">Number of missing items to search per cycle (0 to disable)</p>
+                            <input type="number" id="whisparr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}" style="width: 80px;">
+                            <p class="setting-help">Number of missing items to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="whisparr-hunt-upgrade-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#search-settings" class="info-icon" title="Learn more about upgrade items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <input type="number" id="whisparr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}">
-                            <p class="setting-help">Number of items to upgrade per cycle (0 to disable)</p>
+                            <input type="number" id="whisparr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
+                            <p class="setting-help">Number of items to upgrade per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="whisparr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -1047,9 +1038,7 @@ const SettingsForms = {
                         <h4>Instance ${index + 1}: ${instance.name || 'Unnamed'}</h4>
                         <div class="instance-actions">
                             ${index > 0 ? '<button type="button" class="remove-instance-btn">Remove</button>' : ''}
-                            <button type="button" class="test-connection-btn" data-instance="${index}" style="margin-left: 10px;">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
+                            <span class="connection-status" id="eros-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                         </div>
                     </div>
                     <div class="instance-content">
@@ -1068,23 +1057,23 @@ const SettingsForms = {
                         </div>
                         <div class="setting-item">
                                             <label for="eros-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-url" class="info-icon" title="Learn more about Whisparr V3 (Eros) URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                <input type="text" id="eros-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Whisparr V3 (Eros) (e.g., http://localhost:6969)">
+                <input type="text" id="eros-url-${index}" name="api_url" value="${instance.api_url || ''}" placeholder="Base URL for Whisparr V3 (Eros) (e.g., http://localhost:6969)" data-instance-index="${index}">
                 <p class="setting-help">Base URL for Whisparr V3 (Eros) (e.g., http://localhost:6969)</p>
                         </div>
                         <div class="setting-item">
                                             <label for="eros-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-api-key" class="info-icon" title="Learn more about finding your Whisparr V3 (Eros) API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                <input type="text" id="eros-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Whisparr V3 (Eros)">
+                <input type="text" id="eros-key-${index}" name="api_key" value="${instance.api_key || ''}" placeholder="API key for Whisparr V3 (Eros)" data-instance-index="${index}">
                 <p class="setting-help">API key for Whisparr V3 (Eros)</p>
                         </div>
                         <div class="setting-item">
                             <label for="eros-hunt-missing-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#missing-search" class="info-icon" title="Learn more about missing items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <input type="number" id="eros-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}">
-                            <p class="setting-help">Number of missing items to search per cycle (0 to disable)</p>
+                            <input type="number" id="eros-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}" style="width: 80px;">
+                            <p class="setting-help">Number of missing items to search per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="eros-hunt-upgrade-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#upgrade-search" class="info-icon" title="Learn more about upgrade items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <input type="number" id="eros-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}">
-                            <p class="setting-help">Number of items to upgrade per cycle (0 to disable)</p>
+                            <input type="number" id="eros-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
+                            <p class="setting-help">Number of items to upgrade per cycle (0 to disable).</p>
                         </div>
                         <div class="setting-item">
                             <label for="eros-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
@@ -1993,6 +1982,10 @@ const SettingsForms = {
                 const huntMissingItemsInput = instance.querySelector('input[name="hunt_missing_items"]') || instance.querySelector('input[name="hunt_missing_movies"]');
                 const huntUpgradeItemsInput = instance.querySelector('input[name="hunt_upgrade_items"]') || instance.querySelector('input[name="hunt_upgrade_movies"]');
                 
+                // Get quality profile selectors for Radarr
+                const missingQualityProfileInput = instance.querySelector('select[name="missing_quality_profile"]');
+                const upgradeQualityProfileInput = instance.querySelector('select[name="upgrade_quality_profile"]');
+                
                 const name = nameInput ? nameInput.value : null;
                 const url = urlInput ? urlInput.value : null;
                 const key = keyInput ? keyInput.value : null;
@@ -2002,6 +1995,8 @@ const SettingsForms = {
                 // Get per-instance hunt values (default: missing=1, upgrade=0)
                 const huntMissingItems = huntMissingItemsInput ? parseInt(huntMissingItemsInput.value) || 0 : 1;
                 const huntUpgradeItems = huntUpgradeItemsInput ? parseInt(huntUpgradeItemsInput.value) || 0 : 0;
+                
+                // Quality profile selections removed - not functional
                 
                 if (!name || !url || !key) {
                     console.warn(`Instance ${index} is missing required fields`);
@@ -2053,21 +2048,33 @@ const SettingsForms = {
                 if (appType === 'sonarr') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.missing_quality_profile = '';
+                    defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'radarr') {
                     defaultInstance.hunt_missing_movies = 1;
                     defaultInstance.hunt_upgrade_movies = 0;
+                    defaultInstance.missing_quality_profile = '';
+                    defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'lidarr') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.missing_quality_profile = '';
+                    defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'readarr') {
                     defaultInstance.hunt_missing_books = 1;
                     defaultInstance.hunt_upgrade_books = 0;
+                    defaultInstance.missing_quality_profile = '';
+                    defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'whisparr') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.missing_quality_profile = '';
+                    defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'eros') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.missing_quality_profile = '';
+                    defaultInstance.upgrade_quality_profile = '';
                 }
                 
                 instances.push(defaultInstance);
@@ -2761,136 +2768,51 @@ const SettingsForms = {
             form.setAttribute('data-app-type', appType);
         }
         
-        // Add listeners for test connection buttons
-        const testButtons = container.querySelectorAll('.test-connection-btn');
-        testButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                // Prevent any default form submission
-                e.preventDefault();
-                
-                console.log('Test connection button clicked');
-                
-                // Get the instance panel containing this button - look for both old and new class names
-                const instancePanel = button.closest('.instance-item') || button.closest('.instance-panel');
-                if (!instancePanel) {
-                    console.error('Could not find instance panel for test button', button);
-                    alert('Error: Could not find instance panel');
-                    return;
+        // Add auto-fetch listeners for URL and API key inputs (for all supported apps)
+        const supportedApps = ['radarr', 'sonarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        if (supportedApps.includes(appType)) {
+            const urlInputs = container.querySelectorAll('input[name="api_url"]');
+            const apiKeyInputs = container.querySelectorAll('input[name="api_key"]');
+            
+            urlInputs.forEach(input => {
+                if (input.hasAttribute('data-instance-index')) {
+                    const instanceIndex = input.getAttribute('data-instance-index');
+                    input.addEventListener('input', () => {
+                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
+                    });
+                    input.addEventListener('blur', () => {
+                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
+                    });
                 }
-                
-                // Get the URL and API key inputs directly within this instance panel
-                const urlInput = instancePanel.querySelector('input[name="api_url"]');
-                const keyInput = instancePanel.querySelector('input[name="api_key"]');
-                
-                console.log('Found inputs:', urlInput, keyInput);
-                
-                if (!urlInput || !keyInput) {
-                    console.error('Could not find URL or API key inputs in panel', instancePanel);
-                    alert('Error: Could not find URL or API key inputs');
-                    return;
-                }
-                
-                const url = urlInput.value.trim();
-                const apiKey = keyInput.value.trim();
-                
-                console.log(`Testing connection for ${appType} - URL: ${url}, API Key: ${apiKey.substring(0, 5)}...`);
-                
-                if (!url) {
-                    alert('Please enter a valid URL');
-                    urlInput.focus();
-                    return;
-                }
-                
-                if (!apiKey) {
-                    alert('Please enter a valid API key');
-                    keyInput.focus();
-                    return;
-                }
-                
-                // Temporarily suppress change detection to prevent the unsaved changes dialog
-                window._suppressUnsavedChangesDialog = true;
-                
-                // Show testing status
-                const originalButtonHTML = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
-                button.disabled = true;
-                
-                // Make the API request
-                HuntarrUtils.fetchWithTimeout(`./api/${appType}/test-connection`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        api_url: url,
-                        api_key: apiKey
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log(`Test connection response:`, data);
-                    
-                    // Reset button
-                    button.disabled = false;
-                    
-                    if (data.success) {
-                        // Success
-                        button.innerHTML = '<i class="fas fa-check"></i> Connected!';
-                        button.classList.add('test-success');
-                        
-                        let successMessage = `Successfully connected to ${appType.charAt(0).toUpperCase() + appType.slice(1)}`;
-                        if (data.version) {
-                            successMessage += ` (version ${data.version})`;
-                        }
-                        
-                        // Alert the user of success
-                        alert(successMessage);
-                        
-                        // Reset button after delay
-                        setTimeout(() => {
-                            button.innerHTML = originalButtonHTML;
-                            button.classList.remove('test-success');
-                            // Reset suppression flag
-                            window._suppressUnsavedChangesDialog = false;
-                        }, 3000);
-                    } else {
-                        // Failure
-                        button.innerHTML = '<i class="fas fa-times"></i> Failed';
-                        button.classList.add('test-failed');
-                        
-                        alert(`Connection failed: ${data.message || 'Unknown error'}`);
-                        
-                        setTimeout(() => {
-                            button.innerHTML = originalButtonHTML;
-                            button.classList.remove('test-failed');
-                            // Reset suppression flag
-                            window._suppressUnsavedChangesDialog = false;
-                        }, 3000);
-                    }
-                })
-                .catch(error => {
-                    console.error(`Test connection error:`, error);
-                    
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-times"></i> Error';
-                    button.classList.add('test-failed');
-                    
-                    alert(`Connection test failed: ${error.message}`);
-                    
-                    setTimeout(() => {
-                        button.innerHTML = originalButtonHTML;
-                        button.classList.remove('test-failed');
-                        // Reset suppression flag
-                        window._suppressUnsavedChangesDialog = false;
-                    }, 3000);
-                });
             });
-        });
+            
+            apiKeyInputs.forEach(input => {
+                if (input.hasAttribute('data-instance-index')) {
+                    const instanceIndex = input.getAttribute('data-instance-index');
+                    input.addEventListener('input', () => {
+                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
+                    });
+                    input.addEventListener('blur', () => {
+                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
+                    });
+                }
+            });
+            
+            // Initial check for existing data when form loads
+            setTimeout(() => {
+                urlInputs.forEach(input => {
+                    if (input.hasAttribute('data-instance-index')) {
+                        const instanceIndex = input.getAttribute('data-instance-index');
+                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
+                    }
+                });
+            }, 500);
+        }
+
+
+
+         
+
         
         // Set up remove buttons for existing instances
         const removeButtons = container.querySelectorAll('.remove-instance-btn');
@@ -3030,9 +2952,7 @@ const SettingsForms = {
                             <h4>Instance ${newIndex + 1}: New Instance</h4>
                             <div class="instance-actions">
                                 <button type="button" class="remove-instance-btn">Remove</button>
-                                <button type="button" class="test-connection-btn" data-instance="${newIndex}" style="margin-left: 10px;">
-                                    <i class="fas fa-plug"></i> Test Connection
-                                </button>
+                                <span class="connection-status" id="${appType}-status-${newIndex}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
                             </div>
                         </div>
                         <div class="instance-content">
@@ -3051,22 +2971,22 @@ const SettingsForms = {
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-url-${newIndex}">URL:</label>
-                                <input type="text" id="${appType}-url-${newIndex}" name="api_url" value="" placeholder="Base URL for ${appType} (e.g., http://localhost:8989)">
+                                <input type="text" id="${appType}-url-${newIndex}" name="api_url" value="" placeholder="Base URL for ${appType} (e.g., http://localhost:8989)" data-instance-index="${newIndex}">
                                 <p class="setting-help">Base URL for ${appType}</p>
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-key-${newIndex}">API Key:</label>
-                                <input type="text" id="${appType}-key-${newIndex}" name="api_key" value="" placeholder="API key for ${appType}">
+                                <input type="text" id="${appType}-key-${newIndex}" name="api_key" value="" placeholder="API key for ${appType}" data-instance-index="${newIndex}">
                                 <p class="setting-help">API key for ${appType}</p>
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-${missingFieldName}-${newIndex}">${missingLabel}:</label>
-                                <input type="number" id="${appType}-${missingFieldName}-${newIndex}" name="${missingFieldName}" min="0" value="${missingDefault}">
+                                <input type="number" id="${appType}-${missingFieldName}-${newIndex}" name="${missingFieldName}" min="0" value="${missingDefault}" style="width: 80px;">
                                 <p class="setting-help">Number of missing items to search per cycle (0 to disable)</p>
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-${upgradeFieldName}-${newIndex}">${upgradeLabel}:</label>
-                                <input type="number" id="${appType}-${upgradeFieldName}-${newIndex}" name="${upgradeFieldName}" min="0" value="${upgradeDefault}">
+                                <input type="number" id="${appType}-${upgradeFieldName}-${newIndex}" name="${upgradeFieldName}" min="0" value="${upgradeDefault}" style="width: 80px;">
                                 <p class="setting-help">Number of items to search for quality upgrades per cycle (0 to disable)</p>
                             </div>
                             <div class="setting-item">
@@ -3088,74 +3008,7 @@ const SettingsForms = {
                 const newInstance = instancesContainer.querySelector(`[data-instance-id="${newIndex}"]`);
                 
                 // Set up event listeners for the new instance's buttons
-                const newTestBtn = newInstance.querySelector('.test-connection-btn');
                 const newRemoveBtn = newInstance.querySelector('.remove-instance-btn');
-                
-                // Test connection button
-                if (newTestBtn) {
-                    newTestBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const instancePanel = newTestBtn.closest('.instance-item');
-                        const urlInput = instancePanel.querySelector('input[name="api_url"]');
-                        const keyInput = instancePanel.querySelector('input[name="api_key"]');
-                        
-                        if (!urlInput || !keyInput) {
-                            alert('Error: Could not find URL or API key inputs');
-                            return;
-                        }
-                        
-                        const url = urlInput.value.trim();
-                        const apiKey = keyInput.value.trim();
-                        
-                        if (!url) {
-                            alert('Please enter a valid URL');
-                            urlInput.focus();
-                            return;
-                        }
-                        
-                        if (!apiKey) {
-                            alert('Please enter a valid API key');
-                            keyInput.focus();
-                            return;
-                        }
-                        
-                        // Use the same test connection logic as existing buttons
-                        const originalButtonHTML = newTestBtn.innerHTML;
-                        newTestBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
-                        newTestBtn.disabled = true;
-                        
-                        HuntarrUtils.fetchWithTimeout(`./api/${appType}/test-connection`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ api_url: url, api_key: apiKey })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            newTestBtn.disabled = false;
-                            if (data.success) {
-                                newTestBtn.innerHTML = '<i class="fas fa-check"></i> Connected!';
-                                alert(`Successfully connected to ${appType}`);
-                                setTimeout(() => {
-                                    newTestBtn.innerHTML = originalButtonHTML;
-                                }, 3000);
-                            } else {
-                                newTestBtn.innerHTML = '<i class="fas fa-times"></i> Failed';
-                                alert(`Connection failed: ${data.message || 'Unknown error'}`);
-                                setTimeout(() => {
-                                    newTestBtn.innerHTML = originalButtonHTML;
-                                }, 3000);
-                            }
-                        })
-                        .catch(error => {
-                            newTestBtn.disabled = false;
-                            newTestBtn.innerHTML = '<i class="fas fa-times"></i> Error';
-                            alert(`Connection test failed: ${error.message}`);
-                            setTimeout(() => {
-                                newTestBtn.innerHTML = originalButtonHTML;
-                            }, 3000);
-                        });
-                    });
-                }
                 
                 // Remove button
                 if (newRemoveBtn) {
@@ -3168,6 +3021,29 @@ const SettingsForms = {
                         container.dispatchEvent(changeEvent);
                     });
                 }
+                
+                // Set up auto-detection for the new instance
+                const newUrlInput = newInstance.querySelector(`#${appType}-url-${newIndex}`);
+                const newApiKeyInput = newInstance.querySelector(`#${appType}-key-${newIndex}`);
+                
+                if (newUrlInput) {
+                    newUrlInput.addEventListener('input', function() {
+                        setTimeout(() => {
+                            SettingsForms.checkConnectionStatus(appType, newIndex);
+                        }, 1000); // 1 second delay to prevent spam while typing
+                    });
+                }
+                
+                if (newApiKeyInput) {
+                    newApiKeyInput.addEventListener('input', function() {
+                        setTimeout(() => {
+                            SettingsForms.checkConnectionStatus(appType, newIndex);
+                        }, 1000); // 1 second delay to prevent spam while typing
+                    });
+                }
+                
+                // Initial status check for the new instance
+                SettingsForms.checkConnectionStatus(appType, newIndex);
                 
                 // Update button text and trigger change event
                 updateAddButtonText();
@@ -3269,6 +3145,9 @@ const SettingsForms = {
                 // Show success message
                 statusElement.textContent = successMessage;
                 statusElement.style.color = 'green';
+                
+                // Connection successful - no additional actions needed
+
             } else {
                 // Failure
                 buttonElement.innerHTML = '<i class="fas fa-plug"></i> Test Connection';
@@ -3302,11 +3181,152 @@ const SettingsForms = {
     
     // Helper method to reset unsaved changes suppression flags
     _resetSuppressionFlags: function() {
+        console.log('[ConnectionStatus] Resetting all suppression flags');
         // Reset all suppression flags
         if (window.huntarrUI) {
             window.huntarrUI.suppressUnsavedChangesCheck = false;
         }
         window._suppressUnsavedChangesDialog = false;
+        window._appsSuppressChangeDetection = false;
+        console.log('[ConnectionStatus] All suppression flags reset');
+    },
+    
+    // Check connection status for an instance
+    checkConnectionStatus: function(app, instanceIndex) {
+        const supportedApps = ['radarr', 'sonarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        if (!supportedApps.includes(app)) return;
+        
+        const urlInput = document.getElementById(`${app}-url-${instanceIndex}`);
+        const apiKeyInput = document.getElementById(`${app}-key-${instanceIndex}`);
+        
+        if (!urlInput || !apiKeyInput) return;
+        
+        const url = urlInput.value.trim();
+        const apiKey = apiKeyInput.value.trim();
+        
+        // Find the status element in the instance header
+        const statusElement = document.getElementById(`${app}-status-${instanceIndex}`);
+        
+        console.log(`[ConnectionStatus] Suppressing change detection for ${app} instance ${instanceIndex}`);
+        
+        // Temporarily suppress change detection to prevent the unsaved changes dialog
+        if (window.huntarrUI) {
+            window.huntarrUI.suppressUnsavedChangesCheck = true;
+        }
+        window._suppressUnsavedChangesDialog = true;
+        window._appsSuppressChangeDetection = true;
+        
+        // Show appropriate status for incomplete fields
+        if (url.length <= 10 && apiKey.length <= 20) {
+            if (statusElement) {
+                statusElement.textContent = 'Enter URL and API Key';
+                statusElement.style.color = '#888';
+            }
+            // Longer delay for reset to ensure all changes are processed
+            setTimeout(() => {
+                this._resetSuppressionFlags();
+            }, 2000);
+            return;
+        } else if (url.length <= 10) {
+            if (statusElement) {
+                statusElement.textContent = 'Missing URL';
+                statusElement.style.color = '#fbbf24';
+            }
+            setTimeout(() => {
+                this._resetSuppressionFlags();
+            }, 2000);
+            return;
+        } else if (apiKey.length <= 20) {
+            if (statusElement) {
+                statusElement.textContent = 'Missing API Key';
+                statusElement.style.color = '#fbbf24';
+            }
+            setTimeout(() => {
+                this._resetSuppressionFlags();
+            }, 2000);
+            return;
+        }
+        
+        // Show checking status
+        if (statusElement) {
+            statusElement.textContent = 'Checking...';
+            statusElement.style.color = '#888';
+        }
+        
+        console.log(`Checking connection status for ${app} instance ${instanceIndex}`);
+        
+        // Delay to avoid spamming API calls while typing
+        clearTimeout(this._autoFetchTimeout);
+        this._autoFetchTimeout = setTimeout(() => {
+            this.testConnectionAndUpdateStatus(app, instanceIndex, url, apiKey, statusElement);
+        }, 1000); // Wait 1 second after user stops typing
+    },
+    
+    // Test connection and update status
+    testConnectionAndUpdateStatus: function(app, instanceIndex, url, apiKey, statusElement) {
+        console.log(`[ConnectionStatus] Testing connection for ${app} instance ${instanceIndex}`);
+        
+        // Make API request to test connection
+        HuntarrUtils.fetchWithTimeout(`./api/${app}/test-connection`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                api_url: url,
+                api_key: apiKey
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`[ConnectionStatus] Connection test response for ${app} instance ${instanceIndex}:`, data);
+            
+            if (data.success) {
+                // Update status to connected
+                if (statusElement) {
+                    let statusText = '✓ Connected';
+                    if (data.version) {
+                        statusText += ` (v${data.version})`;
+                    }
+                    statusElement.textContent = statusText;
+                    statusElement.style.color = '#10b981';
+                }
+            } else {
+                // Update status to connection failed
+                if (statusElement) {
+                    statusElement.textContent = '✗ Connection failed';
+                    statusElement.style.color = '#ef4444';
+                }
+            }
+            
+            // Reset suppression flags after updating status with longer delay
+            console.log(`[ConnectionStatus] Resetting suppression flags for ${app} instance ${instanceIndex} in 2 seconds`);
+            setTimeout(() => {
+                console.log(`[ConnectionStatus] Suppression flags reset for ${app} instance ${instanceIndex}`);
+                this._resetSuppressionFlags();
+            }, 2000);
+        })
+        .catch(error => {
+            console.error(`[ConnectionStatus] Connection test error for ${app} instance ${instanceIndex}:`, error);
+            
+            // Update status to error
+            if (statusElement) {
+                statusElement.textContent = '✗ Connection error';
+                statusElement.style.color = '#ef4444';
+            }
+            
+            // Reset suppression flags after updating status with longer delay
+            console.log(`[ConnectionStatus] Resetting suppression flags for ${app} instance ${instanceIndex} in 2 seconds (error case)`);
+            setTimeout(() => {
+                console.log(`[ConnectionStatus] Suppression flags reset for ${app} instance ${instanceIndex} (error case)`);
+                this._resetSuppressionFlags();
+            }, 2000);
+        });
     },
     
     // Update disabled state of Swaparr fields in all app forms based on global Swaparr setting
