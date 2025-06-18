@@ -33,15 +33,36 @@ class HuntarrDatabase:
             return cursor.fetchall()
     
     def _configure_connection(self, conn):
-        """Configure SQLite connection with Synology NAS compatible settings"""
-        conn.execute('PRAGMA foreign_keys = ON')
-        conn.execute('PRAGMA journal_mode = WAL')
-        conn.execute('PRAGMA synchronous = NORMAL')
-        conn.execute('PRAGMA cache_size = 10000')
-        conn.execute('PRAGMA temp_store = MEMORY')
-        conn.execute('PRAGMA mmap_size = 268435456')
-        conn.execute('PRAGMA wal_autocheckpoint = 1000')
-        conn.execute('PRAGMA busy_timeout = 30000')
+        """Configure SQLite connection with cross-platform compatible settings"""
+        try:
+            conn.execute('PRAGMA foreign_keys = ON')
+            
+            # Try WAL mode first, fall back to DELETE mode on Windows if it fails
+            try:
+                conn.execute('PRAGMA journal_mode = WAL')
+            except Exception as wal_error:
+                logger.warning(f"WAL mode failed, using DELETE mode: {wal_error}")
+                conn.execute('PRAGMA journal_mode = DELETE')
+                
+            conn.execute('PRAGMA synchronous = NORMAL')
+            conn.execute('PRAGMA cache_size = 10000')
+            conn.execute('PRAGMA temp_store = MEMORY')
+            
+            # Skip mmap on Windows if it causes issues
+            import platform
+            if platform.system() != "Windows":
+                conn.execute('PRAGMA mmap_size = 268435456')
+            
+            # Only set WAL checkpoint if we're using WAL mode
+            result = conn.execute('PRAGMA journal_mode').fetchone()
+            if result and result[0] == 'wal':
+                conn.execute('PRAGMA wal_autocheckpoint = 1000')
+                
+            conn.execute('PRAGMA busy_timeout = 30000')
+        except Exception as e:
+            logger.error(f"Error configuring database connection: {e}")
+            # Continue with basic connection if configuration fails
+            pass
     
     def get_connection(self):
         """Get a configured SQLite connection with Synology NAS compatibility"""
@@ -50,23 +71,64 @@ class HuntarrDatabase:
         return conn
     
     def _get_database_path(self) -> Path:
-        """Get database path - use /config for Docker, local data directory for development"""
+        """Get database path - use /config for Docker, Windows AppData, or local data directory"""
         # Check if running in Docker (config directory exists)
         config_dir = Path("/config")
         if config_dir.exists() and config_dir.is_dir():
             # Running in Docker - use persistent config directory
             return config_dir / "huntarr.db"
-        else:
-            # For local development, use data directory in project root
-            project_root = Path(__file__).parent.parent.parent.parent
-            data_dir = project_root / "data"
-            
-            # Ensure directory exists
-            data_dir.mkdir(parents=True, exist_ok=True)
-            return data_dir / "huntarr.db"
+        
+        # Check if we have a Windows-specific config directory set
+        windows_config = os.environ.get("HUNTARR_CONFIG_DIR")
+        if windows_config:
+            config_path = Path(windows_config)
+            config_path.mkdir(parents=True, exist_ok=True)
+            return config_path / "huntarr.db"
+        
+        # Check if we're on Windows and use AppData
+        import platform
+        if platform.system() == "Windows":
+            appdata = os.environ.get("APPDATA", os.path.expanduser("~"))
+            windows_config_dir = Path(appdata) / "Huntarr"
+            windows_config_dir.mkdir(parents=True, exist_ok=True)
+            return windows_config_dir / "huntarr.db"
+        
+        # For local development on non-Windows, use data directory in project root
+        project_root = Path(__file__).parent.parent.parent.parent
+        data_dir = project_root / "data"
+        
+        # Ensure directory exists
+        data_dir.mkdir(parents=True, exist_ok=True)
+        return data_dir / "huntarr.db"
     
     def ensure_database_exists(self):
         """Create database and all tables if they don't exist"""
+        try:
+            # Ensure the database directory exists and is writable
+            db_dir = self.db_path.parent
+            db_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Test write permissions
+            test_file = db_dir / f"db_test_{int(time.time())}.tmp"
+            try:
+                test_file.write_text("test")
+                test_file.unlink()
+            except Exception as perm_error:
+                logger.error(f"Database directory not writable: {db_dir} - {perm_error}")
+                # On Windows, try an alternative location
+                import platform
+                if platform.system() == "Windows":
+                    alt_dir = Path(os.path.expanduser("~")) / "Documents" / "Huntarr"
+                    alt_dir.mkdir(parents=True, exist_ok=True)
+                    self.db_path = alt_dir / "huntarr.db"
+                    logger.info(f"Using alternative database location: {self.db_path}")
+                else:
+                    raise perm_error
+            
+        except Exception as e:
+            logger.error(f"Error setting up database directory: {e}")
+            raise
+            
         with self.get_connection() as conn:
             
             # Create app_configs table for all app settings
