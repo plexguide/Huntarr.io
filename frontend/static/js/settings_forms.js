@@ -1979,8 +1979,12 @@ const SettingsForms = {
                 const swaparrEnabledInput = instance.querySelector('input[name="swaparr_enabled"]');
                 
                 // Get per-instance missing/upgrade values 
-                const huntMissingItemsInput = instance.querySelector('input[name="hunt_missing_items"]') || instance.querySelector('input[name="hunt_missing_movies"]');
-                const huntUpgradeItemsInput = instance.querySelector('input[name="hunt_upgrade_items"]') || instance.querySelector('input[name="hunt_upgrade_movies"]');
+                const huntMissingItemsInput = instance.querySelector('input[name="hunt_missing_items"]') || 
+                                            instance.querySelector('input[name="hunt_missing_movies"]') || 
+                                            instance.querySelector('input[name="hunt_missing_books"]');
+                const huntUpgradeItemsInput = instance.querySelector('input[name="hunt_upgrade_items"]') || 
+                                            instance.querySelector('input[name="hunt_upgrade_movies"]') || 
+                                            instance.querySelector('input[name="hunt_upgrade_books"]');
                 
                 // Get quality profile selectors for Radarr
                 const missingQualityProfileInput = instance.querySelector('select[name="missing_quality_profile"]');
