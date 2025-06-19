@@ -222,7 +222,7 @@ const SettingsForms = {
                 <div class="setting-item">
                     <label for="sonarr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
                     <input type="number" id="sonarr_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting). Recommended: 400 max.</p>
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -613,7 +613,7 @@ const SettingsForms = {
                 <div class="setting-item">
                     <label for="radarr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
                     <input type="number" id="radarr_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting). Recommended: 400 max.</p>
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -952,7 +952,7 @@ const SettingsForms = {
                 <div class="setting-item">
                     <label for="lidarr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
                     <input type="number" id="lidarr_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting). Recommended: 400 max.</p>
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -1189,7 +1189,7 @@ const SettingsForms = {
                 <div class="setting-item">
                     <label for="readarr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
                     <input type="number" id="readarr_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting). Recommended: 400 max.</p>
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -1374,7 +1374,7 @@ const SettingsForms = {
                 <div class="setting-item">
                     <label for="whisparr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
                     <input type="number" id="whisparr_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting). Recommended: 400 max.</p>
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -1564,7 +1564,7 @@ const SettingsForms = {
                 <div class="setting-item">
                     <label for="eros_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#api-cap" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
                     <input type="number" id="eros_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting). Recommended: 400 max.</p>
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
