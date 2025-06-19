@@ -1911,6 +1911,77 @@ class HuntarrDatabase:
             days = seconds_ago // 86400
             return f"{days} day{'s' if days != 1 else ''} ago"
 
+    def save_setup_progress(self, progress_data: dict) -> bool:
+        """Save setup progress data to database"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute("""
+                    INSERT OR REPLACE INTO general_settings (setting_key, setting_value, setting_type) 
+                    VALUES ('setup_progress', ?, 'json')
+                """, (json.dumps(progress_data),))
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save setup progress: {e}")
+            return False
+    
+    def get_setup_progress(self) -> dict:
+        """Get setup progress data from database"""
+        try:
+            with self.get_connection() as conn:
+                result = conn.execute(
+                    "SELECT setting_value FROM general_settings WHERE setting_key = 'setup_progress'"
+                ).fetchone()
+                
+                if result:
+                    return json.loads(result[0])
+                else:
+                    return {
+                        'current_step': 1,
+                        'completed_steps': [],
+                        'account_created': False,
+                        'two_factor_enabled': False,
+                        'plex_setup_done': False,
+                        'auth_mode_selected': False,
+                        'recovery_key_generated': False,
+                        'timestamp': datetime.now().isoformat()
+                    }
+        except Exception as e:
+            logger.error(f"Failed to get setup progress: {e}")
+            return {
+                'current_step': 1,
+                'completed_steps': [],
+                'account_created': False,
+                'two_factor_enabled': False,
+                'plex_setup_done': False,
+                'auth_mode_selected': False,
+                'recovery_key_generated': False,
+                'timestamp': datetime.now().isoformat()
+            }
+    
+    def clear_setup_progress(self) -> bool:
+        """Clear setup progress data from database (called when setup is complete)"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute(
+                    "DELETE FROM general_settings WHERE setting_key = 'setup_progress'"
+                )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to clear setup progress: {e}")
+            return False
+    
+    def is_setup_in_progress(self) -> bool:
+        """Check if setup is currently in progress"""
+        try:
+            with self.get_connection() as conn:
+                result = conn.execute(
+                    "SELECT 1 FROM general_settings WHERE setting_key = 'setup_progress'"
+                ).fetchone()
+                return result is not None
+        except Exception as e:
+            logger.error(f"Failed to check setup progress: {e}")
+            return False
+
 # Separate LogsDatabase class for logs.db
 class LogsDatabase:
     """Separate database class specifically for logs to keep logs.db separate from huntarr.db"""

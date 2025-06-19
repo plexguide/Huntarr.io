@@ -185,7 +185,30 @@ def setup():
     # The authentication middleware will handle proper authentication checks
     # This handles cases like returning from Plex authentication during setup
     
-    if request.method == 'POST':
+    if request.method == 'GET':
+        # For GET requests, check if we should restore setup progress
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            
+            # Get setup progress for restoration
+            setup_progress = db.get_setup_progress()
+            logger.debug(f"Setup page accessed, current progress: {setup_progress}")
+            
+            # If user exists but setup is in progress, allow continuation
+            if user_exists() and not db.is_setup_in_progress():
+                logger.info("User exists and setup is complete, redirecting to login")
+                return redirect(url_for('common.login_route'))
+            
+            # Render setup page with progress data
+            return render_template('setup.html', setup_progress=setup_progress)
+            
+        except Exception as e:
+            logger.error(f"Error checking setup progress: {e}")
+            # Fallback to normal setup flow
+            return render_template('setup.html', setup_progress=None)
+    
+    elif request.method == 'POST':
         # For POST requests, check if user exists to prevent duplicate creation
         if user_exists():
             logger.warning("Attempted to create user during setup but user already exists")
@@ -242,6 +265,26 @@ def setup():
                         logger.debug("Proxy auth bypass setting enabled during setup")
                     except Exception as e:
                         logger.error(f"Error saving proxy auth bypass setting: {e}", exc_info=True)
+                
+                # Save setup progress after account creation
+                try:
+                    from src.primary.utils.database import get_database
+                    db = get_database()
+                    progress_data = {
+                        'current_step': 2,  # Move to 2FA step
+                        'completed_steps': [1],
+                        'account_created': True,
+                        'two_factor_enabled': False,
+                        'plex_setup_done': False,
+                        'auth_mode_selected': False,
+                        'recovery_key_generated': False,
+                        'username': username,
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    db.save_setup_progress(progress_data)
+                    logger.debug("Setup progress saved after account creation")
+                except Exception as e:
+                    logger.error(f"Error saving setup progress: {e}")
                 
                 # Automatically log in the user after setup
                 logger.debug(f"User '{username}' created successfully during setup. Creating session.")
@@ -887,6 +930,90 @@ def database_status():
         
     except Exception as e:
         logger.error(f"Failed to get database status: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/setup/progress', methods=['GET', 'POST'])
+def setup_progress():
+    """Get or save setup progress"""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        
+        if request.method == 'GET':
+            # Get current setup progress
+            progress = db.get_setup_progress()
+            return jsonify({
+                'success': True,
+                'progress': progress
+            })
+        
+        elif request.method == 'POST':
+            # Save setup progress
+            data = request.json
+            progress_data = data.get('progress', {})
+            
+            # Add timestamp
+            progress_data['timestamp'] = datetime.now().isoformat()
+            
+            # Save to database
+            success = db.save_setup_progress(progress_data)
+            
+            return jsonify({
+                'success': success,
+                'message': 'Setup progress saved' if success else 'Failed to save setup progress'
+            })
+    
+    except Exception as e:
+        logger.error(f"Setup progress API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/setup/clear', methods=['POST'])
+def clear_setup_progress():
+    """Clear setup progress (called when setup is complete)"""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        
+        success = db.clear_setup_progress()
+        
+        return jsonify({
+            'success': success,
+            'message': 'Setup progress cleared' if success else 'Failed to clear setup progress'
+        })
+    
+    except Exception as e:
+        logger.error(f"Clear setup progress API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/setup/status', methods=['GET'])
+def setup_status():
+    """Check if setup is in progress or complete"""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        
+        # Check if user exists and if setup is in progress
+        user_exists_status = user_exists()
+        setup_in_progress = db.is_setup_in_progress()
+        
+        return jsonify({
+            'success': True,
+            'user_exists': user_exists_status,
+            'setup_in_progress': setup_in_progress,
+            'needs_setup': not user_exists_status or setup_in_progress
+        })
+    
+    except Exception as e:
+        logger.error(f"Setup status API error: {e}")
         return jsonify({
             'success': False,
             'error': str(e)

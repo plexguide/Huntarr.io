@@ -1384,6 +1384,12 @@
                          console.log('2FA verify response:', { status: response.status, ok: response.ok, data: data });
                          if (response.ok && data.success) {
                              twoFactorEnabled = true;
+                             // Save progress after 2FA setup
+                             saveSetupProgress({ 
+                                 current_step: 3, 
+                                 two_factor_enabled: true,
+                                 completed_steps: [1, 2] 
+                             });
                              showStep(3); // Go to Plex Setup step
                          } else {
                              // Handle both HTTP errors and application errors
@@ -1401,6 +1407,11 @@
             
             // Skip 2FA setup
             skip2FALink.addEventListener('click', function() {
+                // Save progress when skipping 2FA
+                saveSetupProgress({ 
+                    current_step: 3,
+                    completed_steps: [1, 2]
+                });
                 showStep(3); // Go to Plex Setup step
             });
             
@@ -1429,6 +1440,12 @@
                     return response.json();
                 })
                 .then(data => {
+                    // Save progress after auth mode selection
+                    saveSetupProgress({ 
+                        current_step: 5,
+                        auth_mode_selected: true,
+                        completed_steps: [1, 2, 3, 4]
+                    });
                     showStep(5);
                 })
                 .catch(error => {
@@ -1517,6 +1534,12 @@
                 if (countdownInterval) {
                     clearInterval(countdownInterval);
                 }
+                // Save progress after recovery key confirmation
+                saveSetupProgress({ 
+                    current_step: 6,
+                    recovery_key_generated: true,
+                    completed_steps: [1, 2, 3, 4, 5]
+                });
                 showStep(6);
             });
             
@@ -1546,15 +1569,23 @@
             });
             
             skipPlexButton.addEventListener('click', function() {
+                // Save progress when skipping Plex setup
+                saveSetupProgress({ 
+                    current_step: 4,
+                    plex_setup_done: true,
+                    completed_steps: [1, 2, 3]
+                });
                 showStep(4); // Go to Auth Mode step
             });
             
             // Complete setup navigation
-            finishSetupButton.addEventListener('click', function() {
+            finishSetupButton.addEventListener('click', async function() {
+                // Clear all setup-related data
                 localStorage.removeItem('huntarr-setup-username');
                 localStorage.removeItem('huntarr-plex-linking');
                 localStorage.removeItem('huntarr-plex-pin-id');
-                console.log('Setup completed, cleaned up localStorage');
+                await clearSetupProgress();
+                console.log('Setup completed, cleaned up localStorage and database progress');
                 
                 window.location.href = './';
             });
@@ -1586,6 +1617,136 @@
             // Always use dark mode
             document.body.classList.add('dark-mode');
             localStorage.setItem('huntarr-dark-mode', 'true');
+            
+            // Setup progress restoration system
+            async function loadSetupProgress() {
+                try {
+                    // Try to get server-side progress first
+                    const response = await fetch('./api/setup/progress');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.progress) {
+                            restoreSetupState(data.progress);
+                            return;
+                        }
+                    }
+                    
+                    // Fallback to localStorage if server fails
+                    const localProgress = localStorage.getItem('huntarr-setup-progress');
+                    if (localProgress) {
+                        try {
+                            const progress = JSON.parse(localProgress);
+                            restoreSetupState(progress);
+                        } catch (e) {
+                            console.error('Error parsing local setup progress:', e);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading setup progress:', error);
+                }
+            }
+            
+            function restoreSetupState(progress) {
+                console.log('Restoring setup state:', progress);
+                
+                // Restore flags
+                if (progress.account_created) {
+                    accountCreated = true;
+                }
+                if (progress.two_factor_enabled) {
+                    twoFactorEnabled = true;
+                }
+                
+                // Restore form values if available
+                if (progress.username && usernameInput) {
+                    usernameInput.value = progress.username;
+                }
+                
+                // Show the current step
+                if (progress.current_step) {
+                    showStep(progress.current_step);
+                } else {
+                    showStep(1); // Default to first step
+                }
+                
+                // Show completion message if returning to setup
+                if (progress.current_step > 1) {
+                    showSuccess('Setup progress restored. You can continue where you left off.');
+                }
+            }
+            
+            async function saveSetupProgress(stepData = {}) {
+                const progress = {
+                    current_step: currentStep,
+                    completed_steps: getCompletedSteps(),
+                    account_created: accountCreated,
+                    two_factor_enabled: twoFactorEnabled,
+                    plex_setup_done: stepData.plex_setup_done || false,
+                    auth_mode_selected: stepData.auth_mode_selected || false,
+                    recovery_key_generated: stepData.recovery_key_generated || false,
+                    username: usernameInput ? usernameInput.value : null,
+                    timestamp: new Date().toISOString(),
+                    ...stepData
+                };
+                
+                // Save to localStorage as backup
+                localStorage.setItem('huntarr-setup-progress', JSON.stringify(progress));
+                
+                // Save to server
+                try {
+                    await fetch('./api/setup/progress', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ progress })
+                    });
+                } catch (error) {
+                    console.error('Error saving setup progress to server:', error);
+                }
+            }
+            
+            function getCompletedSteps() {
+                const completed = [];
+                const stepElements = document.querySelectorAll('.step.completed');
+                stepElements.forEach((step, index) => {
+                    completed.push(index + 1);
+                });
+                return completed;
+            }
+            
+            function showSuccess(message) {
+                const successElement = document.createElement('div');
+                successElement.className = 'error-message success';
+                successElement.textContent = message;
+                successElement.style.cssText = `
+                    background-color: #28a745;
+                    color: white;
+                    padding: 10px;
+                    border-radius: 5px;
+                    margin-bottom: 15px;
+                    display: block;
+                `;
+                
+                const form = document.querySelector('.login-form');
+                form.insertBefore(successElement, form.firstChild);
+                
+                setTimeout(() => {
+                    successElement.remove();
+                }, 5000);
+            }
+            
+            async function clearSetupProgress() {
+                localStorage.removeItem('huntarr-setup-progress');
+                try {
+                    await fetch('./api/setup/clear', { method: 'POST' });
+                } catch (error) {
+                    console.error('Error clearing setup progress:', error);
+                }
+            }
+            
+            // Load progress on page load
+            loadSetupProgress();
             
             // Check if we're returning from Plex authentication during setup
             const plexLinking = localStorage.getItem('huntarr-plex-linking');
