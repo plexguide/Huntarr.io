@@ -714,8 +714,8 @@
             }
             
             // Update server setting to dark mode
-            HuntarrUtils.fetchWithTimeout('/api/settings/theme', {
-                method: 'POST',
+                            HuntarrUtils.fetchWithTimeout('./api/settings/theme', {
+                    method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -771,7 +771,7 @@
         });
         
         function loadPlexAccountStatus() {
-            HuntarrUtils.fetchWithTimeout('/api/auth/plex/status')
+                                HuntarrUtils.fetchWithTimeout('./api/auth/plex/status')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -904,8 +904,8 @@
             setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Preparing Plex authentication...');
             
             // Create Plex PIN
-            HuntarrUtils.fetchWithTimeout('/api/auth/plex/pin', {
-                method: 'POST',
+                                HuntarrUtils.fetchWithTimeout('./api/auth/plex/pin', {
+                        method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_mode: true })
             })
@@ -993,8 +993,8 @@
         function linkWithPlexToken(token) {
             setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Finalizing account link...');
             
-            HuntarrUtils.fetchWithTimeout('/api/auth/plex/link', {
-                method: 'POST',
+                                HuntarrUtils.fetchWithTimeout('./api/auth/plex/link', {
+                        method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     token: token

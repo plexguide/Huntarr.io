@@ -840,8 +840,8 @@
             setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Preparing Plex authentication...');
             
             // Create Plex PIN
-            HuntarrUtils.fetchWithTimeout('/api/auth/plex/pin', {
-                method: 'POST',
+                                HuntarrUtils.fetchWithTimeout('./api/auth/plex/pin', {
+                        method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ setup_mode: true })
             })
@@ -998,8 +998,8 @@
                 return;
             }
             
-            HuntarrUtils.fetchWithTimeout('/api/auth/plex/link', {
-                method: 'POST',
+                                HuntarrUtils.fetchWithTimeout('./api/auth/plex/link', {
+                        method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username: username,
@@ -1137,7 +1137,7 @@
                     qrCodeImg.style.display = 'none';
                 }
                 
-                HuntarrUtils.fetchWithTimeout('/api/user/2fa/setup', { method: 'POST' })
+                                    HuntarrUtils.fetchWithTimeout('./api/user/2fa/setup', { method: 'POST' })
                     .then(response => {
                         if (response.status === 401) {
                             throw new Error('Unauthorized - Session likely not established yet.');
@@ -1389,8 +1389,8 @@
                     return;
                 }
                 
-                HuntarrUtils.fetchWithTimeout('/api/user/2fa/verify', {
-                    method: 'POST',
+                                    HuntarrUtils.fetchWithTimeout('./api/user/2fa/verify', {
+                        method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -1436,7 +1436,7 @@
             authModeNextButton.addEventListener('click', function() {
                 const selectedAuthMode = authModeSelect.value;
                 
-                HuntarrUtils.fetchWithTimeout('/api/settings/general', {
+                HuntarrUtils.fetchWithTimeout('./api/settings/general', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

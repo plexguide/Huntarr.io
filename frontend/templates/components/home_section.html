@@ -2174,7 +2174,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchSponsors() {
         try {
             // Fetch in the background without waiting for visual updates
-            const response = await HuntarrUtils.fetchWithTimeout('/api/github_sponsors');
+            const response = await HuntarrUtils.fetchWithTimeout('./api/github_sponsors');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }

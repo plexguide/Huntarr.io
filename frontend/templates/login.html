@@ -734,8 +734,8 @@
             setPlexStatus('waiting', '<i class="fas fa-spinner spinner"></i> Creating Plex PIN...');
             
             // Create Plex PIN
-            HuntarrUtils.fetchWithTimeout('/api/auth/plex/pin', {
-                method: 'POST',
+                                HuntarrUtils.fetchWithTimeout('./api/auth/plex/pin', {
+                        method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -793,7 +793,7 @@
             pinCheckInterval = setInterval(() => {
                 if (!currentPinId) return;
                 
-                HuntarrUtils.fetchWithTimeout(`/api/auth/plex/check/${currentPinId}`, {
+                HuntarrUtils.fetchWithTimeout(`./api/auth/plex/check/${currentPinId}`, {
                     method: 'GET'
                 })
                 .then(response => {
@@ -834,7 +834,7 @@
         }
         
         function loginWithPlexToken(token, userData) {
-            HuntarrUtils.fetchWithTimeout('/api/auth/plex/login', {
+            HuntarrUtils.fetchWithTimeout('./api/auth/plex/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

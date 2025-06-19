@@ -438,7 +438,7 @@ const huntManagerModule = {
     // Get instance settings for an app
     getInstanceSettings: async function(appType, instanceName) {
         try {
-            const response = await fetch(`/api/settings/${appType}`, {
+            const response = await fetch(`./api/settings/${appType}`, {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',

@@ -1078,7 +1078,7 @@ let huntarrUI = {
         console.log(`[huntarrUI] Sending settings payload for ${app}:`, settings);
 
         // Use the correct endpoint based on app type
-        const endpoint = app === 'general' ? '/api/settings/general' : `/api/settings/${app}`;
+        const endpoint = app === 'general' ? './api/settings/general' : `./api/settings/${app}`;
         
         HuntarrUtils.fetchWithTimeout(endpoint, {
             method: 'POST',
@@ -3029,7 +3029,7 @@ let huntarrUI = {
             expiresDateEl.textContent = 'Updating...';
         }
         
-        const url = '/api/stateful/update-expiration';
+        const url = './api/stateful/update-expiration';
         const cleanedUrl = this.cleanUrlString(url);
         
         HuntarrUtils.fetchWithTimeout(cleanedUrl, {
@@ -3188,7 +3188,7 @@ let huntarrUI = {
         button.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Resetting...';
         
         // API endpoint
-        const endpoint = `/api/cycle/reset/${app}`;
+        const endpoint = `./api/cycle/reset/${app}`;
         
         HuntarrUtils.fetchWithTimeout(endpoint, {
             method: 'POST'

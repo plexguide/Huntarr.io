@@ -354,7 +354,7 @@ window.LogsModule = {
     // Set up log polling with user's configured interval
     setupLogPolling: function(appType) {
         // Fetch the log refresh interval from general settings
-        HuntarrUtils.fetchWithTimeout('/api/settings/general', {
+        HuntarrUtils.fetchWithTimeout('./api/settings/general', {
             method: 'GET'
         })
         .then(response => response.json())
@@ -388,7 +388,7 @@ window.LogsModule = {
     // Load logs from the database API
     loadLogsFromAPI: function(appType, isPolling = false) {
         // Use the correct API endpoint - the backend now supports 'all' as an app_type
-        const apiUrl = `/api/logs/${appType}`;
+        const apiUrl = `./api/logs/${appType}`;
         
         // For polling, always get latest logs (offset=0, small limit)
         // For pagination, use current page and page size

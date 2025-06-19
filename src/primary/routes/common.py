@@ -1028,27 +1028,23 @@ def clear_setup_progress():
 
 @common_bp.route('/api/setup/status', methods=['GET'])
 def setup_status():
-    """Check if setup is in progress or complete"""
     try:
         from src.primary.utils.database import get_database
         db = get_database()
         
-        # Check if user exists and if setup is in progress
-        user_exists_status = user_exists()
-        setup_in_progress = db.is_setup_in_progress()
+        # Check if user exists and setup progress
+        user_exists_flag = user_exists()
+        setup_in_progress = db.is_setup_in_progress() if user_exists_flag else False
         
         return jsonify({
-            'success': True,
-            'user_exists': user_exists_status,
-            'setup_in_progress': setup_in_progress,
-            'needs_setup': not user_exists_status or setup_in_progress
+            "success": True,
+            "user_exists": user_exists_flag,
+            "setup_in_progress": setup_in_progress
         })
-    
     except Exception as e:
-        logger.error(f"Setup status API error: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        logger.error(f"Error checking setup status: {e}")
+        return jsonify({"success": False, "error": "Failed to check setup status"}), 500
+
+
 
 
