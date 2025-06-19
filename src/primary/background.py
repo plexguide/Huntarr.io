@@ -192,7 +192,7 @@ def app_specific_loop(app_type: str) -> None:
                     pass
                 else:
                     # No instances found via get_configured_instances
-                    app_logger.warning(f"No configured {app_type} instances found. Skipping cycle.")
+                    app_logger.debug(f"No configured {app_type} instances found. Skipping cycle.")
                     stop_event.wait(sleep_duration)
                     continue
             except Exception as e:

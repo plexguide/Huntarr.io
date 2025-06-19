@@ -606,7 +606,7 @@ def set_theme():
 
         # Here you would typically save this preference to a user profile or global setting
         # For now, just log it. A real implementation would persist this.
-        logger.info(f"User '{username}' set dark mode preference to: {dark_mode}")
+
 
         # Example: Saving to a hypothetical global config (replace with actual persistence)
         # global_settings = settings_manager.load_global_settings() # Assuming such a function exists
