@@ -279,11 +279,7 @@ window.LogsModule = {
         // Set up polling with user's configured interval
         this.setupLogPolling(appType);
         
-        // Update connection status
-        if (this.elements.logConnectionStatus) {
-            this.elements.logConnectionStatus.textContent = 'Connected';
-            this.elements.logConnectionStatus.className = 'status-connected';
-        }
+        // Status will be updated by loadLogsFromAPI on success/failure
     },
     
     // Set up log polling with user's configured interval
@@ -335,6 +331,11 @@ window.LogsModule = {
             .then(data => {
                 if (data.success && data.logs) {
                     this.processLogsFromAPI(data.logs, appType, isPolling);
+                    // Update connection status on successful API call (only on initial load, not polling)
+                    if (this.elements.logConnectionStatus && !isPolling) {
+                        this.elements.logConnectionStatus.textContent = 'Connected';
+                        this.elements.logConnectionStatus.className = 'status-connected';
+                    }
                 } else {
                     console.error('[LogsModule] Failed to load logs:', data.error || 'No logs in response');
                     if (this.elements.logConnectionStatus) {
