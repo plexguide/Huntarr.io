@@ -81,7 +81,7 @@ def save_schedules():
         db.save_schedules(schedules)
         
         total_schedules = sum(len(s) for s in schedules.values())
-        scheduler_logger.info(f"Saved {total_schedules} schedules to database")
+        # Schedules saved - no need to log every successful save
         
         # Add timestamp to response
         response_data = {

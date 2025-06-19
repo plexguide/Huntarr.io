@@ -419,7 +419,7 @@ class HuntarrDatabase:
                 VALUES (?, ?, CURRENT_TIMESTAMP)
             ''', (app_type, config_json))
             conn.commit()
-            logger.info(f"Saved {app_type} configuration to database")
+            # Auto-save enabled - no need to log every successful save
     
     def get_general_settings(self) -> Dict[str, Any]:
         """Get all general settings as a dictionary"""
@@ -480,7 +480,7 @@ class HuntarrDatabase:
                 ''', (key, setting_value, setting_type))
             
             conn.commit()
-            logger.info("Saved general settings to database")
+            # Auto-save enabled - no need to log every successful save
     
     def get_general_setting(self, key: str, default: Any = None) -> Any:
         """Get a specific general setting"""
@@ -915,7 +915,7 @@ class HuntarrDatabase:
                     ))
             
             conn.commit()
-            logger.info("Saved all schedules to database")
+            # Schedules saved - no need to log every successful save
     
     def add_schedule(self, schedule_data: Dict[str, Any]) -> str:
         """Add a single schedule to database"""

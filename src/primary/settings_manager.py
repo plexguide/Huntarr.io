@@ -238,7 +238,7 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
         else:
             db.save_app_config(app_name, settings_data)
             
-        settings_logger.info(f"Settings saved successfully for {app_name} to database")
+        # Auto-save enabled - no need to log every successful save
         success = True
         
     except Exception as e:

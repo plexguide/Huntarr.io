@@ -757,7 +757,7 @@ def handle_app_settings(app_name):
         success = settings_manager.save_settings(app_name, data)
         
         if success:
-            web_logger.info(f"Successfully saved {app_name} settings")
+            # Auto-save enabled - no need to log every successful save
             return jsonify({"success": True})
         else:
             web_logger.error(f"Failed to save {app_name} settings")
