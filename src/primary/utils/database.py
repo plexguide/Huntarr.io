@@ -33,32 +33,39 @@ class HuntarrDatabase:
             return cursor.fetchall()
     
     def _configure_connection(self, conn):
-        """Configure SQLite connection with cross-platform compatible settings"""
+        """Configure SQLite connection with enhanced Docker resilience and cross-platform compatibility"""
         try:
             conn.execute('PRAGMA foreign_keys = ON')
             
-            # Try WAL mode first, fall back to DELETE mode on Windows if it fails
+            # Try WAL mode first, fall back to DELETE mode if it fails
             try:
                 conn.execute('PRAGMA journal_mode = WAL')
             except Exception as wal_error:
                 logger.warning(f"WAL mode failed, using DELETE mode: {wal_error}")
                 conn.execute('PRAGMA journal_mode = DELETE')
-                
-            conn.execute('PRAGMA synchronous = NORMAL')
-            conn.execute('PRAGMA cache_size = 10000')
-            conn.execute('PRAGMA temp_store = MEMORY')
             
-            # Skip mmap on Windows if it causes issues
+            # Enhanced settings for Docker rebuild resilience
+            conn.execute('PRAGMA synchronous = FULL')       # Maximum durability for Docker environments
+            conn.execute('PRAGMA cache_size = -32000')      # 32MB cache for better performance
+            conn.execute('PRAGMA temp_store = MEMORY')      # Store temp tables in memory
+            conn.execute('PRAGMA busy_timeout = 60000')     # 60 seconds for Docker I/O delays
+            conn.execute('PRAGMA auto_vacuum = INCREMENTAL') # Incremental vacuum for maintenance
+            conn.execute('PRAGMA secure_delete = ON')       # Secure deletion
+            
+            # Skip mmap on Windows if it causes issues, but use it elsewhere for performance
             import platform
             if platform.system() != "Windows":
-                conn.execute('PRAGMA mmap_size = 268435456')
+                conn.execute('PRAGMA mmap_size = 268435456')  # 256MB memory map
             
-            # Only set WAL checkpoint if we're using WAL mode
+            # WAL-specific optimizations
             result = conn.execute('PRAGMA journal_mode').fetchone()
             if result and result[0] == 'wal':
-                conn.execute('PRAGMA wal_autocheckpoint = 1000')
-                
-            conn.execute('PRAGMA busy_timeout = 30000')
+                conn.execute('PRAGMA wal_autocheckpoint = 500')    # More frequent checkpoints for Docker
+                conn.execute('PRAGMA journal_size_limit = 67108864') # 64MB journal size limit
+            
+            # Test the configuration worked
+            conn.execute('PRAGMA integrity_check').fetchone()
+            
         except Exception as e:
             logger.error(f"Error configuring database connection: {e}")
             # Continue with basic connection if configuration fails
@@ -369,18 +376,8 @@ class HuntarrDatabase:
                 )
             ''')
             
-            # Create logs table for all application logs
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS logs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp DATETIME NOT NULL,
-                    level TEXT NOT NULL,
-                    app_type TEXT NOT NULL,
-                    message TEXT NOT NULL,
-                    logger_name TEXT,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
+            # Logs table moved to separate logs.db - remove if it exists
+            conn.execute('DROP TABLE IF EXISTS logs')
             
             # Create hunt_history table for tracking processed media history
             conn.execute('''
@@ -449,10 +446,7 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_swaparr_state_app_name ON swaparr_state(app_name, state_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_sponsors_login ON sponsors(login)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_type ON logs(app_type)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_level ON logs(level)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_level ON logs(app_type, level)')
+            # Logs indexes moved to logs.db
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_app_instance ON hunt_history(app_type, instance_name)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_date_time ON hunt_history(date_time)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_media_id ON hunt_history(media_id)')
@@ -1488,20 +1482,25 @@ class HuntarrDatabase:
             logger.info(f"Saved {len(sponsors_data)} sponsors to database")
     
     def add_sponsor(self, sponsor_data: Dict[str, Any]):
-        """Add or update a single sponsor"""
-        with self.get_connection() as conn:
-            conn.execute('''
-                INSERT OR REPLACE INTO sponsors (login, name, avatar_url, url, tier, monthly_amount, category)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                sponsor_data.get('login', ''),
-                sponsor_data.get('name', sponsor_data.get('login', 'Unknown')),
-                sponsor_data.get('avatarUrl', ''),
-                sponsor_data.get('url', '#'),
-                sponsor_data.get('tier', 'Supporter'),
-                sponsor_data.get('monthlyAmount', 0),
-                sponsor_data.get('category', 'past')
-            ))
+        """Add a new sponsor to the database"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute('''
+                    INSERT OR REPLACE INTO sponsors 
+                    (login, name, avatar_url, url, tier, monthly_amount, category)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    sponsor_data.get('login'),
+                    sponsor_data.get('name', sponsor_data.get('login')),
+                    sponsor_data.get('avatar_url'),
+                    sponsor_data.get('url'),
+                    sponsor_data.get('tier'),
+                    sponsor_data.get('monthly_amount', 0),
+                    sponsor_data.get('category', 'individual')
+                ))
+                conn.commit()
+        except Exception as e:
+            logger.error(f"Error adding sponsor: {e}")
 
     # Logs Database Methods
     def insert_log(self, timestamp: datetime, level: str, app_type: str, message: str, logger_name: str = None):
@@ -1650,7 +1649,7 @@ class HuntarrDatabase:
             logger.error(f"Error clearing logs: {e}")
             return 0
 
-    # Hunt History/Manager Database Methods
+    # Hunt History/Manager Database Methods (logs methods removed - now in LogsDatabase)
     def add_hunt_history_entry(self, app_type: str, instance_name: str, media_id: str, 
                          processed_info: str, operation_type: str = "missing", 
                          discovered: bool = False, date_time: int = None) -> Dict[str, Any]:
@@ -1765,8 +1764,308 @@ class HuntarrDatabase:
             days = seconds_ago // 86400
             return f"{days} day{'s' if days != 1 else ''} ago"
 
-# Global database instance
+# Separate LogsDatabase class for logs.db
+class LogsDatabase:
+    """Separate database class specifically for logs to keep logs.db separate from huntarr.db"""
+    
+    def __init__(self):
+        self.db_path = self._get_logs_database_path()
+        self.ensure_logs_database_exists()
+    
+    def _get_logs_database_path(self) -> Path:
+        """Get logs database path - same directory as main database but separate file"""
+        # Check if running in Docker
+        config_dir = Path("/config")
+        if config_dir.exists() and config_dir.is_dir():
+            return config_dir / "logs.db"
+        
+        # Check for Windows config directory
+        windows_config = os.environ.get("HUNTARR_CONFIG_DIR")
+        if windows_config:
+            config_path = Path(windows_config)
+            config_path.mkdir(parents=True, exist_ok=True)
+            return config_path / "logs.db"
+        
+        # Check for Windows AppData
+        import platform
+        if platform.system() == "Windows":
+            appdata = os.environ.get("APPDATA", os.path.expanduser("~"))
+            windows_config_dir = Path(appdata) / "Huntarr"
+            windows_config_dir.mkdir(parents=True, exist_ok=True)
+            return windows_config_dir / "logs.db"
+        
+        # Local development
+        project_root = Path(__file__).parent.parent.parent.parent
+        data_dir = project_root / "data"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        return data_dir / "logs.db"
+    
+    def _configure_logs_connection(self, conn):
+        """Configure SQLite connection optimized for high-volume log writes"""
+        try:
+            conn.execute('PRAGMA foreign_keys = ON')
+            
+            # WAL mode is particularly beneficial for logs (write-heavy workload)
+            try:
+                conn.execute('PRAGMA journal_mode = WAL')
+            except Exception as wal_error:
+                logger.warning(f"WAL mode failed for logs.db, using DELETE mode: {wal_error}")
+                conn.execute('PRAGMA journal_mode = DELETE')
+            
+            # Optimized settings for log writing
+            conn.execute('PRAGMA synchronous = NORMAL')     # Balance between speed and safety for logs
+            conn.execute('PRAGMA cache_size = -16000')      # 16MB cache for log operations
+            conn.execute('PRAGMA temp_store = MEMORY')
+            conn.execute('PRAGMA busy_timeout = 30000')     # 30 seconds for log operations
+            conn.execute('PRAGMA auto_vacuum = INCREMENTAL')
+            
+            # WAL-specific optimizations for logs
+            result = conn.execute('PRAGMA journal_mode').fetchone()
+            if result and result[0] == 'wal':
+                conn.execute('PRAGMA wal_autocheckpoint = 2000')    # Less frequent checkpoints for logs
+                conn.execute('PRAGMA journal_size_limit = 134217728') # 128MB journal size for logs
+                
+        except Exception as e:
+            logger.error(f"Error configuring logs database connection: {e}")
+            pass
+    
+    def get_logs_connection(self):
+        """Get a configured SQLite connection for logs database"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            self._configure_logs_connection(conn)
+            # Test connection
+            conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
+            return conn
+        except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
+            if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
+                logger.error(f"Logs database corruption detected: {e}")
+                self._handle_logs_database_corruption()
+                # Try connecting again after recovery
+                conn = sqlite3.connect(self.db_path)
+                self._configure_logs_connection(conn)
+                return conn
+            else:
+                raise
+    
+    def _handle_logs_database_corruption(self):
+        """Handle logs database corruption"""
+        import time
+        
+        logger.error(f"Handling logs database corruption for: {self.db_path}")
+        
+        try:
+            if self.db_path.exists():
+                backup_path = self.db_path.parent / f"logs_corrupted_backup_{int(time.time())}.db"
+                self.db_path.rename(backup_path)
+                logger.warning(f"Corrupted logs database backed up to: {backup_path}")
+                logger.warning("Starting with fresh logs database - log history will be lost")
+            
+            if self.db_path.exists():
+                self.db_path.unlink()
+                
+        except Exception as backup_error:
+            logger.error(f"Error during logs database corruption recovery: {backup_error}")
+            try:
+                if self.db_path.exists():
+                    self.db_path.unlink()
+            except:
+                pass
+    
+    def ensure_logs_database_exists(self):
+        """Create logs database and tables if they don't exist"""
+        try:
+            with self.get_logs_connection() as conn:
+                # Create logs table
+                conn.execute('''
+                    CREATE TABLE IF NOT EXISTS logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp DATETIME NOT NULL,
+                        level TEXT NOT NULL,
+                        app_type TEXT NOT NULL,
+                        message TEXT NOT NULL,
+                        logger_name TEXT,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                
+                # Create indexes for logs performance
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_type ON logs(app_type)')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_level ON logs(level)')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_level ON logs(app_type, level)')
+                
+                conn.commit()
+                logger.info(f"Logs database initialized at: {self.db_path}")
+                
+        except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
+            if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
+                logger.error(f"Logs database corruption detected during table creation: {e}")
+                self._handle_logs_database_corruption()
+                # Try creating tables again after recovery
+                self.ensure_logs_database_exists()
+            else:
+                raise
+    
+    def insert_log(self, timestamp: datetime, level: str, app_type: str, message: str, logger_name: str = None):
+        """Insert a log entry into the logs database"""
+        try:
+            with self.get_logs_connection() as conn:
+                conn.execute('''
+                    INSERT INTO logs (timestamp, level, app_type, message, logger_name)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (timestamp, level, app_type, message, logger_name))
+                conn.commit()
+        except Exception as e:
+            # Don't let log insertion failures crash the app
+            print(f"Error inserting log: {e}")
+    
+    def get_logs(self, app_type: str = None, level: str = None, limit: int = 100, offset: int = 0, search: str = None) -> List[Dict[str, Any]]:
+        """Get logs with filtering and pagination"""
+        try:
+            with self.get_logs_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                
+                where_conditions = []
+                params = []
+                
+                if app_type and app_type != "all":
+                    where_conditions.append("app_type = ?")
+                    params.append(app_type)
+                
+                if level and level != "all":
+                    where_conditions.append("level = ?")
+                    params.append(level)
+                
+                if search:
+                    where_conditions.append("message LIKE ?")
+                    params.append(f"%{search}%")
+                
+                where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+                
+                query = f"""
+                    SELECT * FROM logs {where_clause}
+                    ORDER BY timestamp DESC
+                    LIMIT ? OFFSET ?
+                """
+                
+                cursor = conn.execute(query, params + [limit, offset])
+                return [dict(row) for row in cursor.fetchall()]
+                
+        except Exception as e:
+            logger.error(f"Error getting logs: {e}")
+            return []
+    
+    def get_log_count(self, app_type: str = None, level: str = None, search: str = None) -> int:
+        """Get total count of logs matching filters"""
+        try:
+            with self.get_logs_connection() as conn:
+                where_conditions = []
+                params = []
+                
+                if app_type and app_type != "all":
+                    where_conditions.append("app_type = ?")
+                    params.append(app_type)
+                
+                if level and level != "all":
+                    where_conditions.append("level = ?")
+                    params.append(level)
+                
+                if search:
+                    where_conditions.append("message LIKE ?")
+                    params.append(f"%{search}%")
+                
+                where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+                
+                query = f"SELECT COUNT(*) FROM logs {where_clause}"
+                cursor = conn.execute(query, params)
+                return cursor.fetchone()[0]
+                
+        except Exception as e:
+            logger.error(f"Error getting log count: {e}")
+            return 0
+    
+    def cleanup_old_logs(self, days_to_keep: int = 30, max_entries_per_app: int = 10000):
+        """Clean up old logs to prevent database bloat"""
+        try:
+            with self.get_logs_connection() as conn:
+                # Delete logs older than specified days
+                cutoff_date = datetime.now() - timedelta(days=days_to_keep)
+                cursor = conn.execute("DELETE FROM logs WHERE timestamp < ?", (cutoff_date,))
+                deleted_by_age = cursor.rowcount
+                
+                # Keep only the most recent entries per app
+                apps_cursor = conn.execute("SELECT DISTINCT app_type FROM logs")
+                total_deleted_by_count = 0
+                
+                for (app_type,) in apps_cursor.fetchall():
+                    # Get count for this app
+                    count_cursor = conn.execute("SELECT COUNT(*) FROM logs WHERE app_type = ?", (app_type,))
+                    count = count_cursor.fetchone()[0]
+                    
+                    if count > max_entries_per_app:
+                        # Delete oldest entries beyond the limit
+                        excess_count = count - max_entries_per_app
+                        delete_cursor = conn.execute("""
+                            DELETE FROM logs 
+                            WHERE app_type = ? 
+                            AND id IN (
+                                SELECT id FROM logs 
+                                WHERE app_type = ? 
+                                ORDER BY timestamp ASC 
+                                LIMIT ?
+                            )
+                        """, (app_type, app_type, excess_count))
+                        total_deleted_by_count += delete_cursor.rowcount
+                
+                conn.commit()
+                return deleted_by_age + total_deleted_by_count
+                
+        except Exception as e:
+            logger.error(f"Error cleaning up logs: {e}")
+            return 0
+    
+    def get_app_types_from_logs(self) -> List[str]:
+        """Get list of all app types that have logs"""
+        try:
+            with self.get_logs_connection() as conn:
+                cursor = conn.execute("SELECT DISTINCT app_type FROM logs ORDER BY app_type")
+                return [row[0] for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error getting app types from logs: {e}")
+            return []
+    
+    def get_log_levels(self) -> List[str]:
+        """Get list of all log levels that exist"""
+        try:
+            with self.get_logs_connection() as conn:
+                cursor = conn.execute("SELECT DISTINCT level FROM logs ORDER BY level")
+                return [row[0] for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error getting log levels: {e}")
+            return []
+    
+    def clear_logs(self, app_type: str = None):
+        """Clear logs for a specific app type or all logs"""
+        try:
+            with self.get_logs_connection() as conn:
+                if app_type:
+                    cursor = conn.execute("DELETE FROM logs WHERE app_type = ?", (app_type,))
+                else:
+                    cursor = conn.execute("DELETE FROM logs")
+                
+                deleted_count = cursor.rowcount
+                conn.commit()
+                
+                logger.info(f"Cleared {deleted_count} logs" + (f" for {app_type}" if app_type else ""))
+                return deleted_count
+        except Exception as e:
+            logger.error(f"Error clearing logs: {e}")
+            return 0
+
+# Global database instances
 _database_instance = None
+_logs_database_instance = None
 
 def get_database() -> HuntarrDatabase:
     """Get the global database instance"""
@@ -1776,9 +2075,12 @@ def get_database() -> HuntarrDatabase:
     return _database_instance
 
 # Logs Database Functions (consolidated from logs_database.py)
-def get_logs_database() -> HuntarrDatabase:
-    """Get the database instance for logs operations"""
-    return get_database()
+def get_logs_database() -> LogsDatabase:
+    """Get the logs database instance for logs operations"""
+    global _logs_database_instance
+    if _logs_database_instance is None:
+        _logs_database_instance = LogsDatabase()
+    return _logs_database_instance
 
 def schedule_log_cleanup():
     """Schedule periodic log cleanup - call this from background tasks"""
@@ -1790,8 +2092,8 @@ def schedule_log_cleanup():
         while True:
             try:
                 time.sleep(3600)  # Run every hour
-                db = get_database()
-                deleted_count = db.cleanup_old_logs(days_to_keep=30, max_entries_per_app=10000)
+                logs_db = get_logs_database()
+                deleted_count = logs_db.cleanup_old_logs(days_to_keep=30, max_entries_per_app=10000)
                 if deleted_count > 0:
                     logger.info(f"Scheduled cleanup removed {deleted_count} old log entries")
             except Exception as e:
