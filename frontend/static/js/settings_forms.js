@@ -121,7 +121,7 @@ const SettingsForms = {
                                 <option value="episodes" ${huntMissingMode === 'episodes' ? 'selected' : ''}>Episodes</option>
                             </select>
                             <p class="setting-help">How to search for missing content for this instance (Season Packs recommended)</p>
-                            <p class="setting-help" style="display: ${huntMissingMode === 'episodes' ? 'block' : 'none'};" id="episodes-missing-warning-${index}">⚠️ Episodes mode makes more API calls. Season Packs recommended.</p>
+                            <p class="setting-help" style="display: ${huntMissingMode === 'episodes' ? 'block' : 'none'};" id="episodes-missing-warning-${index}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-upgrade-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Mode:</label>
@@ -131,7 +131,7 @@ const SettingsForms = {
                                 <option value="episodes" ${upgradeMode === 'episodes' ? 'selected' : ''}>Episodes</option>
                             </select>
                             <p class="setting-help">How to search for upgrades for this instance (Season Packs recommended)</p>
-                            <p class="setting-help" style="display: ${upgradeMode === 'episodes' ? 'block' : 'none'};" id="episodes-upgrade-warning-${index}">⚠️ Episodes mode makes more API calls. Season Packs recommended.</p>
+                            <p class="setting-help" style="display: ${upgradeMode === 'episodes' ? 'block' : 'none'};" id="episodes-upgrade-warning-${index}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
                         </div>
                         
                         <!-- Instance State Management -->
@@ -3303,13 +3303,18 @@ const SettingsForms = {
                 if (instancePanel && instancePanel.parentNode) {
                     instancePanel.parentNode.removeChild(instancePanel);
                     
-                    // Update the button text with new count if updateAddButtonText exists
+                    // Update the button text with new count using the updateAddButtonText function
                     const addBtn = container.querySelector(`.add-${appType}-instance-btn`);
                     if (addBtn) {
                         const instancesContainer = container.querySelector('.instances-container');
                         if (instancesContainer) {
                             const currentCount = instancesContainer.querySelectorAll('.instance-item').length;
-                            addBtn.innerHTML = `<i class="fas fa-plus"></i> Add ${appType.charAt(0).toUpperCase() + appType.slice(1)} Instance (${currentCount}/9)`;
+                            
+                            // Update button text based on app type
+                            const appNameCapitalized = appType.charAt(0).toUpperCase() + appType.slice(1);
+                            const displayName = appType === 'eros' ? 'Whisparr V3' : (appType === 'whisparr' ? 'Whisparr V2' : appNameCapitalized);
+                            
+                            addBtn.innerHTML = `<i class="fas fa-plus"></i> Add ${displayName} Instance (${currentCount}/9)`;
                             
                             // Re-enable button if we're under the limit
                             if (currentCount < 9) {
@@ -3334,7 +3339,12 @@ const SettingsForms = {
                 const instancesContainer = container.querySelector('.instances-container');
                 if (!instancesContainer) return;
                 const currentCount = instancesContainer.querySelectorAll('.instance-item').length;
-                buttonRef.innerHTML = `<i class="fas fa-plus"></i> Add ${appType.charAt(0).toUpperCase() + appType.slice(1)} Instance (${currentCount}/9)`;
+                
+                // Update button text based on app type
+                const appNameCapitalized = appType.charAt(0).toUpperCase() + appType.slice(1);
+                const displayName = appType === 'eros' ? 'Whisparr V3' : (appType === 'whisparr' ? 'Whisparr V2' : appNameCapitalized);
+                
+                buttonRef.innerHTML = `<i class="fas fa-plus"></i> Add ${displayName} Instance (${currentCount}/9)`;
                 
                 // Disable button if we've reached the limit
                 if (currentCount >= 9) {
@@ -3483,7 +3493,7 @@ const SettingsForms = {
                                     <option value="episodes">Episodes</option>
                                 </select>
                                 <p class="setting-help">How to search for missing content for this instance (Season Packs recommended)</p>
-                                <p class="setting-help" style="display: none;" id="episodes-missing-warning-${newIndex}">⚠️ Episodes mode makes more API calls. Season Packs recommended.</p>
+                                <p class="setting-help" style="display: none;" id="episodes-missing-warning-${newIndex}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-upgrade-mode-${newIndex}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Mode:</label>
@@ -3493,7 +3503,7 @@ const SettingsForms = {
                                     <option value="episodes">Episodes</option>
                                 </select>
                                 <p class="setting-help">How to search for upgrades for this instance (Season Packs recommended)</p>
-                                <p class="setting-help" style="display: none;" id="episodes-upgrade-warning-${newIndex}">⚠️ Episodes mode makes more API calls. Season Packs recommended.</p>
+                                <p class="setting-help" style="display: none;" id="episodes-upgrade-warning-${newIndex}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
                             </div>
                             ` : ''}
                             <div class="setting-item">
@@ -3521,7 +3531,7 @@ const SettingsForms = {
                 if (newRemoveBtn) {
                     newRemoveBtn.addEventListener('click', function() {
                         newInstance.remove();
-                        updateAddButtonText();
+                        updateAddButtonText(newAddBtn);
                         
                         // Trigger change event
                         const changeEvent = new Event('change');
