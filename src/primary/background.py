@@ -31,7 +31,7 @@ from src.primary.state import check_state_reset, calculate_reset_time
 from src.primary.stats_manager import check_hourly_cap_exceeded
 # Instance list generator has been removed
 from src.primary.scheduler_engine import start_scheduler, stop_scheduler
-# Legacy JSON migration removed - all data now stored in database
+
 # from src.primary.utils.app_utils import get_ip_address # No longer used here
 
 # Global state for managing app threads and their status
@@ -124,7 +124,7 @@ def app_specific_loop(app_type: str) -> None:
         elif app_type == "whisparr":
             missing_module = importlib.import_module('src.primary.apps.whisparr.missing')
             upgrade_module = importlib.import_module('src.primary.apps.whisparr.upgrade')
-            process_missing = getattr(missing_module, 'process_missing_scenes')
+            process_missing = getattr(missing_module, 'process_missing_items')
             process_upgrades = getattr(upgrade_module, 'process_cutoff_upgrades')
             hunt_missing_setting = "hunt_missing_items"  # Updated to new name
             hunt_upgrade_setting = "hunt_upgrade_items"  # Updated to new name
@@ -192,7 +192,7 @@ def app_specific_loop(app_type: str) -> None:
                     pass
                 else:
                     # No instances found via get_configured_instances
-                    app_logger.warning(f"No configured {app_type} instances found. Skipping cycle.")
+                    app_logger.debug(f"No configured {app_type} instances found. Skipping cycle.")
                     stop_event.wait(sleep_duration)
                     continue
             except Exception as e:
@@ -429,31 +429,75 @@ def app_specific_loop(app_type: str) -> None:
             try:
                 from src.primary.stateful_manager import get_state_management_summary
                 
-                # Get total summary across all instances
+                # Get summary for each enabled instance with per-instance settings
+                instance_summaries = []
                 total_processed = 0
                 has_any_processed = False
                 
                 for instance_name in enabled_instances:
-                    summary = get_state_management_summary(app_type, instance_name)
-                    if summary["has_processed_items"]:
+                    # Get per-instance settings
+                    instance_hours = None
+                    instance_enabled = True
+                    instance_mode = "custom"
+                    
+                    try:
+                        # Look up the instance in the configured instances
+                        if configured_instances and app_type in configured_instances:
+                            for instance_details in configured_instances[app_type]:
+                                if instance_details.get("instance_name") == instance_name:
+                                    instance_hours = instance_details.get("state_management_hours", 168)
+                                    instance_mode = instance_details.get("state_management_mode", "custom")
+                                    instance_enabled = (instance_mode != "disabled")
+                                    break
+                    except Exception as e:
+                        app_logger.warning(f"Could not load instance settings for {instance_name}: {e}")
+                        instance_hours = 168  # Default fallback
+                    
+                    # Get summary for this instance
+                    summary = get_state_management_summary(app_type, instance_name, instance_hours)
+                    
+                    # Store instance-specific information
+                    instance_summaries.append({
+                        "name": instance_name,
+                        "enabled": instance_enabled,
+                        "mode": instance_mode,
+                        "hours": instance_hours,
+                        "processed_count": summary["processed_count"],
+                        "next_reset_time": summary["next_reset_time"],
+                        "has_processed_items": summary["has_processed_items"]
+                    })
+                    
+                    # Only count if state management is enabled for this instance
+                    if instance_enabled and summary["has_processed_items"]:
                         total_processed += summary["processed_count"]
                         has_any_processed = True
                 
-                # Log state management info based on processing results
-                if not processed_any_items and has_any_processed:
-                    # Items were skipped due to state management
-                    reset_time = get_state_management_summary(app_type, enabled_instances[0])["next_reset_time"] if enabled_instances else None
-                    if reset_time:
-                        app_logger.info(f"STATE MANAGEMENT: {total_processed} items already processed and will not be reprocessed until state reset at {reset_time}.")
+                # Log per-instance state management info
+                if instance_summaries:
+                    app_logger.info(f"=== STATE MANAGEMENT SUMMARY FOR {app_type.upper()} ===")
+                    
+                    for inst in instance_summaries:
+                        if inst["enabled"]:
+                            if inst["processed_count"] > 0:
+                                app_logger.info(f"  {inst['name']}: {inst['processed_count']} items tracked, next reset: {inst['next_reset_time']} ({inst['hours']}h interval)")
+                            else:
+                                app_logger.info(f"  {inst['name']}: No items tracked yet, next reset: {inst['next_reset_time']} ({inst['hours']}h interval)")
+                        else:
+                            app_logger.info(f"  {inst['name']}: State management disabled")
+                    
+                    # Overall summary
+                    if not processed_any_items and has_any_processed:
+                        # Items were skipped due to state management
+                        app_logger.info(f"RESULT: {total_processed} items skipped due to state management (already processed)")
+                    elif processed_any_items:
+                        # Items were processed, show summary
+                        app_logger.info(f"RESULT: Items processed successfully. Total tracked across instances: {total_processed}")
                     else:
-                        app_logger.info(f"STATE MANAGEMENT: {total_processed} items already processed and will not be reprocessed until state management reset.")
-                elif processed_any_items:
-                    # Items were processed, show summary
-                    reset_time = get_state_management_summary(app_type, enabled_instances[0])['next_reset_time'] if enabled_instances else 'Unknown'
-                    app_logger.info(f"STATE MANAGEMENT: Total items tracked: {total_processed}. Next state reset: {reset_time}.")
-                else:
-                    # No items processed and no state management blocking
-                    app_logger.info(f"STATE MANAGEMENT: No items found to process. Items tracked: {total_processed}.")
+                        # No items processed and no state management blocking
+                        if total_processed > 0:
+                            app_logger.info(f"RESULT: No new items found. Total tracked across instances: {total_processed}")
+                        else:
+                            app_logger.info(f"RESULT: No items to process and no items tracked yet")
                     
             except Exception as e:
                 app_logger.warning(f"Could not generate state management summary: {e}")
@@ -797,9 +841,7 @@ def swaparr_app_loop():
     
     swaparr_logger.info("Swaparr thread stopped")
 
-# The instance list generator loop has been removed as it's no longer needed
 
-# The start_instance_list_generator function has been removed as it's no longer needed
 
 def start_hourly_cap_scheduler():
     """Start the hourly API cap scheduler thread"""
@@ -841,9 +883,7 @@ def start_huntarr():
     """Main entry point for Huntarr background tasks."""
     logger.info(f"--- Starting Huntarr Background Tasks v{__version__} --- ")
     
-    # Legacy JSON migration removed - all data now stored in database
-    
-    # Legacy migration removed - settings are now stored in database
+
     # Migration environment variable no longer used
         
     # Start the hourly API cap scheduler

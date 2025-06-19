@@ -739,7 +739,7 @@ def handle_app_settings(app_name):
             return jsonify({"success": False, "error": "Expected JSON data"}), 400
         
         data = request.json
-        web_logger.debug(f"Received {app_name} settings save request: {data}")
+        # Auto-save request received - debug spam removed
         
         # Clean URLs in the data before saving
         if 'instances' in data and isinstance(data['instances'], list):
@@ -751,13 +751,13 @@ def handle_app_settings(app_name):
             # For apps that don't use instances array
             data['api_url'] = data['api_url'].strip().rstrip('/').rstrip('\\')
         
-        web_logger.debug(f"Cleaned {app_name} settings before saving: {data}")
+        # Settings cleaned - debug spam removed
         
         # Save the app settings
         success = settings_manager.save_settings(app_name, data)
         
         if success:
-            web_logger.info(f"Successfully saved {app_name} settings")
+            # Auto-save enabled - no need to log every successful save
             return jsonify({"success": True})
         else:
             web_logger.error(f"Failed to save {app_name} settings")
@@ -871,24 +871,10 @@ def api_app_status(app_name):
                                     web_logger.error(f"Error checking connection for {app_name.capitalize()} instance '{inst_name}': {str(e)}")
                         else:
                             web_logger.warning(f"check_connection function not found in {app_name} API module")
-                    else:
-                        web_logger.debug(f"No configured {app_name.capitalize()} instances found for status check.")
-                    
-                    # Prepare multi-instance response
-                    response_data = {"total_configured": total_configured, "connected_count": connected_count}
-                else:
-                    web_logger.warning(f"get_configured_instances function not found in {app_name} module")
-                    # Fall back to legacy status check
-                    api_url = settings_manager.get_api_url(app_name)
-                    api_key = settings_manager.get_api_key(app_name)
-                    is_configured = bool(api_url and api_key)
-                    is_connected = False
-                    if is_configured and hasattr(api_module, 'check_connection'):
-                        check_connection_func = getattr(api_module, 'check_connection')
-                        is_connected = check_connection_func(api_url, api_key, min(api_timeout, 5))
-                    response_data = {"total_configured": 1 if is_configured else 0, "connected_count": 1 if is_connected else 0}
-                                
-            except ImportError as e:
+                
+                # Prepare multi-instance response
+                response_data = {"total_configured": total_configured, "connected_count": connected_count}
+            except Exception as e:
                 web_logger.error(f"Failed to import {app_name} modules for status check: {e}")
                 response_data = {"total_configured": 0, "connected_count": 0, "error": "Import Error"}
                 status_code = 500

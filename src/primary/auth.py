@@ -321,19 +321,61 @@ def authenticate_request():
     if request.path.startswith((static_path, api_setup_path)) or request.path in (favicon_path, health_check_path, ping_path, '/api/github_sponsors', '/api/sponsors/init'):
         return None
     
+    # Skip authentication for login pages, Plex auth endpoints, recovery key endpoints, and setup-related user endpoints
+    # This must come BEFORE setup checks to allow API access during setup
+    recovery_key_path = "/auth/recovery-key"
+    api_user_2fa_path = "/api/user/2fa/"
+    api_settings_general_path = "/api/settings/general"
+    if request.path.startswith((login_path, api_login_path, api_auth_plex_path, recovery_key_path, api_user_2fa_path)) or request.path == api_settings_general_path:
+        if not is_polling_endpoint:
+            logger.debug(f"Skipping authentication for login/plex/recovery/2fa/settings path '{request.path}'")
+        return None
+    
     # If no user exists, redirect to setup
     if not user_exists():
         if not is_polling_endpoint:
             logger.debug(f"No user exists, redirecting to setup")
-        return redirect(url_for("common.setup"))
+        
+        # Get the base URL from settings to ensure proper subpath redirect
+        try:
+            from src.primary.settings_manager import get_setting
+            base_url = get_setting('general', 'base_url', '')
+            if base_url and not base_url.startswith('/'):
+                base_url = f'/{base_url}'
+            if base_url and base_url.endswith('/'):
+                base_url = base_url.rstrip('/')
+            setup_url = f"{base_url}/setup" if base_url else "/setup"
+            logger.debug(f"Redirecting to setup with base URL: {setup_url}")
+            return redirect(setup_url)
+        except Exception as e:
+            logger.warning(f"Error getting base URL for setup redirect: {e}")
+            return redirect(url_for("common.setup"))
     
-    # Skip authentication for login pages, Plex auth endpoints, recovery key endpoints, and setup-related user endpoints
-    recovery_key_path = "/auth/recovery-key"
-    api_user_2fa_path = "/api/user/2fa/"
-    if request.path.startswith((login_path, api_login_path, api_auth_plex_path, recovery_key_path, api_user_2fa_path)):
-        if not is_polling_endpoint:
-            logger.debug(f"Skipping authentication for login/plex/recovery/2fa path '{request.path}'")
-        return None
+    # If user exists but setup is in progress, redirect to setup
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        if db.is_setup_in_progress():
+            if not is_polling_endpoint:
+                logger.debug(f"Setup is in progress, redirecting to setup")
+            
+            # Get the base URL from settings to ensure proper subpath redirect
+            try:
+                from src.primary.settings_manager import get_setting
+                base_url = get_setting('general', 'base_url', '')
+                if base_url and not base_url.startswith('/'):
+                    base_url = f'/{base_url}'
+                if base_url and base_url.endswith('/'):
+                    base_url = base_url.rstrip('/')
+                setup_url = f"{base_url}/setup" if base_url else "/setup"
+                logger.debug(f"Redirecting to setup (in progress) with base URL: {setup_url}")
+                return redirect(setup_url)
+            except Exception as e:
+                logger.warning(f"Error getting base URL for setup redirect: {e}")
+                return redirect(url_for("common.setup"))
+    except Exception as e:
+        logger.error(f"Error checking setup progress in auth middleware: {e}")
+        # Don't block access if we can't check setup progress
     
     # Load general settings
     local_access_bypass = False
@@ -354,7 +396,8 @@ def authenticate_request():
         
         # Log settings only for non-polling endpoints to reduce spam
         if not is_polling_endpoint:
-            pass  # Removed verbose auth setting logs
+            pass
+
     except Exception as e:
         logger.error(f"Error loading authentication bypass settings: {e}", exc_info=True)
     
@@ -420,15 +463,12 @@ def authenticate_request():
         else:
             if not is_polling_endpoint:
                 logger.warning(f"Access from {remote_addr} is not recognized as local network - Authentication required")
-    else:
-        if not is_polling_endpoint:
-            logger.debug("Local Bypass Mode is DISABLED - Authentication required")
     
     # Check for valid session
     session_id = session.get(SESSION_COOKIE_NAME)
     if session_id and verify_session(session_id):
         if not is_polling_endpoint:
-            logger.debug(f"Valid session found for path '{request.path}'")
+            pass  # Session valid - debug spam removed
         return None
     
     # Use less verbose logging for polling endpoints
@@ -453,7 +493,21 @@ def authenticate_request():
     # No valid session, redirect to login
     if not is_polling_endpoint:
         logger.debug(f"Redirecting to login for path '{request.path}'")
-    return redirect(url_for("common.login_route"))
+    
+    # Get the base URL from settings to ensure proper subpath redirect
+    try:
+        from src.primary.settings_manager import get_setting
+        base_url = get_setting('general', 'base_url', '')
+        if base_url and not base_url.startswith('/'):
+            base_url = f'/{base_url}'
+        if base_url and base_url.endswith('/'):
+            base_url = base_url.rstrip('/')
+        login_url = f"{base_url}/login" if base_url else "/login"
+        logger.debug(f"Redirecting to login with base URL: {login_url}")
+        return redirect(login_url)
+    except Exception as e:
+        logger.warning(f"Error getting base URL for login redirect: {e}")
+        return redirect(url_for("common.login_route"))
 
 def logout(session_id: str):
     """Log out the current user by invalidating their session"""

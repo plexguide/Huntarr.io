@@ -17,8 +17,6 @@ from src.primary.stateful_manager import is_processed, add_processed_id
 from src.primary.utils.history_utils import log_processed_media
 from src.primary.settings_manager import load_settings, get_advanced_setting
 from src.primary.state import check_state_reset
-import json
-import os
 
 # Get the logger for the Lidarr module
 lidarr_logger = get_logger(__name__) # Use __name__ for correct logger hierarchy

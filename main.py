@@ -317,6 +317,33 @@ def main_shutdown_handler(signum, frame):
     """Gracefully shut down the application."""
     huntarr_logger.info(f"Received signal {signum}. Initiating graceful shutdown...")
     
+    # Immediate database checkpoint to prevent corruption
+    try:
+        from primary.utils.database import get_database, get_logs_database
+        
+        huntarr_logger.info("Performing emergency database checkpoint...")
+        
+        # Emergency checkpoint for main database
+        try:
+            main_db = get_database()
+            with main_db.get_connection() as conn:
+                conn.execute("PRAGMA wal_checkpoint(RESTART)")
+                huntarr_logger.info("Main database emergency checkpoint completed")
+        except Exception as e:
+            huntarr_logger.warning(f"Main database emergency checkpoint failed: {e}")
+        
+        # Emergency checkpoint for logs database
+        try:
+            logs_db = get_logs_database()
+            with logs_db.get_logs_connection() as conn:
+                conn.execute("PRAGMA wal_checkpoint(RESTART)")
+                huntarr_logger.info("Logs database emergency checkpoint completed")
+        except Exception as e:
+            huntarr_logger.warning(f"Logs database emergency checkpoint failed: {e}")
+            
+    except Exception as e:
+        huntarr_logger.warning(f"Emergency database checkpoint failed: {e}")
+    
     # Set both shutdown events
     if not stop_event.is_set():
         stop_event.set()
@@ -335,6 +362,39 @@ def main_shutdown_handler(signum, frame):
 def cleanup_handler():
     """Cleanup function called at exit"""
     huntarr_logger.info("Exit cleanup handler called")
+    
+    # Shutdown databases gracefully
+    try:
+        from primary.utils.database import get_database, get_logs_database
+        
+        # Close main database connections
+        main_db = get_database()
+        if hasattr(main_db, '_database_instance') and main_db._database_instance is not None:
+            huntarr_logger.info("Closing main database connections...")
+            # Force close any open connections
+            try:
+                with main_db.get_connection() as conn:
+                    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")  # Flush WAL to main database
+                    conn.execute("VACUUM")  # Optimize database before shutdown
+            except Exception as db_error:
+                huntarr_logger.warning(f"Error during main database cleanup: {db_error}")
+        
+        # Close logs database connections
+        logs_db = get_logs_database()
+        if hasattr(logs_db, '_logs_database_instance') and logs_db._logs_database_instance is not None:
+            huntarr_logger.info("Closing logs database connections...")
+            try:
+                with logs_db.get_logs_connection() as conn:
+                    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")  # Flush WAL to logs database
+                    conn.execute("VACUUM")  # Optimize logs database before shutdown
+            except Exception as logs_error:
+                huntarr_logger.warning(f"Error during logs database cleanup: {logs_error}")
+                
+        huntarr_logger.info("Database shutdown completed")
+        
+    except Exception as e:
+        huntarr_logger.warning(f"Error during database shutdown: {e}")
+    
     if not stop_event.is_set():
         stop_event.set()
     if not shutdown_requested.is_set():

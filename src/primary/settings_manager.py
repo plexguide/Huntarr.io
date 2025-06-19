@@ -185,12 +185,12 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
         settings_logger.debug(f"Saving general settings: {settings_data}")
         settings_logger.debug(f"Apprise URLs being saved: {settings_data.get('apprise_urls', 'NOT_FOUND')}")
     
-    # Validate and enforce hourly_cap maximum limit of 250
+    # Validate and enforce hourly_cap maximum limit of 400
     if 'hourly_cap' in settings_data:
         original_cap = settings_data['hourly_cap']
-        if isinstance(original_cap, (int, float)) and original_cap > 250:
-            settings_data['hourly_cap'] = 250
-            settings_logger.warning(f"Hourly cap for {app_name} was {original_cap}, automatically reduced to maximum allowed value of 250")
+        if isinstance(original_cap, (int, float)) and original_cap > 400:
+            settings_data['hourly_cap'] = 400
+            settings_logger.warning(f"Hourly cap for {app_name} was {original_cap}, automatically reduced to maximum allowed value of 400")
     
     # Validate and enforce minimum values (no negative numbers allowed)
     numeric_fields = [
@@ -238,7 +238,7 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
         else:
             db.save_app_config(app_name, settings_data)
             
-        settings_logger.info(f"Settings saved successfully for {app_name} to database")
+        # Auto-save enabled - no need to log every successful save
         success = True
         
     except Exception as e:
@@ -498,15 +498,26 @@ def get_custom_tag(app_name: str, tag_type: str, default: str) -> str:
     return custom_tags.get(tag_type, default)
 
 def initialize_database():
-    """Initialize the database with default configurations if needed."""
+    """Initialize database with default configurations if needed"""
+    from .utils.database import get_database
+    from pathlib import Path
+    
+    # Get database instance and ensure it exists
+    db = get_database()
+    db.ensure_database_exists()
+    
+    # Initialize database with default configurations
+    defaults_dir = Path(__file__).parent / "default_configs"
+    db.initialize_from_defaults(defaults_dir)
+    
+    # Start database maintenance scheduler for integrity monitoring
     try:
-        db = get_database()
-        defaults_dir = pathlib.Path(DEFAULT_CONFIGS_DIR)
-        db.initialize_from_defaults(defaults_dir)
-        settings_logger.info("Database initialized with default configurations")
+        db.schedule_maintenance()
+        settings_logger.info("Database maintenance scheduler initialized")
     except Exception as e:
-        settings_logger.error(f"Failed to initialize database: {e}")
-        raise
+        settings_logger.warning(f"Failed to start database maintenance scheduler: {e}")
+    
+    settings_logger.info("Database initialization completed successfully")
 
 def auto_detect_base_url_from_request(request_obj=None):
     """

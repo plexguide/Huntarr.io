@@ -4,7 +4,9 @@
       "name": "Default",
       "api_url": "",
       "api_key": "",
-      "enabled": true
+      "enabled": true,
+      "state_management_mode": "custom",
+      "state_management_hours": 168
     }
   ],
   "hunt_missing_items": 1,

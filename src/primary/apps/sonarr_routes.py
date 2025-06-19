@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify, render_template
 import datetime, os, requests
-# keys_manager import removed - using settings_manager instead
+
 from src.primary.state import reset_state_file, check_state_reset
 from src.primary.utils.logger import get_logger
 from src.primary.settings_manager import get_ssl_verify_setting
@@ -183,7 +183,7 @@ def test_connection():
             response_data = response.json()
             
             # We no longer save keys here since we use instances
-            # Legacy keys_manager call removed - settings now stored in database
+        
             
             # Return success with some useful information
             return jsonify({

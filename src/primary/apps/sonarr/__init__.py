@@ -15,7 +15,7 @@ def get_configured_instances():
     """Get all configured and enabled Sonarr instances"""
     settings = load_settings("sonarr")
     instances = []
-    # sonarr_logger.info(f"Loaded Sonarr settings for instance check: {settings}") # Removed verbose log
+
 
     if not settings:
         sonarr_logger.debug("No settings found for Sonarr")
@@ -23,7 +23,7 @@ def get_configured_instances():
 
     # Check if instances are configured
     if "instances" in settings and isinstance(settings["instances"], list) and settings["instances"]:
-        # sonarr_logger.info(f"Found 'instances' list with {len(settings['instances'])} items. Processing...") # Removed verbose log
+
         for idx, instance in enumerate(settings["instances"]):
     
             # Enhanced validation
@@ -56,7 +56,7 @@ def get_configured_instances():
                     "upgrade_mode": instance.get("upgrade_mode", "seasons_packs"),  # Per-instance upgrade mode
                 }
                 instances.append(instance_data)
-                # sonarr_logger.info(f"Added valid instance: {instance_data}") # Removed verbose log
+    
             elif not is_enabled:
                 sonarr_logger.debug(f"Skipping disabled instance: {instance.get('name', 'Unnamed')}")
             else:

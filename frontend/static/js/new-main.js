@@ -26,10 +26,7 @@ let huntarrUI = {
         swaparr: false // Added swaparr
     },
     originalSettings: {}, // Store the full original settings object
-    settingsChanged: false, // Flag to track unsaved settings changes
-    hasUnsavedChanges: false, // Global flag for unsaved changes across all apps
-    formChanged: {}, // Track unsaved changes per app
-    suppressUnsavedChangesCheck: false, // Flag to suppress unsaved changes dialog
+    settingsChanged: false, // Legacy flag (auto-save enabled)
     
     // Logo URL
     logoUrl: './static/logo/256.png',
@@ -54,7 +51,7 @@ let huntarrUI = {
         // Register event handlers
         this.setupEventListeners();
         this.setupLogoHandling();
-        this.registerGlobalUnsavedChangesHandler();
+        // Auto-save enabled - no unsaved changes handler needed
         
         // Check if Low Usage Mode is enabled BEFORE loading stats to avoid race condition
         this.checkLowUsageMode().then(() => {
@@ -72,8 +69,7 @@ let huntarrUI = {
         // Initial navigation based on hash
         this.handleHashNavigation(window.location.hash);
         
-        // Register unsaved changes handler
-        this.registerGlobalUnsavedChangesHandler();
+        // Auto-save enabled - no unsaved changes handler needed
         
         // Load username
         this.loadUsername();
@@ -117,8 +113,7 @@ let huntarrUI = {
         // Initialize instance event handlers
         this.setupInstanceEventHandlers();
         
-        // Add global event handler for unsaved changes
-        this.registerGlobalUnsavedChangesHandler();
+        // Auto-save enabled - no unsaved changes handler needed
         
         // Setup Swaparr components
         this.setupSwaparrResetCycle();
@@ -166,7 +161,7 @@ let huntarrUI = {
         this.elements.appSettingsPanels = document.querySelectorAll('.app-settings-panel');
         
         // Settings
-        this.elements.saveSettingsButton = document.getElementById('saveSettingsButton'); // Corrected ID
+        // Save button removed for auto-save
         
         // Status elements
         this.elements.sonarrHomeStatus = document.getElementById('sonarrHomeStatus');
@@ -252,9 +247,7 @@ let huntarrUI = {
         });
         
         // Save settings button
-        if (this.elements.saveSettingsButton) {
-            this.elements.saveSettingsButton.addEventListener('click', () => this.saveSettings());
-        }
+        // Save button removed for auto-save
         
         // Test notification button (delegated event listener for dynamic content)
         document.addEventListener('click', (e) => {
@@ -291,20 +284,10 @@ let huntarrUI = {
             });
         }
         
-        // Settings inputs change tracking
-        document.querySelectorAll('#settingsSection input, #settingsSection select').forEach(element => {
-            element.addEventListener('change', () => this.markSettingsAsChanged());
-        });
+        // Settings auto-save setup
+        this.setupSettingsAutoSave();
         
-        // Monitor for window beforeunload to warn about unsaved settings
-        window.addEventListener('beforeunload', (e) => {
-            if (this.settingsChanged && this.hasFormChanges(this.currentSettingsTab)) {
-                // Standard way to show a confirmation dialog when navigating away
-                e.preventDefault();
-                e.returnValue = ''; // Chrome requires returnValue to be set
-                return ''; // Legacy browsers
-            }
-        });
+        // Auto-save enabled - no need to warn about unsaved changes
         
         // Stateful management reset button
         const resetStatefulBtn = document.getElementById('reset_stateful_btn');
@@ -323,14 +306,14 @@ let huntarrUI = {
         // Handle window hash change
         window.addEventListener('hashchange', () => this.handleHashNavigation(window.location.hash)); // Ensure hash is passed
 
-        // Settings form delegation
+        // Settings form delegation - now triggers auto-save
         const settingsFormContainer = document.querySelector('.settings-form');
         if (settingsFormContainer) {
             settingsFormContainer.addEventListener('input', (event) => {
                 if (event.target.closest('.app-settings-panel.active')) {
                     // Check if the target is an input, select, or textarea within the active panel
                     if (event.target.matches('input, select, textarea')) {
-                        this.markSettingsAsChanged(); // Use the new function
+                        this.triggerSettingsAutoSave(); // Trigger auto-save instead of marking changed
                     }
                 }
             });
@@ -338,24 +321,13 @@ let huntarrUI = {
                  if (event.target.closest('.app-settings-panel.active')) {
                     // Handle changes for checkboxes and selects that use 'change' event
                     if (event.target.matches('input[type="checkbox"], select')) {
-                         this.markSettingsAsChanged(); // Use the new function
+                         this.triggerSettingsAutoSave(); // Trigger auto-save instead of marking changed
                     }
                  }
             });
         }
 
-        // Add listener for unsaved changes prompt (External Navigation)
-        window.onbeforeunload = (event) => {
-            if (this.settingsChanged) {
-                // Standard way to trigger the browser's confirmation dialog
-                event.preventDefault(); 
-                // Chrome requires returnValue to be set
-                event.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-                return 'You have unsaved changes. Are you sure you want to leave?'; // For older browsers
-            }
-            // If no changes, return undefined to allow navigation without prompt
-            return undefined; 
-        };
+        // Auto-save enabled - no need for beforeunload warnings
 
         // Initial setup based on hash or default to home
         const initialHash = window.location.hash || '#home';
@@ -423,19 +395,7 @@ let huntarrUI = {
              // For now, assume non-hash links navigate away
         }
 
-        // Check for unsaved changes ONLY if navigating INTERNALLY away from settings
-        if (isInternalLink && this.currentSection === 'settings' && targetSection !== 'settings' && this.settingsChanged) {
-            // Use our new comparison function to check if there are actual changes
-            const hasRealChanges = this.hasFormChanges(this.currentSettingsTab);
-            
-            if (hasRealChanges && !confirm('You have unsaved changes. Are you sure you want to leave? Changes will be lost.')) {
-                return; // Stop navigation if user cancels
-            }
-            
-            // User confirmed or no real changes, reset flag before navigating
-            this.settingsChanged = false;
-            this.updateSaveResetButtonState(false); 
-        }
+        // Auto-save enabled - no need to check for unsaved changes when navigating
         
         // Add special handling for apps section - clear global app module flags
         if (this.currentSection === 'apps' && targetSection !== 'apps') {
@@ -1253,19 +1213,83 @@ let huntarrUI = {
         });
     },
 
-    // Add or modify this function to handle enabling/disabling save/reset
-    updateSaveResetButtonState(enable) { // Changed signature
-        const saveButton = this.elements.saveSettingsButton;
+    // Auto-save enabled - save button removed, no state to update
+    updateSaveResetButtonState(enable) {
+        // No-op since save button is removed for auto-save
+    },
 
-        if (saveButton) {
-            saveButton.disabled = !enable;
-            // Optional: Add/remove class for styling
-            if (enable) {
-                saveButton.classList.remove('disabled-button');
-            } else {
-                saveButton.classList.add('disabled-button');
-            }
+    // Setup auto-save for settings
+    setupSettingsAutoSave: function() {
+        console.log('[huntarrUI] Setting up immediate settings auto-save');
+        
+        // Add event listeners to the settings container
+        const settingsContainer = document.getElementById('settingsSection');
+        if (settingsContainer) {
+            // Listen for input events (for text inputs, textareas, range sliders)
+            settingsContainer.addEventListener('input', (event) => {
+                if (event.target.matches('input, textarea')) {
+                    this.triggerSettingsAutoSave();
+                }
+            });
+            
+            // Listen for change events (for checkboxes, selects, radio buttons)
+            settingsContainer.addEventListener('change', (event) => {
+                if (event.target.matches('input, select, textarea')) {
+                    this.triggerSettingsAutoSave();
+                }
+            });
+            
+            console.log('[huntarrUI] Settings auto-save listeners added');
         }
+    },
+
+    // Trigger immediate auto-save
+    triggerSettingsAutoSave: function() {
+        if (window._settingsCurrentlySaving) {
+            console.log('[huntarrUI] Settings auto-save skipped - already saving');
+            return;
+        }
+        
+        const app = this.currentSettingsTab;
+        if (!app) {
+            console.log('[huntarrUI] No current settings tab for auto-save');
+            return;
+        }
+        
+        console.log(`[huntarrUI] Triggering immediate settings auto-save for: ${app}`);
+        this.autoSaveSettings(app);
+    },
+
+    // Auto-save settings function
+    autoSaveSettings: function(app) {
+        if (window._settingsCurrentlySaving) {
+            console.log(`[huntarrUI] Auto-save for ${app} skipped - already saving`);
+            return;
+        }
+        
+        console.log(`[huntarrUI] Auto-saving settings for: ${app}`);
+        window._settingsCurrentlySaving = true;
+        
+        // Use the existing saveSettings logic but make it silent
+        const originalShowNotification = this.showNotification;
+        
+        // Temporarily override showNotification to suppress success messages
+        this.showNotification = (message, type) => {
+            if (type === 'error') {
+                // Only show error notifications
+                originalShowNotification.call(this, message, type);
+            }
+            // Suppress success notifications for auto-save
+        };
+        
+        // Call the existing saveSettings function
+        this.saveSettings();
+        
+        // Schedule restoration of showNotification after save completes
+        setTimeout(() => {
+            this.showNotification = originalShowNotification;
+            window._settingsCurrentlySaving = false;
+        }, 1000);
     },
 
     // Clean URL by removing special characters from the end
@@ -3105,70 +3129,7 @@ let huntarrUI = {
     },
     
     // Add global event handler and method to track saved settings across all apps
-    registerGlobalUnsavedChangesHandler: function() {
-        window.addEventListener('beforeunload', this.handleUnsavedChangesBeforeUnload.bind(this));
-        
-        // Reset hasUnsavedChanges when settings are saved
-        document.addEventListener('settings:saved', (event) => {
-            if (event.detail && event.detail.appType) {
-                console.log(`settings:saved event received for ${event.detail.appType}`);
-                if (this.formChanged) {
-                    this.formChanged[event.detail.appType] = false;
-                }
-                
-                // Also clear the change tracking in the appsModule if it exists
-                if (window.appsModule) {
-                    // Reset the app in the tracking array
-                    if (window.appsModule.appsWithChanges && 
-                        window.appsModule.appsWithChanges.includes(event.detail.appType)) {
-                        window.appsModule.appsWithChanges = 
-                            window.appsModule.appsWithChanges.filter(app => app !== event.detail.appType);
-                    }
-                    
-                    // Only update the overall flag if there are no apps with changes left
-                    if (!window.appsModule.appsWithChanges || window.appsModule.appsWithChanges.length === 0) {
-                        window.appsModule.settingsChanged = false;
-                    }
-                }
-                
-                // Check if there are any remaining form changes
-                this.checkForRemainingChanges();
-            }
-        });
-    },
-    
-    // New method to check if any forms still have changes
-    checkForRemainingChanges: function() {
-        if (!this.formChanged) return;
-        
-        // Check if any forms still have changes
-        const hasAnyChanges = Object.values(this.formChanged).some(val => val === true);
-        
-        console.log('Checking for remaining form changes:', {
-            formChanged: this.formChanged,
-            hasAnyChanges: hasAnyChanges
-        });
-        
-        // Update the global flag
-        this.hasUnsavedChanges = hasAnyChanges;
-    },
-    
-    // Handle unsaved changes before unload
-    handleUnsavedChangesBeforeUnload: function(event) {
-        // Check if we should suppress the check (used for test connection functionality)
-        if (this.suppressUnsavedChangesCheck || window._suppressUnsavedChangesDialog) {
-            console.log('Unsaved changes check suppressed');
-            return;
-        }
-        
-        // If we have unsaved changes, show confirmation dialog
-        if (this.hasUnsavedChanges) {
-            console.log('Preventing navigation due to unsaved changes');
-            event.preventDefault();
-            event.returnValue = 'You have unsaved changes. Do you want to continue without saving?';
-            return event.returnValue;
-        }
-    },
+    // Auto-save enabled - unsaved changes handlers removed
     
     // Add a proper hasFormChanges function to compare form values with original values
     hasFormChanges: function(app) {
@@ -3539,6 +3500,62 @@ let huntarrUI = {
         if (/^[a-z]{1,8}\s*[A-Z]/i.test(trimmed) && trimmed.includes(':')) return true;
         
         return false;
+    },
+    
+    // Load instance-specific state management information
+    loadInstanceStateInfo: function(appType, instanceIndex) {
+        const supportedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        if (!supportedApps.includes(appType)) return;
+        
+        const instanceNameElement = document.getElementById(`${appType}-name-${instanceIndex}`);
+        const instanceName = instanceNameElement?.value || `Instance ${instanceIndex + 1}`;
+        const hoursInput = document.getElementById(`${appType}-state-management-hours-${instanceIndex}`);
+        const customHours = parseInt(hoursInput?.value) || 168;
+        
+        // Calculate reset time based on custom hours for this instance
+        const resetTime = new Date(Date.now() + (customHours * 60 * 60 * 1000));
+        
+        // Load state information for this specific instance
+        HuntarrUtils.fetchWithTimeout('./api/stateful/info', {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            this.updateInstanceStateDisplay(appType, instanceIndex, data, resetTime, instanceName);
+        })
+        .catch(error => {
+            console.error(`[huntarrUI] Error loading state info for ${appType} instance ${instanceIndex}:`, error);
+            // Still update with calculated time even if API fails
+            this.updateInstanceStateDisplay(appType, instanceIndex, null, resetTime, instanceName);
+        });
+    },
+    
+    // Update the instance state management display
+    updateInstanceStateDisplay: function(appType, instanceIndex, stateData, resetTime, instanceName) {
+        const resetTimeElement = document.getElementById(`${appType}-state-reset-time-${instanceIndex}`);
+        const itemsCountElement = document.getElementById(`${appType}-state-items-count-${instanceIndex}`);
+        
+        // Always show the calculated reset time based on instance settings
+        if (resetTimeElement) {
+            resetTimeElement.textContent = resetTime.toLocaleString();
+        }
+        
+        // Load instance-specific item count
+        if (itemsCountElement) {
+            // Try to get instance-specific count from stateful manager
+            HuntarrUtils.fetchWithTimeout(`./api/stateful/summary?app_type=${appType}&instance_name=${encodeURIComponent(instanceName)}`, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(summaryData => {
+                const count = summaryData.processed_count || 0;
+                itemsCountElement.textContent = count.toString();
+            })
+            .catch(error => {
+                console.error(`[huntarrUI] Error loading summary for ${appType}/${instanceName}:`, error);
+                itemsCountElement.textContent = '0';
+            });
+        }
     }
 };
 

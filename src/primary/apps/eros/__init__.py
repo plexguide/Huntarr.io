@@ -14,15 +14,14 @@ from src.primary.utils.logger import get_logger
 # Define logger for this module
 eros_logger = get_logger("eros")
 
-# For backward compatibility
-process_missing_scenes = process_missing_items
+
 
 def get_configured_instances():
     """Get all configured and enabled Eros instances"""
     settings = load_settings("eros")
     instances = []
     # Use debug level to avoid log spam on new installations
-    # eros_logger.debug(f"Loaded Eros settings for instance check: {settings}") # Removed verbose log
+
 
     if not settings:
         eros_logger.debug("No settings found for Eros")
@@ -102,4 +101,4 @@ def get_configured_instances():
     # Use debug level to avoid spamming logs, especially with 0 instances
     return instances
 
-__all__ = ["process_missing_items", "process_missing_scenes", "process_cutoff_upgrades", "get_configured_instances"]
+__all__ = ["process_missing_items", "process_cutoff_upgrades", "get_configured_instances"]

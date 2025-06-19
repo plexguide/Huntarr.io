@@ -195,9 +195,4 @@ def setup_clean_logging():
     _setup_complete = True
 
 
-def get_clean_log_file_path(app_type: str) -> Optional[Path]:
-    """
-    Legacy function for backward compatibility.
-    Returns None since we no longer use file-based logging.
-    """
-    return None
+

@@ -254,8 +254,4 @@ def reset_cycle(app_type: str) -> bool:
             logger.error(f"Error resetting cycle for {app_type}: {e}")
             return False
 
-# Legacy compatibility functions - these maintain the old API but use database
-def ensure_all_apps_have_cyclelock():
-    """Legacy function for compatibility - no longer needed with database"""
-    logger.debug("ensure_all_apps_have_cyclelock called - no action needed with database")
-    pass
+

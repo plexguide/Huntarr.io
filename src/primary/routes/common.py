@@ -22,6 +22,7 @@ from ..auth import (
 )
 from ..utils.logger import logger # Ensure logger is imported
 from .. import settings_manager # Import settings_manager
+from datetime import datetime
 
 
 common_bp = Blueprint('common', __name__)
@@ -127,10 +128,49 @@ def login_route():
             return jsonify({"success": False, "error": "An internal server error occurred during login."}), 500
     else:
         # GET request - show login page
-        # If user already exists, show login, otherwise redirect to setup
+        # If user doesn't exist or setup is in progress, redirect to setup
         if not user_exists():
              logger.info("No user exists, redirecting to setup.")
-             return redirect(url_for('common.setup'))
+             
+             # Get the base URL from settings to ensure proper subpath redirect
+             try:
+                 from src.primary.settings_manager import get_setting
+                 base_url = get_setting('general', 'base_url', '')
+                 if base_url and not base_url.startswith('/'):
+                     base_url = f'/{base_url}'
+                 if base_url and base_url.endswith('/'):
+                     base_url = base_url.rstrip('/')
+                 setup_url = f"{base_url}/setup" if base_url else "/setup"
+                 logger.debug(f"Redirecting to setup with base URL: {setup_url}")
+                 return redirect(setup_url)
+             except Exception as e:
+                 logger.warning(f"Error getting base URL for setup redirect: {e}")
+                 return redirect(url_for('common.setup'))
+        
+        # Check if setup is in progress even if user exists
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            if db.is_setup_in_progress():
+                logger.info("Setup is in progress, redirecting to setup.")
+                
+                # Get the base URL from settings to ensure proper subpath redirect
+                try:
+                    from src.primary.settings_manager import get_setting
+                    base_url = get_setting('general', 'base_url', '')
+                    if base_url and not base_url.startswith('/'):
+                        base_url = f'/{base_url}'
+                    if base_url and base_url.endswith('/'):
+                        base_url = base_url.rstrip('/')
+                    setup_url = f"{base_url}/setup" if base_url else "/setup"
+                    logger.debug(f"Redirecting to setup (in progress) with base URL: {setup_url}")
+                    return redirect(setup_url)
+                except Exception as e:
+                    logger.warning(f"Error getting base URL for setup redirect: {e}")
+                    return redirect(url_for('common.setup'))
+        except Exception as e:
+            logger.error(f"Error checking setup progress in login route: {e}")
+            # Continue to show login page if we can't check setup progress
         
         # Check if any users have Plex authentication configured
         try:
@@ -170,7 +210,30 @@ def setup():
     # The authentication middleware will handle proper authentication checks
     # This handles cases like returning from Plex authentication during setup
     
-    if request.method == 'POST':
+    if request.method == 'GET':
+        # For GET requests, check if we should restore setup progress
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            
+            # Get setup progress for restoration
+            setup_progress = db.get_setup_progress()
+            logger.debug(f"Setup page accessed, current progress: {setup_progress}")
+            
+            # If user exists but setup is in progress, allow continuation
+            if user_exists() and not db.is_setup_in_progress():
+                logger.info("User exists and setup is complete, redirecting to login")
+                return redirect(url_for('common.login_route'))
+            
+            # Render setup page with progress data
+            return render_template('setup.html', setup_progress=setup_progress)
+            
+        except Exception as e:
+            logger.error(f"Error checking setup progress: {e}")
+            # Fallback to normal setup flow
+            return render_template('setup.html', setup_progress=None)
+    
+    elif request.method == 'POST':
         # For POST requests, check if user exists to prevent duplicate creation
         if user_exists():
             logger.warning("Attempted to create user during setup but user already exists")
@@ -227,6 +290,26 @@ def setup():
                         logger.debug("Proxy auth bypass setting enabled during setup")
                     except Exception as e:
                         logger.error(f"Error saving proxy auth bypass setting: {e}", exc_info=True)
+                
+                # Save setup progress after account creation
+                try:
+                    from src.primary.utils.database import get_database
+                    db = get_database()
+                    progress_data = {
+                        'current_step': 2,  # Move to 2FA step
+                        'completed_steps': [1],
+                        'account_created': True,
+                        'two_factor_enabled': False,
+                        'plex_setup_done': False,
+                        'auth_mode_selected': False,
+                        'recovery_key_generated': False,
+                        'username': username,
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    db.save_setup_progress(progress_data)
+                    logger.debug("Setup progress saved after account creation")
+                except Exception as e:
+                    logger.error(f"Error saving setup progress: {e}")
                 
                 # Automatically log in the user after setup
                 logger.debug(f"User '{username}' created successfully during setup. Creating session.")
@@ -361,8 +444,26 @@ def change_password_route():
 
 @common_bp.route('/api/user/2fa/setup', methods=['POST'])
 def setup_2fa():
-    # Get username handling bypass modes
+    # Get username handling bypass modes and setup context
     username = get_user_for_request()
+
+    # If no username from session/bypass, check if we're in setup mode
+    if not username:
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            setup_progress = db.get_setup_progress()
+            if setup_progress and setup_progress.get('username'):
+                username = setup_progress.get('username')
+                logger.debug(f"Using username from setup progress: {username}")
+            else:
+                # If no setup progress, try to get the first user (single user system)
+                first_user = db.get_first_user()
+                if first_user:
+                    username = first_user.get('username')
+                    logger.debug(f"Using first user for 2FA setup: {username}")
+        except Exception as e:
+            logger.error(f"Error getting username for 2FA setup: {e}")
 
     if not username:
         logger.warning("2FA setup attempt failed: Not authenticated and not in bypass mode.")
@@ -382,8 +483,26 @@ def setup_2fa():
 
 @common_bp.route('/api/user/2fa/verify', methods=['POST'])
 def verify_2fa():
-    # Get username handling bypass modes
+    # Get username handling bypass modes and setup context
     username = get_user_for_request()
+
+    # If no username from session/bypass, check if we're in setup mode
+    if not username:
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            setup_progress = db.get_setup_progress()
+            if setup_progress and setup_progress.get('username'):
+                username = setup_progress.get('username')
+                logger.debug(f"Using username from setup progress: {username}")
+            else:
+                # If no setup progress, try to get the first user (single user system)
+                first_user = db.get_first_user()
+                if first_user:
+                    username = first_user.get('username')
+                    logger.debug(f"Using first user for 2FA verify: {username}")
+        except Exception as e:
+            logger.error(f"Error getting username for 2FA verify: {e}")
 
     if not username:
         logger.warning("2FA verify attempt failed: Not authenticated and not in bypass mode.")
@@ -443,11 +562,33 @@ def disable_2fa_route():
 @common_bp.route('/auth/recovery-key/generate', methods=['POST'])
 def generate_recovery_key():
     """Generate a new recovery key for the authenticated user"""
-    # Get username handling bypass modes
+    # Get username handling bypass modes and setup mode
     username = get_user_for_request()
+    
+    # If not authenticated, check if we're in setup mode and get username from setup progress
+    if not username:
+        try:
+            data = request.json or {}
+            setup_mode = data.get('setup_mode', False)
+            if setup_mode:
+                from ..utils.database import get_database
+                db = get_database()
+                setup_progress = db.get_setup_progress()
+                if setup_progress and setup_progress.get('username'):
+                    username = setup_progress['username']
+                    logger.debug(f"Using username from setup progress: {username}")
+                else:
+                    logger.warning("Recovery key generation in setup mode failed: No username in setup progress.")
+                    return jsonify({"error": "Setup not properly initialized"}), 400
+            else:
+                logger.warning("Recovery key generation attempt failed: Not authenticated and not in bypass mode.")
+                return jsonify({"error": "Not authenticated"}), 401
+        except Exception as e:
+            logger.error(f"Error checking setup mode for recovery key generation: {e}")
+            return jsonify({"error": "Authentication check failed"}), 500
 
     if not username:
-        logger.warning("Recovery key generation attempt failed: Not authenticated and not in bypass mode.")
+        logger.warning("Recovery key generation attempt failed: Could not determine username.")
         return jsonify({"error": "Not authenticated"}), 401
 
     try:
@@ -592,7 +733,7 @@ def set_theme():
 
         # Here you would typically save this preference to a user profile or global setting
         # For now, just log it. A real implementation would persist this.
-        logger.info(f"User '{username}' set dark mode preference to: {dark_mode}")
+
 
         # Example: Saving to a hypothetical global config (replace with actual persistence)
         # global_settings = settings_manager.load_global_settings() # Assuming such a function exists
@@ -663,7 +804,7 @@ def get_local_access_bypass_status_route():
         # Enable if either bypass mode is active
         bypass_enabled = local_access_bypass or proxy_auth_bypass
         
-        logger.debug(f"Retrieved bypass status: local={local_access_bypass}, proxy={proxy_auth_bypass}, combined={bypass_enabled}")
+        # Bypass status retrieved - debug spam removed
         # Return status in the format expected by the frontend
         return jsonify({"isEnabled": bypass_enabled})
     except Exception as e:
@@ -681,7 +822,7 @@ def get_stats_api():
         
         # Get stats from stats_manager
         stats = get_stats()
-        logger.debug(f"Retrieved stats for API response: {stats}")
+        # Stats retrieved - debug spam removed
         
         # Return success response with stats
         return jsonify({"success": True, "stats": stats})
@@ -726,4 +867,239 @@ def reset_stats_api():
 # Ensure all routes previously in this file that interact with settings
 # are either moved to web_server.py or updated here using the new settings_manager functions.
 
-# REMOVED DUPLICATE BLUEPRINT DEFINITION AND CONFLICTING ROUTES BELOW THIS LINE
+@common_bp.route('/api/database/integrity', methods=['GET', 'POST'])
+def database_integrity():
+    """Check database integrity and optionally repair issues"""
+    # Get username handling bypass modes
+    username = get_user_for_request()
+    if not username:
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+    
+    try:
+        from primary.utils.database import get_database
+        
+        repair = request.json.get('repair', False) if request.method == 'POST' else False
+        
+        db = get_database()
+        results = db.perform_integrity_check(repair=repair)
+        
+        return jsonify({
+            'success': True,
+            'integrity_check': results,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Database integrity check failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/database/backup', methods=['POST'])
+def create_database_backup():
+    """Create a verified backup of the database"""
+    # Get username handling bypass modes
+    username = get_user_for_request()
+    if not username:
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+    
+    try:
+        from primary.utils.database import get_database
+        
+        backup_name = request.json.get('backup_name') if request.json else None
+        
+        db = get_database()
+        backup_path = db.create_backup(backup_name)
+        
+        # Get backup file size for confirmation
+        from pathlib import Path
+        backup_size = Path(backup_path).stat().st_size
+        
+        return jsonify({
+            'success': True,
+            'backup_path': backup_path,
+            'backup_size': backup_size,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Database backup creation failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/database/maintenance', methods=['POST'])
+def trigger_database_maintenance():
+    """Trigger immediate database maintenance operations"""
+    # Get username handling bypass modes
+    username = get_user_for_request()
+    if not username:
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+    
+    try:
+        from primary.utils.database import get_database
+        
+        db = get_database()
+        
+        # Perform maintenance operations
+        maintenance_results = {
+            'integrity_check': db.perform_integrity_check(repair=True),
+            'optimization': {'status': 'completed'},
+            'checkpoint': {'status': 'completed'}
+        }
+        
+        # Run optimization and checkpoint
+        with db.get_connection() as conn:
+            conn.execute("PRAGMA optimize")
+            conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+        
+        return jsonify({
+            'success': True,
+            'maintenance_results': maintenance_results,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Database maintenance failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/database/status', methods=['GET'])
+def database_status():
+    """Get comprehensive database status information"""
+    # Get username handling bypass modes
+    username = get_user_for_request()
+    if not username:
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+    
+    try:
+        from primary.utils.database import get_database
+        import os
+        
+        db = get_database()
+        
+        # Get database file info
+        db_size = os.path.getsize(db.db_path) if db.db_path.exists() else 0
+        
+        # Get database stats
+        with db.get_connection() as conn:
+            page_count = conn.execute("PRAGMA page_count").fetchone()[0]
+            page_size = conn.execute("PRAGMA page_size").fetchone()[0]
+            freelist_count = conn.execute("PRAGMA freelist_count").fetchone()[0]
+            journal_mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+            cache_size = conn.execute("PRAGMA cache_size").fetchone()[0]
+            
+        status_info = {
+            'database_path': str(db.db_path),
+            'database_size': db_size,
+            'database_size_mb': round(db_size / (1024 * 1024), 2),
+            'page_count': page_count,
+            'page_size': page_size,
+            'freelist_count': freelist_count,
+            'journal_mode': journal_mode,
+            'cache_size': cache_size,
+            'utilization': round((page_count - freelist_count) / page_count * 100, 2) if page_count > 0 else 0
+        }
+        
+        return jsonify({
+            'success': True,
+            'database_status': status_info,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to get database status: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/setup/progress', methods=['GET', 'POST'])
+def setup_progress():
+    """Get or save setup progress"""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        
+        if request.method == 'GET':
+            # Get current setup progress
+            progress = db.get_setup_progress()
+            return jsonify({
+                'success': True,
+                'progress': progress
+            })
+        
+        elif request.method == 'POST':
+            # Save setup progress
+            data = request.json
+            progress_data = data.get('progress', {})
+            
+            # Add timestamp
+            progress_data['timestamp'] = datetime.now().isoformat()
+            
+            # Save to database
+            success = db.save_setup_progress(progress_data)
+            
+            return jsonify({
+                'success': success,
+                'message': 'Setup progress saved' if success else 'Failed to save setup progress'
+            })
+    
+    except Exception as e:
+        logger.error(f"Setup progress API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/setup/clear', methods=['POST'])
+def clear_setup_progress():
+    """Clear setup progress (called when setup is complete)"""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        
+        success = db.clear_setup_progress()
+        
+        return jsonify({
+            'success': success,
+            'message': 'Setup progress cleared' if success else 'Failed to clear setup progress'
+        })
+    
+    except Exception as e:
+        logger.error(f"Clear setup progress API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/setup/status', methods=['GET'])
+def setup_status():
+    """Check if setup is in progress or complete"""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        
+        # Check if user exists and if setup is in progress
+        user_exists_status = user_exists()
+        setup_in_progress = db.is_setup_in_progress()
+        
+        return jsonify({
+            'success': True,
+            'user_exists': user_exists_status,
+            'setup_in_progress': setup_in_progress,
+            'needs_setup': not user_exists_status or setup_in_progress
+        })
+    
+    except Exception as e:
+        logger.error(f"Setup status API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+

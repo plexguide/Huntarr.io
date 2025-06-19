@@ -7,9 +7,8 @@ const appsModule = {
     // State
     currentApp: null,
     isLoading: false,
-    settingsChanged: false, // Flag to track unsaved settings changes
+    settingsChanged: false, // Legacy flag (auto-save enabled)
     originalSettings: {}, // Store original settings to compare
-    appsWithChanges: [], // Track which apps have unsaved changes
     
     // DOM elements
     elements: {},
@@ -18,7 +17,7 @@ const appsModule = {
     init: function() {
         // Initialize state
         this.currentApp = null;
-        this.settingsChanged = false; // Flag to track unsaved settings changes
+        this.settingsChanged = false; // Legacy flag (auto-save enabled)
         this.originalSettings = {}; // Store original settings to compare
         
         // Set a global flag to indicate we've loaded
@@ -42,87 +41,10 @@ const appsModule = {
         // Load apps for initial display
         this.loadApps();
         
-        // Register with the main unsaved changes system if available
-        this.registerUnsavedChangesHandler();
+        // Auto-save enabled - no unsaved changes detection needed
     },
     
-    // Register with the main unsaved changes system
-    registerUnsavedChangesHandler: function() {
-        // Check if we already have the event listener
-        if (!this._unsavedChangesHandlerRegistered) {
-            this._unsavedChangesHandlerRegistered = true;
-            
-            document.addEventListener('click', (event) => {
-                // Skip handling if currently saving or change detection is suppressed
-                if (window._appsCurrentlySaving || window._appsSuppressChangeDetection) {
-                    return;
-                }
-                
-                // Only check for navigation away from apps section
-                const navItem = event.target.closest('.nav-item, a');
-                if (navItem) {
-                    const href = navItem.getAttribute('href');
-                    
-                    // Skip if clicking within the apps section or on external links
-                    if (!href || href === '#apps' || href.startsWith('http') || navItem.getAttribute('target') === '_blank') {
-                        return;
-                    }
-                    
-                    // Immediately clear the settingsChanged flag if we're not actually on the apps page
-                    if (window.location.hash !== '#apps') {
-                        this.settingsChanged = false;
-                        return;
-                    }
-                    
-                    // Check for unsaved changes
-                    if (this.hasUnsavedChanges()) {
-                        if (!confirm('You have unsaved changes. Are you sure you want to leave? Changes will be lost.')) {
-                            event.preventDefault();
-                        } else {
-                            // User clicked OK, reset the settings changed flag
-                            this.settingsChanged = false;
-                        }
-                    }
-                }
-            });
-            
-            // Also handle browser back/forward navigation
-            window.addEventListener('beforeunload', (event) => {
-                // Skip if currently saving, suppression active, or not on apps page
-                if (window._appsCurrentlySaving || 
-                    window._appsSuppressChangeDetection || 
-                    window.location.hash !== '#apps') {
-                    return;
-                }
-                
-                // Check for unsaved changes
-                if (this.hasUnsavedChanges()) {
-                    // Show standard browser confirmation
-                    event.preventDefault();
-                    event.returnValue = 'You have unsaved changes. Are you sure you want to leave? Changes will be lost.';
-                    return event.returnValue;
-                }
-            });
-        }
-    },
-    
-    // Check for unsaved changes before navigating away
-    hasUnsavedChanges: function() {
-        // If test connection suppression is active, return false to prevent dialog
-        if (window._suppressUnsavedChangesDialog === true) {
-            console.log('Unsaved changes check suppressed due to test connection');
-            return false;
-        }
-        
-        // If the app is currently saving, don't consider it as having unsaved changes
-        if (window._appsCurrentlySaving) {
-            console.log('Skipping unsaved changes check because app is currently saving');
-            return false;
-        }
-        
-        // Check if settings have changed
-        return this.settingsChanged === true;
-    },
+    // Auto-save enabled - unsaved changes handlers removed
     
     // Cache DOM elements
     cacheElements: function() {
@@ -136,8 +58,7 @@ const appsModule = {
             // Apps panels
             appAppsPanels: document.querySelectorAll('.app-apps-panel'),
             
-            // Controls
-            saveAppsButton: document.getElementById('saveAppsButton')
+            // Controls - auto-save enabled, no save button needed
         };
     },
     
@@ -176,10 +97,7 @@ const appsModule = {
             }
         });
 
-        // Save button
-        if (this.elements.saveAppsButton) {
-            this.elements.saveAppsButton.addEventListener('click', (event) => this.saveApps(event));
-        }
+        // Auto-save enabled - no save button needed
     },
     
     // Load apps for initial display
@@ -271,7 +189,12 @@ const appsModule = {
                         }
                         
                         // Store original form values after form is generated
-                        this.storeOriginalFormValues(appPanel);
+                        // Add a small delay to ensure all form elements are fully populated
+                        setTimeout(() => {
+                            this.storeOriginalFormValues(appPanel);
+                            console.log(`[Apps] Original values stored for ${app} after form generation`);
+                            console.log(`[Apps] Stored ${Object.keys(this.originalSettings).length} original values for ${app}`);
+                        }, 50);
                         
                         // Add change listener to detect modifications
                         this.addFormChangeListeners(formElement);
@@ -290,30 +213,20 @@ const appsModule = {
             });
     },
     
-    // Add change event listeners to form elements
+    // Add auto-save listeners to form elements
     addFormChangeListeners: function(form) {
         if (!form) return;
         
-        console.log(`Adding form change listeners to form with app type: ${form.getAttribute('data-app-type')}`);
+        const appType = form.getAttribute('data-app-type');
+        console.log(`[Apps] Adding auto-save listeners for ${appType}`);
         
-        // Function to handle form element changes
-        const handleChange = (event) => {
-            // Skip if test connection suppression is active
-            if (window._suppressUnsavedChangesDialog === true || window._appsSuppressChangeDetection === true) {
-                console.log(`[Apps] Change detection suppressed due to test connection or status updates (element: ${event?.target?.id || 'unknown'})`);
-                return;
-            }
-            
-            if (this.hasFormChanges(form)) {
-                console.log(`[Apps] Form changed, enabling save button (triggered by: ${event?.target?.id || 'unknown'})`);
-                this.markAppsAsChanged();
-            } else {
-                console.log(`[Apps] No actual changes, save button remains disabled (event from: ${event?.target?.id || 'unknown'})`);
-            }
+        // Immediate auto-save function
+        const autoSave = () => {
+            this.autoSaveSettings(appType, form);
         };
         
         // Add listeners to all form inputs, selects, and textareas
-        const formElements = form.querySelectorAll('input, select, textarea, button');
+        const formElements = form.querySelectorAll('input, select, textarea');
         formElements.forEach(element => {
             // Skip buttons and test-related elements
             if (element.type === 'button' || 
@@ -324,96 +237,62 @@ const appsModule = {
                 return;
             }
             
-            // Remove any existing change listeners to avoid duplicates
-            element.removeEventListener('change', handleChange);
-            element.removeEventListener('input', handleChange);
+            // Remove any existing listeners to avoid duplicates
+            element.removeEventListener('change', autoSave);
+            element.removeEventListener('input', autoSave);
             
-            // Add change listeners
-            element.addEventListener('change', handleChange);
+            // Add auto-save listeners
+            element.addEventListener('change', autoSave);
             
             // For text and number inputs, also listen for input events
-            if (element.type === 'text' || element.type === 'number' || element.type === 'textarea') {
-                element.addEventListener('input', handleChange);
+            if (element.type === 'text' || element.type === 'number' || element.tagName.toLowerCase() === 'textarea') {
+                element.addEventListener('input', autoSave);
             }
             
-            console.log(`Added change listener to ${element.tagName} with id: ${element.id || 'no-id'}`);
+            console.log(`[Apps] Added auto-save listener to ${element.tagName} with id: ${element.id || 'no-id'}`);
         });
         
-        // Also add a MutationObserver to detect when instances are added or removed
-        // This is needed because adding/removing instances doesn't trigger input events
+        // Also observe for added/removed instances
         try {
-            // Check if we already have an observer for this form
             if (this.observer) {
                 this.observer.disconnect();
             }
             
-            // Create a new MutationObserver
             this.observer = new MutationObserver((mutations) => {
-                let shouldUpdate = false;
+                let shouldAutoSave = false;
                 
                 mutations.forEach(mutation => {
-                    // Check for elements added or removed
                     if (mutation.type === 'childList' && 
                        (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) {
                         
                         // Check if the changes are test-related elements that we should ignore
                         let isTestRelated = false;
                         
-                        // Check added nodes
-                        mutation.addedNodes.forEach(node => {
+                        [...mutation.addedNodes, ...mutation.removedNodes].forEach(node => {
                             if (node.nodeType === Node.ELEMENT_NODE) {
                                 if (node.classList && (
                                     node.classList.contains('connection-message') ||
                                     node.classList.contains('test-status') ||
-                                    node.classList.contains('test-result')
+                                    node.classList.contains('test-result') ||
+                                    node.classList.contains('auto-save-indicator')
                                 )) {
                                     isTestRelated = true;
                                 }
-                                // Also check for status elements by ID pattern
-                                if (node.id && node.id.includes('-status-')) {
+                                if (node.id && (node.id.includes('-status-') || node.id.includes('save-indicator'))) {
                                     isTestRelated = true;
                                 }
                             }
                         });
                         
-                        // Check removed nodes
-                        mutation.removedNodes.forEach(node => {
-                            if (node.nodeType === Node.ELEMENT_NODE) {
-                                if (node.classList && (
-                                    node.classList.contains('connection-message') ||
-                                    node.classList.contains('test-status') ||
-                                    node.classList.contains('test-result')
-                                )) {
-                                    isTestRelated = true;
-                                }
-                                // Also check for status elements by ID pattern
-                                if (node.id && node.id.includes('-status-')) {
-                                    isTestRelated = true;
-                                }
-                            }
-                        });
-                        
-                        // Only mark as changed if it's not test-related
                         if (!isTestRelated) {
-                            shouldUpdate = true;
+                            shouldAutoSave = true;
                         }
                     }
                 });
                 
-                if (shouldUpdate) {
-                    // Skip if test connection suppression is active
-                    if (window._suppressUnsavedChangesDialog === true || window._appsSuppressChangeDetection === true) {
-                        console.log(`[Apps] MutationObserver suppressed due to test connection or status updates (flags: _suppressUnsavedChangesDialog=${window._suppressUnsavedChangesDialog}, _appsSuppressChangeDetection=${window._appsSuppressChangeDetection})`);
-                        return;
-                    }
-                    
-                    console.log('[Apps] Instances container changed - checking for form changes');
-                    if (this.hasFormChanges(form)) {
-                        console.log('[Apps] Form changed via MutationObserver, enabling save button');
-                        this.markAppsAsChanged();
-                    } else {
-                        console.log('[Apps] No actual changes via MutationObserver, save button remains disabled');
-                    }
+                if (shouldAutoSave) {
+                    console.log('[Apps] Instance structure changed - triggering auto-save');
+                    autoSave();
                 }
             });
             
@@ -421,76 +300,126 @@ const appsModule = {
             const instancesContainers = form.querySelectorAll('.instances-container');
             instancesContainers.forEach(container => {
                 this.observer.observe(container, { childList: true, subtree: true });
-                console.log(`Added MutationObserver to container: ${container.className}`);
             });
         } catch (error) {
-            console.error('Error setting up MutationObserver:', error);
+            console.error('[Apps] Error setting up MutationObserver:', error);
         }
     },
     
-    // Mark apps as changed
-    markAppsAsChanged: function() {
-        this.settingsChanged = true;
+    // Auto-save settings silently in background
+    autoSaveSettings: function(appType, form) {
+        console.log(`[Apps] Auto-saving settings for ${appType}`);
         
-        // Find the currently visible app panel and track it in our list of changed apps
-        const currentApp = document.querySelector('.app-panel:not([style*="display: none"])');
-        if (currentApp) {
-            const appType = currentApp.getAttribute('data-app-type');
-            if (appType) {
-                // Initialize the array if it doesn't exist yet
-                if (!this.appsWithChanges) {
-                    this.appsWithChanges = [];
-                }
-                
-                // Add this app to the list of apps with changes if not already there
-                if (!this.appsWithChanges.includes(appType)) {
-                    this.appsWithChanges.push(appType);
-                    console.log(`Added ${appType} to appsWithChanges:`, this.appsWithChanges);
-                }
-                
-                // Set the global tracking flag for this specific app
-                if (!window._hasAppChanges) {
-                    window._hasAppChanges = {};
-                }
-                window._hasAppChanges[appType] = true;
-                
-                // Also update the huntarrUI tracking if available
-                if (window.huntarrUI && window.huntarrUI.formChanged) {
-                    window.huntarrUI.formChanged[appType] = true;
-                    window.huntarrUI.hasUnsavedChanges = true;
-                }
+        // Get the app panel
+        const appPanel = form.closest('.app-apps-panel') || document.getElementById(`${appType}Apps`);
+        if (!appPanel) {
+            console.error(`[Apps] Could not find app panel for ${appType}`);
+            return;
+        }
+        
+        let settings;
+        try {
+            // Get settings from the form
+            settings = SettingsForms.getFormSettings(appPanel, appType);
+            console.log(`[Apps] Collected settings for auto-save (${appType}):`, settings);
+        } catch (error) {
+            console.error(`[Apps] Error collecting settings for auto-save (${appType}):`, error);
+            return;
+        }
+        
+        // Send settings to the server silently
+        HuntarrUtils.fetchWithTimeout(`./api/settings/${appType}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(settings)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
             }
-        }
-        
-        if (this.elements.saveAppsButton) {
-            this.elements.saveAppsButton.disabled = false;
-            console.log('Save button enabled');
-        } else {
-            console.error('Save button element not found');
-        }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`[Apps] ${appType} settings auto-saved successfully:`, data);
+        })
+        .catch(error => {
+            console.error(`[Apps] Error auto-saving ${appType} settings:`, error);
+            // Only show error notifications for failed saves, not success
+            if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
+                huntarrUI.showNotification(`Error auto-saving ${appType} settings`, 'error');
+            }
+        });
     },
+
     
     // Check if the form has actual changes compared to original values
     hasFormChanges: function(form) {
-        if (!form || !this.originalSettings) return true;
+        if (!form) {
+            console.log('[Apps] hasFormChanges: No form found');
+            return false;
+        }
+        
+        if (!this.originalSettings || Object.keys(this.originalSettings).length === 0) {
+            console.log('[Apps] hasFormChanges: No original settings found, checking if form has any values');
+            // If we don't have original settings yet, check if the form has any non-default values
+            // This handles the case where user makes changes before original values are stored
+            const formElements = form.querySelectorAll('input, select, textarea');
+            let hasNonDefaultValues = false;
+            formElements.forEach(element => {
+                if (element.type === 'button' || element.type === 'submit' || !element.id) return;
+                const currentValue = element.type === 'checkbox' ? element.checked : element.value;
+                // If there's any meaningful value, consider it a change
+                if (currentValue && currentValue !== '' && currentValue !== false) {
+                    hasNonDefaultValues = true;
+                }
+            });
+            console.log(`[Apps] Form has non-default values: ${hasNonDefaultValues}`);
+            return hasNonDefaultValues;
+        }
         
         let hasChanges = false;
         const formElements = form.querySelectorAll('input, select, textarea');
         
+        console.log(`[Apps] Checking ${formElements.length} form elements for changes`);
+        console.log(`[Apps] Original settings keys:`, Object.keys(this.originalSettings));
+        
         formElements.forEach(element => {
-            // Skip buttons
-            if (element.type === 'button' || element.type === 'submit') return;
+            // Skip buttons and elements without IDs
+            if (element.type === 'button' || element.type === 'submit' || !element.id) return;
             
             const originalValue = this.originalSettings[element.id];
             const currentValue = element.type === 'checkbox' ? element.checked : element.value;
             
-            // Compare with original value
-            if (originalValue !== undefined && String(originalValue) !== String(currentValue)) {
-                console.log(`Element changed: ${element.id}, Original: ${originalValue}, Current: ${currentValue}`);
-                hasChanges = true;
+            // Only compare if we have an original value stored for this element
+            if (originalValue !== undefined) {
+                // Direct comparison for checkboxes (both should be boolean)
+                // String comparison for everything else
+                let valuesMatch;
+                if (element.type === 'checkbox') {
+                    valuesMatch = originalValue === currentValue;
+                } else {
+                    valuesMatch = String(originalValue) === String(currentValue);
+                }
+                
+                if (!valuesMatch) {
+                    console.log(`[Apps] Element changed: ${element.id}, Original: ${originalValue} (${typeof originalValue}), Current: ${currentValue} (${typeof currentValue})`);
+                    hasChanges = true;
+                }
+            } else {
+                // If we don't have an original value for this element, check if it has a meaningful current value
+                if (element.type === 'checkbox' && currentValue === true) {
+                    console.log(`[Apps] Checkbox ${element.id} is checked but no original value stored - considering as change`);
+                    hasChanges = true;
+                } else if (element.type !== 'checkbox' && currentValue && currentValue.trim() !== '') {
+                    console.log(`[Apps] Element ${element.id} has value '${currentValue}' but no original value stored - considering as change`);
+                    hasChanges = true;
+                }
             }
         });
         
+        console.log(`[Apps] hasFormChanges result: ${hasChanges}`);
         return hasChanges;
     },
     
@@ -528,16 +457,7 @@ const appsModule = {
         
 
         
-        // Check for unsaved changes
-        if (this.settingsChanged) {
-            const confirmSwitch = confirm('You have unsaved changes. Do you want to continue without saving?');
-            if (!confirmSwitch) {
-                // Reset the select to the current app
-                const appsAppSelect = document.getElementById('appsAppSelect');
-                if (appsAppSelect) appsAppSelect.value = this.currentApp;
-                return;
-            }
-        }
+        // Auto-save enabled - no navigation checks needed
         // Update the select value
         const appsAppSelect = document.getElementById('appsAppSelect');
         if (appsAppSelect) appsAppSelect.value = selectedApp;
@@ -546,9 +466,8 @@ const appsModule = {
         this.currentApp = selectedApp;
         // Load the newly selected app's settings
         this.loadAppSettings(selectedApp);
-        // Reset changed state
+        // Reset changed state (auto-save enabled)
         this.settingsChanged = false;
-        if (this.elements.saveAppsButton) this.elements.saveAppsButton.disabled = true;
     },
     
     // Save apps settings - completely rewritten for reliability
@@ -674,11 +593,8 @@ const appsModule = {
             // Store the current form values as the new "original" values
             this.storeOriginalFormValues(appPanel);
             
-            // Disable save button and reset state
+            // Auto-save completed - reset state
             this.settingsChanged = false;
-            if (this.elements.saveAppsButton) {
-                this.elements.saveAppsButton.disabled = true;
-            }
             
             // Reset the saving flag
             window._appsCurrentlySaving = false;
@@ -718,7 +634,12 @@ const appsModule = {
         const originalValues = {};
         const formElements = form.querySelectorAll('input, select, textarea');
         formElements.forEach(element => {
-            originalValues[element.id] = element.value;
+            // Store the appropriate value based on element type
+            if (element.type === 'checkbox') {
+                originalValues[element.id] = element.checked;
+            } else {
+                originalValues[element.id] = element.value;
+            }
         });
         
         this.originalSettings = originalValues;
@@ -757,14 +678,7 @@ const appsModule = {
                 el.setAttribute('data-changed', 'false');
             });
             
-            // Reset the internal change tracking for this specific app
-            if (appType && this.appsWithChanges && this.appsWithChanges.includes(appType)) {
-                this.appsWithChanges = this.appsWithChanges.filter(app => app !== appType);
-                console.log(`Removed ${appType} from appsWithChanges:`, this.appsWithChanges);
-            }
-            
-            // Force update overall app state
-            this.settingsChanged = this.appsWithChanges && this.appsWithChanges.length > 0;
+            // Auto-save enabled - no change tracking needed
             
             // Explicitly handle Readarr, Lidarr, and Whisparr which seem to have issues
             if (appType === 'readarr' || appType === 'lidarr' || appType === 'whisparr' || appType === 'whisparrv2') {
@@ -773,10 +687,7 @@ const appsModule = {
                 if (window.huntarrUI && window.huntarrUI.formChanged) {
                     window.huntarrUI.formChanged[appType] = false;
                 }
-                // Reset the global changed state tracker if this was the only app with changes
-                if (!this.settingsChanged && window.huntarrUI) {
-                    window.huntarrUI.hasUnsavedChanges = false;
-                }
+                // Auto-save enabled - no global state tracking needed
                 // Force immediate re-evaluation of the form state
                 setTimeout(() => {
                     this.hasFormChanges(form);
@@ -792,12 +703,5 @@ const appsModule = {
 document.addEventListener('DOMContentLoaded', () => {
     appsModule.init();
     
-    // Add a direct event listener to the save button for maximum reliability
-    const saveButton = document.getElementById('saveAppsButton');
-    if (saveButton) {
-        saveButton.addEventListener('click', function(event) {
-            console.log('Save button clicked directly');
-            appsModule.saveApps(event);
-        });
-    }
+    // Auto-save enabled - no save button needed
 });

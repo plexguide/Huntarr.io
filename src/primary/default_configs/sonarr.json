@@ -8,7 +8,9 @@
       "hunt_missing_items": 1,
       "hunt_upgrade_items": 0,
       "hunt_missing_mode": "seasons_packs",
-      "upgrade_mode": "seasons_packs"
+      "upgrade_mode": "seasons_packs",
+      "state_management_mode": "custom",
+      "state_management_hours": 168
     }
   ],
   "sleep_duration": 900,

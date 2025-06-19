@@ -33,6 +33,10 @@ const SettingsForms = {
     
     // Generate Sonarr settings form
     generateSonarrForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'sonarr');
         
@@ -67,6 +71,8 @@ const SettingsForms = {
             const huntUpgradeItems = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
             const huntMissingMode = instance.hunt_missing_mode || 'seasons_packs';
             const upgradeMode = instance.upgrade_mode || 'seasons_packs';
+            const stateManagementMode = instance.state_management_mode || 'custom';
+            const stateManagementHours = instance.state_management_hours || 168;
             
             instancesHtml += `
                 <div class="instance-item" data-instance-id="${index}">
@@ -119,7 +125,7 @@ const SettingsForms = {
                                 <option value="episodes" ${huntMissingMode === 'episodes' ? 'selected' : ''}>Episodes</option>
                             </select>
                             <p class="setting-help">How to search for missing content for this instance (Season Packs recommended)</p>
-                            <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: ${huntMissingMode === 'episodes' ? 'block' : 'none'};" id="episodes-missing-warning-${index}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                            <p class="setting-help" style="display: ${huntMissingMode === 'episodes' ? 'block' : 'none'};" id="episodes-missing-warning-${index}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-upgrade-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Mode:</label>
@@ -129,8 +135,58 @@ const SettingsForms = {
                                 <option value="episodes" ${upgradeMode === 'episodes' ? 'selected' : ''}>Episodes</option>
                             </select>
                             <p class="setting-help">How to search for upgrades for this instance (Season Packs recommended)</p>
-                            <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: ${upgradeMode === 'episodes' ? 'block' : 'none'};" id="episodes-upgrade-warning-${index}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                            <p class="setting-help" style="display: ${upgradeMode === 'episodes' ? 'block' : 'none'};" id="episodes-upgrade-warning-${index}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
                         </div>
+                        
+                        <!-- Instance State Management -->
+                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
+                            <label for="sonarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <select id="sonarr-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                                    <option value="custom" ${stateManagementMode === 'custom' ? 'selected' : ''}>Enabled</option>
+                                    <option value="disabled" ${stateManagementMode === 'disabled' ? 'selected' : ''}>Disabled</option>
+                                </select>
+                                <button type="button" id="sonarr-state-reset-btn-${index}" class="btn btn-danger" style="display: ${stateManagementMode !== 'disabled' ? 'inline-flex' : 'none'}; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
+                                    <i class="fas fa-redo"></i> Reset State
+                                </button>
+                            </div>
+                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
+                        </div>
+                        
+                        <!-- State Management Hours (visible when enabled) -->
+                        <div class="setting-item" id="sonarr-custom-state-hours-${index}" style="display: ${stateManagementMode === 'custom' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
+                            <label for="sonarr-state-management-hours-${index}" style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-clock" style="color: #6366f1;"></i>
+                                Reset Interval:
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                <input type="number" id="sonarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${stateManagementHours}" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
+                                <span style="color: #9ca3af; font-size: 14px;">
+                                    hours (<span id="sonarr-state-days-display-${index}">${(stateManagementHours / 24).toFixed(1)}</span> days)
+                                </span>
+                            </div>
+                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                State will automatically reset every <span id="sonarr-state-hours-text-${index}">${stateManagementHours}</span> hours
+                            </p>
+                        </div>
+                        
+                        <!-- State Status Display -->
+                        <div class="setting-item" id="sonarr-state-status-${index}" style="display: ${stateManagementMode !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.4), rgba(30, 39, 56, 0.3)); border: 1px solid rgba(90, 109, 137, 0.1); border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: #10b981; font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
+                                        Active - Tracked Items: <span id="sonarr-state-items-count-${index}">0</span>
+                                    </span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
+                                    <div id="sonarr-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="setting-item">
                             <label for="sonarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative; ${this.isSwaparrGloballyEnabled() ? '' : 'opacity: 0.5; pointer-events: none;'}">
@@ -165,10 +221,8 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                     <label for="sonarr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
-                    <input type="number" id="sonarr_hourly_cap" name="hourly_cap" min="1" max="250" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting)</p>
-                    <p class="setting-help" style="color: #cc7a00; font-weight: bold;">Maximum allowed: 250. Values above 250 will be automatically reduced to 250 when saved.</p>
-                    <p class="setting-help" style="color: #cc0000; font-weight: bold;">Setting this too high will risk your accounts being banned! You have been warned!</p>
+                    <input type="number" id="sonarr_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -226,6 +280,15 @@ const SettingsForms = {
         // Setup instance management (add/remove/test)
         SettingsForms.setupInstanceManagement(container, 'sonarr', settings.instances.length);
         
+        // Load state information for each instance
+        settings.instances.forEach((instance, index) => {
+            if (typeof huntarrUI !== 'undefined' && huntarrUI.loadInstanceStateInfo) {
+                setTimeout(() => {
+                    huntarrUI.loadInstanceStateInfo('sonarr', index);
+                }, 500); // Small delay to ensure DOM is ready
+            }
+        });
+        
         // Add event listeners for custom tags visibility
         const tagProcessedItemsToggle = container.querySelector('#sonarr_tag_processed_items');
         const customTagFields = [
@@ -244,7 +307,7 @@ const SettingsForms = {
             });
         }
         
-        // Add event listeners for per-instance episode mode warnings
+        // Add event listeners for per-instance episode mode warnings and state management
         settings.instances.forEach((instance, index) => {
             const huntMissingModeSelect = container.querySelector(`#sonarr-hunt-missing-mode-${index}`);
             const upgradeModelSelect = container.querySelector(`#sonarr-upgrade-mode-${index}`);
@@ -270,12 +333,134 @@ const SettingsForms = {
                     }
                 });
             }
+            
+            // State management mode change listeners
+            const stateManagementModeSelect = container.querySelector(`#sonarr-state-management-mode-${index}`);
+            const customStateHours = container.querySelector(`#sonarr-custom-state-hours-${index}`);
+            const stateStatus = container.querySelector(`#sonarr-state-status-${index}`);
+            const stateResetBtn = container.querySelector(`#sonarr-state-reset-btn-${index}`);
+            
+            if (stateManagementModeSelect) {
+                stateManagementModeSelect.addEventListener('change', function() {
+                    const mode = this.value;
+                    
+                    // Show/hide hours and status sections
+                    if (customStateHours) {
+                        customStateHours.style.display = mode === 'custom' ? 'block' : 'none';
+                    }
+                    
+                    if (stateStatus) {
+                        stateStatus.style.display = mode !== 'disabled' ? 'block' : 'none';
+                    }
+                    
+                    if (stateResetBtn) {
+                        stateResetBtn.style.display = mode !== 'disabled' ? 'inline-flex' : 'none';
+                    }
+                });
+            }
+            
+            // Reset button functionality
+            if (stateResetBtn) {
+                stateResetBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to reset the state for this instance? This will clear all tracked processed media IDs and allow them to be reprocessed.')) {
+                        SettingsForms.resetInstanceState('sonarr', index);
+                    }
+                });
+            }
+            
+            // Custom hours input change listener
+            const stateHoursInput = container.querySelector(`#sonarr-state-management-hours-${index}`);
+            const stateDaysDisplay = container.querySelector(`#sonarr-state-days-display-${index}`);
+            const stateHoursText = container.querySelector(`#sonarr-state-hours-text-${index}`);
+            const resetTimeElement = container.querySelector(`#sonarr-state-reset-time-${index}`);
+            
+            if (stateHoursInput) {
+                stateHoursInput.addEventListener('input', function() {
+                    const hours = parseInt(this.value) || 168;
+                    const days = (hours / 24).toFixed(1);
+                    
+                    if (stateDaysDisplay) {
+                        stateDaysDisplay.textContent = days;
+                    }
+                    
+                    if (stateHoursText) {
+                        stateHoursText.textContent = hours;
+                    }
+                    
+                    // Update reset time calculation
+                    if (resetTimeElement) {
+                        const resetTime = new Date(Date.now() + (hours * 60 * 60 * 1000));
+                        resetTimeElement.textContent = resetTime.toLocaleString();
+                    }
+                });
+            }
         });
         
+        // Restore the original suppression state after a brief delay to allow form to fully render
+        setTimeout(() => {
+            window._appsSuppressChangeDetection = wasSuppressionActive;
+            console.log(`[SettingsForms] Restored change detection suppression state: ${wasSuppressionActive}`);
+        }, 100);
+        
+    },
+    
+    // Reset state for a specific instance
+    resetInstanceState: function(appType, instanceIndex) {
+        const supportedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        if (!supportedApps.includes(appType)) return;
+        
+        const instanceName = document.querySelector(`#${appType}-name-${instanceIndex}`)?.value || `Instance ${instanceIndex + 1}`;
+        
+        console.log(`[SettingsForms] Resetting state for ${appType} instance ${instanceIndex} (${instanceName})`);
+        
+        // Call the reset API endpoint 
+        HuntarrUtils.fetchWithTimeout('./api/stateful/reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                app_type: appType,
+                instance_name: instanceName
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                const itemsCountElement = document.getElementById(`${appType}-state-items-count-${instanceIndex}`);
+                const resetTimeElement = document.getElementById(`${appType}-state-reset-time-${instanceIndex}`);
+                
+                if (itemsCountElement) {
+                    itemsCountElement.textContent = '0';
+                }
+                
+                if (resetTimeElement) {
+                    // Calculate new reset time based on custom hours
+                    const hoursInput = document.getElementById(`${appType}-state-management-hours-${instanceIndex}`);
+                    const hours = parseInt(hoursInput?.value) || 168;
+                    const resetTime = new Date(Date.now() + (hours * 60 * 60 * 1000));
+                    resetTimeElement.textContent = resetTime.toLocaleString();
+                }
+                
+                console.log(`[SettingsForms] Successfully reset state for ${appType} instance ${instanceIndex}`);
+            } else {
+                console.error(`[SettingsForms] Failed to reset state: ${data.message || 'Unknown error'}`);
+                alert('Failed to reset state. Please check the logs for details.');
+            }
+        })
+        .catch(error => {
+            console.error(`[SettingsForms] Error resetting state for ${appType} instance ${instanceIndex}:`, error);
+            alert('Error resetting state. Please check the logs for details.');
+        });
     },
     
     // Generate Radarr settings form
     generateRadarrForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'radarr');
         
@@ -342,6 +527,56 @@ const SettingsForms = {
                             <input type="number" id="radarr-hunt-upgrade-movies-${index}" name="hunt_upgrade_movies" min="0" value="${instance.hunt_upgrade_movies !== undefined ? instance.hunt_upgrade_movies : 0}" style="width: 80px;">
                             <p class="setting-help">Number of movies to search for quality upgrades per cycle (0 to disable).</p>
                         </div>
+                        
+                        <!-- Instance State Management -->
+                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
+                            <label for="radarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <select id="radarr-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                                    <option value="custom" ${(instance.state_management_mode || 'custom') === 'custom' ? 'selected' : ''}>Enabled</option>
+                                    <option value="disabled" ${(instance.state_management_mode || 'custom') === 'disabled' ? 'selected' : ''}>Disabled</option>
+                                </select>
+                                <button type="button" id="radarr-state-reset-btn-${index}" class="btn btn-danger" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'inline-flex' : 'none'}; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
+                                    <i class="fas fa-redo"></i> Reset State
+                                </button>
+                            </div>
+                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
+                        </div>
+                        
+                        <!-- State Management Hours (visible when enabled) -->
+                        <div class="setting-item" id="radarr-custom-state-hours-${index}" style="display: ${(instance.state_management_mode || 'custom') === 'custom' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
+                            <label for="radarr-state-management-hours-${index}">
+                                <i class="fas fa-clock" style="color: #6366f1;"></i>
+                                Reset Interval:
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                <input type="number" id="radarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${instance.state_management_hours || 168}" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
+                                <span style="color: #9ca3af; font-size: 14px;">
+                                    hours (<span id="radarr-state-days-display-${index}">${((instance.state_management_hours || 168) / 24).toFixed(1)}</span> days)
+                                </span>
+                            </div>
+                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                State will automatically reset every <span id="radarr-state-hours-text-${index}">${instance.state_management_hours || 168}</span> hours
+                            </p>
+                        </div>
+                        
+                        <!-- State Status Display -->
+                        <div class="setting-item" id="radarr-state-status-${index}" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: #10b981; font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
+                                        Active - Tracked Items: <span id="radarr-state-items-count-${index}">0</span>
+                                    </span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
+                                    <div id="radarr-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="setting-item">
                             <label for="radarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative; ${this.isSwaparrGloballyEnabled() ? '' : 'opacity: 0.5; pointer-events: none;'}">
@@ -377,10 +612,8 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                     <label for="radarr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
-                    <input type="number" id="radarr_hourly_cap" name="hourly_cap" min="1" max="250" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting)</p>
-                    <p class="setting-help" style="color: #cc7a00; font-weight: bold;">Maximum allowed: 250. Values above 250 will be automatically reduced to 250 when saved.</p>
-                    <p class="setting-help" style="color: #cc0000; font-weight: bold;">Setting this too high will risk your accounts being banned! You have been warned!</p>
+                    <input type="number" id="radarr_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -441,6 +674,79 @@ const SettingsForms = {
         // Add event listeners for the instance management
         this.setupInstanceManagement(container, 'radarr', settings.instances.length);
         
+        // Load state information for each instance
+        settings.instances.forEach((instance, index) => {
+            if (typeof huntarrUI !== 'undefined' && huntarrUI.loadInstanceStateInfo) {
+                setTimeout(() => {
+                    huntarrUI.loadInstanceStateInfo('radarr', index);
+                }, 500); // Small delay to ensure DOM is ready
+            }
+        });
+        
+        // Add event listeners for per-instance state management
+        settings.instances.forEach((instance, index) => {
+            // State management mode change listeners
+            const stateManagementModeSelect = container.querySelector(`#radarr-state-management-mode-${index}`);
+            const customStateHours = container.querySelector(`#radarr-custom-state-hours-${index}`);
+            const stateStatus = container.querySelector(`#radarr-state-status-${index}`);
+            const stateResetBtn = container.querySelector(`#radarr-state-reset-btn-${index}`);
+            
+            if (stateManagementModeSelect) {
+                stateManagementModeSelect.addEventListener('change', function() {
+                    const mode = this.value;
+                    
+                    // Show/hide hours and status sections
+                    if (customStateHours) {
+                        customStateHours.style.display = mode === 'custom' ? 'block' : 'none';
+                    }
+                    
+                    if (stateStatus) {
+                        stateStatus.style.display = mode !== 'disabled' ? 'block' : 'none';
+                    }
+                    
+                    if (stateResetBtn) {
+                        stateResetBtn.style.display = mode !== 'disabled' ? 'inline-flex' : 'none';
+                    }
+                });
+            }
+            
+            // Reset button functionality
+            if (stateResetBtn) {
+                stateResetBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to reset the state for this instance? This will clear all tracked processed media IDs and allow them to be reprocessed.')) {
+                        SettingsForms.resetInstanceState('radarr', index);
+                    }
+                });
+            }
+            
+            // Custom hours input change listener
+            const stateHoursInput = container.querySelector(`#radarr-state-management-hours-${index}`);
+            const stateDaysDisplay = container.querySelector(`#radarr-state-days-display-${index}`);
+            const stateHoursText = container.querySelector(`#radarr-state-hours-text-${index}`);
+            const resetTimeElement = container.querySelector(`#radarr-state-reset-time-${index}`);
+            
+            if (stateHoursInput) {
+                stateHoursInput.addEventListener('input', function() {
+                    const hours = parseInt(this.value) || 168;
+                    const days = (hours / 24).toFixed(1);
+                    
+                    if (stateDaysDisplay) {
+                        stateDaysDisplay.textContent = days;
+                    }
+                    
+                    if (stateHoursText) {
+                        stateHoursText.textContent = hours;
+                    }
+                    
+                    // Update reset time calculation
+                    if (resetTimeElement) {
+                        const resetTime = new Date(Date.now() + (hours * 60 * 60 * 1000));
+                        resetTimeElement.textContent = resetTime.toLocaleString();
+                    }
+                });
+            }
+        });
+        
         // Set up event listeners for the skip_future_releases checkbox
         const skipFutureCheckbox = container.querySelector('#radarr_skip_future_releases');
         const noReleaseDatesContainer = container.querySelector('#process_no_release_dates_container');
@@ -472,10 +778,20 @@ const SettingsForms = {
             });
         }
         
+        // Restore the original suppression state after a brief delay to allow form to fully render
+        setTimeout(() => {
+            window._appsSuppressChangeDetection = wasSuppressionActive;
+            console.log(`[SettingsForms] Restored change detection suppression state for Radarr: ${wasSuppressionActive}`);
+        }, 100);
+        
     },
     
     // Generate Lidarr settings form
     generateLidarrForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'lidarr');
         
@@ -541,6 +857,56 @@ const SettingsForms = {
                             <input type="number" id="lidarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
                             <p class="setting-help">Number of albums to search for quality upgrades per cycle (0 to disable).</p>
                         </div>
+                        
+                        <!-- Instance State Management -->
+                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
+                            <label for="lidarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <select id="lidarr-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                                    <option value="custom" ${(instance.state_management_mode || 'custom') === 'custom' ? 'selected' : ''}>Enabled</option>
+                                    <option value="disabled" ${(instance.state_management_mode || 'custom') === 'disabled' ? 'selected' : ''}>Disabled</option>
+                                </select>
+                                <button type="button" id="lidarr-state-reset-btn-${index}" class="btn btn-danger" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'inline-flex' : 'none'}; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
+                                    <i class="fas fa-redo"></i> Reset State
+                                </button>
+                            </div>
+                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
+                        </div>
+                        
+                        <!-- State Management Hours (visible when enabled) -->
+                        <div class="setting-item" id="lidarr-custom-state-hours-${index}" style="display: ${(instance.state_management_mode || 'custom') === 'custom' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
+                            <label for="lidarr-state-management-hours-${index}">
+                                <i class="fas fa-clock" style="color: #6366f1;"></i>
+                                Reset Interval:
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                <input type="number" id="lidarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${instance.state_management_hours || 168}" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
+                                <span style="color: #9ca3af; font-size: 14px;">
+                                    hours (<span id="lidarr-state-days-display-${index}">${((instance.state_management_hours || 168) / 24).toFixed(1)}</span> days)
+                                </span>
+                            </div>
+                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                State will automatically reset every <span id="lidarr-state-hours-text-${index}">${instance.state_management_hours || 168}</span> hours
+                            </p>
+                        </div>
+                        
+                        <!-- State Status Display -->
+                        <div class="setting-item" id="lidarr-state-status-${index}" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: #10b981; font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
+                                        Active - Tracked Items: <span id="lidarr-state-items-count-${index}">0</span>
+                                    </span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
+                                    <div id="lidarr-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="setting-item">
                             <label for="lidarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative; ${this.isSwaparrGloballyEnabled() ? '' : 'opacity: 0.5; pointer-events: none;'}">
@@ -585,10 +951,8 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                     <label for="lidarr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
-                    <input type="number" id="lidarr_hourly_cap" name="hourly_cap" min="1" max="250" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting)</p>
-                    <p class="setting-help" style="color: #cc7a00; font-weight: bold;">Maximum allowed: 250. Values above 250 will be automatically reduced to 250 when saved.</p>
-                    <p class="setting-help" style="color: #cc0000; font-weight: bold;">Setting this too high will risk your accounts being banned! You have been warned!</p>
+                    <input type="number" id="lidarr_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -638,6 +1002,15 @@ const SettingsForms = {
         // Add event listeners for the instance management
         SettingsForms.setupInstanceManagement(container, 'lidarr', settings.instances.length);
         
+        // Load state information for each instance
+        settings.instances.forEach((instance, index) => {
+            if (typeof huntarrUI !== 'undefined' && huntarrUI.loadInstanceStateInfo) {
+                setTimeout(() => {
+                    huntarrUI.loadInstanceStateInfo('lidarr', index);
+                }, 500); // Small delay to ensure DOM is ready
+            }
+        });
+        
         // Add event listeners for custom tags visibility
         const lidarrTagProcessedItemsToggle = container.querySelector('#lidarr_tag_processed_items');
         const lidarrCustomTagFields = [
@@ -659,6 +1032,10 @@ const SettingsForms = {
     
     // Generate Readarr settings form
     generateReadarrForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'readarr');
         
@@ -724,6 +1101,56 @@ const SettingsForms = {
                             <input type="number" id="readarr-hunt-upgrade-books-${index}" name="hunt_upgrade_books" min="0" value="${instance.hunt_upgrade_books !== undefined ? instance.hunt_upgrade_books : 0}" style="width: 80px;">
                             <p class="setting-help">Number of books to upgrade per cycle (0 to disable).</p>
                         </div>
+                        
+                        <!-- Instance State Management -->
+                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
+                            <label for="readarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <select id="readarr-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                                    <option value="custom" ${(instance.state_management_mode || 'custom') === 'custom' ? 'selected' : ''}>Enabled</option>
+                                    <option value="disabled" ${(instance.state_management_mode || 'custom') === 'disabled' ? 'selected' : ''}>Disabled</option>
+                                </select>
+                                <button type="button" id="readarr-state-reset-btn-${index}" class="btn btn-danger" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'inline-flex' : 'none'}; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
+                                    <i class="fas fa-redo"></i> Reset State
+                                </button>
+                            </div>
+                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
+                        </div>
+                        
+                        <!-- State Management Hours (visible when enabled) -->
+                        <div class="setting-item" id="readarr-custom-state-hours-${index}" style="display: ${(instance.state_management_mode || 'custom') === 'custom' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
+                            <label for="readarr-state-management-hours-${index}">
+                                <i class="fas fa-clock" style="color: #6366f1;"></i>
+                                Reset Interval:
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                <input type="number" id="readarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${instance.state_management_hours || 168}" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
+                                <span style="color: #9ca3af; font-size: 14px;">
+                                    hours (<span id="readarr-state-days-display-${index}">${((instance.state_management_hours || 168) / 24).toFixed(1)}</span> days)
+                                </span>
+                            </div>
+                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                State will automatically reset every <span id="readarr-state-hours-text-${index}">${instance.state_management_hours || 168}</span> hours
+                            </p>
+                        </div>
+                        
+                        <!-- State Status Display -->
+                        <div class="setting-item" id="readarr-state-status-${index}" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: #10b981; font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
+                                        Active - Tracked Items: <span id="readarr-state-items-count-${index}">0</span>
+                                    </span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
+                                    <div id="readarr-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="setting-item">
                             <label for="readarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative; ${this.isSwaparrGloballyEnabled() ? '' : 'opacity: 0.5; pointer-events: none;'}">
@@ -761,10 +1188,8 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                     <label for="readarr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
-                    <input type="number" id="readarr_hourly_cap" name="hourly_cap" min="1" max="250" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting)</p>
-                    <p class="setting-help" style="color: #cc7a00; font-weight: bold;">Maximum allowed: 250. Values above 250 will be automatically reduced to 250 when saved.</p>
-                    <p class="setting-help" style="color: #cc0000; font-weight: bold;">Setting this too high will risk your accounts being banned! You have been warned!</p>
+                    <input type="number" id="readarr_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -814,6 +1239,15 @@ const SettingsForms = {
         // Add event listeners for the instance management
         SettingsForms.setupInstanceManagement(container, 'readarr', settings.instances.length);
         
+        // Load state information for each instance
+        settings.instances.forEach((instance, index) => {
+            if (typeof huntarrUI !== 'undefined' && huntarrUI.loadInstanceStateInfo) {
+                setTimeout(() => {
+                    huntarrUI.loadInstanceStateInfo('readarr', index);
+                }, 500); // Small delay to ensure DOM is ready
+            }
+        });
+        
         // Add event listeners for custom tags visibility
         const readarrTagProcessedItemsToggle = container.querySelector('#readarr_tag_processed_items');
         const readarrCustomTagFields = [
@@ -835,6 +1269,10 @@ const SettingsForms = {
     
     // Generate Whisparr settings form
     generateWhisparrForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'whisparr');
         
@@ -935,10 +1373,8 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                     <label for="whisparr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
-                    <input type="number" id="whisparr_hourly_cap" name="hourly_cap" min="1" max="250" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting)</p>
-                    <p class="setting-help" style="color: #cc7a00; font-weight: bold;">Maximum allowed: 250. Values above 250 will be automatically reduced to 250 when saved.</p>
-                    <p class="setting-help" style="color: #cc0000; font-weight: bold;">Setting this too high will risk your accounts being banned! You have been warned!</p>
+                    <input type="number" id="whisparr_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -1015,6 +1451,10 @@ const SettingsForms = {
     
     // Generate Eros settings form
     generateErosForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'eros');
         
@@ -1123,10 +1563,8 @@ const SettingsForms = {
                 </div>
                 <div class="setting-item">
                     <label for="eros_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#api-cap" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
-                    <input type="number" id="eros_hourly_cap" name="hourly_cap" min="1" max="250" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
-                    <p class="setting-help">Maximum API requests per hour (helps prevent rate limiting)</p>
-                    <p class="setting-help" style="color: #cc7a00; font-weight: bold;">Maximum allowed: 250. Values above 250 will be automatically reduced to 250 when saved.</p>
-                    <p class="setting-help" style="color: #cc0000; font-weight: bold;">Setting this too high will risk your accounts being banned! You have been warned!</p>
+                    <input type="number" id="eros_hourly_cap" name="hourly_cap" min="1" max="400" value="${settings.hourly_cap !== undefined ? settings.hourly_cap : 20}">
+                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
             
@@ -1909,7 +2347,6 @@ const SettingsForms = {
             settings.display_community_resources = getInputValue('#display_community_resources', true);
             settings.display_huntarr_support = getInputValue('#display_huntarr_support', true);
             settings.low_usage_mode = getInputValue('#low_usage_mode', false);
-            settings.stateful_management_hours = getInputValue('#stateful_management_hours', 168);
             
             // Auth mode handling
             const authModeElement = container.querySelector('#auth_mode');
@@ -1995,6 +2432,10 @@ const SettingsForms = {
                 const huntMissingModeInput = instance.querySelector('select[name="hunt_missing_mode"]');
                 const upgradeModeInput = instance.querySelector('select[name="upgrade_mode"]');
                 
+                // Get per-instance state management settings (for Sonarr)
+                const stateManagementModeInput = instance.querySelector('select[name="state_management_mode"]');
+                const stateManagementHoursInput = instance.querySelector('input[name="state_management_hours"]');
+                
                 // Get quality profile selectors for Radarr
                 const missingQualityProfileInput = instance.querySelector('select[name="missing_quality_profile"]');
                 const upgradeQualityProfileInput = instance.querySelector('select[name="upgrade_quality_profile"]');
@@ -2029,21 +2470,33 @@ const SettingsForms = {
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
                     instanceObj.hunt_missing_mode = huntMissingModeInput ? huntMissingModeInput.value : 'seasons_packs';
                     instanceObj.upgrade_mode = upgradeModeInput ? upgradeModeInput.value : 'seasons_packs';
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'radarr') {
                     instanceObj.hunt_missing_movies = huntMissingItems;
                     instanceObj.hunt_upgrade_movies = huntUpgradeItems;
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'lidarr') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'readarr') {
                     instanceObj.hunt_missing_books = huntMissingItems;
                     instanceObj.hunt_upgrade_books = huntUpgradeItems;
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'whisparr') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'eros') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 }
                 
                 instances.push(instanceObj);
@@ -2065,31 +2518,43 @@ const SettingsForms = {
                     defaultInstance.hunt_upgrade_items = 0;
                     defaultInstance.hunt_missing_mode = 'seasons_packs';
                     defaultInstance.upgrade_mode = 'seasons_packs';
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'radarr') {
                     defaultInstance.hunt_missing_movies = 1;
                     defaultInstance.hunt_upgrade_movies = 0;
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'lidarr') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'readarr') {
                     defaultInstance.hunt_missing_books = 1;
                     defaultInstance.hunt_upgrade_books = 0;
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'whisparr') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'eros') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 }
@@ -2245,22 +2710,7 @@ const SettingsForms = {
                     </label>
                     <p class="setting-help" style="margin-left: -3ch !important;">Automatically check for Huntarr updates</p>
                 </div>
-                <div class="setting-item">
-                    <label for="display_community_resources"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#display-resources" class="info-icon" title="Learn more about resources display options" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Display Resources:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="display_community_resources" ${settings.display_community_resources !== false ? 'checked' : ''}>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Show or hide the Resources section on the home page</p>
-                </div>
-                <div class="setting-item">
-                    <label for="display_huntarr_support"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#display-huntarr-support" class="info-icon" title="Learn more about Huntarr support display options" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Display Huntarr Support:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="display_huntarr_support" ${settings.display_huntarr_support !== false ? 'checked' : ''}>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Display support section to help Huntarr development through GitHub stars and donations</p>
-                </div>
+
                 <div class="setting-item">
                     <label for="low_usage_mode"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#low-usage-mode" class="info-icon" title="Learn more about Low Usage Mode" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Low Usage Mode:</label>
                     <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
@@ -2367,41 +2817,7 @@ const SettingsForms = {
                     <p class="setting-help" style="margin-left: -3ch !important;">Set your timezone for accurate time display in logs and scheduling. Changes are applied when you save settings.</p>
                 </div>
             </div>
-            
-            <div class="settings-group" style="
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-                border: 2px solid rgba(90, 109, 137, 0.3);
-                border-radius: 12px;
-                padding: 20px;
-                margin: 15px 0 25px 0;
-                box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            ">
-                <div class="stateful-header-row">
-                    <h3>Stateful Management</h3>
-                    <!-- Original reset button removed, now using emergency button -->
-                </div>
-                <div id="stateful-section" class="setting-info-block">
-                    <div id="stateful-notification" class="notification error" style="display: none;">
-                        Failed to load stateful management info. Check logs for details.
-                    </div>
-                    <div class="info-container">
-                        <div class="date-info-block">
-                            <div class="date-label">Initial State Created:</div>
-                            <div id="stateful_initial_state" class="date-value">Loading...</div>
-                        </div>
-                        <div class="date-info-block">
-                            <div class="date-label">State Reset Date:</div>
-                            <div id="stateful_expires_date" class="date-value">Loading...</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="setting-item">
-                    <label for="stateful_management_hours"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Learn more about state reset intervals" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>State Reset (Hours):</label>
-                    <input type="number" id="stateful_management_hours" min="1" value="${settings.stateful_management_hours || 168}" style="width: 50% !important; max-width: 200px !important; box-sizing: border-box !important; margin: 0 !important; padding: 8px 12px !important; border-radius: 4px !important; display: block !important; text-align: left !important;">
-                    <p class="setting-help" style="margin-left: -3ch !important;">Hours before resetting processed media state (<span id="stateful_management_days">${((settings.stateful_management_hours || 168) / 24).toFixed(1)} days</span>)</p>
-                    <p class="setting-help reset-help" style="margin-left: -3ch !important;">Reset clears all processed media IDs to allow reprocessing</p>
-                </div>
-            </div>
+
             
             <div class="settings-group" style="
                 background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
@@ -2558,19 +2974,36 @@ const SettingsForms = {
                     <p class="setting-help" style="margin-left: -3ch !important;">Include app name (Sonarr, Radarr, etc.) in notification messages</p>
                 </div>
             </div>
+
+            <div class="settings-group" style="
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+                border: 2px solid rgba(90, 109, 137, 0.3);
+                border-radius: 12px;
+                padding: 20px;
+                margin: 15px 0 25px 0;
+                box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            ">
+                <h3>Display Settings</h3>
+                <div class="setting-item">
+                    <label for="display_community_resources"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#display-resources" class="info-icon" title="Learn more about resources display options" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Display Resources:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="display_community_resources" ${settings.display_community_resources !== false ? 'checked' : ''}>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Show or hide the Resources section on the home page</p>
+                </div>
+                <div class="setting-item">
+                    <label for="display_huntarr_support"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#display-huntarr-support" class="info-icon" title="Learn more about Huntarr support display options" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Display Huntarr Support:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="display_huntarr_support" ${settings.display_huntarr_support !== false ? 'checked' : ''}>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Display support section to help Huntarr development through GitHub stars and donations</p>
+                </div>
+            </div>
         `;
         
-        // Get hours input and days span elements once
-        const statefulHoursInput = container.querySelector('#stateful_management_hours');
-        const statefulDaysSpan = container.querySelector('#stateful_management_days');
-        
-        if (statefulHoursInput && statefulDaysSpan) {
-            statefulHoursInput.addEventListener('input', function() {
-                const hours = parseInt(this.value);
-                const days = (hours / 24).toFixed(1);
-                statefulDaysSpan.textContent = `${days} days`;
-            });
-        }
+
         
         // Set up Apprise notifications toggle functionality
         const enableNotificationsCheckbox = container.querySelector('#enable_notifications');
@@ -2875,10 +3308,32 @@ const SettingsForms = {
                 urlInputs.forEach(input => {
                     if (input.hasAttribute('data-instance-index')) {
                         const instanceIndex = input.getAttribute('data-instance-index');
-                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
+                        const apiKeyInput = container.querySelector(`#${appType}-key-${instanceIndex}`);
+                        
+                        // Only check if both URL and API key have meaningful values
+                        if (input.value.trim().length > 10 && apiKeyInput && apiKeyInput.value.trim().length > 20) {
+                            console.log(`[Initial Check] Running connection check for ${appType} instance ${instanceIndex}`);
+                            SettingsForms.checkConnectionStatus(appType, instanceIndex);
+                        } else {
+                            console.log(`[Initial Check] Skipping connection check for ${appType} instance ${instanceIndex} - insufficient data`);
+                            // Set appropriate status message
+                            const statusElement = container.querySelector(`#${appType}-status-${instanceIndex}`);
+                            if (statusElement) {
+                                if (input.value.trim().length <= 10 && (!apiKeyInput || apiKeyInput.value.trim().length <= 20)) {
+                                    statusElement.textContent = 'Enter URL and API Key';
+                                    statusElement.style.color = '#888';
+                                } else if (input.value.trim().length <= 10) {
+                                    statusElement.textContent = 'Missing URL';
+                                    statusElement.style.color = '#fbbf24';
+                                } else if (!apiKeyInput || apiKeyInput.value.trim().length <= 20) {
+                                    statusElement.textContent = 'Missing API Key';
+                                    statusElement.style.color = '#fbbf24';
+                                }
+                            }
+                        }
                     }
                 });
-            }, 500);
+            }, 1000); // Increased timeout to 1000ms to ensure form is fully rendered
         }
 
 
@@ -2894,13 +3349,18 @@ const SettingsForms = {
                 if (instancePanel && instancePanel.parentNode) {
                     instancePanel.parentNode.removeChild(instancePanel);
                     
-                    // Update the button text with new count if updateAddButtonText exists
+                    // Update the button text with new count using the updateAddButtonText function
                     const addBtn = container.querySelector(`.add-${appType}-instance-btn`);
                     if (addBtn) {
                         const instancesContainer = container.querySelector('.instances-container');
                         if (instancesContainer) {
                             const currentCount = instancesContainer.querySelectorAll('.instance-item').length;
-                            addBtn.innerHTML = `<i class="fas fa-plus"></i> Add ${appType.charAt(0).toUpperCase() + appType.slice(1)} Instance (${currentCount}/9)`;
+                            
+                            // Update button text based on app type
+                            const appNameCapitalized = appType.charAt(0).toUpperCase() + appType.slice(1);
+                            const displayName = appType === 'eros' ? 'Whisparr V3' : (appType === 'whisparr' ? 'Whisparr V2' : appNameCapitalized);
+                            
+                            addBtn.innerHTML = `<i class="fas fa-plus"></i> Add ${displayName} Instance (${currentCount}/9)`;
                             
                             // Re-enable button if we're under the limit
                             if (currentCount < 9) {
@@ -2925,7 +3385,12 @@ const SettingsForms = {
                 const instancesContainer = container.querySelector('.instances-container');
                 if (!instancesContainer) return;
                 const currentCount = instancesContainer.querySelectorAll('.instance-item').length;
-                buttonRef.innerHTML = `<i class="fas fa-plus"></i> Add ${appType.charAt(0).toUpperCase() + appType.slice(1)} Instance (${currentCount}/9)`;
+                
+                // Update button text based on app type
+                const appNameCapitalized = appType.charAt(0).toUpperCase() + appType.slice(1);
+                const displayName = appType === 'eros' ? 'Whisparr V3' : (appType === 'whisparr' ? 'Whisparr V2' : appNameCapitalized);
+                
+                buttonRef.innerHTML = `<i class="fas fa-plus"></i> Add ${displayName} Instance (${currentCount}/9)`;
                 
                 // Disable button if we've reached the limit
                 if (currentCount >= 9) {
@@ -3074,7 +3539,7 @@ const SettingsForms = {
                                     <option value="episodes">Episodes</option>
                                 </select>
                                 <p class="setting-help">How to search for missing content for this instance (Season Packs recommended)</p>
-                                <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: none;" id="episodes-missing-warning-${newIndex}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                                <p class="setting-help" style="display: none;" id="episodes-missing-warning-${newIndex}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-upgrade-mode-${newIndex}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Mode:</label>
@@ -3084,7 +3549,7 @@ const SettingsForms = {
                                     <option value="episodes">Episodes</option>
                                 </select>
                                 <p class="setting-help">How to search for upgrades for this instance (Season Packs recommended)</p>
-                                <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: none;" id="episodes-upgrade-warning-${newIndex}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                                <p class="setting-help" style="display: none;" id="episodes-upgrade-warning-${newIndex}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
                             </div>
                             ` : ''}
                             <div class="setting-item">
@@ -3112,7 +3577,7 @@ const SettingsForms = {
                 if (newRemoveBtn) {
                     newRemoveBtn.addEventListener('click', function() {
                         newInstance.remove();
-                        updateAddButtonText();
+                        updateAddButtonText(newAddBtn);
                         
                         // Trigger change event
                         const changeEvent = new Event('change');
@@ -3382,8 +3847,14 @@ const SettingsForms = {
         console.log(`Checking connection status for ${app} instance ${instanceIndex}`);
         
         // Delay to avoid spamming API calls while typing
-        clearTimeout(this._autoFetchTimeout);
-        this._autoFetchTimeout = setTimeout(() => {
+        const timeoutKey = `${app}_${instanceIndex}`;
+        if (this._autoFetchTimeouts && this._autoFetchTimeouts[timeoutKey]) {
+            clearTimeout(this._autoFetchTimeouts[timeoutKey]);
+        }
+        if (!this._autoFetchTimeouts) {
+            this._autoFetchTimeouts = {};
+        }
+        this._autoFetchTimeouts[timeoutKey] = setTimeout(() => {
             this.testConnectionAndUpdateStatus(app, instanceIndex, url, apiKey, statusElement);
         }, 1000); // Wait 1 second after user stops typing
     },
@@ -3391,6 +3862,16 @@ const SettingsForms = {
     // Test connection and update status
     testConnectionAndUpdateStatus: function(app, instanceIndex, url, apiKey, statusElement) {
         console.log(`[ConnectionStatus] Testing connection for ${app} instance ${instanceIndex}`);
+        
+        // Add a backup timeout in case the request hangs
+        const backupTimeoutId = setTimeout(() => {
+            console.error(`[ConnectionStatus] Backup timeout triggered for ${app} instance ${instanceIndex}`);
+            if (statusElement) {
+                statusElement.textContent = '✗ Connection timeout';
+                statusElement.style.color = '#ef4444';
+            }
+            this._resetSuppressionFlags();
+        }, 30000); // 30 second backup timeout
         
         // Make API request to test connection
         HuntarrUtils.fetchWithTimeout(`./api/${app}/test-connection`, {
@@ -3410,6 +3891,7 @@ const SettingsForms = {
             return response.json();
         })
         .then(data => {
+            clearTimeout(backupTimeoutId); // Clear the backup timeout since we got a response
             console.log(`[ConnectionStatus] Connection test response for ${app} instance ${instanceIndex}:`, data);
             
             if (data.success) {
@@ -3438,6 +3920,7 @@ const SettingsForms = {
             }, 2000);
         })
         .catch(error => {
+            clearTimeout(backupTimeoutId); // Clear the backup timeout since we got an error response
             console.error(`[ConnectionStatus] Connection test error for ${app} instance ${instanceIndex}:`, error);
             
             // Update status to error

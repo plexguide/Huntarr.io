@@ -241,16 +241,4 @@ def process_missing_items(
         
     return processing_done
 
-# For backward compatibility with the background processing system
-def process_missing_scenes(app_settings, stop_check):
-    """
-    Backwards compatibility function that calls process_missing_items.
-    
-    Args:
-        app_settings: Dictionary containing all settings for Eros
-        stop_check: A function that returns True if the process should stop
-    
-    Returns:
-        Result from process_missing_items
-    """
-    return process_missing_items(app_settings, stop_check)
+
