@@ -175,6 +175,20 @@ conn = sqlite3.connect('/config/huntarr.db')
 - ❌ Organic feature growth without reality checks
 - ❌ Theoretical FAQ content (base on real user problems)
 
+### State Management Anti-Patterns
+- ❌ Using global state locks instead of per-instance locks
+- ❌ Frontend calculating times with `Date.now()` instead of using database times
+- ❌ Inconsistent instance naming between frontend and backend API calls
+- ❌ Not testing state persistence across page reloads
+- ❌ Mixing cached frontend times with database-locked times
+
+### Frontend Anti-Patterns (Additional)
+- ❌ Event listeners overriding backend-provided data
+- ❌ Inconsistent styling between similar components across apps
+- ❌ Hard-coded CSS values instead of consistent color schemes
+- ❌ Not clearing browser cache when testing frontend fixes
+- ❌ Assuming frontend calculations match backend logic
+
 ## 🚨 PROACTIVE VIOLATION SCANNING
 
 ### Before Every Commit, Check For:
@@ -183,6 +197,9 @@ conn = sqlite3.connect('/config/huntarr.db')
 3. Database violations: `grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py"`
 4. Hard-coded path violations: `grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager"`
 5. JSON file operations: `grep -r "\.json\|json.load\|json.dump" src/ --include="*.py" | grep -v "requests.*json\|response.json\|Content-Type.*json"`
+6. Frontend time calculation violations: `grep -r "Date.now.*hours.*60.*1000" frontend/ --include="*.js"`
+7. Global state lock usage: `grep -r "stateful_lock" src/ --include="*.py" | grep -v "stateful_instance_locks"`
+8. Inconsistent app styling: `grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js"`
 
 ### Violation Scanning Commands
 ```bash
@@ -192,6 +209,10 @@ echo "1. Absolute URL violations: $(grep -r "fetch('/api/" frontend/ --include="
 echo "2. Documentation violations: $(grep -r "href.*plexguide.github.io" frontend/ --include="*.js" | grep -v "plexguide.github.io/Huntarr.io" | wc -l)"
 echo "3. Database violations: $(grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py" | wc -l)"
 echo "4. Hard-coded path violations: $(grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager" | wc -l)"
+echo "5. JSON file violations: $(grep -r "\.json\|json.load\|json.dump" src/ --include="*.py" | grep -v "requests.*json\|response.json\|Content-Type.*json" | wc -l)"
+echo "6. Frontend time calculation violations: $(grep -r "Date.now.*hours.*60.*1000" frontend/ --include="*.js" | wc -l)"
+echo "7. Global state lock violations: $(grep -r "stateful_lock" src/ --include="*.py" | grep -v "stateful_instance_locks" | wc -l)"
+echo "8. Inconsistent app styling violations: $(grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js" | wc -l)"
 ```
 
 ## 📊 SPECIFIC BUG PATTERNS TO AVOID
@@ -217,6 +238,25 @@ echo "4. Hard-coded path violations: $(grep -r "/config" src/ --include="*.py" |
 - DEBUG logs appear in wrong filters (Info, Warning, Error)
 - Fix: Apply filter to new entries as they arrive in EventSource
 - File: `/frontend/static/js/new-main.js` - `connectEventSource()` method
+
+### Per-Instance State Management Issues
+- Global state locks affect all instances instead of being per-instance
+- Frontend time calculations override database-locked times causing inconsistent display
+- Fix: Implement per-instance database locks with `stateful_instance_locks` table
+- File: `/src/primary/stateful_manager.py`, `/src/primary/utils/database.py`
+
+### Frontend Time Calculation Override Bug
+- Event listeners in form generation calculate new times using `Date.now()` instead of using database times
+- Pattern: `const resetTime = new Date(Date.now() + (hours * 60 * 60 * 1000));`
+- Symptom: Times change on page reload despite being locked in database
+- Fix: Remove time calculation from event listeners, let backend provide locked times
+- File: `/frontend/static/js/settings_forms.js` - state hours input event listeners
+
+### Inconsistent App Styling Issues  
+- Apps may have different styling for similar components (e.g., state status sections)
+- Check for consistent CSS styling across all app form generation functions
+- Pattern: Sonarr using dark gradient while Radarr using green gradient for same component
+- Fix: Standardize styling across all apps for similar UI elements
 
 ## 🎯 DEBUGGING APPROACH
 
@@ -277,6 +317,27 @@ python3 -c "from src.primary.utils.database import DatabaseManager; db = Databas
 2. Verify features mentioned actually exist in codebase
 3. Check frontend alignment with documentation
 4. Audit FAQ against real support requests
+
+### State Management Issues Debugging
+1. Check database locks: `docker exec huntarr sqlite3 /config/huntarr.db "SELECT * FROM stateful_instance_locks;"`
+2. Verify per-instance vs global locks in database schema
+3. Test frontend instance name consistency across API calls
+4. Monitor browser console for time calculation overrides
+5. Check event listener patterns: `grep -r "Date.now.*hours.*60.*1000" frontend/`
+
+### Frontend Time Display Issues Debugging
+1. Compare database time vs displayed time on page reload
+2. Check event listeners for time calculations in form generation
+3. Verify API responses contain locked times from database
+4. Test with browser cache cleared to rule out caching issues
+5. Monitor network tab for API calls during page interactions
+
+### App Styling Consistency Debugging
+1. Search for styling patterns: `grep -r "background.*linear-gradient" frontend/static/js/`
+2. Compare CSS classes between similar components across apps
+3. Check for hard-coded styles vs CSS classes
+4. Verify color consistency: `grep -r "rgba.*185.*129" frontend/`
+5. Test visual consistency across all app settings forms
 
 ## 📝 MEMORY CREATION GUIDELINES
 
