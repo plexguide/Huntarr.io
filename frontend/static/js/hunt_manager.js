@@ -93,14 +93,17 @@ const huntManagerModule = {
                 
                 console.log('Hunt item clicked:', { appType, instanceName, itemId, title });
                 
-                if (appType && instanceName) {
-                    // For all apps, open the actual external instance URL with direct linking
+                // Only process clicks for Sonarr (other apps have URL issues)
+                if (appType === 'sonarr' && instanceName) {
                     huntManagerModule.openAppInstance(appType, instanceName, itemId, title);
-                } else if (appType && window.huntarrUI) {
-                    // Fallback to Apps section if no instance name
+                } else if (appType === 'sonarr' && window.huntarrUI) {
+                    // Fallback to Apps section for Sonarr if no instance name
                     window.huntarrUI.switchSection('apps');
                     window.location.hash = '#apps';
                     console.log(`Navigated to apps section for ${appType}`);
+                } else {
+                    // For non-Sonarr apps, show a helpful message
+                    console.log(`Clicking disabled for ${appType} - only Sonarr links work properly`);
                 }
             }
         });
@@ -247,24 +250,27 @@ const huntManagerModule = {
     
     // Format processed info  
     formatProcessedInfo: function(entry) {
-        // All app types are now clickable with external linking
-        const isClickable = entry.app_type && entry.instance_name;
+        // Only Sonarr entries are clickable with external linking (other apps have URL issues)
+        const isClickable = entry.app_type === 'sonarr' && entry.instance_name;
         const dataAttributes = isClickable ? 
             `data-app="${entry.app_type}" data-instance="${entry.instance_name}" data-item-id="${entry.media_id || ''}"` : 
             `data-app="${entry.app_type}"`;
         const title = isClickable ? 
             `Click to open in ${entry.app_type} (${entry.instance_name})` : 
-            `Click to view ${entry.app_type} app`;
+            `${entry.app_type} (${entry.instance_name || 'Default'})`;
         
         console.log('Creating hunt item link with data:', {
             app_type: entry.app_type,
             instance_name: entry.instance_name,
             media_id: entry.media_id,
             processed_info: entry.processed_info,
-            dataAttributes: dataAttributes
+            dataAttributes: dataAttributes,
+            isClickable: isClickable
         });
         
-        let html = `<strong class="hunt-item-link" ${dataAttributes} title="${title}">${this.escapeHtml(entry.processed_info)}</strong>`;
+        // Only add hunt-item-link class if it's clickable (Sonarr only)
+        const linkClass = isClickable ? 'hunt-item-link' : '';
+        let html = `<strong class="${linkClass}" ${dataAttributes} title="${title}">${this.escapeHtml(entry.processed_info)}</strong>`;
         
         if (entry.discovered) {
             html += ' <span class="discovery-badge">🔍 Discovered</span>';
