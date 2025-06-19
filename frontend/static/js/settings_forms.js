@@ -33,6 +33,10 @@ const SettingsForms = {
     
     // Generate Sonarr settings form
     generateSonarrForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'sonarr');
         
@@ -394,6 +398,12 @@ const SettingsForms = {
             }
         });
         
+        // Restore the original suppression state after a brief delay to allow form to fully render
+        setTimeout(() => {
+            window._appsSuppressChangeDetection = wasSuppressionActive;
+            console.log(`[SettingsForms] Restored change detection suppression state: ${wasSuppressionActive}`);
+        }, 100);
+        
     },
     
     // Reset state for a specific instance
@@ -449,6 +459,10 @@ const SettingsForms = {
     
     // Generate Radarr settings form
     generateRadarrForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'radarr');
         
@@ -768,10 +782,20 @@ const SettingsForms = {
             });
         }
         
+        // Restore the original suppression state after a brief delay to allow form to fully render
+        setTimeout(() => {
+            window._appsSuppressChangeDetection = wasSuppressionActive;
+            console.log(`[SettingsForms] Restored change detection suppression state for Radarr: ${wasSuppressionActive}`);
+        }, 100);
+        
     },
     
     // Generate Lidarr settings form
     generateLidarrForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'lidarr');
         
@@ -1014,6 +1038,10 @@ const SettingsForms = {
     
     // Generate Readarr settings form
     generateReadarrForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'readarr');
         
@@ -1249,6 +1277,10 @@ const SettingsForms = {
     
     // Generate Whisparr settings form
     generateWhisparrForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'whisparr');
         
@@ -1429,6 +1461,10 @@ const SettingsForms = {
     
     // Generate Eros settings form
     generateErosForm: function(container, settings = {}) {
+        // Temporarily suppress change detection during form generation
+        const wasSuppressionActive = window._appsSuppressChangeDetection;
+        window._appsSuppressChangeDetection = true;
+        
         // Add data-app-type attribute to container
         container.setAttribute('data-app-type', 'eros');
         
