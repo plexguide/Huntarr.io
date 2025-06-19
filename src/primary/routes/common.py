@@ -22,6 +22,7 @@ from ..auth import (
 )
 from ..utils.logger import logger # Ensure logger is imported
 from .. import settings_manager # Import settings_manager
+from datetime import datetime
 
 
 common_bp = Blueprint('common', __name__)
@@ -739,5 +740,156 @@ def reset_stats_api():
 
 # Ensure all routes previously in this file that interact with settings
 # are either moved to web_server.py or updated here using the new settings_manager functions.
+
+@common_bp.route('/api/database/integrity', methods=['GET', 'POST'])
+def database_integrity():
+    """Check database integrity and optionally repair issues"""
+    # Get username handling bypass modes
+    username = get_user_for_request()
+    if not username:
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+    
+    try:
+        from primary.utils.database import get_database
+        
+        repair = request.json.get('repair', False) if request.method == 'POST' else False
+        
+        db = get_database()
+        results = db.perform_integrity_check(repair=repair)
+        
+        return jsonify({
+            'success': True,
+            'integrity_check': results,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Database integrity check failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/database/backup', methods=['POST'])
+def create_database_backup():
+    """Create a verified backup of the database"""
+    # Get username handling bypass modes
+    username = get_user_for_request()
+    if not username:
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+    
+    try:
+        from primary.utils.database import get_database
+        
+        backup_name = request.json.get('backup_name') if request.json else None
+        
+        db = get_database()
+        backup_path = db.create_backup(backup_name)
+        
+        # Get backup file size for confirmation
+        from pathlib import Path
+        backup_size = Path(backup_path).stat().st_size
+        
+        return jsonify({
+            'success': True,
+            'backup_path': backup_path,
+            'backup_size': backup_size,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Database backup creation failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/database/maintenance', methods=['POST'])
+def trigger_database_maintenance():
+    """Trigger immediate database maintenance operations"""
+    # Get username handling bypass modes
+    username = get_user_for_request()
+    if not username:
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+    
+    try:
+        from primary.utils.database import get_database
+        
+        db = get_database()
+        
+        # Perform maintenance operations
+        maintenance_results = {
+            'integrity_check': db.perform_integrity_check(repair=True),
+            'optimization': {'status': 'completed'},
+            'checkpoint': {'status': 'completed'}
+        }
+        
+        # Run optimization and checkpoint
+        with db.get_connection() as conn:
+            conn.execute("PRAGMA optimize")
+            conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+        
+        return jsonify({
+            'success': True,
+            'maintenance_results': maintenance_results,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Database maintenance failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@common_bp.route('/api/database/status', methods=['GET'])
+def database_status():
+    """Get comprehensive database status information"""
+    # Get username handling bypass modes
+    username = get_user_for_request()
+    if not username:
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+    
+    try:
+        from primary.utils.database import get_database
+        import os
+        
+        db = get_database()
+        
+        # Get database file info
+        db_size = os.path.getsize(db.db_path) if db.db_path.exists() else 0
+        
+        # Get database stats
+        with db.get_connection() as conn:
+            page_count = conn.execute("PRAGMA page_count").fetchone()[0]
+            page_size = conn.execute("PRAGMA page_size").fetchone()[0]
+            freelist_count = conn.execute("PRAGMA freelist_count").fetchone()[0]
+            journal_mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+            cache_size = conn.execute("PRAGMA cache_size").fetchone()[0]
+            
+        status_info = {
+            'database_path': str(db.db_path),
+            'database_size': db_size,
+            'database_size_mb': round(db_size / (1024 * 1024), 2),
+            'page_count': page_count,
+            'page_size': page_size,
+            'freelist_count': freelist_count,
+            'journal_mode': journal_mode,
+            'cache_size': cache_size,
+            'utilization': round((page_count - freelist_count) / page_count * 100, 2) if page_count > 0 else 0
+        }
+        
+        return jsonify({
+            'success': True,
+            'database_status': status_info,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to get database status: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 

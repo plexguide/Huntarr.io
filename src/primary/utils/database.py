@@ -12,6 +12,7 @@ from typing import Dict, List, Any, Optional, Set
 from datetime import datetime, timedelta
 import logging
 import time
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -44,27 +45,37 @@ class HuntarrDatabase:
                 logger.warning(f"WAL mode failed, using DELETE mode: {wal_error}")
                 conn.execute('PRAGMA journal_mode = DELETE')
             
-            # Enhanced settings for Docker rebuild resilience
+            # Enhanced settings for Docker rebuild resilience and corruption prevention
             conn.execute('PRAGMA synchronous = FULL')       # Maximum durability for Docker environments
             conn.execute('PRAGMA cache_size = -32000')      # 32MB cache for better performance
             conn.execute('PRAGMA temp_store = MEMORY')      # Store temp tables in memory
             conn.execute('PRAGMA busy_timeout = 60000')     # 60 seconds for Docker I/O delays
             conn.execute('PRAGMA auto_vacuum = INCREMENTAL') # Incremental vacuum for maintenance
-            conn.execute('PRAGMA secure_delete = ON')       # Secure deletion
+            conn.execute('PRAGMA secure_delete = ON')       # Secure deletion to prevent data recovery
+            
+            # Additional corruption prevention measures
+            conn.execute('PRAGMA cell_size_check = ON')     # Enable cell size validation
+            conn.execute('PRAGMA integrity_check')          # Verify database integrity on connection
+            conn.execute('PRAGMA optimize')                 # Optimize statistics and indexes
+            conn.execute('PRAGMA application_id = 1751013204')  # Set unique application ID for Huntarr
+            
+            # Enhanced checkpoint settings for WAL mode
+            result = conn.execute('PRAGMA journal_mode').fetchone()
+            if result and result[0] == 'wal':
+                conn.execute('PRAGMA wal_autocheckpoint = 500')    # More frequent checkpoints for Docker
+                conn.execute('PRAGMA journal_size_limit = 67108864') # 64MB journal size limit
+                conn.execute('PRAGMA wal_checkpoint(TRUNCATE)')     # Force checkpoint and truncate
             
             # Skip mmap on Windows if it causes issues, but use it elsewhere for performance
             import platform
             if platform.system() != "Windows":
                 conn.execute('PRAGMA mmap_size = 268435456')  # 256MB memory map
             
-            # WAL-specific optimizations
-            result = conn.execute('PRAGMA journal_mode').fetchone()
-            if result and result[0] == 'wal':
-                conn.execute('PRAGMA wal_autocheckpoint = 500')    # More frequent checkpoints for Docker
-                conn.execute('PRAGMA journal_size_limit = 67108864') # 64MB journal size limit
-            
             # Test the configuration worked
-            conn.execute('PRAGMA integrity_check').fetchone()
+            integrity_result = conn.execute('PRAGMA integrity_check').fetchone()
+            if integrity_result and integrity_result[0] != 'ok':
+                logger.error(f"Database integrity check failed: {integrity_result}")
+                raise sqlite3.DatabaseError(f"Database integrity compromised: {integrity_result}")
             
         except Exception as e:
             logger.error(f"Error configuring database connection: {e}")
@@ -162,6 +173,142 @@ class HuntarrDatabase:
         except Exception as e:
             logger.error(f"Database integrity check failed with error: {e}")
             return False
+    
+    def perform_integrity_check(self, repair: bool = False) -> dict:
+        """Perform comprehensive integrity check with optional repair"""
+        results = {
+            'status': 'ok',
+            'errors': [],
+            'warnings': [],
+            'repaired': False
+        }
+        
+        try:
+            with self.get_connection() as conn:
+                # Full integrity check
+                integrity_results = conn.execute("PRAGMA integrity_check").fetchall()
+                
+                if len(integrity_results) == 1 and integrity_results[0][0] == 'ok':
+                    logger.info("Database integrity check passed")
+                else:
+                    results['status'] = 'error'
+                    for result in integrity_results:
+                        results['errors'].append(result[0])
+                    
+                    if repair:
+                        logger.warning("Attempting to repair database corruption")
+                        try:
+                            # Attempt repair by forcing checkpoint and vacuum
+                            conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                            conn.execute("VACUUM")
+                            
+                            # Re-check integrity after repair
+                            post_repair = conn.execute("PRAGMA integrity_check").fetchall()
+                            if len(post_repair) == 1 and post_repair[0][0] == 'ok':
+                                results['status'] = 'repaired'
+                                results['repaired'] = True
+                                logger.info("Database integrity restored after repair")
+                            else:
+                                logger.error("Database repair failed, corruption persists")
+                        except Exception as repair_error:
+                            logger.error(f"Database repair attempt failed: {repair_error}")
+                
+                # Check foreign key constraints
+                fk_violations = conn.execute("PRAGMA foreign_key_check").fetchall()
+                if fk_violations:
+                    results['warnings'].append(f"Foreign key violations found: {len(fk_violations)}")
+                    for violation in fk_violations[:5]:  # Limit to first 5
+                        results['warnings'].append(f"FK violation: {violation}")
+                
+                # Check index consistency
+                for table_info in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall():
+                    table_name = table_info[0]
+                    try:
+                        index_check = conn.execute(f"PRAGMA integrity_check('{table_name}')").fetchall()
+                        if len(index_check) > 1 or (len(index_check) == 1 and index_check[0][0] != 'ok'):
+                            results['warnings'].append(f"Index issues in table {table_name}")
+                    except Exception:
+                        pass  # Skip if table doesn't exist or other issues
+                        
+        except Exception as e:
+            results['status'] = 'error'
+            results['errors'].append(f"Integrity check failed: {e}")
+            logger.error(f"Failed to perform integrity check: {e}")
+        
+        return results
+    
+    def create_backup(self, backup_path: str = None) -> str:
+        """Create a backup of the database using SQLite backup API"""
+        import time
+        import shutil
+        from pathlib import Path
+        
+        if not backup_path:
+            timestamp = int(time.time())
+            backup_filename = f"huntarr_backup_{timestamp}.db"
+            backup_path = self.db_path.parent / backup_filename
+        else:
+            backup_path = Path(backup_path)
+        
+        try:
+            # Ensure backup directory exists
+            backup_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Force WAL checkpoint before backup
+            with self.get_connection() as conn:
+                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            
+            # Create backup using file copy (simple but effective)
+            shutil.copy2(self.db_path, backup_path)
+            
+            # Verify backup integrity
+            backup_db = HuntarrDatabase()
+            backup_db.db_path = backup_path
+            
+            if backup_db._check_database_integrity():
+                logger.info(f"Database backup created successfully: {backup_path}")
+                return str(backup_path)
+            else:
+                logger.error("Backup verification failed, removing corrupt backup")
+                backup_path.unlink(missing_ok=True)
+                raise Exception("Backup verification failed")
+                
+        except Exception as e:
+            logger.error(f"Failed to create database backup: {e}")
+            raise
+    
+    def schedule_maintenance(self):
+        """Schedule regular maintenance tasks"""
+        import threading
+        import time
+        
+        def maintenance_worker():
+            while True:
+                try:
+                    # Wait 6 hours between maintenance cycles
+                    time.sleep(6 * 60 * 60)
+                    
+                    logger.info("Starting scheduled database maintenance")
+                    
+                    # Perform integrity check
+                    integrity_results = self.perform_integrity_check(repair=True)
+                    if integrity_results['status'] == 'error':
+                        logger.error("Database integrity issues detected during maintenance")
+                    
+                    # Optimize database
+                    with self.get_connection() as conn:
+                        conn.execute("PRAGMA optimize")
+                        conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+                    
+                    logger.info("Scheduled database maintenance completed")
+                    
+                except Exception as e:
+                    logger.error(f"Database maintenance failed: {e}")
+        
+        # Start maintenance thread
+        maintenance_thread = threading.Thread(target=maintenance_worker, daemon=True)
+        maintenance_thread.start()
+        logger.info("Database maintenance scheduler started")
     
     def ensure_database_exists(self):
         """Create database and all tables if they don't exist"""

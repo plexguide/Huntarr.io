@@ -498,15 +498,26 @@ def get_custom_tag(app_name: str, tag_type: str, default: str) -> str:
     return custom_tags.get(tag_type, default)
 
 def initialize_database():
-    """Initialize the database with default configurations if needed."""
+    """Initialize database with default configurations if needed"""
+    from .utils.database import get_database
+    from pathlib import Path
+    
+    # Get database instance and ensure it exists
+    db = get_database()
+    db.ensure_database_exists()
+    
+    # Initialize database with default configurations
+    defaults_dir = Path(__file__).parent / "default_configs"
+    db.initialize_from_defaults(defaults_dir)
+    
+    # Start database maintenance scheduler for integrity monitoring
     try:
-        db = get_database()
-        defaults_dir = pathlib.Path(DEFAULT_CONFIGS_DIR)
-        db.initialize_from_defaults(defaults_dir)
-        settings_logger.info("Database initialized with default configurations")
+        db.schedule_maintenance()
+        settings_logger.info("Database maintenance scheduler initialized")
     except Exception as e:
-        settings_logger.error(f"Failed to initialize database: {e}")
-        raise
+        settings_logger.warning(f"Failed to start database maintenance scheduler: {e}")
+    
+    settings_logger.info("Database initialization completed successfully")
 
 def auto_detect_base_url_from_request(request_obj=None):
     """
