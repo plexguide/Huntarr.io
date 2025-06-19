@@ -46,7 +46,7 @@ def load_stats() -> Dict[str, Dict[str, int]]:
                     if stat_type not in stats[app]:
                         stats[app][stat_type] = 0
         
-        logger.debug(f"Loaded stats from database: {stats}")
+        # Stats loaded - debug spam removed
         return stats
     except Exception as e:
         logger.error(f"Error loading stats from database: {e}")
@@ -405,7 +405,7 @@ def get_stats() -> Dict[str, Dict[str, int]]:
     """
     with stats_lock:
         stats = load_stats()
-        logger.debug(f"Retrieved stats: {stats}")
+        # Stats retrieved - debug spam removed
         return stats
 
 def get_hourly_caps() -> Dict[str, Dict[str, int]]:

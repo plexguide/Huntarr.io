@@ -434,15 +434,12 @@ def authenticate_request():
         else:
             if not is_polling_endpoint:
                 logger.warning(f"Access from {remote_addr} is not recognized as local network - Authentication required")
-    else:
-        if not is_polling_endpoint:
-            logger.debug("Local Bypass Mode is DISABLED - Authentication required")
     
     # Check for valid session
     session_id = session.get(SESSION_COOKIE_NAME)
     if session_id and verify_session(session_id):
         if not is_polling_endpoint:
-            logger.debug(f"Valid session found for path '{request.path}'")
+            pass  # Session valid - debug spam removed
         return None
     
     # Use less verbose logging for polling endpoints

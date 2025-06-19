@@ -739,7 +739,7 @@ def handle_app_settings(app_name):
             return jsonify({"success": False, "error": "Expected JSON data"}), 400
         
         data = request.json
-        web_logger.debug(f"Received {app_name} settings save request: {data}")
+        # Auto-save request received - debug spam removed
         
         # Clean URLs in the data before saving
         if 'instances' in data and isinstance(data['instances'], list):
@@ -751,7 +751,7 @@ def handle_app_settings(app_name):
             # For apps that don't use instances array
             data['api_url'] = data['api_url'].strip().rstrip('/').rstrip('\\')
         
-        web_logger.debug(f"Cleaned {app_name} settings before saving: {data}")
+        # Settings cleaned - debug spam removed
         
         # Save the app settings
         success = settings_manager.save_settings(app_name, data)

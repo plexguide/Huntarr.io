@@ -677,7 +677,7 @@ def get_local_access_bypass_status_route():
         # Enable if either bypass mode is active
         bypass_enabled = local_access_bypass or proxy_auth_bypass
         
-        logger.debug(f"Retrieved bypass status: local={local_access_bypass}, proxy={proxy_auth_bypass}, combined={bypass_enabled}")
+        # Bypass status retrieved - debug spam removed
         # Return status in the format expected by the frontend
         return jsonify({"isEnabled": bypass_enabled})
     except Exception as e:
@@ -695,7 +695,7 @@ def get_stats_api():
         
         # Get stats from stats_manager
         stats = get_stats()
-        logger.debug(f"Retrieved stats for API response: {stats}")
+        # Stats retrieved - debug spam removed
         
         # Return success response with stats
         return jsonify({"success": True, "stats": stats})

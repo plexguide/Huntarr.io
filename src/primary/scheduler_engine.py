@@ -53,7 +53,7 @@ def load_schedule():
     try:
         db = get_database()
         schedule_data = db.get_schedules()
-        scheduler_logger.debug(f"Loaded {sum(len(schedules) for schedules in schedule_data.values())} schedules from database")
+        # Schedules loaded - debug spam removed
         return schedule_data
     except Exception as e:
         scheduler_logger.error(f"Error loading schedule from database: {e}")

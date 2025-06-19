@@ -31,7 +31,7 @@ def load_schedules():
         db = get_database()
         schedules = db.get_schedules()
         
-        scheduler_logger.info(f"Loaded {sum(len(s) for s in schedules.values())} schedules from database")
+        # Schedules loaded - spam reduced
         
         # Add CORS headers
         response = Response(json.dumps(schedules))
