@@ -10,9 +10,8 @@ window.LogsModule = {
     // Current state
     eventSources: {},
     currentLogApp: 'all',
-    autoScroll: true,
-    autoScrollWasEnabled: false,
     userTimezone: null, // Cache for user's timezone setting
+    initialized: false, // Track initialization to prevent duplicates
     
     // Pagination state
     currentPage: 1,
@@ -25,6 +24,11 @@ window.LogsModule = {
     
     // Initialize the logs module
     init: function() {
+        if (this.initialized) {
+            console.log('[LogsModule] Already initialized, skipping...');
+            return;
+        }
+        
         console.log('[LogsModule] Initializing logs module...');
         this.cacheElements();
         this.loadUserTimezone();
@@ -34,6 +38,9 @@ window.LogsModule = {
         console.log('[LogsModule] Loading initial logs...');
         this.loadLogsFromAPI(this.currentLogApp);
         this.setupLogPolling(this.currentLogApp);
+        
+        this.initialized = true;
+        console.log('[LogsModule] Initialization complete');
     },
     
     // Load user's timezone setting from the backend
@@ -134,7 +141,6 @@ window.LogsModule = {
     cacheElements: function() {
         // Logs elements
         this.elements.logsContainer = document.getElementById('logsContainer');
-        this.elements.autoScrollCheckbox = document.getElementById('autoScrollCheckbox');
         this.elements.clearLogsButton = document.getElementById('clearLogsButton');
         this.elements.logConnectionStatus = document.getElementById('logConnectionStatus');
         
@@ -163,12 +169,7 @@ window.LogsModule = {
     
     // Set up event listeners for logging functionality
     setupEventListeners: function() {
-        // Log auto-scroll setting
-        if (this.elements.autoScrollCheckbox) {
-            this.elements.autoScrollCheckbox.addEventListener('change', (e) => {
-                this.autoScroll = e.target.checked;
-            });
-        }
+        // Auto-scroll functionality removed
         
         // Clear logs button
         if (this.elements.clearLogsButton) {
@@ -589,13 +590,7 @@ window.LogsModule = {
                     this.applyFilterToSingleEntry(logEntry, currentLogLevel);
                 }
                 
-                // Auto-scroll to top
-                if (this.autoScroll) {
-                    window.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
-                }
+                // Auto-scroll functionality removed
             } catch (error) {
                 console.error('[LogsModule] Error processing log message:', error, 'Data:', logString);
             }
@@ -764,10 +759,7 @@ window.LogsModule = {
             this.elements.logSearchResults.style.display = 'block';
         }
         
-        if (this.elements.autoScrollCheckbox && this.elements.autoScrollCheckbox.checked) {
-            this.autoScrollWasEnabled = true;
-            this.elements.autoScrollCheckbox.checked = false;
-        }
+        // Auto-scroll functionality removed from search
     },
     
     // Simple highlighting method
@@ -813,10 +805,7 @@ window.LogsModule = {
             }
         });
         
-        if (this.autoScrollWasEnabled && this.elements.autoScrollCheckbox) {
-            this.elements.autoScrollCheckbox.checked = true;
-            this.autoScrollWasEnabled = false;
-        }
+        // Auto-scroll functionality removed from clear search
     },
     
     // Filter logs by level
@@ -941,13 +930,24 @@ window.LogsModule = {
     
     // Handle pagination navigation
     handlePagination: function(direction) {
+        console.log(`[LogsModule] =================== PAGINATION CALL START ===================`);
+        console.log(`[LogsModule] handlePagination called - direction: ${direction}, currentPage BEFORE: ${this.currentPage}, totalPages: ${this.totalPages}`);
+        console.trace('[LogsModule] handlePagination call stack');
+        
         if (direction === 'prev' && this.currentPage > 1) {
+            const oldPage = this.currentPage;
             this.currentPage--;
+            console.log(`[LogsModule] PREV: Changed from page ${oldPage} to page ${this.currentPage}`);
             this.loadLogsFromAPI(this.currentLogApp, false);
         } else if (direction === 'next' && this.currentPage < this.totalPages) {
+            const oldPage = this.currentPage;
             this.currentPage++;
+            console.log(`[LogsModule] NEXT: Changed from page ${oldPage} to page ${this.currentPage}`);
             this.loadLogsFromAPI(this.currentLogApp, false);
+        } else {
+            console.log(`[LogsModule] Pagination blocked - direction: ${direction}, currentPage: ${this.currentPage}, totalPages: ${this.totalPages}`);
         }
+        console.log(`[LogsModule] =================== PAGINATION CALL END ===================`);
     },
     
     // Handle page size change

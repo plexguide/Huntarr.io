@@ -51,10 +51,7 @@
             </div>
             
             <div class="log-options">
-                <label class="auto-scroll">
-                    <input type="checkbox" id="autoScrollCheckbox" checked>
-                    <span>Auto-scroll</span>
-                </label>
+                            <!-- Auto-scroll removed to prevent interference with pagination -->
                 <button id="clearLogsButton" class="clear-button">
                     <i class="fas fa-trash-alt"></i> Clear
                 </button>
@@ -376,33 +373,7 @@
         gap: 10px;
     }
     
-    .auto-scroll {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        padding: 5px 10px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, rgba(30, 39, 56, 0.6) 0%, rgba(14, 20, 32, 0.6) 100%);
-        border: 1px solid rgba(90, 109, 137, 0.3);
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 14px;
-        user-select: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .auto-scroll:hover {
-        background: linear-gradient(135deg, rgba(40, 49, 66, 0.7) 0%, rgba(24, 30, 42, 0.7) 100%);
-        border-color: rgba(90, 109, 137, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-    }
-    
-    .auto-scroll input {
-        margin: 0;
-        cursor: pointer;
-    }
+    /* Auto-scroll styles removed to prevent pagination interference */
     
     .clear-button {
         padding: 8px 16px;
@@ -1022,44 +993,8 @@
 </style>
 
 <script>
-// Fix auto-scroll to work with natural page flow
+// Auto-scroll functionality removed to prevent pagination interference
 document.addEventListener('DOMContentLoaded', function() {
-    const autoScrollCheckbox = document.getElementById('autoScrollCheckbox');
-    const logsContainer = document.getElementById('logsContainer');
-    
-    // Pagination is handled by LogsModule - no need for template pagination
-    
-    if (autoScrollCheckbox) {
-        // Simple auto-scroll behavior for natural page flow - don't interfere with streaming
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                    // Check if new log entries were added
-                    const hasLogEntry = Array.from(mutation.addedNodes).some(node => 
-                        node.nodeType === Node.ELEMENT_NODE && 
-                        (node.classList?.contains('log-entry') || node.querySelector?.('.log-entry'))
-                    );
-                    
-                    if (hasLogEntry && autoScrollCheckbox.checked) {
-                        // Auto-scroll to top of page since logs are in reverse order (newest first)
-                        setTimeout(() => {
-                            window.scrollTo({
-                                top: 0,
-                                behavior: 'smooth'
-                            });
-                        }, 100);
-                    }
-                }
-            });
-        });
-        
-        // Observe the logs container for new entries
-        if (logsContainer) {
-            observer.observe(logsContainer, {
-                childList: true,
-                subtree: true
-            });
-        }
-    }
+    // Pagination is handled by LogsModule - no template interference
 });
 </script>
