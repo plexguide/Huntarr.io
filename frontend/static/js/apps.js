@@ -7,9 +7,8 @@ const appsModule = {
     // State
     currentApp: null,
     isLoading: false,
-    settingsChanged: false, // Flag to track unsaved settings changes
+    settingsChanged: false, // Legacy flag (auto-save enabled)
     originalSettings: {}, // Store original settings to compare
-    appsWithChanges: [], // Track which apps have unsaved changes
     
     // DOM elements
     elements: {},
@@ -18,7 +17,7 @@ const appsModule = {
     init: function() {
         // Initialize state
         this.currentApp = null;
-        this.settingsChanged = false; // Flag to track unsaved settings changes
+        this.settingsChanged = false; // Legacy flag (auto-save enabled)
         this.originalSettings = {}; // Store original settings to compare
         
         // Set a global flag to indicate we've loaded
@@ -42,21 +41,10 @@ const appsModule = {
         // Load apps for initial display
         this.loadApps();
         
-        // Register with the main unsaved changes system if available
-        this.registerUnsavedChangesHandler();
+        // Auto-save enabled - no unsaved changes detection needed
     },
     
-    // Register with the main unsaved changes system
-    registerUnsavedChangesHandler: function() {
-        // Temporarily disabled - will be re-implemented in the future
-        console.log('[Apps] Unsaved changes detection disabled');
-    },
-    
-    // Check for unsaved changes before navigating away
-    hasUnsavedChanges: function() {
-        // Temporarily disabled - will be re-implemented in the future
-        return false;
-    },
+    // Auto-save enabled - unsaved changes handlers removed
     
     // Cache DOM elements
     cacheElements: function() {
@@ -232,13 +220,9 @@ const appsModule = {
         const appType = form.getAttribute('data-app-type');
         console.log(`[Apps] Adding auto-save listeners for ${appType}`);
         
-        // Debounced auto-save function
-        let autoSaveTimeout;
+        // Immediate auto-save function
         const autoSave = () => {
-            clearTimeout(autoSaveTimeout);
-            autoSaveTimeout = setTimeout(() => {
-                this.autoSaveSettings(appType, form);
-            }, 1500); // 1.5 second debounce
+            this.autoSaveSettings(appType, form);
         };
         
         // Add listeners to all form inputs, selects, and textareas
@@ -473,7 +457,7 @@ const appsModule = {
         
 
         
-        // Unsaved changes check temporarily disabled - will be re-implemented in the future
+        // Auto-save enabled - no navigation checks needed
         // Update the select value
         const appsAppSelect = document.getElementById('appsAppSelect');
         if (appsAppSelect) appsAppSelect.value = selectedApp;
@@ -694,14 +678,7 @@ const appsModule = {
                 el.setAttribute('data-changed', 'false');
             });
             
-            // Reset the internal change tracking for this specific app
-            if (appType && this.appsWithChanges && this.appsWithChanges.includes(appType)) {
-                this.appsWithChanges = this.appsWithChanges.filter(app => app !== appType);
-                console.log(`Removed ${appType} from appsWithChanges:`, this.appsWithChanges);
-            }
-            
-            // Force update overall app state
-            this.settingsChanged = this.appsWithChanges && this.appsWithChanges.length > 0;
+            // Auto-save enabled - no change tracking needed
             
             // Explicitly handle Readarr, Lidarr, and Whisparr which seem to have issues
             if (appType === 'readarr' || appType === 'lidarr' || appType === 'whisparr' || appType === 'whisparrv2') {
@@ -710,10 +687,7 @@ const appsModule = {
                 if (window.huntarrUI && window.huntarrUI.formChanged) {
                     window.huntarrUI.formChanged[appType] = false;
                 }
-                // Reset the global changed state tracker if this was the only app with changes
-                if (!this.settingsChanged && window.huntarrUI) {
-                    window.huntarrUI.hasUnsavedChanges = false;
-                }
+                // Auto-save enabled - no global state tracking needed
                 // Force immediate re-evaluation of the form state
                 setTimeout(() => {
                     this.hasFormChanges(form);

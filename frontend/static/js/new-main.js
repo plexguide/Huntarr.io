@@ -26,10 +26,7 @@ let huntarrUI = {
         swaparr: false // Added swaparr
     },
     originalSettings: {}, // Store the full original settings object
-    settingsChanged: false, // Flag to track unsaved settings changes
-    hasUnsavedChanges: false, // Global flag for unsaved changes across all apps
-    formChanged: {}, // Track unsaved changes per app
-    suppressUnsavedChangesCheck: false, // Flag to suppress unsaved changes dialog
+    settingsChanged: false, // Legacy flag (auto-save enabled)
     
     // Logo URL
     logoUrl: './static/logo/256.png',
@@ -54,7 +51,7 @@ let huntarrUI = {
         // Register event handlers
         this.setupEventListeners();
         this.setupLogoHandling();
-        this.registerGlobalUnsavedChangesHandler();
+        // Auto-save enabled - no unsaved changes handler needed
         
         // Check if Low Usage Mode is enabled BEFORE loading stats to avoid race condition
         this.checkLowUsageMode().then(() => {
@@ -72,8 +69,7 @@ let huntarrUI = {
         // Initial navigation based on hash
         this.handleHashNavigation(window.location.hash);
         
-        // Register unsaved changes handler
-        this.registerGlobalUnsavedChangesHandler();
+        // Auto-save enabled - no unsaved changes handler needed
         
         // Load username
         this.loadUsername();
@@ -117,8 +113,7 @@ let huntarrUI = {
         // Initialize instance event handlers
         this.setupInstanceEventHandlers();
         
-        // Add global event handler for unsaved changes
-        this.registerGlobalUnsavedChangesHandler();
+        // Auto-save enabled - no unsaved changes handler needed
         
         // Setup Swaparr components
         this.setupSwaparrResetCycle();
@@ -1225,8 +1220,7 @@ let huntarrUI = {
 
     // Setup auto-save for settings
     setupSettingsAutoSave: function() {
-        console.log('[huntarrUI] Setting up settings auto-save');
-        this.settingsAutoSaveTimeouts = {};
+        console.log('[huntarrUI] Setting up immediate settings auto-save');
         
         // Add event listeners to the settings container
         const settingsContainer = document.getElementById('settingsSection');
@@ -1249,7 +1243,7 @@ let huntarrUI = {
         }
     },
 
-    // Trigger auto-save with debounce
+    // Trigger immediate auto-save
     triggerSettingsAutoSave: function() {
         if (window._settingsCurrentlySaving) {
             console.log('[huntarrUI] Settings auto-save skipped - already saving');
@@ -1262,17 +1256,8 @@ let huntarrUI = {
             return;
         }
         
-        console.log(`[huntarrUI] Triggering settings auto-save for: ${app}`);
-        
-        // Clear existing timeout
-        if (this.settingsAutoSaveTimeouts[app]) {
-            clearTimeout(this.settingsAutoSaveTimeouts[app]);
-        }
-        
-        // Set new timeout for 1.5 seconds
-        this.settingsAutoSaveTimeouts[app] = setTimeout(() => {
-            this.autoSaveSettings(app);
-        }, 1500);
+        console.log(`[huntarrUI] Triggering immediate settings auto-save for: ${app}`);
+        this.autoSaveSettings(app);
     },
 
     // Auto-save settings function
@@ -3144,70 +3129,7 @@ let huntarrUI = {
     },
     
     // Add global event handler and method to track saved settings across all apps
-    registerGlobalUnsavedChangesHandler: function() {
-        window.addEventListener('beforeunload', this.handleUnsavedChangesBeforeUnload.bind(this));
-        
-        // Reset hasUnsavedChanges when settings are saved
-        document.addEventListener('settings:saved', (event) => {
-            if (event.detail && event.detail.appType) {
-                console.log(`settings:saved event received for ${event.detail.appType}`);
-                if (this.formChanged) {
-                    this.formChanged[event.detail.appType] = false;
-                }
-                
-                // Also clear the change tracking in the appsModule if it exists
-                if (window.appsModule) {
-                    // Reset the app in the tracking array
-                    if (window.appsModule.appsWithChanges && 
-                        window.appsModule.appsWithChanges.includes(event.detail.appType)) {
-                        window.appsModule.appsWithChanges = 
-                            window.appsModule.appsWithChanges.filter(app => app !== event.detail.appType);
-                    }
-                    
-                    // Only update the overall flag if there are no apps with changes left
-                    if (!window.appsModule.appsWithChanges || window.appsModule.appsWithChanges.length === 0) {
-                        window.appsModule.settingsChanged = false;
-                    }
-                }
-                
-                // Check if there are any remaining form changes
-                this.checkForRemainingChanges();
-            }
-        });
-    },
-    
-    // New method to check if any forms still have changes
-    checkForRemainingChanges: function() {
-        if (!this.formChanged) return;
-        
-        // Check if any forms still have changes
-        const hasAnyChanges = Object.values(this.formChanged).some(val => val === true);
-        
-        console.log('Checking for remaining form changes:', {
-            formChanged: this.formChanged,
-            hasAnyChanges: hasAnyChanges
-        });
-        
-        // Update the global flag
-        this.hasUnsavedChanges = hasAnyChanges;
-    },
-    
-    // Handle unsaved changes before unload
-    handleUnsavedChangesBeforeUnload: function(event) {
-        // Check if we should suppress the check (used for test connection functionality)
-        if (this.suppressUnsavedChangesCheck || window._suppressUnsavedChangesDialog) {
-            console.log('Unsaved changes check suppressed');
-            return;
-        }
-        
-        // If we have unsaved changes, show confirmation dialog
-        if (this.hasUnsavedChanges) {
-            console.log('Preventing navigation due to unsaved changes');
-            event.preventDefault();
-            event.returnValue = 'You have unsaved changes. Do you want to continue without saving?';
-            return event.returnValue;
-        }
-    },
+    // Auto-save enabled - unsaved changes handlers removed
     
     // Add a proper hasFormChanges function to compare form values with original values
     hasFormChanges: function(app) {
