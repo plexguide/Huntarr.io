@@ -185,12 +185,12 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
         settings_logger.debug(f"Saving general settings: {settings_data}")
         settings_logger.debug(f"Apprise URLs being saved: {settings_data.get('apprise_urls', 'NOT_FOUND')}")
     
-    # Validate and enforce hourly_cap maximum limit of 250
+    # Validate and enforce hourly_cap maximum limit of 400
     if 'hourly_cap' in settings_data:
         original_cap = settings_data['hourly_cap']
-        if isinstance(original_cap, (int, float)) and original_cap > 250:
-            settings_data['hourly_cap'] = 250
-            settings_logger.warning(f"Hourly cap for {app_name} was {original_cap}, automatically reduced to maximum allowed value of 250")
+        if isinstance(original_cap, (int, float)) and original_cap > 400:
+            settings_data['hourly_cap'] = 400
+            settings_logger.warning(f"Hourly cap for {app_name} was {original_cap}, automatically reduced to maximum allowed value of 400")
     
     # Validate and enforce minimum values (no negative numbers allowed)
     numeric_fields = [
