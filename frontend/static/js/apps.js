@@ -48,80 +48,14 @@ const appsModule = {
     
     // Register with the main unsaved changes system
     registerUnsavedChangesHandler: function() {
-        // Check if we already have the event listener
-        if (!this._unsavedChangesHandlerRegistered) {
-            this._unsavedChangesHandlerRegistered = true;
-            
-            document.addEventListener('click', (event) => {
-                // Skip handling if currently saving or change detection is suppressed
-                if (window._appsCurrentlySaving || window._appsSuppressChangeDetection) {
-                    return;
-                }
-                
-                // Only check for navigation away from apps section
-                const navItem = event.target.closest('.nav-item, a');
-                if (navItem) {
-                    const href = navItem.getAttribute('href');
-                    
-                    // Skip if clicking within the apps section or on external links
-                    if (!href || href === '#apps' || href.startsWith('http') || navItem.getAttribute('target') === '_blank') {
-                        return;
-                    }
-                    
-                    // Immediately clear the settingsChanged flag if we're not actually on the apps page
-                    if (window.location.hash !== '#apps') {
-                        this.settingsChanged = false;
-                        return;
-                    }
-                    
-                    // Check for unsaved changes
-                    if (this.hasUnsavedChanges()) {
-                        if (!confirm('You have unsaved changes. Are you sure you want to leave? Changes will be lost.')) {
-                            event.preventDefault();
-                        } else {
-                            // User clicked OK, reset the settings changed flag
-                            this.settingsChanged = false;
-                        }
-                    }
-                }
-            });
-            
-            // Also handle browser back/forward navigation
-            window.addEventListener('beforeunload', (event) => {
-                // Skip if currently saving, suppression active, or not on apps page
-                if (window._appsCurrentlySaving || 
-                    window._appsSuppressChangeDetection || 
-                    window.location.hash !== '#apps') {
-                    return;
-                }
-                
-                // Check for unsaved changes
-                if (this.hasUnsavedChanges()) {
-                    // Show standard browser confirmation
-                    event.preventDefault();
-                    event.returnValue = 'You have unsaved changes. Are you sure you want to leave? Changes will be lost.';
-                    return event.returnValue;
-                }
-            });
-        }
+        // Temporarily disabled - will be re-implemented in the future
+        console.log('[Apps] Unsaved changes detection disabled');
     },
     
     // Check for unsaved changes before navigating away
     hasUnsavedChanges: function() {
-        // If test connection suppression is active, return false to prevent dialog
-        if (window._suppressUnsavedChangesDialog === true) {
-            console.log('Unsaved changes check suppressed due to test connection');
-            return false;
-        }
-        
-        // If the app is currently saving, don't consider it as having unsaved changes
-        if (window._appsCurrentlySaving) {
-            console.log('Skipping unsaved changes check because app is currently saving');
-            return false;
-        }
-        
-        // Check if settings have changed
-        return this.settingsChanged === true;
+        // Temporarily disabled - will be re-implemented in the future
+        return false;
     },
     
     // Cache DOM elements
@@ -271,7 +205,12 @@ const appsModule = {
                         }
                         
                         // Store original form values after form is generated
-                        this.storeOriginalFormValues(appPanel);
+                        // Add a small delay to ensure all form elements are fully populated
+                        setTimeout(() => {
+                            this.storeOriginalFormValues(appPanel);
+                            console.log(`[Apps] Original values stored for ${app} after form generation`);
+                            console.log(`[Apps] Stored ${Object.keys(this.originalSettings).length} original values for ${app}`);
+                        }, 50);
                         
                         // Add change listener to detect modifications
                         this.addFormChangeListeners(formElement);
@@ -292,140 +231,8 @@ const appsModule = {
     
     // Add change event listeners to form elements
     addFormChangeListeners: function(form) {
-        if (!form) return;
-        
-        console.log(`Adding form change listeners to form with app type: ${form.getAttribute('data-app-type')}`);
-        
-        // Function to handle form element changes
-        const handleChange = (event) => {
-            // Skip if test connection suppression is active
-            if (window._suppressUnsavedChangesDialog === true || window._appsSuppressChangeDetection === true) {
-                console.log(`[Apps] Change detection suppressed due to test connection or status updates (element: ${event?.target?.id || 'unknown'})`);
-                return;
-            }
-            
-            if (this.hasFormChanges(form)) {
-                console.log(`[Apps] Form changed, enabling save button (triggered by: ${event?.target?.id || 'unknown'})`);
-                this.markAppsAsChanged();
-            } else {
-                console.log(`[Apps] No actual changes, save button remains disabled (event from: ${event?.target?.id || 'unknown'})`);
-            }
-        };
-        
-        // Add listeners to all form inputs, selects, and textareas
-        const formElements = form.querySelectorAll('input, select, textarea, button');
-        formElements.forEach(element => {
-            // Skip buttons and test-related elements
-            if (element.type === 'button' || 
-                element.type === 'submit' || 
-                element.tagName.toLowerCase() === 'button' ||
-                element.classList.contains('test-connection-btn') ||
-                element.id && element.id.includes('test-')) {
-                return;
-            }
-            
-            // Remove any existing change listeners to avoid duplicates
-            element.removeEventListener('change', handleChange);
-            element.removeEventListener('input', handleChange);
-            
-            // Add change listeners
-            element.addEventListener('change', handleChange);
-            
-            // For text and number inputs, also listen for input events
-            if (element.type === 'text' || element.type === 'number' || element.type === 'textarea') {
-                element.addEventListener('input', handleChange);
-            }
-            
-            console.log(`Added change listener to ${element.tagName} with id: ${element.id || 'no-id'}`);
-        });
-        
-        // Also add a MutationObserver to detect when instances are added or removed
-        // This is needed because adding/removing instances doesn't trigger input events
-        try {
-            // Check if we already have an observer for this form
-            if (this.observer) {
-                this.observer.disconnect();
-            }
-            
-            // Create a new MutationObserver
-            this.observer = new MutationObserver((mutations) => {
-                let shouldUpdate = false;
-                
-                mutations.forEach(mutation => {
-                    // Check for elements added or removed
-                    if (mutation.type === 'childList' && 
-                       (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) {
-                        
-                        // Check if the changes are test-related elements that we should ignore
-                        let isTestRelated = false;
-                        
-                        // Check added nodes
-                        mutation.addedNodes.forEach(node => {
-                            if (node.nodeType === Node.ELEMENT_NODE) {
-                                if (node.classList && (
-                                    node.classList.contains('connection-message') ||
-                                    node.classList.contains('test-status') ||
-                                    node.classList.contains('test-result')
-                                )) {
-                                    isTestRelated = true;
-                                }
-                                // Also check for status elements by ID pattern
-                                if (node.id && node.id.includes('-status-')) {
-                                    isTestRelated = true;
-                                }
-                            }
-                        });
-                        
-                        // Check removed nodes
-                        mutation.removedNodes.forEach(node => {
-                            if (node.nodeType === Node.ELEMENT_NODE) {
-                                if (node.classList && (
-                                    node.classList.contains('connection-message') ||
-                                    node.classList.contains('test-status') ||
-                                    node.classList.contains('test-result')
-                                )) {
-                                    isTestRelated = true;
-                                }
-                                // Also check for status elements by ID pattern
-                                if (node.id && node.id.includes('-status-')) {
-                                    isTestRelated = true;
-                                }
-                            }
-                        });
-                        
-                        // Only mark as changed if it's not test-related
-                        if (!isTestRelated) {
-                            shouldUpdate = true;
-                        }
-                    }
-                });
-                
-                if (shouldUpdate) {
-                    // Skip if test connection suppression is active
-                    if (window._suppressUnsavedChangesDialog === true || window._appsSuppressChangeDetection === true) {
-                        console.log(`[Apps] MutationObserver suppressed due to test connection or status updates (flags: _suppressUnsavedChangesDialog=${window._suppressUnsavedChangesDialog}, _appsSuppressChangeDetection=${window._appsSuppressChangeDetection})`);
-                        return;
-                    }
-                    
-                    console.log('[Apps] Instances container changed - checking for form changes');
-                    if (this.hasFormChanges(form)) {
-                        console.log('[Apps] Form changed via MutationObserver, enabling save button');
-                        this.markAppsAsChanged();
-                    } else {
-                        console.log('[Apps] No actual changes via MutationObserver, save button remains disabled');
-                    }
-                }
-            });
-            
-            // Start observing instances container for changes
-            const instancesContainers = form.querySelectorAll('.instances-container');
-            instancesContainers.forEach(container => {
-                this.observer.observe(container, { childList: true, subtree: true });
-                console.log(`Added MutationObserver to container: ${container.className}`);
-            });
-        } catch (error) {
-            console.error('Error setting up MutationObserver:', error);
-        }
+        // Temporarily disabled - change detection will be re-implemented in the future
+        console.log(`[Apps] Change detection disabled for form with app type: ${form?.getAttribute('data-app-type') || 'unknown'}`);
     },
     
     // Mark apps as changed
@@ -472,25 +279,70 @@ const appsModule = {
     
     // Check if the form has actual changes compared to original values
     hasFormChanges: function(form) {
-        if (!form || !this.originalSettings) return true;
+        if (!form) {
+            console.log('[Apps] hasFormChanges: No form found');
+            return false;
+        }
+        
+        if (!this.originalSettings || Object.keys(this.originalSettings).length === 0) {
+            console.log('[Apps] hasFormChanges: No original settings found, checking if form has any values');
+            // If we don't have original settings yet, check if the form has any non-default values
+            // This handles the case where user makes changes before original values are stored
+            const formElements = form.querySelectorAll('input, select, textarea');
+            let hasNonDefaultValues = false;
+            formElements.forEach(element => {
+                if (element.type === 'button' || element.type === 'submit' || !element.id) return;
+                const currentValue = element.type === 'checkbox' ? element.checked : element.value;
+                // If there's any meaningful value, consider it a change
+                if (currentValue && currentValue !== '' && currentValue !== false) {
+                    hasNonDefaultValues = true;
+                }
+            });
+            console.log(`[Apps] Form has non-default values: ${hasNonDefaultValues}`);
+            return hasNonDefaultValues;
+        }
         
         let hasChanges = false;
         const formElements = form.querySelectorAll('input, select, textarea');
         
+        console.log(`[Apps] Checking ${formElements.length} form elements for changes`);
+        console.log(`[Apps] Original settings keys:`, Object.keys(this.originalSettings));
+        
         formElements.forEach(element => {
-            // Skip buttons
-            if (element.type === 'button' || element.type === 'submit') return;
+            // Skip buttons and elements without IDs
+            if (element.type === 'button' || element.type === 'submit' || !element.id) return;
             
             const originalValue = this.originalSettings[element.id];
             const currentValue = element.type === 'checkbox' ? element.checked : element.value;
             
-            // Compare with original value
-            if (originalValue !== undefined && String(originalValue) !== String(currentValue)) {
-                console.log(`Element changed: ${element.id}, Original: ${originalValue}, Current: ${currentValue}`);
-                hasChanges = true;
+            // Only compare if we have an original value stored for this element
+            if (originalValue !== undefined) {
+                // Direct comparison for checkboxes (both should be boolean)
+                // String comparison for everything else
+                let valuesMatch;
+                if (element.type === 'checkbox') {
+                    valuesMatch = originalValue === currentValue;
+                } else {
+                    valuesMatch = String(originalValue) === String(currentValue);
+                }
+                
+                if (!valuesMatch) {
+                    console.log(`[Apps] Element changed: ${element.id}, Original: ${originalValue} (${typeof originalValue}), Current: ${currentValue} (${typeof currentValue})`);
+                    hasChanges = true;
+                }
+            } else {
+                // If we don't have an original value for this element, check if it has a meaningful current value
+                if (element.type === 'checkbox' && currentValue === true) {
+                    console.log(`[Apps] Checkbox ${element.id} is checked but no original value stored - considering as change`);
+                    hasChanges = true;
+                } else if (element.type !== 'checkbox' && currentValue && currentValue.trim() !== '') {
+                    console.log(`[Apps] Element ${element.id} has value '${currentValue}' but no original value stored - considering as change`);
+                    hasChanges = true;
+                }
             }
         });
         
+        console.log(`[Apps] hasFormChanges result: ${hasChanges}`);
         return hasChanges;
     },
     
@@ -528,16 +380,7 @@ const appsModule = {
         
 
         
-        // Check for unsaved changes
-        if (this.settingsChanged) {
-            const confirmSwitch = confirm('You have unsaved changes. Do you want to continue without saving?');
-            if (!confirmSwitch) {
-                // Reset the select to the current app
-                const appsAppSelect = document.getElementById('appsAppSelect');
-                if (appsAppSelect) appsAppSelect.value = this.currentApp;
-                return;
-            }
-        }
+        // Unsaved changes check temporarily disabled - will be re-implemented in the future
         // Update the select value
         const appsAppSelect = document.getElementById('appsAppSelect');
         if (appsAppSelect) appsAppSelect.value = selectedApp;
@@ -718,7 +561,12 @@ const appsModule = {
         const originalValues = {};
         const formElements = form.querySelectorAll('input, select, textarea');
         formElements.forEach(element => {
-            originalValues[element.id] = element.value;
+            // Store the appropriate value based on element type
+            if (element.type === 'checkbox') {
+                originalValues[element.id] = element.checked;
+            } else {
+                originalValues[element.id] = element.value;
+            }
         });
         
         this.originalSettings = originalValues;
