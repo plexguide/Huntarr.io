@@ -14,6 +14,12 @@ window.LogsModule = {
     autoScrollWasEnabled: false,
     userTimezone: null, // Cache for user's timezone setting
     
+    // Pagination state
+    currentPage: 1,
+    totalPages: 1,
+    pageSize: 20,
+    totalLogs: 0,
+    
     // Element references
     elements: {},
     
@@ -23,6 +29,11 @@ window.LogsModule = {
         this.cacheElements();
         this.loadUserTimezone();
         this.setupEventListeners();
+        
+        // Load initial logs for the default app without resetting pagination
+        console.log('[LogsModule] Loading initial logs...');
+        this.loadLogsFromAPI(this.currentLogApp);
+        this.setupLogPolling(this.currentLogApp);
     },
     
     // Load user's timezone setting from the backend
@@ -141,6 +152,13 @@ window.LogsModule = {
         this.elements.currentLogApp = document.getElementById('current-log-app');
         this.elements.logDropdownBtn = document.querySelector('.log-dropdown-btn');
         this.elements.logDropdownContent = document.querySelector('.log-dropdown-content');
+        
+        // Pagination elements
+        this.elements.logsPrevPage = document.getElementById('logsPrevPage');
+        this.elements.logsNextPage = document.getElementById('logsNextPage');
+        this.elements.logsCurrentPage = document.getElementById('logsCurrentPage');
+        this.elements.logsTotalPages = document.getElementById('logsTotalPages');
+        this.elements.logsPageSize = document.getElementById('logsPageSize');
     },
     
     // Set up event listeners for logging functionality
@@ -219,6 +237,19 @@ window.LogsModule = {
                 this.handleLogOptionChange(app);
             });
         }
+        
+        // Pagination event listeners
+        if (this.elements.logsPrevPage) {
+            this.elements.logsPrevPage.addEventListener('click', () => this.handlePagination('prev'));
+        }
+        
+        if (this.elements.logsNextPage) {
+            this.elements.logsNextPage.addEventListener('click', () => this.handlePagination('next'));
+        }
+        
+        if (this.elements.logsPageSize) {
+            this.elements.logsPageSize.addEventListener('change', () => this.handlePageSizeChange());
+        }
     },
     
     // Handle log option dropdown changes
@@ -228,7 +259,12 @@ window.LogsModule = {
         } else if (app && app.target && typeof app.target.getAttribute === 'function') {
             app = app.target.getAttribute('data-app');
         }
-        if (!app || app === this.currentLogApp) return;
+        if (!app || app === this.currentLogApp) {
+            console.log(`[LogsModule] handleLogOptionChange - no change needed (${app} === ${this.currentLogApp})`);
+            return;
+        }
+        
+        console.log(`[LogsModule] handleLogOptionChange - switching from ${this.currentLogApp} to ${app}`);
         
         // Update the select value
         const logAppSelect = document.getElementById('logAppSelect');
@@ -243,12 +279,43 @@ window.LogsModule = {
         
         // Switch to the selected app logs
         this.currentLogApp = app;
+        this.currentPage = 1; // Reset to first page when switching apps
+        this.clearLogs();
+        this.connectToLogs();
+    },
+    
+    // Handle app changes from external sources (like huntarrUI tab switching)
+    handleAppChange: function(app) {
+        if (!app || app === this.currentLogApp) {
+            console.log(`[LogsModule] handleAppChange - no change needed (${app} === ${this.currentLogApp})`);
+            return;
+        }
+        
+        console.log(`[LogsModule] handleAppChange - switching from ${this.currentLogApp} to ${app}`);
+        
+        // Update the select value
+        const logAppSelect = document.getElementById('logAppSelect');
+        if (logAppSelect) logAppSelect.value = app;
+        
+        // Update the current log app text with proper capitalization
+        let displayName = app.charAt(0).toUpperCase() + app.slice(1);
+        if (app === 'whisparr') displayName = 'Whisparr V2';
+        else if (app === 'eros') displayName = 'Whisparr V3';
+
+        if (this.elements.currentLogApp) this.elements.currentLogApp.textContent = displayName;
+        
+        // Switch to the selected app logs
+        this.currentLogApp = app;
+        this.currentPage = 1; // Reset to first page when switching apps
         this.clearLogs();
         this.connectToLogs();
     },
     
     // Connect to logs stream
     connectToLogs: function() {
+        console.log(`[LogsModule] connectToLogs() called - currentLogApp: ${this.currentLogApp}, currentPage: ${this.currentPage}`);
+        console.trace('[LogsModule] connectToLogs call stack');
+        
         // Disconnect any existing event sources
         this.disconnectAllEventSources();
         
@@ -273,7 +340,8 @@ window.LogsModule = {
             this.elements.logConnectionStatus.className = '';
         }
         
-        // Load initial logs
+        // Load logs for the current page (don't always reset to page 1)
+        console.log(`[LogsModule] connectEventSource - loading page ${this.currentPage} for app ${appType}`);
         this.loadLogsFromAPI(appType);
         
         // Set up polling with user's configured interval
@@ -298,14 +366,20 @@ window.LogsModule = {
             
             // Set up polling for new logs using the configured interval
             this.logPollingInterval = setInterval(() => {
-                this.loadLogsFromAPI(appType, true);
+                // Only poll for new logs when on page 1 (latest logs)
+                if (this.currentPage === 1) {
+                    this.loadLogsFromAPI(appType, true);
+                }
             }, intervalMs);
         })
         .catch(error => {
             console.error('[LogsModule] Error fetching log refresh interval, using default 30 seconds:', error);
             // Fallback to 30 seconds if settings fetch fails
             this.logPollingInterval = setInterval(() => {
-                this.loadLogsFromAPI(appType, true);
+                // Only poll for new logs when on page 1 (latest logs)
+                if (this.currentPage === 1) {
+                    this.loadLogsFromAPI(appType, true);
+                }
             }, 30000);
         });
     },
@@ -315,11 +389,20 @@ window.LogsModule = {
         // Use the correct API endpoint - the backend now supports 'all' as an app_type
         const apiUrl = `/api/logs/${appType}`;
         
-        const limit = isPolling ? 20 : 100; // Load fewer logs when polling for updates
+        // For polling, always get latest logs (offset=0, small limit)
+        // For pagination, use current page and page size
+        let limit, offset;
+        if (isPolling) {
+            limit = 20;
+            offset = 0;
+        } else {
+            limit = this.pageSize;
+            offset = (this.currentPage - 1) * this.pageSize;
+        }
         
         // Include level filter in API call if a specific level is selected
         const currentLogLevel = this.elements.logLevelSelect ? this.elements.logLevelSelect.value : 'all';
-        let apiParams = `limit=${limit}&offset=0`;
+        let apiParams = `limit=${limit}&offset=${offset}`;
         if (currentLogLevel !== 'all') {
             apiParams += `&level=${currentLogLevel.toUpperCase()}`;
         }
@@ -331,6 +414,17 @@ window.LogsModule = {
             .then(data => {
                 if (data.success && data.logs) {
                     this.processLogsFromAPI(data.logs, appType, isPolling);
+                    
+                    // Update pagination info (only on non-polling requests)
+                    if (!isPolling && data.total !== undefined) {
+                        this.totalLogs = data.total;
+                        this.totalPages = Math.max(1, Math.ceil(this.totalLogs / this.pageSize));
+                        console.log(`[LogsModule] Updated pagination: totalLogs=${this.totalLogs}, totalPages=${this.totalPages}, currentPage=${this.currentPage}`);
+                        this.updatePaginationUI();
+                    } else if (isPolling) {
+                        console.log(`[LogsModule] Polling request - not updating pagination. Current: totalLogs=${this.totalLogs}, totalPages=${this.totalPages}, currentPage=${this.currentPage}`);
+                    }
+                    
                     // Update connection status on successful API call (only on initial load, not polling)
                     if (this.elements.logConnectionStatus && !isPolling) {
                         this.elements.logConnectionStatus.textContent = 'Connected';
@@ -727,86 +821,13 @@ window.LogsModule = {
     
     // Filter logs by level
     filterLogsByLevel: function(selectedLevel) {
-        if (!this.elements.logsContainer) return;
+        console.log(`[LogsModule] Filtering logs by level: ${selectedLevel}`);
         
-        const allLogEntries = this.elements.logsContainer.querySelectorAll('.log-entry');
-        let visibleCount = 0;
-        let totalCount = allLogEntries.length;
+        // Reset to first page when changing filter
+        this.currentPage = 1;
         
-        console.log(`[LogsModule] Filtering logs by level: ${selectedLevel}, total entries: ${totalCount}`);
-        
-        allLogEntries.forEach(entry => {
-            entry.removeAttribute('data-hidden-by-filter');
-        });
-        
-        allLogEntries.forEach(entry => {
-            if (selectedLevel === 'all') {
-                entry.style.display = '';
-                visibleCount++;
-            } else {
-                const levelBadge = entry.querySelector('.log-level-badge, .log-level, .log-level-error, .log-level-warning, .log-level-info, .log-level-debug');
-                
-                if (levelBadge) {
-                    let entryLevel = '';
-                    const badgeText = levelBadge.textContent.toLowerCase().trim();
-                    
-                    switch(badgeText) {
-                        case 'information':
-                        case 'info':
-                            entryLevel = 'info';
-                            break;
-                        case 'warning':
-                        case 'warn':
-                            entryLevel = 'warning';
-                            break;
-                        case 'error':
-                            entryLevel = 'error';
-                            break;
-                        case 'debug':
-                            entryLevel = 'debug';
-                            break;
-                        case 'fatal':
-                        case 'critical':
-                            entryLevel = 'error';
-                            break;
-                        default:
-                            if (levelBadge.classList.contains('log-level-error')) {
-                                entryLevel = 'error';
-                            } else if (levelBadge.classList.contains('log-level-warning')) {
-                                entryLevel = 'warning';
-                            } else if (levelBadge.classList.contains('log-level-info')) {
-                                entryLevel = 'info';
-                            } else if (levelBadge.classList.contains('log-level-debug')) {
-                                entryLevel = 'debug';
-                            } else {
-                                entryLevel = null;
-                            }
-                    }
-                    
-                    if (entryLevel && entryLevel === selectedLevel) {
-                        entry.style.display = '';
-                        visibleCount++;
-                    } else {
-                        entry.style.display = 'none';
-                        entry.setAttribute('data-hidden-by-filter', 'true');
-                    }
-                } else {
-                    entry.style.display = 'none';
-                    entry.setAttribute('data-hidden-by-filter', 'true');
-                }
-            }
-        });
-        
-        if (this.autoScroll && this.elements.autoScrollCheckbox && this.elements.autoScrollCheckbox.checked && visibleCount > 0) {
-            setTimeout(() => {
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-            }, 100);
-        }
-        
-        console.log(`[LogsModule] Filtered logs by level '${selectedLevel}': showing ${visibleCount}/${totalCount} entries`);
+        // Reload logs from API with new filter
+        this.loadLogsFromAPI(this.currentLogApp, false);
     },
     
     // Apply filter to single entry
@@ -918,9 +939,64 @@ window.LogsModule = {
         return false;
     },
     
+    // Handle pagination navigation
+    handlePagination: function(direction) {
+        if (direction === 'prev' && this.currentPage > 1) {
+            this.currentPage--;
+            this.loadLogsFromAPI(this.currentLogApp, false);
+        } else if (direction === 'next' && this.currentPage < this.totalPages) {
+            this.currentPage++;
+            this.loadLogsFromAPI(this.currentLogApp, false);
+        }
+    },
+    
+    // Handle page size change
+    handlePageSizeChange: function() {
+        const newPageSize = parseInt(this.elements.logsPageSize.value);
+        if (newPageSize !== this.pageSize) {
+            this.pageSize = newPageSize;
+            this.currentPage = 1; // Reset to first page
+            this.loadLogsFromAPI(this.currentLogApp, false);
+        }
+    },
+    
+    // Update pagination UI elements
+    updatePaginationUI: function() {
+        console.log(`[LogsModule] updatePaginationUI called - currentPage: ${this.currentPage}, totalPages: ${this.totalPages}`);
+        console.log(`[LogsModule] DOM elements found:`, {
+            logsCurrentPage: !!this.elements.logsCurrentPage,
+            logsTotalPages: !!this.elements.logsTotalPages,
+            logsPrevPage: !!this.elements.logsPrevPage,
+            logsNextPage: !!this.elements.logsNextPage
+        });
+        
+        if (this.elements.logsCurrentPage) {
+            this.elements.logsCurrentPage.textContent = this.currentPage;
+            console.log(`[LogsModule] Updated logsCurrentPage to: ${this.currentPage}`);
+        } else {
+            console.warn('[LogsModule] logsCurrentPage element not found!');
+        }
+        
+        if (this.elements.logsTotalPages) {
+            this.elements.logsTotalPages.textContent = this.totalPages;
+            console.log(`[LogsModule] Updated logsTotalPages to: ${this.totalPages}`);
+        } else {
+            console.warn('[LogsModule] logsTotalPages element not found!');
+        }
+        
+        if (this.elements.logsPrevPage) {
+            this.elements.logsPrevPage.disabled = this.currentPage <= 1;
+        }
+        
+        if (this.elements.logsNextPage) {
+            this.elements.logsNextPage.disabled = this.currentPage >= this.totalPages;
+        }
+    },
+    
     // Reset logs to default state
     resetToDefaults: function() {
         this.currentLogApp = 'all';
+        this.currentPage = 1; // Reset pagination
         
         const logAppSelect = document.getElementById('logAppSelect');
         if (logAppSelect && logAppSelect.value !== 'all') {

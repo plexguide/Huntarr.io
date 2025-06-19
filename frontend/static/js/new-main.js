@@ -485,9 +485,8 @@ let huntarrUI = {
                     window.LogsModule.init();
                     console.log('[huntarrUI] LogsModule.init() completed successfully');
                     
-                    console.log('[huntarrUI] Calling LogsModule.connectToLogs()...');
-                    window.LogsModule.connectToLogs();
-                    console.log('[huntarrUI] LogsModule.connectToLogs() completed successfully');
+                    // LogsModule will handle its own connection - don't interfere with pagination
+                    console.log('[huntarrUI] LogsModule initialized - letting it handle its own connections');
                 } catch (error) {
                     console.error('[huntarrUI] Error during LogsModule calls:', error);
                 }
@@ -638,33 +637,15 @@ let huntarrUI = {
         });
         e.target.classList.add('active');
         
-        // Switch to the selected app logs
+        // Let LogsModule handle app switching to preserve pagination
         this.currentApp = app;
-        this.connectToLogs();
+        if (window.LogsModule && typeof window.LogsModule.handleAppChange === 'function') {
+            window.LogsModule.handleAppChange(app);
+        }
     },
     
-    // Log option dropdown handling
-    handleLogOptionChange: function(app) {
-        if (app && app.target && typeof app.target.value === 'string') {
-            app = app.target.value;
-        } else if (app && app.target && typeof app.target.getAttribute === 'function') {
-            app = app.target.getAttribute('data-app');
-        }
-        if (!app || app === this.currentLogApp) return;
-        // Update the select value
-        const logAppSelect = document.getElementById('logAppSelect');
-        if (logAppSelect) logAppSelect.value = app;
-        // Update the current log app text with proper capitalization
-        let displayName = app.charAt(0).toUpperCase() + app.slice(1);
-        if (app === 'whisparr') displayName = 'Whisparr V2';
-        else if (app === 'eros') displayName = 'Whisparr V3';
-
-        if (this.elements.currentLogApp) this.elements.currentLogApp.textContent = displayName;
-        // Switch to the selected app logs
-        this.currentLogApp = app;
-        this.clearLogs();
-        this.connectToLogs();
-    },
+    // Log option dropdown handling - Delegated to LogsModule
+    // (Removed to prevent conflicts with LogsModule.handleLogOptionChange)
     
     // History option dropdown handling
     handleHistoryOptionChange: function(app) {
