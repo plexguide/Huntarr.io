@@ -1126,6 +1126,61 @@
             let accountCreated = false;
             let twoFactorEnabled = false;
             
+            // Function to generate 2FA setup
+            function generate2FA() {
+                console.log('Generating 2FA setup...');
+                
+                // Reset display elements
+                secretKeyElement.textContent = 'Generating...';
+                const qrCodeImg = qrCodeElement.querySelector('img');
+                if (qrCodeImg) {
+                    qrCodeImg.style.display = 'none';
+                }
+                
+                HuntarrUtils.fetchWithTimeout('/api/user/2fa/setup', { method: 'POST' })
+                    .then(response => {
+                        if (response.status === 401) {
+                            throw new Error('Unauthorized - Session likely not established yet.');
+                        }
+                        if (!response.ok) {
+                            return response.json().then(errData => {
+                                throw new Error(errData.error || `Server error: ${response.status}`);
+                            }).catch(() => {
+                                throw new Error(`Server error: ${response.status}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(twoFactorData => {
+                        if (twoFactorData.success) {
+                            const qrCodeImg = qrCodeElement.querySelector('img');
+                            if (qrCodeImg) {
+                                 qrCodeImg.src = twoFactorData.qr_code_url;
+                                 qrCodeImg.style.display = 'block';
+                                 
+                                 qrCodeElement.addEventListener('click', function() {
+                                     openQRModal(twoFactorData.qr_code_url);
+                                 });
+                            } else {
+                                qrCodeElement.innerHTML = `<img src="${twoFactorData.qr_code_url}" alt="QR Code" style="display: block; max-width: 100%; height: auto;">`;
+                                
+                                qrCodeElement.addEventListener('click', function() {
+                                    openQRModal(twoFactorData.qr_code_url);
+                                });
+                            }
+                            secretKeyElement.textContent = twoFactorData.secret;
+                            console.log('2FA setup generated successfully');
+                        } else {
+                            console.error('2FA generation failed:', twoFactorData.error);
+                            secretKeyElement.textContent = 'Failed to generate';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error generating 2FA:', error);
+                        secretKeyElement.textContent = 'Failed to generate';
+                    });
+            }
+
             // Show a specific step - make this global
             window.showStep = function(step) {
                 console.log('showStep called with step:', step);
@@ -1162,6 +1217,8 @@
                         verificationCodeInput.value = '';
                         console.log('Cleared verification code field');
                     }
+                    // Generate 2FA setup when entering step 2 (either first time or restored)
+                    setTimeout(() => generate2FA(), 500);
                 } else if (step === 3) {
                     document.getElementById('accountSetup').classList.remove('active');
                     document.getElementById('twoFactorSetup').classList.remove('active');
@@ -1312,48 +1369,8 @@
                         }
                         console.log('Account created successfully. User credentials should be saved to credentials.json');
                         
-                        // Generate 2FA setup
-                        HuntarrUtils.fetchWithTimeout('/api/user/2fa/setup', { method: 'POST' })
-                            .then(response => {
-                                if (response.status === 401) {
-                                    throw new Error('Unauthorized - Session likely not established yet.');
-                                }
-                                if (!response.ok) {
-                                    return response.json().then(errData => {
-                                        throw new Error(errData.error || `Server error: ${response.status}`);
-                                    }).catch(() => {
-                                        throw new Error(`Server error: ${response.status}`);
-                                    });
-                                }
-                                return response.json();
-                            })
-                            .then(twoFactorData => {
-                                if (twoFactorData.success) {
-                                    const qrCodeImg = qrCodeElement.querySelector('img');
-                                    if (qrCodeImg) {
-                                         qrCodeImg.src = twoFactorData.qr_code_url;
-                                         qrCodeImg.style.display = 'block';
-                                         
-                                         qrCodeElement.addEventListener('click', function() {
-                                             openQRModal(twoFactorData.qr_code_url);
-                                         });
-                                    } else {
-                                        qrCodeElement.innerHTML = `<img src="${twoFactorData.qr_code_url}" alt="QR Code" style="display: block; max-width: 100%; height: auto;">`;
-                                        
-                                        qrCodeElement.addEventListener('click', function() {
-                                            openQRModal(twoFactorData.qr_code_url);
-                                        });
-                                    }
-                                    secretKeyElement.textContent = twoFactorData.secret;
-                                    showStep(2);
-                                } else {
-                                    showError('Failed to generate 2FA setup: ' + (twoFactorData.error || 'Unknown error'));
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error generating 2FA:', error);
-                                showError('Failed to generate 2FA setup: ' + error.message);
-                            });
+                        // Show step 2 - 2FA generation will be triggered automatically by showStep
+                        showStep(2);
                     } else {
                         showError(data.error || 'Account creation failed. Please try again.');
                     }
