@@ -67,6 +67,8 @@ const SettingsForms = {
             const huntUpgradeItems = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
             const huntMissingMode = instance.hunt_missing_mode || 'seasons_packs';
             const upgradeMode = instance.upgrade_mode || 'seasons_packs';
+            const stateManagementMode = instance.state_management_mode || 'global';
+            const stateManagementHours = instance.state_management_hours || 168;
             
             instancesHtml += `
                 <div class="instance-item" data-instance-id="${index}">
@@ -131,6 +133,48 @@ const SettingsForms = {
                             <p class="setting-help">How to search for upgrades for this instance (Season Packs recommended)</p>
                             <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: ${upgradeMode === 'episodes' ? 'block' : 'none'};" id="episodes-upgrade-warning-${index}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
                         </div>
+                        
+                        <!-- Instance State Management -->
+                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
+                            <label for="sonarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
+                            <select id="sonarr-state-management-mode-${index}" name="state_management_mode" style="width: 200px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                                <option value="global" ${stateManagementMode === 'global' ? 'selected' : ''}>Use Global Setting</option>
+                                <option value="custom" ${stateManagementMode === 'custom' ? 'selected' : ''}>Custom for Instance</option>
+                                <option value="disabled" ${stateManagementMode === 'disabled' ? 'selected' : ''}>Disabled</option>
+                            </select>
+                            <p class="setting-help">Control how processed media state is managed for this specific instance</p>
+                        </div>
+                        
+                        <!-- Custom State Management Hours (only visible when custom mode is selected) -->
+                        <div class="setting-item" id="sonarr-custom-state-hours-${index}" style="display: ${stateManagementMode === 'custom' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
+                            <label for="sonarr-state-management-hours-${index}" style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-clock" style="color: #6366f1;"></i>
+                                Custom Reset Hours:
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                <input type="number" id="sonarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${stateManagementHours}" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
+                                <span style="color: #9ca3af; font-size: 14px;">
+                                    hours (<span id="sonarr-state-days-display-${index}">${(stateManagementHours / 24).toFixed(1)}</span> days)
+                                </span>
+                            </div>
+                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                This instance will reset its state every <span id="sonarr-state-hours-text-${index}">${stateManagementHours}</span> hours, independent of the global setting
+                            </p>
+                        </div>
+                        
+                        <!-- State Status Display (compact version) -->
+                        <div class="setting-item" id="sonarr-state-status-${index}" style="display: ${stateManagementMode !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.4), rgba(30, 39, 56, 0.3)); border: 1px solid rgba(90, 109, 137, 0.1); border-radius: 6px;">
+                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 15px; font-size: 13px;">
+                                <span style="color: #9ca3af; font-weight: 500;">Status:</span>
+                                <span id="sonarr-state-status-text-${index}" style="color: #10b981;">Active (${stateManagementMode === 'global' ? 'Global' : stateManagementMode === 'custom' ? 'Custom' : 'Disabled'})</span>
+                                <span style="color: #9ca3af; font-weight: 500;">Next Reset:</span>
+                                <span id="sonarr-state-reset-time-${index}" style="color: #d1d5db;">Loading...</span>
+                                <span style="color: #9ca3af; font-weight: 500;">Items Tracked:</span>
+                                <span id="sonarr-state-items-count-${index}" style="color: #d1d5db;">Loading...</span>
+                            </div>
+                        </div>
+                        
                         <div class="setting-item">
                             <label for="sonarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative; ${this.isSwaparrGloballyEnabled() ? '' : 'opacity: 0.5; pointer-events: none;'}">
@@ -226,6 +270,15 @@ const SettingsForms = {
         // Setup instance management (add/remove/test)
         SettingsForms.setupInstanceManagement(container, 'sonarr', settings.instances.length);
         
+        // Load state information for each instance
+        settings.instances.forEach((instance, index) => {
+            if (typeof huntarrUI !== 'undefined' && huntarrUI.loadInstanceStateInfo) {
+                setTimeout(() => {
+                    huntarrUI.loadInstanceStateInfo('sonarr', index);
+                }, 500); // Small delay to ensure DOM is ready
+            }
+        });
+        
         // Add event listeners for custom tags visibility
         const tagProcessedItemsToggle = container.querySelector('#sonarr_tag_processed_items');
         const customTagFields = [
@@ -244,7 +297,7 @@ const SettingsForms = {
             });
         }
         
-        // Add event listeners for per-instance episode mode warnings
+        // Add event listeners for per-instance episode mode warnings and state management
         settings.instances.forEach((instance, index) => {
             const huntMissingModeSelect = container.querySelector(`#sonarr-hunt-missing-mode-${index}`);
             const upgradeModelSelect = container.querySelector(`#sonarr-upgrade-mode-${index}`);
@@ -267,6 +320,58 @@ const SettingsForms = {
                         episodesUpgradeWarning.style.display = 'block';
                     } else {
                         episodesUpgradeWarning.style.display = 'none';
+                    }
+                });
+            }
+            
+            // State management mode change listeners
+            const stateManagementModeSelect = container.querySelector(`#sonarr-state-management-mode-${index}`);
+            const customStateHours = container.querySelector(`#sonarr-custom-state-hours-${index}`);
+            const stateStatus = container.querySelector(`#sonarr-state-status-${index}`);
+            const stateStatusText = container.querySelector(`#sonarr-state-status-text-${index}`);
+            
+            if (stateManagementModeSelect) {
+                stateManagementModeSelect.addEventListener('change', function() {
+                    const mode = this.value;
+                    
+                    // Show/hide custom hours section
+                    if (customStateHours) {
+                        customStateHours.style.display = mode === 'custom' ? 'block' : 'none';
+                    }
+                    
+                    // Show/hide state status section
+                    if (stateStatus) {
+                        stateStatus.style.display = mode !== 'disabled' ? 'block' : 'none';
+                    }
+                    
+                    // Update status text
+                    if (stateStatusText) {
+                        const statusText = mode === 'global' ? 'Active (Global)' : 
+                                         mode === 'custom' ? 'Active (Custom)' : 
+                                         'Disabled';
+                        const statusColor = mode === 'disabled' ? '#ef4444' : '#10b981';
+                        stateStatusText.textContent = statusText;
+                        stateStatusText.style.color = statusColor;
+                    }
+                });
+            }
+            
+            // Custom hours input change listener
+            const stateHoursInput = container.querySelector(`#sonarr-state-management-hours-${index}`);
+            const stateDaysDisplay = container.querySelector(`#sonarr-state-days-display-${index}`);
+            const stateHoursText = container.querySelector(`#sonarr-state-hours-text-${index}`);
+            
+            if (stateHoursInput) {
+                stateHoursInput.addEventListener('input', function() {
+                    const hours = parseInt(this.value) || 168;
+                    const days = (hours / 24).toFixed(1);
+                    
+                    if (stateDaysDisplay) {
+                        stateDaysDisplay.textContent = days;
+                    }
+                    
+                    if (stateHoursText) {
+                        stateHoursText.textContent = hours;
                     }
                 });
             }
@@ -1995,6 +2100,10 @@ const SettingsForms = {
                 const huntMissingModeInput = instance.querySelector('select[name="hunt_missing_mode"]');
                 const upgradeModeInput = instance.querySelector('select[name="upgrade_mode"]');
                 
+                // Get per-instance state management settings (for Sonarr)
+                const stateManagementModeInput = instance.querySelector('select[name="state_management_mode"]');
+                const stateManagementHoursInput = instance.querySelector('input[name="state_management_hours"]');
+                
                 // Get quality profile selectors for Radarr
                 const missingQualityProfileInput = instance.querySelector('select[name="missing_quality_profile"]');
                 const upgradeQualityProfileInput = instance.querySelector('select[name="upgrade_quality_profile"]');
@@ -2029,6 +2138,8 @@ const SettingsForms = {
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
                     instanceObj.hunt_missing_mode = huntMissingModeInput ? huntMissingModeInput.value : 'seasons_packs';
                     instanceObj.upgrade_mode = upgradeModeInput ? upgradeModeInput.value : 'seasons_packs';
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'global';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'radarr') {
                     instanceObj.hunt_missing_movies = huntMissingItems;
                     instanceObj.hunt_upgrade_movies = huntUpgradeItems;
@@ -2065,6 +2176,8 @@ const SettingsForms = {
                     defaultInstance.hunt_upgrade_items = 0;
                     defaultInstance.hunt_missing_mode = 'seasons_packs';
                     defaultInstance.upgrade_mode = 'seasons_packs';
+                    defaultInstance.state_management_mode = 'global';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'radarr') {

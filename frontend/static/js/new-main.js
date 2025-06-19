@@ -3539,6 +3539,41 @@ let huntarrUI = {
         if (/^[a-z]{1,8}\s*[A-Z]/i.test(trimmed) && trimmed.includes(':')) return true;
         
         return false;
+    },
+    
+    // Load instance-specific state management information
+    loadInstanceStateInfo: function(appType, instanceIndex) {
+        if (appType !== 'sonarr') return; // Only for Sonarr for now
+        
+        // Load state information for this specific instance
+        HuntarrUtils.fetchWithTimeout('./api/stateful/info', {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data) {
+                this.updateInstanceStateDisplay(appType, instanceIndex, data);
+            }
+        })
+        .catch(error => {
+            console.error(`[huntarrUI] Error loading state info for ${appType} instance ${instanceIndex}:`, error);
+        });
+    },
+    
+    // Update the instance state management display
+    updateInstanceStateDisplay: function(appType, instanceIndex, stateData) {
+        const resetTimeElement = document.getElementById(`${appType}-state-reset-time-${instanceIndex}`);
+        const itemsCountElement = document.getElementById(`${appType}-state-items-count-${instanceIndex}`);
+        
+        if (resetTimeElement && stateData.expires_at_ts) {
+            const resetDate = new Date(stateData.expires_at_ts * 1000);
+            resetTimeElement.textContent = resetDate.toLocaleString();
+        }
+        
+        if (itemsCountElement) {
+            // For now, show a placeholder until we implement per-instance tracking
+            itemsCountElement.textContent = 'Global tracking';
+        }
     }
 };
 
