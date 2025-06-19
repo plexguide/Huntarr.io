@@ -154,6 +154,9 @@ conn = sqlite3.connect('/config/huntarr.db')
 - ❌ Hard-coded database paths: `/config/huntarr.db`
 - ❌ JSON file operations for persistent data
 - ❌ Not testing both Docker and local database operations
+- ❌ Bypassing Synology optimizations with direct SQLite configuration
+- ❌ Using `PRAGMA synchronous = FULL` outside of `_configure_connection()`
+- ❌ Not testing database performance on network file systems
 
 ### Frontend Anti-Patterns
 - ❌ Absolute URLs: `/api/endpoint`, `window.location.href = '/'`
@@ -204,6 +207,7 @@ conn = sqlite3.connect('/config/huntarr.db')
 7. Global state lock usage: `grep -r "stateful_lock" src/ --include="*.py" | grep -v "stateful_instance_locks"`
 8. Inconsistent app styling: `grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js"`
 9. Logs pagination conflicts: `grep -r "updateLogsPagination\|updatePagination" frontend/ --include="*.html" --include="*.js" | grep -v "LogsModule"`
+10. Synology optimization bypasses: `grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection"`
 
 ### Violation Scanning Commands
 ```bash
@@ -219,6 +223,7 @@ echo "7. Global state lock violations: $(grep -r "stateful_lock" src/ --include=
 echo "8. Inconsistent app styling violations: $(grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js" | wc -l)"
 echo "9. Logs pagination conflict violations: $(grep -r "updateLogsPagination\|updatePagination" frontend/ --include="*.html" --include="*.js" | grep -v "LogsModule" | wc -l)"
 echo "10. Hunt Manager non-Sonarr clickable links: $(grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l)"
+echo "11. Synology optimization bypass violations: $(grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection" | wc -l)"
 ```
 
 ## 📊 SPECIFIC BUG PATTERNS TO AVOID
@@ -234,6 +239,18 @@ echo "10. Hunt Manager non-Sonarr clickable links: $(grep -r "isClickable.*entry
 ### GitHub Issue #629 Pattern (Windows Database Access)
 - Use DatabaseManager with proper Windows AppData support
 - Never hard-code database paths
+
+### GitHub Issue #615 Pattern (Synology NAS Performance Issues)
+- Synology NAS systems experience severe SQLite performance issues with default settings
+- Root cause: Network file systems (NFS/CIFS) perform poorly with `PRAGMA synchronous = FULL`
+- Symptoms: 20-39 second database operations, "database is locked" errors, general slowness
+- Solution: Automatic Synology detection with optimized SQLite settings
+- Detection methods: `/usr/syno`, `/etc/synoinfo.conf`, `SYNOPKG_PKGNAME` env var, hostname patterns
+- Optimized settings: `synchronous=NORMAL`, 40MB cache, 30s timeout, 128MB mmap, less frequent checkpoints
+- User control: `HUNTARR_SYNOLOGY_OPTIMIZATIONS=false` to disable optimizations
+- Expected improvement: 70-90% performance boost on Synology systems
+- Safety: WAL mode, integrity checks, and error handling preserved
+- File: `/src/primary/utils/database.py` - `_detect_synology_nas()` and `_configure_connection()` methods
 
 ### Frontend Log Regex Issues
 - Malformed regex with double backslashes
@@ -319,6 +336,11 @@ sqlite3 ./data/huntarr.db ".tables"
 
 # Test DatabaseManager operations
 python3 -c "from src.primary.utils.database import DatabaseManager; db = DatabaseManager(); print('Database path:', db.db_path)"
+
+# Synology-specific debugging
+docker exec huntarr python3 -c "from src.primary.utils.database import HuntarrDatabase; db = HuntarrDatabase(); print('Synology detected:', db._detect_synology_nas())"
+docker logs huntarr | grep -i "synology\|optimization"
+docker exec huntarr sqlite3 /config/huntarr.db "PRAGMA synchronous; PRAGMA cache_size; PRAGMA mmap_size;"
 ```
 
 ### Subpath Deployment Debugging
