@@ -362,10 +362,15 @@ def get_state_management_summary(app_type: str, instance_name: str, instance_hou
         if lock_info and lock_info.get("expires_at"):
             import datetime
             expires_at = lock_info["expires_at"]
-            next_reset_time = datetime.datetime.fromtimestamp(expires_at).strftime('%Y-%m-%d %H:%M:%S')
+            # Convert to user timezone for display
+            user_tz = _get_user_timezone()
+            utc_time = datetime.datetime.fromtimestamp(expires_at, tz=datetime.timezone.utc)
+            local_time = utc_time.astimezone(user_tz)
+            next_reset_time = local_time.strftime('%Y-%m-%d %H:%M:%S')
         else:
-            # Fallback to calculated time
-            next_reset_time = get_next_reset_time_for_instance(expiration_hours, app_type)
+            # This should not happen since initialize_instance_state_management was called above
+            stateful_logger.warning(f"No lock info found for {app_type}/{instance_name} after initialization")
+            next_reset_time = None
         
         return {
             "processed_count": processed_count,

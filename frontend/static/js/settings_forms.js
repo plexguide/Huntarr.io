@@ -387,11 +387,8 @@ const SettingsForms = {
                         stateHoursText.textContent = hours;
                     }
                     
-                    // Update reset time calculation
-                    if (resetTimeElement) {
-                        const resetTime = new Date(Date.now() + (hours * 60 * 60 * 1000));
-                        resetTimeElement.textContent = resetTime.toLocaleString();
-                    }
+                    // Don't calculate reset time here - let the server provide the locked time
+                    // The reset time should come from the database lock, not be calculated from current time
                 });
             }
         });
@@ -409,9 +406,34 @@ const SettingsForms = {
         const supportedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
         if (!supportedApps.includes(appType)) return;
         
-        const instanceName = document.querySelector(`#${appType}-name-${instanceIndex}`)?.value || `Instance ${instanceIndex + 1}`;
+        // Use consistent instance name detection logic (same as loadInstanceStateInfo)
+        let instanceName = null;
         
-        console.log(`[SettingsForms] Resetting state for ${appType} instance ${instanceIndex} (${instanceName})`);
+        // Method 1: Try the name input field
+        const instanceNameElement = document.querySelector(`#${appType}-name-${instanceIndex}`);
+        if (instanceNameElement && instanceNameElement.value && instanceNameElement.value.trim()) {
+            instanceName = instanceNameElement.value.trim();
+        }
+        
+        // Method 2: Try to get from the instance header/title
+        if (!instanceName) {
+            const instanceHeader = document.querySelector(`#${appType}-instance-${instanceIndex} h3, #${appType}-instance-${instanceIndex} .instance-title, .instance-header h4`);
+            if (instanceHeader && instanceHeader.textContent) {
+                // Extract instance name from header text like "Instance 1: Default" or "Instance 2: EP Mode"
+                const headerText = instanceHeader.textContent.trim();
+                const match = headerText.match(/Instance \d+:\s*(.+)$/);
+                if (match && match[1]) {
+                    instanceName = match[1].trim();
+                }
+            }
+        }
+        
+        // Method 3: Fallback to Default for first instance, descriptive name for others
+        if (!instanceName) {
+            instanceName = instanceIndex === 0 ? 'Default' : `Instance ${instanceIndex + 1}`;
+        }
+        
+        console.log(`[SettingsForms] Resetting state for ${appType}/${instanceName} (index ${instanceIndex})`);
         
         // Call the reset API endpoint 
         HuntarrUtils.fetchWithTimeout('./api/stateful/reset', {
@@ -427,7 +449,7 @@ const SettingsForms = {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Show success message
+                // Show success message and reload state info from server
                 const itemsCountElement = document.getElementById(`${appType}-state-items-count-${instanceIndex}`);
                 const resetTimeElement = document.getElementById(`${appType}-state-reset-time-${instanceIndex}`);
                 
@@ -435,12 +457,11 @@ const SettingsForms = {
                     itemsCountElement.textContent = '0';
                 }
                 
-                if (resetTimeElement) {
-                    // Calculate new reset time based on custom hours
-                    const hoursInput = document.getElementById(`${appType}-state-management-hours-${instanceIndex}`);
-                    const hours = parseInt(hoursInput?.value) || 168;
-                    const resetTime = new Date(Date.now() + (hours * 60 * 60 * 1000));
-                    resetTimeElement.textContent = resetTime.toLocaleString();
+                // Reload state information from server to get accurate reset time
+                if (resetTimeElement && typeof huntarrUI !== 'undefined' && typeof huntarrUI.loadInstanceStateInfo === 'function') {
+                    huntarrUI.loadInstanceStateInfo(appType, instanceIndex);
+                } else if (resetTimeElement) {
+                    resetTimeElement.textContent = 'Reloading...';
                 }
                 
                 console.log(`[SettingsForms] Successfully reset state for ${appType} instance ${instanceIndex}`);
@@ -471,7 +492,26 @@ const SettingsForms = {
                     const instanceIndex = parseInt(match[2]);
                     
                     // Confirm before resetting
-                    const instanceName = document.querySelector(`#${appType}-name-${instanceIndex}`)?.value || `Instance ${instanceIndex + 1}`;
+                    // Use consistent instance name detection (same as resetInstanceState)
+                    let instanceName = null;
+                    const instanceNameElement = document.querySelector(`#${appType}-name-${instanceIndex}`);
+                    if (instanceNameElement && instanceNameElement.value && instanceNameElement.value.trim()) {
+                        instanceName = instanceNameElement.value.trim();
+                    }
+                    if (!instanceName) {
+                        const instanceHeader = document.querySelector(`#${appType}-instance-${instanceIndex} h3, #${appType}-instance-${instanceIndex} .instance-title, .instance-header h4`);
+                        if (instanceHeader && instanceHeader.textContent) {
+                            const headerText = instanceHeader.textContent.trim();
+                            const match = headerText.match(/Instance \d+:\s*(.+)$/);
+                            if (match && match[1]) {
+                                instanceName = match[1].trim();
+                            }
+                        }
+                    }
+                    if (!instanceName) {
+                        instanceName = instanceIndex === 0 ? 'Default' : `Instance ${instanceIndex + 1}`;
+                    }
+                    
                     if (confirm(`Are you sure you want to reset the state for ${appType} instance "${instanceName}"? This will clear all tracked processed items.`)) {
                         this.resetInstanceState(appType, instanceIndex);
                     }
@@ -765,11 +805,8 @@ const SettingsForms = {
                         stateHoursText.textContent = hours;
                     }
                     
-                    // Update reset time calculation
-                    if (resetTimeElement) {
-                        const resetTime = new Date(Date.now() + (hours * 60 * 60 * 1000));
-                        resetTimeElement.textContent = resetTime.toLocaleString();
-                    }
+                    // Don't calculate reset time here - let the server provide the locked time
+                    // The reset time should come from the database lock, not be calculated from current time
                 });
             }
         });

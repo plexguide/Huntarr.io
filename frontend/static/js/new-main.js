@@ -3507,10 +3507,37 @@ let huntarrUI = {
         const supportedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
         if (!supportedApps.includes(appType)) return;
         
+        // Try multiple methods to get the correct instance name
+        let instanceName = null;
+        
+        // Method 1: Try the name input field
         const instanceNameElement = document.getElementById(`${appType}-name-${instanceIndex}`);
-        const instanceName = instanceNameElement?.value || `Instance ${instanceIndex + 1}`;
+        if (instanceNameElement && instanceNameElement.value && instanceNameElement.value.trim()) {
+            instanceName = instanceNameElement.value.trim();
+        }
+        
+        // Method 2: Try to get from the instance header/title
+        if (!instanceName) {
+            const instanceHeader = document.querySelector(`#${appType}-instance-${instanceIndex} h3, #${appType}-instance-${instanceIndex} .instance-title`);
+            if (instanceHeader && instanceHeader.textContent) {
+                // Extract instance name from header text like "Instance 1: Default" or "Instance 2: EP Mode"
+                const headerText = instanceHeader.textContent.trim();
+                const match = headerText.match(/Instance \d+:\s*(.+)$/);
+                if (match && match[1]) {
+                    instanceName = match[1].trim();
+                }
+            }
+        }
+        
+        // Method 3: Fallback to Default for first instance, descriptive name for others
+        if (!instanceName) {
+            instanceName = instanceIndex === 0 ? 'Default' : `Instance ${instanceIndex + 1}`;
+        }
+        
         const hoursInput = document.getElementById(`${appType}-state-management-hours-${instanceIndex}`);
         const customHours = parseInt(hoursInput?.value) || 168;
+        
+        console.log(`[huntarrUI] Loading state info for ${appType}/${instanceName} (index ${instanceIndex})`);
         
         // Load state information for this specific instance using per-instance API
         HuntarrUtils.fetchWithTimeout(`./api/stateful/summary?app_type=${appType}&instance_name=${encodeURIComponent(instanceName)}`, {
@@ -3518,10 +3545,11 @@ let huntarrUI = {
         })
         .then(response => response.json())
         .then(summaryData => {
+            console.log(`[huntarrUI] State data for ${appType}/${instanceName}:`, summaryData);
             this.updateInstanceStateDisplay(appType, instanceIndex, summaryData, instanceName, customHours);
         })
         .catch(error => {
-            console.error(`[huntarrUI] Error loading state info for ${appType} instance ${instanceIndex}:`, error);
+            console.error(`[huntarrUI] Error loading state info for ${appType}/${instanceName} (index ${instanceIndex}):`, error);
             // Fallback to default display
             this.updateInstanceStateDisplay(appType, instanceIndex, null, instanceName, customHours);
         });
@@ -3532,14 +3560,14 @@ let huntarrUI = {
         const resetTimeElement = document.getElementById(`${appType}-state-reset-time-${instanceIndex}`);
         const itemsCountElement = document.getElementById(`${appType}-state-items-count-${instanceIndex}`);
         
-        // Update reset time from server data or calculate fallback
+        // Update reset time from server data ONLY - no fallback calculations
         if (resetTimeElement) {
             if (summaryData && summaryData.next_reset_time) {
                 resetTimeElement.textContent = summaryData.next_reset_time;
             } else {
-                // Fallback calculation
-                const resetTime = new Date(Date.now() + (customHours * 60 * 60 * 1000));
-                resetTimeElement.textContent = resetTime.toLocaleString();
+                // Show error state - server should always provide this
+                console.error(`[huntarrUI] No next_reset_time provided by server for ${appType}/${instanceName}`);
+                resetTimeElement.textContent = 'Error loading time';
             }
         }
         
