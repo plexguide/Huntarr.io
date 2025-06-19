@@ -96,11 +96,11 @@ def process_missing_albums(
             
             lidarr_logger.info(f"Retrieved {len(missing_albums_data)} missing albums from random page selection.")
             
-            # Convert to the expected format for album processing
+            # Convert to the expected format for album processing - keep IDs as integers
             unprocessed_entities = []
             for album in missing_albums_data:
-                album_id = str(album.get("id"))
-                if not is_processed("lidarr", instance_name, album_id):
+                album_id = album.get("id")  # Keep as integer, don't convert to string
+                if album_id and not is_processed("lidarr", instance_name, str(album_id)):  # Convert to string only for processed check
                     unprocessed_entities.append(album_id)
             
             search_entity_type = "album"
@@ -142,25 +142,15 @@ def process_missing_albums(
             lidarr_logger.info(f"Found {len(unprocessed_entities)} unprocessed artists out of {len(target_entities)} total")
             search_entity_type = "artist"
         else:
-            # In album mode, directly track album IDs
-            target_entities = [item['id'] for item in missing_albums_data]
-            
-            # Filter out processed albums
-            lidarr_logger.info(f"Found {len(target_entities)} missing albums before filtering")
-            unprocessed_entities = [eid for eid in target_entities 
-                                   if not is_processed("lidarr", instance_name, str(eid))]
-            
-            lidarr_logger.info(f"Found {len(unprocessed_entities)} unprocessed albums out of {len(target_entities)} total")
+            # Fallback case - this should not normally be reached
+            lidarr_logger.error(f"Invalid hunt_missing_mode: {hunt_missing_mode}. Expected 'album' or 'artist'.")
+            return False
         
         if not unprocessed_entities:
             lidarr_logger.info(f"No unprocessed {search_entity_type}s found for {instance_name}. All available {search_entity_type}s have been processed.")
             return False
             
         # Select entities to search
-        if not unprocessed_entities:
-            lidarr_logger.info(f"No {search_entity_type}s found to process after grouping/filtering.")
-            return False
-
         entities_to_search_ids = random.sample(unprocessed_entities, min(len(unprocessed_entities), total_items_to_process))
         lidarr_logger.info(f"Randomly selected {len(entities_to_search_ids)} {search_entity_type}s to search.")
         lidarr_logger.debug(f"Unprocessed entities: {unprocessed_entities}")

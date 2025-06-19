@@ -101,8 +101,8 @@ def process_cutoff_upgrades(
         # Filter out already processed items
         unprocessed_albums = []
         for album in cutoff_unmet_data:
-            album_id = str(album.get('id'))
-            if not is_processed("lidarr", instance_name, album_id):
+            album_id = album.get('id')  # Keep as integer
+            if album_id and not is_processed("lidarr", instance_name, str(album_id)):  # Convert to string only for processed check
                 unprocessed_albums.append(album)
             else:
                 lidarr_logger.debug(f"Skipping already processed album ID: {album_id}")
