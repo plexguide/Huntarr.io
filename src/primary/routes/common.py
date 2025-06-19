@@ -130,7 +130,21 @@ def login_route():
         # If user already exists, show login, otherwise redirect to setup
         if not user_exists():
              logger.info("No user exists, redirecting to setup.")
-             return redirect(url_for('common.setup'))
+             
+             # Get the base URL from settings to ensure proper subpath redirect
+             try:
+                 from src.primary.settings_manager import get_setting
+                 base_url = get_setting('general', 'base_url', '')
+                 if base_url and not base_url.startswith('/'):
+                     base_url = f'/{base_url}'
+                 if base_url and base_url.endswith('/'):
+                     base_url = base_url.rstrip('/')
+                 setup_url = f"{base_url}/setup" if base_url else "/setup"
+                 logger.debug(f"Redirecting to setup with base URL: {setup_url}")
+                 return redirect(setup_url)
+             except Exception as e:
+                 logger.warning(f"Error getting base URL for setup redirect: {e}")
+                 return redirect(url_for('common.setup'))
         
         # Check if any users have Plex authentication configured
         try:

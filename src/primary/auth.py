@@ -325,7 +325,21 @@ def authenticate_request():
     if not user_exists():
         if not is_polling_endpoint:
             logger.debug(f"No user exists, redirecting to setup")
-        return redirect(url_for("common.setup"))
+        
+        # Get the base URL from settings to ensure proper subpath redirect
+        try:
+            from src.primary.settings_manager import get_setting
+            base_url = get_setting('general', 'base_url', '')
+            if base_url and not base_url.startswith('/'):
+                base_url = f'/{base_url}'
+            if base_url and base_url.endswith('/'):
+                base_url = base_url.rstrip('/')
+            setup_url = f"{base_url}/setup" if base_url else "/setup"
+            logger.debug(f"Redirecting to setup with base URL: {setup_url}")
+            return redirect(setup_url)
+        except Exception as e:
+            logger.warning(f"Error getting base URL for setup redirect: {e}")
+            return redirect(url_for("common.setup"))
     
     # Skip authentication for login pages, Plex auth endpoints, recovery key endpoints, and setup-related user endpoints
     recovery_key_path = "/auth/recovery-key"
@@ -453,7 +467,21 @@ def authenticate_request():
     # No valid session, redirect to login
     if not is_polling_endpoint:
         logger.debug(f"Redirecting to login for path '{request.path}'")
-    return redirect(url_for("common.login_route"))
+    
+    # Get the base URL from settings to ensure proper subpath redirect
+    try:
+        from src.primary.settings_manager import get_setting
+        base_url = get_setting('general', 'base_url', '')
+        if base_url and not base_url.startswith('/'):
+            base_url = f'/{base_url}'
+        if base_url and base_url.endswith('/'):
+            base_url = base_url.rstrip('/')
+        login_url = f"{base_url}/login" if base_url else "/login"
+        logger.debug(f"Redirecting to login with base URL: {login_url}")
+        return redirect(login_url)
+    except Exception as e:
+        logger.warning(f"Error getting base URL for login redirect: {e}")
+        return redirect(url_for("common.login_route"))
 
 def logout(session_id: str):
     """Log out the current user by invalidating their session"""
