@@ -10,6 +10,7 @@ services:
       - huntarr-config:/config
     environment:
       - TZ=${TZ:-UTC}
+      - BASE_URL=${BASE_URL:-}
     restart: unless-stopped
 
 volumes:

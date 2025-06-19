@@ -438,6 +438,48 @@ def initialize_timezone_from_env():
     except Exception as e:
         settings_logger.error(f"Error initializing timezone from environment: {e}")
 
+def initialize_base_url_from_env():
+    """Initialize base_url setting from BASE_URL environment variable if not already set."""
+    try:
+        # Get the BASE_URL environment variable
+        base_url_env = os.environ.get('BASE_URL')
+        if not base_url_env:
+            settings_logger.info("No BASE_URL environment variable found, using default (no subpath)")
+            return
+
+        # Clean up the environment variable value
+        base_url_env = base_url_env.strip()
+        
+        # Ensure it starts with / if not empty
+        if base_url_env and not base_url_env.startswith('/'):
+            base_url_env = f'/{base_url_env}'
+        
+        # Remove trailing slash if present (except for root)
+        if base_url_env and base_url_env != '/' and base_url_env.endswith('/'):
+            base_url_env = base_url_env.rstrip('/')
+
+        # Load current general settings
+        general_settings = load_settings("general")
+        current_base_url = general_settings.get("base_url", "").strip()
+        
+        # If base_url is not set in settings, initialize it from BASE_URL environment variable
+        if not current_base_url:
+            settings_logger.info(f"Initializing base_url from BASE_URL environment variable: {base_url_env}")
+           
+            # Update the settings with the base_url
+            general_settings["base_url"] = base_url_env
+            save_settings("general", general_settings)
+            
+            # Clear cache to ensure new settings are loaded
+            clear_cache("general")
+            
+            settings_logger.info(f"Successfully initialized base_url to {base_url_env}")
+        else:
+            settings_logger.debug(f"Base URL already configured in settings: {current_base_url}, not overriding with environment variable")
+            
+    except Exception as e:
+        settings_logger.error(f"Error initializing base_url from environment: {e}")
+
 # Add a list of known advanced settings for clarity and documentation
 ADVANCED_SETTINGS = [
     "api_timeout", 

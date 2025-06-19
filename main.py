@@ -124,6 +124,8 @@ try:
     except Exception as e:
         huntarr_logger.warning(f"Failed to initialize timezone from environment: {e}")
     
+
+    
     # Initialize clean logging for frontend consumption
     setup_clean_logging()
     huntarr_logger.info("Clean logging system initialized for frontend consumption.")
@@ -416,6 +418,20 @@ def main():
         from primary.settings_manager import initialize_database
         initialize_database()
         huntarr_logger.info("Main database initialization completed successfully")
+        
+        # Initialize base URL from BASE_URL environment variable early
+        # This needs to happen before web server initialization
+        try:
+            from primary.settings_manager import initialize_base_url_from_env
+            initialize_base_url_from_env()
+            huntarr_logger.info("Base URL initialization completed.")
+            
+            # Reconfigure the web server with the updated base URL
+            from primary.web_server import reconfigure_base_url
+            reconfigure_base_url()
+            huntarr_logger.info("Web server reconfigured with updated base URL.")
+        except Exception as e:
+            huntarr_logger.warning(f"Failed to initialize base URL from environment: {e}")
         
         # Initialize database logging system (now uses main huntarr.db)
         try:
