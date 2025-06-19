@@ -189,20 +189,12 @@ def configure_base_url():
         if base_url:
             print(f"Configuring base URL: {base_url}")
             app.config['APPLICATION_ROOT'] = base_url
-            # Flask 1.x compatibility - needed for proper URL generation
-            if not hasattr(app, 'wsgi_app') or not hasattr(app.wsgi_app, '__call__'):
-                print("Warning: Unable to configure WSGI middleware for base URL")
-            else:
-                # This ensures static files and other routes respect the base URL
-                from werkzeug.middleware.dispatcher import DispatcherMiddleware
-                from werkzeug.exceptions import NotFound
-                app.wsgi_app = DispatcherMiddleware(
-                    NotFound(),  # Default 404 app when accessed without base URL
-                    {base_url: app.wsgi_app}  # Main app mounted at base URL
-                )
-                print(f"WSGI middleware configured for base URL: {base_url}")
+            print(f"Flask APPLICATION_ROOT set to: {base_url}")
         else:
             print("Running at root URL path (no base URL)")
+            # Set APPLICATION_ROOT to None when no base URL (Flask requires this key to exist)
+            app.config['APPLICATION_ROOT'] = None
+            print("Set APPLICATION_ROOT to None (no base URL)")
     except Exception as e:
         print(f"Error applying base URL setting: {e}")
         base_url = ''  # Fallback to empty string on error

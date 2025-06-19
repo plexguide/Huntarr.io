@@ -218,6 +218,7 @@ echo "6. Frontend time calculation violations: $(grep -r "Date.now.*hours.*60.*1
 echo "7. Global state lock violations: $(grep -r "stateful_lock" src/ --include="*.py" | grep -v "stateful_instance_locks" | wc -l)"
 echo "8. Inconsistent app styling violations: $(grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js" | wc -l)"
 echo "9. Logs pagination conflict violations: $(grep -r "updateLogsPagination\|updatePagination" frontend/ --include="*.html" --include="*.js" | grep -v "LogsModule" | wc -l)"
+echo "10. Hunt Manager non-Sonarr clickable links: $(grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l)"
 ```
 
 ## 📊 SPECIFIC BUG PATTERNS TO AVOID
@@ -271,6 +272,31 @@ echo "9. Logs pagination conflict violations: $(grep -r "updateLogsPagination\|u
 - Symptom: Console shows correct API response (totalLogs=7291, totalPages=365) but UI resets to 1 page
 - Fix: Remove all template pagination code, let LogsModule handle all pagination via API calls
 - Files: `/frontend/templates/components/logs_section.html`, `/frontend/static/js/logs.js`
+
+### GitHub Issue #641 Pattern (Lidarr AlbumSearch String/Integer Issue)
+- AlbumSearch fails with 500 error: "The JSON value could not be converted to System.Collections.Generic.List[System.Int32]"
+- Root cause: Album IDs converted to strings with `str(album.get("id"))` but API expects List[int]
+- Pattern: `album_id = str(album.get("id"))` followed by passing to `search_albums(album_ids_to_search)`
+- Symptom: Lidarr returns 500 Internal Server Error for AlbumSearch command
+- Fix: Keep album IDs as integers, only convert to string for processed checks: `album_id = album.get("id")` and `is_processed("lidarr", instance_name, str(album_id))`
+- Files: `/src/primary/apps/lidarr/missing.py`, `/src/primary/apps/lidarr/upgrade.py`
+
+### GitHub Issue #591 Pattern (Lidarr No Items Found Processing Logic)
+- Large libraries (264k+ missing albums) report "No items found to process. Items tracked: 0"
+- Root cause: Unreachable else clause in conditional logic flow after elif for artist mode
+- Pattern: `if hunt_missing_mode == "album":` followed by `elif hunt_missing_mode == "artist":` followed by unreachable `else:` for album processing
+- Symptom: Album mode processing falls through to wrong code path, no items processed
+- Fix: Restructure conditional logic to properly handle both album and artist modes with explicit checks
+- Files: `/src/primary/apps/lidarr/missing.py`
+
+### GitHub Issue #628 Pattern (Hunt Manager Link Issues)
+- Movie links redirect incorrectly to Radarr causing "Sorry, we could not find that movie" errors
+- Root cause: All apps made clickable but only Sonarr title-based slugs work properly
+- Pattern: `formatProcessedInfo()` making all app types clickable with external linking
+- Symptom: Radarr/Lidarr/other app links fail with 404 or wrong movie pages
+- Fix: Only make Sonarr entries clickable (`entry.app_type === 'sonarr'`), show other apps as plain text with tooltips
+- Radarr expects movie IDs in URLs but Hunt Manager uses title-based slugs which don't match
+- Files: `/frontend/static/js/hunt_manager.js` (history.js already correctly implemented)
 
 ## 🎯 DEBUGGING APPROACH
 

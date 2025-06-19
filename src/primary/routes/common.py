@@ -265,14 +265,6 @@ def setup():
 
             logger.info(f"Attempting to create user '{username}' during setup.")
             if create_user(username, password): # This function should now be defined via import
-                # Auto-detect and configure base URL from request headers
-                try:
-                    from src.primary import settings_manager
-                    detected_base_url = settings_manager.initialize_base_url_from_request()
-                    if detected_base_url:
-                        logger.info(f"Auto-configured base URL during setup: {detected_base_url}")
-                except Exception as e:
-                    logger.error(f"Error auto-detecting base URL during setup: {e}", exc_info=True)
                 
                 # If proxy auth bypass is enabled, update general settings
                 if proxy_auth_bypass:
@@ -745,50 +737,7 @@ def set_theme():
         logger.error(f"Error setting theme preference: {e}", exc_info=True)
         return jsonify({"success": False, "error": "Failed to set theme preference"}), 500
 
-# --- Base URL Detection API Route --- #
-@common_bp.route('/api/settings/detect-base-url', methods=['POST'])
-def detect_base_url():
-    """
-    Manually trigger base URL detection from current request.
-    Useful for users who want to configure subpath support after initial setup.
-    """
-    try:
-        from src.primary import settings_manager
-        
-        # Try to auto-detect base URL from current request
-        detected_base_url = settings_manager.auto_detect_base_url_from_request()
-        
-        if detected_base_url:
-            # Load current general settings
-            general_settings = settings_manager.load_settings('general')
-            
-            # Update the settings with the detected base_url
-            general_settings["base_url"] = detected_base_url
-            settings_manager.save_settings('general', general_settings)
-            
-            # Clear cache to ensure new settings are loaded
-            settings_manager.clear_cache("general")
-            
-            logger.info(f"Manually configured base URL: {detected_base_url}")
-            return jsonify({
-                "success": True, 
-                "detected_base_url": detected_base_url,
-                "message": f"Auto-detected and configured base URL: {detected_base_url}. Restart required."
-            })
-        else:
-            return jsonify({
-                "success": False, 
-                "detected_base_url": "",
-                "message": "No base URL detected from current request headers or URL path"
-            })
-            
-    except Exception as e:
-        logger.error(f"Error during manual base URL detection: {e}", exc_info=True)
-        return jsonify({
-            "success": False, 
-            "error": str(e),
-            "message": "Error occurred during base URL detection"
-        }), 500
+
 
 # --- Local Access Bypass Status API Route --- #
 
