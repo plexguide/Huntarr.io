@@ -562,11 +562,33 @@ def disable_2fa_route():
 @common_bp.route('/auth/recovery-key/generate', methods=['POST'])
 def generate_recovery_key():
     """Generate a new recovery key for the authenticated user"""
-    # Get username handling bypass modes
+    # Get username handling bypass modes and setup mode
     username = get_user_for_request()
+    
+    # If not authenticated, check if we're in setup mode and get username from setup progress
+    if not username:
+        try:
+            data = request.json or {}
+            setup_mode = data.get('setup_mode', False)
+            if setup_mode:
+                from ..utils.database import get_database
+                db = get_database()
+                setup_progress = db.get_setup_progress()
+                if setup_progress and setup_progress.get('username'):
+                    username = setup_progress['username']
+                    logger.debug(f"Using username from setup progress: {username}")
+                else:
+                    logger.warning("Recovery key generation in setup mode failed: No username in setup progress.")
+                    return jsonify({"error": "Setup not properly initialized"}), 400
+            else:
+                logger.warning("Recovery key generation attempt failed: Not authenticated and not in bypass mode.")
+                return jsonify({"error": "Not authenticated"}), 401
+        except Exception as e:
+            logger.error(f"Error checking setup mode for recovery key generation: {e}")
+            return jsonify({"error": "Authentication check failed"}), 500
 
     if not username:
-        logger.warning("Recovery key generation attempt failed: Not authenticated and not in bypass mode.")
+        logger.warning("Recovery key generation attempt failed: Could not determine username.")
         return jsonify({"error": "Not authenticated"}), 401
 
     try:
