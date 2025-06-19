@@ -17,10 +17,7 @@
     border: none !important;
 }
 
-/* Better handling of the Save button in the settings header */
-.settings-actions {
-    margin-left: auto;
-}
+/* Auto-save enabled - save button removed */
 
 /* Mobile-specific settings adjustments */
 @media (max-width: 768px) {
@@ -55,20 +52,7 @@
         flex-wrap: wrap !important;
     }
     
-    /* Move Save button to its own row when space is limited - moved from tablet view */
-    #settingsSection .settings-actions {
-        margin-top: 10px;
-        width: 100%;
-        display: flex;
-        justify-content: flex-end;
-    }
-    
-    /* Fix the positioning of the Save button on narrow screens - moved from tablet view */
-    #saveSettingsButton {
-        position: relative !important;
-        top: auto !important;
-        right: auto !important;
-    }
+    /* Auto-save enabled - save button styles removed */
     
     /* Fix General Settings section header on mobile */
     #settingsSection .section-header {

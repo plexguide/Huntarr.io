@@ -133,22 +133,7 @@ window.lastStatefulHoursValue = null;
         }
     }, 1000); // Check every second
     
-    // Also listen for potential UI updates that might remove our button
-    // Especially listen for when settings are saved
-    const saveButton = document.getElementById('saveSettingsButton');
-    if (saveButton) {
-        saveButton.addEventListener('click', function() {
-            // After settings are saved, the UI might refresh
-            // Wait a short moment then check if our button is still there
-            setTimeout(function() {
-                const headerRow = document.querySelector('.stateful-header-row');
-                if (headerRow && !document.getElementById('emergency_reset_btn')) {
-                    console.log('Emergency reset button missing after save, re-adding it');
-                    insertDirectResetButton();
-                }
-            }, 500); // Check half a second after save
-        });
-    }
+    // Save button removed for auto-save - no longer need to listen for click events
     
     // Add a global interceptor for the notification system
     const originalShowNotification = window.huntarrUI && window.huntarrUI.showNotification;
@@ -176,12 +161,7 @@ window.lastStatefulHoursValue = null;
                 }
             }
             
-            // Saving settings already shows a "Settings saved successfully" notification,
-            // so we don't need the expiration one too - suppress it if we just saved settings
-            if (message.includes('Updated expiration to') && document.getElementById('saveSettingsButton')?.disabled) {
-                console.log('Suppressing expiration notification after saving general settings');
-                return;
-            }
+            // Auto-save enabled - no save button to check state
             
             // Otherwise, proceed with the original notification
             return originalShowNotification.call(this, message, type);
