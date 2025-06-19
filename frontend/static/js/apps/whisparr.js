@@ -195,12 +195,3 @@ function setupWhisparrForm() {
     }
 }
 
-// Helper function for escaping HTML (keep if needed elsewhere, e.g., if logs are added here later)
-function escapeHtml(unsafe) {
-    return unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
-         .replace(/'/g, "&#039;");
-}

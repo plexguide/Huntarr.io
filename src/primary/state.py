@@ -17,7 +17,7 @@ from src.primary.utils.database import get_database
 from src.primary.utils.logger import get_logger
 logger = get_logger("huntarr")
 
-# Legacy get_state_file_path function removed - all state management now uses direct database calls
+
 
 def get_last_reset_time(app_type: str) -> datetime.datetime:
     """

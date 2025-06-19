@@ -31,7 +31,7 @@ from src.primary.state import check_state_reset, calculate_reset_time
 from src.primary.stats_manager import check_hourly_cap_exceeded
 # Instance list generator has been removed
 from src.primary.scheduler_engine import start_scheduler, stop_scheduler
-# Legacy JSON migration removed - all data now stored in database
+
 # from src.primary.utils.app_utils import get_ip_address # No longer used here
 
 # Global state for managing app threads and their status
@@ -124,7 +124,7 @@ def app_specific_loop(app_type: str) -> None:
         elif app_type == "whisparr":
             missing_module = importlib.import_module('src.primary.apps.whisparr.missing')
             upgrade_module = importlib.import_module('src.primary.apps.whisparr.upgrade')
-            process_missing = getattr(missing_module, 'process_missing_scenes')
+            process_missing = getattr(missing_module, 'process_missing_items')
             process_upgrades = getattr(upgrade_module, 'process_cutoff_upgrades')
             hunt_missing_setting = "hunt_missing_items"  # Updated to new name
             hunt_upgrade_setting = "hunt_upgrade_items"  # Updated to new name
@@ -841,9 +841,7 @@ def swaparr_app_loop():
     
     swaparr_logger.info("Swaparr thread stopped")
 
-# The instance list generator loop has been removed as it's no longer needed
 
-# The start_instance_list_generator function has been removed as it's no longer needed
 
 def start_hourly_cap_scheduler():
     """Start the hourly API cap scheduler thread"""
@@ -885,9 +883,7 @@ def start_huntarr():
     """Main entry point for Huntarr background tasks."""
     logger.info(f"--- Starting Huntarr Background Tasks v{__version__} --- ")
     
-    # Legacy JSON migration removed - all data now stored in database
-    
-    # Legacy migration removed - settings are now stored in database
+
     # Migration environment variable no longer used
         
     # Start the hourly API cap scheduler

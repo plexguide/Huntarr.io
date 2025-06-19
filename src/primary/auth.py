@@ -368,7 +368,8 @@ def authenticate_request():
         
         # Log settings only for non-polling endpoints to reduce spam
         if not is_polling_endpoint:
-            pass  # Removed verbose auth setting logs
+            pass
+
     except Exception as e:
         logger.error(f"Error loading authentication bypass settings: {e}", exc_info=True)
     

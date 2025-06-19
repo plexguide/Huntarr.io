@@ -740,4 +740,4 @@ def reset_stats_api():
 # Ensure all routes previously in this file that interact with settings
 # are either moved to web_server.py or updated here using the new settings_manager functions.
 
-# REMOVED DUPLICATE BLUEPRINT DEFINITION AND CONFLICTING ROUTES BELOW THIS LINE
+

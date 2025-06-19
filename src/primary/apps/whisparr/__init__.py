@@ -14,15 +14,14 @@ from src.primary.utils.logger import get_logger
 # Define logger for this module
 whisparr_logger = get_logger("whisparr")
 
-# For backward compatibility
-process_missing_scenes = process_missing_items
+
 
 def get_configured_instances():
     """Get all configured and enabled Whisparr instances"""
     settings = load_settings("whisparr")
     instances = []
     # Use debug level to avoid log spam on new installations
-    # whisparr_logger.debug(f"Loaded Whisparr settings for instance check: {settings}") # Removed verbose log
+
 
     if not settings:
         whisparr_logger.debug("No settings found for Whisparr")
@@ -102,4 +101,4 @@ def get_configured_instances():
     # Use debug level to avoid spamming logs, especially with 0 instances
     return instances
 
-__all__ = ["process_missing_items", "process_missing_scenes", "process_cutoff_upgrades", "get_configured_instances"]
+__all__ = ["process_missing_items", "process_cutoff_upgrades", "get_configured_instances"]
