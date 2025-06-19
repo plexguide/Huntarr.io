@@ -9,7 +9,8 @@ import json
 from src.primary.stateful_manager import (
     get_stateful_management_info,
     reset_stateful_management,
-    update_lock_expiration
+    update_lock_expiration,
+    get_state_management_summary
 )
 from src.primary.utils.logger import get_logger
 
@@ -109,6 +110,80 @@ def update_expiration():
         stateful_logger.error(f"Error updating expiration: {e}", exc_info=True)
         # Return error response with proper headers
         error_data = {"success": False, "message": f"Error updating expiration: {str(e)}"}
+        response = Response(json.dumps(error_data), status=500)
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+@stateful_api.route('/summary', methods=['GET'])
+def get_summary():
+    """Get stateful management summary for a specific app instance."""
+    try:
+        app_type = request.args.get('app_type')
+        instance_name = request.args.get('instance_name')
+        
+        if not app_type or not instance_name:
+            error_data = {"success": False, "message": "app_type and instance_name parameters are required"}
+            response = Response(json.dumps(error_data), status=400)
+            response.headers['Content-Type'] = 'application/json'
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+        
+        # Get per-instance settings to retrieve custom hours
+        instance_hours = None
+        try:
+            from src.primary.settings_manager import load_settings
+            settings = load_settings(app_type)
+            
+            if settings and 'instances' in settings:
+                # Find the matching instance
+                for instance in settings['instances']:
+                    if instance.get('name') == instance_name:
+                        # Get per-instance state management hours
+                        instance_hours = instance.get('state_management_hours', 168)
+                        instance_mode = instance.get('state_management_mode', 'custom')
+                        
+                        # If state management is disabled for this instance, return disabled status
+                        if instance_mode == 'disabled':
+                            response_data = {
+                                "success": True,
+                                "processed_count": 0,
+                                "next_reset_time": None,
+                                "expiration_hours": instance_hours,
+                                "has_processed_items": False,
+                                "state_management_enabled": False
+                            }
+                            response = Response(json.dumps(response_data))
+                            response.headers['Content-Type'] = 'application/json'
+                            response.headers['Access-Control-Allow-Origin'] = '*'
+                            return response
+                        
+                        break
+        except Exception as e:
+            stateful_logger.warning(f"Could not load instance settings for {app_type}/{instance_name}: {e}")
+            # Fall back to default hours if settings can't be loaded
+            instance_hours = 168
+        
+        # Get summary for the specific instance with custom hours
+        summary = get_state_management_summary(app_type, instance_name, instance_hours)
+        
+        response_data = {
+            "success": True,
+            "processed_count": summary.get("processed_count", 0),
+            "next_reset_time": summary.get("next_reset_time"),
+            "expiration_hours": summary.get("expiration_hours", instance_hours or 168),
+            "has_processed_items": summary.get("has_processed_items", False),
+            "state_management_enabled": True
+        }
+        
+        response = Response(json.dumps(response_data))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+        
+    except Exception as e:
+        stateful_logger.error(f"Error getting stateful summary for {app_type}/{instance_name}: {e}")
+        error_data = {"success": False, "message": f"Error getting summary: {str(e)}"}
         response = Response(json.dumps(error_data), status=500)
         response.headers['Content-Type'] = 'application/json'
         response.headers['Access-Control-Allow-Origin'] = '*'

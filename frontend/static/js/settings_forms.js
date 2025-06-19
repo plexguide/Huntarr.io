@@ -664,6 +664,15 @@ const SettingsForms = {
         // Add event listeners for the instance management
         this.setupInstanceManagement(container, 'radarr', settings.instances.length);
         
+        // Load state information for each instance
+        settings.instances.forEach((instance, index) => {
+            if (typeof huntarrUI !== 'undefined' && huntarrUI.loadInstanceStateInfo) {
+                setTimeout(() => {
+                    huntarrUI.loadInstanceStateInfo('radarr', index);
+                }, 500); // Small delay to ensure DOM is ready
+            }
+        });
+        
         // Add event listeners for per-instance state management
         settings.instances.forEach((instance, index) => {
             // State management mode change listeners
@@ -975,6 +984,15 @@ const SettingsForms = {
         // Add event listeners for the instance management
         SettingsForms.setupInstanceManagement(container, 'lidarr', settings.instances.length);
         
+        // Load state information for each instance
+        settings.instances.forEach((instance, index) => {
+            if (typeof huntarrUI !== 'undefined' && huntarrUI.loadInstanceStateInfo) {
+                setTimeout(() => {
+                    huntarrUI.loadInstanceStateInfo('lidarr', index);
+                }, 500); // Small delay to ensure DOM is ready
+            }
+        });
+        
         // Add event listeners for custom tags visibility
         const lidarrTagProcessedItemsToggle = container.querySelector('#lidarr_tag_processed_items');
         const lidarrCustomTagFields = [
@@ -1200,6 +1218,15 @@ const SettingsForms = {
 
         // Add event listeners for the instance management
         SettingsForms.setupInstanceManagement(container, 'readarr', settings.instances.length);
+        
+        // Load state information for each instance
+        settings.instances.forEach((instance, index) => {
+            if (typeof huntarrUI !== 'undefined' && huntarrUI.loadInstanceStateInfo) {
+                setTimeout(() => {
+                    huntarrUI.loadInstanceStateInfo('readarr', index);
+                }, 500); // Small delay to ensure DOM is ready
+            }
+        });
         
         // Add event listeners for custom tags visibility
         const readarrTagProcessedItemsToggle = container.querySelector('#readarr_tag_processed_items');

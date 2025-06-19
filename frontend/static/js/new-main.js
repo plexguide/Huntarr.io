@@ -3543,7 +3543,8 @@ let huntarrUI = {
     
     // Load instance-specific state management information
     loadInstanceStateInfo: function(appType, instanceIndex) {
-        if (appType !== 'sonarr') return; // Only for Sonarr for now
+        const supportedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        if (!supportedApps.includes(appType)) return;
         
         const instanceNameElement = document.getElementById(`${appType}-name-${instanceIndex}`);
         const instanceName = instanceNameElement?.value || `Instance ${instanceIndex + 1}`;

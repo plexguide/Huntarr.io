@@ -194,13 +194,33 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
         media_id: The ID of the processed media
         
     Returns:
-        bool: True if successful, False otherwise
+        bool: True if successful, False otherwise (or if state management is disabled)
     """
     if app_type not in APP_TYPES:
         stateful_logger.warning(f"Unknown app type: {app_type}")
         return False
     
     try:
+        # First check if state management is enabled for this instance
+        try:
+            from src.primary.settings_manager import load_settings
+            settings = load_settings(app_type)
+            
+            if settings and 'instances' in settings:
+                # Find the matching instance
+                for instance in settings['instances']:
+                    if instance.get('name') == instance_name:
+                        instance_mode = instance.get('state_management_mode', 'custom')
+                        
+                        # If state management is disabled for this instance, don't add to processed list
+                        if instance_mode == 'disabled':
+                            stateful_logger.debug(f"State management disabled for {app_type}/{instance_name}, not adding item {media_id} to processed list")
+                            return True  # Return True to indicate "success" (no error), but item wasn't actually added
+                        break
+        except Exception as e:
+            stateful_logger.warning(f"Could not check state management mode for {app_type}/{instance_name}: {e}")
+            # Fall back to adding anyway if we can't determine the mode
+        
         db = get_database()
         
         # Check if already processed
@@ -228,9 +248,29 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
         media_id: The ID of the media to check
         
     Returns:
-        bool: True if already processed, False otherwise
+        bool: True if already processed, False otherwise (or if state management is disabled)
     """
     try:
+        # First check if state management is enabled for this instance
+        try:
+            from src.primary.settings_manager import load_settings
+            settings = load_settings(app_type)
+            
+            if settings and 'instances' in settings:
+                # Find the matching instance
+                for instance in settings['instances']:
+                    if instance.get('name') == instance_name:
+                        instance_mode = instance.get('state_management_mode', 'custom')
+                        
+                        # If state management is disabled for this instance, always return False (not processed)
+                        if instance_mode == 'disabled':
+                            stateful_logger.debug(f"State management disabled for {app_type}/{instance_name}, treating item {media_id} as unprocessed")
+                            return False
+                        break
+        except Exception as e:
+            stateful_logger.warning(f"Could not check state management mode for {app_type}/{instance_name}: {e}")
+            # Fall back to checking anyway if we can't determine the mode
+        
         db = get_database()
         
         # Converting media_id to string since some callers might pass an integer
@@ -263,13 +303,14 @@ def get_stateful_management_info() -> Dict[str, Any]:
         "interval_hours": expiration_hours
     }
 
-def get_state_management_summary(app_type: str, instance_name: str) -> Dict[str, Any]:
+def get_state_management_summary(app_type: str, instance_name: str, instance_hours: int = None) -> Dict[str, Any]:
     """
     Get a summary of stateful management for an app instance.
     
     Args:
         app_type: The type of app (sonarr, radarr, etc.)
         instance_name: The name of the instance
+        instance_hours: Custom hours for this instance (if provided)
         
     Returns:
         Dict containing processed count, next reset time, and other useful info
@@ -279,11 +320,14 @@ def get_state_management_summary(app_type: str, instance_name: str) -> Dict[str,
         processed_ids = get_processed_ids(app_type, instance_name)
         processed_count = len(processed_ids)
         
-        # Get next reset time
-        next_reset_time = get_next_reset_time()
+        # Use per-instance hours if provided, otherwise fall back to global setting
+        if instance_hours is not None:
+            expiration_hours = instance_hours
+        else:
+            expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
         
-        # Get expiration hours setting
-        expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
+        # Calculate next reset time based on per-instance hours
+        next_reset_time = get_next_reset_time_for_instance(expiration_hours)
         
         return {
             "processed_count": processed_count,
@@ -296,7 +340,7 @@ def get_state_management_summary(app_type: str, instance_name: str) -> Dict[str,
         return {
             "processed_count": 0,
             "next_reset_time": None,
-            "expiration_hours": DEFAULT_HOURS,
+            "expiration_hours": instance_hours or DEFAULT_HOURS,
             "has_processed_items": False
         }
 
@@ -348,6 +392,46 @@ def get_next_reset_time() -> Optional[str]:
             return next_reset.strftime('%Y-%m-%d %H:%M:%S')
     except Exception as e:
         stateful_logger.error(f"Error calculating next reset time: {e}")
+        return None
+
+def get_next_reset_time_for_instance(instance_hours: int) -> Optional[str]:
+    """
+    Get the next state management reset time for a specific instance based on custom hours.
+    
+    Args:
+        instance_hours: Custom reset interval hours for this instance
+        
+    Returns:
+        Formatted reset time string or None if unable to calculate
+    """
+    try:
+        # Import here to avoid circular imports
+        from src.primary.state import get_last_reset_time
+        
+        # Get user's timezone
+        user_tz = _get_user_timezone()
+        
+        # Get last reset time and calculate next reset
+        last_reset = get_last_reset_time()  # This returns a naive datetime
+        
+        # Check if last_reset is valid (not Unix epoch or too old)
+        unix_epoch = datetime.datetime(1970, 1, 1)
+        one_year_ago = datetime.datetime.now() - datetime.timedelta(days=365)
+        
+        if last_reset and last_reset > one_year_ago and last_reset != unix_epoch:
+            # Convert last reset to user timezone (assuming it was stored in UTC)
+            import pytz
+            last_reset_utc = pytz.UTC.localize(last_reset) if last_reset.tzinfo is None else last_reset
+            next_reset_user_tz = last_reset_utc.astimezone(user_tz) + datetime.timedelta(hours=instance_hours)
+            return next_reset_user_tz.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            # If no valid last reset time, calculate from now
+            stateful_logger.info(f"No valid last reset time found, calculating next reset from current time using {instance_hours} hours")
+            now_user_tz = datetime.datetime.now(user_tz)
+            next_reset = now_user_tz + datetime.timedelta(hours=instance_hours)
+            return next_reset.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception as e:
+        stateful_logger.error(f"Error calculating next reset time for instance ({instance_hours} hours): {e}")
         return None
 
 def initialize_stateful_system():

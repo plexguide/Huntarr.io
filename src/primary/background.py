@@ -429,27 +429,49 @@ def app_specific_loop(app_type: str) -> None:
             try:
                 from src.primary.stateful_manager import get_state_management_summary
                 
-                # Get total summary across all instances
+                # Get total summary across all instances with per-instance settings
                 total_processed = 0
                 has_any_processed = False
+                next_reset_times = []
                 
                 for instance_name in enabled_instances:
-                    summary = get_state_management_summary(app_type, instance_name)
-                    if summary["has_processed_items"]:
-                        total_processed += summary["processed_count"]
-                        has_any_processed = True
+                    # Get per-instance settings
+                    instance_hours = None
+                    instance_enabled = True
+                    
+                    try:
+                        # Look up the instance in the configured instances
+                        if configured_instances and app_type in configured_instances:
+                            for instance_details in configured_instances[app_type]:
+                                if instance_details.get("instance_name") == instance_name:
+                                    instance_hours = instance_details.get("state_management_hours", 168)
+                                    instance_mode = instance_details.get("state_management_mode", "custom")
+                                    instance_enabled = (instance_mode != "disabled")
+                                    break
+                    except Exception as e:
+                        app_logger.warning(f"Could not load instance settings for {instance_name}: {e}")
+                        instance_hours = 168  # Default fallback
+                    
+                    # Only process if state management is enabled for this instance
+                    if instance_enabled:
+                        summary = get_state_management_summary(app_type, instance_name, instance_hours)
+                        if summary["has_processed_items"]:
+                            total_processed += summary["processed_count"]
+                            has_any_processed = True
+                        if summary["next_reset_time"]:
+                            next_reset_times.append(summary["next_reset_time"])
                 
                 # Log state management info based on processing results
                 if not processed_any_items and has_any_processed:
                     # Items were skipped due to state management
-                    reset_time = get_state_management_summary(app_type, enabled_instances[0])["next_reset_time"] if enabled_instances else None
+                    reset_time = next_reset_times[0] if next_reset_times else None
                     if reset_time:
                         app_logger.info(f"STATE MANAGEMENT: {total_processed} items already processed and will not be reprocessed until state reset at {reset_time}.")
                     else:
                         app_logger.info(f"STATE MANAGEMENT: {total_processed} items already processed and will not be reprocessed until state management reset.")
                 elif processed_any_items:
                     # Items were processed, show summary
-                    reset_time = get_state_management_summary(app_type, enabled_instances[0])['next_reset_time'] if enabled_instances else 'Unknown'
+                    reset_time = next_reset_times[0] if next_reset_times else 'Unknown'
                     app_logger.info(f"STATE MANAGEMENT: Total items tracked: {total_processed}. Next state reset: {reset_time}.")
                 else:
                     # No items processed and no state management blocking
