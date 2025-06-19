@@ -128,7 +128,7 @@ def login_route():
             return jsonify({"success": False, "error": "An internal server error occurred during login."}), 500
     else:
         # GET request - show login page
-        # If user already exists, show login, otherwise redirect to setup
+        # If user doesn't exist or setup is in progress, redirect to setup
         if not user_exists():
              logger.info("No user exists, redirecting to setup.")
              
@@ -146,6 +146,31 @@ def login_route():
              except Exception as e:
                  logger.warning(f"Error getting base URL for setup redirect: {e}")
                  return redirect(url_for('common.setup'))
+        
+        # Check if setup is in progress even if user exists
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            if db.is_setup_in_progress():
+                logger.info("Setup is in progress, redirecting to setup.")
+                
+                # Get the base URL from settings to ensure proper subpath redirect
+                try:
+                    from src.primary.settings_manager import get_setting
+                    base_url = get_setting('general', 'base_url', '')
+                    if base_url and not base_url.startswith('/'):
+                        base_url = f'/{base_url}'
+                    if base_url and base_url.endswith('/'):
+                        base_url = base_url.rstrip('/')
+                    setup_url = f"{base_url}/setup" if base_url else "/setup"
+                    logger.debug(f"Redirecting to setup (in progress) with base URL: {setup_url}")
+                    return redirect(setup_url)
+                except Exception as e:
+                    logger.warning(f"Error getting base URL for setup redirect: {e}")
+                    return redirect(url_for('common.setup'))
+        except Exception as e:
+            logger.error(f"Error checking setup progress in login route: {e}")
+            # Continue to show login page if we can't check setup progress
         
         # Check if any users have Plex authentication configured
         try:
@@ -419,8 +444,26 @@ def change_password_route():
 
 @common_bp.route('/api/user/2fa/setup', methods=['POST'])
 def setup_2fa():
-    # Get username handling bypass modes
+    # Get username handling bypass modes and setup context
     username = get_user_for_request()
+
+    # If no username from session/bypass, check if we're in setup mode
+    if not username:
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            setup_progress = db.get_setup_progress()
+            if setup_progress and setup_progress.get('username'):
+                username = setup_progress.get('username')
+                logger.debug(f"Using username from setup progress: {username}")
+            else:
+                # If no setup progress, try to get the first user (single user system)
+                first_user = db.get_first_user()
+                if first_user:
+                    username = first_user.get('username')
+                    logger.debug(f"Using first user for 2FA setup: {username}")
+        except Exception as e:
+            logger.error(f"Error getting username for 2FA setup: {e}")
 
     if not username:
         logger.warning("2FA setup attempt failed: Not authenticated and not in bypass mode.")
@@ -440,8 +483,26 @@ def setup_2fa():
 
 @common_bp.route('/api/user/2fa/verify', methods=['POST'])
 def verify_2fa():
-    # Get username handling bypass modes
+    # Get username handling bypass modes and setup context
     username = get_user_for_request()
+
+    # If no username from session/bypass, check if we're in setup mode
+    if not username:
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            setup_progress = db.get_setup_progress()
+            if setup_progress and setup_progress.get('username'):
+                username = setup_progress.get('username')
+                logger.debug(f"Using username from setup progress: {username}")
+            else:
+                # If no setup progress, try to get the first user (single user system)
+                first_user = db.get_first_user()
+                if first_user:
+                    username = first_user.get('username')
+                    logger.debug(f"Using first user for 2FA verify: {username}")
+        except Exception as e:
+            logger.error(f"Error getting username for 2FA verify: {e}")
 
     if not username:
         logger.warning("2FA verify attempt failed: Not authenticated and not in bypass mode.")
