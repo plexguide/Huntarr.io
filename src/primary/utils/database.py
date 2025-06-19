@@ -399,6 +399,20 @@ class HuntarrDatabase:
                 )
             ''')
             
+            # Create stateful_instance_locks table for per-instance state management
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS stateful_instance_locks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
+                    created_at INTEGER NOT NULL,
+                    expires_at INTEGER NOT NULL,
+                    expiration_hours INTEGER NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(app_type, instance_name)
+                )
+            ''')
+            
             # Create media_stats table for tracking hunted/upgraded media statistics
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS media_stats (
@@ -582,6 +596,7 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_general_settings_key ON general_settings(setting_key)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_stateful_processed_app_instance ON stateful_processed_ids(app_type, instance_name)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_stateful_processed_media_id ON stateful_processed_ids(media_id)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_stateful_instance_locks_app_instance ON stateful_instance_locks(app_type, instance_name)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_media_stats_app_type ON media_stats(app_type, stat_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hourly_caps_app_type ON hourly_caps(app_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_sleep_data_app_type ON sleep_data(app_type)')
@@ -859,6 +874,8 @@ class HuntarrDatabase:
             conn.execute('DELETE FROM stateful_processed_ids')
             # Clear lock info
             conn.execute('DELETE FROM stateful_lock')
+            # Clear per-instance locks
+            conn.execute('DELETE FROM stateful_instance_locks')
             conn.commit()
             logger.info("Cleared all stateful management data from database")
     
@@ -869,6 +886,87 @@ class HuntarrDatabase:
             "processed_count": len(processed_ids),
             "has_processed_items": len(processed_ids) > 0
         }
+    
+    # Per-Instance State Management Methods
+    
+    def get_instance_lock_info(self, app_type: str, instance_name: str) -> Dict[str, Any]:
+        """Get state management lock information for a specific instance"""
+        with self.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT created_at, expires_at, expiration_hours 
+                FROM stateful_instance_locks 
+                WHERE app_type = ? AND instance_name = ?
+            ''', (app_type, instance_name))
+            row = cursor.fetchone()
+            
+            if row:
+                return {
+                    "created_at": row[0],
+                    "expires_at": row[1],
+                    "expiration_hours": row[2]
+                }
+            return {}
+    
+    def set_instance_lock_info(self, app_type: str, instance_name: str, created_at: int, expires_at: int, expiration_hours: int):
+        """Set state management lock information for a specific instance"""
+        with self.get_connection() as conn:
+            conn.execute('''
+                INSERT OR REPLACE INTO stateful_instance_locks 
+                (app_type, instance_name, created_at, expires_at, expiration_hours, updated_at)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ''', (app_type, instance_name, created_at, expires_at, expiration_hours))
+            conn.commit()
+    
+    def check_instance_expiration(self, app_type: str, instance_name: str) -> bool:
+        """Check if state management has expired for a specific instance"""
+        import time
+        current_time = int(time.time())
+        
+        lock_info = self.get_instance_lock_info(app_type, instance_name)
+        if not lock_info:
+            return False  # No lock info means not expired, just not initialized
+        
+        expires_at = lock_info.get("expires_at", 0)
+        return current_time >= expires_at
+    
+    def clear_instance_processed_ids(self, app_type: str, instance_name: str):
+        """Clear processed IDs for a specific instance"""
+        with self.get_connection() as conn:
+            conn.execute('''
+                DELETE FROM stateful_processed_ids 
+                WHERE app_type = ? AND instance_name = ?
+            ''', (app_type, instance_name))
+            conn.commit()
+            logger.info(f"Cleared processed IDs for {app_type}/{instance_name}")
+    
+    def reset_instance_state_management(self, app_type: str, instance_name: str, expiration_hours: int) -> bool:
+        """Reset state management for a specific instance"""
+        import time
+        try:
+            current_time = int(time.time())
+            expires_at = current_time + (expiration_hours * 3600)
+            
+            # Clear processed IDs for this instance
+            self.clear_instance_processed_ids(app_type, instance_name)
+            
+            # Set new lock info for this instance
+            self.set_instance_lock_info(app_type, instance_name, current_time, expires_at, expiration_hours)
+            
+            logger.info(f"Reset state management for {app_type}/{instance_name} with {expiration_hours}h expiration")
+            return True
+        except Exception as e:
+            logger.error(f"Error resetting state management for {app_type}/{instance_name}: {e}")
+            return False
+    
+    def initialize_instance_state_management(self, app_type: str, instance_name: str, expiration_hours: int):
+        """Initialize state management for a specific instance if not already initialized"""
+        lock_info = self.get_instance_lock_info(app_type, instance_name)
+        if not lock_info:
+            import time
+            current_time = int(time.time())
+            expires_at = current_time + (expiration_hours * 3600)
+            self.set_instance_lock_info(app_type, instance_name, current_time, expires_at, expiration_hours)
+            logger.info(f"Initialized state management for {app_type}/{instance_name} with {expiration_hours}h expiration")
 
     # Tally Data Management Methods
     

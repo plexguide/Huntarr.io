@@ -455,6 +455,33 @@ const SettingsForms = {
         });
     },
     
+    // Setup event listeners for per-instance reset buttons
+    setupInstanceResetListeners: function() {
+        // Use event delegation to handle dynamically created reset buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('[id*="-state-reset-btn-"]') || e.target.closest('[id*="-state-reset-btn-"]')) {
+                const button = e.target.matches('[id*="-state-reset-btn-"]') ? e.target : e.target.closest('[id*="-state-reset-btn-"]');
+                const buttonId = button.id;
+                
+                // Extract app type and instance index from button ID
+                // Format: apptype-state-reset-btn-index
+                const match = buttonId.match(/^(\w+)-state-reset-btn-(\d+)$/);
+                if (match) {
+                    const appType = match[1];
+                    const instanceIndex = parseInt(match[2]);
+                    
+                    // Confirm before resetting
+                    const instanceName = document.querySelector(`#${appType}-name-${instanceIndex}`)?.value || `Instance ${instanceIndex + 1}`;
+                    if (confirm(`Are you sure you want to reset the state for ${appType} instance "${instanceName}"? This will clear all tracked processed items.`)) {
+                        this.resetInstanceState(appType, instanceIndex);
+                    }
+                }
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+    },
+    
     // Generate Radarr settings form
     generateRadarrForm: function(container, settings = {}) {
         // Temporarily suppress change detection during form generation

@@ -3512,49 +3512,41 @@ let huntarrUI = {
         const hoursInput = document.getElementById(`${appType}-state-management-hours-${instanceIndex}`);
         const customHours = parseInt(hoursInput?.value) || 168;
         
-        // Calculate reset time based on custom hours for this instance
-        const resetTime = new Date(Date.now() + (customHours * 60 * 60 * 1000));
-        
-        // Load state information for this specific instance
-        HuntarrUtils.fetchWithTimeout('./api/stateful/info', {
+        // Load state information for this specific instance using per-instance API
+        HuntarrUtils.fetchWithTimeout(`./api/stateful/summary?app_type=${appType}&instance_name=${encodeURIComponent(instanceName)}`, {
             method: 'GET'
         })
         .then(response => response.json())
-        .then(data => {
-            this.updateInstanceStateDisplay(appType, instanceIndex, data, resetTime, instanceName);
+        .then(summaryData => {
+            this.updateInstanceStateDisplay(appType, instanceIndex, summaryData, instanceName, customHours);
         })
         .catch(error => {
             console.error(`[huntarrUI] Error loading state info for ${appType} instance ${instanceIndex}:`, error);
-            // Still update with calculated time even if API fails
-            this.updateInstanceStateDisplay(appType, instanceIndex, null, resetTime, instanceName);
+            // Fallback to default display
+            this.updateInstanceStateDisplay(appType, instanceIndex, null, instanceName, customHours);
         });
     },
     
     // Update the instance state management display
-    updateInstanceStateDisplay: function(appType, instanceIndex, stateData, resetTime, instanceName) {
+    updateInstanceStateDisplay: function(appType, instanceIndex, summaryData, instanceName, customHours) {
         const resetTimeElement = document.getElementById(`${appType}-state-reset-time-${instanceIndex}`);
         const itemsCountElement = document.getElementById(`${appType}-state-items-count-${instanceIndex}`);
         
-        // Always show the calculated reset time based on instance settings
+        // Update reset time from server data or calculate fallback
         if (resetTimeElement) {
-            resetTimeElement.textContent = resetTime.toLocaleString();
+            if (summaryData && summaryData.next_reset_time) {
+                resetTimeElement.textContent = summaryData.next_reset_time;
+            } else {
+                // Fallback calculation
+                const resetTime = new Date(Date.now() + (customHours * 60 * 60 * 1000));
+                resetTimeElement.textContent = resetTime.toLocaleString();
+            }
         }
         
-        // Load instance-specific item count
+        // Update processed items count
         if (itemsCountElement) {
-            // Try to get instance-specific count from stateful manager
-            HuntarrUtils.fetchWithTimeout(`./api/stateful/summary?app_type=${appType}&instance_name=${encodeURIComponent(instanceName)}`, {
-                method: 'GET'
-            })
-            .then(response => response.json())
-            .then(summaryData => {
-                const count = summaryData.processed_count || 0;
-                itemsCountElement.textContent = count.toString();
-            })
-            .catch(error => {
-                console.error(`[huntarrUI] Error loading summary for ${appType}/${instanceName}:`, error);
-                itemsCountElement.textContent = '0';
-            });
+            const count = summaryData ? (summaryData.processed_count || 0) : 0;
+            itemsCountElement.textContent = count.toString();
         }
     }
 };
@@ -3578,6 +3570,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (typeof BackgroundPattern !== 'undefined') {
         BackgroundPattern.init();
+    }
+    
+    // Initialize per-instance reset button listeners
+    if (typeof SettingsForms !== 'undefined' && typeof SettingsForms.setupInstanceResetListeners === 'function') {
+        SettingsForms.setupInstanceResetListeners();
     }
 });
 

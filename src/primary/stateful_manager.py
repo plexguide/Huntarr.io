@@ -202,6 +202,9 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
     
     try:
         # First check if state management is enabled for this instance
+        instance_hours = 168  # Default
+        instance_mode = "custom"
+        
         try:
             from src.primary.settings_manager import load_settings
             settings = load_settings(app_type)
@@ -211,6 +214,7 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
                 for instance in settings['instances']:
                     if instance.get('name') == instance_name:
                         instance_mode = instance.get('state_management_mode', 'custom')
+                        instance_hours = instance.get('state_management_hours', 168)
                         
                         # If state management is disabled for this instance, don't add to processed list
                         if instance_mode == 'disabled':
@@ -222,6 +226,14 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
             # Fall back to adding anyway if we can't determine the mode
         
         db = get_database()
+        
+        # Initialize per-instance state management if not already done
+        db.initialize_instance_state_management(app_type, instance_name, instance_hours)
+        
+        # Check if this instance's state has expired
+        if db.check_instance_expiration(app_type, instance_name):
+            stateful_logger.info(f"State management expired for {app_type}/{instance_name}, resetting before adding new ID...")
+            db.reset_instance_state_management(app_type, instance_name, instance_hours)
         
         # Check if already processed
         if db.is_processed(app_type, instance_name, media_id):
@@ -252,6 +264,9 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
     """
     try:
         # First check if state management is enabled for this instance
+        instance_hours = 168  # Default
+        instance_mode = "custom"
+        
         try:
             from src.primary.settings_manager import load_settings
             settings = load_settings(app_type)
@@ -261,6 +276,7 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
                 for instance in settings['instances']:
                     if instance.get('name') == instance_name:
                         instance_mode = instance.get('state_management_mode', 'custom')
+                        instance_hours = instance.get('state_management_hours', 168)
                         
                         # If state management is disabled for this instance, always return False (not processed)
                         if instance_mode == 'disabled':
@@ -272,6 +288,16 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
             # Fall back to checking anyway if we can't determine the mode
         
         db = get_database()
+        
+        # Initialize per-instance state management if not already done
+        db.initialize_instance_state_management(app_type, instance_name, instance_hours)
+        
+        # Check if this instance's state has expired
+        if db.check_instance_expiration(app_type, instance_name):
+            stateful_logger.info(f"State management expired for {app_type}/{instance_name}, resetting...")
+            db.reset_instance_state_management(app_type, instance_name, instance_hours)
+            # After reset, item is not processed
+            return False
         
         # Converting media_id to string since some callers might pass an integer
         media_id_str = str(media_id)
@@ -316,9 +342,7 @@ def get_state_management_summary(app_type: str, instance_name: str, instance_hou
         Dict containing processed count, next reset time, and other useful info
     """
     try:
-        # Get processed IDs count
-        processed_ids = get_processed_ids(app_type, instance_name)
-        processed_count = len(processed_ids)
+        db = get_database()
         
         # Use per-instance hours if provided, otherwise fall back to global setting
         if instance_hours is not None:
@@ -326,8 +350,22 @@ def get_state_management_summary(app_type: str, instance_name: str, instance_hou
         else:
             expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
         
-        # Calculate next reset time based on per-instance hours
-        next_reset_time = get_next_reset_time_for_instance(expiration_hours, app_type)
+        # Initialize per-instance state management if not already done
+        db.initialize_instance_state_management(app_type, instance_name, expiration_hours)
+        
+        # Get processed IDs count
+        processed_ids = get_processed_ids(app_type, instance_name)
+        processed_count = len(processed_ids)
+        
+        # Get per-instance lock info for accurate next reset time
+        lock_info = db.get_instance_lock_info(app_type, instance_name)
+        if lock_info and lock_info.get("expires_at"):
+            import datetime
+            expires_at = lock_info["expires_at"]
+            next_reset_time = datetime.datetime.fromtimestamp(expires_at).strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            # Fallback to calculated time
+            next_reset_time = get_next_reset_time_for_instance(expiration_hours, app_type)
         
         return {
             "processed_count": processed_count,

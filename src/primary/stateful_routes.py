@@ -47,25 +47,58 @@ def get_info():
 
 @stateful_api.route('/reset', methods=['POST'])
 def reset_stateful():
-    """Reset the stateful management system."""
+    """Reset the stateful management system (global or per-instance)."""
     try:
-        success = reset_stateful_management()
-        if success:
-            # Add CORS headers to allow access from frontend
-            response = Response(json.dumps({"success": True, "message": "Stateful management reset successfully"}))
-            response.headers['Content-Type'] = 'application/json'
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            return response
+        data = request.json or {}
+        app_type = data.get('app_type')
+        instance_name = data.get('instance_name')
+        
+        if app_type and instance_name:
+            # Per-instance reset
+            from src.primary.utils.database import get_database
+            from src.primary.settings_manager import load_settings
+            
+            # Get instance settings for expiration hours
+            instance_hours = 168  # Default
+            try:
+                settings = load_settings(app_type)
+                if settings and 'instances' in settings:
+                    for instance in settings['instances']:
+                        if instance.get('name') == instance_name:
+                            instance_hours = instance.get('state_management_hours', 168)
+                            break
+            except Exception as e:
+                stateful_logger.warning(f"Could not load instance settings for {app_type}/{instance_name}: {e}")
+            
+            # Reset per-instance state management
+            db = get_database()
+            success = db.reset_instance_state_management(app_type, instance_name, instance_hours)
+            
+            if success:
+                stateful_logger.info(f"Successfully reset state management for {app_type}/{instance_name}")
+                response_data = {"success": True, "message": f"State management reset successfully for {app_type}/{instance_name}"}
+            else:
+                response_data = {"success": False, "message": f"Failed to reset state management for {app_type}/{instance_name}"}
+                
         else:
-            # Add CORS headers to allow access from frontend
-            response = Response(json.dumps({"success": False, "message": "Failed to reset stateful management"}), status=500)
-            response.headers['Content-Type'] = 'application/json'
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            return response
+            # Global reset (legacy)
+            success = reset_stateful_management()
+            if success:
+                response_data = {"success": True, "message": "Stateful management reset successfully"}
+            else:
+                response_data = {"success": False, "message": "Failed to reset stateful management"}
+        
+        # Add CORS headers to allow access from frontend
+        status_code = 200 if response_data["success"] else 500
+        response = Response(json.dumps(response_data), status=status_code)
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+        
     except Exception as e:
         stateful_logger.error(f"Error resetting stateful management: {e}")
         # Return error response with proper headers
-        error_data = {"error": str(e)}
+        error_data = {"success": False, "error": str(e)}
         response = Response(json.dumps(error_data), status=500)
         response.headers['Content-Type'] = 'application/json'
         response.headers['Access-Control-Allow-Origin'] = '*'
