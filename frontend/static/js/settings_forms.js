@@ -121,7 +121,7 @@ const SettingsForms = {
                                 <option value="episodes" ${huntMissingMode === 'episodes' ? 'selected' : ''}>Episodes</option>
                             </select>
                             <p class="setting-help">How to search for missing content for this instance (Season Packs recommended)</p>
-                            <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: ${huntMissingMode === 'episodes' ? 'block' : 'none'};" id="episodes-missing-warning-${index}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                            <p class="setting-help" style="display: ${huntMissingMode === 'episodes' ? 'block' : 'none'};" id="episodes-missing-warning-${index}">⚠️ Episodes mode makes more API calls. Season Packs recommended.</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-upgrade-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Mode:</label>
@@ -131,7 +131,7 @@ const SettingsForms = {
                                 <option value="episodes" ${upgradeMode === 'episodes' ? 'selected' : ''}>Episodes</option>
                             </select>
                             <p class="setting-help">How to search for upgrades for this instance (Season Packs recommended)</p>
-                            <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: ${upgradeMode === 'episodes' ? 'block' : 'none'};" id="episodes-upgrade-warning-${index}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                            <p class="setting-help" style="display: ${upgradeMode === 'episodes' ? 'block' : 'none'};" id="episodes-upgrade-warning-${index}">⚠️ Episodes mode makes more API calls. Season Packs recommended.</p>
                         </div>
                         
                         <!-- Instance State Management -->
@@ -3483,7 +3483,7 @@ const SettingsForms = {
                                     <option value="episodes">Episodes</option>
                                 </select>
                                 <p class="setting-help">How to search for missing content for this instance (Season Packs recommended)</p>
-                                <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: none;" id="episodes-missing-warning-${newIndex}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                                <p class="setting-help" style="display: none;" id="episodes-missing-warning-${newIndex}">⚠️ Episodes mode makes more API calls. Season Packs recommended.</p>
                             </div>
                             <div class="setting-item">
                                 <label for="${appType}-upgrade-mode-${newIndex}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Mode:</label>
@@ -3493,7 +3493,7 @@ const SettingsForms = {
                                     <option value="episodes">Episodes</option>
                                 </select>
                                 <p class="setting-help">How to search for upgrades for this instance (Season Packs recommended)</p>
-                                <p class="setting-help" style="color: #cc7a00; font-weight: bold; display: none;" id="episodes-upgrade-warning-${newIndex}">⚠️ Episodes mode makes excessive API calls and does not support tagging. Use only for targeting specific episodes. Season Packs mode is strongly recommended.</p>
+                                <p class="setting-help" style="display: none;" id="episodes-upgrade-warning-${newIndex}">⚠️ Episodes mode makes more API calls. Season Packs recommended.</p>
                             </div>
                             ` : ''}
                             <div class="setting-item">
