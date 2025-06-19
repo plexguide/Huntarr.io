@@ -172,7 +172,7 @@ const SettingsForms = {
                         </div>
                         
                         <!-- State Status Display -->
-                        <div class="setting-item" id="sonarr-state-status-${index}" style="display: ${stateManagementMode !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.4), rgba(30, 39, 56, 0.3)); border: 1px solid rgba(90, 109, 137, 0.1); border-radius: 6px;">
+                        <div class="setting-item" id="sonarr-state-status-${index}" style="display: ${stateManagementMode !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="color: #10b981; font-weight: 600;">
