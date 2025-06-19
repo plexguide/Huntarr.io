@@ -3545,34 +3545,54 @@ let huntarrUI = {
     loadInstanceStateInfo: function(appType, instanceIndex) {
         if (appType !== 'sonarr') return; // Only for Sonarr for now
         
+        const instanceNameElement = document.getElementById(`${appType}-name-${instanceIndex}`);
+        const instanceName = instanceNameElement?.value || `Instance ${instanceIndex + 1}`;
+        const hoursInput = document.getElementById(`${appType}-state-management-hours-${instanceIndex}`);
+        const customHours = parseInt(hoursInput?.value) || 168;
+        
+        // Calculate reset time based on custom hours for this instance
+        const resetTime = new Date(Date.now() + (customHours * 60 * 60 * 1000));
+        
         // Load state information for this specific instance
         HuntarrUtils.fetchWithTimeout('./api/stateful/info', {
             method: 'GET'
         })
         .then(response => response.json())
         .then(data => {
-            if (data) {
-                this.updateInstanceStateDisplay(appType, instanceIndex, data);
-            }
+            this.updateInstanceStateDisplay(appType, instanceIndex, data, resetTime, instanceName);
         })
         .catch(error => {
             console.error(`[huntarrUI] Error loading state info for ${appType} instance ${instanceIndex}:`, error);
+            // Still update with calculated time even if API fails
+            this.updateInstanceStateDisplay(appType, instanceIndex, null, resetTime, instanceName);
         });
     },
     
     // Update the instance state management display
-    updateInstanceStateDisplay: function(appType, instanceIndex, stateData) {
+    updateInstanceStateDisplay: function(appType, instanceIndex, stateData, resetTime, instanceName) {
         const resetTimeElement = document.getElementById(`${appType}-state-reset-time-${instanceIndex}`);
         const itemsCountElement = document.getElementById(`${appType}-state-items-count-${instanceIndex}`);
         
-        if (resetTimeElement && stateData.expires_at_ts) {
-            const resetDate = new Date(stateData.expires_at_ts * 1000);
-            resetTimeElement.textContent = resetDate.toLocaleString();
+        // Always show the calculated reset time based on instance settings
+        if (resetTimeElement) {
+            resetTimeElement.textContent = resetTime.toLocaleString();
         }
         
+        // Load instance-specific item count
         if (itemsCountElement) {
-            // For now, show a placeholder until we implement per-instance tracking
-            itemsCountElement.textContent = 'Global tracking';
+            // Try to get instance-specific count from stateful manager
+            HuntarrUtils.fetchWithTimeout(`./api/stateful/summary?app_type=${appType}&instance_name=${encodeURIComponent(instanceName)}`, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(summaryData => {
+                const count = summaryData.processed_count || 0;
+                itemsCountElement.textContent = count.toString();
+            })
+            .catch(error => {
+                console.error(`[huntarrUI] Error loading summary for ${appType}/${instanceName}:`, error);
+                itemsCountElement.textContent = '0';
+            });
         }
     }
 };

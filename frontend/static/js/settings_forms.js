@@ -67,7 +67,7 @@ const SettingsForms = {
             const huntUpgradeItems = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
             const huntMissingMode = instance.hunt_missing_mode || 'seasons_packs';
             const upgradeMode = instance.upgrade_mode || 'seasons_packs';
-            const stateManagementMode = instance.state_management_mode || 'global';
+            const stateManagementMode = instance.state_management_mode || 'custom';
             const stateManagementHours = instance.state_management_hours || 168;
             
             instancesHtml += `
@@ -137,19 +137,23 @@ const SettingsForms = {
                         <!-- Instance State Management -->
                         <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
                             <label for="sonarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
-                            <select id="sonarr-state-management-mode-${index}" name="state_management_mode" style="width: 200px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
-                                <option value="global" ${stateManagementMode === 'global' ? 'selected' : ''}>Use Global Setting</option>
-                                <option value="custom" ${stateManagementMode === 'custom' ? 'selected' : ''}>Custom for Instance</option>
-                                <option value="disabled" ${stateManagementMode === 'disabled' ? 'selected' : ''}>Disabled</option>
-                            </select>
-                            <p class="setting-help">Control how processed media state is managed for this specific instance</p>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <select id="sonarr-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                                    <option value="custom" ${stateManagementMode === 'custom' ? 'selected' : ''}>Enabled</option>
+                                    <option value="disabled" ${stateManagementMode === 'disabled' ? 'selected' : ''}>Disabled</option>
+                                </select>
+                                <button type="button" id="sonarr-state-reset-btn-${index}" class="btn btn-danger" style="display: ${stateManagementMode !== 'disabled' ? 'inline-flex' : 'none'}; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
+                                    <i class="fas fa-redo"></i> Reset State
+                                </button>
+                            </div>
+                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
                         </div>
                         
-                        <!-- Custom State Management Hours (only visible when custom mode is selected) -->
+                        <!-- State Management Hours (visible when enabled) -->
                         <div class="setting-item" id="sonarr-custom-state-hours-${index}" style="display: ${stateManagementMode === 'custom' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
                             <label for="sonarr-state-management-hours-${index}" style="display: flex; align-items: center; gap: 8px;">
                                 <i class="fas fa-clock" style="color: #6366f1;"></i>
-                                Custom Reset Hours:
+                                Reset Interval:
                             </label>
                             <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
                                 <input type="number" id="sonarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${stateManagementHours}" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
@@ -159,19 +163,23 @@ const SettingsForms = {
                             </div>
                             <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
                                 <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
-                                This instance will reset its state every <span id="sonarr-state-hours-text-${index}">${stateManagementHours}</span> hours, independent of the global setting
+                                State will automatically reset every <span id="sonarr-state-hours-text-${index}">${stateManagementHours}</span> hours
                             </p>
                         </div>
                         
-                        <!-- State Status Display (compact version) -->
-                        <div class="setting-item" id="sonarr-state-status-${index}" style="display: ${stateManagementMode !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.4), rgba(30, 39, 56, 0.3)); border: 1px solid rgba(90, 109, 137, 0.1); border-radius: 6px;">
-                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 15px; font-size: 13px;">
-                                <span style="color: #9ca3af; font-weight: 500;">Status:</span>
-                                <span id="sonarr-state-status-text-${index}" style="color: #10b981;">Active (${stateManagementMode === 'global' ? 'Global' : stateManagementMode === 'custom' ? 'Custom' : 'Disabled'})</span>
-                                <span style="color: #9ca3af; font-weight: 500;">Next Reset:</span>
-                                <span id="sonarr-state-reset-time-${index}" style="color: #d1d5db;">Loading...</span>
-                                <span style="color: #9ca3af; font-weight: 500;">Items Tracked:</span>
-                                <span id="sonarr-state-items-count-${index}" style="color: #d1d5db;">Loading...</span>
+                        <!-- State Status Display -->
+                        <div class="setting-item" id="sonarr-state-status-${index}" style="display: ${stateManagementMode !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.4), rgba(30, 39, 56, 0.3)); border: 1px solid rgba(90, 109, 137, 0.1); border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: #10b981; font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
+                                        Active - Tracked Items: <span id="sonarr-state-items-count-${index}">0</span>
+                                    </span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
+                                    <div id="sonarr-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
+                                </div>
                             </div>
                         </div>
                         
@@ -328,30 +336,32 @@ const SettingsForms = {
             const stateManagementModeSelect = container.querySelector(`#sonarr-state-management-mode-${index}`);
             const customStateHours = container.querySelector(`#sonarr-custom-state-hours-${index}`);
             const stateStatus = container.querySelector(`#sonarr-state-status-${index}`);
-            const stateStatusText = container.querySelector(`#sonarr-state-status-text-${index}`);
+            const stateResetBtn = container.querySelector(`#sonarr-state-reset-btn-${index}`);
             
             if (stateManagementModeSelect) {
                 stateManagementModeSelect.addEventListener('change', function() {
                     const mode = this.value;
                     
-                    // Show/hide custom hours section
+                    // Show/hide hours and status sections
                     if (customStateHours) {
                         customStateHours.style.display = mode === 'custom' ? 'block' : 'none';
                     }
                     
-                    // Show/hide state status section
                     if (stateStatus) {
                         stateStatus.style.display = mode !== 'disabled' ? 'block' : 'none';
                     }
                     
-                    // Update status text
-                    if (stateStatusText) {
-                        const statusText = mode === 'global' ? 'Active (Global)' : 
-                                         mode === 'custom' ? 'Active (Custom)' : 
-                                         'Disabled';
-                        const statusColor = mode === 'disabled' ? '#ef4444' : '#10b981';
-                        stateStatusText.textContent = statusText;
-                        stateStatusText.style.color = statusColor;
+                    if (stateResetBtn) {
+                        stateResetBtn.style.display = mode !== 'disabled' ? 'inline-flex' : 'none';
+                    }
+                });
+            }
+            
+            // Reset button functionality
+            if (stateResetBtn) {
+                stateResetBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to reset the state for this instance? This will clear all tracked processed media IDs and allow them to be reprocessed.')) {
+                        SettingsForms.resetInstanceState('sonarr', index);
                     }
                 });
             }
@@ -360,6 +370,7 @@ const SettingsForms = {
             const stateHoursInput = container.querySelector(`#sonarr-state-management-hours-${index}`);
             const stateDaysDisplay = container.querySelector(`#sonarr-state-days-display-${index}`);
             const stateHoursText = container.querySelector(`#sonarr-state-hours-text-${index}`);
+            const resetTimeElement = container.querySelector(`#sonarr-state-reset-time-${index}`);
             
             if (stateHoursInput) {
                 stateHoursInput.addEventListener('input', function() {
@@ -373,10 +384,67 @@ const SettingsForms = {
                     if (stateHoursText) {
                         stateHoursText.textContent = hours;
                     }
+                    
+                    // Update reset time calculation
+                    if (resetTimeElement) {
+                        const resetTime = new Date(Date.now() + (hours * 60 * 60 * 1000));
+                        resetTimeElement.textContent = resetTime.toLocaleString();
+                    }
                 });
             }
         });
         
+    },
+    
+    // Reset state for a specific instance
+    resetInstanceState: function(appType, instanceIndex) {
+        const supportedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        if (!supportedApps.includes(appType)) return;
+        
+        const instanceName = document.querySelector(`#${appType}-name-${instanceIndex}`)?.value || `Instance ${instanceIndex + 1}`;
+        
+        console.log(`[SettingsForms] Resetting state for ${appType} instance ${instanceIndex} (${instanceName})`);
+        
+        // Call the reset API endpoint 
+        HuntarrUtils.fetchWithTimeout('./api/stateful/reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                app_type: appType,
+                instance_name: instanceName
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                const itemsCountElement = document.getElementById(`${appType}-state-items-count-${instanceIndex}`);
+                const resetTimeElement = document.getElementById(`${appType}-state-reset-time-${instanceIndex}`);
+                
+                if (itemsCountElement) {
+                    itemsCountElement.textContent = '0';
+                }
+                
+                if (resetTimeElement) {
+                    // Calculate new reset time based on custom hours
+                    const hoursInput = document.getElementById(`${appType}-state-management-hours-${instanceIndex}`);
+                    const hours = parseInt(hoursInput?.value) || 168;
+                    const resetTime = new Date(Date.now() + (hours * 60 * 60 * 1000));
+                    resetTimeElement.textContent = resetTime.toLocaleString();
+                }
+                
+                console.log(`[SettingsForms] Successfully reset state for ${appType} instance ${instanceIndex}`);
+            } else {
+                console.error(`[SettingsForms] Failed to reset state: ${data.message || 'Unknown error'}`);
+                alert('Failed to reset state. Please check the logs for details.');
+            }
+        })
+        .catch(error => {
+            console.error(`[SettingsForms] Error resetting state for ${appType} instance ${instanceIndex}:`, error);
+            alert('Error resetting state. Please check the logs for details.');
+        });
     },
     
     // Generate Radarr settings form
@@ -447,6 +515,56 @@ const SettingsForms = {
                             <input type="number" id="radarr-hunt-upgrade-movies-${index}" name="hunt_upgrade_movies" min="0" value="${instance.hunt_upgrade_movies !== undefined ? instance.hunt_upgrade_movies : 0}" style="width: 80px;">
                             <p class="setting-help">Number of movies to search for quality upgrades per cycle (0 to disable).</p>
                         </div>
+                        
+                        <!-- Instance State Management -->
+                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
+                            <label for="radarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <select id="radarr-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                                    <option value="custom" ${(instance.state_management_mode || 'custom') === 'custom' ? 'selected' : ''}>Enabled</option>
+                                    <option value="disabled" ${(instance.state_management_mode || 'custom') === 'disabled' ? 'selected' : ''}>Disabled</option>
+                                </select>
+                                <button type="button" id="radarr-state-reset-btn-${index}" class="btn btn-danger" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'inline-flex' : 'none'}; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
+                                    <i class="fas fa-redo"></i> Reset State
+                                </button>
+                            </div>
+                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
+                        </div>
+                        
+                        <!-- State Management Hours (visible when enabled) -->
+                        <div class="setting-item" id="radarr-custom-state-hours-${index}" style="display: ${(instance.state_management_mode || 'custom') === 'custom' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
+                            <label for="radarr-state-management-hours-${index}">
+                                <i class="fas fa-clock" style="color: #6366f1;"></i>
+                                Reset Interval:
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                <input type="number" id="radarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${instance.state_management_hours || 168}" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
+                                <span style="color: #9ca3af; font-size: 14px;">
+                                    hours (<span id="radarr-state-days-display-${index}">${((instance.state_management_hours || 168) / 24).toFixed(1)}</span> days)
+                                </span>
+                            </div>
+                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                State will automatically reset every <span id="radarr-state-hours-text-${index}">${instance.state_management_hours || 168}</span> hours
+                            </p>
+                        </div>
+                        
+                        <!-- State Status Display -->
+                        <div class="setting-item" id="radarr-state-status-${index}" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: #10b981; font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
+                                        Active - Tracked Items: <span id="radarr-state-items-count-${index}">0</span>
+                                    </span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
+                                    <div id="radarr-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="setting-item">
                             <label for="radarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative; ${this.isSwaparrGloballyEnabled() ? '' : 'opacity: 0.5; pointer-events: none;'}">
@@ -545,6 +663,70 @@ const SettingsForms = {
 
         // Add event listeners for the instance management
         this.setupInstanceManagement(container, 'radarr', settings.instances.length);
+        
+        // Add event listeners for per-instance state management
+        settings.instances.forEach((instance, index) => {
+            // State management mode change listeners
+            const stateManagementModeSelect = container.querySelector(`#radarr-state-management-mode-${index}`);
+            const customStateHours = container.querySelector(`#radarr-custom-state-hours-${index}`);
+            const stateStatus = container.querySelector(`#radarr-state-status-${index}`);
+            const stateResetBtn = container.querySelector(`#radarr-state-reset-btn-${index}`);
+            
+            if (stateManagementModeSelect) {
+                stateManagementModeSelect.addEventListener('change', function() {
+                    const mode = this.value;
+                    
+                    // Show/hide hours and status sections
+                    if (customStateHours) {
+                        customStateHours.style.display = mode === 'custom' ? 'block' : 'none';
+                    }
+                    
+                    if (stateStatus) {
+                        stateStatus.style.display = mode !== 'disabled' ? 'block' : 'none';
+                    }
+                    
+                    if (stateResetBtn) {
+                        stateResetBtn.style.display = mode !== 'disabled' ? 'inline-flex' : 'none';
+                    }
+                });
+            }
+            
+            // Reset button functionality
+            if (stateResetBtn) {
+                stateResetBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to reset the state for this instance? This will clear all tracked processed media IDs and allow them to be reprocessed.')) {
+                        SettingsForms.resetInstanceState('radarr', index);
+                    }
+                });
+            }
+            
+            // Custom hours input change listener
+            const stateHoursInput = container.querySelector(`#radarr-state-management-hours-${index}`);
+            const stateDaysDisplay = container.querySelector(`#radarr-state-days-display-${index}`);
+            const stateHoursText = container.querySelector(`#radarr-state-hours-text-${index}`);
+            const resetTimeElement = container.querySelector(`#radarr-state-reset-time-${index}`);
+            
+            if (stateHoursInput) {
+                stateHoursInput.addEventListener('input', function() {
+                    const hours = parseInt(this.value) || 168;
+                    const days = (hours / 24).toFixed(1);
+                    
+                    if (stateDaysDisplay) {
+                        stateDaysDisplay.textContent = days;
+                    }
+                    
+                    if (stateHoursText) {
+                        stateHoursText.textContent = hours;
+                    }
+                    
+                    // Update reset time calculation
+                    if (resetTimeElement) {
+                        const resetTime = new Date(Date.now() + (hours * 60 * 60 * 1000));
+                        resetTimeElement.textContent = resetTime.toLocaleString();
+                    }
+                });
+            }
+        });
         
         // Set up event listeners for the skip_future_releases checkbox
         const skipFutureCheckbox = container.querySelector('#radarr_skip_future_releases');
@@ -646,6 +828,56 @@ const SettingsForms = {
                             <input type="number" id="lidarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}" style="width: 80px;">
                             <p class="setting-help">Number of albums to search for quality upgrades per cycle (0 to disable).</p>
                         </div>
+                        
+                        <!-- Instance State Management -->
+                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
+                            <label for="lidarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <select id="lidarr-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                                    <option value="custom" ${(instance.state_management_mode || 'custom') === 'custom' ? 'selected' : ''}>Enabled</option>
+                                    <option value="disabled" ${(instance.state_management_mode || 'custom') === 'disabled' ? 'selected' : ''}>Disabled</option>
+                                </select>
+                                <button type="button" id="lidarr-state-reset-btn-${index}" class="btn btn-danger" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'inline-flex' : 'none'}; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
+                                    <i class="fas fa-redo"></i> Reset State
+                                </button>
+                            </div>
+                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
+                        </div>
+                        
+                        <!-- State Management Hours (visible when enabled) -->
+                        <div class="setting-item" id="lidarr-custom-state-hours-${index}" style="display: ${(instance.state_management_mode || 'custom') === 'custom' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
+                            <label for="lidarr-state-management-hours-${index}">
+                                <i class="fas fa-clock" style="color: #6366f1;"></i>
+                                Reset Interval:
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                <input type="number" id="lidarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${instance.state_management_hours || 168}" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
+                                <span style="color: #9ca3af; font-size: 14px;">
+                                    hours (<span id="lidarr-state-days-display-${index}">${((instance.state_management_hours || 168) / 24).toFixed(1)}</span> days)
+                                </span>
+                            </div>
+                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                State will automatically reset every <span id="lidarr-state-hours-text-${index}">${instance.state_management_hours || 168}</span> hours
+                            </p>
+                        </div>
+                        
+                        <!-- State Status Display -->
+                        <div class="setting-item" id="lidarr-state-status-${index}" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: #10b981; font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
+                                        Active - Tracked Items: <span id="lidarr-state-items-count-${index}">0</span>
+                                    </span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
+                                    <div id="lidarr-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="setting-item">
                             <label for="lidarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative; ${this.isSwaparrGloballyEnabled() ? '' : 'opacity: 0.5; pointer-events: none;'}">
@@ -829,6 +1061,56 @@ const SettingsForms = {
                             <input type="number" id="readarr-hunt-upgrade-books-${index}" name="hunt_upgrade_books" min="0" value="${instance.hunt_upgrade_books !== undefined ? instance.hunt_upgrade_books : 0}" style="width: 80px;">
                             <p class="setting-help">Number of books to upgrade per cycle (0 to disable).</p>
                         </div>
+                        
+                        <!-- Instance State Management -->
+                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
+                            <label for="readarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <select id="readarr-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                                    <option value="custom" ${(instance.state_management_mode || 'custom') === 'custom' ? 'selected' : ''}>Enabled</option>
+                                    <option value="disabled" ${(instance.state_management_mode || 'custom') === 'disabled' ? 'selected' : ''}>Disabled</option>
+                                </select>
+                                <button type="button" id="readarr-state-reset-btn-${index}" class="btn btn-danger" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'inline-flex' : 'none'}; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
+                                    <i class="fas fa-redo"></i> Reset State
+                                </button>
+                            </div>
+                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
+                        </div>
+                        
+                        <!-- State Management Hours (visible when enabled) -->
+                        <div class="setting-item" id="readarr-custom-state-hours-${index}" style="display: ${(instance.state_management_mode || 'custom') === 'custom' ? 'block' : 'none'}; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
+                            <label for="readarr-state-management-hours-${index}">
+                                <i class="fas fa-clock" style="color: #6366f1;"></i>
+                                Reset Interval:
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                <input type="number" id="readarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${instance.state_management_hours || 168}" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
+                                <span style="color: #9ca3af; font-size: 14px;">
+                                    hours (<span id="readarr-state-days-display-${index}">${((instance.state_management_hours || 168) / 24).toFixed(1)}</span> days)
+                                </span>
+                            </div>
+                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                State will automatically reset every <span id="readarr-state-hours-text-${index}">${instance.state_management_hours || 168}</span> hours
+                            </p>
+                        </div>
+                        
+                        <!-- State Status Display -->
+                        <div class="setting-item" id="readarr-state-status-${index}" style="display: ${(instance.state_management_mode || 'custom') !== 'disabled' ? 'block' : 'none'}; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: #10b981; font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
+                                        Active - Tracked Items: <span id="readarr-state-items-count-${index}">0</span>
+                                    </span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
+                                    <div id="readarr-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="setting-item">
                             <label for="readarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative; ${this.isSwaparrGloballyEnabled() ? '' : 'opacity: 0.5; pointer-events: none;'}">
@@ -2014,7 +2296,6 @@ const SettingsForms = {
             settings.display_community_resources = getInputValue('#display_community_resources', true);
             settings.display_huntarr_support = getInputValue('#display_huntarr_support', true);
             settings.low_usage_mode = getInputValue('#low_usage_mode', false);
-            settings.stateful_management_hours = getInputValue('#stateful_management_hours', 168);
             
             // Auth mode handling
             const authModeElement = container.querySelector('#auth_mode');
@@ -2138,23 +2419,33 @@ const SettingsForms = {
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
                     instanceObj.hunt_missing_mode = huntMissingModeInput ? huntMissingModeInput.value : 'seasons_packs';
                     instanceObj.upgrade_mode = upgradeModeInput ? upgradeModeInput.value : 'seasons_packs';
-                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'global';
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
                     instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'radarr') {
                     instanceObj.hunt_missing_movies = huntMissingItems;
                     instanceObj.hunt_upgrade_movies = huntUpgradeItems;
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'lidarr') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'readarr') {
                     instanceObj.hunt_missing_books = huntMissingItems;
                     instanceObj.hunt_upgrade_books = huntUpgradeItems;
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'whisparr') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 } else if (appType === 'eros') {
                     instanceObj.hunt_missing_items = huntMissingItems;
                     instanceObj.hunt_upgrade_items = huntUpgradeItems;
+                    instanceObj.state_management_mode = stateManagementModeInput ? stateManagementModeInput.value : 'custom';
+                    instanceObj.state_management_hours = stateManagementHoursInput ? parseInt(stateManagementHoursInput.value) || 168 : 168;
                 }
                 
                 instances.push(instanceObj);
@@ -2176,33 +2467,43 @@ const SettingsForms = {
                     defaultInstance.hunt_upgrade_items = 0;
                     defaultInstance.hunt_missing_mode = 'seasons_packs';
                     defaultInstance.upgrade_mode = 'seasons_packs';
-                    defaultInstance.state_management_mode = 'global';
+                    defaultInstance.state_management_mode = 'custom';
                     defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'radarr') {
                     defaultInstance.hunt_missing_movies = 1;
                     defaultInstance.hunt_upgrade_movies = 0;
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'lidarr') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'readarr') {
                     defaultInstance.hunt_missing_books = 1;
                     defaultInstance.hunt_upgrade_books = 0;
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'whisparr') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 } else if (appType === 'eros') {
                     defaultInstance.hunt_missing_items = 1;
                     defaultInstance.hunt_upgrade_items = 0;
+                    defaultInstance.state_management_mode = 'custom';
+                    defaultInstance.state_management_hours = 168;
                     defaultInstance.missing_quality_profile = '';
                     defaultInstance.upgrade_quality_profile = '';
                 }
@@ -2480,41 +2781,7 @@ const SettingsForms = {
                     <p class="setting-help" style="margin-left: -3ch !important;">Set your timezone for accurate time display in logs and scheduling. Changes are applied when you save settings.</p>
                 </div>
             </div>
-            
-            <div class="settings-group" style="
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-                border: 2px solid rgba(90, 109, 137, 0.3);
-                border-radius: 12px;
-                padding: 20px;
-                margin: 15px 0 25px 0;
-                box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            ">
-                <div class="stateful-header-row">
-                    <h3>Stateful Management</h3>
-                    <!-- Original reset button removed, now using emergency button -->
-                </div>
-                <div id="stateful-section" class="setting-info-block">
-                    <div id="stateful-notification" class="notification error" style="display: none;">
-                        Failed to load stateful management info. Check logs for details.
-                    </div>
-                    <div class="info-container">
-                        <div class="date-info-block">
-                            <div class="date-label">Initial State Created:</div>
-                            <div id="stateful_initial_state" class="date-value">Loading...</div>
-                        </div>
-                        <div class="date-info-block">
-                            <div class="date-label">State Reset Date:</div>
-                            <div id="stateful_expires_date" class="date-value">Loading...</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="setting-item">
-                    <label for="stateful_management_hours"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Learn more about state reset intervals" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>State Reset (Hours):</label>
-                    <input type="number" id="stateful_management_hours" min="1" value="${settings.stateful_management_hours || 168}" style="width: 50% !important; max-width: 200px !important; box-sizing: border-box !important; margin: 0 !important; padding: 8px 12px !important; border-radius: 4px !important; display: block !important; text-align: left !important;">
-                    <p class="setting-help" style="margin-left: -3ch !important;">Hours before resetting processed media state (<span id="stateful_management_days">${((settings.stateful_management_hours || 168) / 24).toFixed(1)} days</span>)</p>
-                    <p class="setting-help reset-help" style="margin-left: -3ch !important;">Reset clears all processed media IDs to allow reprocessing</p>
-                </div>
-            </div>
+
             
             <div class="settings-group" style="
                 background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
@@ -2673,17 +2940,7 @@ const SettingsForms = {
             </div>
         `;
         
-        // Get hours input and days span elements once
-        const statefulHoursInput = container.querySelector('#stateful_management_hours');
-        const statefulDaysSpan = container.querySelector('#stateful_management_days');
-        
-        if (statefulHoursInput && statefulDaysSpan) {
-            statefulHoursInput.addEventListener('input', function() {
-                const hours = parseInt(this.value);
-                const days = (hours / 24).toFixed(1);
-                statefulDaysSpan.textContent = `${days} days`;
-            });
-        }
+
         
         // Set up Apprise notifications toggle functionality
         const enableNotificationsCheckbox = container.querySelector('#enable_notifications');

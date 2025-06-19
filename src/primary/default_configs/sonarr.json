@@ -9,7 +9,7 @@
       "hunt_upgrade_items": 0,
       "hunt_missing_mode": "seasons_packs",
       "upgrade_mode": "seasons_packs",
-      "state_management_mode": "global",
+      "state_management_mode": "custom",
       "state_management_hours": 168
     }
   ],

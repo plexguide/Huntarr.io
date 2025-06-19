@@ -16,7 +16,9 @@
       "name": "Default",
       "address": "http://localhost:7878",
       "api_key": "",
-      "api_timeout": 120
+      "api_timeout": 120,
+      "state_management_mode": "custom",
+      "state_management_hours": 168
     }
   ],
   "hunt_missing_movies": 1,
