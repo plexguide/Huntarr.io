@@ -327,7 +327,7 @@ def get_state_management_summary(app_type: str, instance_name: str, instance_hou
             expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
         
         # Calculate next reset time based on per-instance hours
-        next_reset_time = get_next_reset_time_for_instance(expiration_hours)
+        next_reset_time = get_next_reset_time_for_instance(expiration_hours, app_type)
         
         return {
             "processed_count": processed_count,
@@ -371,8 +371,8 @@ def get_next_reset_time() -> Optional[str]:
         # Get reset interval in hours
         reset_interval = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
         
-        # Get last reset time and calculate next reset
-        last_reset = get_last_reset_time()  # This returns a naive datetime
+        # Get last reset time and calculate next reset (use 'sonarr' as default for global state)
+        last_reset = get_last_reset_time('sonarr')  # Pass app_type parameter
         
         # Check if last_reset is valid (not Unix epoch or too old)
         unix_epoch = datetime.datetime(1970, 1, 1)
@@ -394,12 +394,13 @@ def get_next_reset_time() -> Optional[str]:
         stateful_logger.error(f"Error calculating next reset time: {e}")
         return None
 
-def get_next_reset_time_for_instance(instance_hours: int) -> Optional[str]:
+def get_next_reset_time_for_instance(instance_hours: int, app_type: str = None) -> Optional[str]:
     """
     Get the next state management reset time for a specific instance based on custom hours.
     
     Args:
         instance_hours: Custom reset interval hours for this instance
+        app_type: The app type for getting last reset time (optional, defaults to 'sonarr')
         
     Returns:
         Formatted reset time string or None if unable to calculate
@@ -411,8 +412,12 @@ def get_next_reset_time_for_instance(instance_hours: int) -> Optional[str]:
         # Get user's timezone
         user_tz = _get_user_timezone()
         
+        # Default to 'sonarr' if no app_type provided (for backward compatibility)
+        if app_type is None:
+            app_type = 'sonarr'
+        
         # Get last reset time and calculate next reset
-        last_reset = get_last_reset_time()  # This returns a naive datetime
+        last_reset = get_last_reset_time(app_type)  # Pass app_type parameter
         
         # Check if last_reset is valid (not Unix epoch or too old)
         unix_epoch = datetime.datetime(1970, 1, 1)
@@ -426,7 +431,7 @@ def get_next_reset_time_for_instance(instance_hours: int) -> Optional[str]:
             return next_reset_user_tz.strftime('%Y-%m-%d %H:%M:%S')
         else:
             # If no valid last reset time, calculate from now
-            stateful_logger.info(f"No valid last reset time found, calculating next reset from current time using {instance_hours} hours")
+            stateful_logger.info(f"No valid last reset time found for {app_type}, calculating next reset from current time using {instance_hours} hours")
             now_user_tz = datetime.datetime.now(user_tz)
             next_reset = now_user_tz + datetime.timedelta(hours=instance_hours)
             return next_reset.strftime('%Y-%m-%d %H:%M:%S')
