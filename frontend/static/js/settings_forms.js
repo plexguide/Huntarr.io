@@ -3284,10 +3284,32 @@ const SettingsForms = {
                 urlInputs.forEach(input => {
                     if (input.hasAttribute('data-instance-index')) {
                         const instanceIndex = input.getAttribute('data-instance-index');
-                        SettingsForms.checkConnectionStatus(appType, instanceIndex);
+                        const apiKeyInput = container.querySelector(`#${appType}-key-${instanceIndex}`);
+                        
+                        // Only check if both URL and API key have meaningful values
+                        if (input.value.trim().length > 10 && apiKeyInput && apiKeyInput.value.trim().length > 20) {
+                            console.log(`[Initial Check] Running connection check for ${appType} instance ${instanceIndex}`);
+                            SettingsForms.checkConnectionStatus(appType, instanceIndex);
+                        } else {
+                            console.log(`[Initial Check] Skipping connection check for ${appType} instance ${instanceIndex} - insufficient data`);
+                            // Set appropriate status message
+                            const statusElement = container.querySelector(`#${appType}-status-${instanceIndex}`);
+                            if (statusElement) {
+                                if (input.value.trim().length <= 10 && (!apiKeyInput || apiKeyInput.value.trim().length <= 20)) {
+                                    statusElement.textContent = 'Enter URL and API Key';
+                                    statusElement.style.color = '#888';
+                                } else if (input.value.trim().length <= 10) {
+                                    statusElement.textContent = 'Missing URL';
+                                    statusElement.style.color = '#fbbf24';
+                                } else if (!apiKeyInput || apiKeyInput.value.trim().length <= 20) {
+                                    statusElement.textContent = 'Missing API Key';
+                                    statusElement.style.color = '#fbbf24';
+                                }
+                            }
+                        }
                     }
                 });
-            }, 500);
+            }, 1000); // Increased timeout to 1000ms to ensure form is fully rendered
         }
 
 
@@ -3801,8 +3823,14 @@ const SettingsForms = {
         console.log(`Checking connection status for ${app} instance ${instanceIndex}`);
         
         // Delay to avoid spamming API calls while typing
-        clearTimeout(this._autoFetchTimeout);
-        this._autoFetchTimeout = setTimeout(() => {
+        const timeoutKey = `${app}_${instanceIndex}`;
+        if (this._autoFetchTimeouts && this._autoFetchTimeouts[timeoutKey]) {
+            clearTimeout(this._autoFetchTimeouts[timeoutKey]);
+        }
+        if (!this._autoFetchTimeouts) {
+            this._autoFetchTimeouts = {};
+        }
+        this._autoFetchTimeouts[timeoutKey] = setTimeout(() => {
             this.testConnectionAndUpdateStatus(app, instanceIndex, url, apiKey, statusElement);
         }, 1000); // Wait 1 second after user stops typing
     },
@@ -3810,6 +3838,16 @@ const SettingsForms = {
     // Test connection and update status
     testConnectionAndUpdateStatus: function(app, instanceIndex, url, apiKey, statusElement) {
         console.log(`[ConnectionStatus] Testing connection for ${app} instance ${instanceIndex}`);
+        
+        // Add a backup timeout in case the request hangs
+        const backupTimeoutId = setTimeout(() => {
+            console.error(`[ConnectionStatus] Backup timeout triggered for ${app} instance ${instanceIndex}`);
+            if (statusElement) {
+                statusElement.textContent = '✗ Connection timeout';
+                statusElement.style.color = '#ef4444';
+            }
+            this._resetSuppressionFlags();
+        }, 30000); // 30 second backup timeout
         
         // Make API request to test connection
         HuntarrUtils.fetchWithTimeout(`./api/${app}/test-connection`, {
@@ -3829,6 +3867,7 @@ const SettingsForms = {
             return response.json();
         })
         .then(data => {
+            clearTimeout(backupTimeoutId); // Clear the backup timeout since we got a response
             console.log(`[ConnectionStatus] Connection test response for ${app} instance ${instanceIndex}:`, data);
             
             if (data.success) {
@@ -3857,6 +3896,7 @@ const SettingsForms = {
             }, 2000);
         })
         .catch(error => {
+            clearTimeout(backupTimeoutId); // Clear the backup timeout since we got an error response
             console.error(`[ConnectionStatus] Connection test error for ${app} instance ${instanceIndex}:`, error);
             
             // Update status to error
