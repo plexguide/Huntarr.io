@@ -66,9 +66,22 @@ class HuntarrDatabase:
     
     def get_connection(self):
         """Get a configured SQLite connection with Synology NAS compatibility"""
-        conn = sqlite3.connect(self.db_path)
-        self._configure_connection(conn)
-        return conn
+        try:
+            conn = sqlite3.connect(self.db_path)
+            self._configure_connection(conn)
+            # Test the connection by running a simple query
+            conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
+            return conn
+        except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
+            if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
+                logger.error(f"Database corruption detected: {e}")
+                self._handle_database_corruption()
+                # Try connecting again after recovery
+                conn = sqlite3.connect(self.db_path)
+                self._configure_connection(conn)
+                return conn
+            else:
+                raise
     
     def _get_database_path(self) -> Path:
         """Get database path - use /config for Docker, Windows AppData, or local data directory"""
@@ -100,6 +113,48 @@ class HuntarrDatabase:
         # Ensure directory exists
         data_dir.mkdir(parents=True, exist_ok=True)
         return data_dir / "huntarr.db"
+
+    def _handle_database_corruption(self):
+        """Handle database corruption by creating backup and starting fresh"""
+        import time
+        
+        logger.error(f"Handling database corruption for: {self.db_path}")
+        
+        try:
+            # Create backup of corrupted database if it exists
+            if self.db_path.exists():
+                backup_path = self.db_path.parent / f"huntarr_corrupted_backup_{int(time.time())}.db"
+                self.db_path.rename(backup_path)
+                logger.warning(f"Corrupted database backed up to: {backup_path}")
+                logger.warning("Starting with fresh database - all previous data has been backed up but will be lost")
+            
+            # Ensure the corrupted file is completely removed
+            if self.db_path.exists():
+                self.db_path.unlink()
+                
+        except Exception as backup_error:
+            logger.error(f"Error during database corruption recovery: {backup_error}")
+            # Force remove the corrupted file
+            try:
+                if self.db_path.exists():
+                    self.db_path.unlink()
+            except:
+                pass
+
+    def _check_database_integrity(self) -> bool:
+        """Check if database integrity is intact"""
+        try:
+            with self.get_connection() as conn:
+                # Run SQLite integrity check
+                result = conn.execute("PRAGMA integrity_check").fetchone()
+                if result and result[0] == "ok":
+                    return True
+                else:
+                    logger.error(f"Database integrity check failed: {result}")
+                    return False
+        except Exception as e:
+            logger.error(f"Database integrity check failed with error: {e}")
+            return False
     
     def ensure_database_exists(self):
         """Create database and all tables if they don't exist"""
@@ -129,6 +184,20 @@ class HuntarrDatabase:
             logger.error(f"Error setting up database directory: {e}")
             raise
             
+        # Create all tables with corruption recovery
+        try:
+            self._create_all_tables()
+        except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
+            if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
+                logger.error(f"Database corruption detected during table creation: {e}")
+                self._handle_database_corruption()
+                # Try creating tables again after recovery
+                self._create_all_tables()
+            else:
+                raise
+                
+    def _create_all_tables(self):
+        """Create all database tables"""
         with self.get_connection() as conn:
             
             # Create app_configs table for all app settings
