@@ -250,7 +250,8 @@ class UserModule {
         }
 
         // Check if 2FA is enabled and require code
-        const twoFactorEnabled = document.getElementById('twoFactorEnabled').classList.contains('enabled');
+        const twoFactorElement = document.getElementById('twoFactorEnabled');
+        const twoFactorEnabled = twoFactorElement && twoFactorElement.textContent.trim() === 'Enabled';
         if (twoFactorEnabled && !twoFactorCode) {
             this.showStatus(statusElement, 'Please enter your 2FA code', 'error');
             return;
@@ -262,7 +263,7 @@ class UserModule {
                 requestBody.two_factor_code = twoFactorCode;
             }
 
-            const response = await fetch('./api/auth/recovery-key/generate', {
+            const response = await fetch('./auth/recovery-key/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestBody)
