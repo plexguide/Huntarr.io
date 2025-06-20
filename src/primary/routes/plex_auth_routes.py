@@ -38,6 +38,7 @@ def create_pin():
             return jsonify({
                 'success': True,
                 'pin_id': pin_data['id'],
+                'pin': pin_data['code'],
                 'auth_url': pin_data['auth_url']
             })
         else:

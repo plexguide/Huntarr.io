@@ -330,7 +330,15 @@ class UserModule {
 
     async linkPlexAccount() {
         try {
-            const response = await fetch('./api/auth/plex/pin', { method: 'POST' });
+            const response = await fetch('./api/auth/plex/pin', { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_mode: true
+                })
+            });
             const result = await response.json();
 
             if (response.ok) {
@@ -338,7 +346,7 @@ class UserModule {
                 document.getElementById('plexLinkStatus').textContent = 'Waiting for authentication...';
                 document.getElementById('plexLinkModal').style.display = 'flex';
                 
-                this.plexPinId = result.id;
+                this.plexPinId = result.pin_id;
                 this.startPlexPolling();
             } else {
                 const statusElement = document.getElementById('plexMainPageStatus');
@@ -356,14 +364,42 @@ class UserModule {
                 const response = await fetch(`./api/auth/plex/check/${this.plexPinId}`, { method: 'GET' });
                 const result = await response.json();
 
-                if (response.ok && result.success) {
-                    document.getElementById('plexLinkStatus').textContent = 'Successfully linked!';
-                    document.getElementById('plexLinkStatus').className = 'plex-status success';
+                if (response.ok && result.success && result.claimed) {
+                    // PIN has been claimed, now link the account
+                    document.getElementById('plexLinkStatus').textContent = 'Linking account...';
                     
-                    setTimeout(() => {
-                        this.cancelPlexLink();
-                        this.loadUserData(); // Refresh user data to show linked account
-                    }, 2000);
+                    try {
+                        const linkResponse = await fetch('./api/auth/plex/link', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                token: result.token
+                            })
+                        });
+                        
+                        const linkResult = await linkResponse.json();
+                        
+                        if (linkResponse.ok && linkResult.success) {
+                            document.getElementById('plexLinkStatus').textContent = 'Successfully linked!';
+                            document.getElementById('plexLinkStatus').className = 'plex-status success';
+                            
+                            setTimeout(() => {
+                                this.cancelPlexLink();
+                                this.loadUserData(); // Refresh user data to show linked account
+                            }, 2000);
+                        } else {
+                            document.getElementById('plexLinkStatus').textContent = linkResult.error || 'Failed to link account';
+                            document.getElementById('plexLinkStatus').className = 'plex-status error';
+                        }
+                        
+                        clearInterval(this.plexPollingInterval);
+                    } catch (linkError) {
+                        document.getElementById('plexLinkStatus').textContent = 'Error linking account';
+                        document.getElementById('plexLinkStatus').className = 'plex-status error';
+                        clearInterval(this.plexPollingInterval);
+                    }
                 } else if (result.error && result.error !== 'PIN not authorized yet') {
                     document.getElementById('plexLinkStatus').textContent = result.error;
                     document.getElementById('plexLinkStatus').className = 'plex-status error';

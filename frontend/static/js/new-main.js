@@ -1273,14 +1273,24 @@ let huntarrUI = {
             return;
         }
         
+        // Determine what type of settings we're saving
         const app = this.currentSettingsTab;
-        if (!app) {
+        const isGeneralSettings = this.currentSection === 'settings' && !app;
+        
+        if (!app && !isGeneralSettings) {
             console.log('[huntarrUI] No current settings tab for auto-save');
             return;
         }
         
-        console.log(`[huntarrUI] Triggering immediate settings auto-save for: ${app}`);
-        this.autoSaveSettings(app);
+        if (isGeneralSettings) {
+            console.log('[huntarrUI] Triggering immediate general settings auto-save');
+            this.autoSaveGeneralSettings(true).catch(error => {
+                console.error('[huntarrUI] General settings auto-save failed:', error);
+            });
+        } else {
+            console.log(`[huntarrUI] Triggering immediate settings auto-save for: ${app}`);
+            this.autoSaveSettings(app);
+        }
     },
 
     // Auto-save settings function
@@ -1563,8 +1573,8 @@ let huntarrUI = {
             });
     },
 
-    // Auto-save general settings (used by test notification)
-    autoSaveGeneralSettings: function() {
+    // Auto-save general settings (used by test notification and auto-save)
+    autoSaveGeneralSettings: function(silent = false) {
         console.log('[huntarrUI] Auto-saving general settings...');
         
         return new Promise((resolve, reject) => {
