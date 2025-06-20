@@ -342,7 +342,9 @@ class UserModule {
             const result = await response.json();
 
             if (response.ok) {
-                document.getElementById('plexLinkPinCode').textContent = result.pin;
+                // Open Plex auth URL in new window
+                window.open(result.auth_url, '_blank');
+                
                 document.getElementById('plexLinkStatus').textContent = 'Waiting for authentication...';
                 document.getElementById('plexLinkModal').style.display = 'flex';
                 

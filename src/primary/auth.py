@@ -1085,7 +1085,7 @@ def link_plex_account_session_auth(username: str, plex_token: str, plex_user_dat
     Link a Plex account to an existing local user using session authentication
     
     Args:
-        username: Not used for validation - kept for compatibility
+        username: Username from session authentication
         plex_token: Plex access token
         plex_user_data: User data from Plex API
         
@@ -1093,24 +1093,17 @@ def link_plex_account_session_auth(username: str, plex_token: str, plex_user_dat
         bool: True if account linked successfully
     """
     try:
-        user_data = get_user_data()
+        from src.primary.utils.database import get_database
+        db = get_database()
         
-        # No need to validate username since user is already authenticated via session
-        # Just proceed to add Plex information
+        # Use database approach instead of JSON files
+        success = db.update_user_plex(username, plex_token, plex_user_data)
         
-        # Prepare Plex user data for storage - add linked timestamp
-        plex_data_to_store = plex_user_data.copy()
-        plex_data_to_store['linked_at'] = time.time()
-        
-        # Store Plex information using database schema fields
-        user_data["plex_token"] = plex_token
-        user_data["plex_user_data"] = plex_data_to_store
-        
-        if save_user_data(user_data):
-            logger.info(f"Plex account linked to authenticated user - Plex username: {plex_user_data.get('username')}")
+        if success:
+            logger.info(f"Plex account linked to user {username} - Plex username: {plex_user_data.get('username')}")
             return True
         else:
-            logger.error("Failed to save linked Plex data")
+            logger.error("Failed to update user Plex data in database")
             return False
             
     except Exception as e:
