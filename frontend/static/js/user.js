@@ -35,19 +35,35 @@ class UserModule {
 
     async loadUserData() {
         try {
-            const response = await fetch('./api/user');
-            if (!response.ok) throw new Error('Failed to fetch user data');
+            // Load user info
+            const userResponse = await fetch('./api/user/info');
+            if (!userResponse.ok) throw new Error('Failed to fetch user data');
             
-            const data = await response.json();
+            const userData = await userResponse.json();
             
             // Update username
-            document.getElementById('currentUsername').textContent = data.username || 'Unknown';
+            document.getElementById('currentUsername').textContent = userData.username || 'Unknown';
             
             // Update 2FA status
-            this.update2FAStatus(data.two_fa_enabled);
+            this.update2FAStatus(userData.is_2fa_enabled);
             
-            // Update Plex status
-            this.updatePlexStatus(data.plex_data);
+            // Load Plex status
+            try {
+                const plexResponse = await fetch('./api/auth/plex/status');
+                if (plexResponse.ok) {
+                    const plexData = await plexResponse.json();
+                    if (plexData.success) {
+                        this.updatePlexStatus(plexData);
+                    } else {
+                        this.updatePlexStatus(null);
+                    }
+                } else {
+                    this.updatePlexStatus(null);
+                }
+            } catch (plexError) {
+                console.warn('Error loading Plex status:', plexError);
+                this.updatePlexStatus(null);
+            }
             
         } catch (error) {
             console.error('Error loading user data:', error);
@@ -65,12 +81,12 @@ class UserModule {
         }
 
         try {
-            const response = await fetch('./api/user/username', {
+            const response = await fetch('./api/user/change-username', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    new_username: newUsername,
-                    current_password: currentPassword
+                    username: newUsername,
+                    password: currentPassword
                 })
             });
 
@@ -111,7 +127,7 @@ class UserModule {
         }
 
         try {
-            const response = await fetch('./api/user/password', {
+            const response = await fetch('./api/user/change-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -137,11 +153,11 @@ class UserModule {
 
     async enableTwoFactor() {
         try {
-            const response = await fetch('./api/auth/2fa/setup', { method: 'POST' });
+            const response = await fetch('./api/user/2fa/setup', { method: 'POST' });
             const result = await response.json();
 
             if (response.ok) {
-                document.getElementById('qrCode').src = result.qr_code;
+                document.getElementById('qrCode').src = result.qr_code_url;
                 document.getElementById('secretKey').textContent = result.secret;
                 
                 document.getElementById('enableTwoFactorSection').style.display = 'none';
@@ -164,7 +180,7 @@ class UserModule {
         }
 
         try {
-            const response = await fetch('./api/auth/2fa/verify', {
+            const response = await fetch('./api/user/2fa/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code })
@@ -197,12 +213,12 @@ class UserModule {
         }
 
         try {
-            const response = await fetch('./api/auth/2fa/disable', {
+            const response = await fetch('./api/user/2fa/disable', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     password: password,
-                    otp_code: otpCode
+                    code: otpCode
                 })
             });
 
@@ -313,7 +329,7 @@ class UserModule {
 
     async linkPlexAccount() {
         try {
-            const response = await fetch('./api/plex/pin', { method: 'POST' });
+            const response = await fetch('./api/auth/plex/pin', { method: 'POST' });
             const result = await response.json();
 
             if (response.ok) {
@@ -336,7 +352,7 @@ class UserModule {
     startPlexPolling() {
         this.plexPollingInterval = setInterval(async () => {
             try {
-                const response = await fetch(`./api/plex/token/${this.plexPinId}`, { method: 'POST' });
+                const response = await fetch(`./api/auth/plex/check/${this.plexPinId}`, { method: 'GET' });
                 const result = await response.json();
 
                 if (response.ok && result.success) {
@@ -377,7 +393,7 @@ class UserModule {
         }
 
         try {
-            const response = await fetch('./api/plex/unlink', { method: 'POST' });
+            const response = await fetch('./api/auth/plex/unlink', { method: 'POST' });
             const result = await response.json();
 
             if (response.ok) {
@@ -428,13 +444,13 @@ class UserModule {
 
         statusBadge.style.display = 'inline-block';
 
-        if (plexData && plexData.username) {
+        if (plexData && plexData.plex_linked) {
             statusBadge.textContent = 'Linked';
             statusBadge.className = 'status-badge enabled';
             
-            document.getElementById('plexUsername').textContent = plexData.username;
-            document.getElementById('plexEmail').textContent = plexData.email || 'N/A';
-            document.getElementById('plexLinkedAt').textContent = plexData.linked_at || 'Unknown';
+            document.getElementById('plexUsername').textContent = plexData.plex_username || 'Unknown';
+            document.getElementById('plexEmail').textContent = plexData.plex_email || 'N/A';
+            document.getElementById('plexLinkedAt').textContent = plexData.plex_linked_at || 'Unknown';
             
             notLinkedSection.style.display = 'none';
             linkedSection.style.display = 'block';
