@@ -59,17 +59,30 @@ class HuntarrDatabase:
                 
                 # Aggressive Synology-optimized settings for network file system performance
                 conn.execute('PRAGMA synchronous = OFF')          # Most aggressive - no FSYNC waits for maximum performance
-                conn.execute('PRAGMA cache_size = -65536')         # 64MB cache (doubled from 40MB) for better performance
+                conn.execute('PRAGMA cache_size = -131072')        # 128MB cache (massive increase for Synology NAS)
                 conn.execute('PRAGMA temp_store = MEMORY')         # Store temp tables in memory
-                conn.execute('PRAGMA busy_timeout = 60000')        # 60 seconds for Synology I/O (increased from 30s)
-                conn.execute('PRAGMA mmap_size = 268435456')       # 256MB memory map for better performance
-                conn.execute('PRAGMA page_size = 32768')           # Larger page size for network shares (32KB)
+                conn.execute('PRAGMA busy_timeout = 120000')       # 2 minutes for extreme Synology I/O delays
+                conn.execute('PRAGMA mmap_size = 536870912')       # 512MB memory map for network shares
+                conn.execute('PRAGMA page_size = 65536')           # Maximum page size for network shares (64KB)
                 
-                # Additional Synology-specific optimizations
+                # Critical Synology-specific optimizations based on media server research
                 conn.execute('PRAGMA locking_mode = EXCLUSIVE')    # Exclusive locking for single-user scenarios
                 conn.execute('PRAGMA count_changes = OFF')         # Disable change counting for performance
                 conn.execute('PRAGMA legacy_file_format = OFF')   # Use modern file format
                 conn.execute('PRAGMA reverse_unordered_selects = OFF')  # Consistent query results
+                conn.execute('PRAGMA compile_options')             # Check available compile options
+                
+                # Additional optimizations from Plex/Sonarr research for Synology
+                conn.execute('PRAGMA threads = 4')                # Use multiple threads for operations
+                conn.execute('PRAGMA max_page_count = 1073741823') # Maximum database size
+                conn.execute('PRAGMA default_cache_size = -131072') # Set default cache size
+                conn.execute('PRAGMA cache_spill = OFF')           # Prevent cache spilling to disk
+                conn.execute('PRAGMA query_only = OFF')           # Allow write operations
+                conn.execute('PRAGMA trusted_schema = ON')        # Trust schema for performance
+                
+                # File descriptor and connection optimizations
+                conn.execute('PRAGMA analysis_limit = 1000')      # Limit analysis for performance
+                conn.execute('PRAGMA optimize = 0x10002')         # Advanced optimization flags
                 
             else:
                 if is_synology and not synology_opt_enabled:
@@ -110,19 +123,26 @@ class HuntarrDatabase:
             result = conn.execute('PRAGMA journal_mode').fetchone()
             if result and result[0] == 'wal':
                 if is_synology and synology_opt_enabled:
-                    # Very aggressive checkpointing for Synology network shares
-                    conn.execute('PRAGMA wal_autocheckpoint = 2000')      # Much less frequent checkpoints
-                    conn.execute('PRAGMA journal_size_limit = 268435456') # 256MB journal size limit
+                    # Extremely aggressive checkpointing for Synology network shares
+                    conn.execute('PRAGMA wal_autocheckpoint = 5000')      # Very infrequent checkpoints for performance
+                    conn.execute('PRAGMA journal_size_limit = 1073741824') # 1GB journal size limit (maximum)
+                    
+                    # Additional WAL optimizations for Synology
+                    try:
+                        conn.execute('PRAGMA wal_checkpoint = PASSIVE')   # Non-blocking checkpoint mode
+                    except Exception:
+                        pass  # Not all SQLite versions support this
                 else:
                     # Conservative checkpointing for other systems
                     conn.execute('PRAGMA wal_autocheckpoint = 500')       # More frequent checkpoints for Docker
                     conn.execute('PRAGMA journal_size_limit = 67108864')  # 64MB journal size limit
                 
-                # Force checkpoint and truncate to clean up WAL file
-                try:
-                    conn.execute('PRAGMA wal_checkpoint(TRUNCATE)')
-                except Exception as checkpoint_error:
-                    logger.debug(f"WAL checkpoint failed (non-critical): {checkpoint_error}")
+                # Force checkpoint and truncate to clean up WAL file (skip for Synology aggressive mode)
+                if not (is_synology and synology_opt_enabled):
+                    try:
+                        conn.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+                    except Exception as checkpoint_error:
+                        logger.debug(f"WAL checkpoint failed (non-critical): {checkpoint_error}")
             
             # Test the configuration worked (skip integrity check for aggressive Synology mode)
             if not (is_synology and synology_opt_enabled):
@@ -138,8 +158,17 @@ class HuntarrDatabase:
                 cache_size = conn.execute('PRAGMA cache_size').fetchone()[0]
                 mmap_size = conn.execute('PRAGMA mmap_size').fetchone()[0]
                 page_size = conn.execute('PRAGMA page_size').fetchone()[0]
-                logger.info(f"Synology optimizations applied: journal={journal_mode}, sync={sync_mode}, "
-                           f"cache={abs(cache_size/1024):.1f}MB, mmap={mmap_size/1024/1024:.0f}MB, page={page_size}B")
+                busy_timeout = conn.execute('PRAGMA busy_timeout').fetchone()[0]
+                
+                if synology_opt_enabled:
+                    logger.info(f"AGGRESSIVE Synology optimizations applied: journal={journal_mode}, sync={sync_mode}, "
+                               f"cache={abs(cache_size/1024):.1f}MB, mmap={mmap_size/1024/1024:.0f}MB, "
+                               f"page={page_size}B, timeout={busy_timeout/1000:.0f}s")
+                    logger.info("Applied Synology-specific optimizations: threads=4, cache_spill=OFF, "
+                               "exclusive_locking=ON, analysis_limit=1000")
+                else:
+                    logger.info(f"Standard Synology optimizations applied: journal={journal_mode}, sync={sync_mode}, "
+                               f"cache={abs(cache_size/1024):.1f}MB, mmap={mmap_size/1024/1024:.0f}MB, page={page_size}B")
             
         except Exception as e:
             logger.error(f"Error configuring database connection: {e}")
@@ -149,17 +178,50 @@ class HuntarrDatabase:
     def get_connection(self):
         """Get a configured SQLite connection with Synology NAS compatibility"""
         try:
-            conn = sqlite3.connect(self.db_path)
+            # Use timeout and additional connection parameters for Synology compatibility
+            is_synology = self._detect_synology_nas()
+            synology_opt_enabled = os.environ.get('HUNTARR_SYNOLOGY_OPTIMIZATIONS', 'true').lower() == 'true'
+            
+            if is_synology and synology_opt_enabled:
+                # Aggressive connection settings for Synology
+                conn = sqlite3.connect(
+                    self.db_path,
+                    timeout=120.0,  # 2 minutes timeout for network file systems
+                    isolation_level=None,  # Autocommit mode for better performance
+                    check_same_thread=False  # Allow multi-threaded access
+                )
+            else:
+                # Standard connection settings
+                conn = sqlite3.connect(
+                    self.db_path,
+                    timeout=30.0,
+                    check_same_thread=False
+                )
+            
             self._configure_connection(conn)
+            
             # Test the connection by running a simple query
             conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
             return conn
+            
         except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
             if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
                 logger.error(f"Database corruption detected: {e}")
                 self._handle_database_corruption()
                 # Try connecting again after recovery
-                conn = sqlite3.connect(self.db_path)
+                if is_synology and synology_opt_enabled:
+                    conn = sqlite3.connect(
+                        self.db_path,
+                        timeout=120.0,
+                        isolation_level=None,
+                        check_same_thread=False
+                    )
+                else:
+                    conn = sqlite3.connect(
+                        self.db_path,
+                        timeout=30.0,
+                        check_same_thread=False
+                    )
                 self._configure_connection(conn)
                 return conn
             else:
