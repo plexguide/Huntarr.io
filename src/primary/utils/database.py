@@ -742,6 +742,37 @@ class HuntarrDatabase:
             # Logs table moved to separate logs.db - remove if it exists
             conn.execute('DROP TABLE IF EXISTS logs')
             
+            # Create requestor_settings table for Requestor configuration
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS requestor_settings (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    tmdb_api_key TEXT,
+                    enabled BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create requestor_requests table for tracking media requests
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS requestor_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tmdb_id INTEGER NOT NULL,
+                    media_type TEXT NOT NULL CHECK (media_type IN ('movie', 'tv')),
+                    title TEXT NOT NULL,
+                    year INTEGER,
+                    overview TEXT,
+                    poster_path TEXT,
+                    backdrop_path TEXT,
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'requested', 'available', 'failed')),
+                    request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(tmdb_id, media_type, app_type, instance_name)
+                )
+            ''')
+
             # Create hunt_history table for tracking processed media history
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS hunt_history (
@@ -2280,6 +2311,130 @@ class HuntarrDatabase:
                 return result is not None
         except Exception as e:
             logger.error(f"Failed to check setup progress: {e}")
+            return False
+
+    # Requestor functionality methods
+    def get_requestor_settings(self) -> Dict[str, Any]:
+        """Get Requestor configuration settings"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.execute("""
+                    SELECT tmdb_api_key, enabled FROM requestor_settings WHERE id = 1
+                """)
+                row = cursor.fetchone()
+                if row:
+                    return {
+                        'tmdb_api_key': row[0] or '',
+                        'enabled': bool(row[1])
+                    }
+                return {'tmdb_api_key': '', 'enabled': False}
+        except Exception as e:
+            logger.error(f"Error getting requestor settings: {e}")
+            return {'tmdb_api_key': '', 'enabled': False}
+
+    def save_requestor_settings(self, tmdb_api_key: str, enabled: bool) -> bool:
+        """Save Requestor configuration settings"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute("""
+                    INSERT OR REPLACE INTO requestor_settings (id, tmdb_api_key, enabled, updated_at)
+                    VALUES (1, ?, ?, CURRENT_TIMESTAMP)
+                """, (tmdb_api_key, enabled))
+                return True
+        except Exception as e:
+            logger.error(f"Error saving requestor settings: {e}")
+            return False
+
+    def add_request(self, tmdb_id: int, media_type: str, title: str, year: int, 
+                   overview: str, poster_path: str, backdrop_path: str,
+                   app_type: str, instance_name: str) -> bool:
+        """Add a new media request"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute("""
+                    INSERT OR REPLACE INTO requestor_requests 
+                    (tmdb_id, media_type, title, year, overview, poster_path, backdrop_path,
+                     app_type, instance_name, status, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)
+                """, (tmdb_id, media_type, title, year, overview, poster_path, backdrop_path,
+                      app_type, instance_name))
+                return True
+        except Exception as e:
+            logger.error(f"Error adding request: {e}")
+            return False
+
+    def get_requests(self, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
+        """Get paginated list of requests"""
+        try:
+            offset = (page - 1) * page_size
+            with self.get_connection() as conn:
+                # Get total count
+                count_cursor = conn.execute("SELECT COUNT(*) FROM requestor_requests")
+                total_requests = count_cursor.fetchone()[0]
+                
+                # Get paginated requests
+                cursor = conn.execute("""
+                    SELECT tmdb_id, media_type, title, year, overview, poster_path, backdrop_path,
+                           app_type, instance_name, status, request_date, updated_at
+                    FROM requestor_requests 
+                    ORDER BY request_date DESC
+                    LIMIT ? OFFSET ?
+                """, (page_size, offset))
+                
+                requests = []
+                for row in cursor.fetchall():
+                    requests.append({
+                        'tmdb_id': row[0],
+                        'media_type': row[1],
+                        'title': row[2],
+                        'year': row[3],
+                        'overview': row[4],
+                        'poster_path': row[5],
+                        'backdrop_path': row[6],
+                        'app_type': row[7],
+                        'instance_name': row[8],
+                        'status': row[9],
+                        'request_date': row[10],
+                        'updated_at': row[11]
+                    })
+                
+                return {
+                    'requests': requests,
+                    'total': total_requests,
+                    'page': page,
+                    'page_size': page_size,
+                    'total_pages': (total_requests + page_size - 1) // page_size
+                }
+        except Exception as e:
+            logger.error(f"Error getting requests: {e}")
+            return {'requests': [], 'total': 0, 'page': 1, 'page_size': page_size, 'total_pages': 0}
+
+    def update_request_status(self, tmdb_id: int, media_type: str, app_type: str, 
+                             instance_name: str, status: str) -> bool:
+        """Update request status"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute("""
+                    UPDATE requestor_requests 
+                    SET status = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
+                """, (status, tmdb_id, media_type, app_type, instance_name))
+                return True
+        except Exception as e:
+            logger.error(f"Error updating request status: {e}")
+            return False
+
+    def is_already_requested(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str) -> bool:
+        """Check if media is already requested for this app/instance"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.execute("""
+                    SELECT COUNT(*) FROM requestor_requests 
+                    WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
+                """, (tmdb_id, media_type, app_type, instance_name))
+                return cursor.fetchone()[0] > 0
+        except Exception as e:
+            logger.error(f"Error checking if already requested: {e}")
             return False
 
 # Separate LogsDatabase class for logs.db

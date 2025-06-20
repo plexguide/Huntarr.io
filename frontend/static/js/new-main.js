@@ -506,6 +506,17 @@ let huntarrUI = {
             if (typeof huntManagerModule !== 'undefined') {
                 huntManagerModule.refresh();
             }
+        } else if (section === 'requestor' && document.getElementById('requestor-section')) {
+            document.getElementById('requestor-section').classList.add('active');
+            document.getElementById('requestor-section').style.display = 'block';
+            if (document.getElementById('requestorNav')) document.getElementById('requestorNav').classList.add('active');
+            newTitle = 'Requestor';
+            this.currentSection = 'requestor';
+            
+            // Initialize requestor module if it exists
+            if (typeof window.requestorModule !== 'undefined') {
+                window.requestorModule.loadInstances();
+            }
         } else if (section === 'apps' && document.getElementById('appsSection')) {
             document.getElementById('appsSection').classList.add('active');
             document.getElementById('appsSection').style.display = 'block';
