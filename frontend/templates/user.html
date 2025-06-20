@@ -3,7 +3,38 @@
 <head>
     <title>User - Huntarr</title>
     {% include 'components/head.html' %}
+    
+    <!-- Prevent sidebar flash by checking Settings preference immediately -->
+    <script>
+        (function() {
+            // Check immediately if Settings sidebar should be shown
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromSettings = urlParams.get('from') === 'settings';
+            const settingsSidebarActive = localStorage.getItem('huntarr-settings-sidebar') === 'true';
+            
+            if (fromSettings || settingsSidebarActive) {
+                // Add CSS to hide main sidebar and show settings sidebar immediately
+                document.documentElement.style.setProperty('--main-sidebar-display', 'none');
+                document.documentElement.style.setProperty('--settings-sidebar-display', 'block');
+            }
+        })();
+    </script>
     <style>
+        /* CSS variables for sidebar visibility control */
+        :root {
+            --main-sidebar-display: block;
+            --settings-sidebar-display: none;
+        }
+        
+        /* Override sidebar visibility using CSS variables */
+        #sidebar {
+            display: var(--main-sidebar-display) !important;
+        }
+        
+        #settings-sidebar {
+            display: var(--settings-sidebar-display) !important;
+        }
+        
         .user-section {
             padding: 18px;
             max-width: 1440px;
@@ -1145,6 +1176,92 @@
                 button.style.color = '';
             }, 2000);
         }
+    </script>
+    
+    <!-- Settings Sidebar Management -->
+    <script>
+        // Function to show Settings sidebar instead of main sidebar
+        function showSettingsSidebar() {
+            // Use CSS variables to control sidebar visibility
+            document.documentElement.style.setProperty('--main-sidebar-display', 'none');
+            document.documentElement.style.setProperty('--settings-sidebar-display', 'block');
+            
+            // Set User as active in Settings sidebar
+            const settingsSidebar = document.getElementById('settings-sidebar');
+            if (settingsSidebar) {
+                const settingsNavItems = settingsSidebar.querySelectorAll('.nav-item');
+                settingsNavItems.forEach(item => item.classList.remove('active'));
+                
+                const userNav = document.getElementById('settingsUserNav');
+                if (userNav) userNav.classList.add('active');
+            }
+        }
+        
+        // Setup Settings sidebar navigation
+        function setupSettingsNavigation() {
+            // Return button - goes back to main Huntarr
+            const returnNav = document.getElementById('settingsReturnNav');
+            if (returnNav) {
+                returnNav.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Clear Settings sidebar preference when returning to main
+                    localStorage.removeItem('huntarr-settings-sidebar');
+                    window.location.href = './#home';
+                });
+            }
+            
+            // Main button - shows Settings main page
+            const mainNav = document.getElementById('settingsMainNav');
+            if (mainNav) {
+                mainNav.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Keep Settings sidebar preference and navigate to settings
+                    localStorage.setItem('huntarr-settings-sidebar', 'true');
+                    window.location.href = './#settings';
+                });
+            }
+            
+            // Scheduling button - shows Scheduling page
+            const schedulingNav = document.getElementById('settingsSchedulingNav');
+            if (schedulingNav) {
+                schedulingNav.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Keep Settings sidebar preference and navigate to scheduling
+                    localStorage.setItem('huntarr-settings-sidebar', 'true');
+                    window.location.href = './#scheduling';
+                });
+            }
+            
+            // User button - already on user page, just update active state
+            const userNav = document.getElementById('settingsUserNav');
+            if (userNav) {
+                userNav.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Already on user page, just ensure Settings sidebar is shown
+                    showSettingsSidebar();
+                });
+            }
+        }
+        
+        // Check if we should show Settings sidebar on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromSettings = urlParams.get('from') === 'settings';
+            
+            // Check localStorage for Settings sidebar preference
+            const settingsSidebarActive = localStorage.getItem('huntarr-settings-sidebar') === 'true';
+            
+            if (fromSettings || settingsSidebarActive) {
+                showSettingsSidebar();
+                
+                // Set localStorage to remember this preference
+                localStorage.setItem('huntarr-settings-sidebar', 'true');
+                
+                // Setup navigation for Settings sidebar
+                setupSettingsNavigation();
+            }
+        });
     </script>
 </body>
 </html>

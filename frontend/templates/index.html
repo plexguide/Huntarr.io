@@ -3,9 +3,48 @@
 <head>
     {% include 'components/head.html' %}
     <title>Huntarr - Home</title>
+    
+    <!-- Immediate CSS to prevent sidebar flash -->
+    <style id="initial-sidebar-state">
+        /* Hide all sidebars initially, JavaScript will show the correct one */
+        #sidebar, #settings-sidebar, #requestarr-sidebar {
+            display: none !important;
+        }
+    </style>
 
     <!-- Pass base URL configuration to JavaScript -->
     <script>window.HUNTARR_BASE_URL = '{{ base_url|default("", true) }}';</script>
+    
+    <!-- Prevent sidebar flash by checking preferences immediately -->
+    <script>
+        (function() {
+            // Check Settings sidebar preference
+            const settingsSidebarActive = localStorage.getItem('huntarr-settings-sidebar') === 'true';
+            const currentHash = window.location.hash;
+            
+            // More comprehensive check for Settings-related sections
+            const isSettingsSection = settingsSidebarActive || 
+                                    currentHash === '#settings' || 
+                                    currentHash === '#scheduling' ||
+                                    (settingsSidebarActive && (currentHash === '' || currentHash === '#'));
+            
+            if (isSettingsSection) {
+                // Add CSS to hide main sidebar and show settings sidebar immediately
+                const style = document.createElement('style');
+                style.id = 'sidebar-flash-prevention';
+                style.textContent = `
+                    #sidebar { display: none !important; }
+                    #settings-sidebar { display: block !important; }
+                    #requestarr-sidebar { display: none !important; }
+                `;
+                document.head.appendChild(style);
+                
+                // Also set a flag for the main JavaScript to know Settings sidebar should be active
+                window.huntarrSettingsSidebarPreload = true;
+            }
+        })();
+    </script>
+    
     <!-- Pass global scripts -->
     {% include 'components/scripts.html' %}
 </head>

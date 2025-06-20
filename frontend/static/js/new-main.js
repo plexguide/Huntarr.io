@@ -69,6 +69,23 @@ let huntarrUI = {
         // Initial navigation based on hash
         this.handleHashNavigation(window.location.hash);
         
+        // Remove initial sidebar hiding style
+        const initialSidebarStyle = document.getElementById('initial-sidebar-state');
+        if (initialSidebarStyle) {
+            initialSidebarStyle.remove();
+        }
+        
+        // Check if Settings sidebar should be shown based on localStorage or preload flag
+        const settingsSidebarActive = localStorage.getItem('huntarr-settings-sidebar') === 'true';
+        const settingsSidebarPreloaded = window.huntarrSettingsSidebarPreload === true;
+        
+        if ((settingsSidebarActive || settingsSidebarPreloaded) && (this.currentSection === 'settings' || this.currentSection === 'scheduling')) {
+            this.showSettingsSidebar();
+        } else {
+            // Show main sidebar by default
+            this.showMainSidebar();
+        }
+        
         // Auto-save enabled - no unsaved changes handler needed
         
         // Load username
@@ -573,6 +590,9 @@ let huntarrUI = {
             // Switch to Settings sidebar
             this.showSettingsSidebar();
             
+            // Set localStorage to maintain Settings sidebar preference
+            localStorage.setItem('huntarr-settings-sidebar', 'true');
+            
             // Initialize settings if not already done
             this.initializeSettings();
         } else if (section === 'scheduling' && document.getElementById('schedulingSection')) {
@@ -584,6 +604,9 @@ let huntarrUI = {
             
             // Switch to Settings sidebar for scheduling
             this.showSettingsSidebar();
+            
+            // Set localStorage to maintain Settings sidebar preference
+            localStorage.setItem('huntarr-settings-sidebar', 'true');
         } else {
             // Default to home if section is unknown or element missing
             if (this.elements.homeSection) {
@@ -3597,9 +3620,18 @@ let huntarrUI = {
         if (mainSidebar) mainSidebar.style.display = 'block';
         if (requestarrSidebar) requestarrSidebar.style.display = 'none';
         if (settingsSidebar) settingsSidebar.style.display = 'none';
+        
+        // Clear Settings sidebar preference when showing main sidebar
+        localStorage.removeItem('huntarr-settings-sidebar');
     },
 
     showSettingsSidebar: function() {
+        // Remove flash prevention style if it exists
+        const flashPreventionStyle = document.getElementById('sidebar-flash-prevention');
+        if (flashPreventionStyle) {
+            flashPreventionStyle.remove();
+        }
+        
         // Hide main sidebar and show settings sidebar
         const mainSidebar = document.getElementById('sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
@@ -3696,6 +3728,8 @@ let huntarrUI = {
         if (returnNav) {
             returnNav.addEventListener('click', (e) => {
                 e.preventDefault();
+                // Clear Settings sidebar preference when returning to main
+                localStorage.removeItem('huntarr-settings-sidebar');
                 window.location.hash = '#home';
             });
         }
@@ -3723,7 +3757,10 @@ let huntarrUI = {
         if (userNav) {
             userNav.addEventListener('click', (e) => {
                 e.preventDefault();
-                window.location.href = './user';
+                // Set localStorage to remember Settings sidebar preference
+                localStorage.setItem('huntarr-settings-sidebar', 'true');
+                // Navigate to user page with parameter
+                window.location.href = './user?from=settings';
             });
         }
     },
