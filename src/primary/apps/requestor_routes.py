@@ -11,46 +11,21 @@ logger = logging.getLogger(__name__)
 # Create blueprint
 requestor_bp = Blueprint('requestor', __name__, url_prefix='/api/requestor')
 
-@requestor_bp.route('/settings', methods=['GET'])
-def get_requestor_settings():
-    """Get Requestor settings"""
-    try:
-        settings = requestor_api.get_settings()
-        return jsonify(settings)
-    except Exception as e:
-        logger.error(f"Error getting requestor settings: {e}")
-        return jsonify({'error': 'Failed to get settings'}), 500
-
-@requestor_bp.route('/settings', methods=['POST'])
-def save_requestor_settings():
-    """Save Requestor settings"""
-    try:
-        data = request.get_json()
-        tmdb_api_key = data.get('tmdb_api_key', '')
-        enabled = data.get('enabled', False)
-        
-        success = requestor_api.save_settings(tmdb_api_key, enabled)
-        
-        if success:
-            return jsonify({'success': True, 'message': 'Settings saved successfully'})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to save settings'}), 500
-            
-    except Exception as e:
-        logger.error(f"Error saving requestor settings: {e}")
-        return jsonify({'success': False, 'error': 'Failed to save settings'}), 500
-
 @requestor_bp.route('/search', methods=['GET'])
 def search_media():
-    """Search for media using TMDB"""
+    """Search for media using TMDB with availability checking"""
     try:
         query = request.args.get('q', '').strip()
-        media_type = request.args.get('type', 'multi')  # multi, movie, tv
+        app_type = request.args.get('app_type', '').strip()
+        instance_name = request.args.get('instance_name', '').strip()
         
         if not query:
             return jsonify({'results': []})
         
-        results = requestor_api.search_media(query, media_type)
+        if not app_type or not instance_name:
+            return jsonify({'error': 'App type and instance name are required'}), 400
+        
+        results = requestor_api.search_media_with_availability(query, app_type, instance_name)
         return jsonify({'results': results})
         
     except Exception as e:
@@ -114,17 +89,5 @@ def get_requests():
         logger.error(f"Error getting requests: {e}")
         return jsonify({'error': 'Failed to get requests'}), 500
 
-# Initialize TMDB API key if not set
-def initialize_requestor():
-    """Initialize Requestor with default API key if not configured"""
-    try:
-        settings = requestor_api.get_settings()
-        if not settings.get('tmdb_api_key'):
-            # Set the provided API key as default
-            requestor_api.save_settings('9265b0bd0cd1962f7f3225989fcd7192', True)
-            logger.info("Initialized Requestor with default TMDB API key")
-    except Exception as e:
-        logger.error(f"Error initializing Requestor: {e}")
-
-# Call initialization when module is imported
-initialize_requestor() 
+# Requestor is always enabled with hardcoded TMDB API key
+logger.info("Requestor initialized with hardcoded TMDB API key") 

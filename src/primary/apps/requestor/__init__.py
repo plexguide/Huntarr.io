@@ -17,25 +17,19 @@ class RequestorAPI:
         self.tmdb_base_url = "https://api.themoviedb.org/3"
         self.tmdb_image_base_url = "https://image.tmdb.org/t/p/w500"
     
-    def get_settings(self) -> Dict[str, Any]:
-        """Get Requestor settings"""
-        return self.db.get_requestor_settings()
+    def get_tmdb_api_key(self) -> str:
+        """Get hardcoded TMDB API key"""
+        return "9265b0bd0cd1962f7f3225989fcd7192"
     
-    def save_settings(self, tmdb_api_key: str, enabled: bool) -> bool:
-        """Save Requestor settings"""
-        return self.db.save_requestor_settings(tmdb_api_key, enabled)
-    
-    def search_media(self, query: str, media_type: str = "multi") -> List[Dict[str, Any]]:
-        """Search for media using TMDB API"""
-        settings = self.get_settings()
-        api_key = settings.get('tmdb_api_key')
+    def search_media_with_availability(self, query: str, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
+        """Search for media using TMDB API and check availability in specified app instance"""
+        api_key = self.get_tmdb_api_key()
         
-        if not api_key:
-            logger.error("TMDB API key not configured")
-            return []
+        # Determine search type based on app
+        media_type = "movie" if app_type == "radarr" else "tv" if app_type == "sonarr" else "multi"
         
         try:
-            # Use multi search to get both movies and TV shows
+            # Use search to get movies or TV shows
             url = f"{self.tmdb_base_url}/search/{media_type}"
             params = {
                 'api_key': api_key,
@@ -49,6 +43,15 @@ class RequestorAPI:
             data = response.json()
             results = []
             
+            # Get instance configuration for availability checking
+            app_config = self.db.get_app_config(app_type)
+            target_instance = None
+            if app_config and app_config.get('instances'):
+                for instance in app_config['instances']:
+                    if instance.get('name') == instance_name:
+                        target_instance = instance
+                        break
+            
             for item in data.get('results', []):
                 # Skip person results in multi search
                 if item.get('media_type') == 'person':
@@ -59,6 +62,12 @@ class RequestorAPI:
                 if not item_type:
                     # For single-type searches
                     item_type = 'movie' if media_type == 'movie' else 'tv'
+                
+                # Skip if media type doesn't match app type
+                if app_type == "radarr" and item_type != "movie":
+                    continue
+                if app_type == "sonarr" and item_type != "tv":
+                    continue
                 
                 # Get title and year
                 title = item.get('title') or item.get('name', '')
@@ -78,8 +87,12 @@ class RequestorAPI:
                 backdrop_path = item.get('backdrop_path')
                 backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
                 
+                # Check availability status
+                tmdb_id = item.get('id')
+                availability_status = self._get_availability_status(tmdb_id, item_type, target_instance, app_type)
+                
                 results.append({
-                    'tmdb_id': item.get('id'),
+                    'tmdb_id': tmdb_id,
                     'media_type': item_type,
                     'title': title,
                     'year': year,
@@ -87,7 +100,8 @@ class RequestorAPI:
                     'poster_path': poster_url,
                     'backdrop_path': backdrop_url,
                     'vote_average': item.get('vote_average', 0),
-                    'popularity': item.get('popularity', 0)
+                    'popularity': item.get('popularity', 0),
+                    'availability': availability_status
                 })
             
             # Sort by popularity
@@ -97,6 +111,54 @@ class RequestorAPI:
         except Exception as e:
             logger.error(f"Error searching TMDB: {e}")
             return []
+    
+    def _get_availability_status(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str) -> Dict[str, Any]:
+        """Get availability status for media item"""
+        if not instance or not instance.get('url') or not instance.get('api_key'):
+            return {
+                'status': 'unknown',
+                'message': 'Instance not configured',
+                'in_app': False,
+                'already_requested': False
+            }
+        
+        try:
+            # Check if already requested
+            already_requested = self.db.is_already_requested(tmdb_id, media_type, app_type, instance.get('name'))
+            
+            # Check if exists in app
+            exists_result = self._check_media_exists(tmdb_id, media_type, instance, app_type)
+            
+            if exists_result['exists']:
+                return {
+                    'status': 'available',
+                    'message': 'Already in library',
+                    'in_app': True,
+                    'already_requested': already_requested
+                }
+            elif already_requested:
+                return {
+                    'status': 'requested',
+                    'message': 'Previously requested',
+                    'in_app': False,
+                    'already_requested': True
+                }
+            else:
+                return {
+                    'status': 'available_to_request',
+                    'message': 'Available to request',
+                    'in_app': False,
+                    'already_requested': False
+                }
+                
+        except Exception as e:
+            logger.error(f"Error checking availability: {e}")
+            return {
+                'status': 'error',
+                'message': 'Error checking availability',
+                'in_app': False,
+                'already_requested': False
+            }
     
     def get_enabled_instances(self) -> Dict[str, List[Dict[str, str]]]:
         """Get enabled Sonarr and Radarr instances"""

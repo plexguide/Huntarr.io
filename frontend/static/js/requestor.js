@@ -6,20 +6,34 @@ class RequestorModule {
     constructor() {
         this.searchTimeout = null;
         this.instances = { sonarr: [], radarr: [] };
+        this.selectedInstance = null;
         this.init();
     }
 
     init() {
         this.loadInstances();
         this.setupEventListeners();
-        this.loadSettings();
     }
 
     setupEventListeners() {
+        // Instance selection
+        const instanceSelect = document.getElementById('requestor-instance-select');
+        if (instanceSelect) {
+            instanceSelect.addEventListener('change', (e) => this.handleInstanceChange(e));
+        }
+
         // Search input with debouncing
         const searchInput = document.getElementById('requestor-search');
         if (searchInput) {
+            searchInput.disabled = true;
+            searchInput.placeholder = 'Select an instance first...';
+            
             searchInput.addEventListener('input', (e) => {
+                if (!this.selectedInstance) {
+                    this.showNotification('Please select an instance first', 'warning');
+                    return;
+                }
+                
                 clearTimeout(this.searchTimeout);
                 const query = e.target.value.trim();
                 
@@ -32,60 +46,31 @@ class RequestorModule {
                 }
             });
         }
-
-        // Settings form
-        const settingsForm = document.getElementById('requestor-settings-form');
-        if (settingsForm) {
-            settingsForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.saveSettings();
-            });
-        }
     }
 
-    async loadSettings() {
-        try {
-            const response = await fetch('./api/requestor/settings');
-            const settings = await response.json();
+    handleInstanceChange(event) {
+        const selectedValue = event.target.value;
+        if (selectedValue) {
+            const [appType, instanceName] = selectedValue.split('|');
+            this.selectedInstance = { appType, instanceName };
             
-            const apiKeyInput = document.getElementById('requestor-tmdb-api-key');
-            const enabledToggle = document.getElementById('requestor-enabled');
-            
-            if (apiKeyInput) apiKeyInput.value = settings.tmdb_api_key || '';
-            if (enabledToggle) enabledToggle.checked = settings.enabled || false;
-            
-        } catch (error) {
-            console.error('Error loading requestor settings:', error);
-        }
-    }
-
-    async saveSettings() {
-        try {
-            const apiKey = document.getElementById('requestor-tmdb-api-key').value;
-            const enabled = document.getElementById('requestor-enabled').checked;
-            
-            const response = await fetch('./api/requestor/settings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    tmdb_api_key: apiKey,
-                    enabled: enabled
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                this.showNotification('Settings saved successfully', 'success');
-            } else {
-                this.showNotification('Failed to save settings', 'error');
+            // Clear previous results and enable search
+            this.clearResults();
+            const searchInput = document.getElementById('requestor-search');
+            if (searchInput) {
+                searchInput.disabled = false;
+                searchInput.placeholder = `Search for ${appType === 'radarr' ? 'movies' : 'TV shows'}...`;
+                searchInput.value = '';
             }
-            
-        } catch (error) {
-            console.error('Error saving settings:', error);
-            this.showNotification('Error saving settings', 'error');
+        } else {
+            this.selectedInstance = null;
+            const searchInput = document.getElementById('requestor-search');
+            if (searchInput) {
+                searchInput.disabled = true;
+                searchInput.placeholder = 'Select an instance first...';
+                searchInput.value = '';
+            }
+            this.clearResults();
         }
     }
 
@@ -93,45 +78,61 @@ class RequestorModule {
         try {
             const response = await fetch('./api/requestor/instances');
             this.instances = await response.json();
-            this.updateInstanceDropdowns();
+            this.updateInstanceSelect();
         } catch (error) {
             console.error('Error loading instances:', error);
+            this.showNotification('Error loading instances', 'error');
         }
     }
 
-    updateInstanceDropdowns() {
-        const dropdowns = document.querySelectorAll('.instance-dropdown');
-        dropdowns.forEach(dropdown => {
-            dropdown.innerHTML = '<option value="">Select instance...</option>';
-            
-            // Add Sonarr instances
-            this.instances.sonarr.forEach(instance => {
-                const option = document.createElement('option');
-                option.value = `sonarr:${instance.name}`;
-                option.textContent = `Sonarr - ${instance.name}`;
-                dropdown.appendChild(option);
-            });
-            
-            // Add Radarr instances
-            this.instances.radarr.forEach(instance => {
-                const option = document.createElement('option');
-                option.value = `radarr:${instance.name}`;
-                option.textContent = `Radarr - ${instance.name}`;
-                dropdown.appendChild(option);
-            });
+    updateInstanceSelect() {
+        const instanceSelect = document.getElementById('requestor-instance-select');
+        if (!instanceSelect) return;
+        
+        instanceSelect.innerHTML = '<option value="">Select an instance to search...</option>';
+        
+        // Add Sonarr instances
+        this.instances.sonarr.forEach(instance => {
+            const option = document.createElement('option');
+            option.value = `sonarr|${instance.name}`;
+            option.textContent = `Sonarr - ${instance.name}`;
+            instanceSelect.appendChild(option);
+        });
+        
+        // Add Radarr instances
+        this.instances.radarr.forEach(instance => {
+            const option = document.createElement('option');
+            option.value = `radarr|${instance.name}`;
+            option.textContent = `Radarr - ${instance.name}`;
+            instanceSelect.appendChild(option);
         });
     }
 
     async searchMedia(query) {
+        if (!this.selectedInstance) {
+            this.showNotification('Please select an instance first', 'warning');
+            return;
+        }
+
         const resultsContainer = document.getElementById('requestor-results');
         if (!resultsContainer) return;
 
         // Show loading
-        resultsContainer.innerHTML = '<div class="loading">Searching...</div>';
+        resultsContainer.innerHTML = '<div class="loading">🔍 Searching and checking availability...</div>';
 
         try {
-            const response = await fetch(`./api/requestor/search?q=${encodeURIComponent(query)}`);
+            const params = new URLSearchParams({
+                q: query,
+                app_type: this.selectedInstance.appType,
+                instance_name: this.selectedInstance.instanceName
+            });
+            
+            const response = await fetch(`./api/requestor/search?${params}`);
             const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
             
             this.displayResults(data.results || []);
             
@@ -163,6 +164,10 @@ class RequestorModule {
         const mediaTypeIcon = item.media_type === 'movie' ? '🎬' : '📺';
         const rating = item.vote_average ? `⭐ ${item.vote_average.toFixed(1)}` : '';
         
+        // Generate availability status
+        const availability = item.availability || {};
+        const statusInfo = this.getStatusInfo(availability);
+        
         return `
             <div class="result-card" data-tmdb-id="${item.tmdb_id}" data-media-type="${item.media_type}">
                 <div class="result-poster">
@@ -176,12 +181,15 @@ class RequestorModule {
                         <span class="rating">${rating}</span>
                         <span class="media-type">${item.media_type === 'movie' ? 'Movie' : 'TV Show'}</span>
                     </div>
+                    <div class="availability-status ${statusInfo.className}">
+                        <span class="status-icon">${statusInfo.icon}</span>
+                        <span class="status-text">${statusInfo.message}</span>
+                    </div>
                     <div class="request-section">
-                        <select class="instance-dropdown" data-media-type="${item.media_type}">
-                            <option value="">Select instance...</option>
-                        </select>
-                        <button class="request-btn" data-item='${JSON.stringify(item)}'>
-                            Request
+                        <button class="request-btn ${statusInfo.buttonClass}" 
+                                data-item='${JSON.stringify(item)}'
+                                ${statusInfo.disabled ? 'disabled' : ''}>
+                            ${statusInfo.buttonText}
                         </button>
                     </div>
                 </div>
@@ -189,93 +197,116 @@ class RequestorModule {
         `;
     }
 
-    setupRequestButtons() {
-        // Update instance dropdowns for new results
-        this.updateInstanceDropdowns();
-        
-        // Filter dropdowns based on media type
-        document.querySelectorAll('.instance-dropdown').forEach(dropdown => {
-            const mediaType = dropdown.dataset.mediaType;
-            const options = dropdown.querySelectorAll('option');
-            
-            options.forEach(option => {
-                if (option.value === '') return; // Keep the default option
-                
-                const [appType] = option.value.split(':');
-                const shouldShow = (mediaType === 'movie' && appType === 'radarr') || 
-                                  (mediaType === 'tv' && appType === 'sonarr');
-                
-                option.style.display = shouldShow ? 'block' : 'none';
-            });
-        });
+    getStatusInfo(availability) {
+        switch (availability.status) {
+            case 'available':
+                return {
+                    icon: '✅',
+                    message: 'Already in library',
+                    className: 'status-available',
+                    buttonText: 'In Library',
+                    buttonClass: 'btn-disabled',
+                    disabled: true
+                };
+            case 'requested':
+                return {
+                    icon: '⏳',
+                    message: 'Previously requested',
+                    className: 'status-requested',
+                    buttonText: 'Already Requested',
+                    buttonClass: 'btn-disabled',
+                    disabled: true
+                };
+            case 'available_to_request':
+                return {
+                    icon: '📥',
+                    message: 'Available to request',
+                    className: 'status-requestable',
+                    buttonText: 'Request',
+                    buttonClass: 'btn-primary',
+                    disabled: false
+                };
+            case 'error':
+                return {
+                    icon: '❌',
+                    message: 'Error checking availability',
+                    className: 'status-error',
+                    buttonText: 'Error',
+                    buttonClass: 'btn-disabled',
+                    disabled: true
+                };
+            default:
+                return {
+                    icon: '❓',
+                    message: 'Unknown status',
+                    className: 'status-unknown',
+                    buttonText: 'Unknown',
+                    buttonClass: 'btn-disabled',
+                    disabled: true
+                };
+        }
+    }
 
-        // Add click handlers to request buttons
-        document.querySelectorAll('.request-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                this.handleRequest(e.target);
-            });
+    setupRequestButtons() {
+        document.querySelectorAll('.request-btn:not([disabled])').forEach(button => {
+            button.addEventListener('click', (e) => this.handleRequest(e.target));
         });
     }
 
     async handleRequest(button) {
-        const item = JSON.parse(button.dataset.item);
-        const dropdown = button.parentElement.querySelector('.instance-dropdown');
-        const selectedInstance = dropdown.value;
-
-        if (!selectedInstance) {
-            this.showNotification('Please select an instance', 'warning');
-            return;
-        }
-
-        const [appType, instanceName] = selectedInstance.split(':');
+        if (button.disabled) return;
         
-        // Validate media type and app type compatibility
-        if ((item.media_type === 'movie' && appType !== 'radarr') ||
-            (item.media_type === 'tv' && appType !== 'sonarr')) {
-            this.showNotification('Invalid app type for this media', 'error');
-            return;
-        }
-
-        // Disable button and show loading
-        button.disabled = true;
-        button.textContent = 'Requesting...';
-
         try {
+            const item = JSON.parse(button.dataset.item);
+            
+            button.disabled = true;
+            button.textContent = 'Requesting...';
+            
+            const requestData = {
+                tmdb_id: item.tmdb_id,
+                media_type: item.media_type,
+                title: item.title,
+                year: item.year,
+                overview: item.overview,
+                poster_path: item.poster_path,
+                backdrop_path: item.backdrop_path,
+                app_type: this.selectedInstance.appType,
+                instance_name: this.selectedInstance.instanceName
+            };
+            
             const response = await fetch('./api/requestor/request', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    tmdb_id: item.tmdb_id,
-                    media_type: item.media_type,
-                    title: item.title,
-                    year: item.year,
-                    overview: item.overview,
-                    poster_path: item.poster_path,
-                    backdrop_path: item.backdrop_path,
-                    app_type: appType,
-                    instance_name: instanceName
-                })
+                body: JSON.stringify(requestData)
             });
-
+            
             const result = await response.json();
-
+            
             if (result.success) {
-                button.textContent = 'Requested ✓';
-                button.className = 'request-btn requested';
                 this.showNotification(result.message, 'success');
+                button.textContent = 'Requested';
+                button.className = 'request-btn btn-disabled';
+                
+                // Update availability status
+                const statusElement = button.closest('.result-card').querySelector('.availability-status');
+                if (statusElement) {
+                    statusElement.className = 'availability-status status-requested';
+                    statusElement.innerHTML = '<span class="status-icon">⏳</span><span class="status-text">Requested</span>';
+                }
+                
             } else {
-                button.textContent = 'Request';
+                this.showNotification(result.message || 'Request failed', 'error');
                 button.disabled = false;
-                this.showNotification(result.message, 'error');
+                button.textContent = 'Request';
             }
-
+            
         } catch (error) {
             console.error('Error requesting media:', error);
-            button.textContent = 'Request';
-            button.disabled = false;
             this.showNotification('Request failed', 'error');
+            button.disabled = false;
+            button.textContent = 'Request';
         }
     }
 
@@ -289,7 +320,7 @@ class RequestorModule {
     showNotification(message, type = 'info') {
         // Create notification element
         const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
+        notification.className = `notification notification-${type}`;
         notification.textContent = message;
         
         // Add to page
@@ -297,14 +328,16 @@ class RequestorModule {
         
         // Remove after 3 seconds
         setTimeout(() => {
-            notification.remove();
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
         }, 3000);
     }
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('requestor-search') || document.getElementById('requestor-settings-form')) {
+    if (document.getElementById('requestor-section')) {
         window.requestorModule = new RequestorModule();
     }
 }); 

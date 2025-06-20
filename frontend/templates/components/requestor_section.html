@@ -9,30 +9,18 @@
             <p>Search and request movies and TV shows for your Sonarr and Radarr instances</p>
         </div>
 
-        <!-- Settings Section -->
+        <!-- Instance Selection Section -->
         <div class="settings-section">
-            <h2>⚙️ Settings</h2>
-            <form id="requestor-settings-form">
-                <div class="form-group">
-                    <label for="requestor-tmdb-api-key">TMDB API Key</label>
-                    <input type="text" id="requestor-tmdb-api-key" placeholder="Enter your TMDB API key" value="9265b0bd0cd1962f7f3225989fcd7192">
-                    <small style="color: #b0b0b0; margin-top: 5px; display: block;">
-                        Get your free API key from <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color: #4CAF50;">TMDB</a>
-                    </small>
-                </div>
-                
-                <div class="form-group">
-                    <div class="toggle-group">
-                        <label for="requestor-enabled">Enable Requestor</label>
-                        <div class="toggle-switch">
-                            <input type="checkbox" id="requestor-enabled" checked>
-                            <span class="toggle-slider"></span>
-                        </div>
-                    </div>
-                </div>
-                
-                <button type="submit" class="save-btn">💾 Save Settings</button>
-            </form>
+            <h2>📺 Select Target Instance</h2>
+            <div class="form-group">
+                <label for="requestor-instance-select">Choose App Instance</label>
+                <select id="requestor-instance-select" class="form-control">
+                    <option value="">Select an instance to search...</option>
+                </select>
+                <small style="color: #b0b0b0; margin-top: 5px; display: block;">
+                    Select a Sonarr or Radarr instance to search and request media
+                </small>
+            </div>
         </div>
 
         <!-- Search Section -->
