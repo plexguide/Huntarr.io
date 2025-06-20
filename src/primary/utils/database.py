@@ -38,74 +38,108 @@ class HuntarrDatabase:
         try:
             conn.execute('PRAGMA foreign_keys = ON')
             
-            # Try WAL mode first, fall back to DELETE mode if it fails
-            try:
-                conn.execute('PRAGMA journal_mode = WAL')
-            except Exception as wal_error:
-                logger.warning(f"WAL mode failed, using DELETE mode: {wal_error}")
-                conn.execute('PRAGMA journal_mode = DELETE')
-            
             # Detect if running on Synology NAS for performance optimizations
             is_synology = self._detect_synology_nas()
             synology_opt_enabled = os.environ.get('HUNTARR_SYNOLOGY_OPTIMIZATIONS', 'true').lower() == 'true'
             
             if is_synology and synology_opt_enabled:
-                logger.info("Synology NAS detected - applying performance optimizations for network file systems")
-                # Synology-optimized settings for network file system performance
-                conn.execute('PRAGMA synchronous = NORMAL')     # Much faster on NFS/CIFS, still safe with WAL
-                conn.execute('PRAGMA cache_size = -40960')      # 40MB cache for better performance on Synology
-                conn.execute('PRAGMA temp_store = MEMORY')      # Store temp tables in memory
-                conn.execute('PRAGMA busy_timeout = 30000')     # 30 seconds for Synology I/O
-                conn.execute('PRAGMA mmap_size = 134217728')    # 128MB memory map optimized for Synology
+                logger.info("Synology NAS detected - applying aggressive performance optimizations for network file systems")
+                
+                # CRITICAL: Try WAL mode first, but fall back to DELETE mode if it fails on network shares
+                try:
+                    conn.execute('PRAGMA journal_mode = WAL')
+                    # Test if WAL mode actually works on this network file system
+                    result = conn.execute('PRAGMA journal_mode').fetchone()
+                    if result and result[0] != 'wal':
+                        logger.warning("WAL mode failed on network file system, switching to DELETE mode for Synology compatibility")
+                        conn.execute('PRAGMA journal_mode = DELETE')
+                except Exception as wal_error:
+                    logger.warning(f"WAL mode failed on Synology network share, using DELETE mode: {wal_error}")
+                    conn.execute('PRAGMA journal_mode = DELETE')
+                
+                # Aggressive Synology-optimized settings for network file system performance
+                conn.execute('PRAGMA synchronous = OFF')          # Most aggressive - no FSYNC waits for maximum performance
+                conn.execute('PRAGMA cache_size = -65536')         # 64MB cache (doubled from 40MB) for better performance
+                conn.execute('PRAGMA temp_store = MEMORY')         # Store temp tables in memory
+                conn.execute('PRAGMA busy_timeout = 60000')        # 60 seconds for Synology I/O (increased from 30s)
+                conn.execute('PRAGMA mmap_size = 268435456')       # 256MB memory map for better performance
+                conn.execute('PRAGMA page_size = 32768')           # Larger page size for network shares (32KB)
+                
+                # Additional Synology-specific optimizations
+                conn.execute('PRAGMA locking_mode = EXCLUSIVE')    # Exclusive locking for single-user scenarios
+                conn.execute('PRAGMA count_changes = OFF')         # Disable change counting for performance
+                conn.execute('PRAGMA legacy_file_format = OFF')   # Use modern file format
+                conn.execute('PRAGMA reverse_unordered_selects = OFF')  # Consistent query results
+                
             else:
                 if is_synology and not synology_opt_enabled:
                     logger.info("Synology NAS detected but optimizations disabled via HUNTARR_SYNOLOGY_OPTIMIZATIONS=false")
+                
+                # Try WAL mode first, fall back to DELETE mode if it fails
+                try:
+                    conn.execute('PRAGMA journal_mode = WAL')
+                except Exception as wal_error:
+                    logger.warning(f"WAL mode failed, using DELETE mode: {wal_error}")
+                    conn.execute('PRAGMA journal_mode = DELETE')
+                
                 # Standard settings for Docker rebuild resilience and corruption prevention
-                conn.execute('PRAGMA synchronous = FULL')       # Maximum durability for Docker environments
-                conn.execute('PRAGMA cache_size = -32000')      # 32MB cache for better performance
-                conn.execute('PRAGMA temp_store = MEMORY')      # Store temp tables in memory
-                conn.execute('PRAGMA busy_timeout = 60000')     # 60 seconds for Docker I/O delays
+                conn.execute('PRAGMA synchronous = NORMAL')        # Balanced durability/performance for non-Synology
+                conn.execute('PRAGMA cache_size = -32768')         # 32MB cache for better performance
+                conn.execute('PRAGMA temp_store = MEMORY')         # Store temp tables in memory
+                conn.execute('PRAGMA busy_timeout = 30000')        # 30 seconds for Docker I/O delays
                 
                 # Skip mmap on Windows if it causes issues, but use it elsewhere for performance
                 import platform
                 if platform.system() != "Windows":
-                    conn.execute('PRAGMA mmap_size = 268435456')  # 256MB memory map
+                    conn.execute('PRAGMA mmap_size = 134217728')   # 128MB memory map
             
             # Common settings for all platforms
-            conn.execute('PRAGMA auto_vacuum = INCREMENTAL') # Incremental vacuum for maintenance
-            conn.execute('PRAGMA secure_delete = ON')       # Secure deletion to prevent data recovery
+            conn.execute('PRAGMA auto_vacuum = INCREMENTAL')       # Incremental vacuum for maintenance
+            conn.execute('PRAGMA secure_delete = OFF')             # Disable for performance (was ON)
+            conn.execute('PRAGMA read_uncommitted = ON')           # Allow dirty reads for better concurrency
             
-            # Additional corruption prevention measures
-            conn.execute('PRAGMA cell_size_check = ON')     # Enable cell size validation
-            conn.execute('PRAGMA integrity_check')          # Verify database integrity on connection
-            conn.execute('PRAGMA optimize')                 # Optimize statistics and indexes
-            conn.execute('PRAGMA application_id = 1751013204')  # Set unique application ID for Huntarr
+            # Additional corruption prevention measures (only if not in aggressive Synology mode)
+            if not (is_synology and synology_opt_enabled):
+                conn.execute('PRAGMA cell_size_check = ON')        # Enable cell size validation
+                conn.execute('PRAGMA integrity_check')             # Verify database integrity on connection
+            
+            conn.execute('PRAGMA optimize')                        # Optimize statistics and indexes
+            conn.execute('PRAGMA application_id = 1751013204')    # Set unique application ID for Huntarr
             
             # Enhanced checkpoint settings for WAL mode
             result = conn.execute('PRAGMA journal_mode').fetchone()
             if result and result[0] == 'wal':
                 if is_synology and synology_opt_enabled:
-                    # More aggressive checkpointing for Synology
-                    conn.execute('PRAGMA wal_autocheckpoint = 1000')    # Less frequent checkpoints for performance
-                    conn.execute('PRAGMA journal_size_limit = 134217728') # 128MB journal size limit
+                    # Very aggressive checkpointing for Synology network shares
+                    conn.execute('PRAGMA wal_autocheckpoint = 2000')      # Much less frequent checkpoints
+                    conn.execute('PRAGMA journal_size_limit = 268435456') # 256MB journal size limit
                 else:
                     # Conservative checkpointing for other systems
-                    conn.execute('PRAGMA wal_autocheckpoint = 500')     # More frequent checkpoints for Docker
-                    conn.execute('PRAGMA journal_size_limit = 67108864') # 64MB journal size limit
-                conn.execute('PRAGMA wal_checkpoint(TRUNCATE)')     # Force checkpoint and truncate
+                    conn.execute('PRAGMA wal_autocheckpoint = 500')       # More frequent checkpoints for Docker
+                    conn.execute('PRAGMA journal_size_limit = 67108864')  # 64MB journal size limit
+                
+                # Force checkpoint and truncate to clean up WAL file
+                try:
+                    conn.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+                except Exception as checkpoint_error:
+                    logger.debug(f"WAL checkpoint failed (non-critical): {checkpoint_error}")
             
-            # Test the configuration worked
-            integrity_result = conn.execute('PRAGMA integrity_check').fetchone()
-            if integrity_result and integrity_result[0] != 'ok':
-                logger.error(f"Database integrity check failed: {integrity_result}")
-                raise sqlite3.DatabaseError(f"Database integrity compromised: {integrity_result}")
+            # Test the configuration worked (skip integrity check for aggressive Synology mode)
+            if not (is_synology and synology_opt_enabled):
+                integrity_result = conn.execute('PRAGMA integrity_check').fetchone()
+                if integrity_result and integrity_result[0] != 'ok':
+                    logger.error(f"Database integrity check failed: {integrity_result}")
+                    raise sqlite3.DatabaseError(f"Database integrity compromised: {integrity_result}")
             
             # Log optimization status for monitoring
             if is_synology:
+                journal_mode = conn.execute('PRAGMA journal_mode').fetchone()[0]
                 sync_mode = conn.execute('PRAGMA synchronous').fetchone()[0]
                 cache_size = conn.execute('PRAGMA cache_size').fetchone()[0]
                 mmap_size = conn.execute('PRAGMA mmap_size').fetchone()[0]
-                logger.info(f"Synology optimizations applied: sync={sync_mode}, cache={abs(cache_size/1024):.1f}MB, mmap={mmap_size/1024/1024:.0f}MB")
+                page_size = conn.execute('PRAGMA page_size').fetchone()[0]
+                logger.info(f"Synology optimizations applied: journal={journal_mode}, sync={sync_mode}, "
+                           f"cache={abs(cache_size/1024):.1f}MB, mmap={mmap_size/1024/1024:.0f}MB, page={page_size}B")
             
         except Exception as e:
             logger.error(f"Error configuring database connection: {e}")
