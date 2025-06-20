@@ -114,18 +114,37 @@ class RequestorAPI:
     
     def _get_availability_status(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str) -> Dict[str, Any]:
         """Get availability status for media item"""
-        if not instance or not instance.get('url') or not instance.get('api_key'):
+        if not instance:
             return {
-                'status': 'unknown',
-                'message': 'Instance not configured',
+                'status': 'error',
+                'message': 'Instance not found',
+                'in_app': False,
+                'already_requested': False
+            }
+        
+        # Check if already requested first (this doesn't require API connection)
+        try:
+            already_requested = self.db.is_already_requested(tmdb_id, media_type, app_type, instance.get('name'))
+            if already_requested:
+                return {
+                    'status': 'requested',
+                    'message': 'Previously requested',
+                    'in_app': False,
+                    'already_requested': True
+                }
+        except Exception as e:
+            logger.error(f"Error checking request history: {e}")
+        
+        # Check if instance is properly configured
+        if not instance.get('url') or not instance.get('api_key'):
+            return {
+                'status': 'available_to_request',
+                'message': 'Ready to request (instance needs configuration)',
                 'in_app': False,
                 'already_requested': False
             }
         
         try:
-            # Check if already requested
-            already_requested = self.db.is_already_requested(tmdb_id, media_type, app_type, instance.get('name'))
-            
             # Check if exists in app
             exists_result = self._check_media_exists(tmdb_id, media_type, instance, app_type)
             
@@ -134,14 +153,7 @@ class RequestorAPI:
                     'status': 'available',
                     'message': 'Already in library',
                     'in_app': True,
-                    'already_requested': already_requested
-                }
-            elif already_requested:
-                return {
-                    'status': 'requested',
-                    'message': 'Previously requested',
-                    'in_app': False,
-                    'already_requested': True
+                    'already_requested': False
                 }
             else:
                 return {
@@ -152,10 +164,11 @@ class RequestorAPI:
                 }
                 
         except Exception as e:
-            logger.error(f"Error checking availability: {e}")
+            logger.error(f"Error checking availability in {app_type}: {e}")
+            # If we can't check the app, still allow requesting
             return {
-                'status': 'error',
-                'message': 'Error checking availability',
+                'status': 'available_to_request',
+                'message': 'Available to request (could not verify library)',
                 'in_app': False,
                 'already_requested': False
             }
@@ -271,8 +284,13 @@ class RequestorAPI:
     def _check_media_exists(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str) -> Dict[str, Any]:
         """Check if media already exists in the app instance"""
         try:
-            url = instance['url'].rstrip('/')
-            api_key = instance['api_key']
+            url = instance.get('url', '').rstrip('/')
+            api_key = instance.get('api_key', '')
+            
+            # If no URL or API key, we can't check
+            if not url or not api_key:
+                logger.debug(f"Instance {instance.get('name')} not configured with URL/API key")
+                return {'exists': False}
             
             if app_type == 'radarr':
                 # Search for movie by TMDB ID
@@ -305,8 +323,22 @@ class RequestorAPI:
             
             return {'exists': False}
             
+        except requests.exceptions.ConnectionError:
+            logger.debug(f"Could not connect to {app_type} instance at {url}")
+            return {'exists': False}
+        except requests.exceptions.Timeout:
+            logger.debug(f"Timeout connecting to {app_type} instance at {url}")
+            return {'exists': False}
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                logger.debug(f"Authentication failed for {app_type} instance")
+            elif e.response.status_code == 404:
+                logger.debug(f"API endpoint not found for {app_type} instance")
+            else:
+                logger.debug(f"HTTP error checking {app_type}: {e}")
+            return {'exists': False}
         except Exception as e:
-            logger.error(f"Error checking if media exists: {e}")
+            logger.debug(f"Error checking if media exists in {app_type}: {e}")
             return {'exists': False}
     
     def _add_media_to_app(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str) -> Dict[str, Any]:
