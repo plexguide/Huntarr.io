@@ -1,0 +1,160 @@
+<!-- Mobile-specific topbar - clean and simple design -->
+<div id="mobile-topbar" class="mobile-topbar">
+    <div class="mobile-topbar-content">
+        <!-- Left side: Menu toggle (if needed) -->
+        <div class="mobile-topbar-left">
+            <span class="mobile-app-title">Huntarr</span>
+        </div>
+        
+        <!-- Right side: Version info -->
+        <div class="mobile-topbar-right">
+            <div class="mobile-version-container">
+                <div class="mobile-version-item">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="mobile-current-version">8.1.4</span>
+                </div>
+                <div class="mobile-version-item">
+                    <i class="fas fa-download"></i>
+                    <span id="mobile-latest-version">8.1.4</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Mobile topbar styling */
+.mobile-topbar {
+    display: none; /* Hidden by default, shown only in mobile */
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.mobile-topbar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 100%;
+}
+
+.mobile-topbar-left {
+    flex: 1;
+}
+
+.mobile-app-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #e2e8f0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.mobile-topbar-right {
+    flex-shrink: 0;
+}
+
+.mobile-version-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.mobile-version-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(52, 152, 219, 0.15);
+    border: 1px solid rgba(52, 152, 219, 0.3);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #3498db;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.mobile-version-item i {
+    font-size: 10px;
+    opacity: 0.8;
+}
+
+/* Show mobile topbar only on mobile screens */
+@media (max-width: 768px) {
+    .mobile-topbar {
+        display: block !important;
+    }
+    
+    /* Hide the original topbar in mobile */
+    .topbar {
+        display: none !important;
+    }
+}
+
+/* Even more compact for very small screens */
+@media (max-width: 480px) {
+    .mobile-topbar {
+        padding: 10px 12px;
+    }
+    
+    .mobile-app-title {
+        font-size: 16px;
+    }
+    
+    .mobile-version-container {
+        gap: 6px;
+    }
+    
+    .mobile-version-item {
+        padding: 3px 6px;
+        font-size: 10px;
+        gap: 3px;
+    }
+    
+    .mobile-version-item i {
+        font-size: 9px;
+    }
+}
+</style>
+
+<script>
+// Update mobile topbar version info
+function updateMobileVersionInfo() {
+    // Get version info from the main topbar or API
+    const currentVersionElement = document.querySelector('#mobile-current-version');
+    const latestVersionElement = document.querySelector('#mobile-latest-version');
+    
+    if (currentVersionElement && latestVersionElement) {
+        // Try to get version from main topbar first
+        const mainCurrentVersion = document.querySelector('.version-item:nth-child(1)')?.textContent?.replace('Version ', '').trim();
+        const mainLatestVersion = document.querySelector('.version-item:nth-child(3)')?.textContent?.replace('Latest: ', '').trim();
+        
+        if (mainCurrentVersion) {
+            currentVersionElement.textContent = mainCurrentVersion;
+        }
+        
+        if (mainLatestVersion) {
+            latestVersionElement.textContent = mainLatestVersion;
+        }
+    }
+}
+
+// Initialize mobile topbar when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    updateMobileVersionInfo();
+});
+
+// Update mobile topbar when main topbar updates
+if (typeof window.updateVersionInfo === 'function') {
+    const originalUpdateVersionInfo = window.updateVersionInfo;
+    window.updateVersionInfo = function() {
+        originalUpdateVersionInfo.apply(this, arguments);
+        updateMobileVersionInfo();
+    };
+}
+</script> 

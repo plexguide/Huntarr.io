@@ -65,6 +65,16 @@
     .hide-for-bypass {
         display: none !important;
     }
+    
+    /* Hide original topbar in mobile view */
+    .top-bar {
+        display: none !important;
+    }
+    
+    /* Adjust main content padding when mobile topbar is active */
+    .main-content {
+        padding-top: 0 !important;
+    }
 }
 
 /* Very small screens */
