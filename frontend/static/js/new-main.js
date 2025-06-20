@@ -547,6 +547,39 @@ let huntarrUI = {
             
             // Show history view
             this.showRequestarrView('history');
+        } else if (section === 'apps' && document.getElementById('appsSection')) {
+            document.getElementById('appsSection').classList.add('active');
+            document.getElementById('appsSection').style.display = 'block';
+            if (document.getElementById('appsNav')) document.getElementById('appsNav').classList.add('active');
+            newTitle = 'Apps';
+            this.currentSection = 'apps';
+            
+            // Show main sidebar for main sections
+            this.showMainSidebar();
+            
+            // Load app connections when switching to Apps
+            this.checkAppConnections();
+        } else if (section === 'settings' && document.getElementById('settingsSection')) {
+            document.getElementById('settingsSection').classList.add('active');
+            document.getElementById('settingsSection').style.display = 'block';
+            if (document.getElementById('settingsNav')) document.getElementById('settingsNav').classList.add('active');
+            newTitle = 'Settings';
+            this.currentSection = 'settings';
+            
+            // Show main sidebar for main sections
+            this.showMainSidebar();
+            
+            // Initialize settings if not already done
+            this.initializeSettings();
+        } else if (section === 'scheduling' && document.getElementById('schedulingSection')) {
+            document.getElementById('schedulingSection').classList.add('active');
+            document.getElementById('schedulingSection').style.display = 'block';
+            if (document.getElementById('schedulingNav')) document.getElementById('schedulingNav').classList.add('active');
+            newTitle = 'Scheduling';
+            this.currentSection = 'scheduling';
+            
+            // Show main sidebar for main sections
+            this.showMainSidebar();
         } else {
             // Default to home if section is unknown or element missing
             if (this.elements.homeSection) {
@@ -3615,6 +3648,33 @@ let huntarrUI = {
                 window.location.hash = '#requestarr-history';
             });
         }
+    },
+
+    initializeSettings: function() {
+        // Check if settings are already initialized
+        const generalSettings = document.getElementById('generalSettings');
+        if (!generalSettings || generalSettings.innerHTML.trim() !== '') {
+            return; // Already initialized
+        }
+
+        // Load settings from API and generate the form
+        fetch('./api/settings')
+            .then(response => response.json())
+            .then(settings => {
+                console.log('[huntarrUI] Loaded settings:', settings);
+                
+                // Generate the general settings form
+                if (typeof SettingsForms !== 'undefined' && SettingsForms.generateGeneralForm) {
+                    SettingsForms.generateGeneralForm(generalSettings, settings);
+                } else {
+                    console.error('[huntarrUI] SettingsForms not available');
+                    generalSettings.innerHTML = '<p>Error: Settings forms not loaded</p>';
+                }
+            })
+            .catch(error => {
+                console.error('[huntarrUI] Error loading settings:', error);
+                generalSettings.innerHTML = '<p>Error loading settings</p>';
+            });
     }
 };
 
