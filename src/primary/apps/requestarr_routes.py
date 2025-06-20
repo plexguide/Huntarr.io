@@ -1,17 +1,17 @@
 """
-Requestor routes for media search and request functionality
+Requestarr routes for media search and request functionality
 """
 
 from flask import Blueprint, request, jsonify
 import logging
-from src.primary.apps.requestor import requestor_api
+from src.primary.apps.requestarr import requestarr_api
 
 logger = logging.getLogger(__name__)
 
 # Create blueprint
-requestor_bp = Blueprint('requestor', __name__, url_prefix='/api/requestor')
+requestarr_bp = Blueprint('requestarr', __name__, url_prefix='/api/requestarr')
 
-@requestor_bp.route('/search', methods=['GET'])
+@requestarr_bp.route('/search', methods=['GET'])
 def search_media():
     """Search for media using TMDB with availability checking"""
     try:
@@ -25,24 +25,24 @@ def search_media():
         if not app_type or not instance_name:
             return jsonify({'error': 'App type and instance name are required'}), 400
         
-        results = requestor_api.search_media_with_availability(query, app_type, instance_name)
+        results = requestarr_api.search_media_with_availability(query, app_type, instance_name)
         return jsonify({'results': results})
         
     except Exception as e:
         logger.error(f"Error searching media: {e}")
         return jsonify({'error': 'Search failed'}), 500
 
-@requestor_bp.route('/instances', methods=['GET'])
+@requestarr_bp.route('/instances', methods=['GET'])
 def get_enabled_instances():
     """Get enabled Sonarr and Radarr instances"""
     try:
-        instances = requestor_api.get_enabled_instances()
+        instances = requestarr_api.get_enabled_instances()
         return jsonify(instances)
     except Exception as e:
         logger.error(f"Error getting instances: {e}")
         return jsonify({'error': 'Failed to get instances'}), 500
 
-@requestor_bp.route('/request', methods=['POST'])
+@requestarr_bp.route('/request', methods=['POST'])
 def request_media():
     """Request media through app instance"""
     try:
@@ -54,7 +54,7 @@ def request_media():
             if field not in data:
                 return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
         
-        result = requestor_api.request_media(
+        result = requestarr_api.request_media(
             tmdb_id=data['tmdb_id'],
             media_type=data['media_type'],
             title=data['title'],
@@ -75,19 +75,19 @@ def request_media():
         logger.error(f"Error requesting media: {e}")
         return jsonify({'success': False, 'error': 'Request failed'}), 500
 
-@requestor_bp.route('/requests', methods=['GET'])
+@requestarr_bp.route('/requests', methods=['GET'])
 def get_requests():
     """Get paginated list of requests"""
     try:
         page = int(request.args.get('page', 1))
         page_size = int(request.args.get('page_size', 20))
         
-        requests_data = requestor_api.db.get_requests(page, page_size)
+        requests_data = requestarr_api.db.get_requests(page, page_size)
         return jsonify(requests_data)
         
     except Exception as e:
         logger.error(f"Error getting requests: {e}")
         return jsonify({'error': 'Failed to get requests'}), 500
 
-# Requestor is always enabled with hardcoded TMDB API key
-logger.info("Requestor initialized with hardcoded TMDB API key") 
+# Requestarr is always enabled with hardcoded TMDB API key
+logger.info("Requestarr initialized with hardcoded TMDB API key") 

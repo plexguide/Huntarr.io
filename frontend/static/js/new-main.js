@@ -602,6 +602,17 @@ let huntarrUI = {
             this.currentSection = 'scheduling';
             
             console.debug('Scheduling section activated');
+        } else if (section === 'requestarr' && document.getElementById('requestarr-section')) {
+            document.getElementById('requestarr-section').classList.add('active');
+            document.getElementById('requestarr-section').style.display = 'block';
+            if (document.getElementById('requestarrNav')) document.getElementById('requestarrNav').classList.add('active');
+            newTitle = 'Requestarr';
+            this.currentSection = 'requestarr';
+            
+            // Initialize requestarr module if it exists
+            if (typeof window.requestarrModule !== 'undefined') {
+                window.requestarrModule.loadInstances();
+            }
         } else {
             // Default to home if section is unknown or element missing
             if (this.elements.homeSection) {

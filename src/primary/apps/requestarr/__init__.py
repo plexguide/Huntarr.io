@@ -1,5 +1,5 @@
 """
-Requestor module for searching and requesting media through TMDB and *arr apps
+Requestarr module for searching and requesting media through TMDB and *arr apps
 """
 
 import requests
@@ -9,8 +9,8 @@ from src.primary.utils.database import get_database
 
 logger = logging.getLogger(__name__)
 
-class RequestorAPI:
-    """API handler for Requestor functionality"""
+class RequestarrAPI:
+    """API handler for Requestarr functionality"""
     
     def __init__(self):
         self.db = get_database()
@@ -687,4 +687,4 @@ class RequestorAPI:
             }
 
 # Global instance
-requestor_api = RequestorAPI() 
+requestarr_api = RequestarrAPI() 

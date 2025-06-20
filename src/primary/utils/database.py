@@ -742,9 +742,9 @@ class HuntarrDatabase:
             # Logs table moved to separate logs.db - remove if it exists
             conn.execute('DROP TABLE IF EXISTS logs')
             
-            # Create requestor_settings table for Requestor configuration
+                        # Create requestarr_settings table for Requestarr configuration
             conn.execute('''
-                CREATE TABLE IF NOT EXISTS requestor_settings (
+            CREATE TABLE IF NOT EXISTS requestarr_settings (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
                     tmdb_api_key TEXT,
                     enabled BOOLEAN DEFAULT FALSE,
@@ -753,9 +753,9 @@ class HuntarrDatabase:
                 )
             ''')
             
-            # Create requestor_requests table for tracking media requests
+                        # Create requestarr_requests table for tracking media requests
             conn.execute('''
-                CREATE TABLE IF NOT EXISTS requestor_requests (
+            CREATE TABLE IF NOT EXISTS requestarr_requests (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     tmdb_id INTEGER NOT NULL,
                     media_type TEXT NOT NULL CHECK (media_type IN ('movie', 'tv')),
@@ -2313,13 +2313,13 @@ class HuntarrDatabase:
             logger.error(f"Failed to check setup progress: {e}")
             return False
 
-    # Requestor functionality methods
-    def get_requestor_settings(self) -> Dict[str, Any]:
-        """Get Requestor configuration settings"""
+    # Requestarr functionality methods
+    def get_requestarr_settings(self) -> Dict[str, Any]:
+        """Get Requestarr configuration settings"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.execute("""
-                    SELECT tmdb_api_key, enabled FROM requestor_settings WHERE id = 1
+                    SELECT tmdb_api_key, enabled FROM requestarr_settings WHERE id = 1
                 """)
                 row = cursor.fetchone()
                 if row:
@@ -2329,20 +2329,20 @@ class HuntarrDatabase:
                     }
                 return {'tmdb_api_key': '', 'enabled': False}
         except Exception as e:
-            logger.error(f"Error getting requestor settings: {e}")
+            logger.error(f"Error getting requestarr settings: {e}")
             return {'tmdb_api_key': '', 'enabled': False}
 
-    def save_requestor_settings(self, tmdb_api_key: str, enabled: bool) -> bool:
-        """Save Requestor configuration settings"""
+    def save_requestarr_settings(self, tmdb_api_key: str, enabled: bool) -> bool:
+        """Save Requestarr configuration settings"""
         try:
             with self.get_connection() as conn:
                 conn.execute("""
-                    INSERT OR REPLACE INTO requestor_settings (id, tmdb_api_key, enabled, updated_at)
+                    INSERT OR REPLACE INTO requestarr_settings (id, tmdb_api_key, enabled, updated_at)
                     VALUES (1, ?, ?, CURRENT_TIMESTAMP)
                 """, (tmdb_api_key, enabled))
                 return True
         except Exception as e:
-            logger.error(f"Error saving requestor settings: {e}")
+            logger.error(f"Error saving requestarr settings: {e}")
             return False
 
     def add_request(self, tmdb_id: int, media_type: str, title: str, year: int, 
@@ -2352,7 +2352,7 @@ class HuntarrDatabase:
         try:
             with self.get_connection() as conn:
                 conn.execute("""
-                    INSERT OR REPLACE INTO requestor_requests 
+                    INSERT OR REPLACE INTO requestarr_requests 
                     (tmdb_id, media_type, title, year, overview, poster_path, backdrop_path,
                      app_type, instance_name, status, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)
@@ -2369,14 +2369,14 @@ class HuntarrDatabase:
             offset = (page - 1) * page_size
             with self.get_connection() as conn:
                 # Get total count
-                count_cursor = conn.execute("SELECT COUNT(*) FROM requestor_requests")
+                count_cursor = conn.execute("SELECT COUNT(*) FROM requestarr_requests")
                 total_requests = count_cursor.fetchone()[0]
                 
                 # Get paginated requests
                 cursor = conn.execute("""
                     SELECT tmdb_id, media_type, title, year, overview, poster_path, backdrop_path,
                            app_type, instance_name, status, request_date, updated_at
-                    FROM requestor_requests 
+                    FROM requestarr_requests 
                     ORDER BY request_date DESC
                     LIMIT ? OFFSET ?
                 """, (page_size, offset))
@@ -2415,7 +2415,7 @@ class HuntarrDatabase:
         try:
             with self.get_connection() as conn:
                 conn.execute("""
-                    UPDATE requestor_requests 
+                    UPDATE requestarr_requests 
                     SET status = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
                 """, (status, tmdb_id, media_type, app_type, instance_name))
@@ -2429,7 +2429,7 @@ class HuntarrDatabase:
         try:
             with self.get_connection() as conn:
                 cursor = conn.execute("""
-                    SELECT COUNT(*) FROM requestor_requests 
+                    SELECT COUNT(*) FROM requestarr_requests 
                     WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
                 """, (tmdb_id, media_type, app_type, instance_name))
                 return cursor.fetchone()[0] > 0

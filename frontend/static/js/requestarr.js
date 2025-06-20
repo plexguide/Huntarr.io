@@ -1,8 +1,8 @@
 /**
- * Requestor functionality - Media search and request system
+ * Requestarr functionality - Media search and request system
  */
 
-class RequestorModule {
+class RequestarrModule {
     constructor() {
         this.searchTimeout = null;
         this.instances = { sonarr: [], radarr: [] };
@@ -17,13 +17,13 @@ class RequestorModule {
 
     setupEventListeners() {
         // Instance selection
-        const instanceSelect = document.getElementById('requestor-instance-select');
+        const instanceSelect = document.getElementById('requestarr-instance-select');
         if (instanceSelect) {
             instanceSelect.addEventListener('change', (e) => this.handleInstanceChange(e));
         }
 
         // Search input with debouncing
-        const searchInput = document.getElementById('requestor-search');
+        const searchInput = document.getElementById('requestarr-search');
         if (searchInput) {
             searchInput.disabled = true;
             searchInput.placeholder = 'Select an instance first...';
@@ -56,7 +56,7 @@ class RequestorModule {
             
             // Clear previous results and enable search
             this.clearResults();
-            const searchInput = document.getElementById('requestor-search');
+            const searchInput = document.getElementById('requestarr-search');
             if (searchInput) {
                 searchInput.disabled = false;
                 searchInput.placeholder = `Search for ${appType === 'radarr' ? 'movies' : 'TV shows'}...`;
@@ -64,7 +64,7 @@ class RequestorModule {
             }
         } else {
             this.selectedInstance = null;
-            const searchInput = document.getElementById('requestor-search');
+            const searchInput = document.getElementById('requestarr-search');
             if (searchInput) {
                 searchInput.disabled = true;
                 searchInput.placeholder = 'Select an instance first...';
@@ -76,7 +76,7 @@ class RequestorModule {
 
     async loadInstances() {
         try {
-            const response = await fetch('./api/requestor/instances');
+            const response = await fetch('./api/requestarr/instances');
             this.instances = await response.json();
             this.updateInstanceSelect();
         } catch (error) {
@@ -86,7 +86,7 @@ class RequestorModule {
     }
 
     updateInstanceSelect() {
-        const instanceSelect = document.getElementById('requestor-instance-select');
+        const instanceSelect = document.getElementById('requestarr-instance-select');
         if (!instanceSelect) return;
         
         instanceSelect.innerHTML = '<option value="">Select an instance to search...</option>';
@@ -114,7 +114,7 @@ class RequestorModule {
             return;
         }
 
-        const resultsContainer = document.getElementById('requestor-results');
+        const resultsContainer = document.getElementById('requestarr-results');
         if (!resultsContainer) return;
 
         // Show loading
@@ -127,7 +127,7 @@ class RequestorModule {
                 instance_name: this.selectedInstance.instanceName
             });
             
-            const response = await fetch(`./api/requestor/search?${params}`);
+            const response = await fetch(`./api/requestarr/search?${params}`);
             const data = await response.json();
             
             if (data.error) {
@@ -143,7 +143,7 @@ class RequestorModule {
     }
 
     displayResults(results) {
-        const resultsContainer = document.getElementById('requestor-results');
+        const resultsContainer = document.getElementById('requestarr-results');
         if (!resultsContainer) return;
 
         if (results.length === 0) {
@@ -283,7 +283,7 @@ class RequestorModule {
                 instance_name: this.selectedInstance.instanceName
             };
             
-            const response = await fetch('./api/requestor/request', {
+            const response = await fetch('./api/requestarr/request', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -320,7 +320,7 @@ class RequestorModule {
     }
 
     clearResults() {
-        const resultsContainer = document.getElementById('requestor-results');
+        const resultsContainer = document.getElementById('requestarr-results');
         if (resultsContainer) {
             resultsContainer.innerHTML = '';
         }
@@ -346,7 +346,7 @@ class RequestorModule {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('requestor-section')) {
-        window.requestorModule = new RequestorModule();
+    if (document.getElementById('requestarr-section')) {
+        window.requestarrModule = new RequestarrModule();
     }
 }); 
