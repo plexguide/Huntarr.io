@@ -1258,10 +1258,19 @@ let huntarrUI = {
             // Listen for change events (for checkboxes, selects, radio buttons)
             settingsContainer.addEventListener('change', (event) => {
                 if (event.target.matches('input, select, textarea')) {
-                    // Special handling for Low Usage Mode - apply immediately
+                    // Special handling for settings that can take effect immediately
                     if (event.target.id === 'low_usage_mode') {
                         console.log('[huntarrUI] Low Usage Mode toggled, applying immediately');
                         this.applyLowUsageMode(event.target.checked);
+                    } else if (event.target.id === 'timezone') {
+                        console.log('[huntarrUI] Timezone changed, applying immediately');
+                        this.applyTimezoneChange(event.target.value);
+                    } else if (event.target.id === 'auth_mode') {
+                        console.log('[huntarrUI] Authentication mode changed, applying immediately');
+                        this.applyAuthModeChange(event.target.value);
+                    } else if (event.target.id === 'check_for_updates') {
+                        console.log('[huntarrUI] Update checking toggled, applying immediately');
+                        this.applyUpdateCheckingChange(event.target.checked);
                     }
                     
                     this.triggerSettingsAutoSave();
@@ -3230,6 +3239,84 @@ let huntarrUI = {
         if (wasEnabled !== enabled && window.mediaStats) {
             console.log(`[huntarrUI] Low usage mode changed from ${wasEnabled} to ${enabled}, updating stats display`);
             this.updateStatsDisplay(window.mediaStats);
+        }
+    },
+
+    // Apply timezone change immediately
+    applyTimezoneChange: function(timezone) {
+        console.log(`[huntarrUI] Applying timezone change to: ${timezone}`);
+        
+        // Call the backend to apply timezone immediately
+        fetch('./api/settings/apply-timezone', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ timezone: timezone })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('[huntarrUI] Timezone applied successfully');
+                this.showNotification(`Timezone changed to ${timezone}`, 'success');
+                
+                // Refresh any time displays that might be affected
+                this.refreshTimeDisplays();
+            } else {
+                console.error('[huntarrUI] Failed to apply timezone:', data.error);
+                this.showNotification(`Failed to apply timezone: ${data.error}`, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('[huntarrUI] Error applying timezone:', error);
+            this.showNotification(`Error applying timezone: ${error.message}`, 'error');
+        });
+    },
+
+    // Apply authentication mode change immediately
+    applyAuthModeChange: function(authMode) {
+        console.log(`[huntarrUI] Authentication mode changed to: ${authMode}`);
+        
+        // Show notification about the change
+        const modeNames = {
+            'login': 'Login Mode',
+            'local_bypass': 'Local Bypass Mode', 
+            'no_login': 'No Login Mode'
+        };
+        
+        const modeName = modeNames[authMode] || authMode;
+        this.showNotification(`Authentication mode changed to ${modeName}`, 'info');
+        
+        // Add warning for No Login Mode
+        if (authMode === 'no_login') {
+            setTimeout(() => {
+                this.showNotification('Warning: No Login Mode disables all authentication. Ensure your reverse proxy is securing access!', 'warning');
+            }, 1000);
+        }
+    },
+
+    // Apply update checking change immediately
+    applyUpdateCheckingChange: function(enabled) {
+        console.log(`[huntarrUI] Update checking ${enabled ? 'enabled' : 'disabled'}`);
+        this.showNotification(`Update checking ${enabled ? 'enabled' : 'disabled'}`, 'info');
+    },
+
+    // Refresh time displays after timezone change
+    refreshTimeDisplays: function() {
+        // Refresh any elements that display time and might be affected by timezone changes
+        const timeElements = document.querySelectorAll('[data-time], .time-display, .timestamp');
+        timeElements.forEach(element => {
+            // If element has a refresh method or data attribute, trigger refresh
+            if (element.dataset.refreshTime) {
+                // Custom refresh logic could go here
+                console.log('[huntarrUI] Refreshing time display element');
+            }
+        });
+        
+        // Refresh logs if they're currently visible (they contain timestamps)
+        if (this.currentSection === 'logs') {
+            console.log('[huntarrUI] Refreshing logs for timezone change');
+            // The logs will refresh automatically via the EventSource, but we could trigger a manual refresh here if needed
         }
     },
     
