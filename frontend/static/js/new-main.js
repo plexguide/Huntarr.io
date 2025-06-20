@@ -457,6 +457,10 @@ let huntarrUI = {
             if (this.elements.homeNav) this.elements.homeNav.classList.add('active');
             newTitle = 'Home';
             this.currentSection = 'home';
+            
+            // Show main sidebar when returning to home
+            this.showMainSidebar();
+            
             // Disconnect logs if switching away from logs
             this.disconnectAllEventSources(); 
             // Check app connections when returning to home page to update status
@@ -471,6 +475,9 @@ let huntarrUI = {
             if (this.elements.logsNav) this.elements.logsNav.classList.add('active');
             newTitle = 'Logs';
             this.currentSection = 'logs';
+            
+            // Show main sidebar for main sections
+            this.showMainSidebar();
             
             // Comprehensive LogsModule debugging
             console.log('[huntarrUI] === LOGS SECTION DEBUG START ===');
@@ -504,6 +511,9 @@ let huntarrUI = {
             if (document.getElementById('huntManagerNav')) document.getElementById('huntManagerNav').classList.add('active');
             newTitle = 'Hunt Manager';
             this.currentSection = 'hunt-manager';
+            
+            // Show main sidebar for main sections
+            this.showMainSidebar();
             
             // Load hunt manager data if the module exists
             if (typeof huntManagerModule !== 'undefined') {
