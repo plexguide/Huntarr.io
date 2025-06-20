@@ -3807,10 +3807,11 @@ let huntarrUI = {
             .then(response => response.json())
             .then(settings => {
                 console.log('[huntarrUI] Loaded settings:', settings);
+                console.log('[huntarrUI] General settings:', settings.general);
                 
-                // Generate the general settings form
+                // Generate the general settings form - pass only the general settings
                 if (typeof SettingsForms !== 'undefined' && SettingsForms.generateGeneralForm) {
-                    SettingsForms.generateGeneralForm(generalSettings, settings);
+                    SettingsForms.generateGeneralForm(generalSettings, settings.general || {});
                 } else {
                     console.error('[huntarrUI] SettingsForms not available');
                     generalSettings.innerHTML = '<p>Error: Settings forms not loaded</p>';
