@@ -646,6 +646,25 @@ class HuntarrDatabase:
             # Logs table moved to separate logs.db - remove if it exists
             conn.execute('DROP TABLE IF EXISTS logs')
             
+            # Create requestarr_requests table for tracking media requests
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS requestarr_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tmdb_id INTEGER NOT NULL,
+                    media_type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    year INTEGER,
+                    overview TEXT,
+                    poster_path TEXT,
+                    backdrop_path TEXT,
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(tmdb_id, media_type, app_type, instance_name)
+                )
+            ''')
+
             # Create hunt_history table for tracking processed media history
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS hunt_history (
@@ -2185,6 +2204,93 @@ class HuntarrDatabase:
         except Exception as e:
             logger.error(f"Failed to check setup progress: {e}")
             return False
+
+    # Requestarr methods for managing media requests
+    def is_already_requested(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str) -> bool:
+        """Check if media has already been requested for the given app instance"""
+        try:
+            with self.get_connection() as conn:
+                result = conn.execute('''
+                    SELECT 1 FROM requestarr_requests 
+                    WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
+                ''', (tmdb_id, media_type, app_type, instance_name)).fetchone()
+                return result is not None
+        except Exception as e:
+            logger.error(f"Error checking if media already requested: {e}")
+            return False
+
+    def add_request(self, tmdb_id: int, media_type: str, title: str, year: int, overview: str, 
+                   poster_path: str, backdrop_path: str, app_type: str, instance_name: str) -> bool:
+        """Add a new media request to the database"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute('''
+                    INSERT OR REPLACE INTO requestarr_requests 
+                    (tmdb_id, media_type, title, year, overview, poster_path, backdrop_path, app_type, instance_name, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (tmdb_id, media_type, title, year, overview, poster_path, backdrop_path, app_type, instance_name))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error adding media request: {e}")
+            return False
+
+    def get_requests(self, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
+        """Get paginated list of media requests"""
+        try:
+            with self.get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                
+                # Get total count
+                total_count = conn.execute('SELECT COUNT(*) FROM requestarr_requests').fetchone()[0]
+                
+                # Calculate pagination
+                offset = (page - 1) * page_size
+                total_pages = (total_count + page_size - 1) // page_size
+                
+                # Get paginated results
+                results = conn.execute('''
+                    SELECT tmdb_id, media_type, title, year, overview, poster_path, backdrop_path, 
+                           app_type, instance_name, created_at, updated_at
+                    FROM requestarr_requests 
+                    ORDER BY created_at DESC 
+                    LIMIT ? OFFSET ?
+                ''', (page_size, offset)).fetchall()
+                
+                # Convert to list of dictionaries
+                requests_list = []
+                for row in results:
+                    requests_list.append({
+                        'tmdb_id': row['tmdb_id'],
+                        'media_type': row['media_type'],
+                        'title': row['title'],
+                        'year': row['year'],
+                        'overview': row['overview'],
+                        'poster_path': row['poster_path'],
+                        'backdrop_path': row['backdrop_path'],
+                        'app_type': row['app_type'],
+                        'instance_name': row['instance_name'],
+                        'created_at': row['created_at'],
+                        'updated_at': row['updated_at']
+                    })
+                
+                return {
+                    'requests': requests_list,
+                    'total': total_count,
+                    'page': page,
+                    'page_size': page_size,
+                    'total_pages': total_pages
+                }
+                
+        except Exception as e:
+            logger.error(f"Error getting media requests: {e}")
+            return {
+                'requests': [],
+                'total': 0,
+                'page': page,
+                'page_size': page_size,
+                'total_pages': 0
+            }
 
 # Separate LogsDatabase class for logs.db
 class LogsDatabase:
