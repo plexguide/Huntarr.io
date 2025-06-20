@@ -1258,6 +1258,12 @@ let huntarrUI = {
             // Listen for change events (for checkboxes, selects, radio buttons)
             settingsContainer.addEventListener('change', (event) => {
                 if (event.target.matches('input, select, textarea')) {
+                    // Special handling for Low Usage Mode - apply immediately
+                    if (event.target.id === 'low_usage_mode') {
+                        console.log('[huntarrUI] Low Usage Mode toggled, applying immediately');
+                        this.applyLowUsageMode(event.target.checked);
+                    }
+                    
                     this.triggerSettingsAutoSave();
                 }
             });
