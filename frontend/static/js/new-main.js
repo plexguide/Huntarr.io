@@ -113,6 +113,10 @@ let huntarrUI = {
         // Initialize instance event handlers
         this.setupInstanceEventHandlers();
         
+        // Setup navigation for sidebars
+        this.setupRequestarrNavigation();
+        this.setupSettingsNavigation();
+        
         // Auto-save enabled - no unsaved changes handler needed
         
         // Setup Swaparr components
@@ -566,8 +570,8 @@ let huntarrUI = {
             newTitle = 'Settings';
             this.currentSection = 'settings';
             
-            // Show main sidebar for main sections
-            this.showMainSidebar();
+            // Switch to Settings sidebar
+            this.showSettingsSidebar();
             
             // Initialize settings if not already done
             this.initializeSettings();
@@ -578,8 +582,8 @@ let huntarrUI = {
             newTitle = 'Scheduling';
             this.currentSection = 'scheduling';
             
-            // Show main sidebar for main sections
-            this.showMainSidebar();
+            // Switch to Settings sidebar for scheduling
+            this.showSettingsSidebar();
         } else {
             // Default to home if section is unknown or element missing
             if (this.elements.homeSection) {
@@ -3552,11 +3556,13 @@ let huntarrUI = {
     },
 
     showRequestarrSidebar: function() {
-        // Hide main sidebar
+        // Hide main sidebar and settings sidebar
         const mainSidebar = document.getElementById('sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const settingsSidebar = document.getElementById('settings-sidebar');
         
         if (mainSidebar) mainSidebar.style.display = 'none';
+        if (settingsSidebar) settingsSidebar.style.display = 'none';
         if (requestarrSidebar) requestarrSidebar.style.display = 'block';
         
         // Update active states in Requestarr sidebar
@@ -3586,9 +3592,25 @@ let huntarrUI = {
         // Show main sidebar
         const mainSidebar = document.getElementById('sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const settingsSidebar = document.getElementById('settings-sidebar');
         
         if (mainSidebar) mainSidebar.style.display = 'block';
         if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+        if (settingsSidebar) settingsSidebar.style.display = 'none';
+    },
+
+    showSettingsSidebar: function() {
+        // Hide main sidebar and show settings sidebar
+        const mainSidebar = document.getElementById('sidebar');
+        const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const settingsSidebar = document.getElementById('settings-sidebar');
+        
+        if (mainSidebar) mainSidebar.style.display = 'none';
+        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+        if (settingsSidebar) settingsSidebar.style.display = 'block';
+        
+        // Update active states in Settings sidebar
+        this.updateSettingsSidebarActive();
     },
 
     updateRequestarrSidebarActive: function() {
@@ -3646,6 +3668,62 @@ let huntarrUI = {
             historyNav.addEventListener('click', (e) => {
                 e.preventDefault();
                 window.location.hash = '#requestarr-history';
+            });
+        }
+    },
+
+    updateSettingsSidebarActive: function() {
+        // Remove active from all Settings nav items
+        const settingsNavItems = document.querySelectorAll('#settings-sidebar .nav-item');
+        settingsNavItems.forEach(item => item.classList.remove('active'));
+        
+        // Set appropriate active state based on current section
+        if (this.currentSection === 'settings') {
+            const mainNav = document.getElementById('settingsMainNav');
+            if (mainNav) mainNav.classList.add('active');
+        } else if (this.currentSection === 'scheduling') {
+            const schedulingNav = document.getElementById('settingsSchedulingNav');
+            if (schedulingNav) schedulingNav.classList.add('active');
+        } else if (this.currentSection === 'user') {
+            const userNav = document.getElementById('settingsUserNav');
+            if (userNav) userNav.classList.add('active');
+        }
+    },
+
+    setupSettingsNavigation: function() {
+        // Return button - goes back to main Huntarr
+        const returnNav = document.getElementById('settingsReturnNav');
+        if (returnNav) {
+            returnNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#home';
+            });
+        }
+        
+        // Main button - shows Settings main page
+        const mainNav = document.getElementById('settingsMainNav');
+        if (mainNav) {
+            mainNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#settings';
+            });
+        }
+        
+        // Scheduling button - shows Scheduling page
+        const schedulingNav = document.getElementById('settingsSchedulingNav');
+        if (schedulingNav) {
+            schedulingNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#scheduling';
+            });
+        }
+        
+        // User button - navigates to User page
+        const userNav = document.getElementById('settingsUserNav');
+        if (userNav) {
+            userNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = './user';
             });
         }
     },

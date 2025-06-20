@@ -42,12 +42,7 @@
         <!-- Features Group -->
         <div class="nav-group">
             <div class="nav-group-title">Features</div>
-            <a href="./#scheduling" class="nav-item" id="schedulingNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
-                <span>Scheduling</span>
-            </a>
+
             <a href="./#logs" class="nav-item" id="logsNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-list-alt"></i>
@@ -59,12 +54,6 @@
                     <i class="fas fa-crosshairs"></i>
                 </div>
                 <span>Hunt Manager</span>
-            </a>
-            <a href="./user" class="nav-item" id="userNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-user"></i>
-                </div>
-                <span>User</span>
             </a>
             <a href="./#settings" class="nav-item" id="settingsNav">
                 <div class="nav-icon-wrapper">
@@ -151,6 +140,62 @@
                     <i class="fas fa-history"></i>
                 </div>
                 <span>History</span>
+            </a>
+        </div>
+    </nav>
+</div>
+
+<!-- Settings Sidebar -->
+<div class="sidebar settings-sidebar" id="settings-sidebar" style="display: none;">
+    <div class="sidebar-top-line"></div>
+    <div class="logo-container">
+        <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+            <img src="./static/logo/256.png" alt="Huntarr Logo" class="logo logo-large">
+            <img src="./static/logo/32.png" alt="Huntarr Logo" class="logo logo-small">
+            <h1>Huntarr</h1>
+        </a>
+    </div>
+    
+    <nav class="nav-menu">
+        <!-- Project Sponsors Link -->
+        <a href="https://plexguide.github.io/Huntarr.io/donate.html" class="nav-item" target="_blank" rel="noopener noreferrer">
+            <div class="nav-icon-wrapper heart-icon">
+                <i class="fas fa-heart"></i>
+            </div>
+            <span>Become A Sponsor</span>
+        </a>
+        
+        <!-- Huntarr Navigation Group -->
+        <div class="nav-group" style="margin-top: -10px;">
+            <div class="nav-group-title">Huntarr</div>
+            <a href="./" class="nav-item" id="settingsReturnNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <span>Return</span>
+            </a>
+        </div>
+        
+        <!-- Settings Group -->
+        <div class="nav-group">
+            <div class="nav-group-title">Settings</div>
+            <a href="./#settings" class="nav-item active" id="settingsMainNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-home"></i>
+                </div>
+                <span>Main</span>
+            </a>
+            <a href="./#scheduling" class="nav-item" id="settingsSchedulingNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <span>Scheduling</span>
+            </a>
+            <a href="./user" class="nav-item" id="settingsUserNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span>User</span>
             </a>
         </div>
     </nav>
