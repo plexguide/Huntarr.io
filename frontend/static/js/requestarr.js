@@ -7,6 +7,7 @@ class RequestarrModule {
         this.searchTimeout = null;
         this.instances = { sonarr: [], radarr: [] };
         this.selectedInstance = null;
+        this.itemData = {};
         this.init();
     }
 
@@ -170,8 +171,15 @@ class RequestarrModule {
         const availability = item.availability || {};
         const statusInfo = this.getStatusInfo(availability);
         
+        // Generate unique ID for this card to store data safely
+        const cardId = `result-card-${item.tmdb_id}-${item.media_type}`;
+        
+        // Store item data separately to avoid JSON parsing issues
+        this.itemData = this.itemData || {};
+        this.itemData[cardId] = item;
+        
         return `
-            <div class="result-card" data-tmdb-id="${item.tmdb_id}" data-media-type="${item.media_type}">
+            <div class="result-card" data-card-id="${cardId}" data-tmdb-id="${item.tmdb_id}" data-media-type="${item.media_type}">
                 <div class="result-poster">
                     <img src="${poster}" alt="${item.title}" onerror="this.src='${noPosterPlaceholder}'">
                     <div class="media-type-badge">${mediaTypeIcon}</div>
@@ -189,7 +197,7 @@ class RequestarrModule {
                     </div>
                     <div class="request-section">
                         <button class="request-btn ${statusInfo.buttonClass}" 
-                                data-item='${JSON.stringify(item)}'
+                                data-card-id="${cardId}"
                                 ${statusInfo.disabled ? 'disabled' : ''}>
                             ${statusInfo.buttonText}
                         </button>
@@ -268,7 +276,16 @@ class RequestarrModule {
         if (button.disabled) return;
         
         try {
-            const item = JSON.parse(button.dataset.item);
+            const cardId = button.dataset.cardId;
+            if (!cardId) {
+                throw new Error('Invalid card ID');
+            }
+            
+            const item = this.itemData[cardId];
+            if (!item) {
+                throw new Error('Item data not found');
+            }
+            
             console.log('Requesting item:', item);
             console.log('Selected instance:', this.selectedInstance);
             
@@ -331,6 +348,8 @@ class RequestarrModule {
         if (resultsContainer) {
             resultsContainer.innerHTML = '';
         }
+        // Clear stored item data
+        this.itemData = {};
     }
 
     showNotification(message, type = 'info') {

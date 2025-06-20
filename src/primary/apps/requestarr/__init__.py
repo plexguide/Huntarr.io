@@ -294,53 +294,51 @@ class RequestarrAPI:
                     'status': 'instance_not_found'
                 }
             
-            # Check if media already exists in the app
-            existing_status = self._check_media_exists(tmdb_id, media_type, target_instance, app_type)
-            if existing_status['exists']:
-                return {
-                    'success': False,
-                    'message': f'{title} already exists in {app_type.title()} - {instance_name}',
-                    'status': 'already_exists'
-                }
-            
             # Check if media exists and get detailed info
             exists_result = self._check_media_exists(tmdb_id, media_type, target_instance, app_type)
             
-            if (exists_result.get('exists') and app_type == 'sonarr' and 
-                'series_id' in exists_result):
-                # Series exists in Sonarr - check if we should request missing episodes
-                episode_file_count = exists_result.get('episode_file_count', 0)
-                episode_count = exists_result.get('episode_count', 0)
-                
-                if episode_file_count < episode_count and episode_count > 0:
-                    # Request missing episodes for existing series
-                    missing_result = self._request_missing_episodes(exists_result['series_id'], target_instance)
+            if exists_result.get('exists'):
+                if app_type == 'sonarr' and 'series_id' in exists_result:
+                    # Series exists in Sonarr - check if we should request missing episodes
+                    episode_file_count = exists_result.get('episode_file_count', 0)
+                    episode_count = exists_result.get('episode_count', 0)
                     
-                    if missing_result['success']:
-                        # Save request to database
-                        self.db.add_request(
-                            tmdb_id, media_type, title, year, overview, 
-                            poster_path, backdrop_path, app_type, instance_name
-                        )
+                    if episode_file_count < episode_count and episode_count > 0:
+                        # Request missing episodes for existing series
+                        missing_result = self._request_missing_episodes(exists_result['series_id'], target_instance)
                         
-                        missing_count = episode_count - episode_file_count
-                        return {
-                            'success': True,
-                            'message': f'Search initiated for {missing_count} missing episodes of {title}',
-                            'status': 'requested'
-                        }
+                        if missing_result['success']:
+                            # Save request to database
+                            self.db.add_request(
+                                tmdb_id, media_type, title, year, overview, 
+                                poster_path, backdrop_path, app_type, instance_name
+                            )
+                            
+                            missing_count = episode_count - episode_file_count
+                            return {
+                                'success': True,
+                                'message': f'Search initiated for {missing_count} missing episodes of {title}',
+                                'status': 'requested'
+                            }
+                        else:
+                            return {
+                                'success': False,
+                                'message': missing_result['message'],
+                                'status': 'request_failed'
+                            }
                     else:
+                        # Series is complete or no episodes expected
                         return {
                             'success': False,
-                            'message': missing_result['message'],
-                            'status': 'request_failed'
+                            'message': f'{title} is already complete in your library',
+                            'status': 'already_complete'
                         }
                 else:
-                    # Series is complete or no episodes expected
+                    # Media exists in Radarr or other app - can't add again
                     return {
                         'success': False,
-                        'message': f'{title} is already complete in your library',
-                        'status': 'already_complete'
+                        'message': f'{title} already exists in {app_type.title()} - {instance_name}',
+                        'status': 'already_exists'
                     }
             else:
                 # Add new media to the app
@@ -486,8 +484,15 @@ class RequestarrAPI:
     def _add_media_to_app(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str) -> Dict[str, Any]:
         """Add media to the app instance"""
         try:
-            url = instance['url'].rstrip('/')
-            api_key = instance['api_key']
+            # Database stores URL as 'api_url', map it to 'url' for consistency
+            url = (instance.get('api_url', '') or instance.get('url', '')).rstrip('/')
+            api_key = instance.get('api_key', '')
+            
+            if not url or not api_key:
+                return {
+                    'success': False,
+                    'message': 'Instance not configured with URL/API key'
+                }
             
             if app_type == 'radarr' and media_type == 'movie':
                 return self._add_movie_to_radarr(tmdb_id, url, api_key)
