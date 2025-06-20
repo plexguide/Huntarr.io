@@ -506,16 +506,16 @@ let huntarrUI = {
             if (typeof huntManagerModule !== 'undefined') {
                 huntManagerModule.refresh();
             }
-        } else if (section === 'requestor' && document.getElementById('requestor-section')) {
-            document.getElementById('requestor-section').classList.add('active');
-            document.getElementById('requestor-section').style.display = 'block';
-            if (document.getElementById('requestorNav')) document.getElementById('requestorNav').classList.add('active');
-            newTitle = 'Requestor';
-            this.currentSection = 'requestor';
+        } else if (section === 'requestarr' && document.getElementById('requestarr-section')) {
+            document.getElementById('requestarr-section').classList.add('active');
+            document.getElementById('requestarr-section').style.display = 'block';
+            if (document.getElementById('requestarrNav')) document.getElementById('requestarrNav').classList.add('active');
+            newTitle = 'Requestarr';
+            this.currentSection = 'requestarr';
             
-            // Initialize requestor module if it exists
-            if (typeof window.requestorModule !== 'undefined') {
-                window.requestorModule.loadInstances();
+            // Initialize requestarr module if it exists
+            if (typeof window.requestarrModule !== 'undefined') {
+                window.requestarrModule.loadInstances();
             }
         } else if (section === 'apps' && document.getElementById('appsSection')) {
             document.getElementById('appsSection').classList.add('active');

@@ -160,7 +160,9 @@ class RequestarrModule {
 
     createResultCard(item) {
         const year = item.year ? `(${item.year})` : '';
-        const poster = item.poster_path || './static/images/no-poster.png';
+        // Use a simple data URL placeholder instead of missing file
+        const noPosterPlaceholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgdmlld0JveD0iMCAwIDMwMCA0NTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjE1MCIgeT0iMjI1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIFBvc3RlcjwvdGV4dD4KPC9zdmc+';
+        const poster = item.poster_path || noPosterPlaceholder;
         const mediaTypeIcon = item.media_type === 'movie' ? '🎬' : '📺';
         const rating = item.vote_average ? `⭐ ${item.vote_average.toFixed(1)}` : '';
         
@@ -171,7 +173,7 @@ class RequestarrModule {
         return `
             <div class="result-card" data-tmdb-id="${item.tmdb_id}" data-media-type="${item.media_type}">
                 <div class="result-poster">
-                    <img src="${poster}" alt="${item.title}" onerror="this.src='./static/images/no-poster.png'">
+                    <img src="${poster}" alt="${item.title}" onerror="this.src='${noPosterPlaceholder}'">
                     <div class="media-type-badge">${mediaTypeIcon}</div>
                 </div>
                 <div class="result-info">
@@ -267,6 +269,8 @@ class RequestarrModule {
         
         try {
             const item = JSON.parse(button.dataset.item);
+            console.log('Requesting item:', item);
+            console.log('Selected instance:', this.selectedInstance);
             
             button.disabled = true;
             button.textContent = 'Requesting...';
@@ -283,6 +287,8 @@ class RequestarrModule {
                 instance_name: this.selectedInstance.instanceName
             };
             
+            console.log('Request data:', requestData);
+            
             const response = await fetch('./api/requestarr/request', {
                 method: 'POST',
                 headers: {
@@ -292,6 +298,7 @@ class RequestarrModule {
             });
             
             const result = await response.json();
+            console.log('Request result:', result);
             
             if (result.success) {
                 this.showNotification(result.message, 'success');
