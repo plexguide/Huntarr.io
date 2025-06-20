@@ -1,0 +1,80 @@
+/*
+ * Huntarr Mobile CSS
+ * Handles all mobile-specific styling and sidebar behavior
+ */
+
+/* Mobile viewport adjustments */
+@media (max-width: 768px) {
+    /* Sidebar behavior - exactly like desktop but with mobile styling */
+    .sidebar {
+        width: 60px !important;
+        padding: 20px 0 !important;
+    }
+    
+    /* Hide sidebar text and labels in mobile */
+    .sidebar h1, 
+    .nav-item span, 
+    .switch-label {
+        display: none !important;
+    }
+    
+    /* Adjust nav item icons for mobile */
+    .nav-item i {
+        margin-right: 0 !important;
+        font-size: 22px !important;
+    }
+    
+    /* Center logo in mobile */
+    .logo-container {
+        justify-content: center !important;
+    }
+    
+    .logo {
+        margin-right: 0 !important;
+    }
+    
+    /* Requestarr sidebar - same JavaScript behavior as desktop */
+    #requestarr-sidebar {
+        width: 60px !important;
+        padding: 20px 0 !important;
+    }
+    
+    /* When JavaScript sets display: none, enforce it */
+    #sidebar[style*="display: none"],
+    #requestarr-sidebar[style*="display: none"] {
+        display: none !important;
+    }
+    
+    /* When JavaScript sets display: block, show as flex */
+    #sidebar[style*="display: block"],
+    #requestarr-sidebar[style*="display: block"] {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    /* Ensure only one sidebar shows at a time - default state */
+    #requestarr-sidebar:not([style*="display: block"]) {
+        display: none !important;
+    }
+    
+    /* User nav hiding for local bypass mode */
+    #userNav[style*="display: none"] {
+        display: none !important;
+    }
+    
+    .hide-for-bypass {
+        display: none !important;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+    .sidebar,
+    #requestarr-sidebar {
+        width: 50px !important;
+    }
+    
+    .nav-item i {
+        font-size: 20px !important;
+    }
+} 
