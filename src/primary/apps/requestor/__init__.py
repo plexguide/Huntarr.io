@@ -136,7 +136,8 @@ class RequestorAPI:
             logger.error(f"Error checking request history: {e}")
         
         # Check if instance is properly configured
-        if not instance.get('url') or not instance.get('api_key'):
+        url = instance.get('api_url', '') or instance.get('url', '')
+        if not url or not instance.get('api_key'):
             return {
                 'status': 'available_to_request',
                 'message': 'Ready to request (instance needs configuration)',
@@ -211,7 +212,7 @@ class RequestorAPI:
             }
     
     def get_enabled_instances(self) -> Dict[str, List[Dict[str, str]]]:
-        """Get enabled Sonarr and Radarr instances"""
+        """Get enabled and properly configured Sonarr and Radarr instances"""
         instances = {'sonarr': [], 'radarr': []}
         
         try:
@@ -219,22 +220,36 @@ class RequestorAPI:
             sonarr_config = self.db.get_app_config('sonarr')
             if sonarr_config and sonarr_config.get('instances'):
                 for instance in sonarr_config['instances']:
-                    if instance.get('enabled', False):
+                    # Database stores URL as 'api_url', map it to 'url' for consistency
+                    url = instance.get('api_url', '') or instance.get('url', '')
+                    api_key = instance.get('api_key', '')
+                    
+                    # Only include instances that are enabled AND have proper configuration
+                    if (instance.get('enabled', False) and 
+                        url.strip() and 
+                        api_key.strip()):
                         instances['sonarr'].append({
                             'name': instance.get('name', 'Default'),
-                            'url': instance.get('url', ''),
-                            'api_key': instance.get('api_key', '')
+                            'url': url,
+                            'api_key': api_key
                         })
             
             # Get Radarr instances
             radarr_config = self.db.get_app_config('radarr')
             if radarr_config and radarr_config.get('instances'):
                 for instance in radarr_config['instances']:
-                    if instance.get('enabled', False):
+                    # Database stores URL as 'api_url', map it to 'url' for consistency
+                    url = instance.get('api_url', '') or instance.get('url', '')
+                    api_key = instance.get('api_key', '')
+                    
+                    # Only include instances that are enabled AND have proper configuration
+                    if (instance.get('enabled', False) and 
+                        url.strip() and 
+                        api_key.strip()):
                         instances['radarr'].append({
                             'name': instance.get('name', 'Default'),
-                            'url': instance.get('url', ''),
-                            'api_key': instance.get('api_key', '')
+                            'url': url,
+                            'api_key': api_key
                         })
             
             return instances
@@ -361,7 +376,8 @@ class RequestorAPI:
     def _check_media_exists(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str) -> Dict[str, Any]:
         """Check if media already exists in the app instance"""
         try:
-            url = instance.get('url', '').rstrip('/')
+            # Database stores URL as 'api_url', map it to 'url' for consistency
+            url = (instance.get('api_url', '') or instance.get('url', '')).rstrip('/')
             api_key = instance.get('api_key', '')
             
             # If no URL or API key, we can't check
@@ -394,10 +410,11 @@ class RequestorAPI:
                 # Check if any series has matching TMDB ID
                 for series in series_list:
                     if series.get('tmdbId') == tmdb_id:
-                        # Get episode statistics
+                        # Get episode statistics from the statistics object
                         series_id = series.get('id')
-                        episode_file_count = series.get('episodeFileCount', 0)
-                        episode_count = series.get('episodeCount', 0)
+                        statistics = series.get('statistics', {})
+                        episode_file_count = statistics.get('episodeFileCount', 0)
+                        episode_count = statistics.get('episodeCount', 0)
                         
                         return {
                             'exists': True,
@@ -432,7 +449,8 @@ class RequestorAPI:
     def _request_missing_episodes(self, series_id: int, instance: Dict[str, str]) -> Dict[str, Any]:
         """Request missing episodes for an existing series in Sonarr"""
         try:
-            url = instance.get('url', '').rstrip('/')
+            # Database stores URL as 'api_url', map it to 'url' for consistency
+            url = (instance.get('api_url', '') or instance.get('url', '')).rstrip('/')
             api_key = instance.get('api_key', '')
             
             if not url or not api_key:
