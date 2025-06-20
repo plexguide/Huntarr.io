@@ -179,6 +179,12 @@
     border: 1px solid rgba(33, 150, 243, 0.3);
 }
 
+.status-missing-episodes {
+    background: rgba(255, 152, 0, 0.2);
+    color: #FF9800;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
 .status-error {
     background: rgba(244, 67, 54, 0.2);
     color: #F44336;
@@ -226,6 +232,17 @@
     background: linear-gradient(135deg, #45a049, #3d8b40);
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+    color: #fff;
+}
+
+.btn-warning:hover:not(:disabled) {
+    background: linear-gradient(135deg, #F57C00, #E65100);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 152, 0, 0.4);
 }
 
 .btn-disabled {

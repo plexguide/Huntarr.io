@@ -202,11 +202,20 @@ class RequestorModule {
             case 'available':
                 return {
                     icon: '✅',
-                    message: 'Already in library',
+                    message: availability.message || 'Already in library',
                     className: 'status-available',
                     buttonText: 'In Library',
                     buttonClass: 'btn-disabled',
                     disabled: true
+                };
+            case 'available_to_request_missing':
+                return {
+                    icon: '📺',
+                    message: availability.message || 'Request missing episodes',
+                    className: 'status-missing-episodes',
+                    buttonText: 'Request Missing',
+                    buttonClass: 'btn-warning',
+                    disabled: false
                 };
             case 'requested':
                 return {
@@ -220,7 +229,7 @@ class RequestorModule {
             case 'available_to_request':
                 return {
                     icon: '📥',
-                    message: 'Available to request',
+                    message: availability.message || 'Available to request',
                     className: 'status-requestable',
                     buttonText: 'Request',
                     buttonClass: 'btn-primary',
