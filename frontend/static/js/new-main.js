@@ -271,6 +271,9 @@ let huntarrUI = {
             this.elements.logoutLink.addEventListener('click', (e) => this.logout(e));
         }
         
+        // Requestarr navigation
+        this.setupRequestarrNavigation();
+        
         // Dark mode toggle
         const darkModeToggle = document.getElementById('darkModeToggle');
         if (darkModeToggle) {
@@ -513,106 +516,27 @@ let huntarrUI = {
             newTitle = 'Requestarr';
             this.currentSection = 'requestarr';
             
+            // Switch to Requestarr sidebar
+            this.showRequestarrSidebar();
+            
+            // Show home view by default
+            this.showRequestarrView('home');
+            
             // Initialize requestarr module if it exists
             if (typeof window.requestarrModule !== 'undefined') {
                 window.requestarrModule.loadInstances();
             }
-        } else if (section === 'apps' && document.getElementById('appsSection')) {
-            document.getElementById('appsSection').classList.add('active');
-            document.getElementById('appsSection').style.display = 'block';
-            if (document.getElementById('appsNav')) document.getElementById('appsNav').classList.add('active');
-            newTitle = 'Apps';
-            this.currentSection = 'apps';
-            
-            // Load apps if the apps module exists
-            if (typeof appsModule !== 'undefined') {
-                appsModule.loadApps();
-            }
-        } else if (section === 'settings' && this.elements.settingsSection) {
-            this.elements.settingsSection.classList.add('active');
-            this.elements.settingsSection.style.display = 'block';
-            if (this.elements.settingsNav) this.elements.settingsNav.classList.add('active');
-            newTitle = 'Settings';
-            this.currentSection = 'settings';
-            
-            // Ensure default settings tab is set if none is active
-            if (!this.currentSettingsTab) {
-                this.currentSettingsTab = 'general'; // Default to general tab
-                
-                // Set the general tab as active
-                const generalTab = document.querySelector('.settings-tab[data-app="general"]');
-                if (generalTab) {
-                    this.elements.settingsTabs.forEach(t => {
-                        t.classList.remove('active');
-                    });
-                    generalTab.classList.add('active');
-                    
-                    // Also set the general panel as visible
-                    this.elements.appSettingsPanels.forEach(panel => {
-                        panel.classList.remove('active');
-                        panel.style.display = 'none';
-                    });
-                    
-                    const generalPanel = document.getElementById('generalSettings');
-                    if (generalPanel) {
-                        generalPanel.classList.add('active');
-                        generalPanel.style.display = 'block';
-                    }
-                }
-            }
-            
-            // Load stateful info immediately, don't wait for loadAllSettings to complete
-            this.loadStatefulInfo();
-            
-            // Load all settings after stateful info has started loading
-            this.loadAllSettings();
-        } else if (section === 'sponsors' && sponsorsSection) { // ADDED sponsors case
-            sponsorsSection.classList.add('active');
-            sponsorsSection.style.display = 'block';
-            if (sponsorsNav) sponsorsNav.classList.add('active');
-            newTitle = 'Project Sponsors';
-            this.currentSection = 'sponsors';
-            // Set the iframe source when switching to this section
-            const sponsorsFrame = document.getElementById('sponsorsFrame');
-            if (sponsorsFrame && (!sponsorsFrame.src || sponsorsFrame.src === 'about:blank')) { // Set src only if not already set or blank
-                sponsorsFrame.src = 'https://plexguide.github.io/Huntarr.io/donate.html';
-            }
-        } else if (section === 'scheduling' && this.elements.schedulingSection) {
-            // Hide all sections
-            this.elements.sections.forEach(s => {
-                s.style.display = 'none';
-                s.classList.remove('active');
-            });
-            
-            // Make sure apps section is explicitly hidden
-            if (document.getElementById('appsSection')) {
-                document.getElementById('appsSection').style.display = 'none';
-                document.getElementById('appsSection').classList.remove('active');
-            }
-            
-            // Show scheduling section with important flag
-            this.elements.schedulingSection.style.cssText = 'display: block !important';
-            this.elements.schedulingSection.classList.add('active');
-            
-            // Update navigation
-            const schedulingNav = document.getElementById('schedulingNav');
-            if (schedulingNav) schedulingNav.classList.add('active');
-            
-            newTitle = 'Scheduling';
-            this.currentSection = 'scheduling';
-            
-            console.debug('Scheduling section activated');
-        } else if (section === 'requestarr' && document.getElementById('requestarr-section')) {
+        } else if (section === 'requestarr-history' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
-            if (document.getElementById('requestarrNav')) document.getElementById('requestarrNav').classList.add('active');
-            newTitle = 'Requestarr';
-            this.currentSection = 'requestarr';
+            newTitle = 'Requestarr - History';
+            this.currentSection = 'requestarr-history';
             
-            // Initialize requestarr module if it exists
-            if (typeof window.requestarrModule !== 'undefined') {
-                window.requestarrModule.loadInstances();
-            }
+            // Switch to Requestarr sidebar
+            this.showRequestarrSidebar();
+            
+            // Show history view
+            this.showRequestarrView('history');
         } else {
             // Default to home if section is unknown or element missing
             if (this.elements.homeSection) {
@@ -622,6 +546,9 @@ let huntarrUI = {
             if (this.elements.homeNav) this.elements.homeNav.classList.add('active');
             newTitle = 'Home';
             this.currentSection = 'home';
+            
+            // Show main sidebar
+            this.showMainSidebar();
         }
 
         // Disconnect logs when switching away from logs section
@@ -3578,6 +3505,105 @@ let huntarrUI = {
         if (itemsCountElement) {
             const count = summaryData ? (summaryData.processed_count || 0) : 0;
             itemsCountElement.textContent = count.toString();
+        }
+    },
+
+    showRequestarrSidebar: function() {
+        // Hide main sidebar
+        const mainSidebar = document.getElementById('sidebar');
+        const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        
+        if (mainSidebar) mainSidebar.style.display = 'none';
+        if (requestarrSidebar) requestarrSidebar.style.display = 'block';
+        
+        // Update active states in Requestarr sidebar
+        this.updateRequestarrSidebarActive();
+    },
+
+    showRequestarrView: function(view) {
+        // Hide all Requestarr views
+        const homeView = document.getElementById('requestarr-home-view');
+        const historyView = document.getElementById('requestarr-history-view');
+        
+        if (homeView) homeView.style.display = 'none';
+        if (historyView) historyView.style.display = 'none';
+        
+        // Show selected view
+        if (view === 'home' && homeView) {
+            homeView.style.display = 'block';
+        } else if (view === 'history' && historyView) {
+            historyView.style.display = 'block';
+        }
+        
+        // Update navigation states
+        this.updateRequestarrNavigation(view);
+    },
+
+    showMainSidebar: function() {
+        // Show main sidebar
+        const mainSidebar = document.getElementById('sidebar');
+        const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        
+        if (mainSidebar) mainSidebar.style.display = 'block';
+        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+    },
+
+    updateRequestarrSidebarActive: function() {
+        // Remove active from all Requestarr nav items
+        const requestarrNavItems = document.querySelectorAll('#requestarr-sidebar .nav-item');
+        requestarrNavItems.forEach(item => item.classList.remove('active'));
+        
+        // Set appropriate active state based on current section
+        if (this.currentSection === 'requestarr') {
+            const homeNav = document.getElementById('requestarrHomeNav');
+            if (homeNav) homeNav.classList.add('active');
+        } else if (this.currentSection === 'requestarr-history') {
+            const historyNav = document.getElementById('requestarrHistoryNav');
+            if (historyNav) historyNav.classList.add('active');
+        }
+    },
+
+    updateRequestarrNavigation: function(view) {
+        // Remove active from all Requestarr nav items
+        const requestarrNavItems = document.querySelectorAll('#requestarr-sidebar .nav-item');
+        requestarrNavItems.forEach(item => item.classList.remove('active'));
+        
+        // Set active state based on view
+        if (view === 'home') {
+            const homeNav = document.getElementById('requestarrHomeNav');
+            if (homeNav) homeNav.classList.add('active');
+        } else if (view === 'history') {
+            const historyNav = document.getElementById('requestarrHistoryNav');
+            if (historyNav) historyNav.classList.add('active');
+        }
+    },
+
+    setupRequestarrNavigation: function() {
+        // Return button - goes back to main Huntarr
+        const returnNav = document.getElementById('requestarrReturnNav');
+        if (returnNav) {
+            returnNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#home';
+            });
+        }
+        
+        // Home button - shows Requestarr home
+        const homeNav = document.getElementById('requestarrHomeNav');
+        if (homeNav) {
+            homeNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#requestarr';
+            });
+        }
+        
+        // History button - shows Requestarr history
+        const historyNav = document.getElementById('requestarrHistoryNav');
+        if (historyNav) {
+            historyNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#requestarr-history';
+            });
         }
     }
 };

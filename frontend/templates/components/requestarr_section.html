@@ -2,49 +2,77 @@
 <div id="requestarr-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/requestarr.css">
     
-    <div class="requestarr-container">
-        <!-- Header -->
-        <div class="requestarr-header">
-            <h1>🎬 Requestarr</h1>
-            <p>Search and request movies and TV shows for your Sonarr and Radarr instances</p>
-        </div>
+    <!-- Home View -->
+    <div id="requestarr-home-view" class="requestarr-view">
+        <div class="requestarr-container">
+            <!-- Header -->
+            <div class="requestarr-header">
+                <h1>🎬 Requestarr</h1>
+                <p>Search and request movies and TV shows for your Sonarr and Radarr instances</p>
+            </div>
 
-        <!-- Instance Selection Section -->
-        <div class="settings-section">
-            <h2>📺 Select Target Instance</h2>
-            <div class="form-group">
-                <label for="requestarr-instance-select">Choose App Instance</label>
-                <select id="requestarr-instance-select" class="form-control">
-                    <option value="">Select an instance to search...</option>
-                </select>
-                <small style="color: #b0b0b0; margin-top: 5px; display: block;">
-                    Select a Sonarr or Radarr instance to search and request media
-                </small>
+            <!-- Instance Selection Section -->
+            <div class="settings-section">
+                <h2>📺 Select Target Instance</h2>
+                <div class="form-group">
+                    <label for="requestarr-instance-select">Choose App Instance</label>
+                    <select id="requestarr-instance-select" class="form-control">
+                        <option value="">Select an instance to search...</option>
+                    </select>
+                    <small style="color: #b0b0b0; margin-top: 5px; display: block;">
+                        Select a Sonarr or Radarr instance to search and request media
+                    </small>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section">
+                <h2>🔍 Search Media</h2>
+                <div class="search-box">
+                    <input type="text" id="requestarr-search" placeholder="Search for movies and TV shows..." autocomplete="off">
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section">
+                <div id="requestarr-results">
+                    <!-- Search results will be populated here -->
+                </div>
+            </div>
+
+            <!-- Recent Requests Section -->
+            <div class="settings-section">
+                <h2>📋 Recent Requests</h2>
+                <div id="recent-requests">
+                    <p style="color: #b0b0b0; text-align: center; padding: 20px;">
+                        Your recent requests will appear here after you make some requests.
+                    </p>
+                </div>
             </div>
         </div>
-
-        <!-- Search Section -->
-        <div class="search-section">
-            <h2>🔍 Search Media</h2>
-            <div class="search-box">
-                <input type="text" id="requestarr-search" placeholder="Search for movies and TV shows..." autocomplete="off">
+    </div>
+    
+    <!-- History View -->
+    <div id="requestarr-history-view" class="requestarr-view" style="display: none;">
+        <div class="requestarr-container">
+            <!-- Header -->
+            <div class="requestarr-header">
+                <h1>📚 Request History</h1>
+                <p>View your complete request history and track status</p>
             </div>
-        </div>
 
-        <!-- Results Section -->
-        <div class="results-section">
-            <div id="requestarr-results">
-                <!-- Search results will be populated here -->
-            </div>
-        </div>
-
-        <!-- Recent Requests Section -->
-        <div class="settings-section">
-            <h2>📋 Recent Requests</h2>
-            <div id="recent-requests">
-                <p style="color: #b0b0b0; text-align: center; padding: 20px;">
-                    Your recent requests will appear here after you make some requests.
-                </p>
+            <!-- Placeholder Content -->
+            <div class="settings-section">
+                <h2>🚧 Coming Soon</h2>
+                <div style="text-align: center; padding: 40px 20px;">
+                    <i class="fas fa-history" style="font-size: 48px; color: #666; margin-bottom: 20px;"></i>
+                    <p style="color: #b0b0b0; font-size: 16px; margin-bottom: 10px;">
+                        Request History feature is under development
+                    </p>
+                    <p style="color: #888; font-size: 14px;">
+                        This will show your complete request history, status tracking, and management options.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
