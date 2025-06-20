@@ -22,11 +22,10 @@
             const settingsSidebarActive = localStorage.getItem('huntarr-settings-sidebar') === 'true';
             const currentHash = window.location.hash;
             
-            // More comprehensive check for Settings-related sections
-            const isSettingsSection = settingsSidebarActive || 
-                                    currentHash === '#settings' || 
+            // Check for Settings-related sections based on current hash only
+            const isSettingsSection = currentHash === '#settings' || 
                                     currentHash === '#scheduling' ||
-                                    (settingsSidebarActive && (currentHash === '' || currentHash === '#'));
+                                    currentHash === '#user';
             
             if (isSettingsSection) {
                 // Add CSS to hide main sidebar and show settings sidebar immediately

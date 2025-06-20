@@ -79,10 +79,11 @@ let huntarrUI = {
         const settingsSidebarActive = localStorage.getItem('huntarr-settings-sidebar') === 'true';
         const settingsSidebarPreloaded = window.huntarrSettingsSidebarPreload === true;
         
-        if ((settingsSidebarActive || settingsSidebarPreloaded) && (this.currentSection === 'settings' || this.currentSection === 'scheduling')) {
+        if ((settingsSidebarActive || settingsSidebarPreloaded) && (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'user')) {
             this.showSettingsSidebar();
         } else {
-            // Show main sidebar by default
+            // Show main sidebar by default and clear settings sidebar preference
+            localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
         }
         
@@ -479,7 +480,8 @@ let huntarrUI = {
             newTitle = 'Home';
             this.currentSection = 'home';
             
-            // Show main sidebar when returning to home
+            // Show main sidebar when returning to home and clear settings sidebar preference
+            localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
             
             // Disconnect logs if switching away from logs
@@ -497,7 +499,8 @@ let huntarrUI = {
             newTitle = 'Logs';
             this.currentSection = 'logs';
             
-            // Show main sidebar for main sections
+            // Show main sidebar for main sections and clear settings sidebar preference
+            localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
             
             // Comprehensive LogsModule debugging
@@ -533,7 +536,8 @@ let huntarrUI = {
             newTitle = 'Hunt Manager';
             this.currentSection = 'hunt-manager';
             
-            // Show main sidebar for main sections
+            // Show main sidebar for main sections and clear settings sidebar preference
+            localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
             
             // Load hunt manager data if the module exists
@@ -575,7 +579,8 @@ let huntarrUI = {
             newTitle = 'Apps';
             this.currentSection = 'apps';
             
-            // Show main sidebar for main sections
+            // Show main sidebar for main sections and clear settings sidebar preference
+            localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
             
             // Load app connections when switching to Apps
@@ -634,7 +639,8 @@ let huntarrUI = {
             newTitle = 'Home';
             this.currentSection = 'home';
             
-            // Show main sidebar
+            // Show main sidebar and clear settings sidebar preference
+            localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
         }
 
