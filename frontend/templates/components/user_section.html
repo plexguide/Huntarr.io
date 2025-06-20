@@ -1,0 +1,638 @@
+<section id="userSection" class="content-section">
+    <div class="user-section">
+        <div class="user-card">
+            <h3><i class="fas fa-user-edit"></i> Change Username</h3>
+            <div class="form-group">
+                <label for="currentUsername">Current Username:</label>
+                <span id="currentUsername" class="current-value">Loading...</span>
+            </div>
+            <div class="form-group">
+                <label for="newUsername">New Username:</label>
+                <input type="text" id="newUsername" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="currentPasswordForUsernameChange">Current Password:</label>
+                <input type="password" id="currentPasswordForUsernameChange" class="form-control" required>
+            </div>
+            <div class="form-actions">
+                <button id="saveUsername" class="action-button primary-button">Save Username</button>
+            </div>
+            <div id="usernameStatus" class="status-message" style="display: none;"></div>
+        </div>
+        
+        <div class="user-card">
+            <h3><i class="fas fa-key"></i> Change Password</h3>
+            <div class="form-group">
+                <label for="currentPassword">Current Password:</label>
+                <input type="password" id="currentPassword" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password:</label>
+                <input type="password" id="newPassword" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password:</label>
+                <input type="password" id="confirmPassword" class="form-control">
+            </div>
+            <div class="form-actions">
+                <button id="savePassword" class="action-button primary-button">Save Password</button>
+            </div>
+            <div id="passwordStatus" class="status-message" style="display: none;"></div>
+        </div>
+        
+        <div class="user-card">
+            <h3><i class="fas fa-shield-alt"></i> Two-Factor Authentication</h3>
+            <div class="form-group">
+                <label>Status:</label>
+                <span id="twoFactorEnabled" class="status-badge" style="display: none;">Loading...</span>
+            </div>
+            
+            <div id="enableTwoFactorSection" style="display: none;">
+                <div class="form-actions">
+                    <button id="enableTwoFactor" class="action-button primary-button">Enable 2FA</button>
+                </div>
+            </div>
+            
+            <div id="setupTwoFactorSection" style="display: none;">
+                <div class="qr-container">
+                    <div class="qr-code">
+                        <img id="qrCode" src="" alt="QR Code">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="secretKey">Secret Key:</label>
+                    <div class="secret-key-container">
+                        <div id="secretKey" class="secret-key"></div>
+                        <button class="copy-button">Copy</button>
+                    </div>
+                    <p class="help-text">Use this key if you can't scan the QR code</p>
+                </div>
+                <div class="form-group">
+                    <label for="verificationCode">Verification Code:</label>
+                    <input type="text" id="verificationCode" class="form-control" placeholder="000000" maxlength="6">
+                </div>
+                <div class="form-actions">
+                    <button id="verifyTwoFactor" class="action-button primary-button">Verify and Enable</button>
+                </div>
+                <div id="verifyStatus" class="status-message" style="display: none;"></div>
+            </div>
+            
+            <div id="disableTwoFactorSection" style="display: none;">
+                <div class="form-group">
+                    <label for="currentPasswordFor2FADisable">Current Password:</label>
+                    <input type="password" id="currentPasswordFor2FADisable" class="form-control" placeholder="Enter your password" required>
+                </div>
+                <div class="form-group">
+                    <label for="otpCodeFor2FADisable">Current OTP Code:</label>
+                    <input type="text" id="otpCodeFor2FADisable" class="form-control" placeholder="000000" maxlength="6" required>
+                </div>
+                <div class="form-actions">
+                    <button id="disableTwoFactor" class="action-button danger-button">Disable 2FA</button>
+                </div>
+                <div id="disableStatus" class="status-message" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <div class="user-card">
+            <h3><i class="fas fa-life-ring"></i> Recovery Key</h3>
+            <div class="form-group">
+                <label>Account Recovery:</label>
+                <p class="help-text">Generate a recovery key to reset your password if you get locked out. Keep it safe!</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="currentPasswordForRecovery">Current Password:</label>
+                <input type="password" id="currentPasswordForRecovery" class="form-control" placeholder="Enter your current password" required>
+            </div>
+            
+            <div id="recoveryTwoFactorSection" style="display: none;">
+                <div class="form-group">
+                    <label for="recoveryTwoFactorCode">2FA Code:</label>
+                    <input type="text" id="recoveryTwoFactorCode" class="form-control" placeholder="000000" maxlength="6">
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button id="generateRecoveryKey" class="action-button primary-button">
+                    <i class="fas fa-key"></i> Generate Recovery Key
+                </button>
+            </div>
+            
+            <div id="recoveryKeyDisplay" style="display: none; margin-top: 15px;">
+                <div class="form-group">
+                    <label>Your Recovery Key:</label>
+                    <div class="recovery-key-container">
+                        <div id="recoveryKeyValue" class="recovery-key-value"></div>
+                        <button id="copyRecoveryKey" class="copy-button">Copy</button>
+                    </div>
+                    <p class="help-text" style="color: #ff9966; font-weight: 600;">
+                        <i class="fas fa-exclamation-triangle"></i> Save this key securely! It will only be shown once.
+                    </p>
+                </div>
+            </div>
+            
+            <div id="recoveryStatus" class="status-message" style="display: none;"></div>
+        </div>
+        
+        <div class="user-card">
+            <h3><i class="fas fa-tv"></i> Plex Account</h3>
+            <div class="form-group">
+                <label>Status:</label>
+                <span id="plexAccountStatus" class="status-badge" style="display: none;">Loading...</span>
+            </div>
+            
+            <div id="plexNotLinkedSection" style="display: none;">
+                <p class="help-text">Link your Plex account to enable Plex login and additional features.</p>
+                <div class="form-actions">
+                    <button id="linkPlexAccount" class="action-button primary-button">
+                        <i class="fas fa-link"></i> Link Plex Account
+                    </button>
+                </div>
+                <div id="plexMainPageStatus" class="status-message" style="display: none;"></div>
+            </div>
+            
+            <div id="plexLinkedSection" style="display: none;">
+                <div class="form-group">
+                    <label>Plex Username:</label>
+                    <span id="plexUsername" class="current-value"></span>
+                </div>
+                <div class="form-group">
+                    <label>Plex Email:</label>
+                    <span id="plexEmail" class="current-value"></span>
+                </div>
+                <div class="form-group">
+                    <label>Linked At:</label>
+                    <span id="plexLinkedAt" class="current-value"></span>
+                </div>
+                <div class="form-actions">
+                    <button id="unlinkPlexAccount" class="action-button danger-button">
+                        <i class="fas fa-unlink"></i> Unlink Plex Account
+                    </button>
+                </div>
+                <div id="plexUnlinkStatus" class="status-message" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Plex Link Modal -->
+<div class="modal" id="plexLinkModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div style="font-size: 40px; color: #e69500; margin-bottom: 10px;">
+                <i class="fas fa-tv"></i>
+            </div>
+            <h2>Link Plex Account</h2>
+        </div>
+        <div class="plex-pin-display">
+            <p>PIN Code:</p>
+            <p id="plexLinkPinCode" class="plex-pin-code"></p>
+        </div>
+        <div class="plex-instructions">
+            <p>1. Go to <a href="https://plex.tv/link" target="_blank" rel="noopener noreferrer">plex.tv/link</a></p>
+            <p>2. Enter the PIN code above</p>
+            <p>3. Wait for the link to complete</p>
+        </div>
+        <div id="plexLinkStatus" class="plex-status waiting"></div>
+        <div class="modal-actions">
+            <button id="cancelPlexLink" class="action-button secondary-button">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* User Section Styling */
+    #userSection {
+        display: none;
+        width: 100%;
+        padding: 20px;
+        overflow-y: auto;
+        max-height: calc(100vh - 120px);
+    }
+    
+    #userSection.active {
+        display: block;
+    }
+    
+    .user-section {
+        padding: 18px;
+        max-width: 1440px;
+        margin: 0 auto;
+    }
+    
+    /* Desktop layout for cards side by side with intelligent wrapping */
+    @media (min-width: 992px) {
+        .user-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+        
+        .user-card {
+            flex: 1 1 300px;
+        }
+    }
+    
+    /* Medium displays - show just two cards side by side */
+    @media (min-width: 992px) and (max-width: 1200px) {
+        .user-section .user-card:nth-child(3) {
+            flex-basis: 100%; /* Third card takes full width */
+        }
+    }
+    
+    .user-card {
+        background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
+        border-radius: 10px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        padding: 22px;
+        border: 1px solid rgba(90, 109, 137, 0.15);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Add bottom margin only when cards are stacked (mobile view) */
+    @media (max-width: 991px) {
+        .user-card {
+            margin-bottom: 18px;
+        }
+    }
+    
+    .user-card h3 {
+        display: flex;
+        align-items: center;
+        margin-top: 0;
+        margin-bottom: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+    }
+    
+    .user-card h3 i {
+        margin-right: 8px;
+        color: rgba(65, 105, 225, 0.9);
+        font-size: 14px;
+    }
+    
+    .form-group {
+        margin-bottom: 10px;
+        position: relative;
+    }
+    
+    /* Additional styling to compact the 2FA card */
+    .user-card:last-child .form-group {
+        margin-bottom: 8px;
+    }
+    
+    #twoFactorEnabled {
+        margin: 0;
+        line-height: 1.2;
+    }
+    
+    #enableTwoFactorSection, #setupTwoFactorSection, #disableTwoFactorSection {
+        margin-top: 10px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 7px;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+        font-size: 13px;
+    }
+    
+    .current-value {
+        padding: 10px 12px;
+        background: rgba(28, 36, 54, 0.6);
+        border-radius: 6px;
+        border: 1px solid rgba(90, 109, 137, 0.2);
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid rgba(90, 109, 137, 0.2);
+        border-radius: 6px;
+        background-color: rgba(28, 36, 54, 0.6);
+        color: #fff;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: rgba(65, 105, 225, 0.6);
+        box-shadow: 0 0 0 2px rgba(65, 105, 225, 0.2);
+        outline: none;
+    }
+    
+    .password-field {
+        position: relative;
+    }
+    
+    .toggle-password {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.6);
+        z-index: 10;
+        font-size: 12px;
+    }
+    
+    .toggle-password:hover {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .form-actions {
+        margin-top: 12px;
+        display: flex;
+        gap: 8px;
+    }
+    
+    .action-button {
+        padding: 10px 18px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .primary-button {
+        background: linear-gradient(135deg, #3a71e4 0%, #5481e6 100%);
+        color: white;
+        box-shadow: 0 3px 8px rgba(58, 113, 228, 0.3);
+    }
+    
+    .primary-button:hover {
+        background: linear-gradient(135deg, #4a7deb 0%, #6491fa 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(58, 113, 228, 0.4);
+    }
+    
+    .secondary-button {
+        background: linear-gradient(135deg, #38495a 0%, #465b70 100%);
+        color: white;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .secondary-button:hover {
+        background: linear-gradient(135deg, #465b70 0%, #546d84 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    }
+    
+    .danger-button {
+        background: linear-gradient(135deg, #e74c3c 0%, #f15846 100%);
+        color: white;
+        box-shadow: 0 3px 8px rgba(231, 76, 60, 0.3);
+    }
+    
+    .danger-button:hover {
+        background: linear-gradient(135deg, #f15846 0%, #f3695a 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
+    }
+    
+    .recovery-key-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 5px;
+    }
+    
+    .recovery-key-value {
+        flex: 1;
+        padding: 12px 15px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+        border: 1px solid rgba(90, 109, 137, 0.3);
+        color: #fff;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        word-break: break-all;
+        min-height: 20px;
+    }
+    
+    .copy-button {
+        padding: 8px 12px;
+        background: rgba(52, 152, 219, 0.8);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .copy-button:hover {
+        background: rgba(52, 152, 219, 1);
+        transform: translateY(-1px);
+    }
+    
+    .copy-button.copied {
+        background: rgba(46, 204, 113, 0.8);
+    }
+    
+    .secret-key-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 5px;
+    }
+    
+    .secret-key {
+        flex: 1;
+        padding: 12px 15px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+        border: 1px solid rgba(90, 109, 137, 0.3);
+        color: #fff;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        word-break: break-all;
+        line-height: 1.4;
+    }
+    
+    .qr-container {
+        display: flex;
+        justify-content: center;
+        margin: 15px 0;
+    }
+    
+    .qr-code {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        display: inline-block;
+    }
+    
+    .qr-code img {
+        display: block;
+        max-width: 200px;
+        height: auto;
+    }
+    
+    .help-text {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 5px;
+        line-height: 1.3;
+    }
+    
+    .status-message {
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 13px;
+        display: none;
+    }
+    
+    .status-message.success {
+        background: rgba(46, 204, 113, 0.2);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        color: #2ecc71;
+    }
+    
+    .status-message.error {
+        background: rgba(231, 76, 60, 0.2);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: #e74c3c;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .status-badge.enabled {
+        background: rgba(46, 204, 113, 0.2);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        color: #2ecc71;
+    }
+    
+    .status-badge.disabled {
+        background: rgba(231, 76, 60, 0.2);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: #e74c3c;
+    }
+    
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    }
+    
+    .modal-content {
+        background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
+        border-radius: 10px;
+        padding: 30px;
+        max-width: 500px;
+        width: 90%;
+        border: 1px solid rgba(90, 109, 137, 0.15);
+        text-align: center;
+    }
+    
+    .modal-header h2 {
+        color: #fff;
+        margin: 0 0 20px 0;
+        font-size: 24px;
+    }
+    
+    .plex-pin-display {
+        margin: 20px 0;
+    }
+    
+    .plex-pin-display p:first-child {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+    
+    .plex-pin-code {
+        font-size: 36px;
+        font-weight: bold;
+        color: #e69500;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 4px;
+        margin: 0;
+    }
+    
+    .plex-instructions {
+        margin: 20px 0;
+        text-align: left;
+    }
+    
+    .plex-instructions p {
+        color: rgba(255, 255, 255, 0.8);
+        margin: 8px 0;
+        font-size: 14px;
+    }
+    
+    .plex-instructions a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    
+    .plex-instructions a:hover {
+        text-decoration: underline;
+    }
+    
+    .plex-status {
+        margin: 20px 0;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .plex-status.waiting {
+        background: rgba(52, 152, 219, 0.2);
+        border: 1px solid rgba(52, 152, 219, 0.3);
+        color: #3498db;
+    }
+    
+    .plex-status.success {
+        background: rgba(46, 204, 113, 0.2);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        color: #2ecc71;
+    }
+    
+    .plex-status.error {
+        background: rgba(231, 76, 60, 0.2);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: #e74c3c;
+    }
+    
+    .modal-actions {
+        margin-top: 20px;
+    }
+    
+    .spinner {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style> 

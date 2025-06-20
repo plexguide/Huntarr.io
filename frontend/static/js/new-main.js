@@ -607,6 +607,23 @@ let huntarrUI = {
             
             // Set localStorage to maintain Settings sidebar preference
             localStorage.setItem('huntarr-settings-sidebar', 'true');
+        } else if (section === 'user' && document.getElementById('userSection')) {
+            document.getElementById('userSection').classList.add('active');
+            document.getElementById('userSection').style.display = 'block';
+            if (document.getElementById('userNav')) document.getElementById('userNav').classList.add('active');
+            newTitle = 'User';
+            this.currentSection = 'user';
+            
+            // Switch to Settings sidebar for user
+            this.showSettingsSidebar();
+            
+            // Set localStorage to maintain Settings sidebar preference
+            localStorage.setItem('huntarr-settings-sidebar', 'true');
+            
+            // Initialize user module if not already done
+            if (typeof window.UserModule !== 'undefined' && !this.userModule) {
+                this.userModule = new window.UserModule();
+            }
         } else {
             // Default to home if section is unknown or element missing
             if (this.elements.homeSection) {
@@ -3752,15 +3769,12 @@ let huntarrUI = {
             });
         }
         
-        // User button - navigates to User page
+        // User button - shows User page
         const userNav = document.getElementById('settingsUserNav');
         if (userNav) {
             userNav.addEventListener('click', (e) => {
                 e.preventDefault();
-                // Set localStorage to remember Settings sidebar preference
-                localStorage.setItem('huntarr-settings-sidebar', 'true');
-                // Navigate to user page with parameter
-                window.location.href = './user?from=settings';
+                window.location.hash = '#user';
             });
         }
     },
