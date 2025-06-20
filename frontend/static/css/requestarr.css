@@ -23,11 +23,13 @@
 
 /* Search Section */
 .search-section {
-    background: rgba(255, 255, 255, 0.05);
+    background: linear-gradient(145deg, rgba(30, 39, 56, 0.6), rgba(22, 28, 40, 0.7));
+    border: 1px solid rgba(90, 109, 137, 0.1);
     border-radius: 12px;
     padding: 30px;
     margin-bottom: 30px;
     backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .search-box {
@@ -40,17 +42,19 @@
     width: 100%;
     padding: 15px 20px;
     font-size: 18px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(90, 109, 137, 0.2);
     border-radius: 25px;
-    background: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(145deg, rgba(15, 23, 36, 0.7), rgba(22, 30, 45, 0.5));
     color: #fff;
     outline: none;
     transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    backdrop-filter: blur(5px);
 }
 
 #requestarr-search:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+    border-color: rgba(52, 152, 219, 0.5);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
 }
 
 #requestarr-search::placeholder {
@@ -70,18 +74,19 @@
 }
 
 .result-card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    background: linear-gradient(145deg, rgba(30, 39, 56, 0.4), rgba(22, 28, 40, 0.5));
     border-radius: 15px;
     overflow: hidden;
     transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(90, 109, 137, 0.1);
     backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .result-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    border-color: rgba(76, 175, 80, 0.5);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    border-color: rgba(90, 109, 137, 0.2);
 }
 
 .result-poster {
@@ -291,11 +296,13 @@
 
 /* Settings Section */
 .settings-section {
-    background: rgba(255, 255, 255, 0.05);
+    background: linear-gradient(145deg, rgba(30, 39, 56, 0.6), rgba(22, 28, 40, 0.7));
+    border: 1px solid rgba(90, 109, 137, 0.1);
     border-radius: 12px;
     padding: 30px;
     margin-bottom: 30px;
     backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .settings-section h2 {
@@ -316,41 +323,68 @@
 
 .form-group input[type="text"] {
     width: 100%;
-    padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 12px 15px;
+    border: 1px solid rgba(90, 109, 137, 0.2);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(145deg, rgba(15, 23, 36, 0.7), rgba(22, 30, 45, 0.5));
     color: #fff;
     font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    backdrop-filter: blur(5px);
     outline: none;
 }
 
 .form-group input[type="text"]:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+    border-color: rgba(52, 152, 219, 0.5);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
 }
 
 .form-group select {
     width: 100%;
     padding: 12px 15px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(90, 109, 137, 0.2);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(145deg, rgba(15, 23, 36, 0.7), rgba(22, 30, 45, 0.5));
     color: #fff;
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: 500;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235A6D89' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    backdrop-filter: blur(5px);
     outline: none;
-    transition: all 0.3s ease;
 }
 
 .form-group select:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+    border-color: rgba(52, 152, 219, 0.5);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
 }
 
 .form-group select option {
-    background: #2a2a2a;
+    background-color: rgba(22, 30, 45, 0.95);
     color: #fff;
-    padding: 10px;
+    padding: 10px 15px;
+    border: none;
+    font-size: 14px;
+}
+
+.form-group select option:hover,
+.form-group select option:focus {
+    background-color: rgba(52, 152, 219, 0.8);
+    color: #ffffff;
+}
+
+.form-group select option:checked {
+    background-color: rgba(52, 152, 219, 0.9);
+    color: #ffffff;
+    font-weight: 600;
 }
 
 .toggle-group {
@@ -361,8 +395,11 @@
 
 .toggle-switch {
     position: relative;
-    width: 60px;
-    height: 30px;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    margin-right: 10px;
+    flex-shrink: 0;
 }
 
 .toggle-switch input {
@@ -378,29 +415,31 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255, 255, 255, 0.2);
-    transition: 0.4s;
-    border-radius: 30px;
+    background: linear-gradient(145deg, rgba(30, 39, 56, 0.6), rgba(22, 28, 40, 0.7));
+    border: 1px solid rgba(90, 109, 137, 0.2);
+    transition: .4s;
+    border-radius: 20px;
 }
 
 .toggle-slider:before {
     position: absolute;
     content: "";
-    height: 22px;
-    width: 22px;
+    height: 12px;
+    width: 12px;
     left: 4px;
-    bottom: 4px;
+    bottom: 3px;
     background-color: white;
-    transition: 0.4s;
+    transition: .4s;
     border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 input:checked + .toggle-slider {
-    background-color: #4CAF50;
+    background: linear-gradient(145deg, rgba(41, 128, 185, 0.7), rgba(52, 152, 219, 0.8));
 }
 
 input:checked + .toggle-slider:before {
-    transform: translateX(30px);
+    transform: translateX(20px);
 }
 
 .save-btn {
