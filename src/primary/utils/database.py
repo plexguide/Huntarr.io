@@ -38,137 +38,74 @@ class HuntarrDatabase:
         try:
             conn.execute('PRAGMA foreign_keys = ON')
             
+            # Try WAL mode first, fall back to DELETE mode if it fails
+            try:
+                conn.execute('PRAGMA journal_mode = WAL')
+            except Exception as wal_error:
+                logger.warning(f"WAL mode failed, using DELETE mode: {wal_error}")
+                conn.execute('PRAGMA journal_mode = DELETE')
+            
             # Detect if running on Synology NAS for performance optimizations
             is_synology = self._detect_synology_nas()
             synology_opt_enabled = os.environ.get('HUNTARR_SYNOLOGY_OPTIMIZATIONS', 'true').lower() == 'true'
             
             if is_synology and synology_opt_enabled:
-                logger.info("Synology NAS detected - applying aggressive performance optimizations for network file systems")
-                
-                # CRITICAL: Try WAL mode first, but fall back to DELETE mode if it fails on network shares
-                try:
-                    conn.execute('PRAGMA journal_mode = WAL')
-                    # Test if WAL mode actually works on this network file system
-                    result = conn.execute('PRAGMA journal_mode').fetchone()
-                    if result and result[0] != 'wal':
-                        logger.warning("WAL mode failed on network file system, switching to DELETE mode for Synology compatibility")
-                        conn.execute('PRAGMA journal_mode = DELETE')
-                except Exception as wal_error:
-                    logger.warning(f"WAL mode failed on Synology network share, using DELETE mode: {wal_error}")
-                    conn.execute('PRAGMA journal_mode = DELETE')
-                
-                # Aggressive Synology-optimized settings for network file system performance
-                conn.execute('PRAGMA synchronous = OFF')          # Most aggressive - no FSYNC waits for maximum performance
-                conn.execute('PRAGMA cache_size = -131072')        # 128MB cache (massive increase for Synology NAS)
-                conn.execute('PRAGMA temp_store = MEMORY')         # Store temp tables in memory
-                conn.execute('PRAGMA busy_timeout = 120000')       # 2 minutes for extreme Synology I/O delays
-                conn.execute('PRAGMA mmap_size = 536870912')       # 512MB memory map for network shares
-                conn.execute('PRAGMA page_size = 65536')           # Maximum page size for network shares (64KB)
-                
-                # Critical Synology-specific optimizations based on media server research
-                conn.execute('PRAGMA locking_mode = EXCLUSIVE')    # Exclusive locking for single-user scenarios
-                conn.execute('PRAGMA count_changes = OFF')         # Disable change counting for performance
-                conn.execute('PRAGMA legacy_file_format = OFF')   # Use modern file format
-                conn.execute('PRAGMA reverse_unordered_selects = OFF')  # Consistent query results
-                conn.execute('PRAGMA compile_options')             # Check available compile options
-                
-                # Additional optimizations from Plex/Sonarr research for Synology
-                conn.execute('PRAGMA threads = 4')                # Use multiple threads for operations
-                conn.execute('PRAGMA max_page_count = 1073741823') # Maximum database size
-                conn.execute('PRAGMA default_cache_size = -131072') # Set default cache size
-                conn.execute('PRAGMA cache_spill = OFF')           # Prevent cache spilling to disk
-                conn.execute('PRAGMA query_only = OFF')           # Allow write operations
-                conn.execute('PRAGMA trusted_schema = ON')        # Trust schema for performance
-                
-                # File descriptor and connection optimizations
-                conn.execute('PRAGMA analysis_limit = 1000')      # Limit analysis for performance
-                conn.execute('PRAGMA optimize = 0x10002')         # Advanced optimization flags
-                
+                logger.info("Synology NAS detected - applying performance optimizations for network file systems")
+                # Synology-optimized settings for network file system performance
+                conn.execute('PRAGMA synchronous = NORMAL')     # Much faster on NFS/CIFS, still safe with WAL
+                conn.execute('PRAGMA cache_size = -40960')      # 40MB cache for better performance on Synology
+                conn.execute('PRAGMA temp_store = MEMORY')      # Store temp tables in memory
+                conn.execute('PRAGMA busy_timeout = 30000')     # 30 seconds for Synology I/O
+                conn.execute('PRAGMA mmap_size = 134217728')    # 128MB memory map optimized for Synology
             else:
                 if is_synology and not synology_opt_enabled:
                     logger.info("Synology NAS detected but optimizations disabled via HUNTARR_SYNOLOGY_OPTIMIZATIONS=false")
-                
-                # Try WAL mode first, fall back to DELETE mode if it fails
-                try:
-                    conn.execute('PRAGMA journal_mode = WAL')
-                except Exception as wal_error:
-                    logger.warning(f"WAL mode failed, using DELETE mode: {wal_error}")
-                    conn.execute('PRAGMA journal_mode = DELETE')
-                
                 # Standard settings for Docker rebuild resilience and corruption prevention
-                conn.execute('PRAGMA synchronous = NORMAL')        # Balanced durability/performance for non-Synology
-                conn.execute('PRAGMA cache_size = -32768')         # 32MB cache for better performance
-                conn.execute('PRAGMA temp_store = MEMORY')         # Store temp tables in memory
-                conn.execute('PRAGMA busy_timeout = 30000')        # 30 seconds for Docker I/O delays
+                conn.execute('PRAGMA synchronous = FULL')       # Maximum durability for Docker environments
+                conn.execute('PRAGMA cache_size = -32000')      # 32MB cache for better performance
+                conn.execute('PRAGMA temp_store = MEMORY')      # Store temp tables in memory
+                conn.execute('PRAGMA busy_timeout = 60000')     # 60 seconds for Docker I/O delays
                 
                 # Skip mmap on Windows if it causes issues, but use it elsewhere for performance
                 import platform
                 if platform.system() != "Windows":
-                    conn.execute('PRAGMA mmap_size = 134217728')   # 128MB memory map
+                    conn.execute('PRAGMA mmap_size = 268435456')  # 256MB memory map
             
             # Common settings for all platforms
-            conn.execute('PRAGMA auto_vacuum = INCREMENTAL')       # Incremental vacuum for maintenance
-            conn.execute('PRAGMA secure_delete = OFF')             # Disable for performance (was ON)
-            conn.execute('PRAGMA read_uncommitted = ON')           # Allow dirty reads for better concurrency
+            conn.execute('PRAGMA auto_vacuum = INCREMENTAL') # Incremental vacuum for maintenance
+            conn.execute('PRAGMA secure_delete = ON')       # Secure deletion to prevent data recovery
             
-            # Additional corruption prevention measures (only if not in aggressive Synology mode)
-            if not (is_synology and synology_opt_enabled):
-                conn.execute('PRAGMA cell_size_check = ON')        # Enable cell size validation
-                conn.execute('PRAGMA integrity_check')             # Verify database integrity on connection
-            
-            conn.execute('PRAGMA optimize')                        # Optimize statistics and indexes
-            conn.execute('PRAGMA application_id = 1751013204')    # Set unique application ID for Huntarr
+            # Additional corruption prevention measures
+            conn.execute('PRAGMA cell_size_check = ON')     # Enable cell size validation
+            conn.execute('PRAGMA integrity_check')          # Verify database integrity on connection
+            conn.execute('PRAGMA optimize')                 # Optimize statistics and indexes
+            conn.execute('PRAGMA application_id = 1751013204')  # Set unique application ID for Huntarr
             
             # Enhanced checkpoint settings for WAL mode
             result = conn.execute('PRAGMA journal_mode').fetchone()
             if result and result[0] == 'wal':
                 if is_synology and synology_opt_enabled:
-                    # Extremely aggressive checkpointing for Synology network shares
-                    conn.execute('PRAGMA wal_autocheckpoint = 5000')      # Very infrequent checkpoints for performance
-                    conn.execute('PRAGMA journal_size_limit = 1073741824') # 1GB journal size limit (maximum)
-                    
-                    # Additional WAL optimizations for Synology
-                    try:
-                        conn.execute('PRAGMA wal_checkpoint = PASSIVE')   # Non-blocking checkpoint mode
-                    except Exception:
-                        pass  # Not all SQLite versions support this
+                    # More aggressive checkpointing for Synology
+                    conn.execute('PRAGMA wal_autocheckpoint = 1000')    # Less frequent checkpoints for performance
+                    conn.execute('PRAGMA journal_size_limit = 134217728') # 128MB journal size limit
                 else:
                     # Conservative checkpointing for other systems
-                    conn.execute('PRAGMA wal_autocheckpoint = 500')       # More frequent checkpoints for Docker
-                    conn.execute('PRAGMA journal_size_limit = 67108864')  # 64MB journal size limit
-                
-                # Force checkpoint and truncate to clean up WAL file (skip for Synology aggressive mode)
-                if not (is_synology and synology_opt_enabled):
-                    try:
-                        conn.execute('PRAGMA wal_checkpoint(TRUNCATE)')
-                    except Exception as checkpoint_error:
-                        logger.debug(f"WAL checkpoint failed (non-critical): {checkpoint_error}")
+                    conn.execute('PRAGMA wal_autocheckpoint = 500')     # More frequent checkpoints for Docker
+                    conn.execute('PRAGMA journal_size_limit = 67108864') # 64MB journal size limit
+                conn.execute('PRAGMA wal_checkpoint(TRUNCATE)')     # Force checkpoint and truncate
             
-            # Test the configuration worked (skip integrity check for aggressive Synology mode)
-            if not (is_synology and synology_opt_enabled):
-                integrity_result = conn.execute('PRAGMA integrity_check').fetchone()
-                if integrity_result and integrity_result[0] != 'ok':
-                    logger.error(f"Database integrity check failed: {integrity_result}")
-                    raise sqlite3.DatabaseError(f"Database integrity compromised: {integrity_result}")
+            # Test the configuration worked
+            integrity_result = conn.execute('PRAGMA integrity_check').fetchone()
+            if integrity_result and integrity_result[0] != 'ok':
+                logger.error(f"Database integrity check failed: {integrity_result}")
+                raise sqlite3.DatabaseError(f"Database integrity compromised: {integrity_result}")
             
             # Log optimization status for monitoring
             if is_synology:
-                journal_mode = conn.execute('PRAGMA journal_mode').fetchone()[0]
                 sync_mode = conn.execute('PRAGMA synchronous').fetchone()[0]
                 cache_size = conn.execute('PRAGMA cache_size').fetchone()[0]
                 mmap_size = conn.execute('PRAGMA mmap_size').fetchone()[0]
-                page_size = conn.execute('PRAGMA page_size').fetchone()[0]
-                busy_timeout = conn.execute('PRAGMA busy_timeout').fetchone()[0]
-                
-                if synology_opt_enabled:
-                    logger.info(f"AGGRESSIVE Synology optimizations applied: journal={journal_mode}, sync={sync_mode}, "
-                               f"cache={abs(cache_size/1024):.1f}MB, mmap={mmap_size/1024/1024:.0f}MB, "
-                               f"page={page_size}B, timeout={busy_timeout/1000:.0f}s")
-                    logger.info("Applied Synology-specific optimizations: threads=4, cache_spill=OFF, "
-                               "exclusive_locking=ON, analysis_limit=1000")
-                else:
-                    logger.info(f"Standard Synology optimizations applied: journal={journal_mode}, sync={sync_mode}, "
-                               f"cache={abs(cache_size/1024):.1f}MB, mmap={mmap_size/1024/1024:.0f}MB, page={page_size}B")
+                logger.info(f"Synology optimizations applied: sync={sync_mode}, cache={abs(cache_size/1024):.1f}MB, mmap={mmap_size/1024/1024:.0f}MB")
             
         except Exception as e:
             logger.error(f"Error configuring database connection: {e}")
@@ -178,50 +115,17 @@ class HuntarrDatabase:
     def get_connection(self):
         """Get a configured SQLite connection with Synology NAS compatibility"""
         try:
-            # Use timeout and additional connection parameters for Synology compatibility
-            is_synology = self._detect_synology_nas()
-            synology_opt_enabled = os.environ.get('HUNTARR_SYNOLOGY_OPTIMIZATIONS', 'true').lower() == 'true'
-            
-            if is_synology and synology_opt_enabled:
-                # Aggressive connection settings for Synology
-                conn = sqlite3.connect(
-                    self.db_path,
-                    timeout=120.0,  # 2 minutes timeout for network file systems
-                    isolation_level=None,  # Autocommit mode for better performance
-                    check_same_thread=False  # Allow multi-threaded access
-                )
-            else:
-                # Standard connection settings
-                conn = sqlite3.connect(
-                    self.db_path,
-                    timeout=30.0,
-                    check_same_thread=False
-                )
-            
+            conn = sqlite3.connect(self.db_path)
             self._configure_connection(conn)
-            
             # Test the connection by running a simple query
             conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
             return conn
-            
         except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
             if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
                 logger.error(f"Database corruption detected: {e}")
                 self._handle_database_corruption()
                 # Try connecting again after recovery
-                if is_synology and synology_opt_enabled:
-                    conn = sqlite3.connect(
-                        self.db_path,
-                        timeout=120.0,
-                        isolation_level=None,
-                        check_same_thread=False
-                    )
-                else:
-                    conn = sqlite3.connect(
-                        self.db_path,
-                        timeout=30.0,
-                        check_same_thread=False
-                    )
+                conn = sqlite3.connect(self.db_path)
                 self._configure_connection(conn)
                 return conn
             else:
@@ -742,37 +646,6 @@ class HuntarrDatabase:
             # Logs table moved to separate logs.db - remove if it exists
             conn.execute('DROP TABLE IF EXISTS logs')
             
-                        # Create requestarr_settings table for Requestarr configuration
-            conn.execute('''
-            CREATE TABLE IF NOT EXISTS requestarr_settings (
-                    id INTEGER PRIMARY KEY CHECK (id = 1),
-                    tmdb_api_key TEXT,
-                    enabled BOOLEAN DEFAULT FALSE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            
-                        # Create requestarr_requests table for tracking media requests
-            conn.execute('''
-            CREATE TABLE IF NOT EXISTS requestarr_requests (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    tmdb_id INTEGER NOT NULL,
-                    media_type TEXT NOT NULL CHECK (media_type IN ('movie', 'tv')),
-                    title TEXT NOT NULL,
-                    year INTEGER,
-                    overview TEXT,
-                    poster_path TEXT,
-                    backdrop_path TEXT,
-                    app_type TEXT NOT NULL,
-                    instance_name TEXT NOT NULL,
-                    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'requested', 'available', 'failed')),
-                    request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(tmdb_id, media_type, app_type, instance_name)
-                )
-            ''')
-
             # Create hunt_history table for tracking processed media history
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS hunt_history (
@@ -2311,130 +2184,6 @@ class HuntarrDatabase:
                 return result is not None
         except Exception as e:
             logger.error(f"Failed to check setup progress: {e}")
-            return False
-
-    # Requestarr functionality methods
-    def get_requestarr_settings(self) -> Dict[str, Any]:
-        """Get Requestarr configuration settings"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.execute("""
-                    SELECT tmdb_api_key, enabled FROM requestarr_settings WHERE id = 1
-                """)
-                row = cursor.fetchone()
-                if row:
-                    return {
-                        'tmdb_api_key': row[0] or '',
-                        'enabled': bool(row[1])
-                    }
-                return {'tmdb_api_key': '', 'enabled': False}
-        except Exception as e:
-            logger.error(f"Error getting requestarr settings: {e}")
-            return {'tmdb_api_key': '', 'enabled': False}
-
-    def save_requestarr_settings(self, tmdb_api_key: str, enabled: bool) -> bool:
-        """Save Requestarr configuration settings"""
-        try:
-            with self.get_connection() as conn:
-                conn.execute("""
-                    INSERT OR REPLACE INTO requestarr_settings (id, tmdb_api_key, enabled, updated_at)
-                    VALUES (1, ?, ?, CURRENT_TIMESTAMP)
-                """, (tmdb_api_key, enabled))
-                return True
-        except Exception as e:
-            logger.error(f"Error saving requestarr settings: {e}")
-            return False
-
-    def add_request(self, tmdb_id: int, media_type: str, title: str, year: int, 
-                   overview: str, poster_path: str, backdrop_path: str,
-                   app_type: str, instance_name: str) -> bool:
-        """Add a new media request"""
-        try:
-            with self.get_connection() as conn:
-                conn.execute("""
-                    INSERT OR REPLACE INTO requestarr_requests 
-                    (tmdb_id, media_type, title, year, overview, poster_path, backdrop_path,
-                     app_type, instance_name, status, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)
-                """, (tmdb_id, media_type, title, year, overview, poster_path, backdrop_path,
-                      app_type, instance_name))
-                return True
-        except Exception as e:
-            logger.error(f"Error adding request: {e}")
-            return False
-
-    def get_requests(self, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
-        """Get paginated list of requests"""
-        try:
-            offset = (page - 1) * page_size
-            with self.get_connection() as conn:
-                # Get total count
-                count_cursor = conn.execute("SELECT COUNT(*) FROM requestarr_requests")
-                total_requests = count_cursor.fetchone()[0]
-                
-                # Get paginated requests
-                cursor = conn.execute("""
-                    SELECT tmdb_id, media_type, title, year, overview, poster_path, backdrop_path,
-                           app_type, instance_name, status, request_date, updated_at
-                    FROM requestarr_requests 
-                    ORDER BY request_date DESC
-                    LIMIT ? OFFSET ?
-                """, (page_size, offset))
-                
-                requests = []
-                for row in cursor.fetchall():
-                    requests.append({
-                        'tmdb_id': row[0],
-                        'media_type': row[1],
-                        'title': row[2],
-                        'year': row[3],
-                        'overview': row[4],
-                        'poster_path': row[5],
-                        'backdrop_path': row[6],
-                        'app_type': row[7],
-                        'instance_name': row[8],
-                        'status': row[9],
-                        'request_date': row[10],
-                        'updated_at': row[11]
-                    })
-                
-                return {
-                    'requests': requests,
-                    'total': total_requests,
-                    'page': page,
-                    'page_size': page_size,
-                    'total_pages': (total_requests + page_size - 1) // page_size
-                }
-        except Exception as e:
-            logger.error(f"Error getting requests: {e}")
-            return {'requests': [], 'total': 0, 'page': 1, 'page_size': page_size, 'total_pages': 0}
-
-    def update_request_status(self, tmdb_id: int, media_type: str, app_type: str, 
-                             instance_name: str, status: str) -> bool:
-        """Update request status"""
-        try:
-            with self.get_connection() as conn:
-                conn.execute("""
-                    UPDATE requestarr_requests 
-                    SET status = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
-                """, (status, tmdb_id, media_type, app_type, instance_name))
-                return True
-        except Exception as e:
-            logger.error(f"Error updating request status: {e}")
-            return False
-
-    def is_already_requested(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str) -> bool:
-        """Check if media is already requested for this app/instance"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.execute("""
-                    SELECT COUNT(*) FROM requestarr_requests 
-                    WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
-                """, (tmdb_id, media_type, app_type, instance_name))
-                return cursor.fetchone()[0] > 0
-        except Exception as e:
-            logger.error(f"Error checking if already requested: {e}")
             return False
 
 # Separate LogsDatabase class for logs.db
