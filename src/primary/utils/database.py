@@ -34,83 +34,15 @@ class HuntarrDatabase:
             return cursor.fetchall()
     
     def _configure_connection(self, conn):
-        """Configure SQLite connection with enhanced Docker resilience and cross-platform compatibility"""
-        try:
-            conn.execute('PRAGMA foreign_keys = ON')
-            
-            # Try WAL mode first, fall back to DELETE mode if it fails
-            try:
-                conn.execute('PRAGMA journal_mode = WAL')
-            except Exception as wal_error:
-                logger.warning(f"WAL mode failed, using DELETE mode: {wal_error}")
-                conn.execute('PRAGMA journal_mode = DELETE')
-            
-            # Detect if running on Synology NAS for performance optimizations
-            is_synology = self._detect_synology_nas()
-            synology_opt_enabled = os.environ.get('HUNTARR_SYNOLOGY_OPTIMIZATIONS', 'true').lower() == 'true'
-            
-            if is_synology and synology_opt_enabled:
-                logger.info("Synology NAS detected - applying performance optimizations for network file systems")
-                # Synology-optimized settings for network file system performance
-                conn.execute('PRAGMA synchronous = NORMAL')     # Much faster on NFS/CIFS, still safe with WAL
-                conn.execute('PRAGMA cache_size = -40960')      # 40MB cache for better performance on Synology
-                conn.execute('PRAGMA temp_store = MEMORY')      # Store temp tables in memory
-                conn.execute('PRAGMA busy_timeout = 30000')     # 30 seconds for Synology I/O
-                conn.execute('PRAGMA mmap_size = 134217728')    # 128MB memory map optimized for Synology
-            else:
-                if is_synology and not synology_opt_enabled:
-                    logger.info("Synology NAS detected but optimizations disabled via HUNTARR_SYNOLOGY_OPTIMIZATIONS=false")
-                # Standard settings for Docker rebuild resilience and corruption prevention
-                conn.execute('PRAGMA synchronous = FULL')       # Maximum durability for Docker environments
-                conn.execute('PRAGMA cache_size = -32000')      # 32MB cache for better performance
-                conn.execute('PRAGMA temp_store = MEMORY')      # Store temp tables in memory
-                conn.execute('PRAGMA busy_timeout = 60000')     # 60 seconds for Docker I/O delays
-                
-                # Skip mmap on Windows if it causes issues, but use it elsewhere for performance
-                import platform
-                if platform.system() != "Windows":
-                    conn.execute('PRAGMA mmap_size = 268435456')  # 256MB memory map
-            
-            # Common settings for all platforms
-            conn.execute('PRAGMA auto_vacuum = INCREMENTAL') # Incremental vacuum for maintenance
-            conn.execute('PRAGMA secure_delete = ON')       # Secure deletion to prevent data recovery
-            
-            # Additional corruption prevention measures
-            conn.execute('PRAGMA cell_size_check = ON')     # Enable cell size validation
-            conn.execute('PRAGMA integrity_check')          # Verify database integrity on connection
-            conn.execute('PRAGMA optimize')                 # Optimize statistics and indexes
-            conn.execute('PRAGMA application_id = 1751013204')  # Set unique application ID for Huntarr
-            
-            # Enhanced checkpoint settings for WAL mode
-            result = conn.execute('PRAGMA journal_mode').fetchone()
-            if result and result[0] == 'wal':
-                if is_synology and synology_opt_enabled:
-                    # More aggressive checkpointing for Synology
-                    conn.execute('PRAGMA wal_autocheckpoint = 1000')    # Less frequent checkpoints for performance
-                    conn.execute('PRAGMA journal_size_limit = 134217728') # 128MB journal size limit
-                else:
-                    # Conservative checkpointing for other systems
-                    conn.execute('PRAGMA wal_autocheckpoint = 500')     # More frequent checkpoints for Docker
-                    conn.execute('PRAGMA journal_size_limit = 67108864') # 64MB journal size limit
-                conn.execute('PRAGMA wal_checkpoint(TRUNCATE)')     # Force checkpoint and truncate
-            
-            # Test the configuration worked
-            integrity_result = conn.execute('PRAGMA integrity_check').fetchone()
-            if integrity_result and integrity_result[0] != 'ok':
-                logger.error(f"Database integrity check failed: {integrity_result}")
-                raise sqlite3.DatabaseError(f"Database integrity compromised: {integrity_result}")
-            
-            # Log optimization status for monitoring
-            if is_synology:
-                sync_mode = conn.execute('PRAGMA synchronous').fetchone()[0]
-                cache_size = conn.execute('PRAGMA cache_size').fetchone()[0]
-                mmap_size = conn.execute('PRAGMA mmap_size').fetchone()[0]
-                logger.info(f"Synology optimizations applied: sync={sync_mode}, cache={abs(cache_size/1024):.1f}MB, mmap={mmap_size/1024/1024:.0f}MB")
-            
-        except Exception as e:
-            logger.error(f"Error configuring database connection: {e}")
-            # Continue with basic connection if configuration fails
-            pass
+        """Configure SQLite connection with Synology NAS compatible settings"""
+        conn.execute('PRAGMA foreign_keys = ON')
+        conn.execute('PRAGMA journal_mode = WAL')
+        conn.execute('PRAGMA synchronous = NORMAL')
+        conn.execute('PRAGMA cache_size = 10000')
+        conn.execute('PRAGMA temp_store = MEMORY')
+        conn.execute('PRAGMA mmap_size = 268435456')
+        conn.execute('PRAGMA wal_autocheckpoint = 1000')
+        conn.execute('PRAGMA busy_timeout = 30000')
     
     def get_connection(self):
         """Get a configured SQLite connection with Synology NAS compatibility"""
@@ -162,81 +94,7 @@ class HuntarrDatabase:
         data_dir.mkdir(parents=True, exist_ok=True)
         return data_dir / "huntarr.db"
 
-    def _detect_synology_nas(self):
-        """
-        Detect if running on Synology NAS using multiple reliable methods.
-        Returns True if Synology is detected, False otherwise.
-        """
-        try:
-            # Method 1: Check for Synology-specific files and directories
-            synology_indicators = [
-                '/usr/syno',           # Synology system directory
-                '/etc/synoinfo.conf',  # Synology configuration file
-                '/proc/sys/kernel/syno_hw_version',  # Synology hardware version
-                '/usr/bin/synopkg',    # Synology package manager
-                '/var/services'        # Synology services directory
-            ]
-            
-            for indicator in synology_indicators:
-                if os.path.exists(indicator):
-                    logger.debug(f"Synology detected via: {indicator}")
-                    return True
-            
-            # Method 2: Check environment variables set by Synology
-            synology_env_vars = [
-                'SYNOPKG_PKGNAME',
-                'SYNOPKG_PKGVER',
-                'SYNO_USER',
-                'SYNO_GROUP'
-            ]
-            
-            for env_var in synology_env_vars:
-                if os.environ.get(env_var):
-                    logger.debug(f"Synology detected via environment variable: {env_var}")
-                    return True
-            
-            # Method 3: Check system information files for Synology
-            info_files = [
-                ('/etc/os-release', 'synology'),
-                ('/proc/version', 'synology'),
-                ('/etc/issue', 'synology')
-            ]
-            
-            for file_path, keyword in info_files:
-                try:
-                    if os.path.exists(file_path):
-                        with open(file_path, 'r') as f:
-                            content = f.read().lower()
-                            if keyword in content:
-                                logger.debug(f"Synology detected in {file_path}")
-                                return True
-                except (IOError, OSError):
-                    continue
-            
-            # Method 4: Check for Synology-specific hostname patterns
-            try:
-                hostname = os.uname().nodename.lower()
-                if 'diskstation' in hostname or 'rackstation' in hostname:
-                    logger.debug(f"Synology detected via hostname: {hostname}")
-                    return True
-            except (AttributeError, OSError):
-                pass
-            
-            # Method 5: Check for Synology Docker environment
-            try:
-                with open('/proc/1/cgroup', 'r') as f:
-                    cgroup_content = f.read()
-                    if 'synology' in cgroup_content.lower():
-                        logger.debug("Synology detected via Docker cgroup")
-                        return True
-            except (IOError, OSError):
-                pass
-            
-            return False
-            
-        except Exception as e:
-            logger.debug(f"Error during Synology detection: {e}")
-            return False
+
 
     def _handle_database_corruption(self):
         """Handle database corruption by creating backup and starting fresh"""
