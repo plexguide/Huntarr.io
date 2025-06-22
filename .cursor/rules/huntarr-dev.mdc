@@ -203,16 +203,17 @@ conn = sqlite3.connect('/config/huntarr.db')
 ### Before Every Commit, Check For:
 1. Absolute URL violations: `grep -r "fetch('/api/" frontend/ --include="*.js"`
 2. Documentation violations: `grep -r "href.*plexguide.github.io" frontend/ --include="*.js" | grep -v "plexguide.github.io/Huntarr.io"`
-3. Database violations: `grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py"`
-4. Hard-coded path violations: `grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager"`
-5. JSON file operations: `grep -r "\.json\|json.load\|json.dump" src/ --include="*.py" | grep -v "requests.*json\|response.json\|Content-Type.*json"`
-6. Frontend time calculation violations: `grep -r "Date.now.*hours.*60.*1000" frontend/ --include="*.js"`
-7. Global state lock usage: `grep -r "stateful_lock" src/ --include="*.py" | grep -v "stateful_instance_locks"`
-8. Inconsistent app styling: `grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js"`
-9. Logs pagination conflicts: `grep -r "updateLogsPagination\|updatePagination" frontend/ --include="*.html" --include="*.js" | grep -v "LogsModule"`
-10. Hunt Manager non-Sonarr clickable links: `grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l`
-11. Port 9705 usage in local testing: `grep -r "9705" main.py src/ | grep -v "docker\|container"`
-12. Synology optimization bypasses: `grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection"`
+3. Settings form initialization violations: `grep -r "innerHTML.trim.*!==.*''" frontend/static/js/new-main.js | grep -v "includes.*Content will be loaded here"`
+4. Database violations: `grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py"`
+5. Hard-coded path violations: `grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager"`
+6. JSON file operations: `grep -r "\.json\|json.load\|json.dump" src/ --include="*.py" | grep -v "requests.*json\|response.json\|Content-Type.*json"`
+7. Frontend time calculation violations: `grep -r "Date.now.*hours.*60.*1000" frontend/ --include="*.js"`
+8. Global state lock usage: `grep -r "stateful_lock" src/ --include="*.py" | grep -v "stateful_instance_locks"`
+9. Inconsistent app styling: `grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js"`
+10. Logs pagination conflicts: `grep -r "updateLogsPagination\|updatePagination" frontend/ --include="*.html" --include="*.js" | grep -v "LogsModule"`
+11. Hunt Manager non-Sonarr clickable links: `grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l`
+12. Port 9705 usage in local testing: `grep -r "9705" main.py src/ | grep -v "docker\|container"`
+13. Synology optimization bypasses: `grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection"`
 
 ### Violation Scanning Commands
 ```bash
@@ -220,16 +221,17 @@ conn = sqlite3.connect('/config/huntarr.db')
 echo "=== HUNTARR VIOLATION SCAN ==="
 echo "1. Absolute URL violations: $(grep -r "fetch('/api/" frontend/ --include="*.js" | wc -l)"
 echo "2. Documentation violations: $(grep -r "href.*plexguide.github.io" frontend/ --include="*.js" | grep -v "plexguide.github.io/Huntarr.io" | wc -l)"
-echo "3. Database violations: $(grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py" | wc -l)"
-echo "4. Hard-coded path violations: $(grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager" | wc -l)"
-echo "5. JSON file violations: $(grep -r "\.json\|json.load\|json.dump" src/ --include="*.py" | grep -v "requests.*json\|response.json\|Content-Type.*json" | wc -l)"
-echo "6. Frontend time calculation violations: $(grep -r "Date.now.*hours.*60.*1000" frontend/ --include="*.js" | wc -l)"
-echo "7. Global state lock violations: $(grep -r "stateful_lock" src/ --include="*.py" | grep -v "stateful_instance_locks" | wc -l)"
-echo "8. Inconsistent app styling violations: $(grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js" | wc -l)"
-echo "9. Logs pagination conflict violations: $(grep -r "updateLogsPagination\|updatePagination" frontend/ --include="*.html" --include="*.js" | grep -v "LogsModule" | wc -l)"
-echo "10. Hunt Manager non-Sonarr clickable links: $(grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l)"
-echo "11. Port 9705 usage in local code: $(grep -r "9705" main.py src/ | grep -v "docker\|container" | wc -l)"
-echo "12. Synology optimization bypass violations: $(grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection" | wc -l)"
+echo "3. Settings form initialization violations: $(grep -r "innerHTML.trim.*!==.*''" frontend/static/js/new-main.js | grep -v "includes.*Content will be loaded here" | wc -l)"
+echo "4. Database violations: $(grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v "database.py" | wc -l)"
+echo "5. Hard-coded path violations: $(grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager" | wc -l)"
+echo "6. JSON file violations: $(grep -r "\.json\|json.load\|json.dump" src/ --include="*.py" | grep -v "requests.*json\|response.json\|Content-Type.*json" | wc -l)"
+echo "7. Frontend time calculation violations: $(grep -r "Date.now.*hours.*60.*1000" frontend/ --include="*.js" | wc -l)"
+echo "8. Global state lock violations: $(grep -r "stateful_lock" src/ --include="*.py" | grep -v "stateful_instance_locks" | wc -l)"
+echo "9. Inconsistent app styling violations: $(grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js" | wc -l)"
+echo "10. Logs pagination conflict violations: $(grep -r "updateLogsPagination\|updatePagination" frontend/ --include="*.html" --include="*.js" | grep -v "LogsModule" | wc -l)"
+echo "11. Hunt Manager non-Sonarr clickable links: $(grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l)"
+echo "12. Port 9705 usage in local code: $(grep -r "9705" main.py src/ | grep -v "docker\|container" | wc -l)"
+echo "13. Synology optimization bypass violations: $(grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection" | wc -l)"
 ```
 
 ## 📊 SPECIFIC BUG PATTERNS TO AVOID
@@ -321,6 +323,31 @@ echo "12. Synology optimization bypass violations: $(grep -r "sqlite3.connect\|P
 - Radarr expects movie IDs in URLs but Hunt Manager uses title-based slugs which don't match
 - Files: `/frontend/static/js/hunt_manager.js` (history.js already correctly implemented)
 
+### Settings Forms Initialization Pattern (Critical)
+- **Problem**: Settings sections showing empty content despite having proper HTML templates and JavaScript functions
+- **Root Cause**: Initialization functions checking for content but HTML comments count as "content"
+- **Pattern**: `if (container.innerHTML.trim() !== '') { return; }` fails when container has `<!-- Content will be loaded here -->`
+- **Symptom**: Console shows "already initialized, skipping" but form never generates
+- **Critical Fix**: Check for actual content, not just any content including comments
+- **Solution Pattern**:
+  ```javascript
+  const currentContent = container.innerHTML.trim();
+  if (currentContent !== '' && !currentContent.includes('<!-- Content will be loaded here -->')) {
+      console.log('[huntarrUI] Already initialized, skipping');
+      return; // Already initialized
+  }
+  ```
+- **Files Affected**: `/frontend/static/js/new-main.js` (all `initialize*` functions)
+- **Form Generation Flow**:
+  1. `initializeNotifications()` → checks container content → calls API → calls `SettingsForms.generateNotificationsForm()`
+  2. `initializeSettings()` → checks container content → calls API → calls `SettingsForms.generateGeneralForm()`
+  3. Similar pattern for all settings sections
+- **Required Functions in SettingsForms**: `generateNotificationsForm()`, `generateGeneralForm()`, etc.
+- **API Endpoints**: `/api/settings` (general), `/api/settings/general` (specific)
+- **Template Containers**: `notificationsContainer`, `generalSettings`, etc.
+- **Debug Logging**: Always add comprehensive console.log statements to track initialization flow
+- **Testing**: Refresh page, navigate to section, check browser console for proper initialization sequence
+
 ## 🎯 DEBUGGING APPROACH
 
 ### Systematic Issue Discovery
@@ -367,11 +394,23 @@ docker exec huntarr sqlite3 /config/huntarr.db "PRAGMA synchronous; PRAGMA cache
 4. Verify regex patterns in `new-main.js`
 
 ### Settings Issues Debugging
-1. Check form generation functions
-2. Verify `getFormSettings()` method
-3. Test save/load cycle
-4. Check API endpoints
-5. Verify info icon links point to existing documentation anchors
+1. Check form generation functions in `/frontend/static/js/settings_forms.js`
+2. Verify initialization functions in `/frontend/static/js/new-main.js` (e.g., `initializeNotifications()`)
+3. **Critical**: Check for HTML comment interference in container content checks
+4. Test API endpoints: `/api/settings`, `/api/settings/general`
+5. Verify container elements exist: `notificationsContainer`, `generalSettings`
+6. Check browser console for initialization flow logs
+7. Test save/load cycle and auto-save functionality
+8. Verify info icon links point to existing documentation anchors
+9. **Settings Forms Debug Pattern**:
+   ```javascript
+   // Add to initialization functions for debugging
+   console.log('[huntarrUI] initializeX called');
+   console.log('[huntarrUI] container found:', container);
+   console.log('[huntarrUI] Current container content:', container.innerHTML.trim());
+   console.log('[huntarrUI] SettingsForms available:', typeof SettingsForms !== 'undefined');
+   console.log('[huntarrUI] generateXForm available:', typeof SettingsForms.generateXForm === 'function');
+   ```
 
 ### CSS Issues Debugging
 1. Check browser console for errors
