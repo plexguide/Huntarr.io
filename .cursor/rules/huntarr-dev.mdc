@@ -13,9 +13,11 @@ alwaysApply: true
 - Let user decide when to commit
 
 ### MANDATORY TESTING WORKFLOW
-- ALWAYS rebuild and test changes using: `cd /Users/home/Huntarr/Huntarr.io && docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
-- ALWAYS check logs for errors: `docker logs huntarr`
+- Docker: ALWAYS rebuild and test changes using: `cd /Users/home/Huntarr/Huntarr.io && docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
+- Local: ALWAYS use port 9706 for local testing: `HUNTARR_PORT=9706 python main.py`
+- ALWAYS check logs for errors: `docker logs huntarr` (Docker) or terminal output (local)
 - Test in both Docker and local environments
+- Docker uses port 9705, local testing uses port 9706 to avoid conflicts
 
 ### CROSS-PLATFORM REQUIREMENTS
 - NEVER use hard-coded absolute paths (e.g., `/config/file.json`)
@@ -133,14 +135,14 @@ conn = sqlite3.connect('/config/huntarr.db')
 
 ### Making Changes
 1. Edit source code (never modify inside container)
-2. For local testing: `python main.py` (uses ./data/huntarr.db)
+2. For local testing: `HUNTARR_PORT=9706 python main.py` (uses ./data/huntarr.db on port 9706)
 3. For Docker testing: `docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
-4. Check logs: `docker logs huntarr`
+4. Check logs: `docker logs huntarr` (Docker) or terminal output (local)
 5. Test functionality in both environments
 
 ### Before Committing
-1. Test in Docker environment
-2. Test in local environment  
+1. Test in Docker environment (port 9705)
+2. Test in local environment (port 9706)
 3. Test cross-platform compatibility
 4. Test subpath scenarios
 5. Check browser console for errors
@@ -177,6 +179,7 @@ conn = sqlite3.connect('/config/huntarr.db')
 - ❌ Frontend links without verifying documentation anchors exist
 - ❌ Organic feature growth without reality checks
 - ❌ Theoretical FAQ content (base on real user problems)
+- ❌ Using port 9705 for local testing (conflicts with Docker)
 
 ### State Management Anti-Patterns
 - ❌ Using global state locks instead of per-instance locks
@@ -207,7 +210,9 @@ conn = sqlite3.connect('/config/huntarr.db')
 7. Global state lock usage: `grep -r "stateful_lock" src/ --include="*.py" | grep -v "stateful_instance_locks"`
 8. Inconsistent app styling: `grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js"`
 9. Logs pagination conflicts: `grep -r "updateLogsPagination\|updatePagination" frontend/ --include="*.html" --include="*.js" | grep -v "LogsModule"`
-10. Synology optimization bypasses: `grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection"`
+10. Hunt Manager non-Sonarr clickable links: `grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l`
+11. Port 9705 usage in local testing: `grep -r "9705" main.py src/ | grep -v "docker\|container"`
+12. Synology optimization bypasses: `grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection"`
 
 ### Violation Scanning Commands
 ```bash
@@ -223,7 +228,8 @@ echo "7. Global state lock violations: $(grep -r "stateful_lock" src/ --include=
 echo "8. Inconsistent app styling violations: $(grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js" | wc -l)"
 echo "9. Logs pagination conflict violations: $(grep -r "updateLogsPagination\|updatePagination" frontend/ --include="*.html" --include="*.js" | grep -v "LogsModule" | wc -l)"
 echo "10. Hunt Manager non-Sonarr clickable links: $(grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l)"
-echo "11. Synology optimization bypass violations: $(grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection" | wc -l)"
+echo "11. Port 9705 usage in local code: $(grep -r "9705" main.py src/ | grep -v "docker\|container" | wc -l)"
+echo "12. Synology optimization bypass violations: $(grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection" | wc -l)"
 ```
 
 ## 📊 SPECIFIC BUG PATTERNS TO AVOID
