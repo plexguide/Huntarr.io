@@ -75,11 +75,8 @@ let huntarrUI = {
             initialSidebarStyle.remove();
         }
         
-        // Check if Settings sidebar should be shown based on localStorage or preload flag
-        const settingsSidebarActive = localStorage.getItem('huntarr-settings-sidebar') === 'true';
-        const settingsSidebarPreloaded = window.huntarrSettingsSidebarPreload === true;
-        
-        if ((settingsSidebarActive || settingsSidebarPreloaded) && (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'user')) {
+        // Check if Settings sidebar should be shown based on current section (like Requestarr does)
+        if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'user') {
             this.showSettingsSidebar();
         } else {
             // Show main sidebar by default and clear settings sidebar preference
@@ -3753,14 +3750,33 @@ let huntarrUI = {
     },
 
     showMainSidebar: function() {
+        console.log('[huntarrUI] showMainSidebar called');
+        
         // Show main sidebar
         const mainSidebar = document.getElementById('sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
         const settingsSidebar = document.getElementById('settings-sidebar');
         
-        if (mainSidebar) mainSidebar.style.display = 'block';
-        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
-        if (settingsSidebar) settingsSidebar.style.display = 'none';
+        console.log('[huntarrUI] Sidebar elements found:', {
+            main: !!mainSidebar,
+            requestarr: !!requestarrSidebar,
+            settings: !!settingsSidebar
+        });
+        
+        if (mainSidebar) {
+            mainSidebar.style.display = 'block';
+            mainSidebar.style.setProperty('display', 'block', 'important');
+        }
+        if (requestarrSidebar) {
+            requestarrSidebar.style.display = 'none';
+            requestarrSidebar.style.setProperty('display', 'none', 'important');
+        }
+        if (settingsSidebar) {
+            settingsSidebar.style.display = 'none';
+            settingsSidebar.style.setProperty('display', 'none', 'important');
+        }
+        
+        console.log('[huntarrUI] Sidebar styles applied');
         
         // Clear Settings sidebar preference when showing main sidebar
         localStorage.removeItem('huntarr-settings-sidebar');

@@ -15,35 +15,7 @@
     <!-- Pass base URL configuration to JavaScript -->
     <script>window.HUNTARR_BASE_URL = '{{ base_url|default("", true) }}';</script>
     
-    <!-- Prevent sidebar flash by checking preferences immediately -->
-    <script>
-        (function() {
-            // Check Settings sidebar preference
-            const settingsSidebarActive = localStorage.getItem('huntarr-settings-sidebar') === 'true';
-            const currentHash = window.location.hash;
-            
-            // Check for Settings-related sections based on current hash only
-            const isSettingsSection = currentHash === '#settings' || 
-                                    currentHash === '#scheduling' ||
-                                    currentHash === '#notifications' ||
-                                    currentHash === '#user';
-            
-            if (isSettingsSection) {
-                // Add CSS to hide main sidebar and show settings sidebar immediately
-                const style = document.createElement('style');
-                style.id = 'sidebar-flash-prevention';
-                style.textContent = `
-                    #sidebar { display: none !important; }
-                    #settings-sidebar { display: block !important; }
-                    #requestarr-sidebar { display: none !important; }
-                `;
-                document.head.appendChild(style);
-                
-                // Also set a flag for the main JavaScript to know Settings sidebar should be active
-                window.huntarrSettingsSidebarPreload = true;
-            }
-        })();
-    </script>
+    <!-- No flash prevention needed - let main JavaScript handle sidebar switching like Requestarr does -->
     
     <!-- Pass global scripts -->
     {% include 'components/scripts.html' %}
