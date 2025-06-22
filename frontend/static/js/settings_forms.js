@@ -2957,81 +2957,7 @@ const SettingsForms = {
                 </div>
             </div>
 
-            <div class="settings-group" style="
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-                border: 2px solid rgba(90, 109, 137, 0.3);
-                border-radius: 12px;
-                padding: 20px;
-                margin: 15px 0 25px 0;
-                box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            ">
-                <h3>Apprise Notifications</h3>
-                <div class="setting-item">
-                    <label for="enable_notifications"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#enable-notifications" class="info-icon" title="Enable or disable notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enable Notifications:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="enable_notifications" ${settings.enable_notifications === true ? 'checked' : ''}>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Enable sending notifications via Apprise for media processing events</p>
-                </div>
-                <div class="setting-item">
-                    <label for="notification_level"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notification-level" class="info-icon" title="Set minimum notification level" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notification Level:</label>
-                    <select id="notification_level" name="notification_level" style="width: 200px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
-                        <option value="info" ${settings.notification_level === 'info' || !settings.notification_level ? 'selected' : ''}>Info</option>
-                        <option value="success" ${settings.notification_level === 'success' ? 'selected' : ''}>Success</option>
-                        <option value="warning" ${settings.notification_level === 'warning' ? 'selected' : ''}>Warning</option>
-                        <option value="error" ${settings.notification_level === 'error' ? 'selected' : ''}>Error</option>
-                    </select>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Minimum level of events that will trigger notifications</p>
-                </div>
-                <div class="setting-item">
-                    <label for="apprise_urls"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#apprise-urls" class="info-icon" title="Learn about Apprise URL formats" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Apprise URLs:</label>
-                    <textarea id="apprise_urls" rows="4" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">${(settings.apprise_urls || []).join('\n')}</textarea>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Enter one Apprise URL per line (e.g., discord://, telegram://, etc)</p>
-                    <p class="setting-help"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#apprise-urls" target="_blank">Click here for detailed Apprise URL documentation</a></p>
-                    <div style="margin-top: 10px;">
-                        <button type="button" id="testNotificationBtn" class="btn btn-secondary" style="background-color: #6366f1; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
-                            <i class="fas fa-bell"></i> Test Notification
-                        </button>
-                        <span id="testNotificationStatus" style="margin-left: 10px; font-size: 14px;"></span>
-                    </div>
-                    <p class="setting-help" style="margin-left: -3ch !important; margin-top: 8px; font-style: italic; color: #9ca3af;">
-                        <i class="fas fa-magic" style="margin-right: 4px;"></i>Testing will automatically save your current settings first
-                    </p>
-                </div>
-                <div class="setting-item">
-                    <label for="notify_on_missing"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notify-on-missing" class="info-icon" title="Send notifications for missing media" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notify on Missing:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="notify_on_missing" ${settings.notify_on_missing !== false ? 'checked' : ''}>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Send notifications when missing media is processed</p>
-                </div>
-                <div class="setting-item">
-                    <label for="notify_on_upgrade"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notify-on-upgrade" class="info-icon" title="Learn more about upgrade notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notify on Upgrade:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="notify_on_upgrade" ${settings.notify_on_upgrade !== false ? 'checked' : ''}>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Send notifications when media is upgraded</p>
-                </div>
-                <div class="setting-item">
-                    <label for="notification_include_instance"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#include-instance" class="info-icon" title="Include instance name in notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Include Instance:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="notification_include_instance" ${settings.notification_include_instance !== false ? 'checked' : ''}>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Include instance name in notification messages</p>
-                </div>
-                <div class="setting-item">
-                    <label for="notification_include_app"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#include-app-name" class="info-icon" title="Include app name in notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Include App Name:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="notification_include_app" ${settings.notification_include_app !== false ? 'checked' : ''}>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Include app name (Sonarr, Radarr, etc.) in notification messages</p>
-                </div>
-            </div>
+
 
             <div class="settings-group" style="
                 background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
@@ -3063,75 +2989,7 @@ const SettingsForms = {
         
 
         
-        // Set up Apprise notifications toggle functionality
-        const enableNotificationsCheckbox = container.querySelector('#enable_notifications');
-        if (enableNotificationsCheckbox) {
-            // Function to toggle notification settings visibility
-            const toggleNotificationSettings = function(enabled) {
-                const settingsToToggle = [
-                    'notification_level',
-                    'apprise_urls', 
-                    'testNotificationBtn',
-                    'notify_on_missing',
-                    'notify_on_upgrade',
-                    'notification_include_instance',
-                    'notification_include_app'
-                ];
-                
-                // Find parent setting-item containers for each setting
-                settingsToToggle.forEach(settingId => {
-                    const element = container.querySelector(`#${settingId}`);
-                    if (element) {
-                        // Find the parent setting-item div
-                        const settingItem = element.closest('.setting-item');
-                        if (settingItem) {
-                            if (enabled) {
-                                settingItem.style.opacity = '1';
-                                settingItem.style.pointerEvents = '';
-                                // Re-enable form elements
-                                const inputs = settingItem.querySelectorAll('input, select, textarea, button');
-                                inputs.forEach(input => {
-                                    input.disabled = false;
-                                    input.style.cursor = '';
-                                });
-                            } else {
-                                settingItem.style.opacity = '0.4';
-                                settingItem.style.pointerEvents = 'none';
-                                // Disable form elements
-                                const inputs = settingItem.querySelectorAll('input, select, textarea, button');
-                                inputs.forEach(input => {
-                                    input.disabled = true;
-                                    input.style.cursor = 'not-allowed';
-                                });
-                            }
-                        }
-                    }
-                });
-                
-                // Special handling for test notification button and its container
-                const testBtn = container.querySelector('#testNotificationBtn');
-                if (testBtn) {
-                    testBtn.disabled = !enabled;
-                    testBtn.style.opacity = enabled ? '1' : '0.4';
-                    testBtn.style.cursor = enabled ? 'pointer' : 'not-allowed';
-                    
-                    // Also handle the button container div
-                    const buttonContainer = testBtn.closest('div');
-                    if (buttonContainer) {
-                        buttonContainer.style.opacity = enabled ? '1' : '0.4';
-                        buttonContainer.style.pointerEvents = enabled ? '' : 'none';
-                    }
-                }
-            };
-            
-            // Set initial state
-            toggleNotificationSettings(enableNotificationsCheckbox.checked);
-            
-            // Add change event listener
-            enableNotificationsCheckbox.addEventListener('change', function() {
-                toggleNotificationSettings(this.checked);
-            });
-        }
+
 
 
 
@@ -3990,6 +3848,236 @@ const SettingsForms = {
         });
         
         console.log(`[SettingsForms] Updated Swaparr field disabled state: ${isEnabled ? 'enabled' : 'disabled'}`);
+    },
+
+    // Generate Notifications settings form
+    generateNotificationsForm: function(container, settings = {}) {
+        // Add data-app-type attribute to container
+        container.setAttribute('data-app-type', 'notifications');
+        
+        container.innerHTML = `
+            <div class="settings-group" style="
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+                border: 2px solid rgba(90, 109, 137, 0.3);
+                border-radius: 12px;
+                padding: 20px;
+                margin: 15px 0 25px 0;
+                box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            ">
+                <h3>Apprise Notifications</h3>
+                <div class="setting-item">
+                    <label for="enable_notifications"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#enable-notifications" class="info-icon" title="Enable or disable notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enable Notifications:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="enable_notifications" ${settings.enable_notifications === true ? 'checked' : ''}>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Enable sending notifications via Apprise for media processing events</p>
+                </div>
+                <div class="setting-item">
+                    <label for="notification_level"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notification-level" class="info-icon" title="Set minimum notification level" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notification Level:</label>
+                    <select id="notification_level" name="notification_level" style="width: 200px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                        <option value="info" ${settings.notification_level === 'info' || !settings.notification_level ? 'selected' : ''}>Info</option>
+                        <option value="success" ${settings.notification_level === 'success' ? 'selected' : ''}>Success</option>
+                        <option value="warning" ${settings.notification_level === 'warning' ? 'selected' : ''}>Warning</option>
+                        <option value="error" ${settings.notification_level === 'error' ? 'selected' : ''}>Error</option>
+                    </select>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Minimum level of events that will trigger notifications</p>
+                </div>
+                <div class="setting-item">
+                    <label for="apprise_urls"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#apprise-urls" class="info-icon" title="Learn about Apprise URL formats" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Apprise URLs:</label>
+                    <textarea id="apprise_urls" rows="4" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">${(settings.apprise_urls || []).join('\n')}</textarea>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Enter one Apprise URL per line (e.g., discord://, telegram://, etc)</p>
+                    <p class="setting-help"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#apprise-urls" target="_blank">Click here for detailed Apprise URL documentation</a></p>
+                    <div style="margin-top: 10px;">
+                        <button type="button" id="testNotificationBtn" class="btn btn-secondary" style="background-color: #6366f1; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                            <i class="fas fa-bell"></i> Test Notification
+                        </button>
+                        <span id="testNotificationStatus" style="margin-left: 10px; font-size: 14px;"></span>
+                    </div>
+                    <p class="setting-help" style="margin-left: -3ch !important; margin-top: 8px; font-style: italic; color: #9ca3af;">
+                        <i class="fas fa-magic" style="margin-right: 4px;"></i>Testing will automatically save your current settings first
+                    </p>
+                </div>
+                <div class="setting-item">
+                    <label for="notify_on_missing"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notify-on-missing" class="info-icon" title="Send notifications for missing media" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notify on Missing:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="notify_on_missing" ${settings.notify_on_missing !== false ? 'checked' : ''}>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Send notifications when missing media is processed</p>
+                </div>
+                <div class="setting-item">
+                    <label for="notify_on_upgrade"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notify-on-upgrade" class="info-icon" title="Learn more about upgrade notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notify on Upgrade:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="notify_on_upgrade" ${settings.notify_on_upgrade !== false ? 'checked' : ''}>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Send notifications when media is upgraded</p>
+                </div>
+                <div class="setting-item">
+                    <label for="notification_include_instance"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#include-instance" class="info-icon" title="Include instance name in notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Include Instance:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="notification_include_instance" ${settings.notification_include_instance !== false ? 'checked' : ''}>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Include instance name in notification messages</p>
+                </div>
+                <div class="setting-item">
+                    <label for="notification_include_app"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#include-app-name" class="info-icon" title="Include app name in notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Include App Name:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="notification_include_app" ${settings.notification_include_app !== false ? 'checked' : ''}>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Include app name (Sonarr, Radarr, etc.) in notification messages</p>
+                </div>
+            </div>
+        `;
+
+        // Set up Apprise notifications toggle functionality
+        const enableNotificationsCheckbox = container.querySelector('#enable_notifications');
+        if (enableNotificationsCheckbox) {
+            // Function to toggle notification settings visibility
+            const toggleNotificationSettings = function(enabled) {
+                const settingsToToggle = [
+                    'notification_level',
+                    'apprise_urls', 
+                    'testNotificationBtn',
+                    'notify_on_missing',
+                    'notify_on_upgrade',
+                    'notification_include_instance',
+                    'notification_include_app'
+                ];
+                
+                // Find parent setting-item containers for each setting
+                settingsToToggle.forEach(settingId => {
+                    const element = container.querySelector(`#${settingId}`);
+                    if (element) {
+                        // Find the parent setting-item div
+                        const settingItem = element.closest('.setting-item');
+                        if (settingItem) {
+                            if (enabled) {
+                                settingItem.style.opacity = '1';
+                                settingItem.style.pointerEvents = '';
+                                // Re-enable form elements
+                                const inputs = settingItem.querySelectorAll('input, select, textarea, button');
+                                inputs.forEach(input => {
+                                    input.disabled = false;
+                                    input.style.cursor = '';
+                                });
+                            } else {
+                                settingItem.style.opacity = '0.4';
+                                settingItem.style.pointerEvents = 'none';
+                                // Disable form elements
+                                const inputs = settingItem.querySelectorAll('input, select, textarea, button');
+                                inputs.forEach(input => {
+                                    input.disabled = true;
+                                    input.style.cursor = 'not-allowed';
+                                });
+                            }
+                        }
+                    }
+                });
+                
+                // Special handling for test notification button and its container
+                const testBtn = container.querySelector('#testNotificationBtn');
+                if (testBtn) {
+                    testBtn.disabled = !enabled;
+                    testBtn.style.opacity = enabled ? '1' : '0.4';
+                    testBtn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+                    
+                    // Also handle the button container div
+                    const buttonContainer = testBtn.closest('div');
+                    if (buttonContainer) {
+                        buttonContainer.style.opacity = enabled ? '1' : '0.4';
+                        buttonContainer.style.pointerEvents = enabled ? '' : 'none';
+                    }
+                }
+            };
+            
+            // Set initial state
+            toggleNotificationSettings(enableNotificationsCheckbox.checked);
+            
+            // Add change event listener
+            enableNotificationsCheckbox.addEventListener('change', function() {
+                toggleNotificationSettings(this.checked);
+            });
+        }
+
+        // Set up auto-save for notifications settings
+        const notificationInputs = container.querySelectorAll('input, select, textarea');
+        notificationInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                if (typeof window.huntarrUI !== 'undefined' && window.huntarrUI.autoSaveGeneralSettings) {
+                    window.huntarrUI.autoSaveGeneralSettings();
+                }
+            });
+            
+            // Also listen for input events on text areas
+            if (input.tagName === 'TEXTAREA') {
+                input.addEventListener('input', () => {
+                    if (typeof window.huntarrUI !== 'undefined' && window.huntarrUI.autoSaveGeneralSettings) {
+                        window.huntarrUI.autoSaveGeneralSettings();
+                    }
+                });
+            }
+        });
+
+        // Set up test notification button
+        const testBtn = container.querySelector('#testNotificationBtn');
+        if (testBtn) {
+            testBtn.addEventListener('click', function() {
+                const statusSpan = container.querySelector('#testNotificationStatus');
+                
+                // Save settings first, then test
+                if (typeof window.huntarrUI !== 'undefined' && window.huntarrUI.autoSaveGeneralSettings) {
+                    window.huntarrUI.autoSaveGeneralSettings()
+                        .then(() => {
+                            // Show testing status
+                            if (statusSpan) {
+                                statusSpan.textContent = 'Testing...';
+                                statusSpan.style.color = '#6366f1';
+                            }
+                            
+                            // Send test notification
+                            return fetch('./api/test-notification', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (statusSpan) {
+                                if (data.success) {
+                                    statusSpan.textContent = '✓ Test sent successfully!';
+                                    statusSpan.style.color = '#10b981';
+                                } else {
+                                    statusSpan.textContent = `✗ Test failed: ${data.error || 'Unknown error'}`;
+                                    statusSpan.style.color = '#ef4444';
+                                }
+                                
+                                // Clear status after 5 seconds
+                                setTimeout(() => {
+                                    statusSpan.textContent = '';
+                                }, 5000);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Test notification error:', error);
+                            if (statusSpan) {
+                                statusSpan.textContent = '✗ Test failed: Network error';
+                                statusSpan.style.color = '#ef4444';
+                                
+                                // Clear status after 5 seconds
+                                setTimeout(() => {
+                                    statusSpan.textContent = '';
+                                }, 5000);
+                            }
+                        });
+                }
+            });
+        }
     },
 };
 

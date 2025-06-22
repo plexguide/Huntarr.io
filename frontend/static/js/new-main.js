@@ -612,6 +612,21 @@ let huntarrUI = {
             
             // Set localStorage to maintain Settings sidebar preference
             localStorage.setItem('huntarr-settings-sidebar', 'true');
+        } else if (section === 'notifications' && document.getElementById('notificationsSection')) {
+            document.getElementById('notificationsSection').classList.add('active');
+            document.getElementById('notificationsSection').style.display = 'block';
+            if (document.getElementById('settingsNotificationsNav')) document.getElementById('settingsNotificationsNav').classList.add('active');
+            newTitle = 'Notifications';
+            this.currentSection = 'notifications';
+            
+            // Switch to Settings sidebar for notifications
+            this.showSettingsSidebar();
+            
+            // Set localStorage to maintain Settings sidebar preference
+            localStorage.setItem('huntarr-settings-sidebar', 'true');
+            
+            // Initialize notifications settings if not already done
+            this.initializeNotifications();
         } else if (section === 'user' && document.getElementById('userSection')) {
             document.getElementById('userSection').classList.add('active');
             document.getElementById('userSection').style.display = 'block';
@@ -3842,6 +3857,9 @@ let huntarrUI = {
         } else if (this.currentSection === 'scheduling') {
             const schedulingNav = document.getElementById('settingsSchedulingNav');
             if (schedulingNav) schedulingNav.classList.add('active');
+        } else if (this.currentSection === 'notifications') {
+            const notificationsNav = document.getElementById('settingsNotificationsNav');
+            if (notificationsNav) notificationsNav.classList.add('active');
         } else if (this.currentSection === 'user') {
             const userNav = document.getElementById('settingsUserNav');
             if (userNav) userNav.classList.add('active');
@@ -3875,6 +3893,15 @@ let huntarrUI = {
             schedulingNav.addEventListener('click', (e) => {
                 e.preventDefault();
                 window.location.hash = '#scheduling';
+            });
+        }
+        
+        // Notifications button - shows Notifications page
+        const notificationsNav = document.getElementById('settingsNotificationsNav');
+        if (notificationsNav) {
+            notificationsNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#notifications';
             });
         }
         
@@ -3913,6 +3940,53 @@ let huntarrUI = {
             .catch(error => {
                 console.error('[huntarrUI] Error loading settings:', error);
                 generalSettings.innerHTML = '<p>Error loading settings</p>';
+            });
+    },
+
+    initializeNotifications: function() {
+        console.log('[huntarrUI] initializeNotifications called');
+        
+        // Check if notifications are already initialized
+        const notificationsContainer = document.getElementById('notificationsContainer');
+        if (!notificationsContainer) {
+            console.error('[huntarrUI] notificationsContainer element not found!');
+            return;
+        }
+        
+        console.log('[huntarrUI] notificationsContainer found:', notificationsContainer);
+        console.log('[huntarrUI] Current container content:', notificationsContainer.innerHTML.trim());
+        
+        // Check if notifications are actually initialized (ignore HTML comments)
+        const currentContent = notificationsContainer.innerHTML.trim();
+        if (currentContent !== '' && !currentContent.includes('<!-- Notifications content will be loaded here -->')) {
+            console.log('[huntarrUI] Notifications already initialized, skipping');
+            return; // Already initialized
+        }
+
+        console.log('[huntarrUI] Loading notifications settings from API...');
+        
+        // Load settings from API and generate the notifications form
+        fetch('./api/settings')
+            .then(response => response.json())
+            .then(settings => {
+                console.log('[huntarrUI] Loaded settings for notifications:', settings);
+                console.log('[huntarrUI] General settings:', settings.general);
+                console.log('[huntarrUI] SettingsForms available:', typeof SettingsForms !== 'undefined');
+                console.log('[huntarrUI] generateNotificationsForm available:', typeof SettingsForms !== 'undefined' && SettingsForms.generateNotificationsForm);
+                
+                // Generate the notifications form - pass the general settings which contain notification settings
+                if (typeof SettingsForms !== 'undefined' && SettingsForms.generateNotificationsForm) {
+                    console.log('[huntarrUI] Calling SettingsForms.generateNotificationsForm...');
+                    SettingsForms.generateNotificationsForm(notificationsContainer, settings.general || {});
+                    console.log('[huntarrUI] Notifications form generated successfully');
+                } else {
+                    console.error('[huntarrUI] SettingsForms.generateNotificationsForm not available');
+                    notificationsContainer.innerHTML = '<p>Error: Notifications forms not loaded</p>';
+                }
+            })
+            .catch(error => {
+                console.error('[huntarrUI] Error loading notifications settings:', error);
+                notificationsContainer.innerHTML = '<p>Error loading notifications settings</p>';
             });
     }
 };

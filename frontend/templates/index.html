@@ -25,6 +25,7 @@
             // Check for Settings-related sections based on current hash only
             const isSettingsSection = currentHash === '#settings' || 
                                     currentHash === '#scheduling' ||
+                                    currentHash === '#notifications' ||
                                     currentHash === '#user';
             
             if (isSettingsSection) {
@@ -78,6 +79,9 @@
             
             <!-- Scheduling Section -->
             {% include 'components/scheduling_section.html' %}
+            
+            <!-- Notifications Section -->
+            {% include 'components/notifications_section.html' %}
             
             <!-- User Section -->
             {% include 'components/user_section.html' %}
