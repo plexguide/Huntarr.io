@@ -607,12 +607,7 @@ const appsModule = {
                 window._appsSuppressChangeDetection = false;
             }, 1000);
             
-            // Show success notification
-            if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
-                huntarrUI.showNotification(`${appType} settings saved successfully`, 'success');
-            } else {
-                alert(`${appType} settings saved successfully`);
-            }
+            // Settings auto-save notification removed per user request
         })
         .catch(error => {
             console.error(`Error saving ${appType} settings:`, error);

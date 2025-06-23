@@ -1165,7 +1165,7 @@ let huntarrUI = {
                 return;
             }
             
-            this.showNotification('Settings saved successfully', 'success');
+            // Settings auto-save notification removed per user request
 
             // Update original settings state with the full config returned from backend
             if (typeof savedConfig === 'object' && savedConfig !== null) {
@@ -3270,7 +3270,7 @@ let huntarrUI = {
         .then(data => {
             if (data.success) {
                 console.log('[huntarrUI] Timezone applied successfully');
-                this.showNotification(`Timezone changed to ${timezone}`, 'success');
+                // Settings auto-save notification removed per user request
                 
                 // Refresh any time displays that might be affected
                 this.refreshTimeDisplays();
@@ -3297,20 +3297,15 @@ let huntarrUI = {
         };
         
         const modeName = modeNames[authMode] || authMode;
-        this.showNotification(`Authentication mode changed to ${modeName}`, 'info');
+        // Settings auto-save notification removed per user request
         
-        // Add warning for No Login Mode
-        if (authMode === 'no_login') {
-            setTimeout(() => {
-                this.showNotification('Warning: No Login Mode disables all authentication. Ensure your reverse proxy is securing access!', 'warning');
-            }, 1000);
-        }
+        // Settings auto-save warning notification removed per user request
     },
 
     // Apply update checking change immediately
     applyUpdateCheckingChange: function(enabled) {
         console.log(`[huntarrUI] Update checking ${enabled ? 'enabled' : 'disabled'}`);
-        this.showNotification(`Update checking ${enabled ? 'enabled' : 'disabled'}`, 'info');
+        // Settings auto-save notification removed per user request
     },
 
     // Refresh time displays after timezone change
