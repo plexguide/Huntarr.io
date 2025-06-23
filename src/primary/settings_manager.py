@@ -308,7 +308,7 @@ def get_configured_apps() -> List[str]:
     return configured
 
 def apply_timezone(timezone: str) -> bool:
-    """Apply the specified timezone to the container.
+    """Apply the specified timezone to the application.
     
     Args:
         timezone: The timezone to set (e.g., 'UTC', 'America/New_York')
@@ -317,30 +317,56 @@ def apply_timezone(timezone: str) -> bool:
         bool: True if successful, False otherwise
     """
     try:
-        # Set TZ environment variable
+        # Set TZ environment variable (this works in all environments and is sufficient)
         os.environ['TZ'] = timezone
         
-        # Create symlink for localtime (common approach in containers)
-        zoneinfo_path = f"/usr/share/zoneinfo/{timezone}"
-        if os.path.exists(zoneinfo_path):
-            # Remove existing symlink if it exists
-            if os.path.exists("/etc/localtime"):
-                os.remove("/etc/localtime")
-            
-            # Create new symlink
-            os.symlink(zoneinfo_path, "/etc/localtime")
-            
-            # Also update /etc/timezone file if it exists
-            with open("/etc/timezone", "w") as f:
-                f.write(f"{timezone}\n")
-                
-            settings_logger.info(f"Timezone set to {timezone}")
-            return True
+        # Force Python to reload time zone information
+        try:
+            import time
+            time.tzset()
+        except AttributeError:
+            # tzset() is not available on Windows
+            pass
+        
+        # Try to update system timezone files only in Docker containers where we have permissions
+        # This is optional - the TZ environment variable is sufficient for Python timezone handling
+        system_files_updated = False
+        try:
+            # Only attempt system file changes if we have write access to /etc
+            if os.access("/etc", os.W_OK):
+                zoneinfo_path = f"/usr/share/zoneinfo/{timezone}"
+                if os.path.exists(zoneinfo_path):
+                    # Remove existing symlink if it exists
+                    if os.path.exists("/etc/localtime"):
+                        os.remove("/etc/localtime")
+                    
+                    # Create new symlink
+                    os.symlink(zoneinfo_path, "/etc/localtime")
+                    
+                    # Also update /etc/timezone file
+                    with open("/etc/timezone", "w") as f:
+                        f.write(f"{timezone}\n")
+                    
+                    system_files_updated = True
+                    settings_logger.debug(f"System timezone files updated to {timezone}")
+                else:
+                    settings_logger.debug(f"Timezone file not found: {zoneinfo_path}, using TZ environment variable only")
+            else:
+                settings_logger.debug(f"No write access to /etc, using TZ environment variable only for {timezone}")
+        except Exception as e:
+            # Silently handle any errors with system files - TZ env var is sufficient
+            settings_logger.debug(f"Could not update system timezone files: {str(e)}, using TZ environment variable only")
+        
+        # Always return True - TZ environment variable is sufficient for timezone handling
+        if system_files_updated:
+            settings_logger.info(f"Timezone fully applied to {timezone} (system files + TZ env var)")
         else:
-            settings_logger.error(f"Timezone file not found: {zoneinfo_path}")
-            return False
+            settings_logger.info(f"Timezone applied to {timezone} (TZ environment variable)")
+        
+        return True
+        
     except Exception as e:
-        settings_logger.error(f"Error setting timezone: {str(e)}")
+        settings_logger.error(f"Critical error setting timezone: {str(e)}")
         return False
 
 def validate_timezone(timezone_str: str) -> bool:
