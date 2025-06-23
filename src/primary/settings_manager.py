@@ -328,6 +328,30 @@ def apply_timezone(timezone: str) -> bool:
             # tzset() is not available on Windows
             pass
         
+        # Clear timezone cache to force fresh timezone data
+        try:
+            from src.primary.utils.timezone_utils import clear_timezone_cache
+            clear_timezone_cache()
+            settings_logger.debug("Timezone cache cleared")
+        except Exception as e:
+            settings_logger.warning(f"Could not clear timezone cache: {e}")
+        
+        # Refresh all logger formatters to use the new timezone immediately
+        try:
+            from src.primary.utils.logger import refresh_timezone_formatters
+            refresh_timezone_formatters()
+            settings_logger.debug("Logger timezone formatters refreshed")
+        except Exception as e:
+            settings_logger.warning(f"Could not refresh logger formatters: {e}")
+        
+        # Refresh clean log formatters (for database logs)
+        try:
+            from src.primary.utils.clean_logger import refresh_clean_log_formatters
+            refresh_clean_log_formatters()
+            settings_logger.debug("Clean log formatters refreshed")
+        except Exception as e:
+            settings_logger.warning(f"Could not refresh clean log formatters: {e}")
+        
         # Try to update system timezone files only in Docker containers where we have permissions
         # This is optional - the TZ environment variable is sufficient for Python timezone handling
         system_files_updated = False

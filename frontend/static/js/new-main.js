@@ -3310,21 +3310,64 @@ let huntarrUI = {
 
     // Refresh time displays after timezone change
     refreshTimeDisplays: function() {
-        // Refresh any elements that display time and might be affected by timezone changes
+        console.log('[huntarrUI] Refreshing all time displays for timezone change');
+        
+        // 1. Refresh logs module timezone cache and reload logs
+        if (window.LogsModule) {
+            console.log('[huntarrUI] Refreshing LogsModule timezone');
+            window.LogsModule.userTimezone = null; // Clear cache
+            window.LogsModule.loadUserTimezone(); // Reload timezone
+            
+            // Force reload current logs to show new timezone
+            if (window.LogsModule.currentLogApp) {
+                console.log('[huntarrUI] Reloading logs with new timezone');
+                window.LogsModule.loadLogsFromAPI(window.LogsModule.currentLogApp);
+            }
+        }
+        
+        // 2. Refresh cycle countdown timers
+        if (window.CycleCountdown) {
+            console.log('[huntarrUI] Refreshing CycleCountdown timers');
+            // Force refresh cycle data to get updated timestamps
+            window.CycleCountdown.refreshAllData();
+        }
+        
+        // 3. Refresh scheduler timezone display if on scheduling page
+        if (this.currentSection === 'scheduling' || this.currentSection === 'schedules') {
+            console.log('[huntarrUI] Refreshing scheduling timezone display');
+            if (typeof loadServerTimezone === 'function') {
+                loadServerTimezone(); // Reload server timezone display
+            }
+        }
+        
+        // 4. Refresh hunt manager if it's currently visible (timestamps in hunt entries)
+        if (this.currentSection === 'hunt-manager' && window.huntManagerModule) {
+            console.log('[huntarrUI] Refreshing hunt manager data');
+            if (typeof window.huntManagerModule.refresh === 'function') {
+                window.huntManagerModule.refresh();
+            }
+        }
+        
+        // 5. Update any cached timezone settings in huntarrUI
+        if (this.originalSettings && this.originalSettings.general) {
+            // Update cached timezone to match the new setting
+            const timezoneSelect = document.getElementById('timezone');
+            if (timezoneSelect && timezoneSelect.value) {
+                this.originalSettings.general.timezone = timezoneSelect.value;
+                console.log('[huntarrUI] Updated cached timezone setting to:', timezoneSelect.value);
+            }
+        }
+        
+        // 6. Refresh any time elements with custom refresh methods
         const timeElements = document.querySelectorAll('[data-time], .time-display, .timestamp');
         timeElements.forEach(element => {
-            // If element has a refresh method or data attribute, trigger refresh
             if (element.dataset.refreshTime) {
+                console.log('[huntarrUI] Refreshing custom time display element');
                 // Custom refresh logic could go here
-                console.log('[huntarrUI] Refreshing time display element');
             }
         });
         
-        // Refresh logs if they're currently visible (they contain timestamps)
-        if (this.currentSection === 'logs') {
-            console.log('[huntarrUI] Refreshing logs for timezone change');
-            // The logs will refresh automatically via the EventSource, but we could trigger a manual refresh here if needed
-        }
+        console.log('[huntarrUI] Time display refresh completed');
     },
     
     // Reset the app cycle for a specific app

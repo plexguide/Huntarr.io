@@ -699,10 +699,27 @@ window.CycleCountdown = (function() {
         }, 100); // 100ms delay is enough
     });
     
+    // Refresh all cycle data immediately (for timezone changes)
+    function refreshAllData() {
+        console.log('[CycleCountdown] Refreshing all cycle data for timezone change');
+        fetchAllCycleData()
+            .then((data) => {
+                if (data && Object.keys(data).length > 0) {
+                    console.log('[CycleCountdown] Data refreshed successfully for timezone change');
+                } else {
+                    console.log('[CycleCountdown] No apps configured during timezone refresh');
+                }
+            })
+            .catch((error) => {
+                console.warn('[CycleCountdown] Failed to refresh data for timezone change:', error.message);
+            });
+    }
+
     // Public API
     return {
         initialize: initialize,
         fetchAllCycleTimes: fetchAllCycleTimes,
-        cleanup: cleanup
+        cleanup: cleanup,
+        refreshAllData: refreshAllData
     };
 })();

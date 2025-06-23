@@ -32,6 +32,10 @@ class CleanLogFormatter(logging.Formatter):
             # Fallback to UTC if timezone utils not available
             return pytz.UTC
     
+    def refresh_timezone(self):
+        """Refresh the cached timezone - call this when timezone settings change"""
+        self.timezone = self._get_timezone()
+    
     def _get_app_type_from_logger_name(self, logger_name: str) -> str:
         """Extract app type from logger name"""
         if not logger_name:
@@ -193,6 +197,18 @@ def setup_clean_logging():
             logger.addHandler(_database_handlers[app_type])
     
     _setup_complete = True
+
+
+def refresh_clean_log_formatters():
+    """
+    Refresh timezone for all clean log formatters.
+    Call this when the timezone setting changes.
+    """
+    for handler in _database_handlers.values():
+        if hasattr(handler, 'formatter') and hasattr(handler.formatter, 'refresh_timezone'):
+            handler.formatter.refresh_timezone()
+    
+    print("[CleanLogger] Refreshed timezone for all clean log formatters")
 
 
 
