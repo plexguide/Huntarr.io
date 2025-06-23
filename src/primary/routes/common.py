@@ -44,6 +44,100 @@ def logo_files(filename):
 
 # --- API Routes --- #
 
+@common_bp.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for Docker and orchestration systems"""
+    try:
+        # Check if shutdown is in progress using multiple methods
+        from src.primary.background import stop_event
+        
+        # Also check the global shutdown flag from main.py
+        try:
+            import main
+            is_shutting_down = main.is_shutting_down()
+        except:
+            is_shutting_down = stop_event.is_set()
+        
+        if is_shutting_down:
+            return jsonify({
+                "status": "shutting_down",
+                "message": "Application is shutting down",
+                "ready": False
+            }), 503  # Service Unavailable
+        
+        # Basic database connectivity check
+        from src.primary.utils.database import get_database
+        db = get_database()
+        
+        # Quick database health check
+        with db.get_connection() as conn:
+            conn.execute("SELECT 1")
+        
+        return jsonify({
+            "status": "healthy",
+            "message": "Application is running normally",
+            "ready": True,
+            "timestamp": datetime.utcnow().isoformat()
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return jsonify({
+            "status": "unhealthy",
+            "message": f"Health check failed: {str(e)}",
+            "ready": False
+        }), 503  # Service Unavailable
+
+@common_bp.route('/ready', methods=['GET'])
+def readiness_check():
+    """Readiness check endpoint for Kubernetes-style orchestration"""
+    try:
+        # Check if the application is ready to serve traffic
+        from src.primary.background import stop_event
+        
+        # Also check the global shutdown flag from main.py
+        try:
+            import main
+            is_shutting_down = main.is_shutting_down()
+        except:
+            is_shutting_down = stop_event.is_set()
+        
+        if is_shutting_down:
+            return jsonify({
+                "ready": False,
+                "message": "Application is shutting down"
+            }), 503
+        
+        # Check if setup is complete
+        from src.primary.utils.database import get_database
+        db = get_database()
+        
+        if db.is_setup_in_progress():
+            return jsonify({
+                "ready": False,
+                "message": "Application setup in progress"
+            }), 503
+        
+        # Check if user exists (setup complete)
+        from ..auth import user_exists
+        if not user_exists():
+            return jsonify({
+                "ready": False,
+                "message": "Application requires initial setup"
+            }), 503
+        
+        return jsonify({
+            "ready": True,
+            "message": "Application is ready to serve traffic"
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Readiness check failed: {e}")
+        return jsonify({
+            "ready": False,
+            "message": f"Readiness check failed: {str(e)}"
+        }), 503
+
 @common_bp.route('/api/sleep.json', methods=['GET'])
 def api_get_sleep_json():
     """API endpoint to serve sleep/cycle data from the database for frontend access"""

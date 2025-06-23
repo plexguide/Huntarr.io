@@ -11,6 +11,7 @@ import signal
 import logging # Use standard logging for initial setup
 import atexit
 import time
+import time
 
 # Import path configuration early to set up environment
 try:
@@ -143,6 +144,14 @@ except Exception as e:
 # Global variables for server management
 waitress_server = None
 shutdown_requested = threading.Event()
+
+# Global shutdown flag for health checks
+_global_shutdown_flag = False
+
+def is_shutting_down():
+    """Check if the application is shutting down"""
+    global _global_shutdown_flag
+    return _global_shutdown_flag or shutdown_requested.is_set() or stop_event.is_set()
 
 def refresh_sponsors_on_startup():
     """Refresh sponsors database from manifest.json on startup"""
@@ -317,7 +326,15 @@ def run_web_server():
 
 def main_shutdown_handler(signum, frame):
     """Gracefully shut down the application."""
-    huntarr_logger.info(f"Received signal {signum}. Initiating graceful shutdown...")
+    global _global_shutdown_flag
+    _global_shutdown_flag = True  # Set global shutdown flag immediately
+    
+    signal_name = "SIGINT" if signum == signal.SIGINT else "SIGTERM" if signum == signal.SIGTERM else f"Signal {signum}"
+    huntarr_logger.info(f"Received {signal_name}. Initiating graceful shutdown...")
+    
+    # Set a reasonable timeout for shutdown operations
+    shutdown_start_time = time.time()
+    shutdown_timeout = 30  # 30 seconds total shutdown timeout
     
     # Immediate database checkpoint to prevent corruption
     try:
@@ -360,12 +377,19 @@ def main_shutdown_handler(signum, frame):
             waitress_server.close()
         except Exception as e:
             huntarr_logger.warning(f"Error closing Waitress server: {e}")
+    
+    # Force exit if shutdown takes too long (Docker container update scenario)
+    elapsed_time = time.time() - shutdown_start_time
+    if elapsed_time > shutdown_timeout:
+        huntarr_logger.warning(f"Shutdown timeout exceeded ({shutdown_timeout}s). Forcing exit with code 0.")
+        os._exit(0)  # Clean exit for Docker updates
 
 def cleanup_handler():
     """Cleanup function called at exit"""
+    cleanup_start_time = time.time()
     huntarr_logger.info("Exit cleanup handler called")
     
-    # Shutdown databases gracefully
+    # Shutdown databases gracefully with timeout
     try:
         from primary.utils.database import get_database, get_logs_database
         
@@ -377,7 +401,8 @@ def cleanup_handler():
             try:
                 with main_db.get_connection() as conn:
                     conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")  # Flush WAL to main database
-                    conn.execute("VACUUM")  # Optimize database before shutdown
+                    # Skip VACUUM for faster shutdown during updates
+                    huntarr_logger.debug("Main database WAL checkpoint completed")
             except Exception as db_error:
                 huntarr_logger.warning(f"Error during main database cleanup: {db_error}")
         
@@ -388,7 +413,8 @@ def cleanup_handler():
             try:
                 with logs_db.get_logs_connection() as conn:
                     conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")  # Flush WAL to logs database
-                    conn.execute("VACUUM")  # Optimize logs database before shutdown
+                    # Skip VACUUM for faster shutdown during updates
+                    huntarr_logger.debug("Logs database WAL checkpoint completed")
             except Exception as logs_error:
                 huntarr_logger.warning(f"Error during logs database cleanup: {logs_error}")
                 
@@ -397,10 +423,15 @@ def cleanup_handler():
     except Exception as e:
         huntarr_logger.warning(f"Error during database shutdown: {e}")
     
+    # Ensure stop events are set
     if not stop_event.is_set():
         stop_event.set()
     if not shutdown_requested.is_set():
         shutdown_requested.set()
+    
+    # Log cleanup timing for Docker update diagnostics
+    cleanup_duration = time.time() - cleanup_start_time
+    huntarr_logger.info(f"Cleanup completed in {cleanup_duration:.2f} seconds")
 
 def main():
     """Main entry point function for Huntarr application.
@@ -511,7 +542,14 @@ def main():
         # shutdown_threads() # Uncomment if primary.main.shutdown_threads() does more cleanup
 
         huntarr_logger.info("--- Huntarr Main Process Exiting ---")
-        return 0  # Success exit code
+        
+        # Return appropriate exit code based on shutdown reason
+        if shutdown_requested.is_set() or stop_event.is_set():
+            huntarr_logger.info("Clean shutdown completed - Exit code 0")
+            return 0  # Clean shutdown
+        else:
+            huntarr_logger.warning("Unexpected shutdown - Exit code 1")
+            return 1  # Unexpected shutdown
 
 
 if __name__ == '__main__':

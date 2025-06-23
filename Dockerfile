@@ -30,5 +30,9 @@ ENV TZ=UTC
 # Expose port
 EXPOSE 9705
 
+# Add health check for Docker
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:9705/health || exit 1
+
 # Run the main application using the new entry point
 CMD ["python3", "main.py"]

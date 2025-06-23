@@ -651,11 +651,17 @@ def check_and_restart_threads():
 
 def shutdown_handler(signum, frame):
     """Handle termination signals (SIGINT, SIGTERM)."""
-    logger.info(f"Received signal {signum}. Initiating shutdown...")
+    signal_name = "SIGINT" if signum == signal.SIGINT else "SIGTERM" if signum == signal.SIGTERM else f"Signal {signum}"
+    logger.info(f"Received {signal_name}. Initiating background tasks shutdown...")
     stop_event.set() # Signal all threads to stop
+    
+    # Log shutdown progress for Docker diagnostics
+    logger.info("Background shutdown initiated - threads will stop gracefully")
 
 def shutdown_threads():
     """Wait for all threads to finish."""
+    import time
+    shutdown_start = time.time()
     logger.info("Waiting for all app threads to stop...")
     
     # Stop the hourly API cap scheduler
@@ -688,12 +694,22 @@ def shutdown_threads():
     except Exception as e:
         logger.error(f"Error stopping schedule action engine: {e}")
     
-    # Wait for all threads to terminate
-    for thread in app_threads.values():
-        if thread.is_alive():
-            thread.join(timeout=10.0)
+    # Wait for all app threads to terminate
+    active_threads = [name for name, thread in app_threads.items() if thread.is_alive()]
+    if active_threads:
+        logger.info(f"Waiting for {len(active_threads)} app threads to stop: {', '.join(active_threads)}")
+        
+        for name, thread in app_threads.items():
+            if thread.is_alive():
+                logger.debug(f"Waiting for {name} thread to stop...")
+                thread.join(timeout=10.0)
+                if thread.is_alive():
+                    logger.warning(f"{name} thread did not stop gracefully within 10 seconds")
+                else:
+                    logger.debug(f"{name} thread stopped successfully")
     
-    logger.info("All app threads stopped.")
+    shutdown_duration = time.time() - shutdown_start
+    logger.info(f"All app threads stopped. Shutdown completed in {shutdown_duration:.2f} seconds")
 
 def hourly_cap_scheduler_loop():
     """Main loop for the hourly API cap scheduler thread

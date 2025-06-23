@@ -12,6 +12,16 @@ services:
       - TZ=${TZ:-UTC}
       - BASE_URL=${BASE_URL:-}
     restart: unless-stopped
+    # Graceful shutdown configuration
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    # Health check configuration
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9705/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
 
 volumes:
   huntarr-config:
