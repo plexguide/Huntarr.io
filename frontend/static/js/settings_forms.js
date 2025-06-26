@@ -2426,13 +2426,40 @@ const SettingsForms = {
             settings.log_refresh_interval_seconds = getInputValue('#log_refresh_interval_seconds', 30);
             settings.base_url = getInputValue('#base_url', '');
             
-            // Notification settings
-            settings.enable_notifications = getInputValue('#enable_notifications', false);
-            settings.notification_level = container.querySelector('#notification_level')?.value || 'info';
+            // Notification settings - check both container and notifications container
+            const notificationsContainer = document.querySelector('#notificationsContainer');
             
-            // Process apprise URLs (split by newline)
-            const appriseUrlsElement = container.querySelector('#apprise_urls');
-            console.log('Container apprise_urls element found:', appriseUrlsElement);
+            // Helper function to get input value from either container
+            const getNotificationInputValue = (id, defaultValue) => {
+                let element = container.querySelector(id);
+                if (!element && notificationsContainer) {
+                    element = notificationsContainer.querySelector(id);
+                }
+                
+                if (!element) {
+                    console.log(`Notification element ${id} not found in either container`);
+                    return defaultValue;
+                }
+                
+                if (element.type === 'checkbox') {
+                    return element.checked;
+                } else if (element.type === 'number') {
+                    const value = parseInt(element.value, 10);
+                    return isNaN(value) ? defaultValue : value;
+                } else {
+                    return element.value || defaultValue;
+                }
+            };
+            
+            settings.enable_notifications = getNotificationInputValue('#enable_notifications', false);
+            settings.notification_level = getNotificationInputValue('#notification_level', 'info');
+            
+            // Process apprise URLs (split by newline) - check notifications container first
+            let appriseUrlsElement = notificationsContainer ? notificationsContainer.querySelector('#apprise_urls') : null;
+            if (!appriseUrlsElement) {
+                appriseUrlsElement = container.querySelector('#apprise_urls');
+            }
+            console.log('Apprise URLs element found:', appriseUrlsElement);
             const appriseUrlsText = appriseUrlsElement?.value || '';
             console.log('Apprise URLs raw text:', appriseUrlsText);
             settings.apprise_urls = appriseUrlsText.split('\n')
@@ -2440,10 +2467,10 @@ const SettingsForms = {
                 .filter(url => url.length > 0);
             console.log('Apprise URLs processed:', settings.apprise_urls);
                 
-            settings.notify_on_missing = getInputValue('#notify_on_missing', true);
-            settings.notify_on_upgrade = getInputValue('#notify_on_upgrade', true);
-            settings.notification_include_instance = getInputValue('#notification_include_instance', true);
-            settings.notification_include_app = getInputValue('#notification_include_app', true);
+            settings.notify_on_missing = getNotificationInputValue('#notify_on_missing', true);
+            settings.notify_on_upgrade = getNotificationInputValue('#notify_on_upgrade', true);
+            settings.notification_include_instance = getNotificationInputValue('#notification_include_instance', true);
+            settings.notification_include_app = getNotificationInputValue('#notification_include_app', true);
             
             // Handle the auth_mode dropdown
             const authMode = container.querySelector('#auth_mode')?.value || 'login';

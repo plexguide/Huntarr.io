@@ -1384,9 +1384,15 @@ let huntarrUI = {
             const globalAppriseElement = document.querySelector('#apprise_urls');
             console.log('[huntarrUI] Global apprise_urls element:', globalAppriseElement);
             
-            // Get all inputs and select elements in the general form
-            const inputs = form.querySelectorAll('input, select, textarea');
-            inputs.forEach(input => {
+            // Get all inputs and select elements in the general form AND notifications container
+            const generalInputs = form.querySelectorAll('input, select, textarea');
+            const notificationsContainer = document.querySelector('#notificationsContainer');
+            const notificationInputs = notificationsContainer ? notificationsContainer.querySelectorAll('input, select, textarea') : [];
+            
+            // Combine inputs from both containers
+            const allInputs = [...generalInputs, ...notificationInputs];
+            
+            allInputs.forEach(input => {
                 let key = input.id;
                 let value;
                 
