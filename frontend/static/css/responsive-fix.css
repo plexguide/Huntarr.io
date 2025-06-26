@@ -47,37 +47,7 @@
         margin-right: 0 !important;
     }
     
-    /* Ensure General Settings header is responsive - moved from tablet view */
-    #settingsSection .section-header {
-        flex-wrap: wrap !important;
-    }
-    
     /* Auto-save enabled - save button styles removed */
-    
-    /* Fix General Settings section header on mobile */
-    #settingsSection .section-header {
-        padding: 10px 15px !important;
-        min-height: 0 !important;
-        max-height: none !important;
-        flex-direction: column;
-        align-items: flex-start !important;
-    }
-    
-    #settingsSection .section-header h2 {
-        margin-bottom: 10px;
-    }
-    
-    /* Save button positioning for mobile */
-    #settingsSection .settings-actions {
-        margin-top: 10px;
-        width: 100%;
-    }
-    
-    #saveSettingsButton {
-        width: 100%;
-        text-align: center;
-        justify-content: center;
-    }
     
     /* SWAPARR MOBILE RESPONSIVE FIX - Force vertical layout on mobile */
     .app-stats-card.swaparr .stats-numbers {

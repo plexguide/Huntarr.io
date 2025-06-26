@@ -862,7 +862,6 @@ select.form-control {
 /* Ensure section header handles flex layout properly */
 /* Remove background from all section headers */
 #appsSection .section-header,
-#settingsSection .section-header,
 #schedulingSection .section-header,
 #logsSection .section-header,
 #historySection .section-header {
