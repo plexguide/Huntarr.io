@@ -14,20 +14,24 @@ logger = get_logger(__name__)
 log_routes_bp = Blueprint('log_routes', __name__)
 
 def _convert_timestamp_to_user_timezone(timestamp_str: str) -> str:
-    """Convert UTC timestamp to user's timezone"""
+    """Format timestamp - logs are already stored in correct timezone"""
     try:
-        from src.primary.utils.timezone_utils import get_user_timezone
-        user_tz = get_user_timezone()
+        # The logs are already stored in the correct timezone by the logging system
+        # We just need to parse and format them properly
         
-        # Parse UTC timestamp
-        utc_dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-        if utc_dt.tzinfo is None:
-            utc_dt = pytz.UTC.localize(utc_dt)
+        # Parse the timestamp (remove microseconds if present)
+        if '.' in timestamp_str:
+            # Remove microseconds: "2025-06-26 08:48:40.586072" -> "2025-06-26 08:48:40"
+            timestamp_str = timestamp_str.split('.')[0]
         
-        # Convert to user timezone
-        user_dt = utc_dt.astimezone(user_tz)
-        return user_dt.strftime('%Y-%m-%d %H:%M:%S')
-    except Exception:
+        # Remove any timezone suffix if present
+        timestamp_str = timestamp_str.replace('Z', '').replace('+00:00', '')
+        
+        # Return the timestamp as-is since logs are already in correct timezone
+        return timestamp_str
+        
+    except Exception as e:
+        logger.error(f"[LOG_API] Error formatting timestamp {timestamp_str}: {e}")
         # Fallback to original timestamp
         return timestamp_str
 

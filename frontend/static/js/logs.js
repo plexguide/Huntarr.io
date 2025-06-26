@@ -120,7 +120,9 @@ window.LogsModule = {
         try {
             // The backend already converts timestamps to user's timezone
             // So we just need to parse the "YYYY-MM-DD HH:MM:SS" format
-            const parts = timestamp.split(' ');
+            const cleanTimestamp = timestamp.trim();
+            const parts = cleanTimestamp.split(' ');
+            
             if (parts.length >= 2) {
                 return {
                     date: parts[0],
@@ -128,7 +130,8 @@ window.LogsModule = {
                 };
             } else {
                 // Fallback for unexpected format
-                return { date: timestamp, time: '' };
+                console.warn('[LogsModule] Unexpected timestamp format:', timestamp);
+                return { date: cleanTimestamp, time: '' };
             }
         } catch (error) {
             console.warn('[LogsModule] Error parsing timestamp:', error);
