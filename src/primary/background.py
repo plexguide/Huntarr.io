@@ -254,7 +254,7 @@ def app_specific_loop(app_type: str) -> None:
                 if not connected:
                     app_logger.warning(f"Failed to connect to {app_type} instance '{instance_name}' at {api_url}. Skipping.")
                     continue
-                app_logger.info(f"Successfully connected to {app_type} instance: {instance_name}")
+                app_logger.debug(f"Successfully connected to {app_type} instance: {instance_name}")
             except Exception as e:
                 app_logger.error(f"Error connecting to {app_type} instance '{instance_name}': {e}", exc_info=True)
                 continue # Skip this instance if connection fails

@@ -326,11 +326,13 @@ def authenticate_request():
     recovery_key_path = "/auth/recovery-key"
     api_user_2fa_path = "/api/user/2fa/"
     api_settings_general_path = "/api/settings/general"
+    
+    # Check if request is for login/auth paths (including Plex auth) - skip authentication
     if request.path.startswith((login_path, api_login_path, api_auth_plex_path, recovery_key_path, api_user_2fa_path)) or request.path == api_settings_general_path:
         if not is_polling_endpoint:
             # Reduced logging frequency for common paths to prevent spam
-        if hash(request.path) % 20 == 0:  # Log ~5% of auth skips
-            logger.debug(f"Skipping authentication for login/plex/recovery/2fa/settings path '{request.path}'")
+            if hash(request.path) % 20 == 0:  # Log ~5% of auth skips
+                logger.debug(f"Skipping authentication for login/plex/recovery/2fa/settings path '{request.path}'")
         return None
     
     # If no user exists, redirect to setup

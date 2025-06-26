@@ -304,7 +304,7 @@ def get_configured_apps() -> List[str]:
         if settings.get("api_url") and settings.get("api_key"):
             configured.append(app_name)
     
-    settings_logger.info(f"Configured apps: {configured}")
+    settings_logger.debug(f"Configured apps: {configured}")
     return configured
 
 def apply_timezone(timezone: str) -> bool:
