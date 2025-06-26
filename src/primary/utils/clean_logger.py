@@ -17,24 +17,12 @@ import pytz
 class CleanLogFormatter(logging.Formatter):
     """
     Custom formatter that creates clean, readable log messages.
+    Stores timestamps in UTC for timezone-agnostic storage.
     """
     
     def __init__(self):
         super().__init__()
-        self.timezone = self._get_timezone()
-    
-    def _get_timezone(self):
-        """Get the configured timezone"""
-        try:
-            from src.primary.utils.timezone_utils import get_user_timezone
-            return get_user_timezone()
-        except ImportError:
-            # Fallback to UTC if timezone utils not available
-            return pytz.UTC
-    
-    def refresh_timezone(self):
-        """Refresh the cached timezone - call this when timezone settings change"""
-        self.timezone = self._get_timezone()
+        # No longer cache timezone since we store in UTC
     
     def _get_app_type_from_logger_name(self, logger_name: str) -> str:
         """Extract app type from logger name"""
@@ -89,7 +77,7 @@ class CleanLogFormatter(logging.Formatter):
     def format(self, record):
         """Format the log record into a clean message"""
         # Get timezone-aware timestamp
-        dt = datetime.fromtimestamp(record.created, tz=self.timezone)
+        dt = datetime.fromtimestamp(record.created, tz=pytz.UTC)
         timestamp_str = dt.strftime('%Y-%m-%d %H:%M:%S')
         
         # Get app type from logger name
@@ -147,9 +135,10 @@ class DatabaseLogHandler(logging.Handler):
                 else:
                     app_type = 'system'
             
-            # Insert into database
+            # Insert into database with UTC timestamp for timezone-agnostic storage
+            utc_timestamp = datetime.fromtimestamp(record.created, tz=pytz.UTC)
             self.logs_db.insert_log(
-                timestamp=datetime.fromtimestamp(record.created),
+                timestamp=utc_timestamp,
                 level=record.levelname,
                 app_type=app_type,
                 message=clean_message,
@@ -199,16 +188,8 @@ def setup_clean_logging():
     _setup_complete = True
 
 
-def refresh_clean_log_formatters():
-    """
-    Refresh timezone for all clean log formatters.
-    Call this when the timezone setting changes.
-    """
-    for handler in _database_handlers.values():
-        if hasattr(handler, 'formatter') and hasattr(handler.formatter, 'refresh_timezone'):
-            handler.formatter.refresh_timezone()
-    
-    print("[CleanLogger] Refreshed timezone for all clean log formatters")
+# Removed refresh_clean_log_formatters() function since we now store logs in UTC 
+# and convert timezone on-the-fly, eliminating the need for formatter refreshing
 
 
 

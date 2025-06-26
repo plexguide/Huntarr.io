@@ -7,6 +7,7 @@ Replaces file-based log reading with database queries
 from flask import Blueprint, jsonify, request, current_app
 from src.primary.utils.logger import get_logger
 from src.primary.utils.database import get_logs_database
+from src.primary.utils.timezone_utils import get_user_timezone
 from datetime import datetime
 import pytz
 
@@ -14,12 +15,12 @@ logger = get_logger(__name__)
 log_routes_bp = Blueprint('log_routes', __name__)
 
 def _convert_timestamp_to_user_timezone(timestamp_str: str) -> str:
-    """Format timestamp - logs are already stored in correct timezone"""
+    """Convert UTC timestamp to user's current timezone setting"""
     try:
-        # The logs are already stored in the correct timezone by the logging system
-        # We just need to parse and format them properly
+        # Get current user timezone setting
+        user_timezone = get_user_timezone()
         
-        # Parse the timestamp (remove microseconds if present)
+        # Parse the UTC timestamp (remove microseconds if present)
         if '.' in timestamp_str:
             # Remove microseconds: "2025-06-26 08:48:40.586072" -> "2025-06-26 08:48:40"
             timestamp_str = timestamp_str.split('.')[0]
@@ -27,11 +28,25 @@ def _convert_timestamp_to_user_timezone(timestamp_str: str) -> str:
         # Remove any timezone suffix if present
         timestamp_str = timestamp_str.replace('Z', '').replace('+00:00', '')
         
-        # Return the timestamp as-is since logs are already in correct timezone
-        return timestamp_str
+        # Parse as UTC datetime
+        try:
+            utc_dt = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+            utc_dt = pytz.UTC.localize(utc_dt)
+        except ValueError:
+            # Try alternative format
+            utc_dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+            if utc_dt.tzinfo is None:
+                utc_dt = pytz.UTC.localize(utc_dt)
+        
+        # Convert to user timezone
+        local_dt = utc_dt.astimezone(user_timezone)
+        
+        # Return formatted timestamp
+        result = local_dt.strftime('%Y-%m-%d %H:%M:%S')
+        return result
         
     except Exception as e:
-        logger.error(f"[LOG_API] Error formatting timestamp {timestamp_str}: {e}")
+        logger.error(f"[LOG_CONVERT] Error converting timestamp {timestamp_str}: {e}")
         # Fallback to original timestamp
         return timestamp_str
 

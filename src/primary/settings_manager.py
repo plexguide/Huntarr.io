@@ -254,9 +254,9 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
             try:
                 from src.primary.utils.timezone_utils import clear_timezone_cache
                 clear_timezone_cache()
-                settings_logger.debug("Timezone cache cleared after general settings save")
+                settings_logger.debug("Timezone cache cleared")
             except Exception as e:
-                settings_logger.warning(f"Failed to clear timezone cache: {e}")
+                settings_logger.warning(f"Could not clear timezone cache: {e}")
     
     return success
 
@@ -328,7 +328,7 @@ def apply_timezone(timezone: str) -> bool:
             # tzset() is not available on Windows
             pass
         
-        # Clear timezone cache to force fresh timezone data
+        # Clear timezone cache to ensure fresh timezone is loaded
         try:
             from src.primary.utils.timezone_utils import clear_timezone_cache
             clear_timezone_cache()
@@ -344,13 +344,8 @@ def apply_timezone(timezone: str) -> bool:
         except Exception as e:
             settings_logger.warning(f"Could not refresh logger formatters: {e}")
         
-        # Refresh clean log formatters (for database logs)
-        try:
-            from src.primary.utils.clean_logger import refresh_clean_log_formatters
-            refresh_clean_log_formatters()
-            settings_logger.debug("Clean log formatters refreshed")
-        except Exception as e:
-            settings_logger.warning(f"Could not refresh clean log formatters: {e}")
+        # Note: Database logs now store timestamps in UTC and convert timezone on-the-fly,
+        # eliminating the need for formatter refreshing
         
         # Try to update system timezone files only in Docker containers where we have permissions
         # This is optional - the TZ environment variable is sufficient for Python timezone handling
