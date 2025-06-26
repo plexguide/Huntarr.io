@@ -638,9 +638,7 @@ let huntarrUI = {
             localStorage.setItem('huntarr-settings-sidebar', 'true');
             
             // Initialize user module if not already done
-            if (typeof window.UserModule !== 'undefined' && !this.userModule) {
-                this.userModule = new window.UserModule();
-            }
+            this.initializeUser();
         } else {
             // Default to home if section is unknown or element missing
             if (this.elements.homeSection) {
@@ -4042,6 +4040,23 @@ let huntarrUI = {
                 console.error('[huntarrUI] Error loading notifications settings:', error);
                 notificationsContainer.innerHTML = '<p>Error loading notifications settings</p>';
             });
+    },
+
+    initializeUser: function() {
+        console.log('[huntarrUI] initializeUser called');
+        
+        // Check if UserModule is available and initialize it
+        if (typeof UserModule !== 'undefined') {
+            if (!window.userModule) {
+                console.log('[huntarrUI] Creating UserModule instance...');
+                window.userModule = new UserModule();
+                console.log('[huntarrUI] UserModule initialized successfully');
+            } else {
+                console.log('[huntarrUI] UserModule already exists');
+            }
+        } else {
+            console.error('[huntarrUI] UserModule not available - user.js may not be loaded');
+        }
     }
 };
 
@@ -4069,6 +4084,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize per-instance reset button listeners
     if (typeof SettingsForms !== 'undefined' && typeof SettingsForms.setupInstanceResetListeners === 'function') {
         SettingsForms.setupInstanceResetListeners();
+    }
+    
+    // Initialize UserModule when available
+    if (typeof UserModule !== 'undefined') {
+        console.log('[huntarrUI] UserModule available, initializing...');
+        window.userModule = new UserModule();
     }
 });
 
