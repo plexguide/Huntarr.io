@@ -189,11 +189,10 @@
 }
 
 /* Light blue color for Refreshing text */
-.timer-value:contains('Refreshing') {
+/* Timer value styling for refreshing state - use data attributes instead of :contains */
+.timer-value[data-state="refreshing"] {
     color: #00c2ce !important; /* Light blue color */
 }
-
-/* Fallback approach since :contains is not standard CSS */
 .refreshing-state {
     color: #00c2ce !important; /* Light blue color */
 }

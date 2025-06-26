@@ -41,19 +41,27 @@ div:has(> .scheduleAction-menu) .scheduleAction-option:nth-child(3) {
 }
 
 /* Target the existing UI elements that might be showing Resume/Pause */
-[data-action="resume"]:not(option):not(.scheduleAction-option)::after,
-.schedule-item-action:contains("Resume") {
+[data-action="resume"]:not(option):not(.scheduleAction-option)::after {
     content: "Enable" !important;
     visibility: visible !important;
 }
 
-[data-action="pause"]:not(option):not(.scheduleAction-option)::after,
-.schedule-item-action:contains("Pause") {
+.schedule-item-action[data-action="resume"] {
+    background-color: #e7f3e7 !important;
+    border-color: #4CAF50 !important;
+}
+
+[data-action="pause"]:not(option):not(.scheduleAction-option)::after {
     content: "Disable" !important;
     visibility: visible !important;
 }
 
+.schedule-item-action[data-action="pause"] {
+    background-color: #fff3e0 !important;
+    border-color: #ff9800 !important;
+}
+
 /* Activity Control dropdown styling */
-.scheduleAction-header:contains("Activity Control") {
+.scheduleAction-header[data-type="activity-control"] {
     display: flex !important;
 }
