@@ -329,7 +329,7 @@ let huntarrUI = {
         window.addEventListener('hashchange', () => this.handleHashNavigation(window.location.hash)); // Ensure hash is passed
 
         // Settings form delegation - now triggers auto-save
-        const settingsFormContainer = document.querySelector('.settings-form');
+        const settingsFormContainer = document.querySelector('#settingsSection');
         if (settingsFormContainer) {
             settingsFormContainer.addEventListener('input', (event) => {
                 if (event.target.closest('.app-settings-panel.active')) {
@@ -1606,12 +1606,12 @@ let huntarrUI = {
             // Find the general settings form using the correct selectors
             const generalForm = document.querySelector('#generalSettings') ||
                               document.querySelector('.app-settings-panel[data-app-type="general"]') ||
-                              document.querySelector('.settings-form[data-app-type="general"]') ||
+                              document.querySelector('#settingsSection[data-app-type="general"]') ||
                               document.querySelector('#general');
             
             if (!generalForm) {
                 console.error('[huntarrUI] Could not find general settings form for auto-save');
-                console.log('[huntarrUI] Available forms:', document.querySelectorAll('.app-settings-panel, .settings-form, [id*="general"], [id*="General"]'));
+                console.log('[huntarrUI] Available forms:', document.querySelectorAll('.app-settings-panel, #settingsSection, [id*="general"], [id*="General"]'));
                 reject(new Error('Could not find general settings form'));
                 return;
             }

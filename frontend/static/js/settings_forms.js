@@ -3135,7 +3135,7 @@ const SettingsForms = {
         console.log(`Setting up instance management for ${appType} with ${initialCount} instances`);
         
         // Make sure container has the app type set
-        const form = container.closest('.settings-form');
+        const form = container.closest('#settingsSection');
         if (form && !form.hasAttribute('data-app-type')) {
             form.setAttribute('data-app-type', appType);
         }
