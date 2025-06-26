@@ -3763,49 +3763,73 @@ let huntarrUI = {
         console.log('[huntarrUI] Refreshing state management timezone displays due to settings change');
         
         try {
-            // First, tell the backend to clear its timezone cache
-            HuntarrUtils.fetchWithTimeout('./api/stateful/refresh-timezone', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('[huntarrUI] Backend timezone cache cleared for state management');
-                } else {
-                    console.warn('[huntarrUI] Failed to clear backend timezone cache:', data.message);
-                }
-            })
-            .catch(error => {
-                console.warn('[huntarrUI] Error clearing backend timezone cache:', error);
-            });
+            // Simply reload the displays - the backend will use the new timezone automatically
+            this.reloadStateManagementDisplays();
             
-            // Refresh all visible state management displays
-            const supportedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
-            
-            supportedApps.forEach(appType => {
-                // Find all instance containers for this app
-                const appPanel = document.getElementById(`${appType}-panel`);
-                if (appPanel && appPanel.style.display !== 'none') {
-                    // Look for instance containers
-                    const instanceContainers = appPanel.querySelectorAll(`[id^="${appType}-instance-"]`);
-                    
-                    instanceContainers.forEach((container, index) => {
-                        // Check if state management is enabled for this instance
-                        const stateStatusElement = document.getElementById(`${appType}-state-status-${index}`);
-                        if (stateStatusElement && stateStatusElement.style.display !== 'none') {
-                            console.log(`[huntarrUI] Refreshing state management for ${appType} instance ${index}`);
-                            // Reload state info for this instance to get updated timezone
-                            this.loadInstanceStateInfo(appType, index);
-                        }
-                    });
-                }
-            });
-            
-            console.log('[huntarrUI] State management timezone refresh completed');
         } catch (error) {
             console.error('[huntarrUI] Error refreshing state management timezone:', error);
         }
+    },
+
+    // Reload state management displays after timezone change
+    reloadStateManagementDisplays: function() {
+        console.log('[huntarrUI] Reloading state management displays after timezone change');
+        
+        // Refresh all visible state management displays
+        const supportedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        
+        supportedApps.forEach(appType => {
+            // Find all instance containers for this app
+            const appPanel = document.getElementById(`${appType}-panel`);
+            if (appPanel && appPanel.style.display !== 'none') {
+                // Look for state reset time elements
+                const stateElements = appPanel.querySelectorAll(`[id*="${appType}-state-reset-time-"]`);
+                
+                stateElements.forEach(element => {
+                    // Extract instance index from element ID
+                    const match = element.id.match(/(\w+)-state-reset-time-(\d+)/);
+                    if (match) {
+                        const instanceIndex = parseInt(match[2]);
+                        
+                        // Get instance name from the form
+                        const instanceNameElement = document.querySelector(`#${appType}-instance-name-${instanceIndex}`);
+                        if (instanceNameElement) {
+                            const instanceName = instanceNameElement.value || 'Default';
+                            
+                            console.log(`[huntarrUI] Reloading state management for ${appType} instance ${instanceIndex} (${instanceName})`);
+                            
+                            // Fetch fresh state management data
+                            this.loadStateManagementForInstance(appType, instanceIndex, instanceName);
+                        }
+                    }
+                });
+            }
+        });
+        
+        console.log('[huntarrUI] State management timezone refresh completed');
+    },
+
+    // Load state management data for a specific instance
+    loadStateManagementForInstance: function(appType, instanceIndex, instanceName) {
+        const url = `./api/stateful/summary?app_type=${encodeURIComponent(appType)}&instance_name=${encodeURIComponent(instanceName)}`;
+        
+        HuntarrUtils.fetchWithTimeout(url, {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`[huntarrUI] Received updated state management data for ${appType}/${instanceName}:`, data);
+                
+                // Update the display with the new timezone-converted data
+                this.updateInstanceStateDisplay(appType, instanceIndex, data, instanceName, data.expiration_hours);
+            } else {
+                console.warn(`[huntarrUI] Failed to get state management data for ${appType}/${instanceName}:`, data.message || 'Unknown error');
+            }
+        })
+        .catch(error => {
+            console.error(`[huntarrUI] Error loading state management data for ${appType}/${instanceName}:`, error);
+        });
     },
 
     showRequestarrSidebar: function() {

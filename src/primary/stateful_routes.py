@@ -222,23 +222,4 @@ def get_summary():
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
-@stateful_api.route('/refresh-timezone', methods=['POST'])
-def refresh_timezone():
-    """Refresh timezone cache for state management when user changes timezone settings."""
-    try:
-        from src.primary.stateful_manager import clear_timezone_cache
-        clear_timezone_cache()
-        
-        response_data = {"success": True, "message": "State management timezone cache refreshed"}
-        response = Response(json.dumps(response_data))
-        response.headers['Content-Type'] = 'application/json'
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
-        
-    except Exception as e:
-        stateful_logger.error(f"Error refreshing state management timezone: {e}")
-        error_data = {"success": False, "message": f"Error refreshing timezone: {str(e)}"}
-        response = Response(json.dumps(error_data), status=500)
-        response.headers['Content-Type'] = 'application/json'
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
+
