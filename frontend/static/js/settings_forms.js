@@ -3145,6 +3145,12 @@ const SettingsForms = {
                                 window.huntarrUI.connectEventSource();
                             }
                             
+                            // Refresh scheduling timezone display
+                            if (typeof window.refreshSchedulingTimezone === 'function') {
+                                console.log('[SettingsForms] Refreshing scheduling timezone display');
+                                window.refreshSchedulingTimezone();
+                            }
+                            
                             // If we're currently on the logs section, trigger a refresh
                             const currentSection = localStorage.getItem('huntarrCurrentSection') || 'home';
                             if (currentSection === 'logs') {

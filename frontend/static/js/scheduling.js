@@ -707,6 +707,9 @@ function isMobileDevice() {
     return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
+// Global variable to store current timer interval
+let serverTimeInterval = null;
+
 /**
  * Update timezone display for mobile/desktop
  */
@@ -753,6 +756,12 @@ function loadServerTimezone() {
             const serverTimezone = data.general?.timezone || 'UTC';
             console.debug('Server timezone loaded:', serverTimezone);
             
+            // Clear any existing timer
+            if (serverTimeInterval) {
+                clearInterval(serverTimeInterval);
+                serverTimeInterval = null;
+            }
+            
             // Update timezone display with mobile handling
             updateTimezoneDisplay(serverTimezone);
             
@@ -762,8 +771,8 @@ function loadServerTimezone() {
             // Update time inputs to show server current time
             updateTimeInputsWithServerTime(serverTimezone);
             
-            // Update time every minute
-            setInterval(() => updateServerTime(serverTimezone), 60000);
+            // Set up new timer with current timezone
+            serverTimeInterval = setInterval(() => updateServerTime(serverTimezone), 60000);
             
             // Handle window resize to adjust mobile/desktop display
             window.addEventListener('resize', () => {
@@ -775,6 +784,14 @@ function loadServerTimezone() {
             updateTimezoneDisplay('UTC');
             updateServerTime('UTC');
         });
+}
+
+/**
+ * Refresh timezone display and timer (called when timezone settings change)
+ */
+function refreshSchedulingTimezone() {
+    console.debug('Refreshing scheduling timezone due to settings change');
+    loadServerTimezone();
 }
 
 /**
@@ -1003,6 +1020,9 @@ function resetDayCheckboxes() {
         dailyCheckboxDiv.classList.remove('checked');
     }
 }
+
+// Expose scheduling timezone refresh function globally
+window.refreshSchedulingTimezone = refreshSchedulingTimezone;
 
 // Close the IIFE that wraps the script
 })();
