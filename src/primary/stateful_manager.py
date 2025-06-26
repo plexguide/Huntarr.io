@@ -397,6 +397,18 @@ def _get_user_timezone():
         import pytz
         return pytz.UTC
 
+def clear_timezone_cache():
+    """
+    Clear timezone cache and force fresh timezone lookup for state management.
+    This should be called when user changes timezone settings.
+    """
+    try:
+        from src.primary.utils.timezone_utils import clear_timezone_cache as clear_tz_cache
+        clear_tz_cache()
+        stateful_logger.debug("Cleared timezone cache for state management")
+    except Exception as e:
+        stateful_logger.warning(f"Error clearing timezone cache: {e}")
+
 def get_next_reset_time() -> Optional[str]:
     """
     Get the next state management reset time as a formatted string in user's timezone.

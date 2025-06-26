@@ -3758,6 +3758,56 @@ let huntarrUI = {
         }
     },
 
+    // Refresh state management timezone displays when timezone changes
+    refreshStateManagementTimezone: function() {
+        console.log('[huntarrUI] Refreshing state management timezone displays due to settings change');
+        
+        try {
+            // First, tell the backend to clear its timezone cache
+            HuntarrUtils.fetchWithTimeout('./api/stateful/refresh-timezone', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('[huntarrUI] Backend timezone cache cleared for state management');
+                } else {
+                    console.warn('[huntarrUI] Failed to clear backend timezone cache:', data.message);
+                }
+            })
+            .catch(error => {
+                console.warn('[huntarrUI] Error clearing backend timezone cache:', error);
+            });
+            
+            // Refresh all visible state management displays
+            const supportedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+            
+            supportedApps.forEach(appType => {
+                // Find all instance containers for this app
+                const appPanel = document.getElementById(`${appType}-panel`);
+                if (appPanel && appPanel.style.display !== 'none') {
+                    // Look for instance containers
+                    const instanceContainers = appPanel.querySelectorAll(`[id^="${appType}-instance-"]`);
+                    
+                    instanceContainers.forEach((container, index) => {
+                        // Check if state management is enabled for this instance
+                        const stateStatusElement = document.getElementById(`${appType}-state-status-${index}`);
+                        if (stateStatusElement && stateStatusElement.style.display !== 'none') {
+                            console.log(`[huntarrUI] Refreshing state management for ${appType} instance ${index}`);
+                            // Reload state info for this instance to get updated timezone
+                            this.loadInstanceStateInfo(appType, index);
+                        }
+                    });
+                }
+            });
+            
+            console.log('[huntarrUI] State management timezone refresh completed');
+        } catch (error) {
+            console.error('[huntarrUI] Error refreshing state management timezone:', error);
+        }
+    },
+
     showRequestarrSidebar: function() {
         // Hide main sidebar and settings sidebar
         const mainSidebar = document.getElementById('sidebar');
@@ -4101,3 +4151,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Expose huntarrUI to the global scope for access by app modules
 window.huntarrUI = huntarrUI;
+
+// Expose state management timezone refresh function globally for settings forms
+window.refreshStateManagementTimezone = function() {
+    if (window.huntarrUI && typeof window.huntarrUI.refreshStateManagementTimezone === 'function') {
+        window.huntarrUI.refreshStateManagementTimezone();
+    } else {
+        console.warn('[huntarrUI] refreshStateManagementTimezone function not available');
+    }
+};

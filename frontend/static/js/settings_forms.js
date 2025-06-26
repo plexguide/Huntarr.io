@@ -3151,6 +3151,12 @@ const SettingsForms = {
                                 window.refreshSchedulingTimezone();
                             }
                             
+                            // Refresh state management timezone display
+                            if (typeof window.refreshStateManagementTimezone === 'function') {
+                                console.log('[SettingsForms] Refreshing state management timezone display');
+                                window.refreshStateManagementTimezone();
+                            }
+                            
                             // If we're currently on the logs section, trigger a refresh
                             const currentSection = localStorage.getItem('huntarrCurrentSection') || 'home';
                             if (currentSection === 'logs') {
