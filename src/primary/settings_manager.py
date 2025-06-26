@@ -638,4 +638,4 @@ if __name__ == "__main__":
 
     # Test getting configured apps
     configured_list = get_configured_apps()
-    settings_logger.info(f"Configured apps: {configured_list}")
+    settings_logger.debug(f"Configured apps: {configured_list}")
