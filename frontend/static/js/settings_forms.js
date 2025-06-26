@@ -2905,7 +2905,7 @@ const SettingsForms = {
                         <option value="Pacific/Fiji" ${settings.timezone === 'Pacific/Fiji' ? 'selected' : ''}>Fiji (Pacific/Fiji)</option>
                         <option value="Pacific/Guam" ${settings.timezone === 'Pacific/Guam' ? 'selected' : ''}>Guam (Pacific/Guam)</option>
                     </select>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Set your timezone for accurate time display in logs and scheduling. Changes are applied when you save settings.</p>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Set your timezone for accurate time display in logs and scheduling. Changes are applied immediately.</p>
                 </div>
             </div>
 
@@ -3116,16 +3116,60 @@ const SettingsForms = {
         // Update duration display - e.g., convert seconds to hours
         SettingsForms.updateDurationDisplay();
         
-        // Set up timezone preview functionality
+        // Set up timezone change functionality
         const timezoneSelect = container.querySelector('#timezone');
         if (timezoneSelect) {
-            // Update preview on change
+            // Add timezone change event listener
             timezoneSelect.addEventListener('change', function() {
-                // Removed updateTimezonePreview function call
+                console.log('[SettingsForms] Timezone changed to:', this.value);
+                
+                // Auto-save the settings first
+                if (typeof window.huntarrUI !== 'undefined' && window.huntarrUI.autoSaveGeneralSettings) {
+                    window.huntarrUI.autoSaveGeneralSettings()
+                        .then(() => {
+                            console.log('[SettingsForms] Settings saved, refreshing time displays');
+                            
+                            // Refresh all time displays immediately
+                            if (typeof refreshTimeDisplays === 'function') {
+                                refreshTimeDisplays();
+                            }
+                            
+                            // Refresh logs if logs module is available
+                            if (typeof LogsModule !== 'undefined' && LogsModule.refreshLogs) {
+                                LogsModule.refreshLogs();
+                            }
+                            
+                            // Clear the current log display and reload to show updated timezone
+                            if (typeof window.huntarrUI !== 'undefined' && window.huntarrUI.connectEventSource) {
+                                console.log('[SettingsForms] Reconnecting event source for timezone update');
+                                window.huntarrUI.connectEventSource();
+                            }
+                            
+                            // If we're currently on the logs section, trigger a refresh
+                            const currentSection = localStorage.getItem('huntarrCurrentSection') || 'home';
+                            if (currentSection === 'logs') {
+                                // Clear existing logs and reload
+                                const logsContainer = document.querySelector('#logsContainer');
+                                if (logsContainer) {
+                                    const logEntries = logsContainer.querySelector('.log-entries');
+                                    if (logEntries) {
+                                        logEntries.innerHTML = '<div class="log-entry" style="text-align: center; color: #9ca3af;">Refreshing logs with new timezone...</div>';
+                                    }
+                                }
+                                
+                                // Reload logs with new timezone after a brief delay
+                                setTimeout(() => {
+                                    if (typeof LogsModule !== 'undefined' && LogsModule.loadLogs) {
+                                        LogsModule.loadLogs(1); // Load first page
+                                    }
+                                }, 1000);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('[SettingsForms] Error saving timezone settings:', error);
+                        });
+                }
             });
-            
-            // Initialize with current timezone
-            // Removed updateTimezonePreview function call
         }
     },
     
