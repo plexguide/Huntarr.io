@@ -66,8 +66,17 @@ let huntarrUI = {
             }
         });
         
-        // Initial navigation based on hash
-        this.handleHashNavigation(window.location.hash);
+        // Check if we need to navigate to a specific section after refresh
+        const targetSection = localStorage.getItem('huntarr-target-section');
+        if (targetSection) {
+            console.log(`[huntarrUI] Found target section after refresh: ${targetSection}`);
+            localStorage.removeItem('huntarr-target-section');
+            // Navigate to the target section
+            this.switchSection(targetSection);
+        } else {
+            // Initial navigation based on hash
+            this.handleHashNavigation(window.location.hash);
+        }
         
         // Remove initial sidebar hiding style
         const initialSidebarStyle = document.getElementById('initial-sidebar-state');
@@ -143,6 +152,9 @@ let huntarrUI = {
         // Make dashboard visible after initialization to prevent FOUC
         setTimeout(() => {
             this.showDashboard();
+            // Mark as initialized after everything is set up to enable refresh on section changes
+            this.isInitialized = true;
+            console.log('[huntarrUI] Initialization complete - refresh on section change enabled');
         }, 50); // Reduced from implicit longer delay
     },
     
@@ -449,6 +461,18 @@ let huntarrUI = {
     },
     
     switchSection: function(section) {
+        console.log(`[huntarrUI] Switching to section: ${section}, current: ${this.currentSection}`);
+        
+        // Only refresh if this is a user-initiated section change (not initial page load)
+        // and we're switching to a different section
+        if (this.isInitialized && this.currentSection && this.currentSection !== section) {
+            console.log(`[huntarrUI] User switching from ${this.currentSection} to ${section}, refreshing page...`);
+            // Store the target section in localStorage so we can navigate to it after refresh
+            localStorage.setItem('huntarr-target-section', section);
+            location.reload();
+            return;
+        }
+        
         // Update active section
         this.elements.sections.forEach(s => {
             s.classList.remove('active');
