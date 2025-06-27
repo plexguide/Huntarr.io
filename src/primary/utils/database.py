@@ -259,6 +259,9 @@ class HuntarrDatabase:
                     if integrity_results['status'] == 'error':
                         logger.error("Database integrity issues detected during maintenance")
                     
+                    # Clean up expired rate limit entries
+                    self.cleanup_expired_rate_limits()
+                    
                     # Optimize database
                     with self.get_connection() as conn:
                         conn.execute("PRAGMA optimize")
@@ -504,6 +507,21 @@ class HuntarrDatabase:
             # Logs table moved to separate logs.db - remove if it exists
             conn.execute('DROP TABLE IF EXISTS logs')
             
+            # Create recovery_key_rate_limit table for tracking failed recovery key attempts
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS recovery_key_rate_limit (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ip_address TEXT NOT NULL,
+                    username TEXT,
+                    failed_attempts INTEGER DEFAULT 0,
+                    locked_until TIMESTAMP,
+                    last_attempt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(ip_address)
+                )
+            ''')
+
             # Create requestarr_requests table for tracking media requests
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS requestarr_requests (
@@ -1674,6 +1692,138 @@ class HuntarrDatabase:
         except Exception as e:
             logger.error(f"Error clearing recovery key for user {username}: {e}")
             return False
+
+    def check_recovery_key_rate_limit(self, ip_address: str) -> Dict[str, Any]:
+        """Check if IP address is rate limited for recovery key attempts"""
+        try:
+            with self.get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.execute('''
+                    SELECT failed_attempts, locked_until, last_attempt 
+                    FROM recovery_key_rate_limit 
+                    WHERE ip_address = ?
+                ''', (ip_address,))
+                row = cursor.fetchone()
+                
+                if not row:
+                    return {"locked": False, "failed_attempts": 0}
+                
+                # Convert locked_until to datetime if it exists
+                locked_until = None
+                if row['locked_until']:
+                    try:
+                        from datetime import datetime
+                        locked_until = datetime.fromisoformat(row['locked_until'])
+                        # Check if lockout has expired
+                        if datetime.now() >= locked_until:
+                            # Clear the lockout
+                            conn.execute('''
+                                UPDATE recovery_key_rate_limit 
+                                SET failed_attempts = 0, locked_until = NULL, updated_at = CURRENT_TIMESTAMP
+                                WHERE ip_address = ?
+                            ''', (ip_address,))
+                            conn.commit()
+                            return {"locked": False, "failed_attempts": 0}
+                    except ValueError:
+                        # Invalid datetime format, treat as expired
+                        conn.execute('''
+                            UPDATE recovery_key_rate_limit 
+                            SET failed_attempts = 0, locked_until = NULL, updated_at = CURRENT_TIMESTAMP
+                            WHERE ip_address = ?
+                        ''', (ip_address,))
+                        conn.commit()
+                        return {"locked": False, "failed_attempts": 0}
+                
+                return {
+                    "locked": locked_until is not None and datetime.now() < locked_until,
+                    "failed_attempts": row['failed_attempts'],
+                    "locked_until": locked_until.isoformat() if locked_until else None
+                }
+        except Exception as e:
+            logger.error(f"Error checking recovery key rate limit for IP {ip_address}: {e}")
+            return {"locked": False, "failed_attempts": 0}
+
+    def record_recovery_key_attempt(self, ip_address: str, username: str = None, success: bool = False) -> Dict[str, Any]:
+        """Record a recovery key attempt and apply rate limiting if needed"""
+        try:
+            from datetime import datetime, timedelta
+            
+            with self.get_connection() as conn:
+                if success:
+                    # Clear rate limiting on successful attempt
+                    conn.execute('''
+                        UPDATE recovery_key_rate_limit 
+                        SET failed_attempts = 0, locked_until = NULL, updated_at = CURRENT_TIMESTAMP
+                        WHERE ip_address = ?
+                    ''', (ip_address,))
+                    conn.commit()
+                    return {"locked": False, "failed_attempts": 0}
+                
+                # Handle failed attempt
+                cursor = conn.execute('''
+                    SELECT failed_attempts FROM recovery_key_rate_limit WHERE ip_address = ?
+                ''', (ip_address,))
+                row = cursor.fetchone()
+                
+                if row:
+                    # Update existing record
+                    new_failed_attempts = row[0] + 1
+                    locked_until = None
+                    
+                    # Lock for 15 minutes after 3 failed attempts
+                    if new_failed_attempts >= 3:
+                        locked_until = datetime.now() + timedelta(minutes=15)
+                        locked_until_str = locked_until.isoformat()
+                    else:
+                        locked_until_str = None
+                    
+                    conn.execute('''
+                        UPDATE recovery_key_rate_limit 
+                        SET failed_attempts = ?, locked_until = ?, username = ?, 
+                            last_attempt = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                        WHERE ip_address = ?
+                    ''', (new_failed_attempts, locked_until_str, username, ip_address))
+                else:
+                    # Create new record
+                    new_failed_attempts = 1
+                    conn.execute('''
+                        INSERT INTO recovery_key_rate_limit 
+                        (ip_address, username, failed_attempts, last_attempt)
+                        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ''', (ip_address, username, new_failed_attempts))
+                
+                conn.commit()
+                
+                locked = new_failed_attempts >= 3
+                return {
+                    "locked": locked,
+                    "failed_attempts": new_failed_attempts,
+                    "locked_until": locked_until.isoformat() if locked else None
+                }
+                
+        except Exception as e:
+            logger.error(f"Error recording recovery key attempt for IP {ip_address}: {e}")
+            return {"locked": False, "failed_attempts": 0}
+
+    def cleanup_expired_rate_limits(self):
+        """Clean up expired rate limit entries (older than 24 hours)"""
+        try:
+            from datetime import datetime, timedelta
+            cutoff_time = datetime.now() - timedelta(hours=24)
+            
+            with self.get_connection() as conn:
+                cursor = conn.execute('''
+                    DELETE FROM recovery_key_rate_limit 
+                    WHERE last_attempt < ? AND (locked_until IS NULL OR locked_until < CURRENT_TIMESTAMP)
+                ''', (cutoff_time.isoformat(),))
+                deleted_count = cursor.rowcount
+                conn.commit()
+                
+                if deleted_count > 0:
+                    logger.debug(f"Cleaned up {deleted_count} expired recovery key rate limit entries")
+                    
+        except Exception as e:
+            logger.error(f"Error cleaning up expired rate limits: {e}")
 
     def get_sponsors(self) -> List[Dict[str, Any]]:
         """Get all sponsors from database"""

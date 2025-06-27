@@ -729,23 +729,62 @@ def generate_recovery_key():
 def verify_recovery_key():
     """Verify a recovery key (no authentication required)"""
     try:
+        # Get client IP address for rate limiting
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
+        if ',' in client_ip:
+            client_ip = client_ip.split(',')[0].strip()
+            
         data = request.json or {}
         recovery_key = data.get('recovery_key', '').strip()
 
         if not recovery_key:
             return jsonify({"success": False, "error": "Recovery key is required"}), 400
 
-        # Verify the recovery key
+        # Check rate limiting before processing
         from ..utils.database import get_database
         db = get_database()
+        rate_limit_check = db.check_recovery_key_rate_limit(client_ip)
+        
+        if rate_limit_check["locked"]:
+            from datetime import datetime
+            try:
+                locked_until = datetime.fromisoformat(rate_limit_check["locked_until"])
+                minutes_remaining = int((locked_until - datetime.now()).total_seconds() / 60)
+                if minutes_remaining > 0:
+                    logger.warning(f"Recovery key verification blocked for IP {client_ip} - locked for {minutes_remaining} more minutes")
+                    return jsonify({
+                        "success": False, 
+                        "error": f"Too many failed attempts. Please try again in {minutes_remaining} minutes."
+                    }), 429
+            except (ValueError, TypeError):
+                # If there's an issue with the timestamp, clear the lock
+                db.record_recovery_key_attempt(client_ip, success=True)
+
+        # Verify the recovery key
         username = db.verify_recovery_key(recovery_key)
 
         if username:
-            logger.info(f"Recovery key verified successfully for user: {username}")
+            # Record successful attempt to clear rate limiting
+            db.record_recovery_key_attempt(client_ip, username=username, success=True)
+            logger.info(f"Recovery key verified successfully for user: {username} from IP {client_ip}")
             return jsonify({"success": True, "username": username})
         else:
-            logger.warning("Invalid recovery key verification attempted")
-            return jsonify({"success": False, "error": "Invalid recovery key"}), 400
+            # Record failed attempt
+            db.record_recovery_key_attempt(client_ip, success=False)
+            failed_attempts = rate_limit_check["failed_attempts"] + 1
+            
+            if failed_attempts >= 3:
+                logger.warning(f"Recovery key rate limit triggered for IP {client_ip} after {failed_attempts} failed verification attempts")
+                return jsonify({
+                    "success": False, 
+                    "error": "Too many failed attempts. Recovery key access has been temporarily disabled for 15 minutes."
+                }), 429
+            else:
+                logger.warning(f"Invalid recovery key verification attempt from IP {client_ip} ({failed_attempts}/3 attempts)")
+                return jsonify({
+                    "success": False, 
+                    "error": f"Invalid recovery key. {3 - failed_attempts} attempts remaining."
+                }), 400
 
     except Exception as e:
         logger.error(f"Error verifying recovery key: {e}", exc_info=True)
@@ -755,6 +794,11 @@ def verify_recovery_key():
 def reset_password_with_recovery_key():
     """Reset password using recovery key (no authentication required)"""
     try:
+        # Get client IP address for rate limiting
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
+        if ',' in client_ip:
+            client_ip = client_ip.split(',')[0].strip()
+        
         data = request.json or {}
         recovery_key = data.get('recovery_key', '').strip()
         new_password = data.get('new_password', '').strip()
@@ -766,26 +810,61 @@ def reset_password_with_recovery_key():
         if len(new_password) < 8:
             return jsonify({"success": False, "error": "Password must be at least 8 characters long."}), 400
 
-        # Verify the recovery key
+        # Check rate limiting before processing
         from ..utils.database import get_database
         db = get_database()
+        rate_limit_check = db.check_recovery_key_rate_limit(client_ip)
+        
+        if rate_limit_check["locked"]:
+            from datetime import datetime
+            try:
+                locked_until = datetime.fromisoformat(rate_limit_check["locked_until"])
+                minutes_remaining = int((locked_until - datetime.now()).total_seconds() / 60)
+                if minutes_remaining > 0:
+                    logger.warning(f"Recovery key attempt blocked for IP {client_ip} - locked for {minutes_remaining} more minutes")
+                    return jsonify({
+                        "success": False, 
+                        "error": f"Too many failed attempts. Please try again in {minutes_remaining} minutes."
+                    }), 429
+            except (ValueError, TypeError):
+                # If there's an issue with the timestamp, clear the lock
+                db.record_recovery_key_attempt(client_ip, success=True)
+
+        # Verify the recovery key
         username = db.verify_recovery_key(recovery_key)
 
         if not username:
-            logger.warning("Password reset attempted with invalid recovery key")
-            return jsonify({"success": False, "error": "Invalid recovery key"}), 400
+            # Record failed attempt
+            db.record_recovery_key_attempt(client_ip, success=False)
+            failed_attempts = rate_limit_check["failed_attempts"] + 1
+            
+            if failed_attempts >= 3:
+                logger.warning(f"Recovery key rate limit triggered for IP {client_ip} after {failed_attempts} failed attempts")
+                return jsonify({
+                    "success": False, 
+                    "error": "Too many failed attempts. Recovery key access has been temporarily disabled for 15 minutes."
+                }), 429
+            else:
+                logger.warning(f"Invalid recovery key attempt from IP {client_ip} ({failed_attempts}/3 attempts)")
+                return jsonify({
+                    "success": False, 
+                    "error": f"Invalid recovery key. {3 - failed_attempts} attempts remaining."
+                }), 400
 
         # Reset the password using database method directly
         if db.update_user_password(username, new_password):
+            # Record successful attempt to clear rate limiting
+            db.record_recovery_key_attempt(client_ip, username=username, success=True)
+            
             # Disable 2FA since user needed recovery key (likely lost 2FA device)
             two_fa_disabled = db.update_user_2fa(username, two_fa_enabled=False, two_fa_secret=None)
             if two_fa_disabled:
-                logger.info(f"Disabled 2FA for user '{username}' after password reset via recovery key")
+                logger.info(f"Disabled 2FA for user '{username}' after password reset via recovery key from IP {client_ip}")
             else:
                 logger.warning(f"Failed to disable 2FA for user '{username}' after password reset")
             
             # Keep recovery key valid - user may need it again and should manually generate new one
-            logger.info(f"Password reset successfully using recovery key for user: {username}")
+            logger.info(f"Password reset successfully using recovery key for user: {username} from IP {client_ip}")
             
             # Update message to inform user that 2FA has been disabled and recovery key is still valid
             message = "Password reset successfully. Two-factor authentication has been disabled for security - you can re-enable it in your account settings. Your recovery key remains valid until you generate a new one."
