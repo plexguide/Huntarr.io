@@ -2356,6 +2356,64 @@ const SettingsForms = {
                 this.updateSwaparrFieldsDisabledState();
             }, 100);
         }
+
+        // Set up auto-save for Swaparr settings
+        this.setupAutoSave(container);
+    },
+
+    // Set up auto-save for a form container
+    setupAutoSave: function(container) {
+        if (!container) return;
+        
+        const appType = container.getAttribute('data-app-type') || 'general';
+        console.log(`[SettingsForms] Setting up auto-save for app type: ${appType}`);
+        
+        // Find all input elements in the container
+        const inputs = container.querySelectorAll('input, select, textarea');
+        
+        inputs.forEach(input => {
+            // Add change event listener for auto-save
+            input.addEventListener('change', () => {
+                console.log(`[SettingsForms] Auto-save triggered for ${appType} by ${input.id || input.name || 'unnamed input'}`);
+                
+                // Call the appropriate auto-save function based on app type
+                if (appType === 'swaparr' && window.huntarrUI && window.huntarrUI.autoSaveSwaparrSettings) {
+                    window.huntarrUI.autoSaveSwaparrSettings(true).catch(error => {
+                        console.error('[SettingsForms] Swaparr auto-save failed:', error);
+                    });
+                } else if (appType === 'general' && window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
+                    window.huntarrUI.autoSaveGeneralSettings(true).catch(error => {
+                        console.error('[SettingsForms] General auto-save failed:', error);
+                    });
+                } else {
+                    console.warn(`[SettingsForms] No auto-save function available for app type: ${appType}`);
+                }
+            });
+            
+            // Also add input event listener for immediate feedback on text inputs
+            if (input.type === 'text' || input.type === 'number' || input.tagName.toLowerCase() === 'textarea') {
+                let timeout;
+                input.addEventListener('input', () => {
+                    // Debounce to avoid too many saves
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        console.log(`[SettingsForms] Auto-save triggered by input for ${appType}`);
+                        
+                        if (appType === 'swaparr' && window.huntarrUI && window.huntarrUI.autoSaveSwaparrSettings) {
+                            window.huntarrUI.autoSaveSwaparrSettings(true).catch(error => {
+                                console.error('[SettingsForms] Swaparr auto-save failed:', error);
+                            });
+                        } else if (appType === 'general' && window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
+                            window.huntarrUI.autoSaveGeneralSettings(true).catch(error => {
+                                console.error('[SettingsForms] General auto-save failed:', error);
+                            });
+                        }
+                    }, 1000); // 1 second debounce
+                });
+            }
+        });
+        
+        console.log(`[SettingsForms] Auto-save set up for ${inputs.length} inputs in ${appType} form`);
     },
     
     // Initialize tag input systems for malicious file detection

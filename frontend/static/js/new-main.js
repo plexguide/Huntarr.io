@@ -582,6 +582,19 @@ let huntarrUI = {
             
             // Load app connections when switching to Apps
             this.checkAppConnections();
+        } else if (section === 'swaparr' && document.getElementById('swaparrSection')) {
+            document.getElementById('swaparrSection').classList.add('active');
+            document.getElementById('swaparrSection').style.display = 'block';
+            if (document.getElementById('swaparrNav')) document.getElementById('swaparrNav').classList.add('active');
+            newTitle = 'Swaparr';
+            this.currentSection = 'swaparr';
+            
+            // Show main sidebar for main sections and clear settings sidebar preference
+            localStorage.removeItem('huntarr-settings-sidebar');
+            this.showMainSidebar();
+            
+            // Initialize Swaparr section
+            this.initializeSwaparr();
         } else if (section === 'settings' && document.getElementById('settingsSection')) {
             document.getElementById('settingsSection').classList.add('active');
             document.getElementById('settingsSection').style.display = 'block';
@@ -1368,10 +1381,65 @@ let huntarrUI = {
     // Get settings from the form, updated to handle instances consistently
     getFormSettings: function(app) {
         const settings = {};
-        const form = document.getElementById(`${app}Settings`);
+        let form = document.getElementById(`${app}Settings`);
+        
+        // Special handling for Swaparr since it has its own section structure
+        if (app === 'swaparr') {
+            form = document.getElementById('swaparrContainer') || 
+                   document.querySelector('.swaparr-container') ||
+                   document.querySelector('[data-app-type="swaparr"]');
+        }
+        
         if (!form) {
             console.error(`[huntarrUI] Settings form for ${app} not found.`);
             return null;
+        }
+
+        // Special handling for Swaparr settings
+        if (app === 'swaparr') {
+            console.log('[huntarrUI] Processing Swaparr settings');
+            console.log('[huntarrUI] Form:', form);
+            
+            // Get all inputs and select elements in the Swaparr form
+            const swaparrInputs = form.querySelectorAll('input, select, textarea');
+            
+            swaparrInputs.forEach(input => {
+                let key = input.id;
+                let value;
+                
+                // Remove 'swaparr_' prefix to get clean key name
+                if (key.startsWith('swaparr_')) {
+                    key = key.substring(8); // Remove 'swaparr_' prefix
+                }
+                
+                if (input.type === 'checkbox') {
+                    value = input.checked;
+                } else if (input.type === 'number') {
+                    value = input.value === '' ? null : parseInt(input.value, 10);
+                } else {
+                    value = input.value.trim();
+                }
+                
+                console.log(`[huntarrUI] Processing Swaparr input: ${key} = ${value}`);
+                
+                // Handle special array fields for tags
+                if (key === 'malicious_extensions' || key === 'suspicious_patterns' || key === 'blocked_quality_patterns') {
+                    // These are handled separately via tag containers
+                    const containerId = `swaparr_${key}_tags`;
+                    const container = document.getElementById(containerId);
+                    if (container) {
+                        const tags = Array.from(container.querySelectorAll('.tag-text')).map(el => el.textContent);
+                        settings[key] = tags;
+                        console.log(`[huntarrUI] Collected tags for ${key}:`, tags);
+                    }
+                } else if (key && !key.includes('_tags') && !key.includes('_input')) {
+                    // Only include non-tag-system fields
+                    settings[key] = value;
+                }
+            });
+            
+            console.log('[huntarrUI] Final Swaparr settings:', settings);
+            return settings;
         }
 
         // Special handling for general settings
@@ -1655,6 +1723,60 @@ let huntarrUI = {
             })
             .catch(error => {
                 console.error('[huntarrUI] Auto-save request failed:', error);
+                reject(error);
+            });
+        });
+    },
+
+    // Auto-save Swaparr settings
+    autoSaveSwaparrSettings: function(silent = false) {
+        console.log('[huntarrUI] Auto-saving Swaparr settings...');
+        
+        return new Promise((resolve, reject) => {
+            // Find the Swaparr settings form
+            const swaparrForm = document.querySelector('#swaparrContainer') ||
+                               document.querySelector('.swaparr-container') ||
+                               document.querySelector('[data-app-type="swaparr"]');
+            
+            if (!swaparrForm) {
+                console.error('[huntarrUI] Could not find Swaparr settings form for auto-save');
+                reject(new Error('Could not find Swaparr settings form'));
+                return;
+            }
+            
+            console.log('[huntarrUI] Found Swaparr form:', swaparrForm);
+            
+            // Get settings from the form using the correct app parameter
+            let settings = {};
+            try {
+                settings = this.getFormSettings('swaparr');
+                console.log('[huntarrUI] Auto-save collected Swaparr settings:', settings);
+            } catch (error) {
+                console.error('[huntarrUI] Error collecting Swaparr settings for auto-save:', error);
+                reject(error);
+                return;
+            }
+            
+            // Save the settings
+            HuntarrUtils.fetchWithTimeout('./api/swaparr/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success !== false) {  // API returns all settings on success, not just success:true
+                    console.log('[huntarrUI] Swaparr auto-save successful');
+                    resolve();
+                } else {
+                    console.error('[huntarrUI] Swaparr auto-save failed:', data);
+                    reject(new Error(data.error || 'Failed to auto-save Swaparr settings'));
+                }
+            })
+            .catch(error => {
+                console.error('[huntarrUI] Swaparr auto-save request failed:', error);
                 reject(error);
             });
         });
@@ -4137,8 +4259,83 @@ let huntarrUI = {
         } else {
             console.error('[huntarrUI] UserModule not available - user.js may not be loaded');
         }
+    },
+
+    initializeSwaparr: function() {
+        console.log('[huntarrUI] initializeSwaparr called');
+        
+        // Check if Swaparr is already initialized
+        const swaparrContainer = document.getElementById('swaparrContainer');
+        if (!swaparrContainer) {
+            console.error('[huntarrUI] swaparrContainer element not found!');
+            return;
+        }
+        
+        console.log('[huntarrUI] swaparrContainer found:', swaparrContainer);
+        console.log('[huntarrUI] Current container content:', swaparrContainer.innerHTML.trim());
+        
+        // Check if Swaparr is actually initialized (ignore HTML comments)
+        const currentContent = swaparrContainer.innerHTML.trim();
+        if (currentContent !== '' && !currentContent.includes('<!-- Swaparr settings content will be shown here -->')) {
+            console.log('[huntarrUI] Swaparr already initialized, skipping');
+            return; // Already initialized
+        }
+
+        console.log('[huntarrUI] Loading Swaparr settings from API...');
+        
+        // Load settings from API and generate the Swaparr form
+        fetch('./api/swaparr/settings')
+            .then(response => response.json())
+            .then(settings => {
+                console.log('[huntarrUI] Loaded Swaparr settings:', settings);
+                console.log('[huntarrUI] SettingsForms available:', typeof SettingsForms !== 'undefined');
+                console.log('[huntarrUI] generateSwaparrForm available:', typeof SettingsForms !== 'undefined' && SettingsForms.generateSwaparrForm);
+                
+                // Generate the Swaparr form
+                if (typeof SettingsForms !== 'undefined' && SettingsForms.generateSwaparrForm) {
+                    console.log('[huntarrUI] Calling SettingsForms.generateSwaparrForm...');
+                    SettingsForms.generateSwaparrForm(swaparrContainer, settings || {});
+                    console.log('[huntarrUI] Swaparr form generated successfully');
+                    
+                    // Load Swaparr apps table/status
+                    this.loadSwaparrApps();
+                } else {
+                    console.error('[huntarrUI] SettingsForms.generateSwaparrForm not available');
+                    swaparrContainer.innerHTML = '<p>Error: Swaparr forms not loaded</p>';
+                }
+            })
+            .catch(error => {
+                console.error('[huntarrUI] Error loading Swaparr settings:', error);
+                swaparrContainer.innerHTML = '<p>Error loading Swaparr settings</p>';
+            });
+    },
+
+    loadSwaparrApps: function() {
+        console.log('[huntarrUI] loadSwaparrApps called');
+        
+        // Get the Swaparr apps panel
+        const swaparrAppsPanel = document.getElementById('swaparrApps');
+        if (!swaparrAppsPanel) {
+            console.error('[huntarrUI] swaparrApps panel not found');
+            return;
+        }
+
+        // Check if there's a dedicated Swaparr apps module
+        if (typeof window.swaparrModule !== 'undefined' && window.swaparrModule.loadApps) {
+            console.log('[huntarrUI] Using dedicated Swaparr module to load apps');
+            window.swaparrModule.loadApps();
+        } else if (typeof SwaparrApps !== 'undefined') {
+            console.log('[huntarrUI] Using SwaparrApps module to load apps');
+            SwaparrApps.loadApps();
+        } else {
+            console.log('[huntarrUI] No dedicated Swaparr apps module found, using generic approach');
+            // Fall back to loading Swaparr status/info
+            this.loadSwaparrStatus();
+        }
     }
 };
+
+// Note: redirectToSwaparr function removed - Swaparr now has its own dedicated section
 
 // Initialize when document is ready
 document.addEventListener('DOMContentLoaded', function() {

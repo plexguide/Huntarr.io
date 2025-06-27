@@ -1,0 +1,131 @@
+<style>
+    /* DISABLE GLOWING RING ANIMATIONS - Swaparr Section */
+    #swaparrSection .styled-select {
+        animation: none !important;
+        box-shadow: none !important;
+    }
+    
+    #swaparrSection .styled-select:focus,
+    #swaparrSection .styled-select:hover {
+        animation: none !important;
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.2) !important;
+        transform: none !important;
+    }
+</style>
+
+<section id="swaparrSection" class="content-section">
+    <div class="section-header">
+        <h2>Swaparr</h2>
+        <!-- Auto-save enabled - save button removed -->
+    </div>
+    
+    <!-- Single scrollable container for all content -->
+    <div class="single-scroll-container">
+        <div id="swaparrContainer" class="swaparr-container">
+            <!-- Swaparr settings content will be shown here -->
+        </div>
+        
+        <div id="swaparrStatus" class="swaparr-status"></div>
+        
+        <!-- Swaparr panel at the bottom -->
+        <div class="swaparr-panels-container">
+            <div id="swaparrApps" class="swaparr-apps-panel swaparr-content-panel active" style="display: block;"></div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Swaparr Section Layout */
+    /* Remove unwanted background behind swaparr headers */
+    .swaparr-content-panel, .swaparr-apps-panel {
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    #swaparrSection {
+        display: none;
+        width: 100%;
+        height: auto;
+        overflow: hidden; /* Prevent double scrollbar */
+        padding-bottom: 60px; /* Clear space at the bottom */
+    }
+    
+    #swaparrSection.active {
+        display: block;
+    }
+    
+    /* Single scroll container - ONLY this element should scroll */
+    .single-scroll-container {
+        display: block;
+        width: 100%;
+        overflow-y: auto; 
+        overflow-x: hidden;
+        padding-bottom: 100px; /* Significant padding to avoid content being cut off */
+        min-height: 100%;
+        height: auto;
+        max-height: unset; /* Remove any max-height restriction */
+        scrollbar-width: thin; /* Firefox */
+        position: relative;
+    }
+    
+    /* Force-hide scrollbars on all other elements */
+    .swaparr-apps-panel, .swaparr-content-panel, #swaparrContainer,
+    .swaparr-panels-container, #swaparrStatus {
+        overflow: hidden !important;
+        scrollbar-width: none !important; /* Firefox */
+        -ms-overflow-style: none !important; /* IE/Edge */
+    }
+    
+    /* Proper table positioning at bottom */
+    .swaparr-panels-container {
+        margin-top: auto;
+        padding: 10px 0 0;
+        display: block;
+        width: 100%;
+    }
+    
+    /* Swaparr tables */
+    .swaparr-apps-panel {
+        display: none;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: none;
+    }
+    
+    .swaparr-apps-panel.active {
+        display: block;
+    }
+    
+    /* Container styling to match apps section */
+    .swaparr-container {
+        padding: 20px 0;
+        min-height: 300px;
+        width: 100%;
+    }
+    
+    .swaparr-status {
+        padding: 10px 0;
+        width: 100%;
+    }
+    
+    /* Custom scrollbar styling for single-scroll-container */
+    .single-scroll-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .single-scroll-container::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+    }
+    
+    .single-scroll-container::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+    }
+    
+    .single-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
+</style> 
