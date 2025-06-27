@@ -2376,6 +2376,22 @@ const SettingsForms = {
             input.addEventListener('change', () => {
                 console.log(`[SettingsForms] Auto-save triggered for ${appType} by ${input.id || input.name || 'unnamed input'}`);
                 
+                // Special handling for Swaparr enabled toggle - refresh Apps section after save
+                if (appType === 'swaparr' && input.id === 'swaparr_enabled') {
+                    console.log('[SettingsForms] Swaparr enabled toggle changed, will refresh Apps section after save');
+                    
+                    // Save first, then refresh Apps section
+                    if (window.huntarrUI && window.huntarrUI.autoSaveSwaparrSettings) {
+                        window.huntarrUI.autoSaveSwaparrSettings(true).then(() => {
+                            console.log('[SettingsForms] Swaparr settings saved, now refreshing Apps section');
+                            this.refreshAppsSection();
+                        }).catch(error => {
+                            console.error('[SettingsForms] Swaparr auto-save failed:', error);
+                        });
+                    }
+                    return; // Skip the general auto-save logic below since we handled it above
+                }
+                
                 // Call the appropriate auto-save function based on app type
                 if (appType === 'swaparr' && window.huntarrUI && window.huntarrUI.autoSaveSwaparrSettings) {
                     window.huntarrUI.autoSaveSwaparrSettings(true).catch(error => {
@@ -4462,6 +4478,25 @@ const SettingsForms = {
                         });
                 }
             });
+        }
+    },
+
+    // Refresh Apps section to reflect Swaparr setting changes
+    refreshAppsSection: function() {
+        console.log('[SettingsForms] Refreshing Apps section for Swaparr toggle change');
+        
+        // Check if Apps module is available and refresh the currently selected app
+        if (window.Apps && window.Apps.loadAppSettings) {
+            // Get the currently selected app
+            const appSelect = document.getElementById('appsAppSelect');
+            if (appSelect && appSelect.value) {
+                console.log('[SettingsForms] Refreshing currently selected app:', appSelect.value);
+                window.Apps.loadAppSettings(appSelect.value);
+            } else {
+                console.log('[SettingsForms] No app currently selected in Apps section');
+            }
+        } else {
+            console.log('[SettingsForms] Apps module not available for refresh');
         }
     },
 };
