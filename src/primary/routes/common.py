@@ -784,12 +784,11 @@ def reset_password_with_recovery_key():
             else:
                 logger.warning(f"Failed to disable 2FA for user '{username}' after password reset")
             
-            # Clear the recovery key after successful password reset
-            db.clear_recovery_key(username)
+            # Keep recovery key valid - user may need it again and should manually generate new one
             logger.info(f"Password reset successfully using recovery key for user: {username}")
             
-            # Update message to inform user that 2FA has been disabled
-            message = "Password reset successfully. Two-factor authentication has been disabled for security - you can re-enable it in your account settings."
+            # Update message to inform user that 2FA has been disabled and recovery key is still valid
+            message = "Password reset successfully. Two-factor authentication has been disabled for security - you can re-enable it in your account settings. Your recovery key remains valid until you generate a new one."
             return jsonify({"success": True, "message": message})
         else:
             logger.error(f"Failed to reset password for user: {username}")
