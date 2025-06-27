@@ -3822,6 +3822,55 @@ const SettingsForms = {
                                 <p class="setting-help" style="display: none;" id="episodes-upgrade-warning-${newIndex}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
                             </div>
                             ` : ''}
+                            <!-- Instance State Management -->
+                            <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
+                                <label for="${appType}-state-management-mode-${newIndex}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <select id="${appType}-state-management-mode-${newIndex}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                                        <option value="custom" selected>Enabled</option>
+                                        <option value="disabled">Disabled</option>
+                                    </select>
+                                    <button type="button" id="${appType}-state-reset-btn-${newIndex}" class="btn btn-danger" style="display: inline-flex; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
+                                        <i class="fas fa-redo"></i> Reset State
+                                    </button>
+                                </div>
+                                <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
+                            </div>
+                            
+                            <!-- State Management Hours (visible when enabled) -->
+                            <div class="setting-item" id="${appType}-custom-state-hours-${newIndex}" style="display: block; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
+                                <label for="${appType}-state-management-hours-${newIndex}" style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-clock" style="color: #6366f1;"></i>
+                                    Reset Interval:
+                                </label>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                    <input type="number" id="${appType}-state-management-hours-${newIndex}" name="state_management_hours" min="1" max="8760" value="168" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
+                                    <span style="color: #9ca3af; font-size: 14px;">
+                                        hours (<span id="${appType}-state-days-display-${newIndex}">7.0</span> days)
+                                    </span>
+                                </div>
+                                <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
+                                    <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                    State will automatically reset every <span id="${appType}-state-hours-text-${newIndex}">168</span> hours
+                                </p>
+                            </div>
+                            
+                            <!-- State Status Display -->
+                            <div class="setting-item" id="${appType}-state-status-${newIndex}" style="display: block; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="color: #10b981; font-weight: 600;">
+                                            <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
+                                            Active - Tracked Items: <span id="${appType}-state-items-count-${newIndex}">0</span>
+                                        </span>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
+                                        <div id="${appType}-state-reset-time-${newIndex}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="setting-item">
                                 <label for="${appType}-swaparr-${newIndex}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
                                 <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
@@ -3902,6 +3951,78 @@ const SettingsForms = {
                         });
                     }
                 }
+                
+                // Set up state management event listeners for the new instance
+                const stateManagementModeSelect = newInstance.querySelector(`#${appType}-state-management-mode-${newIndex}`);
+                const customStateHours = newInstance.querySelector(`#${appType}-custom-state-hours-${newIndex}`);
+                const stateStatus = newInstance.querySelector(`#${appType}-state-status-${newIndex}`);
+                const stateResetBtn = newInstance.querySelector(`#${appType}-state-reset-btn-${newIndex}`);
+                const stateHoursInput = newInstance.querySelector(`#${appType}-state-management-hours-${newIndex}`);
+                const stateDaysDisplay = newInstance.querySelector(`#${appType}-state-days-display-${newIndex}`);
+                const stateHoursText = newInstance.querySelector(`#${appType}-state-hours-text-${newIndex}`);
+                
+                if (stateManagementModeSelect && customStateHours && stateStatus && stateResetBtn) {
+                    // State management mode change listener
+                    stateManagementModeSelect.addEventListener('change', function() {
+                        if (this.value === 'disabled') {
+                            customStateHours.style.display = 'none';
+                            stateStatus.style.display = 'none';
+                            stateResetBtn.style.display = 'none';
+                        } else {
+                            customStateHours.style.display = 'block';
+                            stateStatus.style.display = 'block';
+                            stateResetBtn.style.display = 'inline-flex';
+                        }
+                    });
+                    
+                    // State reset button listener
+                    stateResetBtn.addEventListener('click', function() {
+                        const instanceNameInput = newInstance.querySelector('input[name="name"]');
+                        const instanceName = instanceNameInput ? instanceNameInput.value || 'Default' : 'Default';
+                        
+                        if (confirm(`Are you sure you want to reset the state for ${appType.charAt(0).toUpperCase() + appType.slice(1)} instance "${instanceName}"? This will clear all tracking data and allow items to be reprocessed.`)) {
+                            // Call the state reset API
+                            const resetUrl = `./api/stateful/reset?app_type=${encodeURIComponent(appType)}&instance_name=${encodeURIComponent(instanceName)}`;
+                            
+                            fetch(resetUrl, { method: 'POST' })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        // Reload state information for this instance
+                                        if (typeof huntarrUI !== 'undefined' && huntarrUI.loadStateManagementForInstance) {
+                                            huntarrUI.loadStateManagementForInstance(appType, newIndex, instanceName);
+                                        }
+                                        alert('State reset successfully!');
+                                    } else {
+                                        alert('Failed to reset state: ' + (data.message || 'Unknown error'));
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error resetting state:', error);
+                                    alert('Error resetting state. Please try again.');
+                                });
+                        }
+                    });
+                }
+                
+                // State hours input listener for real-time updates
+                if (stateHoursInput && stateDaysDisplay && stateHoursText) {
+                    stateHoursInput.addEventListener('input', function() {
+                        const hours = parseInt(this.value) || 168;
+                        const days = (hours / 24).toFixed(1);
+                        stateDaysDisplay.textContent = days;
+                        stateHoursText.textContent = hours;
+                    });
+                }
+                
+                // Load state information for the new instance after a short delay
+                setTimeout(() => {
+                    if (typeof huntarrUI !== 'undefined' && huntarrUI.loadStateManagementForInstance) {
+                        const instanceNameInput = newInstance.querySelector('input[name="name"]');
+                        const instanceName = instanceNameInput ? instanceNameInput.value || 'Default' : 'Default';
+                        huntarrUI.loadStateManagementForInstance(appType, newIndex, instanceName);
+                    }
+                }, 1000);
                 
                 // Initial status check for the new instance
                 SettingsForms.checkConnectionStatus(appType, newIndex);

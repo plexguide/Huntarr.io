@@ -236,6 +236,10 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
         if app_name == 'general':
             db.save_general_settings(settings_data)
         else:
+            # For app configs, check if instance names have changed and migrate state management data
+            if 'instances' in settings_data and isinstance(settings_data['instances'], list):
+                _migrate_instance_state_management_if_needed(app_name, settings_data, db)
+            
             db.save_app_config(app_name, settings_data)
             
         # Auto-save enabled - no need to log every successful save
@@ -605,6 +609,57 @@ def initialize_database():
         settings_logger.warning(f"Failed to start database maintenance scheduler: {e}")
     
     settings_logger.info("Database initialization completed successfully")
+
+def _migrate_instance_state_management_if_needed(app_name: str, new_settings_data: Dict[str, Any], db) -> None:
+    """
+    Check if instance names have changed and migrate state management data if needed.
+    
+    Args:
+        app_name: The app type (e.g., 'sonarr', 'radarr')
+        new_settings_data: The new settings data being saved
+        db: Database instance
+    """
+    try:
+        # Get current settings from database to compare
+        current_settings = db.get_app_config(app_name)
+        if not current_settings or 'instances' not in current_settings:
+            # No existing instances to migrate from
+            return
+        
+        current_instances = current_settings.get('instances', [])
+        new_instances = new_settings_data.get('instances', [])
+        
+        if not isinstance(current_instances, list) or not isinstance(new_instances, list):
+            return
+        
+        # Create mappings of instances by their position/index and identify name changes
+        for i, (current_instance, new_instance) in enumerate(zip(current_instances, new_instances)):
+            if not isinstance(current_instance, dict) or not isinstance(new_instance, dict):
+                continue
+            
+            current_name = current_instance.get('name', f'Instance {i+1}')
+            new_name = new_instance.get('name', f'Instance {i+1}')
+            
+            # If name has changed, migrate the state management data
+            if current_name != new_name and current_name and new_name:
+                settings_logger.info(f"Detected instance name change for {app_name} instance {i+1}: '{current_name}' -> '{new_name}'")
+                
+                # Attempt to migrate state management data
+                migration_success = db.migrate_instance_state_management(app_name, current_name, new_name)
+                
+                if migration_success:
+                    settings_logger.info(f"Successfully migrated state management data for {app_name} from '{current_name}' to '{new_name}'")
+                else:
+                    settings_logger.warning(f"Failed to migrate state management data for {app_name} from '{current_name}' to '{new_name}' - user may need to reset state management")
+        
+        # Handle case where instances were removed (we don't migrate in this case, just log)
+        if len(current_instances) > len(new_instances):
+            removed_count = len(current_instances) - len(new_instances)
+            settings_logger.info(f"Detected {removed_count} removed instances for {app_name} - state management data for removed instances will remain in database")
+            
+    except Exception as e:
+        settings_logger.error(f"Error checking for instance name changes in {app_name}: {e}")
+        # Don't fail the save operation if migration checking fails
 
 
 

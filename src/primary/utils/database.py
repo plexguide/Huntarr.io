@@ -969,6 +969,100 @@ class HuntarrDatabase:
             self.set_instance_lock_info(app_type, instance_name, current_time, expires_at, expiration_hours)
             logger.info(f"Initialized state management for {app_type}/{instance_name} with {expiration_hours}h expiration")
 
+    def migrate_instance_state_management(self, app_type: str, old_instance_name: str, new_instance_name: str) -> bool:
+        """Migrate state management data from old instance name to new instance name"""
+        try:
+            with self.get_connection() as conn:
+                # Check if old instance has any state management data
+                cursor = conn.execute('''
+                    SELECT COUNT(*) FROM stateful_instance_locks 
+                    WHERE app_type = ? AND instance_name = ?
+                ''', (app_type, old_instance_name))
+                has_lock_data = cursor.fetchone()[0] > 0
+                
+                cursor = conn.execute('''
+                    SELECT COUNT(*) FROM stateful_processed_ids 
+                    WHERE app_type = ? AND instance_name = ?
+                ''', (app_type, old_instance_name))
+                has_processed_data = cursor.fetchone()[0] > 0
+                
+                if not has_lock_data and not has_processed_data:
+                    logger.debug(f"No state management data found for {app_type}/{old_instance_name}, skipping migration")
+                    return True
+                
+                # Check if new instance name already has data (avoid overwriting)
+                cursor = conn.execute('''
+                    SELECT COUNT(*) FROM stateful_instance_locks 
+                    WHERE app_type = ? AND instance_name = ?
+                ''', (app_type, new_instance_name))
+                new_has_lock_data = cursor.fetchone()[0] > 0
+                
+                cursor = conn.execute('''
+                    SELECT COUNT(*) FROM stateful_processed_ids 
+                    WHERE app_type = ? AND instance_name = ?
+                ''', (app_type, new_instance_name))
+                new_has_processed_data = cursor.fetchone()[0] > 0
+                
+                if new_has_lock_data or new_has_processed_data:
+                    logger.warning(f"New instance name {app_type}/{new_instance_name} already has state management data, skipping migration to avoid conflicts")
+                    return False
+                
+                # Migrate lock data
+                if has_lock_data:
+                    conn.execute('''
+                        UPDATE stateful_instance_locks 
+                        SET instance_name = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE app_type = ? AND instance_name = ?
+                    ''', (new_instance_name, app_type, old_instance_name))
+                    logger.info(f"Migrated state management lock data from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}")
+                
+                # Migrate processed IDs
+                if has_processed_data:
+                    conn.execute('''
+                        UPDATE stateful_processed_ids 
+                        SET instance_name = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE app_type = ? AND instance_name = ?
+                    ''', (new_instance_name, app_type, old_instance_name))
+                    
+                    # Get count of migrated IDs for logging
+                    cursor = conn.execute('''
+                        SELECT COUNT(*) FROM stateful_processed_ids 
+                        WHERE app_type = ? AND instance_name = ?
+                    ''', (app_type, new_instance_name))
+                    migrated_count = cursor.fetchone()[0]
+                    
+                    logger.info(f"Migrated {migrated_count} processed IDs from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}")
+                
+                # Also migrate hunt history data if it exists
+                cursor = conn.execute('''
+                    SELECT COUNT(*) FROM hunt_history 
+                    WHERE app_type = ? AND instance_name = ?
+                ''', (app_type, old_instance_name))
+                has_history_data = cursor.fetchone()[0] > 0
+                
+                if has_history_data:
+                    conn.execute('''
+                        UPDATE hunt_history 
+                        SET instance_name = ?
+                        WHERE app_type = ? AND instance_name = ?
+                    ''', (new_instance_name, app_type, old_instance_name))
+                    
+                    cursor = conn.execute('''
+                        SELECT COUNT(*) FROM hunt_history 
+                        WHERE app_type = ? AND instance_name = ?
+                    ''', (app_type, new_instance_name))
+                    migrated_history_count = cursor.fetchone()[0]
+                    
+                    logger.info(f"Migrated {migrated_history_count} hunt history entries from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}")
+                
+                conn.commit()
+                logger.info(f"Successfully completed state management migration from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error migrating state management data from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}: {e}")
+            return False
+
     # Tally Data Management Methods
     
     def get_media_stats(self, app_type: str = None) -> Dict[str, Any]:
