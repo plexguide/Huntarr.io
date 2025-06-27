@@ -84,9 +84,11 @@ let huntarrUI = {
             initialSidebarStyle.remove();
         }
         
-        // Check if Settings sidebar should be shown based on current section (like Requestarr does)
+        // Check which sidebar should be shown based on current section
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'user') {
             this.showSettingsSidebar();
+        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-history') {
+            this.showRequestarrSidebar();
         } else {
             // Show main sidebar by default and clear settings sidebar preference
             localStorage.removeItem('huntarr-settings-sidebar');

@@ -1960,67 +1960,63 @@ const SettingsForms = {
         
         const html = `
             <!-- Swaparr Developer Credit Section -->
-            <div class="settings-group" style="margin-bottom: 25px;">
+            <div class="settings-group" style="margin-bottom: 20px;">
                 <div class="swaparr-credit-section" style="
                     background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
                     border: 2px solid #00c2ce;
-                    border-radius: 12px;
-                    padding: 20px;
-                    margin: 15px 0 25px 0;
-                    box-shadow: 0 8px 25px rgba(0, 194, 206, 0.2);
+                    border-radius: 8px;
+                    padding: 12px;
+                    margin: 10px 0 15px 0;
+                    box-shadow: 0 4px 12px rgba(0, 194, 206, 0.15);
                 ">
-
                     <div style="
                         background: rgba(255, 255, 255, 0.05);
-                        border-radius: 8px;
-                        padding: 15px;
-                        margin: 15px 0;
-                        border-left: 4px solid #00c2ce;
+                        border-radius: 6px;
+                        padding: 10px;
+                        margin: 8px 0;
+                        border-left: 3px solid #00c2ce;
                     ">
-                        <p style="color: #e2e8f0; margin: 0 0 8px 0; font-size: 0.95em; line-height: 1.6;">
+                        <p style="color: #e2e8f0; margin: 0 0 5px 0; font-size: 0.85em; line-height: 1.4;">
                             <strong>Developer:</strong> <a href="https://github.com/ThijmenGThN" target="_blank" rel="noopener" style="color: #00c2ce; text-decoration: none;">ThijmenGThN</a> • 
                             <strong>GitHub Stars:</strong> <span style="color: #fbbf24;">⭐ <span id="swaparr-stars-count">172</span></span> • 
                             <strong>Version:</strong> v0.10.0
                         </p>
-                        <p style="color: #cbd5e1; margin: 0; font-size: 0.85em; line-height: 1.4; font-style: italic;">
+                        <p style="color: #cbd5e1; margin: 0; font-size: 0.75em; line-height: 1.3; font-style: italic;">
                             <strong>Beta Notice:</strong> This is a rewritten implementation by Admin9705 for Huntarr integration. 
                             Please note that the original Swaparr project does not provide support for this Huntarr-specific implementation. 
                             For Huntarr-related issues, use Huntarr's support channels.
                         </p>
                     </div>
                     
-                    <div style="text-align: center; margin: 15px 0;">
+                    <div style="text-align: center; margin: 8px 0;">
                         <a href="https://github.com/ThijmenGThN/swaparr" target="_blank" rel="noopener" style="
                             display: inline-block;
                             background: linear-gradient(90deg, #00c2ce 0%, #0891b2 100%);
                             color: white;
-                            padding: 8px 16px;
-                            border-radius: 6px;
+                            padding: 6px 12px;
+                            border-radius: 5px;
                             text-decoration: none;
                             font-weight: 500;
-                            font-size: 0.9em;
+                            font-size: 0.8em;
                             transition: all 0.3s ease;
-                            margin-right: 10px;
                         " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            <i class="fas fa-star" style="margin-right: 5px;"></i>
+                            <i class="fas fa-star" style="margin-right: 4px;"></i>
                             Star Swaparr Project
                         </a>
                     </div>
-                    
-
                 </div>
                 
                 <!-- Advanced Options Notice -->
                 <div style="
                     background: linear-gradient(135deg, #164e63 0%, #0e7490 50%, #0891b2 100%);
                     border: 1px solid #22d3ee;
-                    border-radius: 8px;
-                    padding: 15px;
-                    margin: 15px 0 20px 0;
-                    box-shadow: 0 4px 12px rgba(34, 211, 238, 0.15);
+                    border-radius: 6px;
+                    padding: 10px;
+                    margin: 10px 0 15px 0;
+                    box-shadow: 0 2px 8px rgba(34, 211, 238, 0.1);
                 ">
-                    <p style="color: #e0f7fa; margin: 0; font-size: 0.9em; line-height: 1.5;">
-                        <i class="fas fa-rocket" style="margin-right: 8px; color: #22d3ee;"></i>
+                    <p style="color: #e0f7fa; margin: 0; font-size: 0.8em; line-height: 1.4;">
+                        <i class="fas fa-rocket" style="margin-right: 6px; color: #22d3ee;"></i>
                         <strong>Need Advanced Options?</strong> For enhanced control and features, we recommend 
                         <a href="https://github.com/flmorg/cleanuperr" target="_blank" rel="noopener" style="color: #fbbf24; text-decoration: none; font-weight: 600;">
                             <strong>Cleanuperr</strong>
