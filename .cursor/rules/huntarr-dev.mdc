@@ -68,6 +68,13 @@ conn = sqlite3.connect('/config/huntarr.db')
 - NEVER use double backslashes in regex patterns
 - ALWAYS handle undefined variables gracefully
 
+### Page Refresh Caching Solution (Mandatory)
+- ALWAYS implement page refresh on section changes to eliminate caching issues
+- NEVER use complex cache management systems - simple refresh is more reliable
+- ALWAYS use `isInitialized` flag to prevent endless refresh loops
+- ALWAYS store target section in localStorage for post-refresh navigation
+- This solves toggle visibility issues, stale data, and all frontend caching problems
+
 ## 🐛 COMMON ISSUE PREVENTION
 
 ### Log Regex Issues
@@ -198,6 +205,14 @@ conn = sqlite3.connect('/config/huntarr.db')
 - ❌ Template HTML containing pagination logic that overrides API-based pagination
 - ❌ DOM element counting for pagination instead of using API total counts
 
+### Caching Anti-Patterns (Critical)
+- ❌ Complex cache management systems for simple data refresh needs
+- ❌ Manual cache invalidation instead of automatic page refresh
+- ❌ Frontend state caching causing stale data display
+- ❌ Toggle visibility issues due to cached frontend state
+- ❌ Endless refresh loops due to improper initialization detection
+- ❌ Section switching without proper data refresh
+
 ## 🚨 PROACTIVE VIOLATION SCANNING
 
 ### Before Every Commit, Check For:
@@ -214,6 +229,8 @@ conn = sqlite3.connect('/config/huntarr.db')
 11. Hunt Manager non-Sonarr clickable links: `grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l`
 12. Port 9705 usage in local testing: `grep -r "9705" main.py src/ | grep -v "docker\|container"`
 13. Synology optimization bypasses: `grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection"`
+14. Endless refresh loop violations: `grep -r "location.reload" frontend/ --include="*.js" | grep -v "isInitialized"`
+15. Missing initialization flag violations: `grep -r "switchSection.*function" frontend/ --include="*.js" | xargs grep -L "isInitialized"`
 
 ### Violation Scanning Commands
 ```bash
@@ -232,6 +249,8 @@ echo "10. Logs pagination conflict violations: $(grep -r "updateLogsPagination\|
 echo "11. Hunt Manager non-Sonarr clickable links: $(grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l)"
 echo "12. Port 9705 usage in local code: $(grep -r "9705" main.py src/ | grep -v "docker\|container" | wc -l)"
 echo "13. Synology optimization bypass violations: $(grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection" | wc -l)"
+echo "14. Endless refresh loop violations: $(grep -r "location.reload" frontend/ --include="*.js" | grep -v "isInitialized" | wc -l)"
+echo "15. Missing initialization flag violations: $(grep -r "switchSection.*function" frontend/ --include="*.js" | xargs grep -L "isInitialized" | wc -l)"
 ```
 
 ## 📊 SPECIFIC BUG PATTERNS TO AVOID
@@ -387,6 +406,87 @@ echo "13. Synology optimization bypass violations: $(grep -r "sqlite3.connect\|P
 - **Mobile Compatibility**: Flash prevention must work on mobile where sidebar space is limited
 - **Testing**: Navigate between sections, refresh page, check that only one sidebar shows at a time
 
+### Page Refresh Pattern for Caching Issues (Critical)
+- **Problem**: Frontend caching causing stale data display, especially toggle visibility issues
+- **Root Cause**: Complex cache management systems are error-prone and difficult to maintain
+- **Solution**: Simple page refresh on section changes eliminates all caching issues
+- **Implementation Pattern**:
+  ```javascript
+  // In switchSection function - frontend/static/js/new-main.js
+  switchSection: function(section) {
+      // Only refresh if this is a user-initiated section change (not initial page load)
+      // and we're switching to a different section
+      if (this.isInitialized && this.currentSection && this.currentSection !== section) {
+          console.log(`[huntarrUI] User switching from ${this.currentSection} to ${section}, refreshing page...`);
+          // Store the target section in localStorage so we can navigate to it after refresh
+          localStorage.setItem('huntarr-target-section', section);
+          location.reload();
+          return;
+      }
+      // ... rest of section switching logic
+  }
+  ```
+- **Initialization Flag Pattern**:
+  ```javascript
+  // In init function - mark as initialized after setup complete
+  setTimeout(() => {
+      this.showDashboard();
+      // Mark as initialized after everything is set up to enable refresh on section changes
+      this.isInitialized = true;
+      console.log('[huntarrUI] Initialization complete - refresh on section change enabled');
+  }, 50);
+  ```
+- **Target Section Restoration**:
+  ```javascript
+  // In init function - check for stored target section after refresh
+  const targetSection = localStorage.getItem('huntarr-target-section');
+  if (targetSection) {
+      console.log(`[huntarrUI] Found target section after refresh: ${targetSection}`);
+      localStorage.removeItem('huntarr-target-section');
+      // Navigate to the target section
+      this.switchSection(targetSection);
+  } else {
+      // Initial navigation based on hash
+      this.handleHashNavigation(window.location.hash);
+  }
+  ```
+- **Benefits**:
+  1. Eliminates ALL caching issues with zero complexity
+  2. Ensures fresh data on every section change
+  3. Solves toggle visibility problems automatically
+  4. No cache invalidation logic needed
+  5. Works consistently across all browsers
+  6. Simple to understand and maintain
+- **Critical Requirements**:
+  1. MUST use `isInitialized` flag to prevent endless refresh loops
+  2. MUST store target section in localStorage for navigation after refresh
+  3. MUST clean up localStorage after navigation
+  4. MUST only trigger on user-initiated section changes, not initial page load
+- **Files**: `/frontend/static/js/new-main.js`
+- **Testing**: Verify no endless refresh loops, smooth navigation, fresh data display
+
+### Endless Refresh Loop Prevention Pattern (Critical)
+- **Problem**: Page refreshes continuously every 0.5 seconds due to improper refresh logic
+- **Root Cause**: Refresh logic triggers on every `switchSection` call including initial page load
+- **Symptom**: Infinite refresh loop making the application unusable
+- **Critical Fix**: Use `isInitialized` flag to distinguish user navigation from initialization
+- **Pattern to Avoid**:
+  ```javascript
+  // ❌ WRONG - causes endless refresh loops
+  if (this.currentSection && this.currentSection !== section) {
+      location.reload(); // Triggers on initial page load!
+  }
+  ```
+- **Correct Pattern**:
+  ```javascript
+  // ✅ CORRECT - only refreshes on user navigation
+  if (this.isInitialized && this.currentSection && this.currentSection !== section) {
+      location.reload(); // Only after initialization complete
+  }
+  ```
+- **Debugging**: If endless refresh occurs, check browser console for rapid section switching logs
+- **Prevention**: Always test page load behavior, not just navigation behavior
+
 ## 🎯 DEBUGGING APPROACH
 
 ### Systematic Issue Discovery
@@ -493,6 +593,32 @@ docker exec huntarr sqlite3 /config/huntarr.db "PRAGMA synchronous; PRAGMA cache
 5. Test pagination elements: Verify only one system updates pagination DOM elements
 6. Monitor for template interference: Look for template event listeners overriding LogsModule
 7. Debug pagination state: Add console.log to see which system is updating pagination last
+
+### Page Refresh System Debugging
+1. Check for endless refresh loops: Monitor browser console for rapid section switching messages
+2. Verify initialization flag: `console.log` the `isInitialized` state during section switches
+3. Test localStorage cleanup: Verify `huntarr-target-section` is removed after navigation
+4. Monitor refresh triggers: Look for `[huntarrUI] User switching from X to Y, refreshing page...` messages
+5. Test initial page load: Ensure no refresh triggers during initialization
+6. Verify section preservation: Check that target section is correctly restored after refresh
+7. **Debug Pattern**:
+   ```javascript
+   // Add to switchSection function for debugging
+   console.log('[huntarrUI] switchSection called:', {
+       section: section,
+       currentSection: this.currentSection,
+       isInitialized: this.isInitialized,
+       willRefresh: this.isInitialized && this.currentSection && this.currentSection !== section
+   });
+   ```
+
+### Caching Issues Debugging
+1. **Simple Solution**: Instead of debugging complex cache issues, implement page refresh pattern
+2. Check browser network tab for stale API responses
+3. Verify localStorage is not holding outdated data
+4. Test toggle visibility after section changes
+5. Monitor console for cache-related error messages
+6. **Remember**: Page refresh eliminates need for complex cache debugging
 
 ## 📝 MEMORY CREATION GUIDELINES
 
