@@ -420,7 +420,7 @@ def unlink_plex_account():
     """Unlink Plex account from local user"""
     try:
         # Check if user is authenticated via session
-        session_id = session.get(SESSION_COOKIE_NAME)
+        session_id = request.cookies.get(SESSION_COOKIE_NAME)
         if not session_id or not verify_session(session_id):
             return jsonify({'success': False, 'error': 'User not authenticated'}), 401
         
@@ -491,36 +491,7 @@ def plex_status():
 @plex_auth_bp.route('/auth/plex/callback')
 def plex_callback():
     """Handle Plex authentication callback (redirect back to app)"""
-    # This is just a landing page that will trigger the frontend to check the PIN
-    return '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Plex Authentication - Huntarr</title>
-        <style>
-            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #1a1d24; color: #fff; }
-            .container { max-width: 500px; margin: 0 auto; }
-            .logo { width: 100px; height: 100px; margin: 20px auto; }
-            .success { color: #28a745; }
-            .spinner { animation: spin 1s linear infinite; display: inline-block; }
-            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="logo">🎬</div>
-            <h2>Plex Authentication Successful!</h2>
-            <p class="success">✓ You have successfully authenticated with Plex.</p>
-            <p>You can now close this window and return to Huntarr.</p>
-            <div class="spinner">⟳</div>
-            <p><small>Redirecting automatically...</small></p>
-        </div>
-        <script>
-            // Close the window after a brief delay
-            setTimeout(() => {
-                window.close();
-            }, 3000);
-        </script>
-    </body>
-    </html>
-    '''
+    # Check localStorage to determine if this is setup mode or user mode
+    # For now, redirect directly to user page to avoid double flash
+    # TODO: Could be enhanced to check localStorage and route appropriately
+    return redirect('/user')

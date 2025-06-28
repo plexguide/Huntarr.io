@@ -36,7 +36,7 @@ class UserModule {
     async loadUserData() {
         try {
             // Load user info
-            const userResponse = await fetch('./api/user/info');
+            const userResponse = await fetch('./api/user/info', { credentials: 'include' });
             if (!userResponse.ok) throw new Error('Failed to fetch user data');
             
             const userData = await userResponse.json();
@@ -49,7 +49,7 @@ class UserModule {
             
             // Load Plex status
             try {
-                const plexResponse = await fetch('./api/auth/plex/status');
+                const plexResponse = await fetch('./api/auth/plex/status', { credentials: 'include' });
                 if (plexResponse.ok) {
                     const plexData = await plexResponse.json();
                     if (plexData.success) {
@@ -64,6 +64,9 @@ class UserModule {
                 console.warn('Error loading Plex status:', plexError);
                 this.updatePlexStatus(null);
             }
+            
+            // Check if we're returning from Plex authentication
+            this.checkPlexReturn();
             
         } catch (error) {
             console.error('Error loading user data:', error);
@@ -84,6 +87,7 @@ class UserModule {
             const response = await fetch('./api/user/change-username', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     username: newUsername,
                     password: currentPassword
@@ -130,6 +134,7 @@ class UserModule {
             const response = await fetch('./api/user/change-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     current_password: currentPassword,
                     new_password: newPassword
@@ -153,7 +158,10 @@ class UserModule {
 
     async enableTwoFactor() {
         try {
-            const response = await fetch('./api/user/2fa/setup', { method: 'POST' });
+            const response = await fetch('./api/user/2fa/setup', { 
+                method: 'POST',
+                credentials: 'include'
+            });
             const result = await response.json();
 
             if (response.ok) {
@@ -183,6 +191,7 @@ class UserModule {
             const response = await fetch('./api/user/2fa/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ code })
             });
 
@@ -216,6 +225,7 @@ class UserModule {
             const response = await fetch('./api/user/2fa/disable', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     password: password,
                     code: otpCode
@@ -329,101 +339,214 @@ class UserModule {
     }
 
     async linkPlexAccount() {
+        const modal = document.getElementById('plexLinkModal');
+        const pinCode = document.getElementById('plexLinkPinCode');
+        
+        modal.style.display = 'block';
+        pinCode.textContent = '';
+        this.setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Preparing Plex authentication...');
+        
         try {
-            const response = await fetch('./api/auth/plex/pin', { 
+            // Create Plex PIN with user_mode flag
+            const response = await fetch('./api/auth/plex/pin', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    user_mode: true
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_mode: true })
             });
-            const result = await response.json();
-
-            if (response.ok) {
-                // Open Plex auth URL in new window
-                window.open(result.auth_url, '_blank');
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.currentPlexPinId = data.pin_id;
                 
-                document.getElementById('plexLinkStatus').textContent = 'Waiting for authentication...';
-                document.getElementById('plexLinkModal').style.display = 'flex';
+                // Extract PIN code from auth URL
+                const hashPart = data.auth_url.split('#')[1];
+                if (hashPart) {
+                    const urlParams = new URLSearchParams(hashPart.substring(1));
+                    const pinCodeValue = urlParams.get('code');
+                    pinCode.textContent = pinCodeValue || 'PIN-' + this.currentPlexPinId;
+                } else {
+                    pinCode.textContent = 'PIN-' + this.currentPlexPinId;
+                }
                 
-                this.plexPinId = result.pin_id;
-                this.startPlexPolling();
+                this.setPlexLinkStatus('waiting', '<i class="fas fa-external-link-alt"></i> You will be redirected to Plex to sign in. After authentication, you will be brought back here automatically.');
+                
+                // Store PIN ID and flags for when we return from Plex
+                localStorage.setItem('huntarr-plex-pin-id', this.currentPlexPinId);
+                localStorage.setItem('huntarr-plex-linking', 'true');
+                localStorage.setItem('huntarr-plex-user-mode', 'true');
+                
+                // Redirect to Plex authentication
+                setTimeout(() => {
+                    this.setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Redirecting to Plex...');
+                    setTimeout(() => {
+                        window.location.href = data.auth_url;
+                    }, 1000);
+                }, 2000);
             } else {
-                const statusElement = document.getElementById('plexMainPageStatus');
-                this.showStatus(statusElement, result.error || 'Failed to get Plex PIN', 'error');
+                this.setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Failed to create Plex PIN: ' + (data.error || 'Unknown error. Please try again.'));
             }
         } catch (error) {
-            const statusElement = document.getElementById('plexMainPageStatus');
-            this.showStatus(statusElement, 'Error connecting to Plex', 'error');
+            console.error('Error creating Plex PIN:', error);
+            this.setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Network error: Unable to connect to Plex. Please check your internet connection and try again.');
+        }
+    }
+
+    setPlexLinkStatus(type, message) {
+        const plexLinkStatus = document.getElementById('plexLinkStatus');
+        
+        if (plexLinkStatus) {
+            plexLinkStatus.className = `plex-status ${type}`;
+            plexLinkStatus.innerHTML = message;
+            plexLinkStatus.style.display = 'block';
         }
     }
 
     startPlexPolling() {
-        this.plexPollingInterval = setInterval(async () => {
-            try {
-                const response = await fetch(`./api/auth/plex/check/${this.plexPinId}`, { method: 'GET' });
-                const result = await response.json();
-
-                if (response.ok && result.success && result.claimed) {
-                    // PIN has been claimed, now link the account
-                    document.getElementById('plexLinkStatus').textContent = 'Linking account...';
-                    
-                    try {
-                        // Use the same approach as setup - let backend get username from database
-                        const linkResponse = await fetch('./api/auth/plex/link', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                token: result.token,
-                                setup_mode: true  // Use setup mode like the working implementation
-                            })
-                        });
-                        
-                        const linkResult = await linkResponse.json();
-                        
-                        if (linkResponse.ok && linkResult.success) {
-                            document.getElementById('plexLinkStatus').textContent = 'Successfully linked!';
-                            document.getElementById('plexLinkStatus').className = 'plex-status success';
-                            
-                            setTimeout(() => {
-                                this.cancelPlexLink();
-                                this.loadUserData(); // Refresh user data to show linked account
-                            }, 2000);
-                        } else {
-                            document.getElementById('plexLinkStatus').textContent = linkResult.error || 'Failed to link account';
-                            document.getElementById('plexLinkStatus').className = 'plex-status error';
-                        }
-                        
-                        clearInterval(this.plexPollingInterval);
-                    } catch (linkError) {
-                        document.getElementById('plexLinkStatus').textContent = 'Error linking account';
-                        document.getElementById('plexLinkStatus').className = 'plex-status error';
-                        clearInterval(this.plexPollingInterval);
+        console.log('startPlexPinChecking called with PIN ID:', this.currentPlexPinId);
+        
+        // Clear any existing interval
+        if (this.plexPollingInterval) {
+            console.log('Clearing existing interval');
+            clearInterval(this.plexPollingInterval);
+            this.plexPollingInterval = null;
+        }
+        
+        if (!this.currentPlexPinId) {
+            console.error('No PIN ID available for checking');
+            this.setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> No PIN ID available. Please try again.');
+            return;
+        }
+        
+        this.setPlexLinkStatus('waiting', '<i class="fas fa-hourglass-half"></i> Checking authentication status...');
+        
+        this.plexPollingInterval = setInterval(() => {
+            console.log('Checking PIN status for:', this.currentPlexPinId);
+            
+            fetch(`./api/auth/plex/check/${this.currentPlexPinId}`)
+                .then(response => {
+                    console.log('PIN check response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('PIN check data:', data);
+                    if (data.success && data.claimed) {
+                        console.log('PIN claimed, linking account');
+                        this.setPlexLinkStatus('success', '<i class="fas fa-link"></i> Plex account successfully linked!');
+                        this.stopPlexLinking(); // Stop checking immediately
+                        this.linkWithPlexToken(data.token); // This will also call stopPlexLinking in finally
+                    } else if (data.success && !data.claimed) {
+                        console.log('PIN not yet claimed, continuing to check');
+                        this.setPlexLinkStatus('waiting', '<i class="fas fa-hourglass-half"></i> Waiting for Plex authentication to complete...');
+                    } else {
+                        console.error('PIN check failed:', data);
+                        this.setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Authentication check failed: ' + (data.error || 'Please try again.'));
+                        this.stopPlexLinking();
                     }
-                } else if (result.error && result.error !== 'PIN not authorized yet') {
-                    document.getElementById('plexLinkStatus').textContent = result.error;
-                    document.getElementById('plexLinkStatus').className = 'plex-status error';
-                    clearInterval(this.plexPollingInterval);
-                }
-            } catch (error) {
-                document.getElementById('plexLinkStatus').textContent = 'Error checking authorization';
-                document.getElementById('plexLinkStatus').className = 'plex-status error';
-                clearInterval(this.plexPollingInterval);
-            }
+                })
+                .catch(error => {
+                    console.error('Error checking PIN:', error);
+                    this.setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Network error: Unable to verify authentication status. Please try again.');
+                    this.stopPlexLinking();
+                });
         }, 2000);
+        
+        // Stop checking after 10 minutes
+        setTimeout(() => {
+            if (this.plexPollingInterval) {
+                console.log('PIN check timeout reached');
+                this.stopPlexLinking();
+                this.setPlexLinkStatus('error', '<i class="fas fa-clock"></i> Authentication timeout: PIN expired after 10 minutes. Please try linking your account again.');
+            }
+        }, 600000);
+    }
+    
+    async linkWithPlexToken(token) {
+        console.log('Linking with Plex token');
+        this.setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Finalizing account link...');
+        
+        try {
+            // Use the same approach as setup - let backend get username from database
+            const linkResponse = await fetch('./api/auth/plex/link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    token: token,
+                    setup_mode: true  // Use setup mode like the working implementation
+                })
+            });
+            
+            const linkResult = await linkResponse.json();
+            
+            if (linkResponse.ok && linkResult.success) {
+                this.setPlexLinkStatus('success', '<i class="fas fa-check-circle"></i> Plex account successfully linked!');
+                setTimeout(() => {
+                    const modal = document.getElementById('plexLinkModal');
+                    if (modal) modal.style.display = 'none';
+                    
+                    // Reload user data to show updated Plex status
+                    this.loadUserData();
+                }, 2000);
+            } else {
+                this.setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Account linking failed: ' + (linkResult.error || 'Unknown error occurred. Please try again.'));
+            }
+        } catch (error) {
+            console.error('Error linking Plex account:', error);
+            this.setPlexLinkStatus('error', '<i class="fas fa-exclamation-triangle"></i> Network error: Unable to complete account linking. Please check your connection and try again.');
+        } finally {
+            // Always stop the PIN checking interval when linking completes (success or failure)
+            console.log('linkWithPlexToken completed, stopping PIN checking');
+            this.stopPlexLinking();
+        }
+    }
+    
+    stopPlexLinking() {
+        console.log('stopPlexLinking called');
+        if (this.plexPollingInterval) {
+            clearInterval(this.plexPollingInterval);
+            this.plexPollingInterval = null;
+            console.log('Cleared PIN check interval');
+        }
+        this.currentPlexPinId = null;
+    }
+
+    // Add method to check for return from Plex authentication 
+    checkPlexReturn() {
+        const plexLinking = localStorage.getItem('huntarr-plex-linking');
+        const plexPinId = localStorage.getItem('huntarr-plex-pin-id');
+        const userMode = localStorage.getItem('huntarr-plex-user-mode');
+        
+        if (plexLinking === 'true' && plexPinId && userMode === 'true') {
+            console.log('Detected return from Plex authentication, PIN ID:', plexPinId);
+            
+            // Clear the flags
+            localStorage.removeItem('huntarr-plex-linking');
+            localStorage.removeItem('huntarr-plex-pin-id');
+            localStorage.removeItem('huntarr-plex-user-mode');
+            
+            // Show modal and start checking
+            document.getElementById('plexLinkModal').style.display = 'block';
+            
+            // Extract PIN code for display
+            const pinCodeValue = plexPinId.substring(0, 4) + '-' + plexPinId.substring(4);
+            document.getElementById('plexLinkPinCode').textContent = pinCodeValue;
+            
+            // Set global PIN ID and start checking
+            this.currentPlexPinId = plexPinId;
+            this.setPlexLinkStatus('waiting', '<i class="fas fa-spinner spinner"></i> Completing Plex authentication and linking your account...');
+            
+            console.log('Starting PIN checking for returned user');
+            this.startPlexPolling();
+        }
     }
 
     cancelPlexLink() {
-        if (this.plexPollingInterval) {
-            clearInterval(this.plexPollingInterval);
-        }
+        this.stopPlexLinking();
         document.getElementById('plexLinkModal').style.display = 'none';
-        document.getElementById('plexLinkStatus').className = 'plex-status waiting';
-        document.getElementById('plexLinkStatus').textContent = 'Waiting for authentication...';
+        this.setPlexLinkStatus('waiting', '<i class="fas fa-hourglass-half"></i> Initializing Plex authentication...');
     }
 
     async unlinkPlexAccount() {
@@ -434,7 +557,10 @@ class UserModule {
         }
 
         try {
-            const response = await fetch('./api/auth/plex/unlink', { method: 'POST' });
+            const response = await fetch('./api/auth/plex/unlink', { 
+                method: 'POST',
+                credentials: 'include'
+            });
             const result = await response.json();
 
             if (response.ok) {

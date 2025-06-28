@@ -35,11 +35,11 @@ def static_files(filename):
 
 @common_bp.route('/favicon.ico')
 def favicon():
-    return send_from_directory(common_bp.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    return send_from_directory(current_app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @common_bp.route('/logo/<path:filename>')
 def logo_files(filename):
-    logo_dir = os.path.join(common_bp.static_folder, 'logo')
+    logo_dir = os.path.join(current_app.static_folder, 'logo')
     return send_from_directory(logo_dir, filename)
 
 # --- API Routes --- #

@@ -100,19 +100,15 @@
             const plexLinking = localStorage.getItem('huntarr-plex-linking');
             const plexPinId = localStorage.getItem('huntarr-plex-pin-id');
             const plexSetupMode = localStorage.getItem('huntarr-plex-setup-mode');
+            const plexUserMode = localStorage.getItem('huntarr-plex-user-mode');
             
             if (plexLogin === 'true') {
                 // Redirect to login page to continue authentication
                 window.location.href = './login';
-            } else if (plexLinking === 'true') {
-                // Check if we're explicitly in setup mode
-                if (plexSetupMode === 'true') {
-                    // Redirect to setup page to continue setup flow
-                    window.location.href = './setup';
-                } else {
-                    // Redirect to user page to continue regular linking
-                    window.location.href = './user';
-                }
+            } else if (plexLinking === 'true' && plexSetupMode === 'true') {
+                // Only redirect to setup page for setup mode
+                // User mode now goes directly from callback to user page
+                window.location.href = './setup';
             }
         });
     </script>
