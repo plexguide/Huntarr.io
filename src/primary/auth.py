@@ -469,7 +469,7 @@ def authenticate_request():
                 logger.warning(f"Access from {remote_addr} is not recognized as local network - Authentication required")
     
     # Check for valid session
-    session_id = session.get(SESSION_COOKIE_NAME)
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
     if session_id and verify_session(session_id):
         if not is_polling_endpoint:
             pass  # Session valid - debug spam removed

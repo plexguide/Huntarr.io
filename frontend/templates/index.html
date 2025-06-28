@@ -107,8 +107,11 @@
                 window.location.href = './login';
             } else if (plexLinking === 'true' && plexSetupMode === 'true') {
                 // Only redirect to setup page for setup mode
-                // User mode now goes directly from callback to user page
                 window.location.href = './setup';
+            } else if (plexLinking === 'true' && plexUserMode === 'true') {
+                // For user mode, stay on current page and let user.js handle it
+                // Do NOT redirect - let the UserModule.checkPlexReturn() handle the flow
+                console.log('Detected Plex user mode return - letting UserModule handle it');
             }
         });
     </script>

@@ -491,7 +491,6 @@ def plex_status():
 @plex_auth_bp.route('/auth/plex/callback')
 def plex_callback():
     """Handle Plex authentication callback (redirect back to app)"""
-    # Check localStorage to determine if this is setup mode or user mode
-    # For now, redirect directly to user page to avoid double flash
-    # TODO: Could be enhanced to check localStorage and route appropriately
-    return redirect('/user')
+    # Redirect to main page with user hash to avoid index.html redirect conflicts
+    # This ensures proper navigation without triggering localStorage redirects
+    return redirect('/#user')

@@ -35,6 +35,9 @@ class UserModule {
 
     async loadUserData() {
         try {
+            // Clean up any stale localStorage flags that might interfere
+            this.cleanupStaleFlags();
+            
             // Load user info
             const userResponse = await fetch('./api/user/info', { credentials: 'include' });
             if (!userResponse.ok) throw new Error('Failed to fetch user data');
@@ -375,6 +378,7 @@ class UserModule {
                 localStorage.setItem('huntarr-plex-pin-id', this.currentPlexPinId);
                 localStorage.setItem('huntarr-plex-linking', 'true');
                 localStorage.setItem('huntarr-plex-user-mode', 'true');
+                localStorage.setItem('huntarr-plex-linking-timestamp', Date.now().toString());
                 
                 // Redirect to Plex authentication
                 setTimeout(() => {
@@ -526,6 +530,7 @@ class UserModule {
             localStorage.removeItem('huntarr-plex-linking');
             localStorage.removeItem('huntarr-plex-pin-id');
             localStorage.removeItem('huntarr-plex-user-mode');
+            localStorage.removeItem('huntarr-plex-linking-timestamp');
             
             // Show modal and start checking
             document.getElementById('plexLinkModal').style.display = 'block';
@@ -617,7 +622,20 @@ class UserModule {
             
             document.getElementById('plexUsername').textContent = plexData.plex_username || 'Unknown';
             document.getElementById('plexEmail').textContent = plexData.plex_email || 'N/A';
-            document.getElementById('plexLinkedAt').textContent = plexData.plex_linked_at || 'Unknown';
+            
+            // Format the timestamp properly
+            let linkedAtText = 'Unknown';
+            if (plexData.plex_linked_at) {
+                try {
+                    const timestamp = plexData.plex_linked_at;
+                    const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
+                    linkedAtText = date.toLocaleString(); // Format as readable date/time
+                } catch (error) {
+                    console.error('Error formatting plex_linked_at timestamp:', error);
+                    linkedAtText = 'Invalid Date';
+                }
+            }
+            document.getElementById('plexLinkedAt').textContent = linkedAtText;
             
             notLinkedSection.style.display = 'none';
             linkedSection.style.display = 'block';
@@ -627,6 +645,34 @@ class UserModule {
             
             notLinkedSection.style.display = 'block';
             linkedSection.style.display = 'none';
+        }
+    }
+
+    cleanupStaleFlags() {
+        // Clean up any localStorage flags that might interfere with normal operation
+        const flagsToClean = [
+            'huntarr-plex-login',
+            'huntarr-plex-setup-mode'
+        ];
+        
+        flagsToClean.forEach(flag => {
+            if (localStorage.getItem(flag)) {
+                console.log(`[UserModule] Cleaning up stale localStorage flag: ${flag}`);
+                localStorage.removeItem(flag);
+            }
+        });
+        
+        // Only clean up Plex linking flags if they're older than 10 minutes (stale)
+        const plexLinkingTimestamp = localStorage.getItem('huntarr-plex-linking-timestamp');
+        if (plexLinkingTimestamp) {
+            const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+            if (parseInt(plexLinkingTimestamp) < tenMinutesAgo) {
+                console.log('[UserModule] Cleaning up stale Plex linking flags (older than 10 minutes)');
+                localStorage.removeItem('huntarr-plex-linking');
+                localStorage.removeItem('huntarr-plex-pin-id');
+                localStorage.removeItem('huntarr-plex-user-mode');
+                localStorage.removeItem('huntarr-plex-linking-timestamp');
+            }
         }
     }
 
