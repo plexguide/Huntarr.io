@@ -371,13 +371,15 @@ class UserModule {
                     document.getElementById('plexLinkStatus').textContent = 'Linking account...';
                     
                     try {
+                        // Use the same approach as setup - let backend get username from database
                         const linkResponse = await fetch('./api/auth/plex/link', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                token: result.token
+                                token: result.token,
+                                setup_mode: true  // Use setup mode like the working implementation
                             })
                         });
                         

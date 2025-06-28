@@ -195,7 +195,8 @@ def handle_oauth_callback():
                         return jsonify({
                             'success': True,
                             'message': 'Login successful',
-                            'user': plex_user_data
+                            'user': plex_user_data,
+                            'redirect': './'
                         })
                     else:
                         return jsonify({
@@ -246,7 +247,8 @@ def plex_login():
                 response = jsonify({
                     'success': True,
                     'message': 'Plex user created and logged in successfully',
-                    'auth_type': 'plex'
+                    'auth_type': 'plex',
+                    'redirect': './'
                 })
                 session[SESSION_COOKIE_NAME] = session_id  # Store in Flask session
                 response.set_cookie(SESSION_COOKIE_NAME, session_id, 
@@ -277,7 +279,8 @@ def plex_login():
                     response = jsonify({
                         'success': True,
                         'message': 'Logged in with Plex successfully',
-                        'auth_type': 'plex'
+                        'auth_type': 'plex',
+                        'redirect': './'
                     })
                     session[SESSION_COOKIE_NAME] = session_id  # Store in Flask session
                     response.set_cookie(SESSION_COOKIE_NAME, session_id, 

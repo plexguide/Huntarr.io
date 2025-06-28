@@ -617,7 +617,7 @@
                 
                 if (status === 200 && body.success) {
                     // Login successful
-                                                window.location.href = body.redirect || './';
+                    window.location.href = body.redirect || './';
                 } else if (status === 401 && requires2FA) {
                     // 2FA is required
                     console.log('2FA required, showing 2FA input field');
@@ -734,8 +734,8 @@
             setPlexStatus('waiting', '<i class="fas fa-spinner spinner"></i> Creating Plex PIN...');
             
             // Create Plex PIN
-                                HuntarrUtils.fetchWithTimeout('./api/auth/plex/pin', {
-                        method: 'POST',
+            HuntarrUtils.fetchWithTimeout('./api/auth/plex/pin', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -855,7 +855,7 @@
                 if (data.success) {
                     setPlexStatus('success', '<i class="fas fa-check"></i> Login successful! Redirecting...');
                     setTimeout(() => {
-                        window.location.href = './';
+                        window.location.href = data.redirect || './';
                     }, 1500);
                 } else {
                     if (status === 409) {
