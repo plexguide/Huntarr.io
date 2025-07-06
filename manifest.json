@@ -1,6 +1,6 @@
 {
   "version": "8.1.11",
-  "updated": "2025-07-05T03:17:21Z",
+  "updated": "2025-07-06T03:36:54Z",
   "sponsors": [{"login":"scottia","name":"scottia","avatarUrl":"https://avatars.githubusercontent.com/u/5298748?u=63da334efcfd5c11f0533b6ba5435dc535047308&v=4","url":"https://github.com/scottia","tier":"Supporter","monthlyAmount":0,"createdAt":"2025-06-24T20:42:49Z","category":"past"},{"login":"beignet-killa","name":"Rougarou","avatarUrl":"https://avatars.githubusercontent.com/u/10518332?u=3eb71e84770f7330a4fafc2a4c8378c8896acd13&v=4","url":"https://github.com/beignet-killa","tier":"Supporter","monthlyAmount":0,"createdAt":"2025-06-21T16:04:31Z","category":"past"},{"login":"TheOnlyLite","name":"TheOnlyLite","avatarUrl":"https://avatars.githubusercontent.com/u/1551675?v=4","url":"https://github.com/TheOnlyLite","tier":"Supporter","monthlyAmount":0,"createdAt":"2025-06-06T00:13:06Z","category":"past"},{"login":"ezek1el","name":"ezek1el","avatarUrl":"https://avatars.githubusercontent.com/u/15878321?u=6a2f5b36d9f2f2ae09e48b29fed9dfd10085ddb9&v=4","url":"https://github.com/ezek1el","tier":"Supporter","monthlyAmount":0,"createdAt":"2025-04-26T08:07:25Z","category":"past"},{"login":"elfhosted","name":"ElfHosted","avatarUrl":"https://avatars.githubusercontent.com/u/163625678?v=4","url":"https://github.com/elfhosted","tier":"Supporter","monthlyAmount":0,"createdAt":"2025-04-25T07:48:40Z","category":"past"}],
   "project": {
     "name": "Huntarr",
