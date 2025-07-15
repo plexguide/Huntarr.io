@@ -1959,6 +1959,27 @@ const SettingsForms = {
         container.setAttribute('data-app-type', 'swaparr');
         
         const html = `
+            <!-- Swaparr Save Button -->
+            <div class="swaparr-save-container" style="margin-bottom: 20px;">
+                <button id="swaparr-save-button" class="swaparr-save-btn" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+            
             <!-- Swaparr Developer Credit Section -->
             <div class="settings-group" style="margin-bottom: 20px;">
                 <div class="swaparr-credit-section" style="
@@ -2353,8 +2374,174 @@ const SettingsForms = {
             }, 100);
         }
 
-        // Set up auto-save for Swaparr settings
-        this.setupAutoSave(container);
+        // Set up manual save functionality for Swaparr
+        this.setupSwaparrManualSave(container, settings);
+    },
+
+    // Set up manual save functionality for Swaparr
+    setupSwaparrManualSave: function(container, originalSettings = {}) {
+        const saveButton = container.querySelector('#swaparr-save-button');
+        if (!saveButton) return;
+        
+        let hasChanges = false;
+        
+        // Function to update save button state
+        const updateSaveButtonState = (changesDetected) => {
+            hasChanges = changesDetected;
+            if (hasChanges) {
+                // Red enabled state
+                saveButton.disabled = false;
+                saveButton.style.background = '#dc2626';
+                saveButton.style.color = '#ffffff';
+                saveButton.style.borderColor = '#dc2626';
+                saveButton.style.cursor = 'pointer';
+            } else {
+                // Grey disabled state
+                saveButton.disabled = true;
+                saveButton.style.background = '#6b7280';
+                saveButton.style.color = '#9ca3af';
+                saveButton.style.borderColor = '#4b5563';
+                saveButton.style.cursor = 'not-allowed';
+            }
+        };
+        
+        // Function to detect changes in form elements
+        const detectChanges = () => {
+            // Check regular form inputs
+            const inputs = container.querySelectorAll('input, select, textarea');
+            let formChanged = false;
+            
+            inputs.forEach(input => {
+                const key = input.id.replace('swaparr_', '');
+                let originalValue, currentValue;
+                
+                if (input.type === 'checkbox') {
+                    originalValue = originalSettings[key] !== undefined ? originalSettings[key] : false;
+                    currentValue = input.checked;
+                } else if (input.type === 'number') {
+                    originalValue = originalSettings[key] !== undefined ? originalSettings[key] : (input.min || 0);
+                    currentValue = parseInt(input.value) || 0;
+                    
+                    // Special handling for sleep_duration (convert minutes to seconds for comparison)
+                    if (key === 'sleep_duration') {
+                        originalValue = originalSettings[key] ? Math.round(originalSettings[key] / 60) : 15;
+                    }
+                } else {
+                    originalValue = originalSettings[key] || '';
+                    currentValue = input.value.trim();
+                }
+                
+                if (originalValue !== currentValue) {
+                    formChanged = true;
+                }
+            });
+            
+            // Check tag containers for changes
+            const tagContainers = [
+                'swaparr_malicious_extensions_tags',
+                'swaparr_suspicious_patterns_tags', 
+                'swaparr_quality_patterns_tags'
+            ];
+            
+            tagContainers.forEach(containerId => {
+                const currentTags = this.getTagsFromContainer(containerId);
+                const originalTags = originalSettings[containerId.replace('swaparr_', '').replace('_tags', '')] || [];
+                
+                if (JSON.stringify(currentTags.sort()) !== JSON.stringify(originalTags.sort())) {
+                    formChanged = true;
+                }
+            });
+            
+            updateSaveButtonState(formChanged);
+        };
+        
+        // Add event listeners to all form elements
+        const inputs = container.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('change', detectChanges);
+            if (input.type === 'text' || input.type === 'number' || input.tagName.toLowerCase() === 'textarea') {
+                input.addEventListener('input', detectChanges);
+            }
+        });
+        
+        // Override tag manipulation functions to trigger change detection
+        const originalAddExtensionTag = this.addExtensionTag.bind(this);
+        const originalAddPatternTag = this.addPatternTag.bind(this);
+        const originalAddQualityTag = this.addQualityTag.bind(this);
+        
+        this.addExtensionTag = function() {
+            originalAddExtensionTag();
+            setTimeout(detectChanges, 10);
+        };
+        
+        this.addPatternTag = function() {
+            originalAddPatternTag();
+            setTimeout(detectChanges, 10);
+        };
+        
+        this.addQualityTag = function() {
+            originalAddQualityTag();
+            setTimeout(detectChanges, 10);
+        };
+        
+        // Make functions globally available
+        window.addExtensionTag = this.addExtensionTag.bind(this);
+        window.addPatternTag = this.addPatternTag.bind(this);
+        window.addQualityTag = this.addQualityTag.bind(this);
+        
+        // Add observer for tag removal (since they use onclick)
+        const observeTagRemovals = () => {
+            tagContainers.forEach(containerId => {
+                const container = document.getElementById(containerId);
+                if (container) {
+                    const observer = new MutationObserver(() => {
+                        setTimeout(detectChanges, 10);
+                    });
+                    observer.observe(container, { childList: true });
+                }
+            });
+        };
+        
+        // Set up tag removal observation after tags are loaded
+        setTimeout(observeTagRemovals, 100);
+        
+        // Save button click handler
+        saveButton.addEventListener('click', () => {
+            if (!hasChanges) return;
+            
+            console.log('[SettingsForms] Manual save triggered for Swaparr');
+            
+            // Show saving state
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveButton.disabled = true;
+            
+            // Get settings and save
+            if (window.huntarrUI && window.huntarrUI.autoSaveSwaparrSettings) {
+                window.huntarrUI.autoSaveSwaparrSettings(true).then(() => {
+                    console.log('[SettingsForms] Swaparr manual save successful');
+                    
+                    // Reset button state
+                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                    updateSaveButtonState(false);
+                    
+                    // Update original settings for future change detection
+                    const updatedSettings = window.huntarrUI.getFormSettings('swaparr');
+                    if (updatedSettings) {
+                        Object.assign(originalSettings, updatedSettings);
+                    }
+                    
+                }).catch(error => {
+                    console.error('[SettingsForms] Swaparr manual save failed:', error);
+                    
+                    // Reset button state
+                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                    updateSaveButtonState(hasChanges);
+                });
+            }
+        });
+        
+        // Initial change detection
+        setTimeout(detectChanges, 50);
     },
 
     // Set up auto-save for a form container
@@ -2362,6 +2549,13 @@ const SettingsForms = {
         if (!container) return;
         
         const appType = container.getAttribute('data-app-type') || 'general';
+        
+        // Skip auto-save for Swaparr - it uses manual save
+        if (appType === 'swaparr') {
+            console.log(`[SettingsForms] Skipping auto-save setup for Swaparr - using manual save`);
+            return;
+        }
+        
         console.log(`[SettingsForms] Setting up auto-save for app type: ${appType}`);
         
         // Find all input elements in the container
@@ -2372,28 +2566,8 @@ const SettingsForms = {
             input.addEventListener('change', () => {
                 console.log(`[SettingsForms] Auto-save triggered for ${appType} by ${input.id || input.name || 'unnamed input'}`);
                 
-                // Special handling for Swaparr enabled toggle - refresh Apps section after save
-                if (appType === 'swaparr' && input.id === 'swaparr_enabled') {
-                    console.log('[SettingsForms] Swaparr enabled toggle changed, will refresh Apps section after save');
-                    
-                    // Save first, then refresh Apps section
-                    if (window.huntarrUI && window.huntarrUI.autoSaveSwaparrSettings) {
-                        window.huntarrUI.autoSaveSwaparrSettings(true).then(() => {
-                            console.log('[SettingsForms] Swaparr settings saved, now refreshing Apps section');
-                            this.refreshAppsSection();
-                        }).catch(error => {
-                            console.error('[SettingsForms] Swaparr auto-save failed:', error);
-                        });
-                    }
-                    return; // Skip the general auto-save logic below since we handled it above
-                }
-                
                 // Call the appropriate auto-save function based on app type
-                if (appType === 'swaparr' && window.huntarrUI && window.huntarrUI.autoSaveSwaparrSettings) {
-                    window.huntarrUI.autoSaveSwaparrSettings(true).catch(error => {
-                        console.error('[SettingsForms] Swaparr auto-save failed:', error);
-                    });
-                } else if (appType === 'general' && window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
+                if (appType === 'general' && window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
                     window.huntarrUI.autoSaveGeneralSettings(true).catch(error => {
                         console.error('[SettingsForms] General auto-save failed:', error);
                     });
@@ -2411,11 +2585,7 @@ const SettingsForms = {
                     timeout = setTimeout(() => {
                         console.log(`[SettingsForms] Auto-save triggered by input for ${appType}`);
                         
-                        if (appType === 'swaparr' && window.huntarrUI && window.huntarrUI.autoSaveSwaparrSettings) {
-                            window.huntarrUI.autoSaveSwaparrSettings(true).catch(error => {
-                                console.error('[SettingsForms] Swaparr auto-save failed:', error);
-                            });
-                        } else if (appType === 'general' && window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
+                        if (appType === 'general' && window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
                             window.huntarrUI.autoSaveGeneralSettings(true).catch(error => {
                                 console.error('[SettingsForms] General auto-save failed:', error);
                             });
