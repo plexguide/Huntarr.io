@@ -4880,12 +4880,12 @@ const SettingsForms = {
         if (window.swaparrUnsavedChanges) {
             const userChoice = confirm(
                 'You have unsaved changes in Swaparr settings.\n\n' +
-                'Click "OK" to continue and lose your changes.\n' +
-                'Click "Cancel" to stay and save your changes.'
+                'Click "OK" to stay and save your changes.\n' +
+                'Click "Cancel" to continue and lose your changes.'
             );
             
-            if (!userChoice) {
-                // User chose to stay
+            if (userChoice) {
+                // User chose to stay and save
                 console.log('[SettingsForms] User chose to stay and save changes');
                 return false;
             } else {
