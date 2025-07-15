@@ -1101,7 +1101,6 @@ select.form-control {
 
 .settings-group:hover {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    transform: translateY(-2px);
 }
 
 .settings-group h3 {
@@ -2216,7 +2215,6 @@ input:checked + .toggle-slider:before {
 
 .styled-select:focus, .styled-select:hover {
   background: var(--accent-hover);
-  transform: translateY(-2px);
   /* Switch to more intense glowing animation on hover */
   animation: glowing-ring-hover 6s infinite ease-in-out;
 }
