@@ -2390,6 +2390,10 @@ const SettingsForms = {
         
         let hasChanges = false;
         
+        // Clear any existing unsaved changes state and warnings when setting up
+        window.swaparrUnsavedChanges = false;
+        this.removeUnsavedChangesWarning();
+        
         // Initialize button in disabled/grey state immediately
         saveButton.disabled = true;
         saveButton.style.background = '#6b7280';
@@ -2401,7 +2405,8 @@ const SettingsForms = {
         // Function to update save button state
         const updateSaveButtonState = (changesDetected) => {
             hasChanges = changesDetected;
-            console.log(`[SettingsForms] Updating save button state: hasChanges=${hasChanges}`);
+            window.swaparrUnsavedChanges = changesDetected;
+            console.log(`[SettingsForms] Updating save button state: hasChanges=${hasChanges}, global unsaved=${window.swaparrUnsavedChanges}`);
             
             if (hasChanges) {
                 // Red enabled state
@@ -2411,6 +2416,9 @@ const SettingsForms = {
                 saveButton.style.borderColor = '#dc2626';
                 saveButton.style.cursor = 'pointer';
                 console.log('[SettingsForms] Save button enabled (red)');
+                
+                // Add beforeunload warning for page refresh
+                SettingsForms.addUnsavedChangesWarning();
             } else {
                 // Grey disabled state
                 saveButton.disabled = true;
@@ -2419,6 +2427,9 @@ const SettingsForms = {
                 saveButton.style.borderColor = '#4b5563';
                 saveButton.style.cursor = 'not-allowed';
                 console.log('[SettingsForms] Save button disabled (grey)');
+                
+                // Remove beforeunload warning when no changes
+                SettingsForms.removeUnsavedChangesWarning();
             }
         };
         
@@ -2566,7 +2577,7 @@ const SettingsForms = {
                 window.huntarrUI.autoSaveSwaparrSettings(true).then(() => {
                     console.log('[SettingsForms] Swaparr manual save successful');
                     
-                    // Reset button state
+                    // Reset button state and clear unsaved changes warning
                     saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
                     updateSaveButtonState(false);
                     
@@ -4836,6 +4847,57 @@ const SettingsForms = {
             console.log('[SettingsForms] Apps module not available for refresh');
         }
     },
+
+    // Unsaved changes warning system for Swaparr
+    addUnsavedChangesWarning: function() {
+        console.log('[SettingsForms] Adding unsaved changes warning');
+        
+        // Add beforeunload event listener for page refresh warning
+        if (!window.swaparrBeforeUnloadListener) {
+            window.swaparrBeforeUnloadListener = function(e) {
+                if (window.swaparrUnsavedChanges) {
+                    e.preventDefault();
+                    e.returnValue = ''; // Standard way to trigger browser warning
+                    return ''; // For older browsers
+                }
+            };
+            window.addEventListener('beforeunload', window.swaparrBeforeUnloadListener);
+        }
+    },
+
+    removeUnsavedChangesWarning: function() {
+        console.log('[SettingsForms] Removing unsaved changes warning');
+        
+        // Remove beforeunload event listener
+        if (window.swaparrBeforeUnloadListener) {
+            window.removeEventListener('beforeunload', window.swaparrBeforeUnloadListener);
+            window.swaparrBeforeUnloadListener = null;
+        }
+    },
+
+    // Check for unsaved changes before navigation
+    checkUnsavedChanges: function() {
+        if (window.swaparrUnsavedChanges) {
+            const userChoice = confirm(
+                'You have unsaved changes in Swaparr settings.\n\n' +
+                'Click "OK" to continue and lose your changes.\n' +
+                'Click "Cancel" to stay and save your changes.'
+            );
+            
+            if (!userChoice) {
+                // User chose to stay
+                console.log('[SettingsForms] User chose to stay and save changes');
+                return false;
+            } else {
+                // User chose to leave and lose changes
+                console.log('[SettingsForms] User chose to leave and lose changes');
+                window.swaparrUnsavedChanges = false;
+                this.removeUnsavedChangesWarning();
+                return true;
+            }
+        }
+        return true; // No unsaved changes, can proceed
+    }
 };
 
 // Add CSS for toggle circle
@@ -4874,3 +4936,6 @@ styleEl.innerHTML = `
     }
 `;
 document.head.appendChild(styleEl);
+
+// Make SettingsForms globally available
+window.SettingsForms = SettingsForms;

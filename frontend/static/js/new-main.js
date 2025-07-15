@@ -465,9 +465,16 @@ let huntarrUI = {
     switchSection: function(section) {
         console.log(`[huntarrUI] Switching to section: ${section}, current: ${this.currentSection}`);
         
-        // Only refresh if this is a user-initiated section change (not initial page load)
-        // and we're switching to a different section
+        // Check for unsaved changes before allowing navigation
         if (this.isInitialized && this.currentSection && this.currentSection !== section) {
+            // Check for unsaved Swaparr changes if leaving Swaparr section
+            if (this.currentSection === 'swaparr' && window.SettingsForms && typeof window.SettingsForms.checkUnsavedChanges === 'function') {
+                if (!window.SettingsForms.checkUnsavedChanges()) {
+                    console.log(`[huntarrUI] Navigation cancelled due to unsaved Swaparr changes`);
+                    return; // User chose to stay and save changes
+                }
+            }
+            
             console.log(`[huntarrUI] User switching from ${this.currentSection} to ${section}, refreshing page...`);
             // Store the target section in localStorage so we can navigate to it after refresh
             localStorage.setItem('huntarr-target-section', section);
