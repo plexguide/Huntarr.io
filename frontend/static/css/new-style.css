@@ -773,7 +773,6 @@ select.form-control {
 
 .action-button.start:hover {
     background-color: var(--button-success-hover);
-    transform: translateY(-2px);
 }
 
 .action-button.stop {
@@ -783,7 +782,6 @@ select.form-control {
 
 .action-button.stop:hover {
     background-color: var(--button-danger-hover);
-    transform: translateY(-2px);
 }
 
 /* Logs Section */
@@ -1339,7 +1337,6 @@ input:checked + .toggle-slider:before {
 
 .instance-item:hover {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
     border-color: rgba(90, 109, 137, 0.2);
 }
 
@@ -1395,7 +1392,6 @@ input:checked + .toggle-slider:before {
 
 .test-connection-btn:hover {
     background: linear-gradient(145deg, rgba(41, 128, 185, 0.3), rgba(52, 152, 219, 0.25));
-    transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     color: rgba(52, 152, 219, 1);
 }
@@ -1408,7 +1404,6 @@ input:checked + .toggle-slider:before {
 
 .add-instance-btn:hover {
     background: linear-gradient(145deg, rgba(39, 174, 96, 0.3), rgba(46, 204, 113, 0.25));
-    transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     color: rgba(46, 204, 113, 1);
 }
@@ -1421,7 +1416,6 @@ input:checked + .toggle-slider:before {
 
 .remove-instance-btn:hover {
     background: linear-gradient(145deg, rgba(231, 76, 60, 0.3), rgba(192, 57, 43, 0.25));
-    transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     color: rgba(231, 76, 60, 1);
 }
@@ -2308,7 +2302,6 @@ input[type="number"].interval-input,
 
 #reset_stateful_btn:hover {
     background: linear-gradient(145deg, rgba(231, 76, 60, 0.3), rgba(192, 57, 43, 0.25));
-    transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     color: rgba(231, 76, 60, 1);
 }

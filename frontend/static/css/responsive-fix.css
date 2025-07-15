@@ -72,7 +72,6 @@
     }
     
     .app-stats-card.swaparr .stat-box:hover {
-        transform: translateY(-2px) !important;
         border-color: rgba(120, 140, 180, 0.4) !important;
         background: rgba(26, 32, 44, 0.7) !important;
     }
