@@ -1460,7 +1460,13 @@ let huntarrUI = {
                     }
                 } else if (key && !key.includes('_tags') && !key.includes('_input')) {
                     // Only include non-tag-system fields
-                    settings[key] = value;
+                    // Special handling for sleep_duration - convert minutes to seconds
+                    if (key === 'sleep_duration' && input.type === 'number') {
+                        settings[key] = value * 60; // Convert minutes to seconds
+                        console.log(`[huntarrUI] Converted sleep_duration from ${value} minutes to ${settings[key]} seconds`);
+                    } else {
+                        settings[key] = value;
+                    }
                 }
             });
             
