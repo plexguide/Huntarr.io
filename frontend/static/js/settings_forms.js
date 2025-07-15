@@ -2380,14 +2380,21 @@ const SettingsForms = {
 
     // Set up manual save functionality for Swaparr
     setupSwaparrManualSave: function(container, originalSettings = {}) {
+        console.log('[SettingsForms] Setting up manual save with original settings:', originalSettings);
+        
         const saveButton = container.querySelector('#swaparr-save-button');
-        if (!saveButton) return;
+        if (!saveButton) {
+            console.error('[SettingsForms] Save button not found!');
+            return;
+        }
         
         let hasChanges = false;
         
         // Function to update save button state
         const updateSaveButtonState = (changesDetected) => {
             hasChanges = changesDetected;
+            console.log(`[SettingsForms] Updating save button state: hasChanges=${hasChanges}`);
+            
             if (hasChanges) {
                 // Red enabled state
                 saveButton.disabled = false;
@@ -2395,6 +2402,7 @@ const SettingsForms = {
                 saveButton.style.color = '#ffffff';
                 saveButton.style.borderColor = '#dc2626';
                 saveButton.style.cursor = 'pointer';
+                console.log('[SettingsForms] Save button enabled (red)');
             } else {
                 // Grey disabled state
                 saveButton.disabled = true;
@@ -2402,6 +2410,7 @@ const SettingsForms = {
                 saveButton.style.color = '#9ca3af';
                 saveButton.style.borderColor = '#4b5563';
                 saveButton.style.cursor = 'not-allowed';
+                console.log('[SettingsForms] Save button disabled (grey)');
             }
         };
         
@@ -2438,20 +2447,26 @@ const SettingsForms = {
             
             // Check tag containers for changes
             const tagContainers = [
-                'swaparr_malicious_extensions_tags',
-                'swaparr_suspicious_patterns_tags', 
-                'swaparr_quality_patterns_tags'
+                { containerId: 'swaparr_malicious_extensions_tags', settingKey: 'malicious_extensions' },
+                { containerId: 'swaparr_suspicious_patterns_tags', settingKey: 'suspicious_patterns' },
+                { containerId: 'swaparr_quality_patterns_tags', settingKey: 'blocked_quality_patterns' }
             ];
             
-            tagContainers.forEach(containerId => {
+            tagContainers.forEach(({ containerId, settingKey }) => {
                 const currentTags = this.getTagsFromContainer(containerId);
-                const originalTags = originalSettings[containerId.replace('swaparr_', '').replace('_tags', '')] || [];
+                const originalTags = originalSettings[settingKey] || [];
+                
+                console.log(`[SettingsForms] Comparing tags for ${settingKey}:`);
+                console.log(`[SettingsForms] Current:`, currentTags);
+                console.log(`[SettingsForms] Original:`, originalTags);
                 
                 if (JSON.stringify(currentTags.sort()) !== JSON.stringify(originalTags.sort())) {
+                    console.log(`[SettingsForms] Tag changes detected for ${settingKey}`);
                     formChanged = true;
                 }
             });
             
+            console.log(`[SettingsForms] Change detection result: ${formChanged}`);
             updateSaveButtonState(formChanged);
         };
         
@@ -2491,7 +2506,13 @@ const SettingsForms = {
         
         // Add observer for tag removal (since they use onclick)
         const observeTagRemovals = () => {
-            tagContainers.forEach(containerId => {
+            const tagContainerIds = [
+                'swaparr_malicious_extensions_tags',
+                'swaparr_suspicious_patterns_tags', 
+                'swaparr_quality_patterns_tags'
+            ];
+            
+            tagContainerIds.forEach(containerId => {
                 const container = document.getElementById(containerId);
                 if (container) {
                     const observer = new MutationObserver(() => {

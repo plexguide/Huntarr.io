@@ -1448,17 +1448,8 @@ let huntarrUI = {
                 
                 console.log(`[huntarrUI] Processing Swaparr input: ${key} = ${value}`);
                 
-                // Handle special array fields for tags
-                if (key === 'malicious_extensions' || key === 'suspicious_patterns' || key === 'blocked_quality_patterns') {
-                    // These are handled separately via tag containers
-                    const containerId = `swaparr_${key}_tags`;
-                    const container = document.getElementById(containerId);
-                    if (container) {
-                        const tags = Array.from(container.querySelectorAll('.tag-text')).map(el => el.textContent);
-                        settings[key] = tags;
-                        console.log(`[huntarrUI] Collected tags for ${key}:`, tags);
-                    }
-                } else if (key && !key.includes('_tags') && !key.includes('_input')) {
+                // Only include non-tag-system fields
+                if (key && !key.includes('_tags') && !key.includes('_input')) {
                     // Only include non-tag-system fields
                     // Special handling for sleep_duration - convert minutes to seconds
                     if (key === 'sleep_duration' && input.type === 'number') {
@@ -1467,6 +1458,25 @@ let huntarrUI = {
                     } else {
                         settings[key] = value;
                     }
+                }
+            });
+            
+            // Handle tag containers separately
+            const tagContainers = [
+                { containerId: 'swaparr_malicious_extensions_tags', settingKey: 'malicious_extensions' },
+                { containerId: 'swaparr_suspicious_patterns_tags', settingKey: 'suspicious_patterns' },
+                { containerId: 'swaparr_quality_patterns_tags', settingKey: 'blocked_quality_patterns' }
+            ];
+            
+            tagContainers.forEach(({ containerId, settingKey }) => {
+                const container = document.getElementById(containerId);
+                if (container) {
+                    const tags = Array.from(container.querySelectorAll('.tag-text')).map(el => el.textContent);
+                    settings[settingKey] = tags;
+                    console.log(`[huntarrUI] Collected tags for ${settingKey}:`, tags);
+                } else {
+                    console.warn(`[huntarrUI] Tag container not found: ${containerId}`);
+                    settings[settingKey] = [];
                 }
             });
             
