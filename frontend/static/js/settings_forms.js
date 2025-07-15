@@ -2390,6 +2390,14 @@ const SettingsForms = {
         
         let hasChanges = false;
         
+        // Initialize button in disabled/grey state immediately
+        saveButton.disabled = true;
+        saveButton.style.background = '#6b7280';
+        saveButton.style.color = '#9ca3af';
+        saveButton.style.borderColor = '#4b5563';
+        saveButton.style.cursor = 'not-allowed';
+        console.log('[SettingsForms] Save button initialized as disabled (grey)');
+        
         // Function to update save button state
         const updateSaveButtonState = (changesDetected) => {
             hasChanges = changesDetected;
@@ -2421,26 +2429,43 @@ const SettingsForms = {
             let formChanged = false;
             
             inputs.forEach(input => {
-                const key = input.id.replace('swaparr_', '');
+                // Skip inputs that don't have swaparr prefix or are disabled
+                if (!input.id.startsWith('swaparr_') || input.disabled) {
+                    return;
+                }
+                
+                let key = input.id.replace('swaparr_', '');
+                
+                // Handle field name mappings for settings that have different names
+                if (key === 'malicious_detection') {
+                    key = 'malicious_file_detection';
+                }
+                
                 let originalValue, currentValue;
                 
                 if (input.type === 'checkbox') {
                     originalValue = originalSettings[key] !== undefined ? originalSettings[key] : false;
                     currentValue = input.checked;
                 } else if (input.type === 'number') {
-                    originalValue = originalSettings[key] !== undefined ? originalSettings[key] : (input.min || 0);
-                    currentValue = parseInt(input.value) || 0;
-                    
-                    // Special handling for sleep_duration (convert minutes to seconds for comparison)
+                    // Special handling for sleep_duration (stored in seconds, displayed in minutes)
                     if (key === 'sleep_duration') {
                         originalValue = originalSettings[key] ? Math.round(originalSettings[key] / 60) : 15;
+                        currentValue = parseInt(input.value) || 15;
+                    } else {
+                        // For other numeric fields, get default from input attributes or use 0
+                        const defaultValue = parseInt(input.getAttribute('value')) || parseInt(input.min) || 0;
+                        originalValue = originalSettings[key] !== undefined ? parseInt(originalSettings[key]) : defaultValue;
+                        currentValue = parseInt(input.value) || 0;
                     }
                 } else {
                     originalValue = originalSettings[key] || '';
                     currentValue = input.value.trim();
                 }
                 
+                console.log(`[SettingsForms] Checking ${key}: original=${originalValue}, current=${currentValue}`);
+                
                 if (originalValue !== currentValue) {
+                    console.log(`[SettingsForms] Change detected in ${key}: ${originalValue} -> ${currentValue}`);
                     formChanged = true;
                 }
             });
@@ -2561,8 +2586,12 @@ const SettingsForms = {
             }
         });
         
-        // Initial change detection
-        setTimeout(detectChanges, 50);
+        // Initial change detection - ensure form is fully loaded before checking
+        // Use a longer timeout to ensure all form elements are properly initialized
+        setTimeout(() => {
+            console.log('[SettingsForms] Running initial change detection for Swaparr');
+            detectChanges();
+        }, 200);
     },
 
     // Set up auto-save for a form container

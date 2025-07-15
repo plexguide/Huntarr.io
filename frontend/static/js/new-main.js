@@ -1448,6 +1448,12 @@ let huntarrUI = {
                 
                 console.log(`[huntarrUI] Processing Swaparr input: ${key} = ${value}`);
                 
+                // Handle field name mappings for settings that have different names
+                if (key === 'malicious_detection') {
+                    key = 'malicious_file_detection';
+                    console.log(`[huntarrUI] Mapped malicious_detection -> malicious_file_detection`);
+                }
+                
                 // Only include non-tag-system fields
                 if (key && !key.includes('_tags') && !key.includes('_input')) {
                     // Only include non-tag-system fields
