@@ -681,6 +681,21 @@ let huntarrUI = {
             
             // Initialize notifications settings if not already done
             this.initializeNotifications();
+        } else if (section === 'prowlarr' && document.getElementById('prowlarrSection')) {
+            document.getElementById('prowlarrSection').classList.add('active');
+            document.getElementById('prowlarrSection').style.display = 'block';
+            if (document.getElementById('settingsProwlarrNav')) document.getElementById('settingsProwlarrNav').classList.add('active');
+            newTitle = 'Prowlarr';
+            this.currentSection = 'prowlarr';
+            
+            // Switch to Settings sidebar for prowlarr
+            this.showSettingsSidebar();
+            
+            // Set localStorage to maintain Settings sidebar preference
+            localStorage.setItem('huntarr-settings-sidebar', 'true');
+            
+            // Initialize prowlarr settings if not already done
+            this.initializeProwlarr();
         } else if (section === 'user' && document.getElementById('userSection')) {
             document.getElementById('userSection').classList.add('active');
             document.getElementById('userSection').style.display = 'block';
@@ -1086,6 +1101,7 @@ let huntarrUI = {
                     window.swaparrSettings = data.swaparr;
                     this.populateSettingsForm('swaparr', data.swaparr);
                 }
+                if (data.prowlarr) this.populateSettingsForm('prowlarr', data.prowlarr);
                 if (data.general) this.populateSettingsForm('general', data.general);
                 
                 // Update duration displays (like sleep durations)
@@ -4314,6 +4330,53 @@ let huntarrUI = {
             .catch(error => {
                 console.error('[huntarrUI] Error loading notifications settings:', error);
                 notificationsContainer.innerHTML = '<p>Error loading notifications settings</p>';
+            });
+    },
+
+    initializeProwlarr: function() {
+        console.log('[huntarrUI] initializeProwlarr called');
+        
+        // Check if prowlarr is already initialized
+        const prowlarrContainer = document.getElementById('prowlarrContainer');
+        if (!prowlarrContainer) {
+            console.error('[huntarrUI] prowlarrContainer element not found!');
+            return;
+        }
+        
+        console.log('[huntarrUI] prowlarrContainer found:', prowlarrContainer);
+        console.log('[huntarrUI] Current container content:', prowlarrContainer.innerHTML.trim());
+        
+        // Check if prowlarr is actually initialized (ignore HTML comments)
+        const currentContent = prowlarrContainer.innerHTML.trim();
+        if (currentContent !== '' && !currentContent.includes('<!-- Prowlarr content will be loaded here -->')) {
+            console.log('[huntarrUI] Prowlarr already initialized, skipping');
+            return; // Already initialized
+        }
+
+        console.log('[huntarrUI] Loading prowlarr settings from API...');
+        
+        // Load settings from API and generate the prowlarr form
+        fetch('./api/settings')
+            .then(response => response.json())
+            .then(settings => {
+                console.log('[huntarrUI] Loaded settings for prowlarr:', settings);
+                console.log('[huntarrUI] Prowlarr settings:', settings.prowlarr);
+                console.log('[huntarrUI] SettingsForms available:', typeof SettingsForms !== 'undefined');
+                console.log('[huntarrUI] generateProwlarrForm available:', typeof SettingsForms !== 'undefined' && SettingsForms.generateProwlarrForm);
+                
+                // Generate the prowlarr form
+                if (typeof SettingsForms !== 'undefined' && SettingsForms.generateProwlarrForm) {
+                    console.log('[huntarrUI] Calling SettingsForms.generateProwlarrForm...');
+                    SettingsForms.generateProwlarrForm(prowlarrContainer, settings.prowlarr || {});
+                    console.log('[huntarrUI] Prowlarr form generated successfully');
+                } else {
+                    console.error('[huntarrUI] SettingsForms.generateProwlarrForm not available');
+                    prowlarrContainer.innerHTML = '<p>Error: Prowlarr forms not loaded</p>';
+                }
+            })
+            .catch(error => {
+                console.error('[huntarrUI] Error loading prowlarr settings:', error);
+                prowlarrContainer.innerHTML = '<p>Error loading prowlarr settings</p>';
             });
     },
 

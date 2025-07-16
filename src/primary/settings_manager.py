@@ -23,7 +23,7 @@ from src.primary.utils.database import get_database
 DEFAULT_CONFIGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'default_configs'))
 
 # Known app types
-KNOWN_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr", "general"]
+KNOWN_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr", "prowlarr", "general"]
 
 # Add a settings cache with timestamps to avoid excessive database reads
 settings_cache = {}  # Format: {app_name: {'timestamp': timestamp, 'data': settings_dict}}

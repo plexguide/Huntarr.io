@@ -3403,7 +3403,7 @@ const SettingsForms = {
         const appType = container.getAttribute('data-app-type') || 'general';
         
         // Skip auto-save for all forms - they now use manual save
-        const manualSaveApps = ['swaparr', 'general', 'notifications', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        const manualSaveApps = ['swaparr', 'general', 'notifications', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr'];
         if (manualSaveApps.includes(appType)) {
             console.log(`[SettingsForms] Skipping auto-save setup for ${appType} - using manual save`);
             return;
@@ -4110,6 +4110,15 @@ const SettingsForms = {
                 // Quality-based removal settings
                 settings.quality_based_removal = getInputValue('#swaparr_quality_based_removal', false);
                 settings.blocked_quality_patterns = this.getTagsFromContainer('swaparr_quality_patterns_tags');
+            }
+            else if (appType === 'prowlarr') {
+                // Prowlarr doesn't use instances array, store directly
+                settings.instances = [];
+                
+                settings.enabled = getInputValue('#prowlarr-enabled-0', true);
+                settings.name = getInputValue('#prowlarr-name-0', 'Prowlarr');
+                settings.api_url = getInputValue('#prowlarr-url-0', '');
+                settings.api_key = getInputValue('#prowlarr-key-0', '');
             }
         }
         
@@ -5142,7 +5151,7 @@ const SettingsForms = {
     
     // Check connection status for an instance
     checkConnectionStatus: function(app, instanceIndex) {
-        const supportedApps = ['radarr', 'sonarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        const supportedApps = ['radarr', 'sonarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr'];
         if (!supportedApps.includes(app)) return;
         
         const urlInput = document.getElementById(`${app}-url-${instanceIndex}`);
@@ -5640,7 +5649,7 @@ const SettingsForms = {
         // Only remove if all sections have no unsaved changes
         if (!window.swaparrUnsavedChanges && !window.settingsUnsavedChanges && !window.notificationsUnsavedChanges &&
             !window.sonarrUnsavedChanges && !window.radarrUnsavedChanges && !window.lidarrUnsavedChanges &&
-            !window.readarrUnsavedChanges && !window.whisparrUnsavedChanges && !window.erosUnsavedChanges) {
+            !window.readarrUnsavedChanges && !window.whisparrUnsavedChanges && !window.erosUnsavedChanges && !window.prowlarrUnsavedChanges) {
             // Remove beforeunload event listener
             if (window.huntarrBeforeUnloadListener) {
                 window.removeEventListener('beforeunload', window.huntarrBeforeUnloadListener);
@@ -5712,7 +5721,7 @@ const SettingsForms = {
         }
         
         // Check each app instance for unsaved changes
-        const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr'];
         for (const appType of appTypes) {
             const unsavedChangesVar = `${appType}UnsavedChanges`;
             if (window[unsavedChangesVar]) {
@@ -5738,6 +5747,136 @@ const SettingsForms = {
         }
         
         return true; // No unsaved changes, can proceed
+    },
+
+    // Generate Prowlarr settings form
+    generateProwlarrForm: function(container, settings = {}) {
+        // Ensure settings is a valid object
+        if (!settings || typeof settings !== 'object') {
+            settings = {};
+        }
+        
+        // Add data-app-type attribute to container
+        container.setAttribute('data-app-type', 'prowlarr');
+        
+        // Add save button at the top
+        let prowlarrSaveButtonHtml = `
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="prowlarr-save-button" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        `;
+
+        // Create the Prowlarr configuration container
+        let prowlarrHtml = `
+            <div class="settings-group" style="
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+                border: 2px solid rgba(90, 109, 137, 0.3);
+                border-radius: 12px;
+                padding: 20px;
+                margin: 15px 0 25px 0;
+                box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            ">
+                <h3>Prowlarr Configuration</h3>
+                <div class="prowlarr-container">
+                    <div class="prowlarr-item" data-instance-id="0">
+                        <div class="prowlarr-header">
+                            <h4>Prowlarr</h4>
+                            <div class="prowlarr-actions">
+                                <span class="connection-status" id="prowlarr-status-0" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
+                            </div>
+                        </div>
+                        <div class="prowlarr-content">
+                            <div class="setting-item">
+                                <label for="prowlarr-enabled-0">Enabled:</label>
+                                <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                                    <input type="checkbox" id="prowlarr-enabled-0" name="enabled" ${settings.enabled !== false ? 'checked' : ''}>
+                                    <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                                </label>
+                                <p class="setting-help">Enable or disable Prowlarr integration</p>
+                            </div>
+                            <div class="setting-item">
+                                <label for="prowlarr-name-0">Name:</label>
+                                <input type="text" id="prowlarr-name-0" name="name" value="${settings.name || 'Prowlarr'}" placeholder="Friendly name for Prowlarr">
+                                <p class="setting-help">Friendly name for this Prowlarr instance</p>
+                            </div>
+                            <div class="setting-item">
+                                <label for="prowlarr-url-0">URL:</label>
+                                <input type="text" id="prowlarr-url-0" name="api_url" value="${settings.api_url || ''}" placeholder="Base URL for Prowlarr (e.g., http://localhost:9696)" data-instance-index="0">
+                                <p class="setting-help">Base URL for Prowlarr (e.g., http://localhost:9696)</p>
+                            </div>
+                            <div class="setting-item">
+                                <label for="prowlarr-key-0">API Key:</label>
+                                <input type="text" id="prowlarr-key-0" name="api_key" value="${settings.api_key || ''}" placeholder="API key for Prowlarr" data-instance-index="0">
+                                <p class="setting-help">API key for Prowlarr</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Set the content with save button at the top
+        container.innerHTML = prowlarrSaveButtonHtml + prowlarrHtml;
+
+        // Setup auto-detection (like Sonarr)
+        this.setupProwlarrAutoDetection(container);
+
+        // Set up manual save functionality for Prowlarr
+        this.setupAppManualSave(container, 'prowlarr', settings);
+    },
+
+    // Setup auto-detection for Prowlarr (similar to Sonarr)
+    setupProwlarrAutoDetection: function(container) {
+        console.log('[SettingsForms] Setting up Prowlarr auto-detection');
+        
+        // Find URL and API key inputs
+        const urlInput = container.querySelector('#prowlarr-url-0');
+        const apiKeyInput = container.querySelector('#prowlarr-key-0');
+        
+        if (urlInput) {
+            urlInput.addEventListener('input', () => {
+                setTimeout(() => {
+                    this.checkConnectionStatus('prowlarr', 0);
+                }, 1000); // 1 second delay to prevent spam while typing
+            });
+            urlInput.addEventListener('blur', () => {
+                this.checkConnectionStatus('prowlarr', 0);
+            });
+        }
+        
+        if (apiKeyInput) {
+            apiKeyInput.addEventListener('input', () => {
+                setTimeout(() => {
+                    this.checkConnectionStatus('prowlarr', 0);
+                }, 1000); // 1 second delay to prevent spam while typing
+            });
+            apiKeyInput.addEventListener('blur', () => {
+                this.checkConnectionStatus('prowlarr', 0);
+            });
+        }
+        
+        // Initial status check if URL and key are provided
+        if (urlInput && apiKeyInput && urlInput.value.trim() && apiKeyInput.value.trim()) {
+            setTimeout(() => {
+                this.checkConnectionStatus('prowlarr', 0);
+            }, 500);
+        }
     }
 };
 
