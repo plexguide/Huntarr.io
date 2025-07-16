@@ -3840,6 +3840,9 @@ const SettingsForms = {
                 console.log('[SettingsForms] Timezone changed - manual save required');
             });
         }
+        
+        // Set up manual save functionality for Settings
+        this.setupSettingsManualSave(container, settings);
     },
     
     // Update duration display - e.g., convert seconds to hours
