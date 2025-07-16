@@ -1207,6 +1207,29 @@ const SettingsForms = {
             }];
         }
         
+        // Add save button at the top
+        let readarrSaveButtonHtml = `
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="readarr-save-button" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        `;
+        
         // Create a container for instances
         let instancesHtml = `
             <div class="settings-group">
@@ -1334,6 +1357,7 @@ const SettingsForms = {
         
         // Continue with the rest of the settings form
         container.innerHTML = `
+            ${readarrSaveButtonHtml}
             ${instancesHtml}
             
             <div class="settings-group">
@@ -1397,6 +1421,9 @@ const SettingsForms = {
         // Add event listeners for the instance management
         SettingsForms.setupInstanceManagement(container, 'readarr', (settings.instances || []).length);
         
+        // Set up manual save functionality for Readarr
+        this.setupAppManualSave(container, 'readarr', settings);
+        
         // Load state information for each instance
         settings.instances.forEach((instance, index) => {
             if (typeof huntarrUI !== 'undefined' && huntarrUI.loadInstanceStateInfo) {
@@ -1443,6 +1470,29 @@ const SettingsForms = {
                 enabled: true
             }];
         }
+
+        // Add save button at the top
+        let whisparrSaveButtonHtml = `
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="whisparr-save-button" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        `;
 
         // Create a container for instances
         let instancesHtml = `
@@ -1629,11 +1679,14 @@ const SettingsForms = {
             </div>
         `;
 
-        // Set the content
-        container.innerHTML = instancesHtml + searchSettingsHtml;
+        // Set the content with save button at the top
+        container.innerHTML = whisparrSaveButtonHtml + instancesHtml + searchSettingsHtml;
 
         // Add event listeners for the instance management
         this.setupInstanceManagement(container, 'whisparr', (settings.instances || []).length);
+        
+        // Set up manual save functionality for Whisparr
+        this.setupAppManualSave(container, 'whisparr', settings);
         
         // Load state information for each instance
         settings.instances.forEach((instance, index) => {
@@ -1750,6 +1803,29 @@ const SettingsForms = {
                 enabled: true
             }];
         }
+
+        // Add save button at the top
+        let erosSaveButtonHtml = `
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="eros-save-button" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        `;
 
         // Create a container for instances
         let instancesHtml = `
@@ -1944,11 +2020,14 @@ const SettingsForms = {
             </div>
         `;
 
-        // Set the content
-        container.innerHTML = instancesHtml + searchSettingsHtml;
+        // Set the content with save button at the top
+        container.innerHTML = erosSaveButtonHtml + instancesHtml + searchSettingsHtml;
 
         // Add event listeners for the instance management
         this.setupInstanceManagement(container, 'eros', (settings.instances || []).length);
+        
+        // Set up manual save functionality for Eros
+        this.setupAppManualSave(container, 'eros', settings);
         
         // Load state information for each instance
         settings.instances.forEach((instance, index) => {
@@ -2897,9 +2976,19 @@ const SettingsForms = {
                 return;
             }
             
+            let formChanged = false;
+            
+            // Check if number of instances has changed
+            const currentInstanceCount = container.querySelectorAll('.instance-item').length;
+            const originalInstanceCount = normalizedSettings.originalInstanceCount || 0;
+            
+            if (currentInstanceCount !== originalInstanceCount) {
+                console.log(`[SettingsForms] ${appType} instance count changed: ${originalInstanceCount} -> ${currentInstanceCount}`);
+                formChanged = true;
+            }
+            
             // Check regular form inputs
             const inputs = container.querySelectorAll('input, select, textarea');
-            let formChanged = false;
             
             inputs.forEach(input => {
                 // Skip disabled inputs, inputs without IDs, or buttons
@@ -2946,6 +3035,9 @@ const SettingsForms = {
                 input.addEventListener('input', detectChanges);
             }
         });
+        
+        // Also listen for change events on the container (for instance add/remove)
+        container.addEventListener('change', detectChanges);
         
         // Save button click handler
         saveButton.addEventListener('click', () => {
@@ -3016,6 +3108,9 @@ const SettingsForms = {
         
         // Function to capture current form state as baseline
         const captureFormBaseline = () => {
+            // Capture instance count
+            normalizedSettings.originalInstanceCount = container.querySelectorAll('.instance-item').length;
+            
             const inputs = container.querySelectorAll('input, select, textarea');
             inputs.forEach(input => {
                 if (!input.id || input.disabled || input.type === 'button' || input.type === 'submit') return;
