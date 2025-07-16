@@ -4587,7 +4587,7 @@ const SettingsForms = {
                     }
                     
                     // Trigger change event to update save button state
-                    const changeEvent = new Event('change');
+                    const changeEvent = new Event('change', { bubbles: true });
                     container.dispatchEvent(changeEvent);
                 }
             });
@@ -4845,7 +4845,7 @@ const SettingsForms = {
                         updateAddButtonText(newAddBtn);
                         
                         // Trigger change event
-                        const changeEvent = new Event('change');
+                        const changeEvent = new Event('change', { bubbles: true });
                         container.dispatchEvent(changeEvent);
                     });
                 }
@@ -4975,7 +4975,7 @@ const SettingsForms = {
                 
                 // Update button text and trigger change event
                 updateAddButtonText(newAddBtn);
-                const changeEvent = new Event('change');
+                const changeEvent = new Event('change', { bubbles: true });
                 container.dispatchEvent(changeEvent);
                 
                 // Update Swaparr visibility for the new instance
