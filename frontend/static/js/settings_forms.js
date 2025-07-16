@@ -58,7 +58,7 @@ const SettingsForms = {
         // Add save button at the top
         let sonarrSaveButtonHtml = `
             <div style="margin-bottom: 20px;">
-                <button type="button" id="saveSonarrButton" disabled style="
+                <button type="button" id="sonarr-save-button" disabled style="
                     background: #6b7280;
                     color: #9ca3af;
                     border: 1px solid #4b5563;
@@ -577,7 +577,7 @@ const SettingsForms = {
         // Add save button at the top
         let radarrSaveButtonHtml = `
             <div style="margin-bottom: 20px;">
-                <button type="button" id="saveRadarrButton" disabled style="
+                <button type="button" id="radarr-save-button" disabled style="
                     background: #6b7280;
                     color: #9ca3af;
                     border: 1px solid #4b5563;
@@ -933,7 +933,7 @@ const SettingsForms = {
         // Add save button at the top
         let lidarrSaveButtonHtml = `
             <div style="margin-bottom: 20px;">
-                <button type="button" id="saveLidarrButton" disabled style="
+                <button type="button" id="lidarr-save-button" disabled style="
                     background: #6b7280;
                     color: #9ca3af;
                     border: 1px solid #4b5563;
@@ -2957,30 +2957,61 @@ const SettingsForms = {
             saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             saveButton.disabled = true;
             
-            // Use the apps module save functionality
-            if (window.appsModule && window.appsModule.saveAppSettings) {
-                const appPanel = container.closest('.app-apps-panel') || document.getElementById(`${appType}Apps`);
-                if (appPanel) {
-                    window.appsModule.saveAppSettings(appType, appPanel);
-                    
-                    // Wait a bit then reset button state (the apps module will handle success/error)
-                    setTimeout(() => {
-                        saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
-                        updateSaveButtonState(false);
-                        
-                        // Update baseline after successful save
-                        captureFormBaseline();
-                    }, 1000);
-                } else {
-                    console.error(`[SettingsForms] Could not find app panel for ${appType}`);
-                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
-                    updateSaveButtonState(hasChanges);
-                }
-            } else {
-                console.error('[SettingsForms] Apps module save function not available');
+            // Collect form settings
+            let settings;
+            try {
+                settings = SettingsForms.getFormSettings(container, appType);
+                console.log(`[SettingsForms] Collected ${appType} settings:`, settings);
+            } catch (error) {
+                console.error(`[SettingsForms] Error collecting ${appType} settings:`, error);
                 saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
                 updateSaveButtonState(hasChanges);
+                return;
             }
+            
+            // Save settings to server
+            HuntarrUtils.fetchWithTimeout(`./api/settings/${appType}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(`[SettingsForms] ${appType} settings saved successfully:`, data);
+                
+                // Reset button state and clear unsaved changes warning
+                saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                updateSaveButtonState(false);
+                
+                // Update baseline after successful save
+                captureFormBaseline();
+                
+                // Show success notification
+                if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
+                    huntarrUI.showNotification(`${appType.charAt(0).toUpperCase() + appType.slice(1)} settings saved successfully`, 'success');
+                }
+            })
+            .catch(error => {
+                console.error(`[SettingsForms] Error saving ${appType} settings:`, error);
+                
+                // Reset button state but keep changes detected
+                saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                updateSaveButtonState(hasChanges);
+                
+                // Show error notification
+                if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
+                    huntarrUI.showNotification(`Error saving ${appType} settings: ${error.message}`, 'error');
+                } else {
+                    alert(`Error saving ${appType} settings: ${error.message}`);
+                }
+            });
         });
         
         // Function to capture current form state as baseline
