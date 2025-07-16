@@ -2544,6 +2544,167 @@ const SettingsForms = {
         }, 200);
     },
 
+    // Set up manual save functionality for Notifications
+    setupNotificationsManualSave: function(container, originalSettings = {}) {
+        console.log('[SettingsForms] Setting up manual save for Notifications with original settings:', originalSettings);
+        
+        const saveButton = document.querySelector('#notifications-save-button');
+        if (!saveButton) {
+            console.error('[SettingsForms] Notifications save button not found!');
+            return;
+        }
+        
+        let hasChanges = false;
+        
+        // Clear any existing unsaved changes state and warnings when setting up
+        window.notificationsUnsavedChanges = false;
+        this.removeUnsavedChangesWarning();
+        
+        // Initialize button in disabled/grey state immediately
+        saveButton.disabled = true;
+        saveButton.style.background = '#6b7280';
+        saveButton.style.color = '#9ca3af';
+        saveButton.style.borderColor = '#4b5563';
+        saveButton.style.cursor = 'not-allowed';
+        console.log('[SettingsForms] Notifications save button initialized as disabled (grey)');
+        
+        // Function to update save button state
+        const updateSaveButtonState = (changesDetected) => {
+            hasChanges = changesDetected;
+            window.notificationsUnsavedChanges = changesDetected;
+            console.log(`[SettingsForms] Updating notifications save button state: hasChanges=${hasChanges}, global unsaved=${window.notificationsUnsavedChanges}`);
+            
+            if (hasChanges) {
+                // Red enabled state
+                saveButton.disabled = false;
+                saveButton.style.background = '#dc2626';
+                saveButton.style.color = '#ffffff';
+                saveButton.style.borderColor = '#dc2626';
+                saveButton.style.cursor = 'pointer';
+                console.log('[SettingsForms] Notifications save button enabled (red)');
+                
+                // Add beforeunload warning for page refresh
+                SettingsForms.addUnsavedChangesWarning();
+            } else {
+                // Grey disabled state
+                saveButton.disabled = true;
+                saveButton.style.background = '#6b7280';
+                saveButton.style.color = '#9ca3af';
+                saveButton.style.borderColor = '#4b5563';
+                saveButton.style.cursor = 'not-allowed';
+                console.log('[SettingsForms] Notifications save button disabled (grey)');
+                
+                // Remove beforeunload warning when no changes
+                SettingsForms.removeUnsavedChangesWarning();
+            }
+        };
+        
+        // Function to detect changes in form elements
+        const detectChanges = () => {
+            // Check regular form inputs
+            const inputs = container.querySelectorAll('input, select, textarea');
+            let formChanged = false;
+            
+            inputs.forEach(input => {
+                // Skip disabled inputs or inputs without IDs
+                if (!input.id || input.disabled) {
+                    return;
+                }
+                
+                let key = input.id;
+                let originalValue, currentValue;
+                
+                if (input.type === 'checkbox') {
+                    originalValue = originalSettings[key] !== undefined ? originalSettings[key] : false;
+                    currentValue = input.checked;
+                } else if (input.type === 'number') {
+                    // Get default from input attributes or use 0
+                    const defaultValue = parseInt(input.getAttribute('value')) || parseInt(input.min) || 0;
+                    originalValue = originalSettings[key] !== undefined ? parseInt(originalSettings[key]) : defaultValue;
+                    currentValue = parseInt(input.value) || 0;
+                } else {
+                    originalValue = originalSettings[key] || '';
+                    currentValue = input.value.trim();
+                }
+                
+                console.log(`[SettingsForms] Checking notifications ${key}: original=${originalValue}, current=${currentValue}`);
+                
+                if (originalValue !== currentValue) {
+                    console.log(`[SettingsForms] Notifications change detected in ${key}: ${originalValue} -> ${currentValue}`);
+                    formChanged = true;
+                }
+            });
+            
+            // Special handling for apprise_urls which is a textarea with newlines
+            const appriseUrlsElement = container.querySelector('#apprise_urls');
+            if (appriseUrlsElement) {
+                const originalUrls = originalSettings.apprise_urls || [];
+                const currentUrls = appriseUrlsElement.value.split('\n')
+                    .map(url => url.trim())
+                    .filter(url => url.length > 0);
+                
+                if (JSON.stringify(originalUrls.sort()) !== JSON.stringify(currentUrls.sort())) {
+                    console.log('[SettingsForms] Notifications apprise_urls change detected');
+                    formChanged = true;
+                }
+            }
+            
+            console.log(`[SettingsForms] Notifications change detection result: ${formChanged}`);
+            updateSaveButtonState(formChanged);
+        };
+        
+        // Add event listeners to all form elements
+        const inputs = container.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('change', detectChanges);
+            if (input.type === 'text' || input.type === 'number' || input.tagName.toLowerCase() === 'textarea') {
+                input.addEventListener('input', detectChanges);
+            }
+        });
+        
+        // Save button click handler
+        saveButton.addEventListener('click', () => {
+            if (!hasChanges) return;
+            
+            console.log('[SettingsForms] Manual save triggered for Notifications');
+            
+            // Show saving state
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveButton.disabled = true;
+            
+            // Get settings and save
+            if (window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
+                window.huntarrUI.autoSaveGeneralSettings(true).then(() => {
+                    console.log('[SettingsForms] Notifications manual save successful');
+                    
+                    // Reset button state and clear unsaved changes warning
+                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                    updateSaveButtonState(false);
+                    
+                    // Update original settings for future change detection
+                    const updatedSettings = window.huntarrUI.getFormSettings('general');
+                    if (updatedSettings) {
+                        Object.assign(originalSettings, updatedSettings);
+                    }
+                    
+                }).catch(error => {
+                    console.error('[SettingsForms] Notifications manual save failed:', error);
+                    
+                    // Reset button state
+                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                    updateSaveButtonState(hasChanges);
+                });
+            }
+        });
+        
+        // Initial change detection - ensure form is fully loaded before checking
+        // Use a longer timeout to ensure all form elements are properly initialized
+        setTimeout(() => {
+            console.log('[SettingsForms] Running initial change detection for Notifications');
+            detectChanges();
+        }, 200);
+    },
+
     // Set up manual save functionality for Swaparr
     setupSwaparrManualSave: function(container, originalSettings = {}) {
         console.log('[SettingsForms] Setting up manual save with original settings:', originalSettings);
@@ -2777,8 +2938,8 @@ const SettingsForms = {
         
         const appType = container.getAttribute('data-app-type') || 'general';
         
-        // Skip auto-save for Swaparr and Settings - they use manual save
-        if (appType === 'swaparr' || appType === 'general') {
+        // Skip auto-save for Swaparr, Settings, and Notifications - they use manual save
+        if (appType === 'swaparr' || appType === 'general' || appType === 'notifications') {
             console.log(`[SettingsForms] Skipping auto-save setup for ${appType} - using manual save`);
             return;
         }
@@ -4862,20 +5023,7 @@ const SettingsForms = {
             });
         }
 
-        // Set up auto-save for notifications settings
-        const notificationInputs = container.querySelectorAll('input, select, textarea');
-        notificationInputs.forEach(input => {
-            input.addEventListener('change', () => {
-                console.log('[SettingsForms] Notification setting changed - manual save required');
-            });
-            
-            // Also listen for input events on text areas
-            if (input.tagName === 'TEXTAREA') {
-                input.addEventListener('input', () => {
-                    console.log('[SettingsForms] Notification textarea input - manual save required');
-                });
-            }
-        });
+        // Auto-save disabled for notifications - using manual save button
 
         // Set up test notification button
         const testBtn = container.querySelector('#testNotificationBtn');
@@ -4930,6 +5078,9 @@ const SettingsForms = {
                 });
             });
         }
+        
+        // Set up manual save functionality for Notifications
+        this.setupNotificationsManualSave(container, settings);
     },
 
     // Refresh Apps section to reflect Swaparr setting changes
@@ -4958,7 +5109,7 @@ const SettingsForms = {
         // Add beforeunload event listener for page refresh warning
         if (!window.huntarrBeforeUnloadListener) {
             window.huntarrBeforeUnloadListener = function(e) {
-                if (window.swaparrUnsavedChanges || window.settingsUnsavedChanges) {
+                if (window.swaparrUnsavedChanges || window.settingsUnsavedChanges || window.notificationsUnsavedChanges) {
                     e.preventDefault();
                     e.returnValue = ''; // Standard way to trigger browser warning
                     return ''; // For older browsers
@@ -4971,8 +5122,8 @@ const SettingsForms = {
     removeUnsavedChangesWarning: function() {
         console.log('[SettingsForms] Removing unsaved changes warning');
         
-        // Only remove if both swaparr and settings have no unsaved changes
-        if (!window.swaparrUnsavedChanges && !window.settingsUnsavedChanges) {
+        // Only remove if swaparr, settings, and notifications all have no unsaved changes
+        if (!window.swaparrUnsavedChanges && !window.settingsUnsavedChanges && !window.notificationsUnsavedChanges) {
             // Remove beforeunload event listener
             if (window.huntarrBeforeUnloadListener) {
                 window.removeEventListener('beforeunload', window.huntarrBeforeUnloadListener);
@@ -5018,6 +5169,26 @@ const SettingsForms = {
                 // User chose to leave and lose changes
                 console.log('[SettingsForms] User chose to leave and lose Settings changes');
                 window.settingsUnsavedChanges = false;
+                this.removeUnsavedChangesWarning();
+                return true;
+            }
+        }
+        
+        if (window.notificationsUnsavedChanges) {
+            const userChoice = confirm(
+                'You have unsaved changes in Notifications.\n\n' +
+                'Click "OK" to stay and save your changes.\n' +
+                'Click "Cancel" to continue and lose your changes.'
+            );
+            
+            if (userChoice) {
+                // User chose to stay and save
+                console.log('[SettingsForms] User chose to stay and save Notifications changes');
+                return false;
+            } else {
+                // User chose to leave and lose changes
+                console.log('[SettingsForms] User chose to leave and lose Notifications changes');
+                window.notificationsUnsavedChanges = false;
                 this.removeUnsavedChangesWarning();
                 return true;
             }
