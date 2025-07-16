@@ -2561,18 +2561,8 @@ const SettingsForms = {
         window.notificationsUnsavedChanges = false;
         this.removeUnsavedChangesWarning();
         
-        // Ensure originalSettings has the same defaults used in form generation
-        // This prevents mismatches between form display values and change detection
-        const normalizedSettings = {
-            enable_notifications: originalSettings.enable_notifications !== undefined ? originalSettings.enable_notifications : false,
-            notification_level: originalSettings.notification_level || 'warning',
-            apprise_urls: originalSettings.apprise_urls || [],
-            notify_on_missing: originalSettings.notify_on_missing !== undefined ? originalSettings.notify_on_missing : true,
-            notify_on_upgrade: originalSettings.notify_on_upgrade !== undefined ? originalSettings.notify_on_upgrade : true,
-            notification_include_instance: originalSettings.notification_include_instance !== undefined ? originalSettings.notification_include_instance : true,
-            notification_include_app: originalSettings.notification_include_app !== undefined ? originalSettings.notification_include_app : true,
-            ...originalSettings // Keep any other settings that might exist
-        };
+        // Capture the actual form state as baseline instead of guessing defaults
+        let normalizedSettings = {};
         
         // Initialize button in disabled/grey state immediately
         saveButton.disabled = true;
@@ -2717,10 +2707,30 @@ const SettingsForms = {
             }
         });
         
-        // Initial change detection - ensure form is fully loaded before checking
+        // Initial setup - capture actual form state as baseline
         // Use a longer timeout to ensure all form elements are properly initialized
         setTimeout(() => {
-            console.log('[SettingsForms] Initializing notifications form baseline');
+            console.log('[SettingsForms] Capturing actual form state as notifications baseline');
+            
+            // Capture the current form state as our baseline instead of guessing defaults
+            const inputs = container.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                if (!input.id || input.disabled) return;
+                
+                let value;
+                if (input.type === 'checkbox') {
+                    value = input.checked;
+                } else if (input.type === 'number') {
+                    value = parseInt(input.value) || 0;
+                } else if (input.id === 'apprise_urls') {
+                    // Special handling for textarea - convert to array for comparison
+                    value = input.value.split('\n').map(url => url.trim()).filter(url => url.length > 0);
+                } else {
+                    value = input.value.trim();
+                }
+                
+                normalizedSettings[input.id] = value;
+            });
             
             // Force button to grey state and clear any changes
             saveButton.disabled = true;
@@ -2731,12 +2741,9 @@ const SettingsForms = {
             window.notificationsUnsavedChanges = false;
             hasChanges = false;
             
-            // Enable change detection now that form is properly initialized
+            // Enable change detection now that baseline is captured
             suppressInitialDetection = false;
-            console.log('[SettingsForms] Notifications change detection enabled - button should remain grey unless changes made');
-            
-            // Run one final change detection to confirm no changes detected
-            detectChanges();
+            console.log('[SettingsForms] Notifications baseline captured, change detection enabled');
         }, 500);
     },
 
