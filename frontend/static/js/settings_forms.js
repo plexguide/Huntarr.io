@@ -2555,10 +2555,24 @@ const SettingsForms = {
         }
         
         let hasChanges = false;
+        let suppressInitialDetection = true; // Suppress change detection during initial setup
         
         // Clear any existing unsaved changes state and warnings when setting up
         window.notificationsUnsavedChanges = false;
         this.removeUnsavedChangesWarning();
+        
+        // Ensure originalSettings has the same defaults used in form generation
+        // This prevents mismatches between form display values and change detection
+        const normalizedSettings = {
+            enable_notifications: originalSettings.enable_notifications !== undefined ? originalSettings.enable_notifications : false,
+            notification_level: originalSettings.notification_level || 'warning',
+            apprise_urls: originalSettings.apprise_urls || [],
+            notify_on_missing: originalSettings.notify_on_missing !== undefined ? originalSettings.notify_on_missing : true,
+            notify_on_upgrade: originalSettings.notify_on_upgrade !== undefined ? originalSettings.notify_on_upgrade : true,
+            notification_include_instance: originalSettings.notification_include_instance !== undefined ? originalSettings.notification_include_instance : true,
+            notification_include_app: originalSettings.notification_include_app !== undefined ? originalSettings.notification_include_app : true,
+            ...originalSettings // Keep any other settings that might exist
+        };
         
         // Initialize button in disabled/grey state immediately
         saveButton.disabled = true;
@@ -2601,6 +2615,12 @@ const SettingsForms = {
         
         // Function to detect changes in form elements
         const detectChanges = () => {
+            // Skip change detection if still in initial setup phase
+            if (suppressInitialDetection) {
+                console.log('[SettingsForms] Notifications change detection suppressed during initial setup');
+                return;
+            }
+            
             // Check regular form inputs
             const inputs = container.querySelectorAll('input, select, textarea');
             let formChanged = false;
@@ -2615,15 +2635,15 @@ const SettingsForms = {
                 let originalValue, currentValue;
                 
                 if (input.type === 'checkbox') {
-                    originalValue = originalSettings[key] !== undefined ? originalSettings[key] : false;
+                    originalValue = normalizedSettings[key] !== undefined ? normalizedSettings[key] : false;
                     currentValue = input.checked;
                 } else if (input.type === 'number') {
                     // Get default from input attributes or use 0
                     const defaultValue = parseInt(input.getAttribute('value')) || parseInt(input.min) || 0;
-                    originalValue = originalSettings[key] !== undefined ? parseInt(originalSettings[key]) : defaultValue;
+                    originalValue = normalizedSettings[key] !== undefined ? parseInt(normalizedSettings[key]) : defaultValue;
                     currentValue = parseInt(input.value) || 0;
                 } else {
-                    originalValue = originalSettings[key] || '';
+                    originalValue = normalizedSettings[key] || '';
                     currentValue = input.value.trim();
                 }
                 
@@ -2638,7 +2658,7 @@ const SettingsForms = {
             // Special handling for apprise_urls which is a textarea with newlines
             const appriseUrlsElement = container.querySelector('#apprise_urls');
             if (appriseUrlsElement) {
-                const originalUrls = originalSettings.apprise_urls || [];
+                const originalUrls = normalizedSettings.apprise_urls || [];
                 const currentUrls = appriseUrlsElement.value.split('\n')
                     .map(url => url.trim())
                     .filter(url => url.length > 0);
@@ -2684,7 +2704,7 @@ const SettingsForms = {
                     // Update original settings for future change detection
                     const updatedSettings = window.huntarrUI.getFormSettings('general');
                     if (updatedSettings) {
-                        Object.assign(originalSettings, updatedSettings);
+                        Object.assign(normalizedSettings, updatedSettings);
                     }
                     
                 }).catch(error => {
@@ -2700,9 +2720,24 @@ const SettingsForms = {
         // Initial change detection - ensure form is fully loaded before checking
         // Use a longer timeout to ensure all form elements are properly initialized
         setTimeout(() => {
-            console.log('[SettingsForms] Running initial change detection for Notifications');
+            console.log('[SettingsForms] Initializing notifications form baseline');
+            
+            // Force button to grey state and clear any changes
+            saveButton.disabled = true;
+            saveButton.style.background = '#6b7280';
+            saveButton.style.color = '#9ca3af';
+            saveButton.style.borderColor = '#4b5563';
+            saveButton.style.cursor = 'not-allowed';
+            window.notificationsUnsavedChanges = false;
+            hasChanges = false;
+            
+            // Enable change detection now that form is properly initialized
+            suppressInitialDetection = false;
+            console.log('[SettingsForms] Notifications change detection enabled - button should remain grey unless changes made');
+            
+            // Run one final change detection to confirm no changes detected
             detectChanges();
-        }, 200);
+        }, 500);
     },
 
     // Set up manual save functionality for Swaparr
