@@ -580,6 +580,75 @@
             </div>
         </div>
 
+        <!-- Additional CSS for Prowlarr Status Card -->
+        <style>
+            .prowlarr-stats-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 15px;
+                width: 100%;
+            }
+            
+            .prowlarr-health-indicator {
+                margin-top: 10px;
+                padding: 8px 12px;
+                background-color: rgba(32, 38, 50, 0.6);
+                border-radius: 6px;
+                border-left: 3px solid #6366f1;
+            }
+            
+            .health-status-text {
+                font-size: 0.9em;
+                font-weight: 500;
+                color: #9ca3af;
+            }
+        </style>
+
+        <!-- Prowlarr Status Card -->
+        <div class="card stats-card" id="prowlarrStatusCard" style="display: none;">
+            <div class="card-header">
+                <h3><i class="fas fa-search"></i> Prowlarr Monitor</h3>
+                <button id="refresh-prowlarr-data" class="action-button success"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+            <div class="media-stats-container">
+                <div class="prowlarr-stats-grid">
+                    <!-- Prowlarr Stats Card -->
+                    <div class="app-stats-card prowlarr">
+                        <div class="status-container">
+                            <span id="prowlarrConnectionStatus" class="status-badge">⚫ Disconnected</span>
+                        </div>
+                        <div class="app-content">
+                            <div class="app-icon-wrapper">
+                                <img src="./static/images/app-icons/sonarr.png" alt="Prowlarr Logo" class="app-logo" style="filter: hue-rotate(60deg);">
+                            </div>
+                            <h4>Prowlarr</h4>
+                        </div>
+                        <div class="stats-numbers">
+                            <div class="stat-box">
+                                <div class="stat-number" id="prowlarr-active-indexers">--</div>
+                                <div class="stat-label">Active Indexers</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="prowlarr-total-calls">--</div>
+                                <div class="stat-label">Total API Calls</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="prowlarr-throttled">--</div>
+                                <div class="stat-label">Throttled Indexers</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="prowlarr-failed">--</div>
+                                <div class="stat-label">Failed Indexers</div>
+                            </div>
+                        </div>
+                        <div class="prowlarr-health-indicator">
+                            <div id="prowlarr-health-status" class="health-status-text">Checking connection...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </section>
 

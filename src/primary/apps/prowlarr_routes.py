@@ -151,6 +151,130 @@ def get_status():
         prowlarr_logger.error(f"Error getting Prowlarr status: {str(e)}")
         return jsonify({"configured": False, "connected": False, "error": str(e)})
 
+@prowlarr_bp.route('/stats', methods=['GET'])
+def get_prowlarr_stats():
+    """Get Prowlarr statistics for homepage monitoring"""
+    try:
+        settings = load_settings("prowlarr")
+        
+        api_url = settings.get("api_url", "").strip()
+        api_key = settings.get("api_key", "").strip()
+        enabled = settings.get("enabled", True)
+        
+        if not api_url or not api_key or not enabled:
+            return jsonify({
+                'success': False,
+                'error': 'Prowlarr is not configured or enabled'
+            }), 400
+        
+        # Clean URL
+        if not api_url.startswith(('http://', 'https://')):
+            api_url = f'http://{api_url}'
+        
+        headers = {'X-Api-Key': api_key}
+        
+        # Initialize stats
+        stats = {
+            'connected': False,
+            'active_indexers': 0,
+            'total_indexers': 0,
+            'throttled_indexers': 0,
+            'failed_indexers': 0,
+            'total_api_calls': 0,
+            'version': 'Unknown',
+            'health_status': 'Disconnected'
+        }
+        
+        try:
+            # Get system status
+            status_url = f"{api_url.rstrip('/')}/api/v1/system/status"
+            status_response = requests.get(status_url, headers=headers, timeout=10)
+            
+            if status_response.status_code == 200:
+                status_data = status_response.json()
+                stats['connected'] = True
+                stats['version'] = status_data.get('version', 'Unknown')
+                stats['health_status'] = 'Connected'
+                
+                # Get indexers information
+                try:
+                    indexers_url = f"{api_url.rstrip('/')}/api/v1/indexer"
+                    indexers_response = requests.get(indexers_url, headers=headers, timeout=10)
+                    
+                    if indexers_response.status_code == 200:
+                        indexers = indexers_response.json()
+                        stats['total_indexers'] = len(indexers)
+                        
+                        # Count active, throttled, and failed indexers
+                        active_count = 0
+                        throttled_count = 0
+                        failed_count = 0
+                        
+                        for indexer in indexers:
+                            if indexer.get('enable', False):
+                                active_count += 1
+                                
+                            # Check for throttling/rate limiting
+                            capabilities = indexer.get('capabilities', {})
+                            if capabilities.get('limitsexceeded', False):
+                                throttled_count += 1
+                                
+                            # Check for failures - look for disabled indexers or low priority
+                            if not indexer.get('enable', False):
+                                failed_count += 1
+                        
+                        stats['active_indexers'] = active_count
+                        stats['throttled_indexers'] = throttled_count
+                        stats['failed_indexers'] = failed_count
+                        
+                        # Update health status based on indexer health
+                        if throttled_count > 0:
+                            stats['health_status'] = f'{throttled_count} indexer(s) throttled'
+                        elif failed_count > 0:
+                            stats['health_status'] = f'{failed_count} indexer(s) disabled'
+                        else:
+                            stats['health_status'] = 'All indexers healthy'
+                            
+                except Exception:
+                    # Indexer endpoint failed but system is connected
+                    stats['health_status'] = 'Indexer data unavailable'
+                
+                # Get API history/usage statistics
+                try:
+                    history_url = f"{api_url.rstrip('/')}/api/v1/history"
+                    history_response = requests.get(history_url, headers=headers, timeout=10, params={'pageSize': 1})
+                    
+                    if history_response.status_code == 200:
+                        history_data = history_response.json()
+                        # Total records gives us approximate API call count
+                        stats['total_api_calls'] = history_data.get('totalRecords', 0)
+                        
+                except Exception:
+                    # History endpoint failed, keep default value
+                    pass
+                    
+            else:
+                stats['health_status'] = f'Connection failed (HTTP {status_response.status_code})'
+                
+        except requests.exceptions.Timeout:
+            stats['health_status'] = 'Connection timeout'
+        except requests.exceptions.ConnectionError:
+            stats['health_status'] = 'Connection refused'
+        except Exception as e:
+            stats['health_status'] = f'Error: {str(e)[:50]}'
+        
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+        
+    except Exception as e:
+        prowlarr_logger.error(f"Failed to get Prowlarr stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to get Prowlarr stats: {str(e)}'
+        }), 500
+
 @prowlarr_bp.route('/test-connection', methods=['POST'])
 def test_connection_endpoint():
     """Test connection to Prowlarr API instance"""
