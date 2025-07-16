@@ -320,8 +320,8 @@ let huntarrUI = {
             });
         }
         
-        // Settings auto-save setup
-        this.setupSettingsAutoSave();
+        // Settings now use manual save - no auto-save setup
+        console.log('[huntarrUI] Settings using manual save - skipping auto-save setup');
         
         // Auto-save enabled - no need to warn about unsaved changes
         
@@ -345,22 +345,8 @@ let huntarrUI = {
         // Settings form delegation - now triggers auto-save
         const settingsFormContainer = document.querySelector('#settingsSection');
         if (settingsFormContainer) {
-            settingsFormContainer.addEventListener('input', (event) => {
-                if (event.target.closest('.app-settings-panel.active')) {
-                    // Check if the target is an input, select, or textarea within the active panel
-                    if (event.target.matches('input, select, textarea')) {
-                        this.triggerSettingsAutoSave(); // Trigger auto-save instead of marking changed
-                    }
-                }
-            });
-             settingsFormContainer.addEventListener('change', (event) => {
-                 if (event.target.closest('.app-settings-panel.active')) {
-                    // Handle changes for checkboxes and selects that use 'change' event
-                    if (event.target.matches('input[type="checkbox"], select')) {
-                         this.triggerSettingsAutoSave(); // Trigger auto-save instead of marking changed
-                    }
-                 }
-            });
+            // Settings now use manual save - remove auto-save event listeners
+            console.log('[huntarrUI] Settings section using manual save - no auto-save listeners');
         }
 
         // Auto-save enabled - no need for beforeunload warnings

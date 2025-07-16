@@ -1,9 +1,30 @@
 <section id="settingsSection" class="content-section">
+    <!-- Settings Save Button -->
+    <div class="settings-save-container" style="margin-bottom: 20px;">
+        <button id="settings-save-button" class="settings-save-btn" disabled style="
+            background: #6b7280;
+            color: #9ca3af;
+            border: 1px solid #4b5563;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: not-allowed;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        ">
+            <i class="fas fa-save"></i>
+            Save Changes
+        </button>
+    </div>
+    
     <div id="generalSettings" class="app-settings-panel active" style="display: block;"></div>
 </section>
 
 <style>
-    /* Auto-save enabled - save button styles removed */
+    /* Manual save enabled - save button styles included */
     
     /* Fixed banner footer styling */
     .fixed-banner-footer {

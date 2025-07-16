@@ -33,6 +33,11 @@ const SettingsForms = {
     
     // Generate Sonarr settings form
     generateSonarrForm: function(container, settings = {}) {
+        // Ensure settings is a valid object
+        if (!settings || typeof settings !== 'object') {
+            settings = {};
+        }
+        
         // Temporarily suppress change detection during form generation
         const wasSuppressionActive = window._appsSuppressChangeDetection;
         window._appsSuppressChangeDetection = true;
@@ -278,7 +283,7 @@ const SettingsForms = {
         container.innerHTML = instancesHtml + searchSettingsHtml;
 
         // Setup instance management (add/remove/test)
-        SettingsForms.setupInstanceManagement(container, 'sonarr', settings.instances.length);
+        SettingsForms.setupInstanceManagement(container, 'sonarr', (settings.instances || []).length);
         
         // Load state information for each instance
         settings.instances.forEach((instance, index) => {
@@ -739,7 +744,7 @@ const SettingsForms = {
         container.innerHTML = instancesHtml + searchSettingsHtml;
 
         // Add event listeners for the instance management
-        this.setupInstanceManagement(container, 'radarr', settings.instances.length);
+        this.setupInstanceManagement(container, 'radarr', (settings.instances || []).length);
         
         // Load state information for each instance
         settings.instances.forEach((instance, index) => {
@@ -1064,7 +1069,7 @@ const SettingsForms = {
         `;
 
         // Add event listeners for the instance management
-        SettingsForms.setupInstanceManagement(container, 'lidarr', settings.instances.length);
+        SettingsForms.setupInstanceManagement(container, 'lidarr', (settings.instances || []).length);
         
         // Load state information for each instance
         settings.instances.forEach((instance, index) => {
@@ -1301,7 +1306,7 @@ const SettingsForms = {
         `;
 
         // Add event listeners for the instance management
-        SettingsForms.setupInstanceManagement(container, 'readarr', settings.instances.length);
+        SettingsForms.setupInstanceManagement(container, 'readarr', (settings.instances || []).length);
         
         // Load state information for each instance
         settings.instances.forEach((instance, index) => {
@@ -1539,7 +1544,7 @@ const SettingsForms = {
         container.innerHTML = instancesHtml + searchSettingsHtml;
 
         // Add event listeners for the instance management
-        this.setupInstanceManagement(container, 'whisparr', settings.instances.length);
+        this.setupInstanceManagement(container, 'whisparr', (settings.instances || []).length);
         
         // Load state information for each instance
         settings.instances.forEach((instance, index) => {
@@ -1854,7 +1859,7 @@ const SettingsForms = {
         container.innerHTML = instancesHtml + searchSettingsHtml;
 
         // Add event listeners for the instance management
-        this.setupInstanceManagement(container, 'eros', settings.instances.length);
+        this.setupInstanceManagement(container, 'eros', (settings.instances || []).length);
         
         // Load state information for each instance
         settings.instances.forEach((instance, index) => {
@@ -2378,6 +2383,167 @@ const SettingsForms = {
         this.setupSwaparrManualSave(container, settings);
     },
 
+    // Set up manual save functionality for Settings
+    setupSettingsManualSave: function(container, originalSettings = {}) {
+        console.log('[SettingsForms] Setting up manual save for Settings with original settings:', originalSettings);
+        
+        const saveButton = document.querySelector('#settings-save-button');
+        if (!saveButton) {
+            console.error('[SettingsForms] Settings save button not found!');
+            return;
+        }
+        
+        let hasChanges = false;
+        
+        // Clear any existing unsaved changes state and warnings when setting up
+        window.settingsUnsavedChanges = false;
+        this.removeUnsavedChangesWarning();
+        
+        // Initialize button in disabled/grey state immediately
+        saveButton.disabled = true;
+        saveButton.style.background = '#6b7280';
+        saveButton.style.color = '#9ca3af';
+        saveButton.style.borderColor = '#4b5563';
+        saveButton.style.cursor = 'not-allowed';
+        console.log('[SettingsForms] Settings save button initialized as disabled (grey)');
+        
+        // Function to update save button state
+        const updateSaveButtonState = (changesDetected) => {
+            hasChanges = changesDetected;
+            window.settingsUnsavedChanges = changesDetected;
+            console.log(`[SettingsForms] Updating settings save button state: hasChanges=${hasChanges}, global unsaved=${window.settingsUnsavedChanges}`);
+            
+            if (hasChanges) {
+                // Red enabled state
+                saveButton.disabled = false;
+                saveButton.style.background = '#dc2626';
+                saveButton.style.color = '#ffffff';
+                saveButton.style.borderColor = '#dc2626';
+                saveButton.style.cursor = 'pointer';
+                console.log('[SettingsForms] Settings save button enabled (red)');
+                
+                // Add beforeunload warning for page refresh
+                SettingsForms.addUnsavedChangesWarning();
+            } else {
+                // Grey disabled state
+                saveButton.disabled = true;
+                saveButton.style.background = '#6b7280';
+                saveButton.style.color = '#9ca3af';
+                saveButton.style.borderColor = '#4b5563';
+                saveButton.style.cursor = 'not-allowed';
+                console.log('[SettingsForms] Settings save button disabled (grey)');
+                
+                // Remove beforeunload warning when no changes
+                SettingsForms.removeUnsavedChangesWarning();
+            }
+        };
+        
+        // Function to detect changes in form elements
+        const detectChanges = () => {
+            // Check regular form inputs
+            const inputs = container.querySelectorAll('input, select, textarea');
+            let formChanged = false;
+            
+            inputs.forEach(input => {
+                // Skip disabled inputs or inputs without IDs
+                if (!input.id || input.disabled) {
+                    return;
+                }
+                
+                let key = input.id;
+                let originalValue, currentValue;
+                
+                if (input.type === 'checkbox') {
+                    originalValue = originalSettings[key] !== undefined ? originalSettings[key] : false;
+                    currentValue = input.checked;
+                } else if (input.type === 'number') {
+                    // Get default from input attributes or use 0
+                    const defaultValue = parseInt(input.getAttribute('value')) || parseInt(input.min) || 0;
+                    originalValue = originalSettings[key] !== undefined ? parseInt(originalSettings[key]) : defaultValue;
+                    currentValue = parseInt(input.value) || 0;
+                } else {
+                    originalValue = originalSettings[key] || '';
+                    currentValue = input.value.trim();
+                }
+                
+                console.log(`[SettingsForms] Checking settings ${key}: original=${originalValue}, current=${currentValue}`);
+                
+                if (originalValue !== currentValue) {
+                    console.log(`[SettingsForms] Settings change detected in ${key}: ${originalValue} -> ${currentValue}`);
+                    formChanged = true;
+                }
+            });
+            
+            // Special handling for apprise_urls which is a textarea with newlines
+            const appriseUrlsElement = container.querySelector('#apprise_urls');
+            if (appriseUrlsElement) {
+                const originalUrls = originalSettings.apprise_urls || [];
+                const currentUrls = appriseUrlsElement.value.split('\n')
+                    .map(url => url.trim())
+                    .filter(url => url.length > 0);
+                
+                if (JSON.stringify(originalUrls.sort()) !== JSON.stringify(currentUrls.sort())) {
+                    console.log('[SettingsForms] Settings apprise_urls change detected');
+                    formChanged = true;
+                }
+            }
+            
+            console.log(`[SettingsForms] Settings change detection result: ${formChanged}`);
+            updateSaveButtonState(formChanged);
+        };
+        
+        // Add event listeners to all form elements
+        const inputs = container.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('change', detectChanges);
+            if (input.type === 'text' || input.type === 'number' || input.tagName.toLowerCase() === 'textarea') {
+                input.addEventListener('input', detectChanges);
+            }
+        });
+        
+        // Save button click handler
+        saveButton.addEventListener('click', () => {
+            if (!hasChanges) return;
+            
+            console.log('[SettingsForms] Manual save triggered for Settings');
+            
+            // Show saving state
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveButton.disabled = true;
+            
+            // Get settings and save
+            if (window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
+                window.huntarrUI.autoSaveGeneralSettings(true).then(() => {
+                    console.log('[SettingsForms] Settings manual save successful');
+                    
+                    // Reset button state and clear unsaved changes warning
+                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                    updateSaveButtonState(false);
+                    
+                    // Update original settings for future change detection
+                    const updatedSettings = window.huntarrUI.getFormSettings('general');
+                    if (updatedSettings) {
+                        Object.assign(originalSettings, updatedSettings);
+                    }
+                    
+                }).catch(error => {
+                    console.error('[SettingsForms] Settings manual save failed:', error);
+                    
+                    // Reset button state
+                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                    updateSaveButtonState(hasChanges);
+                });
+            }
+        });
+        
+        // Initial change detection - ensure form is fully loaded before checking
+        // Use a longer timeout to ensure all form elements are properly initialized
+        setTimeout(() => {
+            console.log('[SettingsForms] Running initial change detection for Settings');
+            detectChanges();
+        }, 200);
+    },
+
     // Set up manual save functionality for Swaparr
     setupSwaparrManualSave: function(container, originalSettings = {}) {
         console.log('[SettingsForms] Setting up manual save with original settings:', originalSettings);
@@ -2611,9 +2777,9 @@ const SettingsForms = {
         
         const appType = container.getAttribute('data-app-type') || 'general';
         
-        // Skip auto-save for Swaparr - it uses manual save
-        if (appType === 'swaparr') {
-            console.log(`[SettingsForms] Skipping auto-save setup for Swaparr - using manual save`);
+        // Skip auto-save for Swaparr and Settings - they use manual save
+        if (appType === 'swaparr' || appType === 'general') {
+            console.log(`[SettingsForms] Skipping auto-save setup for ${appType} - using manual save`);
             return;
         }
         
@@ -2627,11 +2793,9 @@ const SettingsForms = {
             input.addEventListener('change', () => {
                 console.log(`[SettingsForms] Auto-save triggered for ${appType} by ${input.id || input.name || 'unnamed input'}`);
                 
-                // Call the appropriate auto-save function based on app type
-                if (appType === 'general' && window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
-                    window.huntarrUI.autoSaveGeneralSettings(true).catch(error => {
-                        console.error('[SettingsForms] General auto-save failed:', error);
-                    });
+                // Settings now use manual save - no auto-save
+                if (appType === 'general') {
+                    console.log(`[SettingsForms] Settings use manual save - skipping auto-save for ${appType}`);
                 } else {
                     console.warn(`[SettingsForms] No auto-save function available for app type: ${appType}`);
                 }
@@ -2646,10 +2810,8 @@ const SettingsForms = {
                     timeout = setTimeout(() => {
                         console.log(`[SettingsForms] Auto-save triggered by input for ${appType}`);
                         
-                        if (appType === 'general' && window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
-                            window.huntarrUI.autoSaveGeneralSettings(true).catch(error => {
-                                console.error('[SettingsForms] General auto-save failed:', error);
-                            });
+                        if (appType === 'general') {
+                            console.log(`[SettingsForms] Settings use manual save - skipping auto-save for input in ${appType}`);
                         }
                     }, 1000); // 1 second debounce
                 });
@@ -3674,64 +3836,8 @@ const SettingsForms = {
             timezoneSelect.addEventListener('change', function() {
                 console.log('[SettingsForms] Timezone changed to:', this.value);
                 
-                // Auto-save the settings first
-                if (typeof window.huntarrUI !== 'undefined' && window.huntarrUI.autoSaveGeneralSettings) {
-                    window.huntarrUI.autoSaveGeneralSettings()
-                        .then(() => {
-                            console.log('[SettingsForms] Settings saved, refreshing time displays');
-                            
-                            // Refresh all time displays immediately
-                            if (typeof refreshTimeDisplays === 'function') {
-                                refreshTimeDisplays();
-                            }
-                            
-                            // Refresh logs if logs module is available
-                            if (typeof LogsModule !== 'undefined' && LogsModule.refreshLogs) {
-                                LogsModule.refreshLogs();
-                            }
-                            
-                            // Clear the current log display and reload to show updated timezone
-                            if (typeof window.huntarrUI !== 'undefined' && window.huntarrUI.connectEventSource) {
-                                console.log('[SettingsForms] Reconnecting event source for timezone update');
-                                window.huntarrUI.connectEventSource();
-                            }
-                            
-                            // Refresh scheduling timezone display
-                            if (typeof window.refreshSchedulingTimezone === 'function') {
-                                console.log('[SettingsForms] Refreshing scheduling timezone display');
-                                window.refreshSchedulingTimezone();
-                            }
-                            
-                            // Refresh state management timezone display
-                            if (typeof window.refreshStateManagementTimezone === 'function') {
-                                console.log('[SettingsForms] Refreshing state management timezone display');
-                                window.refreshStateManagementTimezone();
-                            }
-                            
-                            // If we're currently on the logs section, trigger a refresh
-                            const currentSection = localStorage.getItem('huntarrCurrentSection') || 'home';
-                            if (currentSection === 'logs') {
-                                // Clear existing logs and reload
-                                const logsContainer = document.querySelector('#logsContainer');
-                                if (logsContainer) {
-                                    const logEntries = logsContainer.querySelector('.log-entries');
-                                    if (logEntries) {
-                                        logEntries.innerHTML = '<div class="log-entry" style="text-align: center; color: #9ca3af;">Refreshing logs with new timezone...</div>';
-                                    }
-                                }
-                                
-                                // Reload logs with new timezone after a brief delay
-                                setTimeout(() => {
-                                    if (typeof LogsModule !== 'undefined' && LogsModule.loadLogs) {
-                                        LogsModule.loadLogs(1); // Load first page
-                                    }
-                                }, 1000);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('[SettingsForms] Error saving timezone settings:', error);
-                        });
-                }
+                // Settings now use manual save - timezone change detected but not auto-saved
+                console.log('[SettingsForms] Timezone changed - manual save required');
             });
         }
     },
@@ -4272,6 +4378,7 @@ const SettingsForms = {
                 }
             });
         }
+        
     },
     
     // Test connection to an *arr API
@@ -4756,17 +4863,13 @@ const SettingsForms = {
         const notificationInputs = container.querySelectorAll('input, select, textarea');
         notificationInputs.forEach(input => {
             input.addEventListener('change', () => {
-                if (typeof window.huntarrUI !== 'undefined' && window.huntarrUI.autoSaveGeneralSettings) {
-                    window.huntarrUI.autoSaveGeneralSettings();
-                }
+                console.log('[SettingsForms] Notification setting changed - manual save required');
             });
             
             // Also listen for input events on text areas
             if (input.tagName === 'TEXTAREA') {
                 input.addEventListener('input', () => {
-                    if (typeof window.huntarrUI !== 'undefined' && window.huntarrUI.autoSaveGeneralSettings) {
-                        window.huntarrUI.autoSaveGeneralSettings();
-                    }
+                    console.log('[SettingsForms] Notification textarea input - manual save required');
                 });
             }
         });
@@ -4777,54 +4880,51 @@ const SettingsForms = {
             testBtn.addEventListener('click', function() {
                 const statusSpan = container.querySelector('#testNotificationStatus');
                 
-                // Save settings first, then test
-                if (typeof window.huntarrUI !== 'undefined' && window.huntarrUI.autoSaveGeneralSettings) {
-                    window.huntarrUI.autoSaveGeneralSettings()
-                        .then(() => {
-                            // Show testing status
-                            if (statusSpan) {
-                                statusSpan.textContent = 'Testing...';
-                                statusSpan.style.color = '#6366f1';
-                            }
-                            
-                            // Send test notification
-                            return fetch('./api/test-notification', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            });
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (statusSpan) {
-                                if (data.success) {
-                                    statusSpan.textContent = '✓ Test sent successfully!';
-                                    statusSpan.style.color = '#10b981';
-                                } else {
-                                    statusSpan.textContent = `✗ Test failed: ${data.error || 'Unknown error'}`;
-                                    statusSpan.style.color = '#ef4444';
-                                }
-                                
-                                // Clear status after 5 seconds
-                                setTimeout(() => {
-                                    statusSpan.textContent = '';
-                                }, 5000);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Test notification error:', error);
-                            if (statusSpan) {
-                                statusSpan.textContent = '✗ Test failed: Network error';
-                                statusSpan.style.color = '#ef4444';
-                                
-                                // Clear status after 5 seconds
-                                setTimeout(() => {
-                                    statusSpan.textContent = '';
-                                }, 5000);
-                            }
-                        });
+                // Note: Settings must be saved manually before testing
+                console.log('[SettingsForms] Test notification - ensure settings are saved first');
+                
+                // Show testing status
+                if (statusSpan) {
+                    statusSpan.textContent = 'Testing...';
+                    statusSpan.style.color = '#6366f1';
                 }
+                
+                // Send test notification
+                fetch('./api/test-notification', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (statusSpan) {
+                        if (data.success) {
+                            statusSpan.textContent = '✓ Test sent successfully!';
+                            statusSpan.style.color = '#10b981';
+                        } else {
+                            statusSpan.textContent = `✗ Test failed: ${data.error || 'Unknown error'}`;
+                            statusSpan.style.color = '#ef4444';
+                        }
+                        
+                        // Clear status after 5 seconds
+                        setTimeout(() => {
+                            statusSpan.textContent = '';
+                        }, 5000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Test notification error:', error);
+                    if (statusSpan) {
+                        statusSpan.textContent = '✗ Test failed: Network error';
+                        statusSpan.style.color = '#ef4444';
+                        
+                        // Clear status after 5 seconds
+                        setTimeout(() => {
+                            statusSpan.textContent = '';
+                        }, 5000);
+                    }
+                });
             });
         }
     },
