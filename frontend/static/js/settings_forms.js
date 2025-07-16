@@ -55,6 +55,29 @@ const SettingsForms = {
             }];
         }
 
+        // Add save button at the top
+        let sonarrSaveButtonHtml = `
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="saveSonarrButton" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        `;
+
         // Create a container for instances
         let instancesHtml = `
             <div class="settings-group" style="
@@ -279,8 +302,10 @@ const SettingsForms = {
             </div>
         `;
 
-        // Set the content
-        container.innerHTML = instancesHtml + searchSettingsHtml;
+
+
+        // Set the content with save button at the top
+        container.innerHTML = sonarrSaveButtonHtml + instancesHtml + searchSettingsHtml;
 
         // Setup instance management (add/remove/test)
         SettingsForms.setupInstanceManagement(container, 'sonarr', (settings.instances || []).length);
@@ -397,6 +422,9 @@ const SettingsForms = {
                 });
             }
         });
+        
+        // Set up manual save functionality for Sonarr
+        this.setupAppManualSave(container, 'sonarr', settings);
         
         // Restore the original suppression state after a brief delay to allow form to fully render
         setTimeout(() => {
@@ -545,6 +573,29 @@ const SettingsForms = {
                 enabled: true
             }];
         }
+        
+        // Add save button at the top
+        let radarrSaveButtonHtml = `
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="saveRadarrButton" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        `;
         
         // Create a container for instances with a scrollable area for many instances
         let instancesHtml = `
@@ -740,8 +791,10 @@ const SettingsForms = {
             </div>
         `;
 
-        // Set the content
-        container.innerHTML = instancesHtml + searchSettingsHtml;
+
+
+        // Set the content with save button at the top
+        container.innerHTML = radarrSaveButtonHtml + instancesHtml + searchSettingsHtml;
 
         // Add event listeners for the instance management
         this.setupInstanceManagement(container, 'radarr', (settings.instances || []).length);
@@ -847,6 +900,9 @@ const SettingsForms = {
             });
         }
         
+        // Set up manual save functionality for Radarr
+        this.setupAppManualSave(container, 'radarr', settings);
+        
         // Restore the original suppression state after a brief delay to allow form to fully render
         setTimeout(() => {
             window._appsSuppressChangeDetection = wasSuppressionActive;
@@ -873,6 +929,29 @@ const SettingsForms = {
                 enabled: true
             }];
         }
+        
+        // Add save button at the top
+        let lidarrSaveButtonHtml = `
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="saveLidarrButton" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        `;
         
         // Create a container for instances
         let instancesHtml = `
@@ -1001,6 +1080,7 @@ const SettingsForms = {
         
         // Continue with the rest of the settings form
         container.innerHTML = `
+            ${lidarrSaveButtonHtml}
             ${instancesHtml}
             
             <div class="settings-group">
@@ -1096,6 +1176,15 @@ const SettingsForms = {
                 });
             });
         }
+        
+        // Set up manual save functionality for Lidarr
+        this.setupAppManualSave(container, 'lidarr', settings);
+        
+        // Restore the original suppression state after a brief delay to allow form to fully render
+        setTimeout(() => {
+            window._appsSuppressChangeDetection = wasSuppressionActive;
+            console.log(`[SettingsForms] Restored change detection suppression state for Lidarr: ${wasSuppressionActive}`);
+        }, 100);
         
     },
     
@@ -2747,6 +2836,193 @@ const SettingsForms = {
         }, 500);
     },
 
+    // Set up manual save functionality for App instances (Sonarr, Radarr, etc.)
+    setupAppManualSave: function(container, appType, originalSettings = {}) {
+        console.log(`[SettingsForms] Setting up manual save for ${appType} with original settings:`, originalSettings);
+        
+        const saveButton = document.querySelector(`#${appType}-save-button`);
+        if (!saveButton) {
+            console.error(`[SettingsForms] ${appType} save button not found!`);
+            return;
+        }
+        
+        let hasChanges = false;
+        let suppressInitialDetection = true; // Suppress change detection during initial setup
+        
+        // Clear any existing unsaved changes state and warnings when setting up
+        window[`${appType}UnsavedChanges`] = false;
+        this.removeUnsavedChangesWarning();
+        
+        // Capture the actual form state as baseline instead of guessing defaults
+        let normalizedSettings = {};
+        
+        // Initialize button in disabled/grey state immediately
+        saveButton.disabled = true;
+        saveButton.style.background = '#6b7280';
+        saveButton.style.color = '#9ca3af';
+        saveButton.style.borderColor = '#4b5563';
+        saveButton.style.cursor = 'not-allowed';
+        
+        // Function to update save button state
+        const updateSaveButtonState = (changed) => {
+            hasChanges = changed;
+            window[`${appType}UnsavedChanges`] = changed;
+            
+            if (changed) {
+                // Red state - changes detected
+                saveButton.disabled = false;
+                saveButton.style.background = '#dc2626';
+                saveButton.style.color = '#ffffff';
+                saveButton.style.borderColor = '#b91c1c';
+                saveButton.style.cursor = 'pointer';
+                saveButton.style.opacity = '1';
+                this.addUnsavedChangesWarning();
+            } else {
+                // Grey state - no changes
+                saveButton.disabled = true;
+                saveButton.style.background = '#6b7280';
+                saveButton.style.color = '#9ca3af';
+                saveButton.style.borderColor = '#4b5563';
+                saveButton.style.cursor = 'not-allowed';
+                saveButton.style.opacity = '0.7';
+                this.removeUnsavedChangesWarning();
+            }
+        };
+        
+        // Function to detect changes in form elements
+        const detectChanges = () => {
+            // Skip change detection if still in initial setup phase
+            if (suppressInitialDetection) {
+                console.log(`[SettingsForms] ${appType} change detection suppressed during initial setup`);
+                return;
+            }
+            
+            // Check regular form inputs
+            const inputs = container.querySelectorAll('input, select, textarea');
+            let formChanged = false;
+            
+            inputs.forEach(input => {
+                // Skip disabled inputs, inputs without IDs, or buttons
+                if (!input.id || input.disabled || input.type === 'button' || input.type === 'submit') {
+                    return;
+                }
+                
+                let key = input.id;
+                let originalValue, currentValue;
+                
+                if (input.type === 'checkbox') {
+                    originalValue = normalizedSettings[key] !== undefined ? normalizedSettings[key] : false;
+                    currentValue = input.checked;
+                } else if (input.type === 'number') {
+                    originalValue = normalizedSettings[key] !== undefined ? parseInt(normalizedSettings[key]) : 0;
+                    currentValue = parseInt(input.value) || 0;
+                } else {
+                    originalValue = normalizedSettings[key] || '';
+                    currentValue = input.value.trim();
+                }
+                
+                if (originalValue !== currentValue) {
+                    console.log(`[SettingsForms] ${appType} change detected in ${key}: ${originalValue} -> ${currentValue}`);
+                    formChanged = true;
+                }
+            });
+            
+            console.log(`[SettingsForms] ${appType} change detection result: ${formChanged}`);
+            updateSaveButtonState(formChanged);
+        };
+        
+        // Add event listeners to all form elements
+        const inputs = container.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            // Skip buttons and test-related elements
+            if (input.type === 'button' || input.type === 'submit' || 
+                input.classList.contains('test-connection-btn') ||
+                (input.id && input.id.includes('test-'))) {
+                return;
+            }
+            
+            input.addEventListener('change', detectChanges);
+            if (input.type === 'text' || input.type === 'number' || input.tagName.toLowerCase() === 'textarea') {
+                input.addEventListener('input', detectChanges);
+            }
+        });
+        
+        // Save button click handler
+        saveButton.addEventListener('click', () => {
+            if (!hasChanges) return;
+            
+            console.log(`[SettingsForms] Manual save triggered for ${appType}`);
+            
+            // Show saving state
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveButton.disabled = true;
+            
+            // Use the apps module save functionality
+            if (window.appsModule && window.appsModule.saveAppSettings) {
+                const appPanel = container.closest('.app-apps-panel') || document.getElementById(`${appType}Apps`);
+                if (appPanel) {
+                    window.appsModule.saveAppSettings(appType, appPanel);
+                    
+                    // Wait a bit then reset button state (the apps module will handle success/error)
+                    setTimeout(() => {
+                        saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                        updateSaveButtonState(false);
+                        
+                        // Update baseline after successful save
+                        captureFormBaseline();
+                    }, 1000);
+                } else {
+                    console.error(`[SettingsForms] Could not find app panel for ${appType}`);
+                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                    updateSaveButtonState(hasChanges);
+                }
+            } else {
+                console.error('[SettingsForms] Apps module save function not available');
+                saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                updateSaveButtonState(hasChanges);
+            }
+        });
+        
+        // Function to capture current form state as baseline
+        const captureFormBaseline = () => {
+            const inputs = container.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                if (!input.id || input.disabled || input.type === 'button' || input.type === 'submit') return;
+                
+                let value;
+                if (input.type === 'checkbox') {
+                    value = input.checked;
+                } else if (input.type === 'number') {
+                    value = parseInt(input.value) || 0;
+                } else {
+                    value = input.value.trim();
+                }
+                
+                normalizedSettings[input.id] = value;
+            });
+        };
+        
+        // Initial setup - capture actual form state as baseline
+        setTimeout(() => {
+            console.log(`[SettingsForms] Capturing actual form state as ${appType} baseline`);
+            
+            captureFormBaseline();
+            
+            // Force button to grey state and clear any changes
+            saveButton.disabled = true;
+            saveButton.style.background = '#6b7280';
+            saveButton.style.color = '#9ca3af';
+            saveButton.style.borderColor = '#4b5563';
+            saveButton.style.cursor = 'not-allowed';
+            window[`${appType}UnsavedChanges`] = false;
+            hasChanges = false;
+            
+            // Enable change detection now that baseline is captured
+            suppressInitialDetection = false;
+            console.log(`[SettingsForms] ${appType} baseline captured, change detection enabled`);
+        }, 500);
+    },
+
     // Set up manual save functionality for Swaparr
     setupSwaparrManualSave: function(container, originalSettings = {}) {
         console.log('[SettingsForms] Setting up manual save with original settings:', originalSettings);
@@ -2980,8 +3256,9 @@ const SettingsForms = {
         
         const appType = container.getAttribute('data-app-type') || 'general';
         
-        // Skip auto-save for Swaparr, Settings, and Notifications - they use manual save
-        if (appType === 'swaparr' || appType === 'general' || appType === 'notifications') {
+        // Skip auto-save for all forms - they now use manual save
+        const manualSaveApps = ['swaparr', 'general', 'notifications', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        if (manualSaveApps.includes(appType)) {
             console.log(`[SettingsForms] Skipping auto-save setup for ${appType} - using manual save`);
             return;
         }
@@ -5151,7 +5428,9 @@ const SettingsForms = {
         // Add beforeunload event listener for page refresh warning
         if (!window.huntarrBeforeUnloadListener) {
             window.huntarrBeforeUnloadListener = function(e) {
-                if (window.swaparrUnsavedChanges || window.settingsUnsavedChanges || window.notificationsUnsavedChanges) {
+                if (window.swaparrUnsavedChanges || window.settingsUnsavedChanges || window.notificationsUnsavedChanges ||
+                    window.sonarrUnsavedChanges || window.radarrUnsavedChanges || window.lidarrUnsavedChanges ||
+                    window.readarrUnsavedChanges || window.whisparrUnsavedChanges || window.erosUnsavedChanges) {
                     e.preventDefault();
                     e.returnValue = ''; // Standard way to trigger browser warning
                     return ''; // For older browsers
@@ -5164,8 +5443,10 @@ const SettingsForms = {
     removeUnsavedChangesWarning: function() {
         console.log('[SettingsForms] Removing unsaved changes warning');
         
-        // Only remove if swaparr, settings, and notifications all have no unsaved changes
-        if (!window.swaparrUnsavedChanges && !window.settingsUnsavedChanges && !window.notificationsUnsavedChanges) {
+        // Only remove if all sections have no unsaved changes
+        if (!window.swaparrUnsavedChanges && !window.settingsUnsavedChanges && !window.notificationsUnsavedChanges &&
+            !window.sonarrUnsavedChanges && !window.radarrUnsavedChanges && !window.lidarrUnsavedChanges &&
+            !window.readarrUnsavedChanges && !window.whisparrUnsavedChanges && !window.erosUnsavedChanges) {
             // Remove beforeunload event listener
             if (window.huntarrBeforeUnloadListener) {
                 window.removeEventListener('beforeunload', window.huntarrBeforeUnloadListener);
@@ -5233,6 +5514,32 @@ const SettingsForms = {
                 window.notificationsUnsavedChanges = false;
                 this.removeUnsavedChangesWarning();
                 return true;
+            }
+        }
+        
+        // Check each app instance for unsaved changes
+        const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        for (const appType of appTypes) {
+            const unsavedChangesVar = `${appType}UnsavedChanges`;
+            if (window[unsavedChangesVar]) {
+                const appDisplayName = appType.charAt(0).toUpperCase() + appType.slice(1);
+                const userChoice = confirm(
+                    `You have unsaved changes in ${appDisplayName} settings.\n\n` +
+                    'Click "OK" to stay and save your changes.\n' +
+                    'Click "Cancel" to continue and lose your changes.'
+                );
+                
+                if (userChoice) {
+                    // User chose to stay and save
+                    console.log(`[SettingsForms] User chose to stay and save ${appDisplayName} changes`);
+                    return false;
+                } else {
+                    // User chose to leave and lose changes
+                    console.log(`[SettingsForms] User chose to leave and lose ${appDisplayName} changes`);
+                    window[unsavedChangesVar] = false;
+                    this.removeUnsavedChangesWarning();
+                    return true;
+                }
             }
         }
         

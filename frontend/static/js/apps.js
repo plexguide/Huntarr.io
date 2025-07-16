@@ -213,97 +213,15 @@ const appsModule = {
             });
     },
     
-    // Add auto-save listeners to form elements
+    // Add change listeners to form elements (auto-save removed - now using manual save)
     addFormChangeListeners: function(form) {
         if (!form) return;
         
         const appType = form.getAttribute('data-app-type');
-        console.log(`[Apps] Adding auto-save listeners for ${appType}`);
+        console.log(`[Apps] Skipping auto-save listeners for ${appType} - now using manual save`);
         
-        // Immediate auto-save function
-        const autoSave = () => {
-            this.autoSaveSettings(appType, form);
-        };
-        
-        // Add listeners to all form inputs, selects, and textareas
-        const formElements = form.querySelectorAll('input, select, textarea');
-        formElements.forEach(element => {
-            // Skip buttons and test-related elements
-            if (element.type === 'button' || 
-                element.type === 'submit' || 
-                element.tagName.toLowerCase() === 'button' ||
-                element.classList.contains('test-connection-btn') ||
-                element.id && element.id.includes('test-')) {
-                return;
-            }
-            
-            // Remove any existing listeners to avoid duplicates
-            element.removeEventListener('change', autoSave);
-            element.removeEventListener('input', autoSave);
-            
-            // Add auto-save listeners
-            element.addEventListener('change', autoSave);
-            
-            // For text and number inputs, also listen for input events
-            if (element.type === 'text' || element.type === 'number' || element.tagName.toLowerCase() === 'textarea') {
-                element.addEventListener('input', autoSave);
-            }
-            
-            console.log(`[Apps] Added auto-save listener to ${element.tagName} with id: ${element.id || 'no-id'}`);
-        });
-        
-        // Also observe for added/removed instances
-        try {
-            if (this.observer) {
-                this.observer.disconnect();
-            }
-            
-            this.observer = new MutationObserver((mutations) => {
-                let shouldAutoSave = false;
-                
-                mutations.forEach(mutation => {
-                    if (mutation.type === 'childList' && 
-                       (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) {
-                        
-                        // Check if the changes are test-related elements that we should ignore
-                        let isTestRelated = false;
-                        
-                        [...mutation.addedNodes, ...mutation.removedNodes].forEach(node => {
-                            if (node.nodeType === Node.ELEMENT_NODE) {
-                                if (node.classList && (
-                                    node.classList.contains('connection-message') ||
-                                    node.classList.contains('test-status') ||
-                                    node.classList.contains('test-result') ||
-                                    node.classList.contains('auto-save-indicator')
-                                )) {
-                                    isTestRelated = true;
-                                }
-                                if (node.id && (node.id.includes('-status-') || node.id.includes('save-indicator'))) {
-                                    isTestRelated = true;
-                                }
-                            }
-                        });
-                        
-                        if (!isTestRelated) {
-                            shouldAutoSave = true;
-                        }
-                    }
-                });
-                
-                if (shouldAutoSave) {
-                    console.log('[Apps] Instance structure changed - triggering auto-save');
-                    autoSave();
-                }
-            });
-            
-            // Start observing instances container for changes
-            const instancesContainers = form.querySelectorAll('.instances-container');
-            instancesContainers.forEach(container => {
-                this.observer.observe(container, { childList: true, subtree: true });
-            });
-        } catch (error) {
-            console.error('[Apps] Error setting up MutationObserver:', error);
-        }
+        // Auto-save has been removed - apps now use manual save buttons
+        // No longer adding change listeners or mutation observers for auto-save functionality
     },
     
     // Auto-save settings silently in background
