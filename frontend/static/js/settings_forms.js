@@ -4951,30 +4951,33 @@ const SettingsForms = {
         }
     },
 
-    // Unsaved changes warning system for Swaparr
+    // Unsaved changes warning system for both Swaparr and Settings
     addUnsavedChangesWarning: function() {
         console.log('[SettingsForms] Adding unsaved changes warning');
         
         // Add beforeunload event listener for page refresh warning
-        if (!window.swaparrBeforeUnloadListener) {
-            window.swaparrBeforeUnloadListener = function(e) {
-                if (window.swaparrUnsavedChanges) {
+        if (!window.huntarrBeforeUnloadListener) {
+            window.huntarrBeforeUnloadListener = function(e) {
+                if (window.swaparrUnsavedChanges || window.settingsUnsavedChanges) {
                     e.preventDefault();
                     e.returnValue = ''; // Standard way to trigger browser warning
                     return ''; // For older browsers
                 }
             };
-            window.addEventListener('beforeunload', window.swaparrBeforeUnloadListener);
+            window.addEventListener('beforeunload', window.huntarrBeforeUnloadListener);
         }
     },
 
     removeUnsavedChangesWarning: function() {
         console.log('[SettingsForms] Removing unsaved changes warning');
         
-        // Remove beforeunload event listener
-        if (window.swaparrBeforeUnloadListener) {
-            window.removeEventListener('beforeunload', window.swaparrBeforeUnloadListener);
-            window.swaparrBeforeUnloadListener = null;
+        // Only remove if both swaparr and settings have no unsaved changes
+        if (!window.swaparrUnsavedChanges && !window.settingsUnsavedChanges) {
+            // Remove beforeunload event listener
+            if (window.huntarrBeforeUnloadListener) {
+                window.removeEventListener('beforeunload', window.huntarrBeforeUnloadListener);
+                window.huntarrBeforeUnloadListener = null;
+            }
         }
     },
 
@@ -4989,16 +4992,37 @@ const SettingsForms = {
             
             if (userChoice) {
                 // User chose to stay and save
-                console.log('[SettingsForms] User chose to stay and save changes');
+                console.log('[SettingsForms] User chose to stay and save Swaparr changes');
                 return false;
             } else {
                 // User chose to leave and lose changes
-                console.log('[SettingsForms] User chose to leave and lose changes');
+                console.log('[SettingsForms] User chose to leave and lose Swaparr changes');
                 window.swaparrUnsavedChanges = false;
                 this.removeUnsavedChangesWarning();
                 return true;
             }
         }
+        
+        if (window.settingsUnsavedChanges) {
+            const userChoice = confirm(
+                'You have unsaved changes in Settings.\n\n' +
+                'Click "OK" to stay and save your changes.\n' +
+                'Click "Cancel" to continue and lose your changes.'
+            );
+            
+            if (userChoice) {
+                // User chose to stay and save
+                console.log('[SettingsForms] User chose to stay and save Settings changes');
+                return false;
+            } else {
+                // User chose to leave and lose changes
+                console.log('[SettingsForms] User chose to leave and lose Settings changes');
+                window.settingsUnsavedChanges = false;
+                this.removeUnsavedChangesWarning();
+                return true;
+            }
+        }
+        
         return true; // No unsaved changes, can proceed
     }
 };
