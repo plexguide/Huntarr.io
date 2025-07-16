@@ -1835,6 +1835,13 @@ let huntarrUI = {
             .then(data => {
                 if (data.success !== false) {  // API returns all settings on success, not just success:true
                     console.log('[huntarrUI] Swaparr auto-save successful');
+                    
+                    // Update Swaparr field visibility in all loaded app forms
+                    if (window.SettingsForms && typeof window.SettingsForms.updateSwaparrFieldsDisabledState === 'function') {
+                        console.log('[huntarrUI] Broadcasting Swaparr state change to all app forms...');
+                        window.SettingsForms.updateSwaparrFieldsDisabledState();
+                    }
+                    
                     resolve();
                 } else {
                     console.error('[huntarrUI] Swaparr auto-save failed:', data);

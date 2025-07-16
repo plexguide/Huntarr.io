@@ -9,25 +9,41 @@ const SettingsForms = {
     isSwaparrGloballyEnabled: function() {
         // Try to get Swaparr settings from cache or current settings
         try {
+            // First check the DOM - if we're on the Swaparr page, check the toggle directly
+            const swaparrToggle = document.querySelector('#swaparr_enabled');
+            if (swaparrToggle) {
+                console.log(`[SettingsForms] Reading Swaparr state from DOM toggle: ${swaparrToggle.checked}`);
+                return swaparrToggle.checked;
+            }
+            
             // Check if we have cached settings
             const cachedSettings = localStorage.getItem('huntarr-settings-cache');
             if (cachedSettings) {
                 const settings = JSON.parse(cachedSettings);
                 if (settings.swaparr && settings.swaparr.enabled !== undefined) {
+                    console.log(`[SettingsForms] Reading Swaparr state from cache: ${settings.swaparr.enabled}`);
                     return settings.swaparr.enabled === true;
                 }
             }
             
             // Fallback: check if we have current settings loaded
             if (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.swaparr) {
+                console.log(`[SettingsForms] Reading Swaparr state from window settings: ${window.huntarrUI.originalSettings.swaparr.enabled}`);
                 return window.huntarrUI.originalSettings.swaparr.enabled === true;
             }
             
-            // Default to true if we can't determine the state (enable the field by default)
-            return true;
+            // If we can't determine the state, trigger an async fetch but return false for now
+            console.log('[SettingsForms] Cannot determine Swaparr state, fetching from server...');
+            this.fetchAndCacheSwaparrState().then(() => {
+                // After fetching, trigger a visibility update
+                setTimeout(() => {
+                    this.updateSwaparrFieldsDisabledState();
+                }, 100);
+            });
+            return false;
         } catch (e) {
             console.warn('[SettingsForms] Error checking Swaparr global status:', e);
-            return true; // Default to enabling the field if there's an error
+            return false; // Default to disabling the field if there's an error
         }
     },
     
@@ -3358,6 +3374,10 @@ const SettingsForms = {
                         Object.assign(originalSettings, updatedSettings);
                     }
                     
+                    // Update Swaparr field visibility in all loaded app forms
+                    console.log('[SettingsForms] Broadcasting Swaparr state change to all app forms after manual save...');
+                    this.updateSwaparrFieldsDisabledState();
+                    
                 }).catch(error => {
                     console.error('[SettingsForms] Swaparr manual save failed:', error);
                     
@@ -5278,41 +5298,89 @@ const SettingsForms = {
     
     // Update visibility of Swaparr fields in all app forms based on global Swaparr setting
     updateSwaparrFieldsDisabledState: function() {
-        const isEnabled = this.isSwaparrGloballyEnabled();
-        
-        // Since Swaparr sections are now conditionally rendered, we need to regenerate forms
-        // to show/hide the Swaparr sections. Check if any app forms are currently visible.
-        const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
-        let formsRegenerated = false;
-        
-        appTypes.forEach(appType => {
-            const container = document.querySelector(`[data-app-type="${appType}"]`);
-            if (container && container.innerHTML.trim() !== '') {
-                // This app form is currently loaded, regenerate it to update Swaparr visibility
-                try {
-                    // Get current settings from cache or original settings
-                    let settings = {};
-                    if (window.huntarrUI?.originalSettings?.[appType]) {
-                        settings = window.huntarrUI.originalSettings[appType];
+        // First ensure we have the current Swaparr state
+        this.fetchAndCacheSwaparrState().then(() => {
+            const isEnabled = this.isSwaparrGloballyEnabled();
+            console.log(`[SettingsForms] Updating Swaparr fields visibility with state: ${isEnabled}`);
+            
+            // Since Swaparr sections are now conditionally rendered, we need to regenerate forms
+            // to show/hide the Swaparr sections. Check if any app forms are currently visible.
+            const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+            let formsRegenerated = false;
+            
+            appTypes.forEach(appType => {
+                const container = document.querySelector(`[data-app-type="${appType}"]`);
+                if (container && container.innerHTML.trim() !== '') {
+                    // This app form is currently loaded, regenerate it to update Swaparr visibility
+                    try {
+                        // Get current settings from cache or original settings
+                        let settings = {};
+                        if (window.huntarrUI?.originalSettings?.[appType]) {
+                            settings = window.huntarrUI.originalSettings[appType];
+                        }
+                        
+                        // Regenerate the form
+                        const formMethodName = `generate${appType.charAt(0).toUpperCase() + appType.slice(1)}Form`;
+                        if (this[formMethodName]) {
+                            this[formMethodName](container, settings);
+                            formsRegenerated = true;
+                        }
+                    } catch (e) {
+                        console.warn(`[SettingsForms] Failed to regenerate ${appType} form:`, e);
                     }
-                    
-                    // Regenerate the form
-                    const formMethodName = `generate${appType.charAt(0).toUpperCase() + appType.slice(1)}Form`;
-                    if (this[formMethodName]) {
-                        this[formMethodName](container, settings);
-                        formsRegenerated = true;
-                    }
-                } catch (e) {
-                    console.warn(`[SettingsForms] Failed to regenerate ${appType} form:`, e);
                 }
+            });
+            
+            if (formsRegenerated) {
+                console.log(`[SettingsForms] Regenerated app forms to update Swaparr visibility: ${isEnabled ? 'enabled' : 'disabled'}`);
+            } else {
+                console.log(`[SettingsForms] Updated Swaparr field visibility state: ${isEnabled ? 'enabled' : 'disabled'}`);
             }
         });
-        
-        if (formsRegenerated) {
-            console.log(`[SettingsForms] Regenerated app forms to update Swaparr visibility: ${isEnabled ? 'enabled' : 'disabled'}`);
-        } else {
-            console.log(`[SettingsForms] Updated Swaparr field visibility state: ${isEnabled ? 'enabled' : 'disabled'}`);
-        }
+    },
+
+    // Update Swaparr instance visibility for all loaded app forms
+    updateAllSwaparrInstanceVisibility: function() {
+        console.log('[SettingsForms] Updating Swaparr instance visibility...');
+        this.updateSwaparrFieldsDisabledState();
+    },
+
+    // Fetch and cache current Swaparr state from server
+    fetchAndCacheSwaparrState: function() {
+        return fetch('./api/settings/swaparr')
+            .then(response => response.json())
+            .then(data => {
+                console.log('[SettingsForms] Fetched current Swaparr state:', data);
+                
+                // Update cache
+                try {
+                    let cachedSettings = {};
+                    const existing = localStorage.getItem('huntarr-settings-cache');
+                    if (existing) {
+                        cachedSettings = JSON.parse(existing);
+                    }
+                    if (!cachedSettings.swaparr) cachedSettings.swaparr = {};
+                    cachedSettings.swaparr.enabled = data.enabled === true;
+                    localStorage.setItem('huntarr-settings-cache', JSON.stringify(cachedSettings));
+                    console.log('[SettingsForms] Updated Swaparr cache:', cachedSettings.swaparr);
+                } catch (e) {
+                    console.warn('[SettingsForms] Failed to update Swaparr cache:', e);
+                }
+                
+                // Update window settings if available
+                if (window.huntarrUI && window.huntarrUI.originalSettings) {
+                    if (!window.huntarrUI.originalSettings.swaparr) {
+                        window.huntarrUI.originalSettings.swaparr = {};
+                    }
+                    window.huntarrUI.originalSettings.swaparr.enabled = data.enabled === true;
+                }
+                
+                return data.enabled === true;
+            })
+            .catch(error => {
+                console.warn('[SettingsForms] Failed to fetch Swaparr state:', error);
+                return false;
+            });
     },
 
     // Generate Notifications settings form
