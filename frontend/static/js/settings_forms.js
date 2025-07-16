@@ -4116,7 +4116,7 @@ const SettingsForms = {
                 settings.instances = [];
                 
                 settings.enabled = getInputValue('#prowlarr-enabled-0', true);
-                settings.name = getInputValue('#prowlarr-name-0', 'Prowlarr');
+                settings.name = 'Prowlarr'; // Fixed name since Prowlarr is always single instance
                 settings.api_url = getInputValue('#prowlarr-url-0', '');
                 settings.api_key = getInputValue('#prowlarr-key-0', '');
             }
@@ -5794,14 +5794,14 @@ const SettingsForms = {
             ">
                 <h3>Prowlarr Configuration</h3>
                 <div class="prowlarr-container">
-                    <div class="prowlarr-item" data-instance-id="0">
-                        <div class="prowlarr-header">
+                    <div class="instance-item" data-instance-id="0">
+                        <div class="instance-header">
                             <h4>Prowlarr</h4>
-                            <div class="prowlarr-actions">
-                                <span class="connection-status" id="prowlarr-status-0" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
+                            <div class="instance-actions">
+                                <span class="connection-status" id="prowlarr-status-0"></span>
                             </div>
                         </div>
-                        <div class="prowlarr-content">
+                        <div class="instance-content">
                             <div class="setting-item">
                                 <label for="prowlarr-enabled-0">Enabled:</label>
                                 <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
@@ -5809,11 +5809,6 @@ const SettingsForms = {
                                     <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                                 </label>
                                 <p class="setting-help">Enable or disable Prowlarr integration</p>
-                            </div>
-                            <div class="setting-item">
-                                <label for="prowlarr-name-0">Name:</label>
-                                <input type="text" id="prowlarr-name-0" name="name" value="${settings.name || 'Prowlarr'}" placeholder="Friendly name for Prowlarr">
-                                <p class="setting-help">Friendly name for this Prowlarr instance</p>
                             </div>
                             <div class="setting-item">
                                 <label for="prowlarr-url-0">URL:</label>
