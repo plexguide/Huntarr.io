@@ -602,6 +602,154 @@
                 font-weight: 500;
                 color: #9ca3af;
             }
+            
+            /* New Prowlarr Card Layout */
+            .prowlarr-main-card {
+                background-color: rgba(32, 38, 50, 0.6);
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 15px;
+                border: 1px solid rgba(90, 109, 137, 0.2);
+            }
+            
+            .prowlarr-header-section {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+            
+            .prowlarr-info {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                flex: 1;
+            }
+            
+            .prowlarr-info h4 {
+                margin: 0;
+                color: var(--text-primary);
+                font-size: 1.2em;
+                font-weight: 600;
+            }
+            
+            .prowlarr-subcards {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            
+            .prowlarr-subcard {
+                background-color: rgba(24, 28, 37, 0.6);
+                border-radius: 8px;
+                border: 1px solid rgba(90, 109, 137, 0.2);
+                overflow: hidden;
+            }
+            
+            .subcard-header {
+                background-color: rgba(64, 70, 84, 0.6);
+                padding: 10px 15px;
+                border-bottom: 1px solid rgba(90, 109, 137, 0.2);
+            }
+            
+            .subcard-header h5 {
+                margin: 0;
+                color: var(--text-primary);
+                font-size: 0.9em;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .subcard-header i {
+                font-size: 0.8em;
+                color: var(--accent-color);
+            }
+            
+            .indexers-list {
+                padding: 15px;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+            
+            .indexer-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+                border-bottom: 1px solid rgba(90, 109, 137, 0.1);
+            }
+            
+            .indexer-item:last-child {
+                border-bottom: none;
+            }
+            
+            .indexer-name {
+                font-weight: 500;
+                color: var(--text-primary);
+            }
+            
+            .indexer-status {
+                font-size: 0.8em;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-weight: 500;
+            }
+            
+            .indexer-status.active {
+                background-color: rgba(16, 185, 129, 0.2);
+                color: #10b981;
+            }
+            
+            .indexer-status.throttled {
+                background-color: rgba(245, 158, 11, 0.2);
+                color: #f59e0b;
+            }
+            
+            .indexer-status.failed {
+                background-color: rgba(239, 68, 68, 0.2);
+                color: #ef4444;
+            }
+            
+            .loading-text {
+                color: var(--text-secondary);
+                text-align: center;
+                font-style: italic;
+            }
+            
+            .pending-content {
+                padding: 40px 15px;
+                text-align: center;
+            }
+            
+            .pending-text {
+                font-size: 1.1em;
+                font-weight: 600;
+                color: var(--text-secondary);
+                margin-bottom: 5px;
+            }
+            
+            .pending-subtitle {
+                font-size: 0.8em;
+                color: var(--text-tertiary);
+            }
+            
+            /* Mobile responsive */
+            @media (max-width: 768px) {
+                .prowlarr-subcards {
+                    grid-template-columns: 1fr;
+                }
+                
+                .prowlarr-header-section {
+                    flex-direction: column;
+                    text-align: center;
+                    gap: 10px;
+                }
+                
+                .indexers-list {
+                    max-height: 150px;
+                }
+            }
         </style>
 
         <!-- Prowlarr Status Card -->
@@ -610,40 +758,40 @@
                 <h3><i class="fas fa-search"></i> Prowlarr Monitor</h3>
                 <button id="refresh-prowlarr-data" class="action-button success"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
-            <div class="media-stats-container">
-                <div class="prowlarr-stats-grid">
-                    <!-- Prowlarr Stats Card -->
-                    <div class="app-stats-card prowlarr">
-                        <div class="status-container">
-                            <span id="prowlarrConnectionStatus" class="status-badge">⚫ Disconnected</span>
-                        </div>
-                        <div class="app-content">
-                            <div class="app-icon-wrapper">
-                                <img src="./static/images/app-icons/sonarr.png" alt="Prowlarr Logo" class="app-logo" style="filter: hue-rotate(60deg);">
-                            </div>
-                            <h4>Prowlarr</h4>
-                        </div>
-                        <div class="stats-numbers">
-                            <div class="stat-box">
-                                <div class="stat-number" id="prowlarr-active-indexers">--</div>
-                                <div class="stat-label">Active Indexers</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-number" id="prowlarr-total-calls">--</div>
-                                <div class="stat-label">Total API Calls</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-number" id="prowlarr-throttled">--</div>
-                                <div class="stat-label">Throttled Indexers</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-number" id="prowlarr-failed">--</div>
-                                <div class="stat-label">Failed Indexers</div>
-                            </div>
-                        </div>
-                        <div class="prowlarr-health-indicator">
-                            <div id="prowlarr-health-status" class="health-status-text">Checking connection...</div>
-                        </div>
+            
+            <!-- Main Prowlarr Card -->
+            <div class="prowlarr-main-card">
+                <div class="prowlarr-header-section">
+                    <div class="app-icon-wrapper">
+                        <img src="./static/images/app-icons/sonarr.png" alt="Prowlarr Logo" class="app-logo" style="filter: hue-rotate(60deg);">
+                    </div>
+                    <div class="prowlarr-info">
+                        <h4>Prowlarr</h4>
+                        <span id="prowlarrConnectionStatus" class="status-badge">⚫ Disconnected</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub Cards Container -->
+            <div class="prowlarr-subcards">
+                <!-- Left Sub-Card: Indexers List -->
+                <div class="prowlarr-subcard prowlarr-indexers-card">
+                    <div class="subcard-header">
+                        <h5><i class="fas fa-list"></i> Indexers</h5>
+                    </div>
+                    <div class="indexers-list" id="prowlarr-indexers-list">
+                        <div class="loading-text">Loading indexers...</div>
+                    </div>
+                </div>
+
+                <!-- Right Sub-Card: Pending -->
+                <div class="prowlarr-subcard prowlarr-pending-card">
+                    <div class="subcard-header">
+                        <h5><i class="fas fa-clock"></i> Statistics</h5>
+                    </div>
+                    <div class="pending-content">
+                        <div class="pending-text">Pending</div>
+                        <div class="pending-subtitle">Coming soon</div>
                     </div>
                 </div>
             </div>

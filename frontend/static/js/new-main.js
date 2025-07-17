@@ -4702,51 +4702,8 @@ let huntarrUI = {
                         }
                     }
                     
-                    // Update stats display
-                    const updateElement = (id, value, tooltip = '') => {
-                        const element = document.getElementById(id);
-                        if (element) {
-                            element.textContent = value || '--';
-                            if (tooltip) {
-                                element.title = tooltip;
-                            }
-                        }
-                    };
-                    
-                    // Update basic stats
-                    updateElement('prowlarr-active-indexers', stats.active_indexers);
-                    updateElement('prowlarr-total-calls', stats.total_api_calls);
-                    updateElement('prowlarr-throttled', stats.throttled_indexers);
-                    updateElement('prowlarr-failed', stats.failed_indexers);
-                    
-                    // Update detailed tooltips with indexer names if available
-                    if (stats.indexer_details) {
-                        const activeNames = stats.indexer_details.active?.map(idx => idx.name).join(', ') || 'None';
-                        const throttledNames = stats.indexer_details.throttled?.map(idx => idx.name).join(', ') || 'None';
-                        const failedNames = stats.indexer_details.failed?.map(idx => idx.name).join(', ') || 'None';
-                        
-                        updateElement('prowlarr-active-indexers', stats.active_indexers, `Active: ${activeNames}`);
-                        updateElement('prowlarr-throttled', stats.throttled_indexers, `Throttled: ${throttledNames}`);
-                        updateElement('prowlarr-failed', stats.failed_indexers, `Failed: ${failedNames}`);
-                    }
-                    
-                    // Update health status
-                    const healthStatus = document.getElementById('prowlarr-health-status');
-                    if (healthStatus) {
-                        healthStatus.textContent = stats.health_status || 'Unknown';
-                        
-                        // Color-code health status
-                        healthStatus.className = 'health-status-text';
-                        if (stats.health_status?.includes('healthy')) {
-                            healthStatus.style.color = '#10b981'; // Green
-                        } else if (stats.health_status?.includes('throttled')) {
-                            healthStatus.style.color = '#f59e0b'; // Amber
-                        } else if (stats.health_status?.includes('failed') || stats.health_status?.includes('disabled')) {
-                            healthStatus.style.color = '#ef4444'; // Red
-                        } else {
-                            healthStatus.style.color = '#9ca3af'; // Gray
-                        }
-                    }
+                    // Update indexers list
+                    this.updateIndexersList(stats.indexer_details)
                     
                 } else {
                     // Handle error case
@@ -4761,31 +4718,95 @@ let huntarrUI = {
                         connectionStatus.className = 'status-badge error';
                     }
                     
-                    // Set all stats to error state
-                    ['prowlarr-active-indexers', 'prowlarr-total-calls', 'prowlarr-throttled', 'prowlarr-failed'].forEach(id => {
-                        const element = document.getElementById(id);
-                        if (element) {
-                            element.textContent = '--';
-                            element.title = data.message || 'Connection error';
-                        }
-                    });
-                    
-                    const healthStatus = document.getElementById('prowlarr-health-status');
-                    if (healthStatus) {
-                        healthStatus.textContent = data.message || 'Connection error';
-                        healthStatus.style.color = '#ef4444'; // Red
-                    }
+                    // Show error in indexers list
+                    this.updateIndexersList(null, data.message || 'Connection error');
                 }
             })
             .catch(error => {
                 console.error('[huntarrUI] Error loading Prowlarr status:', error);
                 
-                // Hide the card on error
+                // Show the card with error state
                 const prowlarrCard = document.getElementById('prowlarrStatusCard');
                 if (prowlarrCard) {
-                    prowlarrCard.style.display = 'none';
+                    prowlarrCard.style.display = 'block';
+                    
+                    // Update connection status to error
+                    const connectionStatus = document.getElementById('prowlarrConnectionStatus');
+                    if (connectionStatus) {
+                        connectionStatus.textContent = '🔴 Error';
+                        connectionStatus.className = 'status-badge error';
+                    }
+                    
+                    // Show error in indexers list
+                    this.updateIndexersList(null, 'Failed to load Prowlarr data');
                 }
             });
+    },
+
+    // Update indexers list display
+    updateIndexersList: function(indexerDetails, errorMessage = null) {
+        const indexersList = document.getElementById('prowlarr-indexers-list');
+        if (!indexersList) return;
+        
+        if (errorMessage) {
+            // Show error state
+            indexersList.innerHTML = `<div class="loading-text" style="color: #ef4444;">${errorMessage}</div>`;
+            return;
+        }
+        
+        if (!indexerDetails || (!indexerDetails.active && !indexerDetails.throttled && !indexerDetails.failed)) {
+            // No indexers found
+            indexersList.innerHTML = '<div class="loading-text">No indexers configured</div>';
+            return;
+        }
+        
+        // Combine all indexers and sort alphabetically
+        let allIndexers = [];
+        
+        // Add active indexers
+        if (indexerDetails.active) {
+            allIndexers = allIndexers.concat(
+                indexerDetails.active.map(idx => ({ ...idx, status: 'active' }))
+            );
+        }
+        
+        // Add throttled indexers
+        if (indexerDetails.throttled) {
+            allIndexers = allIndexers.concat(
+                indexerDetails.throttled.map(idx => ({ ...idx, status: 'throttled' }))
+            );
+        }
+        
+        // Add failed indexers
+        if (indexerDetails.failed) {
+            allIndexers = allIndexers.concat(
+                indexerDetails.failed.map(idx => ({ ...idx, status: 'failed' }))
+            );
+        }
+        
+        // Sort alphabetically by name
+        allIndexers.sort((a, b) => a.name.localeCompare(b.name));
+        
+        if (allIndexers.length === 0) {
+            indexersList.innerHTML = '<div class="loading-text">No indexers found</div>';
+            return;
+        }
+        
+        // Build the HTML for indexers list
+        const indexersHtml = allIndexers.map(indexer => {
+            const statusText = indexer.status === 'active' ? 'Active' :
+                             indexer.status === 'throttled' ? 'Throttled' :
+                             'Failed';
+            
+            return `
+                <div class="indexer-item">
+                    <span class="indexer-name">${indexer.name}</span>
+                    <span class="indexer-status ${indexer.status}">${statusText}</span>
+                </div>
+            `;
+        }).join('');
+        
+        indexersList.innerHTML = indexersHtml;
     }
 };
 
