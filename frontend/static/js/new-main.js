@@ -2359,9 +2359,6 @@ let huntarrUI = {
                         this.updateIndexersList(null, 'Prowlarr is disconnected');
                     }
                     
-                    // Setup refresh button
-                    this.setupProwlarrRefreshButton();
-                    
                 } else {
                     // Hide card if not configured or disabled
                     prowlarrCard.style.display = 'none';
@@ -2523,46 +2520,7 @@ let huntarrUI = {
         indexersList.innerHTML = indexersHtml;
     },
 
-    // Setup Prowlarr refresh button
-    setupProwlarrRefreshButton: function() {
-        const refreshButton = document.getElementById('refresh-prowlarr-data');
-        if (refreshButton) {
-            refreshButton.addEventListener('click', () => {
-                this.refreshProwlarrData();
-            });
-        }
-    },
 
-    // Refresh Prowlarr data
-    refreshProwlarrData: function() {
-        // Prevent multiple refreshes
-        if (this.prowlarrRefreshInProgress) {
-            return;
-        }
-        
-        this.prowlarrRefreshInProgress = true;
-        
-        // Update button to show refreshing state
-        const refreshButton = document.getElementById('refresh-prowlarr-data');
-        if (refreshButton) {
-            const originalText = refreshButton.innerHTML;
-            refreshButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
-            refreshButton.disabled = true;
-            
-            // Restore button after refresh
-            setTimeout(() => {
-                refreshButton.innerHTML = originalText;
-                refreshButton.disabled = false;
-                this.prowlarrRefreshInProgress = false;
-            }, 2000);
-        }
-        
-        // Reload Prowlarr status and stats
-        this.loadProwlarrStatus();
-        
-        // Show notification
-        this.showNotification('Prowlarr data refreshed', 'success');
-    },
 
     
     // User
