@@ -2320,13 +2320,14 @@ let huntarrUI = {
 
     // Load and update Prowlarr status card
     loadProwlarrStatus: function() {
+        const prowlarrCard = document.getElementById('prowlarrStatusCard');
+        if (!prowlarrCard) return;
+
+        // First check if Prowlarr is configured and enabled
         HuntarrUtils.fetchWithTimeout('./api/prowlarr/status')
             .then(response => response.json())
             .then(statusData => {
-                const prowlarrCard = document.getElementById('prowlarrStatusCard');
-                if (!prowlarrCard) return;
-
-                // Show/hide card based on whether Prowlarr is configured and enabled
+                // Only show card if Prowlarr is configured and enabled
                 if (statusData.configured && statusData.enabled) {
                     prowlarrCard.style.display = 'block';
                     
@@ -2335,7 +2336,7 @@ let huntarrUI = {
                     if (statusElement) {
                         if (statusData.connected) {
                             statusElement.textContent = '🟢 Connected';
-                            statusElement.className = 'status-badge success';
+                            statusElement.className = 'status-badge connected';
                         } else {
                             statusElement.textContent = '🔴 Disconnected';
                             statusElement.className = 'status-badge error';
@@ -2346,29 +2347,23 @@ let huntarrUI = {
                     if (statusData.connected) {
                         this.loadProwlarrStats();
                     } else {
-                        // Show disconnected state
-                        this.updateProwlarrStatsDisplay({
-                            active_indexers: '--',
-                            total_api_calls: '--',
-                            throttled_indexers: '--',
-                            failed_indexers: '--',
-                            health_status: 'Disconnected'
-                        });
+                        // Show disconnected state in indexers list
+                        this.updateIndexersList(null, 'Prowlarr is disconnected');
                     }
                     
                     // Setup refresh button
                     this.setupProwlarrRefreshButton();
                     
                 } else {
+                    // Hide card if not configured or disabled
                     prowlarrCard.style.display = 'none';
+                    console.log('[huntarrUI] Prowlarr card hidden - configured:', statusData.configured, 'enabled:', statusData.enabled);
                 }
             })
             .catch(error => {
                 console.error('Error loading Prowlarr status:', error);
-                const prowlarrCard = document.getElementById('prowlarrStatusCard');
-                if (prowlarrCard) {
-                    prowlarrCard.style.display = 'none';
-                }
+                // Hide card on error
+                prowlarrCard.style.display = 'none';
             });
     },
 
@@ -2433,6 +2428,91 @@ let huntarrUI = {
                 healthElement.style.color = '#9ca3af'; // gray
             }
         }
+    },
+
+    // Load detailed Prowlarr statistics
+    loadProwlarrStats: function() {
+        HuntarrUtils.fetchWithTimeout('./api/prowlarr/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stats) {
+                    // Update indexers list with detailed stats
+                    this.updateIndexersList(data.stats.indexer_details);
+                } else {
+                    console.error('Failed to load Prowlarr stats:', data.error);
+                    this.updateIndexersList(null, data.error || 'Failed to load stats');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading Prowlarr stats:', error);
+                this.updateIndexersList(null, 'Connection error');
+            });
+    },
+
+    // Update indexers list display
+    updateIndexersList: function(indexerDetails, errorMessage = null) {
+        const indexersList = document.getElementById('prowlarr-indexers-list');
+        if (!indexersList) return;
+        
+        if (errorMessage) {
+            // Show error state
+            indexersList.innerHTML = `<div class="loading-text" style="color: #ef4444;">${errorMessage}</div>`;
+            return;
+        }
+        
+        if (!indexerDetails || (!indexerDetails.active && !indexerDetails.throttled && !indexerDetails.failed)) {
+            // No indexers found
+            indexersList.innerHTML = '<div class="loading-text">No indexers configured</div>';
+            return;
+        }
+        
+        // Combine all indexers and sort alphabetically
+        let allIndexers = [];
+        
+        // Add active indexers
+        if (indexerDetails.active) {
+            allIndexers = allIndexers.concat(
+                indexerDetails.active.map(idx => ({ ...idx, status: 'active' }))
+            );
+        }
+        
+        // Add throttled indexers
+        if (indexerDetails.throttled) {
+            allIndexers = allIndexers.concat(
+                indexerDetails.throttled.map(idx => ({ ...idx, status: 'throttled' }))
+            );
+        }
+        
+        // Add failed indexers
+        if (indexerDetails.failed) {
+            allIndexers = allIndexers.concat(
+                indexerDetails.failed.map(idx => ({ ...idx, status: 'failed' }))
+            );
+        }
+        
+        // Sort alphabetically by name
+        allIndexers.sort((a, b) => a.name.localeCompare(b.name));
+        
+        if (allIndexers.length === 0) {
+            indexersList.innerHTML = '<div class="loading-text">No indexers found</div>';
+            return;
+        }
+        
+        // Build the HTML for indexers list
+        const indexersHtml = allIndexers.map(indexer => {
+            const statusText = indexer.status === 'active' ? 'Active' :
+                             indexer.status === 'throttled' ? 'Throttled' :
+                             'Failed';
+            
+            return `
+                <div class="indexer-item">
+                    <span class="indexer-name">${indexer.name}</span>
+                    <span class="indexer-status ${indexer.status}">${statusText}</span>
+                </div>
+            `;
+        }).join('');
+        
+        indexersList.innerHTML = indexersHtml;
     },
 
     // Setup Prowlarr refresh button
@@ -4669,145 +4749,7 @@ let huntarrUI = {
         }
     },
 
-    // Load and update Prowlarr status card
-    loadProwlarrStatus: function() {
-        console.log('[huntarrUI] Loading Prowlarr status');
-        
-        HuntarrUtils.fetchWithTimeout('./api/prowlarr/stats')
-            .then(response => response.json())
-            .then(data => {
-                console.log('[huntarrUI] Prowlarr stats received:', data);
-                
-                const prowlarrCard = document.getElementById('prowlarrStatusCard');
-                if (!prowlarrCard) {
-                    console.log('[huntarrUI] Prowlarr card not found in DOM');
-                    return;
-                }
 
-                if (data.success && data.stats) {
-                    const stats = data.stats;
-                    
-                    // Show the card since we have data
-                    prowlarrCard.style.display = 'block';
-                    
-                    // Update connection status
-                    const connectionStatus = document.getElementById('prowlarrConnectionStatus');
-                    if (connectionStatus) {
-                        if (stats.connected) {
-                            connectionStatus.textContent = '🟢 Connected';
-                            connectionStatus.className = 'status-badge connected';
-                        } else {
-                            connectionStatus.textContent = '🔴 Disconnected';
-                            connectionStatus.className = 'status-badge disconnected';
-                        }
-                    }
-                    
-                    // Update indexers list
-                    this.updateIndexersList(stats.indexer_details)
-                    
-                } else {
-                    // Handle error case
-                    console.log('[huntarrUI] Error in Prowlarr stats:', data.message || 'Unknown error');
-                    
-                    // Still show the card but with error states
-                    prowlarrCard.style.display = 'block';
-                    
-                    const connectionStatus = document.getElementById('prowlarrConnectionStatus');
-                    if (connectionStatus) {
-                        connectionStatus.textContent = '🔴 Error';
-                        connectionStatus.className = 'status-badge error';
-                    }
-                    
-                    // Show error in indexers list
-                    this.updateIndexersList(null, data.message || 'Connection error');
-                }
-            })
-            .catch(error => {
-                console.error('[huntarrUI] Error loading Prowlarr status:', error);
-                
-                // Show the card with error state
-                const prowlarrCard = document.getElementById('prowlarrStatusCard');
-                if (prowlarrCard) {
-                    prowlarrCard.style.display = 'block';
-                    
-                    // Update connection status to error
-                    const connectionStatus = document.getElementById('prowlarrConnectionStatus');
-                    if (connectionStatus) {
-                        connectionStatus.textContent = '🔴 Error';
-                        connectionStatus.className = 'status-badge error';
-                    }
-                    
-                    // Show error in indexers list
-                    this.updateIndexersList(null, 'Failed to load Prowlarr data');
-                }
-            });
-    },
-
-    // Update indexers list display
-    updateIndexersList: function(indexerDetails, errorMessage = null) {
-        const indexersList = document.getElementById('prowlarr-indexers-list');
-        if (!indexersList) return;
-        
-        if (errorMessage) {
-            // Show error state
-            indexersList.innerHTML = `<div class="loading-text" style="color: #ef4444;">${errorMessage}</div>`;
-            return;
-        }
-        
-        if (!indexerDetails || (!indexerDetails.active && !indexerDetails.throttled && !indexerDetails.failed)) {
-            // No indexers found
-            indexersList.innerHTML = '<div class="loading-text">No indexers configured</div>';
-            return;
-        }
-        
-        // Combine all indexers and sort alphabetically
-        let allIndexers = [];
-        
-        // Add active indexers
-        if (indexerDetails.active) {
-            allIndexers = allIndexers.concat(
-                indexerDetails.active.map(idx => ({ ...idx, status: 'active' }))
-            );
-        }
-        
-        // Add throttled indexers
-        if (indexerDetails.throttled) {
-            allIndexers = allIndexers.concat(
-                indexerDetails.throttled.map(idx => ({ ...idx, status: 'throttled' }))
-            );
-        }
-        
-        // Add failed indexers
-        if (indexerDetails.failed) {
-            allIndexers = allIndexers.concat(
-                indexerDetails.failed.map(idx => ({ ...idx, status: 'failed' }))
-            );
-        }
-        
-        // Sort alphabetically by name
-        allIndexers.sort((a, b) => a.name.localeCompare(b.name));
-        
-        if (allIndexers.length === 0) {
-            indexersList.innerHTML = '<div class="loading-text">No indexers found</div>';
-            return;
-        }
-        
-        // Build the HTML for indexers list
-        const indexersHtml = allIndexers.map(indexer => {
-            const statusText = indexer.status === 'active' ? 'Active' :
-                             indexer.status === 'throttled' ? 'Throttled' :
-                             'Failed';
-            
-            return `
-                <div class="indexer-item">
-                    <span class="indexer-name">${indexer.name}</span>
-                    <span class="indexer-status ${indexer.status}">${statusText}</span>
-                </div>
-            `;
-        }).join('');
-        
-        indexersList.innerHTML = indexersHtml;
-    }
 };
 
 // Note: redirectToSwaparr function removed - Swaparr now has its own dedicated section
