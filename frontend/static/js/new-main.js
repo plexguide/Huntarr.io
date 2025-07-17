@@ -4642,6 +4642,150 @@ let huntarrUI = {
             // Fall back to loading Swaparr status/info
             this.loadSwaparrStatus();
         }
+    },
+
+    // Setup Prowlarr status polling
+    setupProwlarrStatusPolling: function() {
+        console.log('[huntarrUI] Setting up Prowlarr status polling');
+        
+        // Load initial status
+        this.loadProwlarrStatus();
+        
+        // Set up polling to refresh Prowlarr status every 30 seconds
+        // Only poll when home section is active to reduce unnecessary requests
+        this.prowlarrPollingInterval = setInterval(() => {
+            if (this.currentSection === 'home') {
+                this.loadProwlarrStatus();
+            }
+        }, 30000);
+        
+        // Set up refresh button handler
+        const refreshButton = document.getElementById('refresh-prowlarr-data');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', () => {
+                console.log('[huntarrUI] Manual Prowlarr refresh triggered');
+                this.loadProwlarrStatus();
+            });
+        }
+    },
+
+    // Load and update Prowlarr status card
+    loadProwlarrStatus: function() {
+        console.log('[huntarrUI] Loading Prowlarr status');
+        
+        HuntarrUtils.fetchWithTimeout('./api/prowlarr/stats')
+            .then(response => response.json())
+            .then(data => {
+                console.log('[huntarrUI] Prowlarr stats received:', data);
+                
+                const prowlarrCard = document.getElementById('prowlarrStatusCard');
+                if (!prowlarrCard) {
+                    console.log('[huntarrUI] Prowlarr card not found in DOM');
+                    return;
+                }
+
+                if (data.success && data.stats) {
+                    const stats = data.stats;
+                    
+                    // Show the card since we have data
+                    prowlarrCard.style.display = 'block';
+                    
+                    // Update connection status
+                    const connectionStatus = document.getElementById('prowlarrConnectionStatus');
+                    if (connectionStatus) {
+                        if (stats.connected) {
+                            connectionStatus.textContent = '🟢 Connected';
+                            connectionStatus.className = 'status-badge connected';
+                        } else {
+                            connectionStatus.textContent = '🔴 Disconnected';
+                            connectionStatus.className = 'status-badge disconnected';
+                        }
+                    }
+                    
+                    // Update stats display
+                    const updateElement = (id, value, tooltip = '') => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            element.textContent = value || '--';
+                            if (tooltip) {
+                                element.title = tooltip;
+                            }
+                        }
+                    };
+                    
+                    // Update basic stats
+                    updateElement('prowlarr-active-indexers', stats.active_indexers);
+                    updateElement('prowlarr-total-calls', stats.total_api_calls);
+                    updateElement('prowlarr-throttled', stats.throttled_indexers);
+                    updateElement('prowlarr-failed', stats.failed_indexers);
+                    
+                    // Update detailed tooltips with indexer names if available
+                    if (stats.indexer_details) {
+                        const activeNames = stats.indexer_details.active?.map(idx => idx.name).join(', ') || 'None';
+                        const throttledNames = stats.indexer_details.throttled?.map(idx => idx.name).join(', ') || 'None';
+                        const failedNames = stats.indexer_details.failed?.map(idx => idx.name).join(', ') || 'None';
+                        
+                        updateElement('prowlarr-active-indexers', stats.active_indexers, `Active: ${activeNames}`);
+                        updateElement('prowlarr-throttled', stats.throttled_indexers, `Throttled: ${throttledNames}`);
+                        updateElement('prowlarr-failed', stats.failed_indexers, `Failed: ${failedNames}`);
+                    }
+                    
+                    // Update health status
+                    const healthStatus = document.getElementById('prowlarr-health-status');
+                    if (healthStatus) {
+                        healthStatus.textContent = stats.health_status || 'Unknown';
+                        
+                        // Color-code health status
+                        healthStatus.className = 'health-status-text';
+                        if (stats.health_status?.includes('healthy')) {
+                            healthStatus.style.color = '#10b981'; // Green
+                        } else if (stats.health_status?.includes('throttled')) {
+                            healthStatus.style.color = '#f59e0b'; // Amber
+                        } else if (stats.health_status?.includes('failed') || stats.health_status?.includes('disabled')) {
+                            healthStatus.style.color = '#ef4444'; // Red
+                        } else {
+                            healthStatus.style.color = '#9ca3af'; // Gray
+                        }
+                    }
+                    
+                } else {
+                    // Handle error case
+                    console.log('[huntarrUI] Error in Prowlarr stats:', data.message || 'Unknown error');
+                    
+                    // Still show the card but with error states
+                    prowlarrCard.style.display = 'block';
+                    
+                    const connectionStatus = document.getElementById('prowlarrConnectionStatus');
+                    if (connectionStatus) {
+                        connectionStatus.textContent = '🔴 Error';
+                        connectionStatus.className = 'status-badge error';
+                    }
+                    
+                    // Set all stats to error state
+                    ['prowlarr-active-indexers', 'prowlarr-total-calls', 'prowlarr-throttled', 'prowlarr-failed'].forEach(id => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            element.textContent = '--';
+                            element.title = data.message || 'Connection error';
+                        }
+                    });
+                    
+                    const healthStatus = document.getElementById('prowlarr-health-status');
+                    if (healthStatus) {
+                        healthStatus.textContent = data.message || 'Connection error';
+                        healthStatus.style.color = '#ef4444'; // Red
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('[huntarrUI] Error loading Prowlarr status:', error);
+                
+                // Hide the card on error
+                const prowlarrCard = document.getElementById('prowlarrStatusCard');
+                if (prowlarrCard) {
+                    prowlarrCard.style.display = 'none';
+                }
+            });
     }
 };
 

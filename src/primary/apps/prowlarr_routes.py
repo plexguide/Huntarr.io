@@ -205,33 +205,44 @@ def get_prowlarr_stats():
                         indexers = indexers_response.json()
                         stats['total_indexers'] = len(indexers)
                         
-                        # Count active, throttled, and failed indexers
-                        active_count = 0
-                        throttled_count = 0
-                        failed_count = 0
+                        # Process indexers and collect detailed information
+                        active_indexers = []
+                        throttled_indexers = []
+                        failed_indexers = []
                         
                         for indexer in indexers:
+                            indexer_info = {
+                                'name': indexer.get('name', 'Unknown'),
+                                'protocol': indexer.get('protocol', 'unknown'),
+                                'id': indexer.get('id')
+                            }
+                            
                             if indexer.get('enable', False):
-                                active_count += 1
+                                active_indexers.append(indexer_info)
                                 
                             # Check for throttling/rate limiting
                             capabilities = indexer.get('capabilities', {})
                             if capabilities.get('limitsexceeded', False):
-                                throttled_count += 1
+                                throttled_indexers.append(indexer_info)
                                 
                             # Check for failures - look for disabled indexers or low priority
                             if not indexer.get('enable', False):
-                                failed_count += 1
+                                failed_indexers.append(indexer_info)
                         
-                        stats['active_indexers'] = active_count
-                        stats['throttled_indexers'] = throttled_count
-                        stats['failed_indexers'] = failed_count
+                        stats['active_indexers'] = len(active_indexers)
+                        stats['throttled_indexers'] = len(throttled_indexers)
+                        stats['failed_indexers'] = len(failed_indexers)
+                        stats['indexer_details'] = {
+                            'active': active_indexers,
+                            'throttled': throttled_indexers,
+                            'failed': failed_indexers
+                        }
                         
                         # Update health status based on indexer health
-                        if throttled_count > 0:
-                            stats['health_status'] = f'{throttled_count} indexer(s) throttled'
-                        elif failed_count > 0:
-                            stats['health_status'] = f'{failed_count} indexer(s) disabled'
+                        if len(throttled_indexers) > 0:
+                            stats['health_status'] = f'{len(throttled_indexers)} indexer(s) throttled'
+                        elif len(failed_indexers) > 0:
+                            stats['health_status'] = f'{len(failed_indexers)} indexer(s) disabled'
                         else:
                             stats['health_status'] = 'All indexers healthy'
                             
