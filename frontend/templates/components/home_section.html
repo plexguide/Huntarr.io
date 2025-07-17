@@ -734,6 +734,39 @@
                 color: var(--text-tertiary);
             }
             
+            /* Status Legend */
+            .prowlarr-legend {
+                margin-top: 15px;
+                padding: 12px 15px;
+                background-color: rgba(16, 20, 28, 0.6);
+                border-radius: 6px;
+                border: 1px solid rgba(90, 109, 137, 0.1);
+            }
+            
+            .legend-title {
+                font-size: 0.85em;
+                font-weight: 600;
+                color: var(--text-primary);
+                margin-bottom: 8px;
+            }
+            
+            .legend-items {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            
+            .legend-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .legend-description {
+                font-size: 0.75em;
+                color: var(--text-secondary);
+            }
+            
             /* Mobile responsive */
             @media (max-width: 768px) {
                 .prowlarr-subcards {
@@ -748,6 +781,15 @@
                 
                 .indexers-list {
                     max-height: 150px;
+                }
+                
+                .legend-items {
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                
+                .legend-item {
+                    justify-content: center;
                 }
             }
         </style>
@@ -792,6 +834,25 @@
                     <div class="pending-content">
                         <div class="pending-text">Pending</div>
                         <div class="pending-subtitle">Coming soon</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Legend -->
+            <div class="prowlarr-legend">
+                <div class="legend-title">Status Legend:</div>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="indexer-status active">Active</span>
+                        <span class="legend-description">Indexer is working normally</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="indexer-status throttled">Throttled</span>
+                        <span class="legend-description">Rate limited - reduce search frequency</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="indexer-status failed">Failed</span>
+                        <span class="legend-description">Disabled or not responding</span>
                     </div>
                 </div>
             </div>
