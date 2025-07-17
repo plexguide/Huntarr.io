@@ -489,6 +489,14 @@ let huntarrUI = {
                 }
             }
             
+            // Check for unsaved Prowlarr changes if leaving Prowlarr section
+            if (this.currentSection === 'prowlarr' && window.SettingsForms && typeof window.SettingsForms.checkUnsavedChanges === 'function') {
+                if (!window.SettingsForms.checkUnsavedChanges()) {
+                    console.log(`[huntarrUI] Navigation cancelled due to unsaved Prowlarr changes`);
+                    return; // User chose to stay and save changes
+                }
+            }
+            
             console.log(`[huntarrUI] User switching from ${this.currentSection} to ${section}, refreshing page...`);
             // Store the target section in localStorage so we can navigate to it after refresh
             localStorage.setItem('huntarr-target-section', section);

@@ -5633,7 +5633,7 @@ const SettingsForms = {
             window.huntarrBeforeUnloadListener = function(e) {
                 if (window.swaparrUnsavedChanges || window.settingsUnsavedChanges || window.notificationsUnsavedChanges ||
                     window.sonarrUnsavedChanges || window.radarrUnsavedChanges || window.lidarrUnsavedChanges ||
-                    window.readarrUnsavedChanges || window.whisparrUnsavedChanges || window.erosUnsavedChanges) {
+                    window.readarrUnsavedChanges || window.whisparrUnsavedChanges || window.erosUnsavedChanges || window.prowlarrUnsavedChanges) {
                     e.preventDefault();
                     e.returnValue = ''; // Standard way to trigger browser warning
                     return ''; // For older browsers
