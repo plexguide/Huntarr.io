@@ -136,12 +136,12 @@ A big thank you to these amazing contributors who've helped build and maintain t
 <p align="center">
   <img src="https://github.com/plexguide/Huntarr.io/blob/main/frontend/static/logo/128.png?raw=true" alt="Huntarr" width="64" height="64">
   <span style="font-size: 32px; margin: 0 15px;">+</span>
-  <img src="https://github.com/flmorg/cleanuparr/blob/main/Logo/128.png?raw=true" alt="Cleanuparr" width="64" height="64">
+  <img src="https://github.com/cleanuparr/cleanuparr/blob/main/Logo/128.png?raw=true" alt="Cleanuparr" width="64" height="64">
 </p>
 
 **Huntarr** is the compulsive librarian who finds missing media and upgrades your existing content. It fills in the blanks and improves what you already have.
 
-**Cleanuparr** ([![GitHub stars](https://img.shields.io/github/stars/flmorg/cleanuparr?style=social)](https://github.com/flmorg/cleanuparr/stargazers)) is the janitor of your server; it keeps your download queue spotless, removes clutter, and blocks malicious files.
+**Cleanuparr** ([![GitHub stars](https://img.shields.io/github/stars/cleanuparr/cleanuparr?style=social)](https://github.com/cleanuparr/cleanuparr/stargazers)) is the janitor of your server; it keeps your download queue spotless, removes clutter, and blocks malicious files.
 
 When combined, these tools create a powerful, self-sufficient media automation stack:
 
@@ -149,7 +149,7 @@ When combined, these tools create a powerful, self-sufficient media automation s
 - **Cleanuparr** ensures only clean downloads get through
 - Together, they create a reliable, hands-off media management system
 
-Learn more about **Cleanuparr** at [https://github.com/flmorg/cleanuparr](https://github.com/flmorg/cleanuparr)
+Learn more about **Cleanuparr** at [https://github.com/flmorg/cleanuparr](https://github.com/cleanuparr/cleanuparr)
 
 ## 📜 Change Log
 Visit: https://github.com/plexguide/Huntarr.io/releases/
