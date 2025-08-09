@@ -149,7 +149,7 @@ When combined, these tools create a powerful, self-sufficient media automation s
 - **Cleanuparr** ensures only clean downloads get through
 - Together, they create a reliable, hands-off media management system
 
-Learn more about **Cleanuparr** at [https://github.com/flmorg/cleanuparr](https://github.com/cleanuparr/cleanuparr)
+Learn more about **Cleanuparr** at [https://github.com/cleanuparr/cleanuparr](https://github.com/cleanuparr/cleanuparr)
 
 ## 📜 Change Log
 Visit: https://github.com/plexguide/Huntarr.io/releases/
