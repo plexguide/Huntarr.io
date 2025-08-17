@@ -185,14 +185,27 @@ def get_prowlarr_indexers():
         headers = {'X-Api-Key': api_key}
         
         try:
-            # Get indexers information quickly
+            # Get indexers information and their status
             indexers_url = f"{api_url.rstrip('/')}/api/v1/indexer"
-            indexers_response = requests.get(indexers_url, headers=headers, timeout=5)  # Short timeout
+            indexers_response = requests.get(indexers_url, headers=headers, timeout=5)
+            
+            # Get indexer status information
+            status_url = f"{api_url.rstrip('/')}/api/v1/indexerstatus"
+            status_response = requests.get(status_url, headers=headers, timeout=5)
             
             if indexers_response.status_code == 200:
                 indexers = indexers_response.json()
                 
-                # Process indexers quickly
+                # Build status lookup by indexer ID
+                status_lookup = {}
+                if status_response.status_code == 200:
+                    status_data = status_response.json()
+                    for status in status_data:
+                        indexer_id = status.get('indexerId')
+                        if indexer_id:
+                            status_lookup[indexer_id] = status
+                
+                # Process indexers with proper status detection
                 active_indexers = []
                 throttled_indexers = []
                 failed_indexers = []
@@ -204,17 +217,31 @@ def get_prowlarr_indexers():
                         'id': indexer.get('id')
                     }
                     
-                    if indexer.get('enable', False):
-                        active_indexers.append(indexer_info)
-                        
-                    # Check for throttling/rate limiting
-                    capabilities = indexer.get('capabilities', {})
-                    if capabilities.get('limitsexceeded', False):
-                        throttled_indexers.append(indexer_info)
-                        
-                    # Check for failures - look for disabled indexers
-                    if not indexer.get('enable', False):
+                    indexer_id = indexer.get('id')
+                    is_enabled = indexer.get('enable', False)
+                    
+                    # Get status information for this indexer
+                    status_info = status_lookup.get(indexer_id, {})
+                    disabled_till = status_info.get('disabledTill')
+                    recent_failure = status_info.get('mostRecentFailure')
+                    
+                    if not is_enabled:
+                        # Explicitly disabled indexers
                         failed_indexers.append(indexer_info)
+                    elif disabled_till:
+                        # Temporarily disabled due to failures
+                        failed_indexers.append(indexer_info)
+                    elif recent_failure:
+                        # Has recent failures but still enabled - consider it throttled/problematic
+                        throttled_indexers.append(indexer_info)
+                    else:
+                        # Check for rate limiting
+                        capabilities = indexer.get('capabilities', {})
+                        if capabilities.get('limitsexceeded', False):
+                            throttled_indexers.append(indexer_info)
+                        else:
+                            # Enabled, no failures, no rate limits = active
+                            active_indexers.append(indexer_info)
                 
                 return jsonify({
                     'success': True,
