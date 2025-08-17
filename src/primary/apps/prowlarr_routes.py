@@ -302,7 +302,7 @@ def _fetch_detailed_stats():
                         # Total records gives us approximate API call count
                         stats['total_api_calls'] = history_data.get('totalRecords', 0)
                         
-                        # Analyze recent activity
+                        # Analyze recent activity (overall and per indexer)
                         from datetime import datetime, timedelta
                         now = datetime.utcnow()
                         today = now.date()
@@ -313,12 +313,25 @@ def _fetch_detailed_stats():
                         successful_searches = 0
                         failed_searches = 0
                         
+                        # Track per-indexer statistics
+                        indexer_daily_stats = {}
+                        
                         records = history_data.get('records', [])
                         for record in records:
                             try:
                                 # Parse the date from the record
                                 record_date = datetime.fromisoformat(record.get('date', '').replace('Z', '+00:00')).date()
                                 is_successful = record.get('successful', False)
+                                indexer_id = record.get('indexerId')
+                                
+                                # Initialize indexer stats if not exists
+                                if indexer_id and indexer_id not in indexer_daily_stats:
+                                    indexer_daily_stats[indexer_id] = {
+                                        'searches_today': 0,
+                                        'searches_yesterday': 0,
+                                        'successful_today': 0,
+                                        'failed_today': 0
+                                    }
                                 
                                 if record_date == today:
                                     searches_today += 1
@@ -326,8 +339,20 @@ def _fetch_detailed_stats():
                                         successful_searches += 1
                                     else:
                                         failed_searches += 1
+                                    
+                                    # Per-indexer tracking
+                                    if indexer_id:
+                                        indexer_daily_stats[indexer_id]['searches_today'] += 1
+                                        if is_successful:
+                                            indexer_daily_stats[indexer_id]['successful_today'] += 1
+                                        else:
+                                            indexer_daily_stats[indexer_id]['failed_today'] += 1
+                                            
                                 elif record_date == yesterday:
                                     searches_yesterday += 1
+                                    if indexer_id:
+                                        indexer_daily_stats[indexer_id]['searches_yesterday'] += 1
+                                        
                             except (ValueError, AttributeError):
                                 continue
                         
@@ -335,6 +360,7 @@ def _fetch_detailed_stats():
                         stats['searches_yesterday'] = searches_yesterday
                         stats['recent_success_rate'] = round((successful_searches / max(searches_today, 1)) * 100, 1)
                         stats['recent_failed_searches'] = failed_searches
+                        stats['indexer_daily_stats'] = indexer_daily_stats
                         
                 except Exception as e:
                     prowlarr_logger.debug(f"History endpoint failed: {str(e)}")
@@ -353,28 +379,55 @@ def _fetch_detailed_stats():
                             total_response_time = 0
                             total_queries = 0
                             indexer_performance = []
+                            individual_indexer_stats = {}
                             
                             for indexer_stat in indexer_stats:
                                 response_time = indexer_stat.get('averageResponseTime', 0)
                                 queries = indexer_stat.get('numberOfQueries', 0)
                                 grabs = indexer_stat.get('numberOfGrabs', 0)
+                                indexer_id = indexer_stat.get('indexerId')
+                                indexer_name = indexer_stat.get('indexerName', 'Unknown')
+                                
+                                # Get daily stats for this indexer
+                                daily_stats = stats.get('indexer_daily_stats', {}).get(indexer_id, {
+                                    'searches_today': 0,
+                                    'searches_yesterday': 0,
+                                    'successful_today': 0,
+                                    'failed_today': 0
+                                })
+                                
+                                # Calculate success rate for today
+                                today_success_rate = 0
+                                if daily_stats['searches_today'] > 0:
+                                    today_success_rate = round((daily_stats['successful_today'] / daily_stats['searches_today']) * 100, 1)
+                                
+                                indexer_data = {
+                                    'id': indexer_id,
+                                    'name': indexer_name,
+                                    'response_time': response_time,
+                                    'queries': queries,
+                                    'grabs': grabs,
+                                    'success_rate': round((grabs / queries) * 100, 1) if queries > 0 else 0,
+                                    'searches_today': daily_stats['searches_today'],
+                                    'searches_yesterday': daily_stats['searches_yesterday'],
+                                    'successful_today': daily_stats['successful_today'],
+                                    'failed_today': daily_stats['failed_today'],
+                                    'today_success_rate': today_success_rate
+                                }
                                 
                                 if queries > 0:
                                     total_response_time += response_time * queries
                                     total_queries += queries
-                                    
-                                    indexer_performance.append({
-                                        'name': indexer_stat.get('indexerName', 'Unknown'),
-                                        'response_time': response_time,
-                                        'queries': queries,
-                                        'grabs': grabs,
-                                        'success_rate': round((grabs / queries) * 100, 1) if queries > 0 else 0
-                                    })
+                                    indexer_performance.append(indexer_data)
+                                
+                                # Store individual stats by name for easy lookup
+                                individual_indexer_stats[indexer_name] = indexer_data
                             
                             # Calculate overall average response time
                             avg_response_time = round(total_response_time / max(total_queries, 1), 0)
                             stats['avg_response_time'] = avg_response_time
-                            stats['indexer_performance'] = sorted(indexer_performance, key=lambda x: x['queries'], reverse=True)[:10]  # Top 10 most active
+                            stats['indexer_performance'] = sorted(indexer_performance, key=lambda x: x['queries'], reverse=True)
+                            stats['individual_indexer_stats'] = individual_indexer_stats
                         
                 except Exception as e:
                     prowlarr_logger.debug(f"Indexer stats endpoint failed: {str(e)}")
@@ -453,6 +506,51 @@ def get_prowlarr_stats():
         return jsonify({
             'success': False,
             'error': f'Failed to get statistics: {str(e)}'
+        }), 500
+
+@prowlarr_bp.route('/indexer-stats/<indexer_name>', methods=['GET'])
+def get_indexer_stats(indexer_name):
+    """Get cached statistics for a specific indexer"""
+    global _stats_cache
+    
+    try:
+        with _cache_lock:
+            cached_data = _stats_cache['data']
+        
+        if not cached_data or 'individual_indexer_stats' not in cached_data:
+            return jsonify({
+                'success': False,
+                'error': 'Indexer statistics not available'
+            }), 503
+        
+        individual_stats = cached_data['individual_indexer_stats']
+        
+        if indexer_name not in individual_stats:
+            return jsonify({
+                'success': False,
+                'error': f'Statistics for indexer "{indexer_name}" not found'
+            }), 404
+        
+        indexer_data = individual_stats[indexer_name]
+        
+        return jsonify({
+            'success': True,
+            'indexer_name': indexer_name,
+            'stats': {
+                'searches_today': indexer_data['searches_today'],
+                'recent_success_rate': indexer_data['today_success_rate'],
+                'avg_response_time': indexer_data['response_time'],
+                'total_api_calls': indexer_data['queries'],
+                'recent_failed_searches': indexer_data['failed_today']
+            },
+            'cached': True
+        })
+        
+    except Exception as e:
+        prowlarr_logger.error(f"Failed to get indexer stats for {indexer_name}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to get indexer statistics: {str(e)}'
         }), 500
 
 @prowlarr_bp.route('/test-connection', methods=['POST'])

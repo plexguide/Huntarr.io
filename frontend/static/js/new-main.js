@@ -2537,21 +2537,38 @@ let huntarrUI = {
             return;
         }
         
-        // Build the HTML for indexers list
+        // Build the HTML for indexers list with hover interactions
         const indexersHtml = allIndexers.map(indexer => {
             const statusText = indexer.status === 'active' ? 'Active' :
                              indexer.status === 'throttled' ? 'Throttled' :
                              'Failed';
             
             return `
-                <div class="indexer-item">
-                    <span class="indexer-name">${indexer.name}</span>
+                <div class="indexer-item" data-indexer-name="${indexer.name}">
+                    <span class="indexer-name hoverable">${indexer.name}</span>
                     <span class="indexer-status ${indexer.status}">${statusText}</span>
                 </div>
             `;
         }).join('');
         
         indexersList.innerHTML = indexersHtml;
+        
+        // Add hover event listeners to indexer names
+        const indexerItems = indexersList.querySelectorAll('.indexer-item');
+        indexerItems.forEach(item => {
+            const indexerName = item.dataset.indexerName;
+            const nameElement = item.querySelector('.indexer-name');
+            
+            nameElement.addEventListener('mouseenter', () => {
+                this.showIndexerStats(indexerName);
+                nameElement.classList.add('hovered');
+            });
+            
+            nameElement.addEventListener('mouseleave', () => {
+                this.showOverallStats();
+                nameElement.classList.remove('hovered');
+            });
+        });
     },
 
     // Update Prowlarr statistics display
@@ -2636,6 +2653,42 @@ let huntarrUI = {
         } else {
             statisticsContent.innerHTML = statisticsCards.join('');
         }
+    },
+
+    // Show statistics for a specific indexer
+    showIndexerStats: function(indexerName) {
+        // Update the statistics header
+        const statisticsHeader = document.querySelector('.prowlarr-statistics-card .subcard-header h5');
+        if (statisticsHeader) {
+            statisticsHeader.innerHTML = `<i class="fas fa-chart-bar"></i> ${indexerName} Stats`;
+        }
+        
+        // Fetch and display indexer-specific stats
+        HuntarrUtils.fetchWithTimeout(`./api/prowlarr/indexer-stats/${encodeURIComponent(indexerName)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stats) {
+                    this.updateProwlarrStatistics(data.stats);
+                } else {
+                    this.updateProwlarrStatistics(null, `No stats available for ${indexerName}`);
+                }
+            })
+            .catch(error => {
+                console.error(`Error loading stats for ${indexerName}:`, error);
+                this.updateProwlarrStatistics(null, 'Error loading indexer stats');
+            });
+    },
+
+    // Show overall statistics (when not hovering)
+    showOverallStats: function() {
+        // Reset the statistics header
+        const statisticsHeader = document.querySelector('.prowlarr-statistics-card .subcard-header h5');
+        if (statisticsHeader) {
+            statisticsHeader.innerHTML = '<i class="fas fa-chart-bar"></i> Statistics';
+        }
+        
+        // Show cached overall stats
+        this.loadProwlarrStats();
     },
 
 

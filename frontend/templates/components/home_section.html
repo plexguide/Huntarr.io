@@ -666,6 +666,10 @@
                 color: var(--accent-color);
             }
             
+            .subcard-header h5 {
+                transition: all 0.3s ease;
+            }
+            
             .indexers-list {
                 padding: 15px;
             }
@@ -685,6 +689,34 @@
             .indexer-name {
                 font-weight: 500;
                 color: var(--text-primary);
+                transition: all 0.2s ease;
+            }
+            
+            .indexer-name.hoverable {
+                cursor: pointer;
+                position: relative;
+            }
+            
+            .indexer-name.hoverable:hover,
+            .indexer-name.hovered {
+                color: var(--accent-color);
+                text-shadow: 0 0 8px rgba(90, 109, 137, 0.4);
+            }
+            
+            .indexer-name.hoverable::after {
+                content: '';
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                width: 0;
+                height: 2px;
+                background: var(--accent-color);
+                transition: width 0.2s ease;
+            }
+            
+            .indexer-name.hoverable:hover::after,
+            .indexer-name.hovered::after {
+                width: 100%;
             }
             
             .indexer-status {
