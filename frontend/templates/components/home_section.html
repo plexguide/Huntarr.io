@@ -763,6 +763,10 @@
                 position: relative;
                 overflow: hidden;
                 transition: all 0.3s ease;
+                height: 60px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
             }
             
             .stat-card:hover {
@@ -792,15 +796,16 @@
                 color: var(--text-secondary);
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                margin-bottom: 4px;
+                margin-bottom: 2px;
                 font-weight: 500;
+                line-height: 1;
             }
             
             .stat-value {
                 font-size: 1.4em;
                 font-weight: 700;
                 color: var(--text-primary);
-                line-height: 1.2;
+                line-height: 1;
             }
             
             .stat-value.success {
