@@ -2600,17 +2600,16 @@ let huntarrUI = {
             `);
         }
         
-        // Success rate
-        if (stats.recent_success_rate !== undefined) {
-            const successClass = stats.recent_success_rate >= 80 ? 'success' : 
-                                stats.recent_success_rate >= 60 ? 'warning' : 'error';
-            statisticsCards.push(`
-                <div class="stat-card">
-                    <div class="stat-label">Success Rate</div>
-                    <div class="stat-value ${successClass}">${stats.recent_success_rate}%</div>
-                </div>
-            `);
-        }
+        // Success rate (always show, even if 0)
+        const successRate = stats.recent_success_rate !== undefined ? stats.recent_success_rate : 0;
+        const successClass = successRate >= 80 ? 'success' : 
+                            successRate >= 60 ? 'warning' : 'error';
+        statisticsCards.push(`
+            <div class="stat-card">
+                <div class="stat-label">Success Rate</div>
+                <div class="stat-value ${successClass}">${successRate}%</div>
+            </div>
+        `);
         
         // Average response time
         if (stats.avg_response_time !== undefined) {
@@ -2629,9 +2628,8 @@ let huntarrUI = {
         
         // Total API calls
         if (stats.total_api_calls !== undefined) {
-            const isLargeNumber = stats.total_api_calls >= 100000;
             statisticsCards.push(`
-                <div class="stat-card ${isLargeNumber ? 'large-number' : ''}">
+                <div class="stat-card">
                     <div class="stat-label">Total Searches</div>
                     <div class="stat-value">${stats.total_api_calls.toLocaleString()}</div>
                 </div>
