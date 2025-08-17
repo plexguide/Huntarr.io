@@ -4,6 +4,9 @@ from flask import Blueprint, request, jsonify
 import requests
 import socket
 from urllib.parse import urlparse
+import time
+import threading
+from datetime import datetime, timedelta
 
 from src.primary.utils.logger import get_logger
 from src.primary.settings_manager import get_ssl_verify_setting, load_settings
@@ -11,6 +14,14 @@ import traceback
 
 prowlarr_bp = Blueprint('prowlarr', __name__)
 prowlarr_logger = get_logger("prowlarr")
+
+# Cache for statistics
+_stats_cache = {
+    'data': None,
+    'timestamp': 0,
+    'cache_duration': 300  # 5 minutes in seconds
+}
+_cache_lock = threading.Lock()
 
 def test_connection(url, api_key, timeout=30):
     """Test connection to Prowlarr API"""
@@ -151,9 +162,9 @@ def get_status():
         prowlarr_logger.error(f"Error getting Prowlarr status: {str(e)}")
         return jsonify({"configured": False, "connected": False, "error": str(e)})
 
-@prowlarr_bp.route('/stats', methods=['GET'])
-def get_prowlarr_stats():
-    """Get Prowlarr statistics for homepage monitoring"""
+@prowlarr_bp.route('/indexers', methods=['GET'])
+def get_prowlarr_indexers():
+    """Get Prowlarr indexers list quickly (no heavy statistics)"""
     try:
         settings = load_settings("prowlarr")
         
@@ -173,117 +184,275 @@ def get_prowlarr_stats():
         
         headers = {'X-Api-Key': api_key}
         
+        try:
+            # Get indexers information quickly
+            indexers_url = f"{api_url.rstrip('/')}/api/v1/indexer"
+            indexers_response = requests.get(indexers_url, headers=headers, timeout=5)  # Short timeout
+            
+            if indexers_response.status_code == 200:
+                indexers = indexers_response.json()
+                
+                # Process indexers quickly
+                active_indexers = []
+                throttled_indexers = []
+                failed_indexers = []
+                
+                for indexer in indexers:
+                    indexer_info = {
+                        'name': indexer.get('name', 'Unknown'),
+                        'protocol': indexer.get('protocol', 'unknown'),
+                        'id': indexer.get('id')
+                    }
+                    
+                    if indexer.get('enable', False):
+                        active_indexers.append(indexer_info)
+                        
+                    # Check for throttling/rate limiting
+                    capabilities = indexer.get('capabilities', {})
+                    if capabilities.get('limitsexceeded', False):
+                        throttled_indexers.append(indexer_info)
+                        
+                    # Check for failures - look for disabled indexers
+                    if not indexer.get('enable', False):
+                        failed_indexers.append(indexer_info)
+                
+                return jsonify({
+                    'success': True,
+                    'indexer_details': {
+                        'active': active_indexers,
+                        'throttled': throttled_indexers,
+                        'failed': failed_indexers
+                    }
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to get indexers (HTTP {indexers_response.status_code})'
+                }), 500
+                
+        except requests.exceptions.Timeout:
+            return jsonify({
+                'success': False,
+                'error': 'Connection timeout'
+            }), 504
+        except requests.exceptions.ConnectionError:
+            return jsonify({
+                'success': False,
+                'error': 'Connection refused'
+            }), 503
+        except Exception as e:
+            prowlarr_logger.error(f"Error getting indexers: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': f'Error getting indexers: {str(e)}'
+            }), 500
+        
+    except Exception as e:
+        prowlarr_logger.error(f"Failed to get Prowlarr indexers: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to get Prowlarr indexers: {str(e)}'
+        }), 500
+
+def _fetch_detailed_stats():
+    """Fetch detailed statistics from Prowlarr API (used by background cache update)"""
+    try:
+        settings = load_settings("prowlarr")
+        
+        api_url = settings.get("api_url", "").strip()
+        api_key = settings.get("api_key", "").strip()
+        enabled = settings.get("enabled", True)
+        
+        if not api_url or not api_key or not enabled:
+            return None
+        
+        # Clean URL
+        if not api_url.startswith(('http://', 'https://')):
+            api_url = f'http://{api_url}'
+        
+        headers = {'X-Api-Key': api_key}
+        
         # Initialize stats
         stats = {
             'connected': False,
-            'active_indexers': 0,
-            'total_indexers': 0,
-            'throttled_indexers': 0,
-            'failed_indexers': 0,
+            'searches_today': 0,
+            'searches_yesterday': 0,
+            'recent_success_rate': 0,
+            'recent_failed_searches': 0,
+            'avg_response_time': 0,
             'total_api_calls': 0,
-            'version': 'Unknown',
-            'health_status': 'Disconnected'
+            'indexer_performance': []
         }
         
         try:
-            # Get system status
+            # Check connection first
             status_url = f"{api_url.rstrip('/')}/api/v1/system/status"
             status_response = requests.get(status_url, headers=headers, timeout=10)
             
             if status_response.status_code == 200:
-                status_data = status_response.json()
                 stats['connected'] = True
-                stats['version'] = status_data.get('version', 'Unknown')
-                stats['health_status'] = 'Connected'
-                
-                # Get indexers information
-                try:
-                    indexers_url = f"{api_url.rstrip('/')}/api/v1/indexer"
-                    indexers_response = requests.get(indexers_url, headers=headers, timeout=10)
-                    
-                    if indexers_response.status_code == 200:
-                        indexers = indexers_response.json()
-                        stats['total_indexers'] = len(indexers)
-                        
-                        # Process indexers and collect detailed information
-                        active_indexers = []
-                        throttled_indexers = []
-                        failed_indexers = []
-                        
-                        for indexer in indexers:
-                            indexer_info = {
-                                'name': indexer.get('name', 'Unknown'),
-                                'protocol': indexer.get('protocol', 'unknown'),
-                                'id': indexer.get('id')
-                            }
-                            
-                            if indexer.get('enable', False):
-                                active_indexers.append(indexer_info)
-                                
-                            # Check for throttling/rate limiting
-                            capabilities = indexer.get('capabilities', {})
-                            if capabilities.get('limitsexceeded', False):
-                                throttled_indexers.append(indexer_info)
-                                
-                            # Check for failures - look for disabled indexers or low priority
-                            if not indexer.get('enable', False):
-                                failed_indexers.append(indexer_info)
-                        
-                        stats['active_indexers'] = len(active_indexers)
-                        stats['throttled_indexers'] = len(throttled_indexers)
-                        stats['failed_indexers'] = len(failed_indexers)
-                        stats['indexer_details'] = {
-                            'active': active_indexers,
-                            'throttled': throttled_indexers,
-                            'failed': failed_indexers
-                        }
-                        
-                        # Update health status based on indexer health
-                        if len(throttled_indexers) > 0:
-                            stats['health_status'] = f'{len(throttled_indexers)} indexer(s) throttled'
-                        elif len(failed_indexers) > 0:
-                            stats['health_status'] = f'{len(failed_indexers)} indexer(s) disabled'
-                        else:
-                            stats['health_status'] = 'All indexers healthy'
-                            
-                except Exception:
-                    # Indexer endpoint failed but system is connected
-                    stats['health_status'] = 'Indexer data unavailable'
                 
                 # Get API history/usage statistics
                 try:
                     history_url = f"{api_url.rstrip('/')}/api/v1/history"
-                    history_response = requests.get(history_url, headers=headers, timeout=10, params={'pageSize': 1})
+                    history_response = requests.get(history_url, headers=headers, timeout=15, params={'pageSize': 50})
                     
                     if history_response.status_code == 200:
                         history_data = history_response.json()
                         # Total records gives us approximate API call count
                         stats['total_api_calls'] = history_data.get('totalRecords', 0)
                         
-                except Exception:
-                    # History endpoint failed, keep default value
-                    pass
-                    
-            else:
-                stats['health_status'] = f'Connection failed (HTTP {status_response.status_code})'
+                        # Analyze recent activity
+                        from datetime import datetime, timedelta
+                        now = datetime.utcnow()
+                        today = now.date()
+                        yesterday = today - timedelta(days=1)
+                        
+                        searches_today = 0
+                        searches_yesterday = 0
+                        successful_searches = 0
+                        failed_searches = 0
+                        
+                        records = history_data.get('records', [])
+                        for record in records:
+                            try:
+                                # Parse the date from the record
+                                record_date = datetime.fromisoformat(record.get('date', '').replace('Z', '+00:00')).date()
+                                is_successful = record.get('successful', False)
+                                
+                                if record_date == today:
+                                    searches_today += 1
+                                    if is_successful:
+                                        successful_searches += 1
+                                    else:
+                                        failed_searches += 1
+                                elif record_date == yesterday:
+                                    searches_yesterday += 1
+                            except (ValueError, AttributeError):
+                                continue
+                        
+                        stats['searches_today'] = searches_today
+                        stats['searches_yesterday'] = searches_yesterday
+                        stats['recent_success_rate'] = round((successful_searches / max(searches_today, 1)) * 100, 1)
+                        stats['recent_failed_searches'] = failed_searches
+                        
+                except Exception as e:
+                    prowlarr_logger.debug(f"History endpoint failed: {str(e)}")
                 
-        except requests.exceptions.Timeout:
-            stats['health_status'] = 'Connection timeout'
-        except requests.exceptions.ConnectionError:
-            stats['health_status'] = 'Connection refused'
+                # Get indexer performance statistics
+                try:
+                    indexerstats_url = f"{api_url.rstrip('/')}/api/v1/indexerstats"
+                    indexerstats_response = requests.get(indexerstats_url, headers=headers, timeout=15)
+                    
+                    if indexerstats_response.status_code == 200:
+                        indexerstats_data = indexerstats_response.json()
+                        indexer_stats = indexerstats_data.get('indexers', [])
+                        
+                        if indexer_stats:
+                            # Calculate average response time
+                            total_response_time = 0
+                            total_queries = 0
+                            indexer_performance = []
+                            
+                            for indexer_stat in indexer_stats:
+                                response_time = indexer_stat.get('averageResponseTime', 0)
+                                queries = indexer_stat.get('numberOfQueries', 0)
+                                grabs = indexer_stat.get('numberOfGrabs', 0)
+                                
+                                if queries > 0:
+                                    total_response_time += response_time * queries
+                                    total_queries += queries
+                                    
+                                    indexer_performance.append({
+                                        'name': indexer_stat.get('indexerName', 'Unknown'),
+                                        'response_time': response_time,
+                                        'queries': queries,
+                                        'grabs': grabs,
+                                        'success_rate': round((grabs / queries) * 100, 1) if queries > 0 else 0
+                                    })
+                            
+                            # Calculate overall average response time
+                            avg_response_time = round(total_response_time / max(total_queries, 1), 0)
+                            stats['avg_response_time'] = avg_response_time
+                            stats['indexer_performance'] = sorted(indexer_performance, key=lambda x: x['queries'], reverse=True)[:10]  # Top 10 most active
+                        
+                except Exception as e:
+                    prowlarr_logger.debug(f"Indexer stats endpoint failed: {str(e)}")
+                    
         except Exception as e:
-            stats['health_status'] = f'Error: {str(e)[:50]}'
+            prowlarr_logger.debug(f"Error fetching detailed stats: {str(e)}")
         
-        return jsonify({
-            'success': True,
-            'stats': stats
-        })
+        return stats
         
     except Exception as e:
-        prowlarr_logger.error(f"Failed to get Prowlarr stats: {str(e)}")
+        prowlarr_logger.error(f"Failed to fetch detailed stats: {str(e)}")
+        return None
+
+def _update_stats_cache():
+    """Update the statistics cache in background"""
+    global _stats_cache
+    
+    try:
+        new_stats = _fetch_detailed_stats()
+        
+        with _cache_lock:
+            if new_stats:
+                _stats_cache['data'] = new_stats
+                _stats_cache['timestamp'] = time.time()
+                prowlarr_logger.debug("Statistics cache updated successfully")
+            else:
+                prowlarr_logger.debug("Failed to update statistics cache")
+                
+    except Exception as e:
+        prowlarr_logger.error(f"Error updating stats cache: {str(e)}")
+
+@prowlarr_bp.route('/stats', methods=['GET'])
+def get_prowlarr_stats():
+    """Get cached Prowlarr statistics"""
+    global _stats_cache
+    
+    try:
+        with _cache_lock:
+            current_time = time.time()
+            
+            # Check if cache is expired or empty
+            if (_stats_cache['data'] is None or 
+                current_time - _stats_cache['timestamp'] > _stats_cache['cache_duration']):
+                
+                # Start background update if cache is expired
+                if _stats_cache['data'] is None:
+                    # First time - fetch synchronously but with shorter timeout
+                    prowlarr_logger.debug("First time stats fetch - getting initial data")
+                    initial_stats = _fetch_detailed_stats()
+                    if initial_stats:
+                        _stats_cache['data'] = initial_stats
+                        _stats_cache['timestamp'] = current_time
+                else:
+                    # Cache expired - start background update
+                    threading.Thread(target=_update_stats_cache, daemon=True).start()
+            
+            # Return cached data (or None if no cache available)
+            cached_data = _stats_cache['data']
+        
+        if cached_data:
+            return jsonify({
+                'success': True,
+                'stats': cached_data,
+                'cached': True,
+                'cache_age': int(current_time - _stats_cache['timestamp'])
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Statistics not available',
+                'cached': False
+            }), 503
+        
+    except Exception as e:
+        prowlarr_logger.error(f"Failed to get cached stats: {str(e)}")
         return jsonify({
             'success': False,
-            'error': f'Failed to get Prowlarr stats: {str(e)}'
+            'error': f'Failed to get statistics: {str(e)}'
         }), 500
 
 @prowlarr_bp.route('/test-connection', methods=['POST'])

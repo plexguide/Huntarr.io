@@ -2351,12 +2351,29 @@ let huntarrUI = {
                         }
                     }
                     
-                    // Load detailed stats if connected
+                    // Load data if connected
                     if (statusData.connected) {
+                        // Load indexers quickly first
+                        this.loadProwlarrIndexers();
+                        // Load statistics separately (cached)
                         this.loadProwlarrStats();
+                        
+                        // Set up periodic refresh for statistics (every 5 minutes)
+                        if (!this.prowlarrStatsInterval) {
+                            this.prowlarrStatsInterval = setInterval(() => {
+                                this.loadProwlarrStats();
+                            }, 5 * 60 * 1000); // 5 minutes
+                        }
                     } else {
-                        // Show disconnected state in indexers list
+                        // Show disconnected state
                         this.updateIndexersList(null, 'Prowlarr is disconnected');
+                        this.updateProwlarrStatistics(null, 'Prowlarr is disconnected');
+                        
+                        // Clear interval if disconnected
+                        if (this.prowlarrStatsInterval) {
+                            clearInterval(this.prowlarrStatsInterval);
+                            this.prowlarrStatsInterval = null;
+                        }
                     }
                     
                 } else {
@@ -2435,22 +2452,39 @@ let huntarrUI = {
         }
     },
 
-    // Load detailed Prowlarr statistics
+    // Load Prowlarr indexers quickly
+    loadProwlarrIndexers: function() {
+        HuntarrUtils.fetchWithTimeout('./api/prowlarr/indexers')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.indexer_details) {
+                    this.updateIndexersList(data.indexer_details);
+                } else {
+                    console.error('Failed to load Prowlarr indexers:', data.error);
+                    this.updateIndexersList(null, data.error || 'Failed to load indexers');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading Prowlarr indexers:', error);
+                this.updateIndexersList(null, 'Connection error');
+            });
+    },
+
+    // Load Prowlarr statistics (cached)
     loadProwlarrStats: function() {
         HuntarrUtils.fetchWithTimeout('./api/prowlarr/stats')
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.stats) {
-                    // Update indexers list with detailed stats
-                    this.updateIndexersList(data.stats.indexer_details);
+                    this.updateProwlarrStatistics(data.stats);
                 } else {
                     console.error('Failed to load Prowlarr stats:', data.error);
-                    this.updateIndexersList(null, data.error || 'Failed to load stats');
+                    this.updateProwlarrStatistics(null, data.error || 'Failed to load stats');
                 }
             })
             .catch(error => {
                 console.error('Error loading Prowlarr stats:', error);
-                this.updateIndexersList(null, 'Connection error');
+                this.updateProwlarrStatistics(null, 'Connection error');
             });
     },
 
@@ -2518,6 +2552,89 @@ let huntarrUI = {
         }).join('');
         
         indexersList.innerHTML = indexersHtml;
+    },
+
+    // Update Prowlarr statistics display
+    updateProwlarrStatistics: function(stats, errorMessage = null) {
+        const statisticsContent = document.getElementById('prowlarr-statistics-content');
+        if (!statisticsContent) return;
+        
+        if (errorMessage) {
+            statisticsContent.innerHTML = `<div class="loading-text" style="color: #ef4444;">${errorMessage}</div>`;
+            return;
+        }
+        
+        if (!stats) {
+            statisticsContent.innerHTML = '<div class="loading-text">No statistics available</div>';
+            return;
+        }
+        
+        // Build statistics HTML
+        let statisticsHtml = '';
+        
+        // Search activity
+        if (stats.searches_today !== undefined) {
+            const todayClass = stats.searches_today > 0 ? 'success' : '';
+            statisticsHtml += `
+                <div class="stat-item">
+                    <span class="stat-label">Searches Today</span>
+                    <span class="stat-value ${todayClass}">${stats.searches_today}</span>
+                </div>
+            `;
+        }
+        
+        // Success rate
+        if (stats.recent_success_rate !== undefined) {
+            const successClass = stats.recent_success_rate >= 80 ? 'success' : 
+                                stats.recent_success_rate >= 60 ? 'warning' : 'error';
+            statisticsHtml += `
+                <div class="stat-item">
+                    <span class="stat-label">Success Rate</span>
+                    <span class="stat-value ${successClass}">${stats.recent_success_rate}%</span>
+                </div>
+            `;
+        }
+        
+        // Average response time
+        if (stats.avg_response_time !== undefined) {
+            const responseClass = stats.avg_response_time <= 1000 ? 'success' : 
+                                stats.avg_response_time <= 3000 ? 'warning' : 'error';
+            const responseTime = stats.avg_response_time >= 1000 ? 
+                                `${(stats.avg_response_time / 1000).toFixed(1)}s` : 
+                                `${stats.avg_response_time}ms`;
+            statisticsHtml += `
+                <div class="stat-item">
+                    <span class="stat-label">Avg Response</span>
+                    <span class="stat-value ${responseClass}">${responseTime}</span>
+                </div>
+            `;
+        }
+        
+        // Total API calls
+        if (stats.total_api_calls !== undefined) {
+            statisticsHtml += `
+                <div class="stat-item">
+                    <span class="stat-label">Total Searches</span>
+                    <span class="stat-value">${stats.total_api_calls.toLocaleString()}</span>
+                </div>
+            `;
+        }
+        
+        // Failed searches
+        if (stats.recent_failed_searches !== undefined && stats.recent_failed_searches > 0) {
+            statisticsHtml += `
+                <div class="stat-item">
+                    <span class="stat-label">Failed Today</span>
+                    <span class="stat-value error">${stats.recent_failed_searches}</span>
+                </div>
+            `;
+        }
+        
+        if (statisticsHtml === '') {
+            statisticsContent.innerHTML = '<div class="loading-text">No recent activity</div>';
+        } else {
+            statisticsContent.innerHTML = statisticsHtml;
+        }
     },
 
 

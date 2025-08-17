@@ -715,21 +715,42 @@
                 font-style: italic;
             }
             
-            .pending-content {
-                padding: 40px 15px;
-                text-align: center;
+            .statistics-content {
+                padding: 15px;
             }
             
-            .pending-text {
-                font-size: 1.1em;
-                font-weight: 600;
+            .stat-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 6px 0;
+                border-bottom: 1px solid rgba(90, 109, 137, 0.1);
+            }
+            
+            .stat-item:last-child {
+                border-bottom: none;
+            }
+            
+            .stat-label {
+                font-size: 0.9em;
                 color: var(--text-secondary);
-                margin-bottom: 5px;
             }
             
-            .pending-subtitle {
-                font-size: 0.8em;
-                color: var(--text-tertiary);
+            .stat-value {
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+            
+            .stat-value.success {
+                color: #10b981;
+            }
+            
+            .stat-value.warning {
+                color: #f59e0b;
+            }
+            
+            .stat-value.error {
+                color: #ef4444;
             }
             
             /* Status Legend */
@@ -819,14 +840,13 @@
                     </div>
                 </div>
 
-                <!-- Right Sub-Card: Pending -->
-                <div class="prowlarr-subcard prowlarr-pending-card">
+                <!-- Right Sub-Card: Statistics -->
+                <div class="prowlarr-subcard prowlarr-statistics-card">
                     <div class="subcard-header">
-                        <h5><i class="fas fa-clock"></i> Statistics</h5>
+                        <h5><i class="fas fa-chart-bar"></i> Statistics</h5>
                     </div>
-                    <div class="pending-content">
-                        <div class="pending-text">Pending</div>
-                        <div class="pending-subtitle">Coming soon</div>
+                    <div class="statistics-content" id="prowlarr-statistics-content">
+                        <div class="loading-text">Loading statistics...</div>
                     </div>
                 </div>
             </div>
