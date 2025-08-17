@@ -32,6 +32,37 @@ def search_media():
         logger.error(f"Error searching media: {e}")
         return jsonify({'error': 'Search failed'}), 500
 
+@requestarr_bp.route('/search/stream', methods=['GET'])
+def search_media_stream():
+    """Stream search results as they become available"""
+    from flask import Response
+    import json
+    
+    try:
+        query = request.args.get('q', '').strip()
+        app_type = request.args.get('app_type', '').strip()
+        instance_name = request.args.get('instance_name', '').strip()
+        
+        if not query:
+            return jsonify({'error': 'Query parameter is required'}), 400
+        
+        if not app_type or not instance_name:
+            return jsonify({'error': 'App type and instance name are required'}), 400
+        
+        def generate():
+            try:
+                for result in requestarr_api.search_media_with_availability_stream(query, app_type, instance_name):
+                    yield f"data: {json.dumps(result)}\n\n"
+            except Exception as e:
+                logger.error(f"Error in streaming search: {e}")
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        
+        return Response(generate(), mimetype='text/plain')
+        
+    except Exception as e:
+        logger.error(f"Error setting up streaming search: {e}")
+        return jsonify({'error': 'Search failed'}), 500
+
 @requestarr_bp.route('/instances', methods=['GET'])
 def get_enabled_instances():
     """Get enabled Sonarr and Radarr instances"""

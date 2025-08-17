@@ -111,6 +111,132 @@ class RequestarrAPI:
         except Exception as e:
             logger.error(f"Error searching TMDB: {e}")
             return []
+
+    def search_media_with_availability_stream(self, query: str, app_type: str, instance_name: str):
+        """Stream search results as they become available"""
+        api_key = self.get_tmdb_api_key()
+        
+        # Determine search type based on app
+        media_type = "movie" if app_type == "radarr" else "tv" if app_type == "sonarr" else "multi"
+        
+        try:
+            # Use search to get movies or TV shows
+            url = f"{self.tmdb_base_url}/search/{media_type}"
+            params = {
+                'api_key': api_key,
+                'query': query,
+                'include_adult': False
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Get instance configuration for availability checking
+            app_config = self.db.get_app_config(app_type)
+            target_instance = None
+            if app_config and app_config.get('instances'):
+                for instance in app_config['instances']:
+                    if instance.get('name') == instance_name:
+                        target_instance = instance
+                        break
+            
+            # Process items and yield results as they become available
+            processed_items = []
+            
+            for item in data.get('results', []):
+                # Skip person results in multi search
+                if item.get('media_type') == 'person':
+                    continue
+                
+                # Determine media type
+                item_type = item.get('media_type')
+                if not item_type:
+                    # For single-type searches
+                    item_type = 'movie' if media_type == 'movie' else 'tv'
+                
+                # Skip if media type doesn't match app type
+                if app_type == "radarr" and item_type != "movie":
+                    continue
+                if app_type == "sonarr" and item_type != "tv":
+                    continue
+                
+                # Get title and year
+                title = item.get('title') or item.get('name', '')
+                release_date = item.get('release_date') or item.get('first_air_date', '')
+                year = None
+                if release_date:
+                    try:
+                        year = int(release_date.split('-')[0])
+                    except (ValueError, IndexError):
+                        pass
+                
+                # Build poster URL
+                poster_path = item.get('poster_path')
+                poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+                
+                # Build backdrop URL
+                backdrop_path = item.get('backdrop_path')
+                backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
+                
+                # Create basic result first (without availability check)
+                basic_result = {
+                    'tmdb_id': item.get('id'),
+                    'media_type': item_type,
+                    'title': title,
+                    'year': year,
+                    'overview': item.get('overview', ''),
+                    'poster_path': poster_url,
+                    'backdrop_path': backdrop_url,
+                    'vote_average': item.get('vote_average', 0),
+                    'popularity': item.get('popularity', 0),
+                    'availability': {
+                        'status': 'checking',
+                        'message': 'Checking availability...',
+                        'in_app': False,
+                        'already_requested': False
+                    }
+                }
+                
+                processed_items.append((basic_result, item.get('id'), item_type))
+            
+            # Sort by popularity before streaming
+            processed_items.sort(key=lambda x: x[0]['popularity'], reverse=True)
+            processed_items = processed_items[:20]  # Limit to top 20 results
+            
+            # Yield basic results first
+            for basic_result, tmdb_id, item_type in processed_items:
+                yield basic_result
+            
+            # Now check availability for each item and yield updates
+            for basic_result, tmdb_id, item_type in processed_items:
+                try:
+                    availability_status = self._get_availability_status(tmdb_id, item_type, target_instance, app_type)
+                    
+                    # Yield updated result with availability
+                    updated_result = basic_result.copy()
+                    updated_result['availability'] = availability_status
+                    updated_result['_update'] = True  # Flag to indicate this is an update
+                    
+                    yield updated_result
+                    
+                except Exception as e:
+                    logger.error(f"Error checking availability for {tmdb_id}: {e}")
+                    # Yield error status
+                    error_result = basic_result.copy()
+                    error_result['availability'] = {
+                        'status': 'error',
+                        'message': 'Error checking availability',
+                        'in_app': False,
+                        'already_requested': False
+                    }
+                    error_result['_update'] = True
+                    yield error_result
+            
+        except Exception as e:
+            logger.error(f"Error in streaming search: {e}")
+            yield {'error': str(e)}
     
     def _get_availability_status(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str) -> Dict[str, Any]:
         """Get availability status for media item"""

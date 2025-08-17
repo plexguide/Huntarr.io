@@ -119,7 +119,7 @@ class RequestarrModule {
         if (!resultsContainer) return;
 
         // Show loading
-        resultsContainer.innerHTML = '<div class="loading">🔍 Searching and checking availability...</div>';
+        resultsContainer.innerHTML = '<div class="loading">🔍 Searching...</div>';
 
         try {
             const params = new URLSearchParams({
@@ -128,14 +128,65 @@ class RequestarrModule {
                 instance_name: this.selectedInstance.instanceName
             });
             
-            const response = await fetch(`./api/requestarr/search?${params}`);
-            const data = await response.json();
+            // Use streaming endpoint for progressive loading
+            const response = await fetch(`./api/requestarr/search/stream?${params}`);
             
-            if (data.error) {
-                throw new Error(data.error);
+            if (!response.ok) {
+                throw new Error('Search failed');
             }
             
-            this.displayResults(data.results || []);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let hasResults = false;
+            
+            // Clear loading message once we start getting results
+            const clearLoadingOnce = () => {
+                if (!hasResults) {
+                    resultsContainer.innerHTML = '';
+                    hasResults = true;
+                }
+            };
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // Keep incomplete line in buffer
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            
+                            if (data.error) {
+                                throw new Error(data.error);
+                            }
+                            
+                            clearLoadingOnce();
+                            
+                            if (data._update) {
+                                // This is an availability update for an existing result
+                                this.updateResultAvailability(data);
+                            } else {
+                                // This is a new result
+                                this.addResult(data);
+                            }
+                            
+                        } catch (parseError) {
+                            console.error('Error parsing streaming data:', parseError);
+                        }
+                    }
+                }
+            }
+            
+            // If no results were found
+            if (!hasResults) {
+                resultsContainer.innerHTML = '<div class="no-results">No results found.</div>';
+            }
             
         } catch (error) {
             console.error('Error searching media:', error);
@@ -157,6 +208,57 @@ class RequestarrModule {
 
         // Add event listeners to request buttons
         this.setupRequestButtons();
+    }
+
+    addResult(item) {
+        const resultsContainer = document.getElementById('requestarr-results');
+        if (!resultsContainer) return;
+
+        // Create and append the new result card
+        const cardHTML = this.createResultCard(item);
+        const cardElement = document.createElement('div');
+        cardElement.innerHTML = cardHTML;
+        const actualCard = cardElement.firstElementChild;
+        
+        resultsContainer.appendChild(actualCard);
+
+        // Add event listeners to the new request button
+        const requestBtn = actualCard.querySelector('.request-btn:not([disabled])');
+        if (requestBtn) {
+            requestBtn.addEventListener('click', (e) => this.handleRequest(e.target));
+        }
+    }
+
+    updateResultAvailability(updatedItem) {
+        const cardId = `result-card-${updatedItem.tmdb_id}-${updatedItem.media_type}`;
+        const card = document.querySelector(`[data-card-id="${cardId}"]`);
+        
+        if (!card) return;
+
+        // Update stored item data
+        this.itemData[cardId] = updatedItem;
+
+        // Update availability status display
+        const statusElement = card.querySelector('.availability-status');
+        const requestButton = card.querySelector('.request-btn');
+        
+        if (statusElement && requestButton) {
+            const statusInfo = this.getStatusInfo(updatedItem.availability);
+            
+            // Update status display
+            statusElement.className = `availability-status ${statusInfo.className}`;
+            statusElement.innerHTML = `<span class="status-icon">${statusInfo.icon}</span><span class="status-text">${statusInfo.message}</span>`;
+            
+            // Update button
+            requestButton.textContent = statusInfo.buttonText;
+            requestButton.className = `request-btn ${statusInfo.buttonClass}`;
+            requestButton.disabled = statusInfo.disabled;
+            
+            // Add event listener if button is now enabled
+            if (!statusInfo.disabled) {
+                requestButton.addEventListener('click', (e) => this.handleRequest(e.target));
+            }
+        }
     }
 
     createResultCard(item) {
