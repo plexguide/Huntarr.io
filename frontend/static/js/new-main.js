@@ -2586,6 +2586,9 @@ let huntarrUI = {
             return;
         }
         
+        // Debug: Log the stats data
+        console.log('Statistics data:', stats);
+        
         // Build statistics cards HTML
         let statisticsCards = [];
         
@@ -2600,8 +2603,11 @@ let huntarrUI = {
             `);
         }
         
-        // Success rate (always show, even if 0)
-        const successRate = stats.recent_success_rate !== undefined ? stats.recent_success_rate : 0;
+        // Success rate (always show, even if 0 or undefined)
+        let successRate = 0;
+        if (stats.recent_success_rate !== undefined && stats.recent_success_rate !== null) {
+            successRate = stats.recent_success_rate;
+        }
         const successClass = successRate >= 80 ? 'success' : 
                             successRate >= 60 ? 'warning' : 'error';
         statisticsCards.push(`
