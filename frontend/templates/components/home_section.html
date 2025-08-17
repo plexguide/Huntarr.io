@@ -716,41 +716,95 @@
             }
             
             .statistics-content {
-                padding: 15px;
+                padding: 12px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
             }
             
-            .stat-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 6px 0;
-                border-bottom: 1px solid rgba(90, 109, 137, 0.1);
+            .stat-card {
+                background: linear-gradient(135deg, rgba(16, 20, 28, 0.8) 0%, rgba(30, 35, 45, 0.6) 100%);
+                border: 1px solid rgba(90, 109, 137, 0.15);
+                border-radius: 8px;
+                padding: 12px;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s ease;
             }
             
-            .stat-item:last-child {
-                border-bottom: none;
+            .stat-card:hover {
+                transform: translateY(-2px);
+                border-color: rgba(90, 109, 137, 0.3);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            }
+            
+            .stat-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: var(--accent-color);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            
+            .stat-card:hover::before {
+                opacity: 1;
             }
             
             .stat-label {
-                font-size: 0.9em;
+                font-size: 0.75em;
                 color: var(--text-secondary);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 4px;
+                font-weight: 500;
             }
             
             .stat-value {
-                font-weight: 600;
+                font-size: 1.4em;
+                font-weight: 700;
                 color: var(--text-primary);
+                line-height: 1.2;
             }
             
             .stat-value.success {
                 color: #10b981;
+                text-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
             }
             
             .stat-value.warning {
                 color: #f59e0b;
+                text-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
             }
             
             .stat-value.error {
                 color: #ef4444;
+                text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+            }
+            
+            /* Special styling for large numbers */
+            .stat-card.large-number .stat-value {
+                font-size: 1.2em;
+            }
+            
+            /* Single column layout for mobile */
+            @media (max-width: 768px) {
+                .statistics-content {
+                    grid-template-columns: 1fr;
+                    gap: 8px;
+                }
+                
+                .stat-card {
+                    padding: 10px;
+                }
+                
+                .stat-value {
+                    font-size: 1.2em;
+                }
             }
             
             /* Status Legend */

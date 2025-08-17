@@ -2569,30 +2569,30 @@ let huntarrUI = {
             return;
         }
         
-        // Build statistics HTML
-        let statisticsHtml = '';
+        // Build statistics cards HTML
+        let statisticsCards = [];
         
         // Search activity
         if (stats.searches_today !== undefined) {
             const todayClass = stats.searches_today > 0 ? 'success' : '';
-            statisticsHtml += `
-                <div class="stat-item">
-                    <span class="stat-label">Searches Today</span>
-                    <span class="stat-value ${todayClass}">${stats.searches_today}</span>
+            statisticsCards.push(`
+                <div class="stat-card">
+                    <div class="stat-label">Searches Today</div>
+                    <div class="stat-value ${todayClass}">${stats.searches_today}</div>
                 </div>
-            `;
+            `);
         }
         
         // Success rate
         if (stats.recent_success_rate !== undefined) {
             const successClass = stats.recent_success_rate >= 80 ? 'success' : 
                                 stats.recent_success_rate >= 60 ? 'warning' : 'error';
-            statisticsHtml += `
-                <div class="stat-item">
-                    <span class="stat-label">Success Rate</span>
-                    <span class="stat-value ${successClass}">${stats.recent_success_rate}%</span>
+            statisticsCards.push(`
+                <div class="stat-card">
+                    <div class="stat-label">Success Rate</div>
+                    <div class="stat-value ${successClass}">${stats.recent_success_rate}%</div>
                 </div>
-            `;
+            `);
         }
         
         // Average response time
@@ -2602,38 +2602,39 @@ let huntarrUI = {
             const responseTime = stats.avg_response_time >= 1000 ? 
                                 `${(stats.avg_response_time / 1000).toFixed(1)}s` : 
                                 `${stats.avg_response_time}ms`;
-            statisticsHtml += `
-                <div class="stat-item">
-                    <span class="stat-label">Avg Response</span>
-                    <span class="stat-value ${responseClass}">${responseTime}</span>
+            statisticsCards.push(`
+                <div class="stat-card">
+                    <div class="stat-label">Avg Response</div>
+                    <div class="stat-value ${responseClass}">${responseTime}</div>
                 </div>
-            `;
+            `);
         }
         
         // Total API calls
         if (stats.total_api_calls !== undefined) {
-            statisticsHtml += `
-                <div class="stat-item">
-                    <span class="stat-label">Total Searches</span>
-                    <span class="stat-value">${stats.total_api_calls.toLocaleString()}</span>
+            const isLargeNumber = stats.total_api_calls >= 100000;
+            statisticsCards.push(`
+                <div class="stat-card ${isLargeNumber ? 'large-number' : ''}">
+                    <div class="stat-label">Total Searches</div>
+                    <div class="stat-value">${stats.total_api_calls.toLocaleString()}</div>
                 </div>
-            `;
+            `);
         }
         
-        // Failed searches
+        // Failed searches (only show if > 0)
         if (stats.recent_failed_searches !== undefined && stats.recent_failed_searches > 0) {
-            statisticsHtml += `
-                <div class="stat-item">
-                    <span class="stat-label">Failed Today</span>
-                    <span class="stat-value error">${stats.recent_failed_searches}</span>
+            statisticsCards.push(`
+                <div class="stat-card">
+                    <div class="stat-label">Failed Today</div>
+                    <div class="stat-value error">${stats.recent_failed_searches}</div>
                 </div>
-            `;
+            `);
         }
         
-        if (statisticsHtml === '') {
+        if (statisticsCards.length === 0) {
             statisticsContent.innerHTML = '<div class="loading-text">No recent activity</div>';
         } else {
-            statisticsContent.innerHTML = statisticsHtml;
+            statisticsContent.innerHTML = statisticsCards.join('');
         }
     },
 
