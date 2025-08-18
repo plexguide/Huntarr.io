@@ -44,6 +44,9 @@ hourly_cap_scheduler_thread = None
 # Swaparr processing thread
 swaparr_thread = None
 
+# Background refresher for Prowlarr statistics
+prowlarr_stats_thread = None
+
 # Define which apps have background processing cycles
 CYCLICAL_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
 
@@ -693,6 +696,16 @@ def shutdown_threads():
         else:
             logger.info("Hourly API cap scheduler stopped")
     
+    # Stop the Prowlarr stats refresher
+    global prowlarr_stats_thread
+    if prowlarr_stats_thread and prowlarr_stats_thread.is_alive():
+        logger.info("Waiting for Prowlarr stats refresher to stop...")
+        prowlarr_stats_thread.join(timeout=5.0)
+        if prowlarr_stats_thread.is_alive():
+            logger.warning("Prowlarr stats refresher did not stop gracefully")
+        else:
+            logger.info("Prowlarr stats refresher stopped")
+
     # Stop the Swaparr processing thread
     global swaparr_thread
     if swaparr_thread and swaparr_thread.is_alive():
@@ -775,6 +788,52 @@ def hourly_cap_scheduler_loop():
         logger.error(traceback.format_exc())
     
     logger.info("Hourly API cap scheduler stopped")
+
+def prowlarr_stats_loop():
+    """Background loop to refresh Prowlarr statistics cache every 5 minutes.
+    Runs independently of the frontend and does nothing if Prowlarr is not configured or disabled.
+    """
+    refresher_logger = get_logger("prowlarr")
+    refresher_logger.info("Prowlarr stats refresher thread started")
+    try:
+        from src.primary.settings_manager import load_settings
+        # Import inside loop target to avoid circular issues at module import time
+        from src.primary.apps import prowlarr_routes as prow
+
+        refresh_interval_seconds = 300  # 5 minutes
+
+        # Do an immediate pass on start
+        while not stop_event.is_set():
+            try:
+                settings = load_settings("prowlarr")
+                api_url = (settings.get("api_url", "") or "").strip()
+                api_key = (settings.get("api_key", "") or "").strip()
+                enabled = settings.get("enabled", True)
+
+                if not api_url or not api_key or not enabled:
+                    # Not configured or disabled; sleep a bit and check again
+                    if stop_event.wait(60):
+                        break
+                    continue
+
+                # Trigger cache update (safe even if cache is warm)
+                try:
+                    prow._update_stats_cache()
+                except Exception as e:
+                    refresher_logger.error(f"Prowlarr stats refresh error: {e}", exc_info=True)
+
+                # Sleep until next refresh or until stop requested
+                if stop_event.wait(refresh_interval_seconds):
+                    break
+
+            except Exception as loop_error:
+                refresher_logger.error(f"Unexpected error in Prowlarr stats refresher: {loop_error}", exc_info=True)
+                # Back off briefly to avoid tight error loops
+                if stop_event.wait(60):
+                    break
+    finally:
+        refresher_logger.info("Prowlarr stats refresher thread stopped")
+
 
 def swaparr_app_loop():
     """Dedicated Swaparr processing loop that follows same patterns as other apps"""
@@ -864,7 +923,7 @@ def swaparr_app_loop():
                     # Log progress every 30 seconds (like other apps)
                     if elapsed > 0 and elapsed % 30 == 0:
                         swaparr_logger.debug(f"Still sleeping, {sleep_duration - elapsed} seconds remaining before next cycle...")
-                    
+                
             except Exception as e:
                 swaparr_logger.error(f"Unexpected error in Swaparr loop: {e}", exc_info=True)
                 # Sleep briefly to avoid spinning in case of repeated errors
@@ -874,8 +933,6 @@ def swaparr_app_loop():
         swaparr_logger.error(f"Fatal error in Swaparr thread: {e}", exc_info=True)
     
     swaparr_logger.info("Swaparr thread stopped")
-
-
 
 def start_hourly_cap_scheduler():
     """Start the hourly API cap scheduler thread"""
@@ -894,6 +951,20 @@ def start_hourly_cap_scheduler():
     hourly_cap_scheduler_thread.start()
     
     logger.info(f"Hourly API cap scheduler started. Thread is alive: {hourly_cap_scheduler_thread.is_alive()}")
+
+def start_prowlarr_stats_thread():
+    """Start the Prowlarr statistics refresher thread (5-minute cadence)."""
+    global prowlarr_stats_thread
+    if prowlarr_stats_thread and prowlarr_stats_thread.is_alive():
+        logger.info("Prowlarr stats refresher already running")
+        return
+    prowlarr_stats_thread = threading.Thread(
+        target=prowlarr_stats_loop,
+        name="ProwlarrStatsRefresher",
+        daemon=True,
+    )
+    prowlarr_stats_thread.start()
+    logger.info(f"Prowlarr stats refresher started. Thread is alive: {prowlarr_stats_thread.is_alive()}")
 
 def start_swaparr_thread():
     """Start the dedicated Swaparr processing thread"""
@@ -933,7 +1004,14 @@ def start_huntarr():
         logger.info("Swaparr thread started successfully")
     except Exception as e:
         logger.error(f"Failed to start Swaparr thread: {e}")
-        
+    
+    # Start the Prowlarr stats refresher
+    try:
+        start_prowlarr_stats_thread()
+        logger.info("Prowlarr stats refresher started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start Prowlarr stats refresher: {e}")
+         
     # Start the scheduler engine
     try:
         start_scheduler()
