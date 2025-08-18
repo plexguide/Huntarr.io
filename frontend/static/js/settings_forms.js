@@ -382,9 +382,7 @@ const SettingsForms = {
                 </div>
             </div>
             
-            <div class="settings-group" id="sonarr-custom-tags" style="display: ${
-              settings.tag_processed_items !== false ? "block" : "none"
-            };">
+            <div class="settings-group" id="sonarr-custom-tags">
                 <h3>Custom Tags</h3>
                 <div class="setting-item">
                     <label for="sonarr_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
@@ -1094,9 +1092,7 @@ const SettingsForms = {
                 </div>
             </div>
             
-            <div class="settings-group" id="radarr-custom-tags" style="display: ${
-              settings.tag_processed_items !== false ? "block" : "none"
-            };">
+            <div class="settings-group" id="radarr-custom-tags">
                 <h3>Custom Tags</h3>
                 <div class="setting-item">
                     <label for="radarr_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
@@ -1593,9 +1589,7 @@ const SettingsForms = {
                 </div>
             </div>
             
-            <div class="settings-group" id="lidarr-custom-tags" style="display: ${
-              settings.tag_processed_items !== false ? "block" : "none"
-            };">
+            <div class="settings-group" id="lidarr-custom-tags">
                 <h3>Custom Tags</h3>
                 <div class="setting-item">
                     <label for="lidarr_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
@@ -1962,9 +1956,7 @@ const SettingsForms = {
                 </div>
             </div>
             
-            <div class="settings-group" id="readarr-custom-tags" style="display: ${
-              settings.tag_processed_items !== false ? "block" : "none"
-            };">
+            <div class="settings-group" id="readarr-custom-tags">
                 <h3>Custom Tags</h3>
                 <div class="setting-item">
                     <label for="readarr_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
@@ -2322,9 +2314,7 @@ const SettingsForms = {
                 </div>
             </div>
             
-            <div class="settings-group" id="whisparr-custom-tags" style="display: ${
-              settings.tag_processed_items !== false ? "block" : "none"
-            };">
+            <div class="settings-group" id="whisparr-custom-tags">
                 <h3>Custom Tags</h3>
                 <div class="setting-item">
                     <label for="whisparr_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
@@ -2603,7 +2593,7 @@ const SettingsForms = {
                             <p class="setting-help">Enable or disable this Whisparr V3 instance for processing</p>
                         </div>
                         <div class="setting-item">
-                                            <label for="eros-name-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-name" class="info-icon" title="Learn more about naming your Whisparr V3 (Eros) instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Name:</label>
+                                            <label for="eros-name-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-name" class="info-icon" title="Learn more about naming your Whisparr V3 instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Name:</label>
                 <input type="text" id="eros-name-${index}" name="name" value="${
         instance.name || ""
       }" placeholder="Friendly name for this Whisparr V3 (Eros) instance">
@@ -2790,9 +2780,7 @@ const SettingsForms = {
                 </div>
             </div>
             
-            <div class="settings-group" id="eros-custom-tags" style="display: ${
-              settings.tag_processed_items !== false ? "block" : "none"
-            };">
+            <div class="settings-group" id="eros-custom-tags">
                 <h3>Custom Tags</h3>
                 <div class="setting-item">
                     <label for="eros_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
