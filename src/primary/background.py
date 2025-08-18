@@ -351,6 +351,7 @@ def app_specific_loop(app_type: str) -> None:
                     command_wait_attempts = combined_settings.get("command_wait_attempts", 600)
                     
                     if app_type == "sonarr":
+                        air_date_delay_days = instance_details.get("air_date_delay_days", 0)
                         processed_missing = process_missing(
                             api_url=api_url,
                             api_key=api_key,
@@ -360,6 +361,7 @@ def app_specific_loop(app_type: str) -> None:
                             skip_future_episodes=skip_future_episodes,
                             hunt_missing_items=hunt_missing_items,
                             hunt_missing_mode=hunt_missing_mode,
+                            air_date_delay_days=air_date_delay_days,
                             command_wait_delay=command_wait_delay,
                             command_wait_attempts=command_wait_attempts,
                             stop_check=stop_check_func

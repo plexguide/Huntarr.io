@@ -54,6 +54,7 @@ def get_configured_instances():
                     "hunt_upgrade_items": instance.get("hunt_upgrade_items", 0),  # Per-instance upgrade hunt value
                     "hunt_missing_mode": instance.get("hunt_missing_mode", "seasons_packs"),  # Per-instance missing mode
                     "upgrade_mode": instance.get("upgrade_mode", "seasons_packs"),  # Per-instance upgrade mode
+                    "air_date_delay_days": instance.get("air_date_delay_days", 0),  # Per-instance air date delay
                 }
                 instances.append(instance_data)
     

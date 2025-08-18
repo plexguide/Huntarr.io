@@ -16,6 +16,38 @@ from src.primary.stats_manager import increment_stat, increment_stat_only, check
 from src.primary.stateful_manager import is_processed, add_processed_id
 from src.primary.apps.sonarr import api as sonarr_api
 
+def should_delay_episode_search(air_date_str: str, delay_days: int) -> bool:
+    """
+    Check if an episode search should be delayed based on its air date.
+    
+    Args:
+        air_date_str: Episode air date in ISO format (e.g., '2024-01-15T20:00:00Z')
+        delay_days: Number of days to delay search after air date
+        
+    Returns:
+        True if search should be delayed, False if ready to search
+    """
+    if delay_days <= 0:
+        return False  # No delay configured
+        
+    if not air_date_str:
+        return False  # No air date, don't delay
+        
+    try:
+        # Parse the air date
+        air_date_unix = time.mktime(time.strptime(air_date_str, '%Y-%m-%dT%H:%M:%SZ'))
+        current_unix = time.time()
+        
+        # Calculate when search should start (air date + delay)
+        search_start_unix = air_date_unix + (delay_days * 24 * 60 * 60)
+        
+        # Return True if we should still delay (current time < search start time)
+        return current_unix < search_start_unix
+        
+    except (ValueError, TypeError) as e:
+        sonarr_logger.warning(f"Could not parse air date '{air_date_str}' for delay calculation: {e}")
+        return False  # Don't delay if we can't parse the date
+
 # Get logger for the Sonarr app
 sonarr_logger = get_logger("sonarr")
 
@@ -29,6 +61,7 @@ def process_missing_episodes(
 
     hunt_missing_items: int = 5,
     hunt_missing_mode: str = "seasons_packs",
+    air_date_delay_days: int = 0,
     command_wait_delay: int = get_advanced_setting("command_wait_delay", 1),
     command_wait_attempts: int = get_advanced_setting("command_wait_attempts", 600),
     stop_check: Callable[[], bool] = lambda: False
@@ -50,7 +83,7 @@ def process_missing_episodes(
         sonarr_logger.info("Season [Packs] mode selected - searching for complete season packs")
         return process_missing_seasons_packs_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
-            skip_future_episodes, hunt_missing_items,
+            skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check
         )
     elif hunt_missing_mode == "shows":
@@ -58,7 +91,7 @@ def process_missing_episodes(
         sonarr_logger.info("Show-based missing mode selected")
         return process_missing_shows_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
-            skip_future_episodes, hunt_missing_items,
+            skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check
         )
     elif hunt_missing_mode == "episodes":
@@ -66,7 +99,7 @@ def process_missing_episodes(
         sonarr_logger.warning("Episodes mode selected - WARNING: This mode makes excessive API calls and does not support tagging. Consider using Season Packs mode instead.")
         return process_missing_episodes_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
-            skip_future_episodes, hunt_missing_items,
+            skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check
         )
     else:
@@ -81,6 +114,7 @@ def process_missing_seasons_packs_mode(
     monitored_only: bool,
     skip_future_episodes: bool,
     hunt_missing_items: int,
+    air_date_delay_days: int,
     command_wait_delay: int,
     command_wait_attempts: int,
     stop_check: Callable[[], bool]
@@ -133,6 +167,24 @@ def process_missing_seasons_packs_mode(
         missing_episodes = filtered_episodes
         if skipped_count > 0:
             sonarr_logger.info(f"Skipped {skipped_count} future episodes based on air date.")
+    
+    # Apply air date delay if configured (only for episodes and shows modes)
+    if air_date_delay_days > 0 and hunt_missing_mode in ['episodes', 'shows']:
+        original_count = len(missing_episodes)
+        delayed_episodes = []
+        delayed_count = 0
+        
+        for episode in missing_episodes:
+            air_date_str = episode.get('airDateUtc')
+            if should_delay_episode_search(air_date_str, air_date_delay_days):
+                delayed_count += 1
+                sonarr_logger.debug(f"Delaying search for episode ID {episode.get('id')} - aired {air_date_str}, waiting {air_date_delay_days} days")
+            else:
+                delayed_episodes.append(episode)
+        
+        missing_episodes = delayed_episodes
+        if delayed_count > 0:
+            sonarr_logger.info(f"Delayed {delayed_count} episodes due to {air_date_delay_days}-day air date delay setting.")
     
     if not missing_episodes:
         sonarr_logger.info("No missing episodes left to process after filtering future episodes.")
@@ -274,6 +326,7 @@ def process_missing_shows_mode(
     monitored_only: bool,
     skip_future_episodes: bool,
     hunt_missing_items: int,
+    air_date_delay_days: int,
     command_wait_delay: int,
     command_wait_attempts: int,
     stop_check: Callable[[], bool]
@@ -359,6 +412,24 @@ def process_missing_shows_mode(
             skipped_count = original_count - len(missing_episodes)
             if skipped_count > 0:
                 sonarr_logger.info(f"Skipped {skipped_count} future episodes for {show_title} based on air date.")
+        
+        # Apply air date delay if configured
+        if air_date_delay_days > 0:
+            original_count = len(missing_episodes)
+            delayed_episodes = []
+            delayed_count = 0
+            
+            for episode in missing_episodes:
+                air_date_str = episode.get('airDateUtc')
+                if should_delay_episode_search(air_date_str, air_date_delay_days):
+                    delayed_count += 1
+                    sonarr_logger.debug(f"Delaying search for episode ID {episode.get('id')} - aired {air_date_str}, waiting {air_date_delay_days} days")
+                else:
+                    delayed_episodes.append(episode)
+            
+            missing_episodes = delayed_episodes
+            if delayed_count > 0:
+                sonarr_logger.info(f"Delayed {delayed_count} episodes for {show_title} due to {air_date_delay_days}-day air date delay setting.")
         
         if not missing_episodes:
             sonarr_logger.info(f"No eligible missing episodes found for {show_title} after filtering.")
@@ -453,6 +524,7 @@ def process_missing_episodes_mode(
     monitored_only: bool,
     skip_future_episodes: bool,
     hunt_missing_items: int,
+    air_date_delay_days: int,
     command_wait_delay: int,
     command_wait_attempts: int,
     stop_check: Callable[[], bool]
@@ -506,6 +578,24 @@ def process_missing_episodes_mode(
         missing_episodes = filtered_episodes
         if skipped_count > 0:
             sonarr_logger.info(f"Skipped {skipped_count} future episodes based on air date.")
+    
+    # Apply air date delay if configured
+    if air_date_delay_days > 0:
+        original_count = len(missing_episodes)
+        delayed_episodes = []
+        delayed_count = 0
+        
+        for episode in missing_episodes:
+            air_date_str = episode.get('airDateUtc')
+            if should_delay_episode_search(air_date_str, air_date_delay_days):
+                delayed_count += 1
+                sonarr_logger.debug(f"Delaying search for episode ID {episode.get('id')} - aired {air_date_str}, waiting {air_date_delay_days} days")
+            else:
+                delayed_episodes.append(episode)
+        
+        missing_episodes = delayed_episodes
+        if delayed_count > 0:
+            sonarr_logger.info(f"Delayed {delayed_count} episodes due to {air_date_delay_days}-day air date delay setting.")
     
     if not missing_episodes:
         sonarr_logger.info("No missing episodes left to process after filtering future episodes.")
