@@ -360,7 +360,7 @@
                                     <div class="api-progress-fill" id="sonarr-api-progress" style="width: 0%;"></div>
                                 </div>
                                 <div class="api-progress-text">
-                                    <span id="sonarr-api-used">0</span>/<span id="sonarr-api-total">20</span> requests used
+                                    API: <span id="sonarr-api-used">0</span> / <span id="sonarr-api-total">20</span>
                                 </div>
                             </div>
                         </div>
@@ -400,7 +400,7 @@
                                     <div class="api-progress-fill" id="radarr-api-progress" style="width: 0%;"></div>
                                 </div>
                                 <div class="api-progress-text">
-                                    <span id="radarr-api-used">0</span>/<span id="radarr-api-total">20</span> requests used
+                                    API: <span id="radarr-api-used">0</span> / <span id="radarr-api-total">20</span>
                                 </div>
                             </div>
                         </div>
@@ -440,7 +440,7 @@
                                     <div class="api-progress-fill" id="lidarr-api-progress" style="width: 0%;"></div>
                                 </div>
                                 <div class="api-progress-text">
-                                    <span id="lidarr-api-used">0</span>/<span id="lidarr-api-total">20</span> requests used
+                                    API: <span id="lidarr-api-used">0</span> / <span id="lidarr-api-total">20</span>
                                 </div>
                             </div>
                         </div>
@@ -480,7 +480,7 @@
                                     <div class="api-progress-fill" id="readarr-api-progress" style="width: 0%;"></div>
                                 </div>
                                 <div class="api-progress-text">
-                                    <span id="readarr-api-used">0</span>/<span id="readarr-api-total">20</span> requests used
+                                    API: <span id="readarr-api-used">0</span> / <span id="readarr-api-total">20</span>
                                 </div>
                             </div>
                         </div>
@@ -520,7 +520,7 @@
                                     <div class="api-progress-fill" id="whisparr-api-progress" style="width: 0%;"></div>
                                 </div>
                                 <div class="api-progress-text">
-                                    <span id="whisparr-api-used">0</span>/<span id="whisparr-api-total">20</span> requests used
+                                    API: <span id="whisparr-api-used">0</span> / <span id="whisparr-api-total">20</span>
                                 </div>
                             </div>
                         </div>
@@ -560,7 +560,7 @@
                                     <div class="api-progress-fill" id="eros-api-progress" style="width: 0%;"></div>
                                 </div>
                                 <div class="api-progress-text">
-                                    <span id="eros-api-used">0</span>/<span id="eros-api-total">20</span> requests used
+                                    API: <span id="eros-api-used">0</span> / <span id="eros-api-total">20</span>
                                 </div>
                             </div>
                         </div>
@@ -2345,18 +2345,9 @@
 
     .api-progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, 
-            #22c55e 0%,           /* Green start */
-            #22c55e 35%,          /* Green until 35% */
-            #84cc16 42%,          /* Green-yellow transition */
-            #f59e0b 50%,          /* Yellow at 50% */
-            #f97316 58%,          /* Yellow-orange transition */
-            #ea580c 70%,          /* Orange at 70% */
-            #dc2626 85%,          /* Orange-red transition */
-            #ef4444 100%          /* Full red at 100% */
-        );
+        background: #22c55e; /* Default green, will be overridden by JavaScript */
         border-radius: 3px;
-        transition: width 0.3s ease;
+        transition: width 0.3s ease, background-color 0.3s ease;
         position: relative;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }

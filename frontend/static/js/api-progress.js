@@ -11,6 +11,36 @@ function updateApiProgress(appName, used, total) {
     if (progressFill && usedSpan && totalSpan) {
         const percentage = (used / total) * 100;
         progressFill.style.width = `${percentage}%`;
+        
+        // Create a dynamic gradient that transitions colors based on the current percentage
+        let gradient;
+        if (percentage <= 35) {
+            // Pure green zone
+            gradient = '#22c55e';
+        } else if (percentage <= 50) {
+            // Green to yellow transition zone
+            gradient = `linear-gradient(90deg, 
+                #22c55e 0%, 
+                #22c55e ${35 * 100 / percentage}%, 
+                #f59e0b 100%)`;
+        } else if (percentage <= 70) {
+            // Green through yellow to orange zone
+            gradient = `linear-gradient(90deg, 
+                #22c55e 0%, 
+                #22c55e ${35 * 100 / percentage}%, 
+                #f59e0b ${50 * 100 / percentage}%, 
+                #ea580c 100%)`;
+        } else {
+            // Full gradient from green to red
+            gradient = `linear-gradient(90deg, 
+                #22c55e 0%, 
+                #22c55e ${35 * 100 / percentage}%, 
+                #f59e0b ${50 * 100 / percentage}%, 
+                #ea580c ${70 * 100 / percentage}%, 
+                #ef4444 100%)`;
+        }
+        
+        progressFill.style.background = gradient;
         usedSpan.textContent = used;
         totalSpan.textContent = total;
     }
