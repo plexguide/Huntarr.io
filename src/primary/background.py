@@ -44,6 +44,9 @@ hourly_cap_scheduler_thread = None
 # Swaparr processing thread
 swaparr_thread = None
 
+# Define which apps have background processing cycles
+CYCLICAL_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
+
 # Instance list generator has been removed
 
 def _get_user_timezone():
@@ -65,6 +68,11 @@ def app_specific_loop(app_type: str) -> None:
     
     app_logger = get_logger(app_type)
     app_logger.info(f"=== [{app_type.upper()}] Thread starting ===")
+
+    # Immediately exit for non-cyclical apps (e.g., prowlarr, swaparr)
+    if app_type not in CYCLICAL_APP_TYPES:
+        app_logger.info(f"Skipping background loop for non-cyclical app: {app_type}")
+        return
 
     # Dynamically import app-specific modules
     process_missing = None
@@ -609,6 +617,11 @@ def start_app_threads():
 
     for app_type, is_configured in configured_apps.items():
         if is_configured:
+            # Skip non-cyclical apps (e.g., prowlarr handled via routes, swaparr has its own thread)
+            if app_type not in CYCLICAL_APP_TYPES:
+                logger.debug(f"Configured non-cyclical app detected; not starting background thread: {app_type}")
+                continue
+
             # Optional: Add an explicit 'enabled' setting check if desired
             # enabled = settings_manager.get_setting(app_type, "enabled", True)
             # if not enabled:
@@ -639,6 +652,9 @@ def check_and_restart_threads():
     configured_apps = {app: True for app in configured_apps_list} # Convert list to dict format expected below
 
     for app_type, thread in list(app_threads.items()):
+        # Only monitor cyclical apps for restarts
+        if app_type not in CYCLICAL_APP_TYPES:
+            continue
         if not thread.is_alive():
             logger.warning(f"{app_type} thread died unexpectedly.")
             del app_threads[app_type] # Remove dead thread
