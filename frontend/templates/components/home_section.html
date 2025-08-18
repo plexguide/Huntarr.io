@@ -355,6 +355,14 @@
                                     <span class="hourly-cap-icon" id="sonarr-cap-icon"></span>
                                     <span class="hourly-cap-text">API: <span id="sonarr-api-count">0</span> / <span id="sonarr-api-limit">20</span></span>
                                 </div>
+                            <div class="api-progress-container">
+                                <div class="api-progress-bar">
+                                    <div class="api-progress-fill" id="sonarr-api-progress" style="width: 0%;"></div>
+                                </div>
+                                <div class="api-progress-text">
+                                    <span id="sonarr-api-used">0</span>/<span id="sonarr-api-total">20</span> requests used
+                                </div>
+                            </div>
                         </div>
                         <div class="app-content">
                             <div class="app-icon-wrapper">
@@ -387,6 +395,14 @@
                                     <span class="hourly-cap-icon" id="radarr-cap-icon"></span>
                                     <span class="hourly-cap-text">API: <span id="radarr-api-count">0</span> / <span id="radarr-api-limit">20</span></span>
                                 </div>
+                            <div class="api-progress-container">
+                                <div class="api-progress-bar">
+                                    <div class="api-progress-fill" id="radarr-api-progress" style="width: 0%;"></div>
+                                </div>
+                                <div class="api-progress-text">
+                                    <span id="radarr-api-used">0</span>/<span id="radarr-api-total">20</span> requests used
+                                </div>
+                            </div>
                         </div>
                         <div class="app-content">
                             <div class="app-icon-wrapper">
@@ -419,6 +435,14 @@
                                     <span class="hourly-cap-icon" id="lidarr-cap-icon"></span>
                                     <span class="hourly-cap-text">API: <span id="lidarr-api-count">0</span> / <span id="lidarr-api-limit">20</span></span>
                                 </div>
+                            <div class="api-progress-container">
+                                <div class="api-progress-bar">
+                                    <div class="api-progress-fill" id="lidarr-api-progress" style="width: 0%;"></div>
+                                </div>
+                                <div class="api-progress-text">
+                                    <span id="lidarr-api-used">0</span>/<span id="lidarr-api-total">20</span> requests used
+                                </div>
+                            </div>
                         </div>
                         <div class="app-content">
                             <div class="app-icon-wrapper">
@@ -451,6 +475,14 @@
                                     <span class="hourly-cap-icon" id="readarr-cap-icon"></span>
                                     <span class="hourly-cap-text">API: <span id="readarr-api-count">0</span> / <span id="readarr-api-limit">20</span></span>
                                 </div>
+                            <div class="api-progress-container">
+                                <div class="api-progress-bar">
+                                    <div class="api-progress-fill" id="readarr-api-progress" style="width: 0%;"></div>
+                                </div>
+                                <div class="api-progress-text">
+                                    <span id="readarr-api-used">0</span>/<span id="readarr-api-total">20</span> requests used
+                                </div>
+                            </div>
                         </div>
                         <div class="app-content">
                             <div class="app-icon-wrapper">
@@ -483,6 +515,14 @@
                                     <span class="hourly-cap-icon" id="whisparr-cap-icon"></span>
                                     <span class="hourly-cap-text">API: <span id="whisparr-api-count">0</span> / <span id="whisparr-api-limit">20</span></span>
                                 </div>
+                            <div class="api-progress-container">
+                                <div class="api-progress-bar">
+                                    <div class="api-progress-fill" id="whisparr-api-progress" style="width: 0%;"></div>
+                                </div>
+                                <div class="api-progress-text">
+                                    <span id="whisparr-api-used">0</span>/<span id="whisparr-api-total">20</span> requests used
+                                </div>
+                            </div>
                         </div>
                         <div class="app-content">
                             <div class="app-icon-wrapper">
@@ -515,6 +555,14 @@
                                     <span class="hourly-cap-icon" id="eros-cap-icon"></span>
                                     <span class="hourly-cap-text">API: <span id="eros-api-count">0</span> / <span id="eros-api-limit">20</span></span>
                                 </div>
+                            <div class="api-progress-container">
+                                <div class="api-progress-bar">
+                                    <div class="api-progress-fill" id="eros-api-progress" style="width: 0%;"></div>
+                                </div>
+                                <div class="api-progress-text">
+                                    <span id="eros-api-used">0</span>/<span id="eros-api-total">20</span> requests used
+                                </div>
+                            </div>
                         </div>
                         <div class="app-content">
                             <div class="app-icon-wrapper">
@@ -2277,6 +2325,91 @@
     .cycle-reset-button.resetting {
         opacity: 0.7;
         pointer-events: none;
+    }
+
+    /* API Progress Bar Styling */
+    .api-progress-container {
+        margin-top: 8px;
+        padding: 0;
+    }
+
+    .api-progress-bar {
+        width: 100%;
+        height: 6px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 3px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .api-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, 
+            #22c55e 0%,           /* Green start */
+            #22c55e 35%,          /* Green until 35% */
+            #84cc16 42%,          /* Green-yellow transition */
+            #f59e0b 50%,          /* Yellow at 50% */
+            #f97316 58%,          /* Yellow-orange transition */
+            #ea580c 70%,          /* Orange at 70% */
+            #dc2626 85%,          /* Orange-red transition */
+            #ef4444 100%          /* Full red at 100% */
+        );
+        border-radius: 3px;
+        transition: width 0.3s ease;
+        position: relative;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .api-progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.2) 100%);
+        border-radius: 3px;
+    }
+
+    .api-progress-text {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        margin-top: 4px;
+        text-align: center;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+
+    /* Hide the old chunky API text */
+    .hourly-cap-status {
+        display: none;
+    }
+
+    /* Mobile responsiveness for progress bars */
+    @media (max-width: 768px) {
+        .api-progress-container {
+            margin-top: 6px;
+        }
+        
+        .api-progress-bar {
+            height: 5px;
+        }
+        
+        .api-progress-text {
+            font-size: 0.7rem;
+            margin-top: 3px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .api-progress-bar {
+            height: 4px;
+        }
+        
+        .api-progress-text {
+            font-size: 0.65rem;
+        }
     }
 </style>
 
