@@ -949,6 +949,16 @@ const SettingsForms = {
                             <p class="setting-help">Number of movies to search for quality upgrades per cycle (0 to disable).</p>
                         </div>
                         
+                        <!-- Release Date Delay Setting -->
+                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
+                            <label for="radarr-release-date-delay-${index}"><a href="https://github.com/plexguide/Huntarr.io/issues/693" class="info-icon" title="Delay searching for movies after their release date to allow better releases to appear" target="_blank" rel="noopener"><i class="fas fa-calendar-alt"></i></a>Release Date Search Delay:</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="number" id="radarr-release-date-delay-${index}" name="release_date_delay_days" min="0" max="365" value="${instance.release_date_delay_days || 0}" style="width: 80px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
+                                <span style="color: #9ca3af; font-size: 14px;">days</span>
+                            </div>
+                            <p class="setting-help">Wait this many days after a movie's release date before searching for it. Allows better quality releases to appear. Movies without release dates are processed immediately. (0 = search immediately)</p>
+                        </div>
+                        
                         <!-- Instance State Management -->
                         <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
                             <label for="radarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
@@ -5144,6 +5154,10 @@ const SettingsForms = {
           instanceObj.state_management_hours = stateManagementHoursInput
             ? parseInt(stateManagementHoursInput.value) || 168
             : 168;
+          
+          // Add release date delay setting
+          const releaseDateDelayInput = instance.querySelector('input[name="release_date_delay_days"]');
+          instanceObj.release_date_delay_days = releaseDateDelayInput ? parseInt(releaseDateDelayInput.value) || 0 : 0;
         } else if (appType === "lidarr") {
           instanceObj.hunt_missing_items = huntMissingItems;
           instanceObj.hunt_upgrade_items = huntUpgradeItems;
@@ -5213,6 +5227,7 @@ const SettingsForms = {
           defaultInstance.state_management_hours = 168;
           defaultInstance.missing_quality_profile = "";
           defaultInstance.upgrade_quality_profile = "";
+          defaultInstance.release_date_delay_days = 0;
         } else if (appType === "lidarr") {
           defaultInstance.hunt_missing_items = 1;
           defaultInstance.hunt_upgrade_items = 0;

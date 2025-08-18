@@ -19,6 +19,41 @@ from src.primary.settings_manager import load_settings, get_advanced_setting
 # Get logger for the app
 radarr_logger = get_logger("radarr")
 
+def should_delay_movie_search(release_date_str: str, delay_days: int) -> bool:
+    """
+    Check if a movie search should be delayed based on its release date.
+    
+    Args:
+        release_date_str: Movie release date in ISO format (e.g., '2024-01-15T00:00:00Z')
+        delay_days: Number of days to delay search after release date
+        
+    Returns:
+        True if search should be delayed, False if ready to search
+    """
+    if delay_days <= 0:
+        return False  # No delay configured
+        
+    if not release_date_str:
+        return False  # No release date, don't delay (process immediately)
+        
+    try:
+        # Parse the release date
+        release_date = parse_date(release_date_str)
+        if not release_date:
+            return False  # Invalid date, don't delay
+            
+        current_time = datetime.datetime.now(datetime.timezone.utc)
+        
+        # Calculate when search should start (release date + delay)
+        search_start_time = release_date + datetime.timedelta(days=delay_days)
+        
+        # Return True if we should still delay (current time < search start time)
+        return current_time < search_start_time
+        
+    except Exception as e:
+        radarr_logger.warning(f"Could not parse release date '{release_date_str}' for delay calculation: {e}")
+        return False  # Don't delay if we can't parse the date
+
 def parse_date(date_str):
     """Parse date string, handling various ISO formats from Radarr API"""
     if not date_str:
@@ -166,6 +201,29 @@ def process_missing_movies(
     else:
         radarr_logger.info("Skip future releases is disabled - processing all movies regardless of release date")
 
+    # Apply release date delay if configured
+    release_date_delay_days = app_settings.get("release_date_delay_days", 0)
+    if release_date_delay_days > 0:
+        radarr_logger.info(f"Applying {release_date_delay_days}-day release date delay...")
+        original_count = len(missing_movies)
+        delayed_movies = []
+        delayed_count = 0
+        
+        for movie in missing_movies:
+            movie_id = movie.get('id')
+            movie_title = movie.get('title', 'Unknown Title')
+            release_date_str = movie.get('releaseDate')
+            
+            if should_delay_movie_search(release_date_str, release_date_delay_days):
+                delayed_count += 1
+                radarr_logger.debug(f"Delaying search for movie ID {movie_id} ('{movie_title}') - released {release_date_str}, waiting {release_date_delay_days} days")
+            else:
+                delayed_movies.append(movie)
+        
+        missing_movies = delayed_movies
+        if delayed_count > 0:
+            radarr_logger.info(f"Delayed {delayed_count} movies due to {release_date_delay_days}-day release date delay setting.")
+    
     if not missing_movies:
         radarr_logger.info("No missing movies left to process after filtering future releases.")
         return False
