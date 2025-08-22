@@ -85,12 +85,16 @@ let huntarrUI = {
         }
         
         // Check which sidebar should be shown based on current section
+        console.log(`[huntarrUI] Initialization - current section: ${this.currentSection}`);
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'user') {
+            console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-history') {
+            console.log('[huntarrUI] Initialization - showing requestarr sidebar');
             this.showRequestarrSidebar();
         } else {
             // Show main sidebar by default and clear settings sidebar preference
+            console.log('[huntarrUI] Initialization - showing main sidebar (default)');
             localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
         }
@@ -453,7 +457,7 @@ let huntarrUI = {
     },
     
     switchSection: function(section) {
-        console.log(`[huntarrUI] Switching to section: ${section}, current: ${this.currentSection}`);
+        console.log(`[huntarrUI] *** SWITCH SECTION CALLED *** section: ${section}, current: ${this.currentSection}`);
         
         // Check for unsaved changes before allowing navigation
         if (this.isInitialized && this.currentSection && this.currentSection !== section) {
@@ -739,6 +743,7 @@ let huntarrUI = {
             // Initialize Swaparr section
             this.initializeSwaparr();
         } else if (section === 'settings' && document.getElementById('settingsSection')) {
+            console.log('[huntarrUI] Switching to settings section');
             document.getElementById('settingsSection').classList.add('active');
             document.getElementById('settingsSection').style.display = 'block';
             if (document.getElementById('settingsNav')) document.getElementById('settingsNav').classList.add('active');
@@ -746,7 +751,9 @@ let huntarrUI = {
             this.currentSection = 'settings';
             
             // Switch to Settings sidebar
+            console.log('[huntarrUI] About to call showSettingsSidebar()');
             this.showSettingsSidebar();
+            console.log('[huntarrUI] Called showSettingsSidebar()');
             
             // Set localStorage to maintain Settings sidebar preference
             localStorage.setItem('huntarr-settings-sidebar', 'true');
@@ -841,87 +848,31 @@ let huntarrUI = {
     
     // Sidebar switching functions
     showMainSidebar: function() {
-        console.log('[huntarrUI] Showing main sidebar');
-        // Hide all sidebars first, then show the target one
-        const sidebars = ['sidebar', 'apps-sidebar', 'settings-sidebar', 'requestarr-sidebar'];
-        
-        sidebars.forEach(sidebarId => {
-            const sidebar = document.getElementById(sidebarId);
-            if (sidebar) {
-                sidebar.classList.remove('visible');
-                sidebar.classList.add('hidden');
-            }
-        });
-        
-        // Show main sidebar
-        const mainSidebar = document.getElementById('sidebar');
-        if (mainSidebar) {
-            mainSidebar.classList.remove('hidden');
-            mainSidebar.classList.add('visible');
-        }
+        document.getElementById('sidebar').style.display = 'flex';
+        document.getElementById('apps-sidebar').style.display = 'none';
+        document.getElementById('settings-sidebar').style.display = 'none';
+        document.getElementById('requestarr-sidebar').style.display = 'none';
     },
     
     showAppsSidebar: function() {
-        console.log('[huntarrUI] Showing apps sidebar');
-        // Hide all sidebars first, then show the target one
-        const sidebars = ['sidebar', 'apps-sidebar', 'settings-sidebar', 'requestarr-sidebar'];
-        
-        sidebars.forEach(sidebarId => {
-            const sidebar = document.getElementById(sidebarId);
-            if (sidebar) {
-                sidebar.classList.remove('visible');
-                sidebar.classList.add('hidden');
-            }
-        });
-        
-        // Show apps sidebar
-        const appsSidebar = document.getElementById('apps-sidebar');
-        if (appsSidebar) {
-            appsSidebar.classList.remove('hidden');
-            appsSidebar.classList.add('visible');
-        }
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('apps-sidebar').style.display = 'flex';
+        document.getElementById('settings-sidebar').style.display = 'none';
+        document.getElementById('requestarr-sidebar').style.display = 'none';
     },
     
     showSettingsSidebar: function() {
-        console.log('[huntarrUI] Showing settings sidebar');
-        // Hide all sidebars first, then show the target one
-        const sidebars = ['sidebar', 'apps-sidebar', 'settings-sidebar', 'requestarr-sidebar'];
-        
-        sidebars.forEach(sidebarId => {
-            const sidebar = document.getElementById(sidebarId);
-            if (sidebar) {
-                sidebar.classList.remove('visible');
-                sidebar.classList.add('hidden');
-            }
-        });
-        
-        // Show settings sidebar
-        const settingsSidebar = document.getElementById('settings-sidebar');
-        if (settingsSidebar) {
-            settingsSidebar.classList.remove('hidden');
-            settingsSidebar.classList.add('visible');
-        }
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('apps-sidebar').style.display = 'none';
+        document.getElementById('settings-sidebar').style.display = 'flex';
+        document.getElementById('requestarr-sidebar').style.display = 'none';
     },
     
     showRequestarrSidebar: function() {
-        console.log('[huntarrUI] Showing requestarr sidebar');
-        // Hide all sidebars first, then show the target one
-        const sidebars = ['sidebar', 'apps-sidebar', 'settings-sidebar', 'requestarr-sidebar'];
-        
-        sidebars.forEach(sidebarId => {
-            const sidebar = document.getElementById(sidebarId);
-            if (sidebar) {
-                sidebar.classList.remove('visible');
-                sidebar.classList.add('hidden');
-            }
-        });
-        
-        // Show requestarr sidebar
-        const requestarrSidebar = document.getElementById('requestarr-sidebar');
-        if (requestarrSidebar) {
-            requestarrSidebar.classList.remove('hidden');
-            requestarrSidebar.classList.add('visible');
-        }
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('apps-sidebar').style.display = 'none';
+        document.getElementById('settings-sidebar').style.display = 'none';
+        document.getElementById('requestarr-sidebar').style.display = 'flex';
     },
     
     // Simple event source disconnection for compatibility
