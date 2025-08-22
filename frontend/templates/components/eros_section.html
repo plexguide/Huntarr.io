@@ -1,69 +1,31 @@
 <section id="erosSection" class="content-section">
-    <!-- Single scrollable container for all content -->
-    <div class="single-scroll-container">
-        <div id="erosContainer" class="app-container">
-            <!-- Settings content will be shown here -->
-        </div>
-        
-        <div id="erosStatus" class="app-status"></div>
-        
-        <!-- App panel -->
-        <div class="app-panels-container">
-            <div id="erosApps" class="app-apps-panel app-content-panel active" style="display: block;"></div>
-        </div>
-    </div>
+    <div id="erosApps" class="app-content-panel"></div>
 </section>
 
 <style>
-    /* Eros Section Layout */
+    /* Eros Section - Full Page Layout */
     #erosSection {
         display: none;
         width: 100%;
-        height: auto;
-        overflow: hidden;
-        padding-bottom: 60px;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+        margin: 0;
     }
     
     #erosSection.active {
         display: block;
     }
     
-    /* Single scroll container - ONLY this element should scroll */
-    #erosSection .single-scroll-container {
-        display: block;
-        width: 100%;
-        overflow-y: auto; 
-        overflow-x: hidden;
-        padding-bottom: 100px;
-        min-height: 100%;
-        height: auto;
-        max-height: unset;
-        scrollbar-width: thin;
-        position: relative;
-    }
-    
-    /* App container styling */
-    #erosContainer {
-        height: auto;
-        flex: 1;
-        overflow: visible;
-    }
-    
-    /* Panel styling */
-    #erosSection .app-apps-panel {
-        padding-bottom: 10px;
-        min-height: 0;
-        height: auto;
-        background-color: transparent !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
-    
-    /* Ensure bottom content is visible */
+    /* App content panel - full scrollable page */
     #erosApps {
-        padding-bottom: 150px;
-        margin-bottom: 50px;
+        width: 100%;
+        min-height: 100vh;
+        padding: 20px;
+        margin: 0;
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
     }
-    
-
 </style>

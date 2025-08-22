@@ -1,69 +1,31 @@
 <section id="readarrSection" class="content-section">
-    <!-- Single scrollable container for all content -->
-    <div class="single-scroll-container">
-        <div id="readarrContainer" class="app-container">
-            <!-- Settings content will be shown here -->
-        </div>
-        
-        <div id="readarrStatus" class="app-status"></div>
-        
-        <!-- App panel -->
-        <div class="app-panels-container">
-            <div id="readarrApps" class="app-apps-panel app-content-panel active" style="display: block;"></div>
-        </div>
-    </div>
+    <div id="readarrApps" class="app-content-panel"></div>
 </section>
 
 <style>
-    /* Readarr Section Layout */
+    /* Readarr Section - Full Page Layout */
     #readarrSection {
         display: none;
         width: 100%;
-        height: auto;
-        overflow: hidden;
-        padding-bottom: 60px;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+        margin: 0;
     }
     
     #readarrSection.active {
         display: block;
     }
     
-    /* Single scroll container - ONLY this element should scroll */
-    #readarrSection .single-scroll-container {
-        display: block;
-        width: 100%;
-        overflow-y: auto; 
-        overflow-x: hidden;
-        padding-bottom: 100px;
-        min-height: 100%;
-        height: auto;
-        max-height: unset;
-        scrollbar-width: thin;
-        position: relative;
-    }
-    
-    /* App container styling */
-    #readarrContainer {
-        height: auto;
-        flex: 1;
-        overflow: visible;
-    }
-    
-    /* Panel styling */
-    #readarrSection .app-apps-panel {
-        padding-bottom: 10px;
-        min-height: 0;
-        height: auto;
-        background-color: transparent !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
-    
-    /* Ensure bottom content is visible */
+    /* App content panel - full scrollable page */
     #readarrApps {
-        padding-bottom: 150px;
-        margin-bottom: 50px;
+        width: 100%;
+        min-height: 100vh;
+        padding: 20px;
+        margin: 0;
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
     }
-    
-
 </style>

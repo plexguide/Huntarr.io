@@ -1,69 +1,31 @@
 <section id="sonarrSection" class="content-section">
-    <!-- Single scrollable container for all content -->
-    <div class="single-scroll-container">
-        <div id="sonarrContainer" class="app-container">
-            <!-- Settings content will be shown here -->
-        </div>
-        
-        <div id="sonarrStatus" class="app-status"></div>
-        
-        <!-- App panel -->
-        <div class="app-panels-container">
-            <div id="sonarrApps" class="app-apps-panel app-content-panel active" style="display: block;"></div>
-        </div>
-    </div>
+    <div id="sonarrApps" class="app-content-panel"></div>
 </section>
 
 <style>
-    /* Sonarr Section Layout */
+    /* Sonarr Section - Full Page Layout */
     #sonarrSection {
         display: none;
         width: 100%;
-        height: auto;
-        overflow: hidden;
-        padding-bottom: 60px;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+        margin: 0;
     }
     
     #sonarrSection.active {
         display: block;
     }
     
-    /* Single scroll container - ONLY this element should scroll */
-    #sonarrSection .single-scroll-container {
-        display: block;
-        width: 100%;
-        overflow-y: auto; 
-        overflow-x: hidden;
-        padding-bottom: 100px;
-        min-height: 100%;
-        height: auto;
-        max-height: unset;
-        scrollbar-width: thin;
-        position: relative;
-    }
-    
-    /* App container styling */
-    #sonarrContainer {
-        height: auto;
-        flex: 1;
-        overflow: visible;
-    }
-    
-    /* Panel styling */
-    #sonarrSection .app-apps-panel {
-        padding-bottom: 10px;
-        min-height: 0;
-        height: auto;
-        background-color: transparent !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
-    
-    /* Ensure bottom content is visible */
+    /* App content panel - full scrollable page */
     #sonarrApps {
-        padding-bottom: 150px;
-        margin-bottom: 50px;
+        width: 100%;
+        min-height: 100vh;
+        padding: 20px;
+        margin: 0;
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
     }
-    
-
 </style>
