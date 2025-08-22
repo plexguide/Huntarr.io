@@ -110,45 +110,189 @@
 </style>
 <section id="appsSection" class="content-section">
     <div class="section-header">
-        <div class="apps-app-filter">
-            <label for="appsAppSelect">
-                <i class="fas fa-layer-group"></i>
-                <span>App:</span>
-            </label>
-            <select id="appsAppSelect" class="styled-select">
-                <option value="sonarr">Sonarr</option>
-                <option value="radarr">Radarr</option>
-                <option value="lidarr">Lidarr</option>
-                <option value="readarr">Readarr</option>
-                <option value="whisparr">Whisparr V2</option>
-                <option value="eros">Whisparr V3</option>
-            </select>
-        </div>
-
-        <!-- Auto-save enabled - save button removed -->
+        <h2>Apps</h2>
+        <p>Select an app from the sidebar to configure its settings.</p>
     </div>
     
-    <!-- Single scrollable container for all content -->
-    <div class="single-scroll-container">
-        <div id="appsContainer" class="apps-container">
-            <!-- Settings content will be shown here -->
-        </div>
-        
-        <div id="appsStatus" class="apps-status"></div>
-        
-        <!-- App panels at the bottom -->
-        <div class="app-panels-container">
-            <div id="sonarrApps" class="app-apps-panel app-content-panel active" style="display: block;"></div>
-            <div id="radarrApps" class="app-apps-panel app-content-panel"></div>
-            <div id="lidarrApps" class="app-apps-panel app-content-panel"></div>
-            <div id="readarrApps" class="app-apps-panel app-content-panel"></div>
-            <div id="whisparrApps" class="app-apps-panel app-content-panel"></div>
-            <div id="erosApps" class="app-apps-panel app-content-panel"></div>
-            <div id="swaparrApps" class="app-apps-panel app-content-panel"></div>
-
+    <div class="apps-overview">
+        <div class="apps-grid">
+            <div class="app-card" onclick="window.location.hash = '#sonarr'">
+                <div class="app-icon">
+                    <i class="fas fa-tv"></i>
+                </div>
+                <h3>Sonarr</h3>
+                <p>TV Series Management</p>
+            </div>
+            
+            <div class="app-card" onclick="window.location.hash = '#radarr'">
+                <div class="app-icon">
+                    <i class="fas fa-film"></i>
+                </div>
+                <h3>Radarr</h3>
+                <p>Movie Management</p>
+            </div>
+            
+            <div class="app-card" onclick="window.location.hash = '#lidarr'">
+                <div class="app-icon">
+                    <i class="fas fa-music"></i>
+                </div>
+                <h3>Lidarr</h3>
+                <p>Music Management</p>
+            </div>
+            
+            <div class="app-card" onclick="window.location.hash = '#readarr'">
+                <div class="app-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <h3>Readarr</h3>
+                <p>Book Management</p>
+            </div>
+            
+            <div class="app-card" onclick="window.location.hash = '#whisparr'">
+                <div class="app-icon">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <h3>Whisparr V2</h3>
+                <p>Adult Content Management</p>
+            </div>
+            
+            <div class="app-card" onclick="window.location.hash = '#eros'">
+                <div class="app-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <h3>Whisparr V3</h3>
+                <p>Adult Content Management (V3)</p>
+            </div>
         </div>
     </div>
 </section>
+
+<style>
+    #appsSection {
+        display: none;
+        width: 100%;
+        height: auto;
+        padding: 20px;
+    }
+    
+    #appsSection.active {
+        display: block;
+    }
+    
+    .section-header {
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .section-header h2 {
+        color: #fff;
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+    
+    .section-header p {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 16px;
+    }
+    
+    .apps-overview {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .apps-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        padding: 20px 0;
+    }
+    
+    .app-card {
+        background: linear-gradient(135deg, rgba(30, 39, 56, 0.8) 0%, rgba(14, 20, 32, 0.8) 100%);
+        border: 1px solid rgba(90, 109, 137, 0.3);
+        border-radius: 12px;
+        padding: 30px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .app-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(52, 152, 219, 0.6);
+        box-shadow: 0 10px 25px rgba(52, 152, 219, 0.2);
+        background: linear-gradient(135deg, rgba(40, 49, 66, 0.9) 0%, rgba(24, 30, 42, 0.9) 100%);
+    }
+    
+    .app-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, rgba(155, 89, 182, 0.2) 100%);
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+    
+    .app-card:hover .app-icon {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.4) 0%, rgba(155, 89, 182, 0.4) 100%);
+        transform: scale(1.1);
+    }
+    
+    .app-icon i {
+        font-size: 24px;
+        color: rgba(52, 152, 219, 0.9);
+        transition: all 0.3s ease;
+    }
+    
+    .app-card:hover .app-icon i {
+        color: #fff;
+        text-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+    }
+    
+    .app-card h3 {
+        color: #fff;
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .app-card:hover h3 {
+        color: rgba(52, 152, 219, 0.9);
+    }
+    
+    .app-card p {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 14px;
+        margin: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .app-card:hover p {
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    @media (max-width: 768px) {
+        .apps-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+            padding: 15px;
+        }
+        
+        .app-card {
+            padding: 20px 15px;
+        }
+        
+        .section-header h2 {
+            font-size: 24px;
+        }
+    }
+</style>
 
 <style>
     /* Apps Section Layout - Complete Redesign */

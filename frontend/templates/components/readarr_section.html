@@ -1,0 +1,86 @@
+<section id="readarrSection" class="content-section">
+    <div class="section-header">
+        <h2>Readarr Settings</h2>
+        <!-- Auto-save enabled - save button removed -->
+    </div>
+    
+    <!-- Single scrollable container for all content -->
+    <div class="single-scroll-container">
+        <div id="readarrContainer" class="app-container">
+            <!-- Settings content will be shown here -->
+        </div>
+        
+        <div id="readarrStatus" class="app-status"></div>
+        
+        <!-- App panel -->
+        <div class="app-panels-container">
+            <div id="readarrApps" class="app-apps-panel app-content-panel active" style="display: block;"></div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Readarr Section Layout */
+    #readarrSection {
+        display: none;
+        width: 100%;
+        height: auto;
+        overflow: hidden;
+        padding-bottom: 60px;
+    }
+    
+    #readarrSection.active {
+        display: block;
+    }
+    
+    /* Single scroll container - ONLY this element should scroll */
+    #readarrSection .single-scroll-container {
+        display: block;
+        width: 100%;
+        overflow-y: auto; 
+        overflow-x: hidden;
+        padding-bottom: 100px;
+        min-height: 100%;
+        height: auto;
+        max-height: unset;
+        scrollbar-width: thin;
+        position: relative;
+    }
+    
+    /* App container styling */
+    #readarrContainer {
+        height: auto;
+        flex: 1;
+        overflow: visible;
+    }
+    
+    /* Panel styling */
+    #readarrSection .app-apps-panel {
+        padding-bottom: 10px;
+        min-height: 0;
+        height: auto;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    /* Ensure bottom content is visible */
+    #readarrApps {
+        padding-bottom: 150px;
+        margin-bottom: 50px;
+    }
+    
+    /* Section header styling */
+    #readarrSection .section-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    #readarrSection .section-header h2 {
+        margin: 0;
+        color: #fff;
+        font-size: 24px;
+        font-weight: 600;
+    }
+</style>

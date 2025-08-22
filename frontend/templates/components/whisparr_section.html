@@ -1,0 +1,86 @@
+<section id="whisparrSection" class="content-section">
+    <div class="section-header">
+        <h2>Whisparr V2 Settings</h2>
+        <!-- Auto-save enabled - save button removed -->
+    </div>
+    
+    <!-- Single scrollable container for all content -->
+    <div class="single-scroll-container">
+        <div id="whisparrContainer" class="app-container">
+            <!-- Settings content will be shown here -->
+        </div>
+        
+        <div id="whisparrStatus" class="app-status"></div>
+        
+        <!-- App panel -->
+        <div class="app-panels-container">
+            <div id="whisparrApps" class="app-apps-panel app-content-panel active" style="display: block;"></div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Whisparr Section Layout */
+    #whisparrSection {
+        display: none;
+        width: 100%;
+        height: auto;
+        overflow: hidden;
+        padding-bottom: 60px;
+    }
+    
+    #whisparrSection.active {
+        display: block;
+    }
+    
+    /* Single scroll container - ONLY this element should scroll */
+    #whisparrSection .single-scroll-container {
+        display: block;
+        width: 100%;
+        overflow-y: auto; 
+        overflow-x: hidden;
+        padding-bottom: 100px;
+        min-height: 100%;
+        height: auto;
+        max-height: unset;
+        scrollbar-width: thin;
+        position: relative;
+    }
+    
+    /* App container styling */
+    #whisparrContainer {
+        height: auto;
+        flex: 1;
+        overflow: visible;
+    }
+    
+    /* Panel styling */
+    #whisparrSection .app-apps-panel {
+        padding-bottom: 10px;
+        min-height: 0;
+        height: auto;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    /* Ensure bottom content is visible */
+    #whisparrApps {
+        padding-bottom: 150px;
+        margin-bottom: 50px;
+    }
+    
+    /* Section header styling */
+    #whisparrSection .section-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    #whisparrSection .section-header h2 {
+        margin: 0;
+        color: #fff;
+        font-size: 24px;
+        font-weight: 600;
+    }
+</style>

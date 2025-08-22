@@ -7,7 +7,7 @@
     <!-- Immediate CSS to prevent sidebar flash -->
     <style id="initial-sidebar-state">
         /* Hide all sidebars initially, JavaScript will show the correct one */
-        #sidebar, #settings-sidebar, #requestarr-sidebar {
+        #sidebar, #settings-sidebar, #requestarr-sidebar, #apps-sidebar {
             display: none !important;
         }
     </style>
@@ -43,6 +43,14 @@
             <!-- Apps Section -->
             {% include 'components/apps_section.html' %}
             
+            <!-- Individual App Sections -->
+            {% include 'components/sonarr_section.html' %}
+            {% include 'components/radarr_section.html' %}
+            {% include 'components/lidarr_section.html' %}
+            {% include 'components/readarr_section.html' %}
+            {% include 'components/whisparr_section.html' %}
+            {% include 'components/eros_section.html' %}
+            
             <!-- Swaparr Section -->
             {% include 'components/swaparr_section.html' %}
             
@@ -71,6 +79,8 @@
     
     <!-- Load settings-related scripts -->
     <script src="./static/js/settings_forms.js?v=20250615"></script>
+    <!-- Load apps module -->
+    <script src="./static/js/apps.js"></script>
     <!-- Load logging module -->
     <script src="./static/js/logs.js"></script>
     <!-- Load main UI script -->

@@ -13,10 +13,10 @@ const appsModule = {
     // DOM elements
     elements: {},
     
-    // Initialize the apps module
-    init: function() {
+    // Initialize the apps module for a specific app
+    init: function(appType) {
         // Initialize state
-        this.currentApp = null;
+        this.currentApp = appType || null;
         this.settingsChanged = false; // Legacy flag (auto-save enabled)
         this.originalSettings = {}; // Store original settings to compare
         
@@ -38,8 +38,10 @@ const appsModule = {
         // Initialize state
         this.settingsChanged = false;
         
-        // Load apps for initial display
-        this.loadApps();
+        // Load the specific app if provided
+        if (appType) {
+            this.loadAppSettings(appType);
+        }
         
         // Auto-save enabled - no unsaved changes detection needed
     },
@@ -49,14 +51,16 @@ const appsModule = {
     // Cache DOM elements
     cacheElements: function() {
         this.elements = {
-            // Apps dropdown
-            appsOptions: document.querySelectorAll('#appsSection .log-option'),
-            currentAppsApp: document.getElementById('current-apps-app'),
-            appsDropdownBtn: document.querySelector('#appsSection .log-dropdown-btn'),
-            appsDropdownContent: document.querySelector('#appsSection .log-dropdown-content'),
-            
-            // Apps panels
+            // Apps panels - now individual sections
             appAppsPanels: document.querySelectorAll('.app-apps-panel'),
+            
+            // Individual app sections
+            sonarrSection: document.getElementById('sonarrSection'),
+            radarrSection: document.getElementById('radarrSection'),
+            lidarrSection: document.getElementById('lidarrSection'),
+            readarrSection: document.getElementById('readarrSection'),
+            whisparrSection: document.getElementById('whisparrSection'),
+            erosSection: document.getElementById('erosSection'),
             
             // Controls - auto-save enabled, no save button needed
         };
@@ -64,73 +68,21 @@ const appsModule = {
     
     // Set up event listeners
     setupEventListeners: function() {
-        // App selection via <select>
-        const appsAppSelect = document.getElementById('appsAppSelect');
-        if (appsAppSelect) {
-            appsAppSelect.addEventListener('change', (e) => {
-                const app = e.target.value;
-                this.handleAppsAppChange(app);
-            });
-        }
-        
-        // Dropdown toggle
-        if (this.elements.appsDropdownBtn) {
-            this.elements.appsDropdownBtn.addEventListener('click', () => {
-                this.elements.appsDropdownContent.classList.toggle('show');
-                
-                // Close all other dropdowns
-                document.querySelectorAll('.log-dropdown-content.show').forEach(dropdown => {
-                    if (dropdown !== this.elements.appsDropdownContent) {
-                        dropdown.classList.remove('show');
-                    }
-                });
-            });
-        }
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', e => {
-            if (!e.target.matches('#appsSection .log-dropdown-btn') && 
-                !e.target.closest('#appsSection .log-dropdown-btn')) {
-                if (this.elements.appsDropdownContent && this.elements.appsDropdownContent.classList.contains('show')) {
-                    this.elements.appsDropdownContent.classList.remove('show');
-                }
-            }
-        });
-
+        // No dropdown needed anymore - apps have individual sections
         // Auto-save enabled - no save button needed
     },
     
-    // Load apps for initial display
-    loadApps: function() {
-        // Set default app if none is selected
-        if (!this.currentApp) {
-            this.currentApp = 'sonarr'; // Default to Sonarr
-            
-            // Update the dropdown text to show current app
-            if (this.elements.currentAppsApp) {
-                this.elements.currentAppsApp.textContent = 'Sonarr';
-            }
-            
-            // Mark the sonarr option as active in the dropdown
-            if (this.elements.appsOptions) {
-                this.elements.appsOptions.forEach(option => {
-                    option.classList.remove('active');
-                    if (option.getAttribute('data-app') === 'sonarr') {
-                        option.classList.add('active');
-                    }
-                });
-            }
-        }
-        
-        // Load the currently selected app
-        this.loadAppSettings(this.currentApp);
+    // Load specific app settings
+    loadApp: function(appType) {
+        this.currentApp = appType;
+        this.loadAppSettings(appType);
     },
     
     // Load app settings
     loadAppSettings: function(app) {
         console.log(`[Apps] Loading settings for ${app}`);
         
-        // Get the container to put the settings in
+        // Get the container to put the settings in - now using individual app sections
         const appPanel = document.getElementById(app + 'Apps');
         if (!appPanel) {
             console.error(`App panel not found for ${app}`);
@@ -612,9 +564,5 @@ const appsModule = {
     }
 };
 
-// Initialize when document is ready
-document.addEventListener('DOMContentLoaded', () => {
-    appsModule.init();
-    
-    // Auto-save enabled - no save button needed
-});
+// Apps module is now initialized per-app when navigating to individual app sections
+// No automatic initialization needed

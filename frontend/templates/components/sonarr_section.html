@@ -1,0 +1,86 @@
+<section id="sonarrSection" class="content-section">
+    <div class="section-header">
+        <h2>Sonarr Settings</h2>
+        <!-- Auto-save enabled - save button removed -->
+    </div>
+    
+    <!-- Single scrollable container for all content -->
+    <div class="single-scroll-container">
+        <div id="sonarrContainer" class="app-container">
+            <!-- Settings content will be shown here -->
+        </div>
+        
+        <div id="sonarrStatus" class="app-status"></div>
+        
+        <!-- App panel -->
+        <div class="app-panels-container">
+            <div id="sonarrApps" class="app-apps-panel app-content-panel active" style="display: block;"></div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Sonarr Section Layout */
+    #sonarrSection {
+        display: none;
+        width: 100%;
+        height: auto;
+        overflow: hidden;
+        padding-bottom: 60px;
+    }
+    
+    #sonarrSection.active {
+        display: block;
+    }
+    
+    /* Single scroll container - ONLY this element should scroll */
+    #sonarrSection .single-scroll-container {
+        display: block;
+        width: 100%;
+        overflow-y: auto; 
+        overflow-x: hidden;
+        padding-bottom: 100px;
+        min-height: 100%;
+        height: auto;
+        max-height: unset;
+        scrollbar-width: thin;
+        position: relative;
+    }
+    
+    /* App container styling */
+    #sonarrContainer {
+        height: auto;
+        flex: 1;
+        overflow: visible;
+    }
+    
+    /* Panel styling */
+    #sonarrSection .app-apps-panel {
+        padding-bottom: 10px;
+        min-height: 0;
+        height: auto;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    /* Ensure bottom content is visible */
+    #sonarrApps {
+        padding-bottom: 150px;
+        margin-bottom: 50px;
+    }
+    
+    /* Section header styling */
+    #sonarrSection .section-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    #sonarrSection .section-header h2 {
+        margin: 0;
+        color: #fff;
+        font-size: 24px;
+        font-weight: 600;
+    }
+</style>

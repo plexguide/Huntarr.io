@@ -141,6 +141,7 @@ let huntarrUI = {
         
         // Setup navigation for sidebars
         this.setupRequestarrNavigation();
+        this.setupAppsNavigation();
         this.setupSettingsNavigation();
         
         // Auto-save enabled - no unsaved changes handler needed
@@ -624,19 +625,106 @@ let huntarrUI = {
             
             // Show history view
             this.showRequestarrView('history');
-        } else if (section === 'apps' && document.getElementById('appsSection')) {
-            document.getElementById('appsSection').classList.add('active');
-            document.getElementById('appsSection').style.display = 'block';
+        } else if (section === 'apps') {
+            // Show Apps section with sidebar - similar to Settings
+            const appsSection = document.getElementById('appsSection');
+            if (appsSection) {
+                appsSection.classList.add('active');
+                appsSection.style.display = 'block';
+            }
             if (document.getElementById('appsNav')) document.getElementById('appsNav').classList.add('active');
             newTitle = 'Apps';
             this.currentSection = 'apps';
             
-            // Show main sidebar for main sections and clear settings sidebar preference
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
+            // Switch to Apps sidebar
+            this.showAppsSidebar();
             
-            // Load app connections when switching to Apps
-            this.checkAppConnections();
+            // Show message to select an app
+            return;
+        } else if (section === 'sonarr' && document.getElementById('sonarrSection')) {
+            document.getElementById('sonarrSection').classList.add('active');
+            document.getElementById('sonarrSection').style.display = 'block';
+            if (document.getElementById('appsSonarrNav')) document.getElementById('appsSonarrNav').classList.add('active');
+            newTitle = 'Sonarr';
+            this.currentSection = 'sonarr';
+            
+            // Switch to Apps sidebar
+            this.showAppsSidebar();
+            
+            // Initialize app module for sonarr
+            if (typeof appsModule !== 'undefined') {
+                appsModule.init('sonarr');
+            }
+        } else if (section === 'radarr' && document.getElementById('radarrSection')) {
+            document.getElementById('radarrSection').classList.add('active');
+            document.getElementById('radarrSection').style.display = 'block';
+            if (document.getElementById('appsRadarrNav')) document.getElementById('appsRadarrNav').classList.add('active');
+            newTitle = 'Radarr';
+            this.currentSection = 'radarr';
+            
+            // Switch to Apps sidebar
+            this.showAppsSidebar();
+            
+            // Initialize app module for radarr
+            if (typeof appsModule !== 'undefined') {
+                appsModule.init('radarr');
+            }
+        } else if (section === 'lidarr' && document.getElementById('lidarrSection')) {
+            document.getElementById('lidarrSection').classList.add('active');
+            document.getElementById('lidarrSection').style.display = 'block';
+            if (document.getElementById('appsLidarrNav')) document.getElementById('appsLidarrNav').classList.add('active');
+            newTitle = 'Lidarr';
+            this.currentSection = 'lidarr';
+            
+            // Switch to Apps sidebar
+            this.showAppsSidebar();
+            
+            // Initialize app module for lidarr
+            if (typeof appsModule !== 'undefined') {
+                appsModule.init('lidarr');
+            }
+        } else if (section === 'readarr' && document.getElementById('readarrSection')) {
+            document.getElementById('readarrSection').classList.add('active');
+            document.getElementById('readarrSection').style.display = 'block';
+            if (document.getElementById('appsReadarrNav')) document.getElementById('appsReadarrNav').classList.add('active');
+            newTitle = 'Readarr';
+            this.currentSection = 'readarr';
+            
+            // Switch to Apps sidebar
+            this.showAppsSidebar();
+            
+            // Initialize app module for readarr
+            if (typeof appsModule !== 'undefined') {
+                appsModule.init('readarr');
+            }
+        } else if (section === 'whisparr' && document.getElementById('whisparrSection')) {
+            document.getElementById('whisparrSection').classList.add('active');
+            document.getElementById('whisparrSection').style.display = 'block';
+            if (document.getElementById('appsWhisparrNav')) document.getElementById('appsWhisparrNav').classList.add('active');
+            newTitle = 'Whisparr V2';
+            this.currentSection = 'whisparr';
+            
+            // Switch to Apps sidebar
+            this.showAppsSidebar();
+            
+            // Initialize app module for whisparr
+            if (typeof appsModule !== 'undefined') {
+                appsModule.init('whisparr');
+            }
+        } else if (section === 'eros' && document.getElementById('erosSection')) {
+            document.getElementById('erosSection').classList.add('active');
+            document.getElementById('erosSection').style.display = 'block';
+            if (document.getElementById('appsErosNav')) document.getElementById('appsErosNav').classList.add('active');
+            newTitle = 'Whisparr V3';
+            this.currentSection = 'eros';
+            
+            // Switch to Apps sidebar
+            this.showAppsSidebar();
+            
+            // Initialize app module for eros
+            if (typeof appsModule !== 'undefined') {
+                appsModule.init('eros');
+            }
         } else if (section === 'swaparr' && document.getElementById('swaparrSection')) {
             document.getElementById('swaparrSection').classList.add('active');
             document.getElementById('swaparrSection').style.display = 'block';
@@ -4504,6 +4592,74 @@ let huntarrUI = {
         localStorage.removeItem('huntarr-settings-sidebar');
     },
 
+    showMainSidebar: function() {
+        // Remove flash prevention style if it exists
+        const flashPreventionStyle = document.getElementById('sidebar-flash-prevention');
+        if (flashPreventionStyle) {
+            flashPreventionStyle.remove();
+        }
+        
+        // Show main sidebar and hide others
+        const mainSidebar = document.getElementById('sidebar');
+        const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const settingsSidebar = document.getElementById('settings-sidebar');
+        const appsSidebar = document.getElementById('apps-sidebar');
+        
+        if (mainSidebar) mainSidebar.style.display = 'block';
+        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+        if (settingsSidebar) settingsSidebar.style.display = 'none';
+        if (appsSidebar) appsSidebar.style.display = 'none';
+        
+        console.log('[huntarrUI] Main sidebar shown');
+        
+        // Clear Settings sidebar preference when showing main sidebar
+        localStorage.removeItem('huntarr-settings-sidebar');
+    },
+
+    showRequestarrSidebar: function() {
+        // Remove flash prevention style if it exists
+        const flashPreventionStyle = document.getElementById('sidebar-flash-prevention');
+        if (flashPreventionStyle) {
+            flashPreventionStyle.remove();
+        }
+        
+        // Hide main sidebar and show requestarr sidebar
+        const mainSidebar = document.getElementById('sidebar');
+        const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const settingsSidebar = document.getElementById('settings-sidebar');
+        const appsSidebar = document.getElementById('apps-sidebar');
+        
+        if (mainSidebar) mainSidebar.style.display = 'none';
+        if (requestarrSidebar) requestarrSidebar.style.display = 'block';
+        if (settingsSidebar) settingsSidebar.style.display = 'none';
+        if (appsSidebar) appsSidebar.style.display = 'none';
+        
+        // Update active states in Requestarr sidebar
+        this.updateRequestarrSidebarActive();
+    },
+
+    showAppsSidebar: function() {
+        // Remove flash prevention style if it exists
+        const flashPreventionStyle = document.getElementById('sidebar-flash-prevention');
+        if (flashPreventionStyle) {
+            flashPreventionStyle.remove();
+        }
+        
+        // Hide main sidebar and show apps sidebar
+        const mainSidebar = document.getElementById('sidebar');
+        const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const settingsSidebar = document.getElementById('settings-sidebar');
+        const appsSidebar = document.getElementById('apps-sidebar');
+        
+        if (mainSidebar) mainSidebar.style.display = 'none';
+        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+        if (settingsSidebar) settingsSidebar.style.display = 'none';
+        if (appsSidebar) appsSidebar.style.display = 'block';
+        
+        // Update active states in Apps sidebar
+        this.updateAppsSidebarActive();
+    },
+
     showSettingsSidebar: function() {
         // Remove flash prevention style if it exists
         const flashPreventionStyle = document.getElementById('sidebar-flash-prevention');
@@ -4515,9 +4671,11 @@ let huntarrUI = {
         const mainSidebar = document.getElementById('sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
         const settingsSidebar = document.getElementById('settings-sidebar');
+        const appsSidebar = document.getElementById('apps-sidebar');
         
         if (mainSidebar) mainSidebar.style.display = 'none';
         if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+        if (appsSidebar) appsSidebar.style.display = 'none';
         if (settingsSidebar) settingsSidebar.style.display = 'block';
         
         // Update active states in Settings sidebar
@@ -4583,6 +4741,33 @@ let huntarrUI = {
         }
     },
 
+    updateAppsSidebarActive: function() {
+        // Remove active from all Apps nav items
+        const appsNavItems = document.querySelectorAll('#apps-sidebar .nav-item');
+        appsNavItems.forEach(item => item.classList.remove('active'));
+        
+        // Set appropriate active state based on current section
+        if (this.currentSection === 'sonarr') {
+            const sonarrNav = document.getElementById('appsSonarrNav');
+            if (sonarrNav) sonarrNav.classList.add('active');
+        } else if (this.currentSection === 'radarr') {
+            const radarrNav = document.getElementById('appsRadarrNav');
+            if (radarrNav) radarrNav.classList.add('active');
+        } else if (this.currentSection === 'lidarr') {
+            const lidarrNav = document.getElementById('appsLidarrNav');
+            if (lidarrNav) lidarrNav.classList.add('active');
+        } else if (this.currentSection === 'readarr') {
+            const readarrNav = document.getElementById('appsReadarrNav');
+            if (readarrNav) readarrNav.classList.add('active');
+        } else if (this.currentSection === 'whisparr') {
+            const whisparrNav = document.getElementById('appsWhisparrNav');
+            if (whisparrNav) whisparrNav.classList.add('active');
+        } else if (this.currentSection === 'eros') {
+            const erosNav = document.getElementById('appsErosNav');
+            if (erosNav) erosNav.classList.add('active');
+        }
+    },
+
     updateSettingsSidebarActive: function() {
         // Remove active from all Settings nav items
         const settingsNavItems = document.querySelectorAll('#settings-sidebar .nav-item');
@@ -4601,6 +4786,71 @@ let huntarrUI = {
         } else if (this.currentSection === 'user') {
             const userNav = document.getElementById('settingsUserNav');
             if (userNav) userNav.classList.add('active');
+        }
+    },
+
+    setupAppsNavigation: function() {
+        // Return button - goes back to main Huntarr
+        const returnNav = document.getElementById('appsReturnNav');
+        if (returnNav) {
+            returnNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#home';
+            });
+        }
+        
+        // Sonarr button
+        const sonarrNav = document.getElementById('appsSonarrNav');
+        if (sonarrNav) {
+            sonarrNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#sonarr';
+            });
+        }
+        
+        // Radarr button
+        const radarrNav = document.getElementById('appsRadarrNav');
+        if (radarrNav) {
+            radarrNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#radarr';
+            });
+        }
+        
+        // Lidarr button
+        const lidarrNav = document.getElementById('appsLidarrNav');
+        if (lidarrNav) {
+            lidarrNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#lidarr';
+            });
+        }
+        
+        // Readarr button
+        const readarrNav = document.getElementById('appsReadarrNav');
+        if (readarrNav) {
+            readarrNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#readarr';
+            });
+        }
+        
+        // Whisparr button
+        const whisparrNav = document.getElementById('appsWhisparrNav');
+        if (whisparrNav) {
+            whisparrNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#whisparr';
+            });
+        }
+        
+        // Eros button
+        const erosNav = document.getElementById('appsErosNav');
+        if (erosNav) {
+            erosNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.hash = '#eros';
+            });
         }
     },
 

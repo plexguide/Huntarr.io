@@ -1,0 +1,86 @@
+<section id="lidarrSection" class="content-section">
+    <div class="section-header">
+        <h2>Lidarr Settings</h2>
+        <!-- Auto-save enabled - save button removed -->
+    </div>
+    
+    <!-- Single scrollable container for all content -->
+    <div class="single-scroll-container">
+        <div id="lidarrContainer" class="app-container">
+            <!-- Settings content will be shown here -->
+        </div>
+        
+        <div id="lidarrStatus" class="app-status"></div>
+        
+        <!-- App panel -->
+        <div class="app-panels-container">
+            <div id="lidarrApps" class="app-apps-panel app-content-panel active" style="display: block;"></div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Lidarr Section Layout */
+    #lidarrSection {
+        display: none;
+        width: 100%;
+        height: auto;
+        overflow: hidden;
+        padding-bottom: 60px;
+    }
+    
+    #lidarrSection.active {
+        display: block;
+    }
+    
+    /* Single scroll container - ONLY this element should scroll */
+    #lidarrSection .single-scroll-container {
+        display: block;
+        width: 100%;
+        overflow-y: auto; 
+        overflow-x: hidden;
+        padding-bottom: 100px;
+        min-height: 100%;
+        height: auto;
+        max-height: unset;
+        scrollbar-width: thin;
+        position: relative;
+    }
+    
+    /* App container styling */
+    #lidarrContainer {
+        height: auto;
+        flex: 1;
+        overflow: visible;
+    }
+    
+    /* Panel styling */
+    #lidarrSection .app-apps-panel {
+        padding-bottom: 10px;
+        min-height: 0;
+        height: auto;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    /* Ensure bottom content is visible */
+    #lidarrApps {
+        padding-bottom: 150px;
+        margin-bottom: 50px;
+    }
+    
+    /* Section header styling */
+    #lidarrSection .section-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    #lidarrSection .section-header h2 {
+        margin: 0;
+        color: #fff;
+        font-size: 24px;
+        font-weight: 600;
+    }
+</style>
