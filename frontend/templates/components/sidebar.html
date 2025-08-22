@@ -622,9 +622,14 @@
 
     /* Mobile view optimization */
     @media (max-width: 768px) {
-        .sidebar:not([style*="display: none"]):not([style*="display:none"]) {
+        .sidebar {
             width: 70px !important;
             overflow-x: hidden !important;
+        }
+
+        /* Ensure hidden sidebars stay hidden even in mobile */
+        .sidebar[style*="display: none"] {
+            display: none !important;
         }
 
         /* Adjust vertical color lines on mobile */
