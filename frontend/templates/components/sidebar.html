@@ -1,4 +1,4 @@
-<div class="sidebar" id="sidebar">
+<div class="sidebar visible" id="sidebar">
     <div class="sidebar-top-line"></div>
     <div class="logo-container">
         <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer"
@@ -105,7 +105,7 @@
 </div>
 
 <!-- Requestarr Sidebar -->
-<div class="sidebar requestarr-sidebar" id="requestarr-sidebar" style="display: none;">
+<div class="sidebar requestarr-sidebar hidden" id="requestarr-sidebar">
     <div class="sidebar-top-line"></div>
     <div class="logo-container">
         <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer"
@@ -157,7 +157,7 @@
 </div>
 
 <!-- Apps Sidebar -->
-<div class="sidebar apps-sidebar" id="apps-sidebar" style="display: none;">
+<div class="sidebar apps-sidebar hidden" id="apps-sidebar">
     <div class="sidebar-top-line"></div>
     <div class="logo-container">
         <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer"
@@ -233,7 +233,7 @@
 </div>
 
 <!-- Settings Sidebar -->
-<div class="sidebar settings-sidebar" id="settings-sidebar" style="display: none;">
+<div class="sidebar settings-sidebar hidden" id="settings-sidebar">
     <div class="sidebar-top-line"></div>
     <div class="logo-container">
         <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer"
@@ -620,9 +620,18 @@
         background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.3));
     }
 
+    /* Sidebar visibility control */
+    .sidebar.hidden {
+        display: none !important;
+    }
+
+    .sidebar.visible {
+        display: flex !important;
+    }
+
     /* Mobile view optimization */
     @media (max-width: 768px) {
-        .sidebar {
+        .sidebar.visible {
             width: 70px !important;
             overflow-x: hidden !important;
         }
