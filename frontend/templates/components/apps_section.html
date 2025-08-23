@@ -410,17 +410,108 @@
     
     @media (max-width: 768px) {
         .apps-grid {
-            grid-template-columns: 1fr;
-            gap: 15px;
-            padding: 15px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 10px;
+            max-width: 100%;
         }
         
         .app-card {
-            padding: 20px 15px;
+            padding: 15px 10px;
+            min-height: 140px;
+            max-width: 100%;
+        }
+        
+        .app-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 12px;
+        }
+        
+        .app-icon .app-icon-img {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .app-card h3 {
+            font-size: 16px;
+            margin-bottom: 6px;
+            line-height: 1.2;
+        }
+        
+        .app-card p {
+            font-size: 12px;
+            line-height: 1.3;
+            margin: 0;
+        }
+        
+        .section-header {
+            margin-bottom: 20px;
+            padding: 0 10px;
         }
         
         .section-header h2 {
-            font-size: 24px;
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+        
+        .section-header p {
+            font-size: 14px;
+        }
+        
+        .apps-overview {
+            padding: 0 5px;
+        }
+        
+        /* Reduce hover effects on mobile for better performance */
+        .app-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .app-card:hover .app-icon {
+            transform: scale(1.05);
+        }
+    }
+    
+    /* Extra small screens - single column */
+    @media (max-width: 480px) {
+        .apps-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            padding: 8px;
+        }
+        
+        .app-card {
+            padding: 12px 8px;
+            min-height: 120px;
+        }
+        
+        .app-icon {
+            width: 35px;
+            height: 35px;
+            margin: 0 auto 10px;
+        }
+        
+        .app-icon .app-icon-img {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .app-card h3 {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .app-card p {
+            font-size: 11px;
+        }
+        
+        .section-header h2 {
+            font-size: 20px;
+        }
+        
+        .section-header p {
+            font-size: 13px;
         }
     }
 </style>
