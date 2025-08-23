@@ -175,6 +175,38 @@
     </div>
 </section>
 
+<script>
+// Enable glowing ring effects only if not in low resource mode
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if low resource mode is enabled
+    fetch('./api/settings/global')
+        .then(response => response.json())
+        .then(data => {
+            const lowResourceMode = data.low_usage_mode === 'true' || data.low_usage_mode === true;
+            
+            if (!lowResourceMode) {
+                // Enable glowing effects for all app icons
+                const appIcons = document.querySelectorAll('.app-icon');
+                appIcons.forEach(icon => {
+                    icon.classList.add('glow-enabled');
+                });
+                
+                console.log('[Apps] Glowing ring effects enabled (low resource mode: disabled)');
+            } else {
+                console.log('[Apps] Glowing ring effects disabled (low resource mode: enabled)');
+            }
+        })
+        .catch(error => {
+            console.warn('[Apps] Could not check low resource mode, enabling glowing effects by default:', error);
+            // Default to enabling effects if we can't check the setting
+            const appIcons = document.querySelectorAll('.app-icon');
+            appIcons.forEach(icon => {
+                icon.classList.add('glow-enabled');
+            });
+        });
+});
+</script>
+
 <style>
     #appsSection {
         display: none;
@@ -210,21 +242,24 @@
     
     .apps-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(225px, 1fr));
+        gap: 15px;
         padding: 20px 0;
+        max-width: 900px;
+        margin: 0 auto;
     }
     
     .app-card {
         background: linear-gradient(135deg, rgba(30, 39, 56, 0.8) 0%, rgba(14, 20, 32, 0.8) 100%);
         border: 1px solid rgba(90, 109, 137, 0.3);
         border-radius: 12px;
-        padding: 30px 20px;
+        padding: 22px 15px;
         text-align: center;
         cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
+        max-width: 225px;
     }
     
     .app-card:hover {
@@ -235,20 +270,112 @@
     }
     
     .app-icon {
-        width: 60px;
-        height: 60px;
-        margin: 0 auto 20px;
+        width: 50px;
+        height: 50px;
+        margin: 0 auto 15px;
         display: flex;
         align-items: center;
         justify-content: center;
         background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, rgba(155, 89, 182, 0.2) 100%);
         border-radius: 50%;
         transition: all 0.3s ease;
+        position: relative;
     }
     
     .app-card:hover .app-icon {
         background: linear-gradient(135deg, rgba(52, 152, 219, 0.4) 0%, rgba(155, 89, 182, 0.4) 100%);
         transform: scale(1.1);
+    }
+
+    /* Glowing ring animations - only when NOT in low resource mode */
+    .app-icon::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        border-radius: 50%;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+    }
+
+    /* Default state - no glow rings (will be enabled by JavaScript if not in low resource mode) */
+    .app-icon.glow-enabled::before {
+        opacity: 1;
+    }
+
+    /* App-specific glowing ring keyframes - only active when glow is enabled */
+    @keyframes sonarrGlow {
+        0%, 100% { box-shadow: 0 0 5px rgba(52, 152, 219, 0.4), 0 0 10px rgba(52, 152, 219, 0.3), 0 0 15px rgba(52, 152, 219, 0.2); }
+        50% { box-shadow: 0 0 10px rgba(52, 152, 219, 0.6), 0 0 20px rgba(52, 152, 219, 0.4), 0 0 30px rgba(52, 152, 219, 0.3); }
+    }
+
+    @keyframes radarrGlow {
+        0%, 100% { box-shadow: 0 0 5px rgba(241, 196, 15, 0.4), 0 0 10px rgba(241, 196, 15, 0.3), 0 0 15px rgba(241, 196, 15, 0.2); }
+        50% { box-shadow: 0 0 10px rgba(241, 196, 15, 0.6), 0 0 20px rgba(241, 196, 15, 0.4), 0 0 30px rgba(241, 196, 15, 0.3); }
+    }
+
+    @keyframes lidarrGlow {
+        0%, 100% { box-shadow: 0 0 5px rgba(46, 204, 113, 0.4), 0 0 10px rgba(46, 204, 113, 0.3), 0 0 15px rgba(46, 204, 113, 0.2); }
+        50% { box-shadow: 0 0 10px rgba(46, 204, 113, 0.6), 0 0 20px rgba(46, 204, 113, 0.4), 0 0 30px rgba(46, 204, 113, 0.3); }
+    }
+
+    @keyframes readarrGlow {
+        0%, 100% { box-shadow: 0 0 5px rgba(231, 76, 60, 0.4), 0 0 10px rgba(231, 76, 60, 0.3), 0 0 15px rgba(231, 76, 60, 0.2); }
+        50% { box-shadow: 0 0 10px rgba(231, 76, 60, 0.6), 0 0 20px rgba(231, 76, 60, 0.4), 0 0 30px rgba(231, 76, 60, 0.3); }
+    }
+
+    @keyframes whisparrGlow {
+        0%, 100% { box-shadow: 0 0 5px rgba(155, 89, 182, 0.4), 0 0 10px rgba(155, 89, 182, 0.3), 0 0 15px rgba(155, 89, 182, 0.2); }
+        50% { box-shadow: 0 0 10px rgba(155, 89, 182, 0.6), 0 0 20px rgba(155, 89, 182, 0.4), 0 0 30px rgba(155, 89, 182, 0.3); }
+    }
+
+    @keyframes erosGlow {
+        0%, 100% { box-shadow: 0 0 5px rgba(142, 68, 173, 0.4), 0 0 10px rgba(142, 68, 173, 0.3), 0 0 15px rgba(142, 68, 173, 0.2); }
+        50% { box-shadow: 0 0 10px rgba(142, 68, 173, 0.6), 0 0 20px rgba(142, 68, 173, 0.4), 0 0 30px rgba(142, 68, 173, 0.3); }
+    }
+
+    @keyframes prowlarrGlow {
+        0%, 100% { box-shadow: 0 0 5px rgba(230, 126, 34, 0.4), 0 0 10px rgba(230, 126, 34, 0.3), 0 0 15px rgba(230, 126, 34, 0.2); }
+        50% { box-shadow: 0 0 10px rgba(230, 126, 34, 0.6), 0 0 20px rgba(230, 126, 34, 0.4), 0 0 30px rgba(230, 126, 34, 0.3); }
+    }
+
+    /* Apply glowing animations only when glow is enabled */
+    .sonarr-icon-card.glow-enabled::before {
+        border: 2px solid rgba(52, 152, 219, 0.6);
+        animation: sonarrGlow 3s ease-in-out infinite;
+    }
+
+    .radarr-icon-card.glow-enabled::before {
+        border: 2px solid rgba(241, 196, 15, 0.6);
+        animation: radarrGlow 3s ease-in-out infinite 0.5s;
+    }
+
+    .lidarr-icon-card.glow-enabled::before {
+        border: 2px solid rgba(46, 204, 113, 0.6);
+        animation: lidarrGlow 3s ease-in-out infinite 1s;
+    }
+
+    .readarr-icon-card.glow-enabled::before {
+        border: 2px solid rgba(231, 76, 60, 0.6);
+        animation: readarrGlow 3s ease-in-out infinite 1.5s;
+    }
+
+    .whisparr-icon-card.glow-enabled::before {
+        border: 2px solid rgba(155, 89, 182, 0.6);
+        animation: whisparrGlow 3s ease-in-out infinite 2s;
+    }
+
+    .eros-icon-card.glow-enabled::before {
+        border: 2px solid rgba(142, 68, 173, 0.6);
+        animation: erosGlow 3s ease-in-out infinite 2.5s;
+    }
+
+    .prowlarr-icon-card.glow-enabled::before {
+        border: 2px solid rgba(230, 126, 34, 0.6);
+        animation: prowlarrGlow 3s ease-in-out infinite 3s;
     }
     
     .app-icon i {
@@ -264,9 +391,9 @@
 
     /* App icon image styling for cards */
     .app-icon .app-icon-img {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
+        width: 28px;
+        height: 28px;
+        border-radius: 5px;
         transition: all 0.3s ease;
         filter: brightness(0.9) contrast(1.1);
     }
@@ -387,10 +514,11 @@
     
     .app-card h3 {
         color: #fff;
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 600;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         transition: all 0.3s ease;
+        line-height: 1.2;
     }
     
     .app-card:hover h3 {
@@ -399,9 +527,10 @@
     
     .app-card p {
         color: rgba(255, 255, 255, 0.6);
-        font-size: 14px;
+        font-size: 13px;
         margin: 0;
         transition: all 0.3s ease;
+        line-height: 1.3;
     }
     
     .app-card:hover p {
