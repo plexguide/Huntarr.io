@@ -873,7 +873,7 @@
             selector = '#huntManagerNav';
         } else if (currentHash === '#logs') {
             selector = '#logsNav';
-        } else if (currentHash === '#apps') {
+        } else if (currentHash === '#apps' || currentHash === '#sonarr') {
             selector = '#appsNav';
         } else if (currentHash === '#swaparr') {
             selector = '#swaparrNav';
@@ -881,9 +881,7 @@
             selector = '#requestarrNav';
         }
         // Apps sidebar items
-        else if (currentHash === '#sonarr') {
-            selector = '#appsSonarrNav';
-        } else if (currentHash === '#radarr') {
+        else if (currentHash === '#radarr') {
             selector = '#appsRadarrNav';
         } else if (currentHash === '#lidarr') {
             selector = '#appsLidarrNav';

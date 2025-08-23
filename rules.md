@@ -25,6 +25,63 @@ docker logs huntarr
 - **ALWAYS use relative URLs** in frontend (e.g., `./api/` not `/api/`)
 - **ALWAYS test**: Docker, Windows, Mac, Linux, subpaths (`domain.com/huntarr/`)
 
+### 🎛️ SIDEBAR NAVIGATION ARCHITECTURE
+**Huntarr uses a multi-sidebar system for organized navigation:**
+
+#### **Sidebar Types:**
+1. **Main Sidebar** (`#sidebar`) - Default navigation (Home, Apps, Swaparr, Requestarr, etc.)
+2. **Apps Sidebar** (`#apps-sidebar`) - App-specific navigation (Sonarr, Radarr, Lidarr, etc.)
+3. **Settings Sidebar** (`#settings-sidebar`) - Settings navigation (Main, Scheduling, Notifications, User)
+4. **Requestarr Sidebar** (`#requestarr-sidebar`) - Requestarr navigation (Home, History)
+
+#### **Navigation Logic Pattern:**
+```javascript
+// CRITICAL: All sidebar sections must be included in initialization logic
+if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || 
+    this.currentSection === 'notifications' || this.currentSection === 'user') {
+    this.showSettingsSidebar();
+} else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-history') {
+    this.showRequestarrSidebar();
+} else if (this.currentSection === 'apps' || this.currentSection === 'sonarr' || 
+           this.currentSection === 'radarr' || this.currentSection === 'lidarr' || 
+           this.currentSection === 'readarr' || this.currentSection === 'whisparr' || 
+           this.currentSection === 'eros' || this.currentSection === 'prowlarr') {
+    this.showAppsSidebar();
+} else {
+    this.showMainSidebar();
+}
+```
+
+#### **Sidebar Switching Functions:**
+```javascript
+showMainSidebar: function() {
+    document.getElementById('sidebar').style.display = 'flex';
+    document.getElementById('apps-sidebar').style.display = 'none';
+    document.getElementById('settings-sidebar').style.display = 'none';
+    document.getElementById('requestarr-sidebar').style.display = 'none';
+},
+
+showAppsSidebar: function() {
+    document.getElementById('sidebar').style.display = 'none';
+    document.getElementById('apps-sidebar').style.display = 'flex';
+    document.getElementById('settings-sidebar').style.display = 'none';
+    document.getElementById('requestarr-sidebar').style.display = 'none';
+}
+// ... etc for other sidebars
+```
+
+#### **Required Elements for New Sidebars:**
+1. **HTML Structure** - Must include logo, nav-menu, return button, and section groups
+2. **Navigation Logic** - Must be added to both section switching AND initialization logic
+3. **localStorage Management** - Set preferences like `localStorage.setItem('huntarr-apps-sidebar', 'true')`
+4. **Mobile Responsiveness** - Ensure proper display on mobile devices
+5. **Return Button** - Always include return navigation to main sidebar
+
+#### **Mobile Behavior:**
+- **Desktop**: Sidebars switch seamlessly with full navigation
+- **Mobile**: Sidebars collapse to icons only, maintain switching functionality
+- **Touch-friendly**: All navigation elements sized appropriately for mobile interaction
+
 ## 🐛 COMMON ISSUE PATTERNS
 
 ### 1. Frontend Log Regex Issues

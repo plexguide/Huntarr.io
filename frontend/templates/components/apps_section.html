@@ -109,13 +109,160 @@
     }
 </style>
 <section id="appsSection" class="content-section">
-    <div class="apps-placeholder">
-        <div class="placeholder-content">
-            <div class="placeholder-icon">
+    <div class="apps-dashboard">
+        <div class="dashboard-header">
+            <div class="header-icon">
                 <i class="fas fa-tools"></i>
             </div>
-            <h2>Apps</h2>
-            <p>Select an app from the sidebar to configure its settings.</p>
+            <h2>Apps Dashboard</h2>
+            <p>Monitor and manage your media server applications</p>
+        </div>
+        
+        <div class="apps-stats-grid">
+            <!-- App Status Cards -->
+            <div class="stat-card app-status-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-server"></i> App Status</h3>
+                </div>
+                <div class="status-list" id="appsStatusList">
+                    <div class="status-item" onclick="navigateToApp('sonarr')">
+                        <img src="./static/images/app-icons/sonarr.png" alt="Sonarr" class="status-icon">
+                        <div class="app-info">
+                            <span class="app-name">Sonarr</span>
+                            <span class="app-subtitle" id="sonarrSubtitle">TV Series Management</span>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-badge" id="sonarrStatus">Checking...</span>
+                            <span class="instance-count" id="sonarrInstances">0 instances</span>
+                        </div>
+                    </div>
+                    <div class="status-item" onclick="navigateToApp('radarr')">
+                        <img src="./static/images/app-icons/radarr.png" alt="Radarr" class="status-icon">
+                        <div class="app-info">
+                            <span class="app-name">Radarr</span>
+                            <span class="app-subtitle" id="radarrSubtitle">Movie Management</span>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-badge" id="radarrStatus">Checking...</span>
+                            <span class="instance-count" id="radarrInstances">0 instances</span>
+                        </div>
+                    </div>
+                    <div class="status-item" onclick="navigateToApp('lidarr')">
+                        <img src="./static/images/app-icons/lidarr.png" alt="Lidarr" class="status-icon">
+                        <div class="app-info">
+                            <span class="app-name">Lidarr</span>
+                            <span class="app-subtitle" id="lidarrSubtitle">Music Management</span>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-badge" id="lidarrStatus">Checking...</span>
+                            <span class="instance-count" id="lidarrInstances">0 instances</span>
+                        </div>
+                    </div>
+                    <div class="status-item" onclick="navigateToApp('readarr')">
+                        <img src="./static/images/app-icons/readarr.png" alt="Readarr" class="status-icon">
+                        <div class="app-info">
+                            <span class="app-name">Readarr</span>
+                            <span class="app-subtitle" id="readarrSubtitle">Book Management</span>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-badge" id="readarrStatus">Checking...</span>
+                            <span class="instance-count" id="readarrInstances">0 instances</span>
+                        </div>
+                    </div>
+                    <div class="status-item" onclick="navigateToApp('whisparr')">
+                        <img src="./static/images/app-icons/whisparr.png" alt="Whisparr V2" class="status-icon">
+                        <div class="app-info">
+                            <span class="app-name">Whisparr V2</span>
+                            <span class="app-subtitle" id="whisparrSubtitle">Adult Content Management</span>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-badge" id="whisparrStatus">Checking...</span>
+                            <span class="instance-count" id="whisparrInstances">0 instances</span>
+                        </div>
+                    </div>
+                    <div class="status-item" onclick="navigateToApp('eros')">
+                        <img src="./static/images/app-icons/eros.png" alt="Whisparr V3" class="status-icon">
+                        <div class="app-info">
+                            <span class="app-name">Whisparr V3</span>
+                            <span class="app-subtitle" id="erosSubtitle">Adult Content Management</span>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-badge" id="erosStatus">Checking...</span>
+                            <span class="instance-count" id="erosInstances">0 instances</span>
+                        </div>
+                    </div>
+                    <div class="status-item" onclick="navigateToApp('prowlarr')">
+                        <img src="./static/images/app-icons/prowlarr.png" alt="Prowlarr" class="status-icon">
+                        <div class="app-info">
+                            <span class="app-name">Prowlarr</span>
+                            <span class="app-subtitle" id="prowlarrSubtitle">Indexer Management</span>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-badge" id="prowlarrStatus">Checking...</span>
+                            <span class="instance-count" id="prowlarrInstances">0 instances</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Configuration Summary -->
+            <div class="stat-card config-summary-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-cog"></i> Configuration Summary</h3>
+                </div>
+                <div class="config-stats" id="configStats">
+                    <div class="config-item">
+                        <span class="config-label">Configured Apps:</span>
+                        <span class="config-value" id="configuredAppsCount">0</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">Total Instances:</span>
+                        <span class="config-value" id="totalInstancesCount">0</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">Active Connections:</span>
+                        <span class="config-value" id="activeConnectionsCount">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="stat-card activity-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-clock"></i> Recent Activity</h3>
+                </div>
+                <div class="activity-list" id="recentActivity">
+                    <div class="activity-item loading">
+                        <i class="fas fa-spinner fa-spin activity-icon"></i>
+                        <span class="activity-text">Loading recent activity...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="stat-card actions-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                </div>
+                <div class="actions-grid">
+                    <button class="action-btn" onclick="window.location.hash = '#settings'">
+                        <i class="fas fa-cog"></i>
+                        <span>Global Settings</span>
+                    </button>
+                    <button class="action-btn" onclick="window.location.hash = '#logs'">
+                        <i class="fas fa-list-alt"></i>
+                        <span>View Logs</span>
+                    </button>
+                    <button class="action-btn" onclick="refreshAppStatus()">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Refresh Status</span>
+                    </button>
+                    <button class="action-btn" onclick="window.location.hash = '#hunt-manager'">
+                        <i class="fas fa-crosshairs"></i>
+                        <span>Hunt Manager</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -126,55 +273,323 @@
     #appsSection {
         display: none;
         width: 100%;
-        height: 100vh;
-        padding: 0;
-        overflow: hidden;
+        height: auto;
+        min-height: 100vh;
+        padding: 20px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
     
     #appsSection.active {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: block;
     }
     
-    .apps-placeholder {
+    .apps-dashboard {
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 0 10px;
+    }
+    
+    .dashboard-header {
         text-align: center;
-        max-width: 400px;
-        padding: 40px;
+        margin-bottom: 30px;
     }
     
-    .placeholder-content {
-        opacity: 0.6;
-    }
-    
-    .placeholder-icon {
+    .header-icon {
         width: 80px;
         height: 80px;
         margin: 0 auto 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(155, 89, 182, 0.1) 100%);
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, rgba(155, 89, 182, 0.2) 100%);
         border-radius: 50%;
-        border: 2px solid rgba(52, 152, 219, 0.2);
+        border: 2px solid rgba(52, 152, 219, 0.3);
     }
     
-    .placeholder-icon i {
+    .header-icon i {
         font-size: 32px;
-        color: rgba(52, 152, 219, 0.6);
+        color: rgba(52, 152, 219, 0.9);
     }
     
-    .placeholder-content h2 {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 28px;
-        margin-bottom: 15px;
+    .dashboard-header h2 {
+        color: #fff;
+        font-size: 32px;
+        margin-bottom: 10px;
         font-weight: 600;
     }
     
-    .placeholder-content p {
-        color: rgba(255, 255, 255, 0.5);
+    .dashboard-header p {
+        color: rgba(255, 255, 255, 0.7);
         font-size: 16px;
         line-height: 1.5;
+    }
+    
+    .apps-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        width: 100%;
+        max-width: none;
+    }
+    
+    @media (max-width: 1200px) {
+        .apps-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .apps-stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, rgba(30, 39, 56, 0.8) 0%, rgba(14, 20, 32, 0.8) 100%);
+        border: 1px solid rgba(90, 109, 137, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        border-color: rgba(52, 152, 219, 0.4);
+    }
+    
+    .card-header {
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .card-header h3 {
+        color: #fff;
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .card-header i {
+        color: rgba(52, 152, 219, 0.8);
+    }
+    
+    /* App Status Styles */
+    .status-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+    
+    .status-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(52, 152, 219, 0.3);
+        transform: translateY(-1px);
+    }
+    
+    .app-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .app-subtitle {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 400;
+    }
+    
+    .status-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+    }
+    
+    .instance-count {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 400;
+    }
+    
+    .status-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+    
+    .app-name {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+        flex: 1;
+    }
+    
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        background: rgba(108, 117, 125, 0.3);
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .status-badge.online {
+        background: rgba(40, 167, 69, 0.3);
+        color: #28a745;
+    }
+    
+    .status-badge.offline {
+        background: rgba(220, 53, 69, 0.3);
+        color: #dc3545;
+    }
+    
+    .status-badge.checking {
+        background: rgba(255, 193, 7, 0.3);
+        color: #ffc107;
+    }
+    
+    /* Configuration Summary Styles */
+    .config-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .config-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+    }
+    
+    .config-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+    }
+    
+    .config-value {
+        color: rgba(52, 152, 219, 0.9);
+        font-weight: 600;
+        font-size: 16px;
+    }
+    
+    /* Activity Styles */
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 0;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+        line-height: 1.4;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-item.loading {
+        justify-content: center;
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        color: rgba(52, 152, 219, 0.6);
+        margin-top: 2px;
+        flex-shrink: 0;
+        width: 14px;
+    }
+    
+    .activity-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .activity-time {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+    }
+    
+    .activity-item.success .activity-icon {
+        color: rgba(40, 167, 69, 0.8);
+    }
+    
+    .activity-item.warning .activity-icon {
+        color: rgba(255, 193, 7, 0.8);
+    }
+    
+    .activity-item.info .activity-icon {
+        color: rgba(23, 162, 184, 0.8);
+    }
+    
+    /* Quick Actions Styles */
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 12px 8px;
+        background: rgba(52, 152, 219, 0.1);
+        border: 1px solid rgba(52, 152, 219, 0.3);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .action-btn:hover {
+        background: rgba(52, 152, 219, 0.2);
+        border-color: rgba(52, 152, 219, 0.5);
+        color: #fff;
+        transform: translateY(-1px);
+    }
+    
+    .action-btn i {
+        font-size: 16px;
+        color: rgba(52, 152, 219, 0.8);
+    }
+    
+    .action-btn span {
+        font-size: 12px;
+        font-weight: 500;
+        text-align: center;
     }
     
 

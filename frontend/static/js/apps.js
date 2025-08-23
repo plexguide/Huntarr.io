@@ -564,5 +564,294 @@ const appsModule = {
     }
 };
 
+// Apps Dashboard functionality
+const appsDashboard = {
+    statusCheckInterval: null,
+    activityRefreshInterval: null,
+    
+    // Initialize the dashboard
+    init: function() {
+        console.log('[Apps Dashboard] Initializing...');
+        this.checkAllAppStatus();
+        this.loadRecentActivity();
+        this.loadConfigurationSummary();
+        this.startAutoRefresh();
+    },
+    
+    // Check status of all apps
+    checkAllAppStatus: function() {
+        const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr'];
+        
+        apps.forEach(app => {
+            this.checkAppStatus(app);
+        });
+    },
+    
+    // Check status of a specific app
+    checkAppStatus: function(app) {
+        const statusElement = document.getElementById(`${app}Status`);
+        const instancesElement = document.getElementById(`${app}Instances`);
+        
+        if (!statusElement) return;
+        
+        // Set checking status
+        statusElement.textContent = 'Checking...';
+        statusElement.className = 'status-badge checking';
+        
+        // Fetch app settings to check configuration and instances
+        HuntarrUtils.fetchWithTimeout(`./api/settings/${app}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(settings => {
+                let instanceCount = 0;
+                let onlineCount = 0;
+                
+                if (settings.instances && Array.isArray(settings.instances)) {
+                    instanceCount = settings.instances.length;
+                    
+                    // Check each instance status
+                    const statusPromises = settings.instances.map(instance => {
+                        return this.checkInstanceConnection(app, instance)
+                            .then(isOnline => {
+                                if (isOnline) onlineCount++;
+                                return isOnline;
+                            })
+                            .catch(() => false);
+                    });
+                    
+                    Promise.all(statusPromises).then(() => {
+                        this.updateAppStatus(app, instanceCount, onlineCount);
+                    });
+                } else {
+                    this.updateAppStatus(app, 0, 0);
+                }
+            })
+            .catch(error => {
+                console.error(`Error checking ${app} status:`, error);
+                statusElement.textContent = 'Error';
+                statusElement.className = 'status-badge offline';
+                if (instancesElement) {
+                    instancesElement.textContent = 'Not configured';
+                }
+            });
+    },
+    
+    // Check if a specific instance is online
+    checkInstanceConnection: function(app, instance) {
+        if (!instance.url || !instance.api_key) {
+            return Promise.resolve(false);
+        }
+        
+        const testUrl = `${instance.url}/api/v3/system/status`;
+        
+        return fetch(testUrl, {
+            method: 'GET',
+            headers: {
+                'X-Api-Key': instance.api_key,
+                'Content-Type': 'application/json'
+            },
+            timeout: 5000
+        })
+        .then(response => response.ok)
+        .catch(() => false);
+    },
+    
+    // Update app status display
+    updateAppStatus: function(app, totalInstances, onlineInstances) {
+        const statusElement = document.getElementById(`${app}Status`);
+        const instancesElement = document.getElementById(`${app}Instances`);
+        
+        if (!statusElement) return;
+        
+        if (totalInstances === 0) {
+            statusElement.textContent = 'Not configured';
+            statusElement.className = 'status-badge offline';
+            if (instancesElement) {
+                instancesElement.textContent = 'No instances';
+            }
+        } else if (onlineInstances === totalInstances) {
+            statusElement.textContent = 'Online';
+            statusElement.className = 'status-badge online';
+            if (instancesElement) {
+                instancesElement.textContent = `${totalInstances} instance${totalInstances > 1 ? 's' : ''}`;
+            }
+        } else if (onlineInstances > 0) {
+            statusElement.textContent = 'Partial';
+            statusElement.className = 'status-badge checking';
+            if (instancesElement) {
+                instancesElement.textContent = `${onlineInstances}/${totalInstances} online`;
+            }
+        } else {
+            statusElement.textContent = 'Offline';
+            statusElement.className = 'status-badge offline';
+            if (instancesElement) {
+                instancesElement.textContent = `${totalInstances} instance${totalInstances > 1 ? 's' : ''} offline`;
+            }
+        }
+    },
+    
+    // Load recent activity
+    loadRecentActivity: function() {
+        const activityList = document.getElementById('recentActivity');
+        if (!activityList) return;
+        
+        // Simulate loading recent activity (replace with actual API call)
+        setTimeout(() => {
+            const activities = [
+                { icon: 'fas fa-download', text: 'Sonarr: Downloaded "The Office S09E23"', time: '2 minutes ago', type: 'success' },
+                { icon: 'fas fa-search', text: 'Radarr: Searching for "Inception (2010)"', time: '5 minutes ago', type: 'info' },
+                { icon: 'fas fa-music', text: 'Lidarr: Added "Pink Floyd - Dark Side of the Moon"', time: '12 minutes ago', type: 'success' },
+                { icon: 'fas fa-exclamation-triangle', text: 'Prowlarr: Indexer "TorrentLeech" failed health check', time: '18 minutes ago', type: 'warning' },
+                { icon: 'fas fa-book', text: 'Readarr: Imported "Dune by Frank Herbert"', time: '25 minutes ago', type: 'success' }
+            ];
+            
+            activityList.innerHTML = activities.map(activity => `
+                <div class="activity-item ${activity.type}">
+                    <i class="${activity.icon} activity-icon"></i>
+                    <div class="activity-content">
+                        <span class="activity-text">${activity.text}</span>
+                        <span class="activity-time">${activity.time}</span>
+                    </div>
+                </div>
+            `).join('');
+        }, 1000);
+    },
+    
+    // Load configuration summary
+    loadConfigurationSummary: function() {
+        const configuredAppsElement = document.getElementById('configuredAppsCount');
+        const totalInstancesElement = document.getElementById('totalInstancesCount');
+        const activeConnectionsElement = document.getElementById('activeConnectionsCount');
+        
+        if (!configuredAppsElement) return;
+        
+        const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr'];
+        let configuredApps = 0;
+        let totalInstances = 0;
+        let activeConnections = 0;
+        
+        const promises = apps.map(app => {
+            return HuntarrUtils.fetchWithTimeout(`./api/settings/${app}`)
+                .then(response => response.json())
+                .then(settings => {
+                    if (settings.instances && settings.instances.length > 0) {
+                        configuredApps++;
+                        totalInstances += settings.instances.length;
+                        
+                        // Count active connections (simplified)
+                        settings.instances.forEach(instance => {
+                            if (instance.url && instance.api_key) {
+                                activeConnections++;
+                            }
+                        });
+                    }
+                })
+                .catch(() => {});
+        });
+        
+        Promise.all(promises).then(() => {
+            if (configuredAppsElement) configuredAppsElement.textContent = configuredApps;
+            if (totalInstancesElement) totalInstancesElement.textContent = totalInstances;
+            if (activeConnectionsElement) activeConnectionsElement.textContent = activeConnections;
+        });
+    },
+    
+    // Start auto-refresh intervals
+    startAutoRefresh: function() {
+        // Refresh status every 30 seconds
+        this.statusCheckInterval = setInterval(() => {
+            this.checkAllAppStatus();
+        }, 30000);
+        
+        // Refresh activity every 60 seconds
+        this.activityRefreshInterval = setInterval(() => {
+            this.loadRecentActivity();
+        }, 60000);
+    },
+    
+    // Stop auto-refresh intervals
+    stopAutoRefresh: function() {
+        if (this.statusCheckInterval) {
+            clearInterval(this.statusCheckInterval);
+            this.statusCheckInterval = null;
+        }
+        if (this.activityRefreshInterval) {
+            clearInterval(this.activityRefreshInterval);
+            this.activityRefreshInterval = null;
+        }
+    }
+};
+
+// Global functions for dashboard actions
+function navigateToApp(app) {
+    console.log(`Navigating to ${app} app`);
+    window.location.hash = `#${app}`;
+}
+
+function refreshAppStatus() {
+    console.log('Refreshing all app status...');
+    if (typeof appsDashboard !== 'undefined') {
+        appsDashboard.checkAllAppStatus();
+        appsDashboard.loadConfigurationSummary();
+    }
+}
+
+function refreshAllApps() {
+    console.log('Refreshing all apps...');
+    refreshAppStatus();
+    if (typeof appsDashboard !== 'undefined') {
+        appsDashboard.loadRecentActivity();
+    }
+}
+
+function globalSearch() {
+    console.log('Opening global search...');
+    // Implement global search functionality
+    alert('Global search functionality coming soon!');
+}
+
+function systemMaintenance() {
+    console.log('Opening system maintenance...');
+    // Implement system maintenance functionality
+    alert('System maintenance functionality coming soon!');
+}
+
+// Initialize dashboard when Apps section is shown
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we're on the apps section and initialize dashboard
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const appsSection = document.getElementById('appsSection');
+                if (appsSection && appsSection.classList.contains('active')) {
+                    if (typeof appsDashboard !== 'undefined') {
+                        appsDashboard.init();
+                    }
+                } else {
+                    if (typeof appsDashboard !== 'undefined') {
+                        appsDashboard.stopAutoRefresh();
+                    }
+                }
+            }
+        });
+    });
+    
+    const appsSection = document.getElementById('appsSection');
+    if (appsSection) {
+        observer.observe(appsSection, { attributes: true });
+        
+        // Initialize immediately if already active
+        if (appsSection.classList.contains('active')) {
+            if (typeof appsDashboard !== 'undefined') {
+                appsDashboard.init();
+            }
+        }
+    }
+});
+
 // Apps module is now initialized per-app when navigating to individual app sections
 // No automatic initialization needed

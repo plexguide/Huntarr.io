@@ -634,20 +634,11 @@ let huntarrUI = {
             // Show history view
             this.showRequestarrView('history');
         } else if (section === 'apps') {
-            console.log('[huntarrUI] Switching to apps section');
-            document.getElementById('appsSection').classList.add('active');
-            document.getElementById('appsSection').style.display = 'block';
-            if (document.getElementById('appsNav')) document.getElementById('appsNav').classList.add('active');
-            newTitle = 'Apps';
-            this.currentSection = 'apps';
-            
-            // Switch to Apps sidebar
-            console.log('[huntarrUI] About to call showAppsSidebar()');
-            this.showAppsSidebar();
-            console.log('[huntarrUI] Called showAppsSidebar()');
-            
-            // Set localStorage to maintain Apps sidebar preference
-            localStorage.setItem('huntarr-apps-sidebar', 'true');
+            console.log('[huntarrUI] Apps section requested - redirecting to Sonarr by default');
+            // Instead of showing apps dashboard, redirect to Sonarr
+            this.switchSection('sonarr');
+            window.location.hash = '#sonarr';
+            return;
         } else if (section === 'sonarr' && document.getElementById('sonarrSection')) {
             document.getElementById('sonarrSection').classList.add('active');
             document.getElementById('sonarrSection').style.display = 'block';
