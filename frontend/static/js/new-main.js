@@ -92,10 +92,14 @@ let huntarrUI = {
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-history') {
             console.log('[huntarrUI] Initialization - showing requestarr sidebar');
             this.showRequestarrSidebar();
+        } else if (this.currentSection === 'apps' || this.currentSection === 'sonarr' || this.currentSection === 'radarr' || this.currentSection === 'lidarr' || this.currentSection === 'readarr' || this.currentSection === 'whisparr' || this.currentSection === 'eros' || this.currentSection === 'prowlarr') {
+            console.log('[huntarrUI] Initialization - showing apps sidebar');
+            this.showAppsSidebar();
         } else {
             // Show main sidebar by default and clear settings sidebar preference
             console.log('[huntarrUI] Initialization - showing main sidebar (default)');
             localStorage.removeItem('huntarr-settings-sidebar');
+            localStorage.removeItem('huntarr-apps-sidebar');
             this.showMainSidebar();
         }
         
@@ -630,21 +634,20 @@ let huntarrUI = {
             // Show history view
             this.showRequestarrView('history');
         } else if (section === 'apps') {
-            // Show Apps section with sidebar - similar to Settings
-            const appsSection = document.getElementById('appsSection');
-            if (appsSection) {
-                appsSection.classList.add('active');
-                appsSection.style.display = 'block';
-            }
+            console.log('[huntarrUI] Switching to apps section');
+            document.getElementById('appsSection').classList.add('active');
+            document.getElementById('appsSection').style.display = 'block';
             if (document.getElementById('appsNav')) document.getElementById('appsNav').classList.add('active');
             newTitle = 'Apps';
             this.currentSection = 'apps';
             
             // Switch to Apps sidebar
+            console.log('[huntarrUI] About to call showAppsSidebar()');
             this.showAppsSidebar();
+            console.log('[huntarrUI] Called showAppsSidebar()');
             
-            // Show message to select an app
-            return;
+            // Set localStorage to maintain Apps sidebar preference
+            localStorage.setItem('huntarr-apps-sidebar', 'true');
         } else if (section === 'sonarr' && document.getElementById('sonarrSection')) {
             document.getElementById('sonarrSection').classList.add('active');
             document.getElementById('sonarrSection').style.display = 'block';
