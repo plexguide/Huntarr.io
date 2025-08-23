@@ -790,15 +790,12 @@ let huntarrUI = {
         } else if (section === 'prowlarr' && document.getElementById('prowlarrSection')) {
             document.getElementById('prowlarrSection').classList.add('active');
             document.getElementById('prowlarrSection').style.display = 'block';
-            if (document.getElementById('settingsProwlarrNav')) document.getElementById('settingsProwlarrNav').classList.add('active');
+            if (document.getElementById('appsProwlarrNav')) document.getElementById('appsProwlarrNav').classList.add('active');
             newTitle = 'Prowlarr';
             this.currentSection = 'prowlarr';
             
-            // Switch to Settings sidebar for prowlarr
-            this.showSettingsSidebar();
-            
-            // Set localStorage to maintain Settings sidebar preference
-            localStorage.setItem('huntarr-settings-sidebar', 'true');
+            // Switch to Apps sidebar for prowlarr
+            this.showAppsSidebar();
             
             // Initialize prowlarr settings if not already done
             this.initializeProwlarr();

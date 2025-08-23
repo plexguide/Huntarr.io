@@ -116,52 +116,60 @@
     
     <div class="apps-overview">
         <div class="apps-grid">
-            <div class="app-card" onclick="window.location.hash = '#sonarr'">
-                <div class="app-icon">
-                    <i class="fas fa-tv"></i>
+            <div class="app-card sonarr-card" onclick="window.location.hash = '#sonarr'">
+                <div class="app-icon sonarr-icon-card">
+                    <img src="./static/images/app-icons/sonarr.png" alt="Sonarr" class="app-icon-img">
                 </div>
                 <h3>Sonarr</h3>
                 <p>TV Series Management</p>
             </div>
             
-            <div class="app-card" onclick="window.location.hash = '#radarr'">
-                <div class="app-icon">
-                    <i class="fas fa-film"></i>
+            <div class="app-card radarr-card" onclick="window.location.hash = '#radarr'">
+                <div class="app-icon radarr-icon-card">
+                    <img src="./static/images/app-icons/radarr.png" alt="Radarr" class="app-icon-img">
                 </div>
                 <h3>Radarr</h3>
                 <p>Movie Management</p>
             </div>
             
-            <div class="app-card" onclick="window.location.hash = '#lidarr'">
-                <div class="app-icon">
-                    <i class="fas fa-music"></i>
+            <div class="app-card lidarr-card" onclick="window.location.hash = '#lidarr'">
+                <div class="app-icon lidarr-icon-card">
+                    <img src="./static/images/app-icons/lidarr.png" alt="Lidarr" class="app-icon-img">
                 </div>
                 <h3>Lidarr</h3>
                 <p>Music Management</p>
             </div>
             
-            <div class="app-card" onclick="window.location.hash = '#readarr'">
-                <div class="app-icon">
-                    <i class="fas fa-book"></i>
+            <div class="app-card readarr-card" onclick="window.location.hash = '#readarr'">
+                <div class="app-icon readarr-icon-card">
+                    <img src="./static/images/app-icons/readarr.png" alt="Readarr" class="app-icon-img">
                 </div>
                 <h3>Readarr</h3>
                 <p>Book Management</p>
             </div>
             
-            <div class="app-card" onclick="window.location.hash = '#whisparr'">
-                <div class="app-icon">
-                    <i class="fas fa-heart"></i>
+            <div class="app-card whisparr-card" onclick="window.location.hash = '#whisparr'">
+                <div class="app-icon whisparr-icon-card">
+                    <img src="./static/images/app-icons/whisparr.png" alt="Whisparr V2" class="app-icon-img">
                 </div>
                 <h3>Whisparr V2</h3>
                 <p>Adult Content Management</p>
             </div>
             
-            <div class="app-card" onclick="window.location.hash = '#eros'">
-                <div class="app-icon">
-                    <i class="fas fa-fire"></i>
+            <div class="app-card eros-card" onclick="window.location.hash = '#eros'">
+                <div class="app-icon eros-icon-card">
+                    <img src="./static/images/app-icons/eros.png" alt="Whisparr V3" class="app-icon-img">
                 </div>
                 <h3>Whisparr V3</h3>
                 <p>Adult Content Management (V3)</p>
+            </div>
+            
+            <div class="app-card prowlarr-card" onclick="window.location.hash = '#prowlarr'">
+                <div class="app-icon prowlarr-icon-card">
+                    <img src="./static/images/app-icons/prowlarr.png" alt="Prowlarr" class="app-icon-img">
+                </div>
+                <h3>Prowlarr</h3>
+                <p>Indexer Management</p>
             </div>
         </div>
     </div>
@@ -252,6 +260,129 @@
     .app-card:hover .app-icon i {
         color: #fff;
         text-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+    }
+
+    /* App icon image styling for cards */
+    .app-icon .app-icon-img {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        filter: brightness(0.9) contrast(1.1);
+    }
+
+    /* App-specific visual effects matching front page and sidebar */
+    
+    /* Sonarr - Blue */
+    .sonarr-card:hover .sonarr-icon-card {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.3) 0%, rgba(52, 152, 219, 0.5) 100%);
+        border: 2px solid rgba(52, 152, 219, 0.6);
+        box-shadow: 0 0 20px rgba(52, 152, 219, 0.4);
+    }
+    
+    .sonarr-card:hover .app-icon-img {
+        filter: brightness(1.3) contrast(1.3) drop-shadow(0 0 10px rgba(52, 152, 219, 0.7));
+        transform: scale(1.1);
+    }
+    
+    .sonarr-card:hover h3 {
+        color: #3498db;
+    }
+    
+    /* Radarr - Yellow */
+    .radarr-card:hover .radarr-icon-card {
+        background: linear-gradient(135deg, rgba(241, 196, 15, 0.3) 0%, rgba(241, 196, 15, 0.5) 100%);
+        border: 2px solid rgba(241, 196, 15, 0.6);
+        box-shadow: 0 0 20px rgba(241, 196, 15, 0.4);
+    }
+    
+    .radarr-card:hover .app-icon-img {
+        filter: brightness(1.3) contrast(1.3) drop-shadow(0 0 10px rgba(241, 196, 15, 0.7));
+        transform: scale(1.1);
+    }
+    
+    .radarr-card:hover h3 {
+        color: #f1c40f;
+    }
+    
+    /* Lidarr - Green */
+    .lidarr-card:hover .lidarr-icon-card {
+        background: linear-gradient(135deg, rgba(46, 204, 113, 0.3) 0%, rgba(46, 204, 113, 0.5) 100%);
+        border: 2px solid rgba(46, 204, 113, 0.6);
+        box-shadow: 0 0 20px rgba(46, 204, 113, 0.4);
+    }
+    
+    .lidarr-card:hover .app-icon-img {
+        filter: brightness(1.3) contrast(1.3) drop-shadow(0 0 10px rgba(46, 204, 113, 0.7));
+        transform: scale(1.1);
+    }
+    
+    .lidarr-card:hover h3 {
+        color: #2ecc71;
+    }
+    
+    /* Readarr - Red */
+    .readarr-card:hover .readarr-icon-card {
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.3) 0%, rgba(231, 76, 60, 0.5) 100%);
+        border: 2px solid rgba(231, 76, 60, 0.6);
+        box-shadow: 0 0 20px rgba(231, 76, 60, 0.4);
+    }
+    
+    .readarr-card:hover .app-icon-img {
+        filter: brightness(1.3) contrast(1.3) drop-shadow(0 0 10px rgba(231, 76, 60, 0.7));
+        transform: scale(1.1);
+    }
+    
+    .readarr-card:hover h3 {
+        color: #e74c3c;
+    }
+    
+    /* Whisparr V2 - Purple */
+    .whisparr-card:hover .whisparr-icon-card {
+        background: linear-gradient(135deg, rgba(155, 89, 182, 0.3) 0%, rgba(155, 89, 182, 0.5) 100%);
+        border: 2px solid rgba(155, 89, 182, 0.6);
+        box-shadow: 0 0 20px rgba(155, 89, 182, 0.4);
+    }
+    
+    .whisparr-card:hover .app-icon-img {
+        filter: brightness(1.3) contrast(1.3) drop-shadow(0 0 10px rgba(155, 89, 182, 0.7));
+        transform: scale(1.1);
+    }
+    
+    .whisparr-card:hover h3 {
+        color: #9b59b6;
+    }
+    
+    /* Eros (Whisparr V3) - Dark Purple/Magenta */
+    .eros-card:hover .eros-icon-card {
+        background: linear-gradient(135deg, rgba(142, 68, 173, 0.3) 0%, rgba(142, 68, 173, 0.5) 100%);
+        border: 2px solid rgba(142, 68, 173, 0.6);
+        box-shadow: 0 0 20px rgba(142, 68, 173, 0.4);
+    }
+    
+    .eros-card:hover .app-icon-img {
+        filter: brightness(1.3) contrast(1.3) drop-shadow(0 0 10px rgba(142, 68, 173, 0.7));
+        transform: scale(1.1);
+    }
+    
+    .eros-card:hover h3 {
+        color: #8e44ad;
+    }
+    
+    /* Prowlarr - Orange */
+    .prowlarr-card:hover .prowlarr-icon-card {
+        background: linear-gradient(135deg, rgba(230, 126, 34, 0.3) 0%, rgba(230, 126, 34, 0.5) 100%);
+        border: 2px solid rgba(230, 126, 34, 0.6);
+        box-shadow: 0 0 20px rgba(230, 126, 34, 0.4);
+    }
+    
+    .prowlarr-card:hover .app-icon-img {
+        filter: brightness(1.3) contrast(1.3) drop-shadow(0 0 10px rgba(230, 126, 34, 0.7));
+        transform: scale(1.1);
+    }
+    
+    .prowlarr-card:hover h3 {
+        color: #e67e22;
     }
     
     .app-card h3 {

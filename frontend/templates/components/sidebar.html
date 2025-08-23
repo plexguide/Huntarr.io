@@ -192,41 +192,47 @@
         <!-- Apps Group -->
         <div class="nav-group">
             <div class="nav-group-title">Apps</div>
-            <a href="./#sonarr" class="nav-item" id="appsSonarrNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-tv"></i>
+            <a href="./#sonarr" class="nav-item sonarr-app" id="appsSonarrNav">
+                <div class="nav-icon-wrapper sonarr-icon">
+                    <img src="./static/images/app-icons/sonarr.png" alt="Sonarr" class="app-icon-img">
                 </div>
                 <span>Sonarr</span>
             </a>
-            <a href="./#radarr" class="nav-item" id="appsRadarrNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-film"></i>
+            <a href="./#radarr" class="nav-item radarr-app" id="appsRadarrNav">
+                <div class="nav-icon-wrapper radarr-icon">
+                    <img src="./static/images/app-icons/radarr.png" alt="Radarr" class="app-icon-img">
                 </div>
                 <span>Radarr</span>
             </a>
-            <a href="./#lidarr" class="nav-item" id="appsLidarrNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-music"></i>
+            <a href="./#lidarr" class="nav-item lidarr-app" id="appsLidarrNav">
+                <div class="nav-icon-wrapper lidarr-icon">
+                    <img src="./static/images/app-icons/lidarr.png" alt="Lidarr" class="app-icon-img">
                 </div>
                 <span>Lidarr</span>
             </a>
-            <a href="./#readarr" class="nav-item" id="appsReadarrNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-book"></i>
+            <a href="./#readarr" class="nav-item readarr-app" id="appsReadarrNav">
+                <div class="nav-icon-wrapper readarr-icon">
+                    <img src="./static/images/app-icons/readarr.png" alt="Readarr" class="app-icon-img">
                 </div>
                 <span>Readarr</span>
             </a>
-            <a href="./#whisparr" class="nav-item" id="appsWhisparrNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-heart"></i>
+            <a href="./#whisparr" class="nav-item whisparr-app" id="appsWhisparrNav">
+                <div class="nav-icon-wrapper whisparr-icon">
+                    <img src="./static/images/app-icons/whisparr.png" alt="Whisparr V2" class="app-icon-img">
                 </div>
                 <span>Whisparr V2</span>
             </a>
-            <a href="./#eros" class="nav-item" id="appsErosNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-fire"></i>
+            <a href="./#eros" class="nav-item eros-app" id="appsErosNav">
+                <div class="nav-icon-wrapper eros-icon">
+                    <img src="./static/images/app-icons/eros.png" alt="Whisparr V3" class="app-icon-img">
                 </div>
                 <span>Whisparr V3</span>
+            </a>
+            <a href="./#prowlarr" class="nav-item prowlarr-app" id="appsProwlarrNav">
+                <div class="nav-icon-wrapper prowlarr-icon">
+                    <img src="./static/images/app-icons/prowlarr.png" alt="Prowlarr" class="app-icon-img">
+                </div>
+                <span>Prowlarr</span>
             </a>
         </div>
     </nav>
@@ -286,12 +292,7 @@
                 </div>
                 <span>Notifications</span>
             </a>
-            <a href="./#prowlarr" class="nav-item" id="settingsProwlarrNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-search"></i>
-                </div>
-                <span>Prowlarr</span>
-            </a>
+
             <a href="./user" class="nav-item" id="settingsUserNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-user"></i>
@@ -709,6 +710,140 @@
         margin-top: 5px;
         margin-bottom: 5px;
     }
+
+    /* App icon image styling */
+    .app-icon-img {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        filter: brightness(0.9) contrast(1.1);
+    }
+
+    /* App-specific visual effects with colored rings matching front page */
+
+    /* Sonarr - Blue */
+    .sonarr-app:hover .sonarr-icon,
+    .sonarr-app.active .sonarr-icon {
+        background: rgba(52, 152, 219, 0.2);
+        border: 2px solid rgba(52, 152, 219, 0.6);
+        box-shadow: 0 0 15px rgba(52, 152, 219, 0.4), inset 0 0 10px rgba(52, 152, 219, 0.1);
+        transform: scale(1.1);
+    }
+
+    .sonarr-app:hover .app-icon-img,
+    .sonarr-app.active .app-icon-img {
+        filter: brightness(1.2) contrast(1.2) drop-shadow(0 0 8px rgba(52, 152, 219, 0.6));
+        transform: scale(1.05);
+    }
+
+    /* Radarr - Yellow */
+    .radarr-app:hover .radarr-icon,
+    .radarr-app.active .radarr-icon {
+        background: rgba(241, 196, 15, 0.2);
+        border: 2px solid rgba(241, 196, 15, 0.6);
+        box-shadow: 0 0 15px rgba(241, 196, 15, 0.4), inset 0 0 10px rgba(241, 196, 15, 0.1);
+        transform: scale(1.1);
+    }
+
+    .radarr-app:hover .app-icon-img,
+    .radarr-app.active .app-icon-img {
+        filter: brightness(1.2) contrast(1.2) drop-shadow(0 0 8px rgba(241, 196, 15, 0.6));
+        transform: scale(1.05);
+    }
+
+    /* Lidarr - Green */
+    .lidarr-app:hover .lidarr-icon,
+    .lidarr-app.active .lidarr-icon {
+        background: rgba(46, 204, 113, 0.2);
+        border: 2px solid rgba(46, 204, 113, 0.6);
+        box-shadow: 0 0 15px rgba(46, 204, 113, 0.4), inset 0 0 10px rgba(46, 204, 113, 0.1);
+        transform: scale(1.1);
+    }
+
+    .lidarr-app:hover .app-icon-img,
+    .lidarr-app.active .app-icon-img {
+        filter: brightness(1.2) contrast(1.2) drop-shadow(0 0 8px rgba(46, 204, 113, 0.6));
+        transform: scale(1.05);
+    }
+
+    /* Readarr - Red */
+    .readarr-app:hover .readarr-icon,
+    .readarr-app.active .readarr-icon {
+        background: rgba(231, 76, 60, 0.2);
+        border: 2px solid rgba(231, 76, 60, 0.6);
+        box-shadow: 0 0 15px rgba(231, 76, 60, 0.4), inset 0 0 10px rgba(231, 76, 60, 0.1);
+        transform: scale(1.1);
+    }
+
+    .readarr-app:hover .app-icon-img,
+    .readarr-app.active .app-icon-img {
+        filter: brightness(1.2) contrast(1.2) drop-shadow(0 0 8px rgba(231, 76, 60, 0.6));
+        transform: scale(1.05);
+    }
+
+    /* Whisparr V2 - Purple */
+    .whisparr-app:hover .whisparr-icon,
+    .whisparr-app.active .whisparr-icon {
+        background: rgba(155, 89, 182, 0.2);
+        border: 2px solid rgba(155, 89, 182, 0.6);
+        box-shadow: 0 0 15px rgba(155, 89, 182, 0.4), inset 0 0 10px rgba(155, 89, 182, 0.1);
+        transform: scale(1.1);
+    }
+
+    .whisparr-app:hover .app-icon-img,
+    .whisparr-app.active .app-icon-img {
+        filter: brightness(1.2) contrast(1.2) drop-shadow(0 0 8px rgba(155, 89, 182, 0.6));
+        transform: scale(1.05);
+    }
+
+    /* Eros (Whisparr V3) - Dark Purple/Magenta */
+    .eros-app:hover .eros-icon,
+    .eros-app.active .eros-icon {
+        background: rgba(142, 68, 173, 0.2);
+        border: 2px solid rgba(142, 68, 173, 0.6);
+        box-shadow: 0 0 15px rgba(142, 68, 173, 0.4), inset 0 0 10px rgba(142, 68, 173, 0.1);
+        transform: scale(1.1);
+    }
+
+    .eros-app:hover .app-icon-img,
+    .eros-app.active .app-icon-img {
+        filter: brightness(1.2) contrast(1.2) drop-shadow(0 0 8px rgba(142, 68, 173, 0.6));
+        transform: scale(1.05);
+    }
+
+    /* Prowlarr - Orange (as requested) */
+    .prowlarr-app:hover .prowlarr-icon,
+    .prowlarr-app.active .prowlarr-icon {
+        background: rgba(230, 126, 34, 0.2);
+        border: 2px solid rgba(230, 126, 34, 0.6);
+        box-shadow: 0 0 15px rgba(230, 126, 34, 0.4), inset 0 0 10px rgba(230, 126, 34, 0.1);
+        transform: scale(1.1);
+    }
+
+    .prowlarr-app:hover .app-icon-img,
+    .prowlarr-app.active .app-icon-img {
+        filter: brightness(1.2) contrast(1.2) drop-shadow(0 0 8px rgba(230, 126, 34, 0.6));
+        transform: scale(1.05);
+    }
+
+    /* Mobile adjustments for app icons */
+    @media (max-width: 768px) {
+        .app-icon-img {
+            width: 18px;
+            height: 18px;
+        }
+
+        .nav-item:hover .nav-icon-wrapper,
+        .nav-item.active .nav-icon-wrapper {
+            transform: scale(1.05);
+        }
+
+        .nav-item:hover .app-icon-img,
+        .nav-item.active .app-icon-img {
+            transform: scale(1.02);
+        }
+    }
 </style>
 
 <script>
@@ -758,6 +893,8 @@
             selector = '#appsWhisparrNav';
         } else if (currentHash === '#eros') {
             selector = '#appsErosNav';
+        } else if (currentHash === '#prowlarr') {
+            selector = '#appsProwlarrNav';
         }
         // Settings sidebar items
         else if (currentHash === '#settings') {
@@ -766,8 +903,6 @@
             selector = '#settingsSchedulingNav';
         } else if (currentHash === '#notifications') {
             selector = '#settingsNotificationsNav';
-        } else if (currentHash === '#prowlarr') {
-            selector = '#settingsProwlarrNav';
         } else if (currentHash === '#user') {
             selector = '#settingsUserNav';
         }
