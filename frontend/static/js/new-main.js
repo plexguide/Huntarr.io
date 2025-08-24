@@ -2746,6 +2746,7 @@ let huntarrUI = {
                 <div class="stat-value ${successClass}">${successRate}%</div>
             </div>
         `);
+        console.log('Added success rate card:', successRate, successClass);
         
         // Average response time
         if (stats.avg_response_time !== undefined) {
@@ -2785,7 +2786,10 @@ let huntarrUI = {
         if (statisticsCards.length === 0) {
             statisticsContent.innerHTML = '<div class="loading-text">No recent activity</div>';
         } else {
-            statisticsContent.innerHTML = statisticsCards.join('');
+            const finalHTML = statisticsCards.join('');
+            console.log('Final Prowlarr statistics HTML:', finalHTML);
+            console.log('Number of stat cards:', statisticsCards.length);
+            statisticsContent.innerHTML = finalHTML;
         }
     },
 
