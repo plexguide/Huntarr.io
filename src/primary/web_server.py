@@ -50,6 +50,9 @@ from src.primary.routes.history_routes import history_blueprint
 # Import scheduler blueprint
 from src.primary.routes.scheduler_routes import scheduler_api
 
+# Import backup blueprint
+from src.routes.backup_routes import backup_bp
+
 # Import log routes blueprint
 from src.primary.routes.log_routes import log_routes_bp
 
@@ -277,6 +280,7 @@ app.register_blueprint(stateful_api, url_prefix='/api/stateful')
 app.register_blueprint(history_blueprint, url_prefix='/api/hunt-manager')
 app.register_blueprint(scheduler_api)
 app.register_blueprint(log_routes_bp)
+app.register_blueprint(backup_bp)
 
 # Register the authentication check to run before requests
 app.before_request(authenticate_request)

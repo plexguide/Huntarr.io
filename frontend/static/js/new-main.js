@@ -86,7 +86,7 @@ let huntarrUI = {
         
         // Check which sidebar should be shown based on current section
         console.log(`[huntarrUI] Initialization - current section: ${this.currentSection}`);
-        if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'user') {
+        if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user') {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-history') {
@@ -781,6 +781,21 @@ let huntarrUI = {
             
             // Initialize notifications settings if not already done
             this.initializeNotifications();
+        } else if (section === 'backup-restore' && document.getElementById('backupRestoreSection')) {
+            document.getElementById('backupRestoreSection').classList.add('active');
+            document.getElementById('backupRestoreSection').style.display = 'block';
+            if (document.getElementById('settingsBackupRestoreNav')) document.getElementById('settingsBackupRestoreNav').classList.add('active');
+            newTitle = 'Backup / Restore';
+            this.currentSection = 'backup-restore';
+            
+            // Switch to Settings sidebar for backup/restore
+            this.showSettingsSidebar();
+            
+            // Set localStorage to maintain Settings sidebar preference
+            localStorage.setItem('huntarr-settings-sidebar', 'true');
+            
+            // Initialize backup/restore functionality if not already done
+            this.initializeBackupRestore();
         } else if (section === 'prowlarr' && document.getElementById('prowlarrSection')) {
             document.getElementById('prowlarrSection').classList.add('active');
             document.getElementById('prowlarrSection').style.display = 'block';
@@ -5003,6 +5018,17 @@ let huntarrUI = {
                 console.error('[huntarrUI] Error loading notifications settings:', error);
                 notificationsContainer.innerHTML = '<p>Error loading notifications settings</p>';
             });
+    },
+
+    initializeBackupRestore: function() {
+        console.log('[huntarrUI] initializeBackupRestore called');
+        
+        // Initialize backup/restore functionality
+        if (typeof BackupRestore !== 'undefined') {
+            BackupRestore.initialize();
+        } else {
+            console.error('[huntarrUI] BackupRestore module not loaded');
+        }
     },
 
     initializeProwlarr: function() {

@@ -31,14 +31,15 @@ docker logs huntarr
 #### **Sidebar Types:**
 1. **Main Sidebar** (`#sidebar`) - Default navigation (Home, Apps, Swaparr, Requestarr, etc.)
 2. **Apps Sidebar** (`#apps-sidebar`) - App-specific navigation (Sonarr, Radarr, Lidarr, etc.)
-3. **Settings Sidebar** (`#settings-sidebar`) - Settings navigation (Main, Scheduling, Notifications, User)
+3. **Settings Sidebar** (`#settings-sidebar`) - Settings navigation (Main, Scheduling, Notifications, Backup/Restore, User)
 4. **Requestarr Sidebar** (`#requestarr-sidebar`) - Requestarr navigation (Home, History)
 
 #### **Navigation Logic Pattern:**
 ```javascript
 // CRITICAL: All sidebar sections must be included in initialization logic
 if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || 
-    this.currentSection === 'notifications' || this.currentSection === 'user') {
+    this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || 
+    this.currentSection === 'user') {
     this.showSettingsSidebar();
 } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-history') {
     this.showRequestarrSidebar();
@@ -51,6 +52,12 @@ if (this.currentSection === 'settings' || this.currentSection === 'scheduling' |
     this.showMainSidebar();
 }
 ```
+
+#### **Apps Navigation Behavior:**
+- **Clicking "Apps"** → Automatically redirects to Sonarr (most commonly used app)
+- **Apps nav item stays highlighted** when viewing any app (Sonarr, Radarr, etc.)
+- **Apps sidebar provides navigation** between individual apps
+- **Direct URLs still work** (`#sonarr`, `#radarr`, etc.) for bookmarking specific apps
 
 #### **Sidebar Switching Functions:**
 ```javascript
@@ -415,6 +422,263 @@ docker exec huntarr du -h /config/huntarr.db
 5. **Unique constraints prevent duplicates** - app_name combinations are unique
 6. **Transactions for consistency** - DatabaseManager handles commit/rollback
 
+## 💾 BACKUP & RESTORE SYSTEM
+
+### Overview
+**Huntarr includes a comprehensive backup and restore system for database protection and recovery.**
+
+**Key Features:**
+- **Automatic scheduled backups** based on user-defined frequency
+- **Manual backup creation** with progress tracking
+- **Multi-database backup** (huntarr.db, logs.db, manager.db)
+- **Database integrity verification** before and after operations
+- **Cross-platform backup storage** with environment detection
+- **Backup retention management** with automatic cleanup
+- **Safe restoration** with pre-restore backup creation
+
+### Backup Storage Structure
+```
+/config/backups/                           # Docker environment
+├── scheduled_backup_2025-08-24_02-05-16/  # Backup folder (timestamp-based)
+│   ├── backup_info.json                   # Backup metadata
+│   ├── huntarr.db                        # Main database backup
+│   ├── logs.db                           # Logs database backup
+│   └── manager.db                        # Manager database backup (if exists)
+└── manual_backup_2025-08-24_14-30-00/    # Manual backup folder
+    ├── backup_info.json
+    └── [database files...]
+```
+
+**Storage Locations:**
+- **Docker:** `/config/backups/` (persistent volume)
+- **Windows:** `%APPDATA%/Huntarr/backups/`
+- **Local Development:** `{project_root}/data/backups/`
+
+### Backup System Architecture
+
+#### **BackupManager Class** (`src/routes/backup_routes.py`)
+```python
+class BackupManager:
+    def create_backup(self, backup_type='manual', name=None)  # Creates verified backup
+    def restore_backup(self, backup_id)                      # Restores with pre-backup
+    def list_backups(self)                                   # Lists available backups
+    def delete_backup(self, backup_id)                       # Deletes specific backup
+    def get_backup_settings(self)                            # Gets user settings
+    def save_backup_settings(self, settings)                 # Saves user settings
+    def _cleanup_old_backups(self)                           # Retention management
+```
+
+#### **BackupScheduler Class** (`src/routes/backup_routes.py`)
+```python
+class BackupScheduler:
+    def start(self)                    # Starts background scheduler thread
+    def stop(self)                     # Gracefully stops scheduler
+    def _should_create_backup(self)    # Checks if backup is due
+    def _scheduler_loop(self)          # Main scheduling loop (hourly checks)
+```
+
+### API Endpoints
+```python
+# Backup Settings
+GET/POST /api/backup/settings          # Get/set backup frequency & retention
+
+# Backup Operations  
+POST /api/backup/create               # Create manual backup
+GET  /api/backup/list                 # List available backups
+POST /api/backup/restore              # Restore from backup
+POST /api/backup/delete               # Delete specific backup
+GET  /api/backup/next-scheduled       # Get next scheduled backup time
+
+# Destructive Operations
+POST /api/backup/delete-database      # Delete current database (testing/reset)
+```
+
+### Frontend Integration
+
+#### **Settings Navigation** (`frontend/templates/components/sidebar.html`)
+```html
+<!-- Added to Settings Sidebar -->
+<a href="./#backup-restore" class="nav-item" id="settingsBackupRestoreNav">
+    <div class="nav-icon-wrapper">
+        <i class="fas fa-database"></i>
+    </div>
+    <span>Backup / Restore</span>
+</a>
+```
+
+#### **Section Handling** (`frontend/static/js/new-main.js`)
+```javascript
+// CRITICAL: backup-restore must be included in settings sections
+if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || 
+    this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || 
+    this.currentSection === 'user') {
+    this.showSettingsSidebar();
+}
+
+// Section initialization
+} else if (section === 'backup-restore' && document.getElementById('backupRestoreSection')) {
+    document.getElementById('backupRestoreSection').classList.add('active');
+    document.getElementById('backupRestoreSection').style.display = 'block';
+    if (document.getElementById('settingsBackupRestoreNav')) 
+        document.getElementById('settingsBackupRestoreNav').classList.add('active');
+    this.currentSection = 'backup-restore';
+    this.showSettingsSidebar();
+    this.initializeBackupRestore();
+}
+```
+
+#### **JavaScript Module** (`frontend/static/js/backup-restore.js`)
+```javascript
+const BackupRestore = {
+    initialize: function()              // Main initialization
+    createManualBackup: function()      // Manual backup with progress
+    restoreBackup: function()           // Restore with confirmations
+    deleteDatabase: function()          # Destructive operation with safeguards
+    loadBackupList: function()          // Refresh backup list
+    validateRestoreConfirmation: function()  // "RESTORE" confirmation
+    validateDeleteConfirmation: function()   // "huntarr" confirmation
+}
+```
+
+### Safety & Security Features
+
+#### **Multi-Level Confirmations**
+1. **Restore Operations:**
+   - Select backup from dropdown
+   - Type "RESTORE" to enable button
+   - Final browser confirmation dialog
+   - Pre-restore backup creation
+
+2. **Database Deletion:**
+   - Type "huntarr" to enable deletion
+   - Final browser confirmation dialog
+   - Multiple warning messages
+
+#### **Data Integrity**
+```python
+def _verify_database_integrity(self, db_path):
+    """Verify database integrity using SQLite PRAGMA"""
+    conn = sqlite3.connect(db_path)
+    result = conn.execute("PRAGMA integrity_check").fetchone()
+    return result and result[0] == "ok"
+```
+
+#### **Backup Verification Process**
+1. **Pre-backup:** Force WAL checkpoint
+2. **During backup:** Copy all database files
+3. **Post-backup:** Verify each backup file integrity
+4. **Cleanup:** Remove corrupted backups automatically
+
+### Configuration & Settings
+
+#### **Default Settings**
+```python
+backup_settings = {
+    'frequency': 3,    # Days between automatic backups
+    'retention': 3     # Number of backups to keep
+}
+```
+
+#### **Settings Storage** (Database)
+```sql
+-- Stored in general_settings table
+INSERT INTO general_settings (setting_key, setting_value) VALUES 
+('backup_frequency', '3'),
+('backup_retention', '3'),
+('last_backup_time', '2025-08-24T02:05:16');
+```
+
+### Troubleshooting Backup Issues
+
+#### **Common Problems & Solutions**
+
+1. **Backup Directory Not Writable**
+   ```python
+   # System falls back to alternative locations
+   # Windows: Documents/Huntarr/ if AppData fails
+   # Check logs for "Database directory not writable"
+   ```
+
+2. **Database Corruption During Backup**
+   ```bash
+   # Check integrity manually
+   docker exec huntarr sqlite3 /config/huntarr.db "PRAGMA integrity_check"
+   
+   # Backup system auto-detects and handles corruption
+   # Creates corrupted_backup_[timestamp].db for recovery
+   ```
+
+3. **Scheduler Not Running**
+   ```bash
+   # Check logs for scheduler startup
+   docker logs huntarr | grep -i "backup scheduler"
+   
+   # Should see: "Backup scheduler started"
+   ```
+
+4. **Restore Failures**
+   ```python
+   # System creates pre-restore backup automatically
+   # Check /config/backups/ for pre_restore_backup_[timestamp] folders
+   # Original data preserved even if restore fails
+   ```
+
+#### **Debugging Commands**
+```bash
+# Check backup directory
+docker exec huntarr ls -la /config/backups/
+
+# Verify backup integrity
+docker exec huntarr sqlite3 /config/backups/[backup_folder]/huntarr.db "PRAGMA integrity_check"
+
+# Check backup settings
+docker exec huntarr sqlite3 /config/huntarr.db "SELECT * FROM general_settings WHERE setting_key LIKE 'backup_%'"
+
+# Monitor backup scheduler
+docker logs huntarr | grep -i backup
+```
+
+### Development Guidelines for Backup System
+
+#### **Adding New Database Files**
+```python
+def _get_all_database_paths(self):
+    """Update this method when adding new database files"""
+    databases = {
+        'huntarr': str(main_db_path),
+        'logs': str(logs_db_path),
+        'manager': str(manager_db_path),
+        'new_db': str(new_db_path)  # Add new databases here
+    }
+    return databases
+```
+
+#### **Backup Metadata Format**
+```json
+{
+    "id": "backup_name",
+    "name": "backup_name", 
+    "type": "manual|scheduled|pre-restore",
+    "timestamp": "2025-08-24T02:05:16",
+    "databases": [
+        {
+            "name": "huntarr",
+            "size": 249856,
+            "path": "/config/backups/backup_name/huntarr.db"
+        }
+    ],
+    "size": 1331200
+}
+```
+
+#### **Critical Requirements**
+1. **Always verify backup integrity** before considering backup complete
+2. **Create pre-restore backup** before any restore operation
+3. **Use cross-platform paths** - never hardcode `/config/`
+4. **Handle backup corruption gracefully** with user notifications
+5. **Implement proper cleanup** based on retention settings
+6. **Provide clear user feedback** for all operations
+
 ## 🔧 DEVELOPMENT WORKFLOW
 
 ### Before Any Changes
@@ -438,6 +702,11 @@ docker exec huntarr du -h /config/huntarr.db
 - [ ] Test subpath scenarios (`domain.com/huntarr/`)
 - [ ] Check browser console for errors
 - [ ] **NEW:** Verify database persistence across container restarts
+- [ ] **NEW:** Test backup/restore functionality if modified:
+  - [ ] Verify backup creation and integrity
+  - [ ] Test backup scheduler startup
+  - [ ] Verify backup directory creation (`/config/backups/`)
+  - [ ] Test restore confirmation workflow
 - [ ] Get user approval before committing
 
 ### Proactive Violation Scanning
@@ -489,15 +758,20 @@ grep -r "fetch('/api/" frontend/ --include="*.js"
 - `/src/primary/cycle_tracker.py` - Timer functionality
 - `/src/primary/utils/logger.py` - Logging configuration
 - `/src/primary/utils/database.py` - **NEW:** DatabaseManager class (replaces settings_manager.py)
+- `/src/routes/backup_routes.py` - **NEW:** Backup & Restore API endpoints and BackupManager
 
 ### Frontend Core  
 - `/frontend/static/js/new-main.js` - Main UI logic
 - `/frontend/static/js/settings_forms.js` - Settings forms
+- `/frontend/static/js/backup-restore.js` - **NEW:** Backup & Restore functionality
 - `/frontend/templates/components/` - UI components
+- `/frontend/templates/components/backup_restore_section.html` - **NEW:** Backup & Restore UI
 
 ### Database & Storage
 - `/config/huntarr.db` - **Docker:** Main database file (persistent)
 - `./data/huntarr.db` - **Local:** Main database file (development)
+- `/config/backups/` - **Docker:** Backup storage directory (persistent)
+- `./data/backups/` - **Local:** Backup storage directory (development)
 - `/src/primary/utils/database.py` - DatabaseManager with auto-detection
 - **REMOVED:** All JSON files (settings.json, stateful.json, etc.)
 
@@ -702,6 +976,63 @@ grep -r 'id="[^"]*"' docs/apps/ | grep -o 'id="[^"]*"' | sort | uniq
 - Updated `src/primary/apps/radarr/upgrade.py` to check release dates
 - Both missing and upgrade searches now respect `skip_future_releases` and `process_no_release_dates`
 - Documentation updated to clarify behavior affects both search types
+
+### Apps Navigation Redesign (2024-12)
+**Issue:** Apps section showed a dashboard that users had to navigate through to reach individual app settings
+**User Feedback:** "Instead of an apps dashboard; make it where when a user clicks apps, it goes to the sonarr apps being selected by default"
+**Solution:** Direct navigation to Sonarr when clicking Apps, eliminating the dashboard step
+
+**Implementation Changes:**
+
+1. **Modified Apps Section Navigation** (`frontend/static/js/new-main.js`):
+   ```javascript
+   // OLD: Showed apps dashboard
+   } else if (section === 'apps') {
+       document.getElementById('appsSection').classList.add('active');
+       // ... dashboard logic
+   
+   // NEW: Direct redirect to Sonarr
+   } else if (section === 'apps') {
+       console.log('[huntarrUI] Apps section requested - redirecting to Sonarr by default');
+       this.switchSection('sonarr');
+       window.location.hash = '#sonarr';
+       return;
+   ```
+
+2. **Updated Navigation Highlighting** (`frontend/templates/components/sidebar.html`):
+   ```javascript
+   // Keep "Apps" nav item active when viewing Sonarr
+   } else if (currentHash === '#apps' || currentHash === '#sonarr') {
+       selector = '#appsNav';
+   ```
+
+3. **Preserved Apps Sidebar Functionality**:
+   - Apps sidebar still provides navigation between all apps (Sonarr, Radarr, Lidarr, etc.)
+   - Return button allows going back to main navigation
+   - Individual app sections remain fully functional
+
+**User Experience Improvements:**
+- **Faster Access**: Click "Apps" → Immediately see Sonarr settings (most commonly used)
+- **Intuitive Navigation**: Apps nav item stays highlighted when viewing any app
+- **Preserved Functionality**: All apps still accessible via Apps sidebar
+- **Consistent Behavior**: Maintains existing sidebar switching patterns
+
+**Navigation Flow:**
+```
+Main Sidebar: Apps → Sonarr (default)
+Apps Sidebar: Sonarr ↔ Radarr ↔ Lidarr ↔ Readarr ↔ Whisparr V2 ↔ Whisparr V3 ↔ Prowlarr
+```
+
+**Files Modified:**
+- `frontend/static/js/new-main.js` - Apps section redirect logic
+- `frontend/templates/components/sidebar.html` - Navigation highlighting logic
+- Removed dashboard functionality from `frontend/templates/components/apps_section.html`
+
+**Benefits:**
+- Eliminates unnecessary dashboard step
+- Provides direct access to most commonly used app (Sonarr)
+- Maintains all existing functionality through sidebar navigation
+- Improves user workflow efficiency
 - Frontend info icons fixed to use GitHub documentation links
 
 **User Benefit:** Consistent behavior - no more unexpected future movie upgrades
