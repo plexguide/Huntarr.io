@@ -855,6 +855,15 @@
                 color: var(--text-primary);
                 line-height: 1;
             }
+
+            /* Ensure Success Rate label shows and values match other stats sizing */
+            .prowlarr-statistics-card .stat-label {
+                display: block;
+                opacity: 1;
+            }
+            .prowlarr-statistics-card .stat-value {
+                font-size: 1.4em; /* keep consistent with other stat values */
+            }
             
             .stat-value.success {
                 color: #10b981;
