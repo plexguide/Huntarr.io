@@ -241,12 +241,10 @@ const SettingsForms = {
                             };" id="episodes-upgrade-warning-${index}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
                         </div>
                         
-                        <!-- Air Date Delay Setting (only visible for episodes and shows modes) -->
+                        <!-- Air Date Delay Setting (only visible when either upgrade or missing mode is in episodes mode) -->
                         <div class="setting-item" id="sonarr-air-date-delay-container-${index}" style="display: ${
         huntMissingMode === "episodes" ||
-        huntMissingMode === "shows" ||
-        upgradeMode === "episodes" ||
-        upgradeMode === "shows"
+        upgradeMode === "episodes"
           ? "block"
           : "none"
       }; border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
@@ -257,7 +255,7 @@ const SettingsForms = {
       }" style="width: 80px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
                                 <span style="color: #9ca3af; font-size: 14px;">days</span>
                             </div>
-                            <p class="setting-help">Wait this many days after an episode airs before searching for it. Allows better quality releases to appear. Only applies to episodes and shows modes. (0 = search immediately)</p>
+                            <p class="setting-help">Wait this many days after an episode airs before searching for it. Allows better quality releases to appear. Only applies when either upgrade or missing mode is set to episodes. (0 = search immediately)</p>
                         </div>
                         
                         <!-- Instance State Management -->
@@ -545,12 +543,10 @@ const SettingsForms = {
             ? upgradeModelSelect.value
             : "seasons_packs";
 
-          // Show if either missing or upgrade mode is episodes or shows
+          // Show if either missing or upgrade mode is episodes (not shows)
           const shouldShow =
             missingMode === "episodes" ||
-            missingMode === "shows" ||
-            upgradeMode === "episodes" ||
-            upgradeMode === "shows";
+            upgradeMode === "episodes";
 
           airDateDelayContainer.style.display = shouldShow ? "block" : "none";
         }
@@ -6800,12 +6796,10 @@ const SettingsForms = {
                 ? upgradeModeSelect.value
                 : "seasons_packs";
 
-              // Show if either missing or upgrade mode is episodes or shows
+              // Show if either missing or upgrade mode is episodes (not shows)
               const shouldShow =
                 missingMode === "episodes" ||
-                missingMode === "shows" ||
-                upgradeMode === "episodes" ||
-                upgradeMode === "shows";
+                upgradeMode === "episodes";
 
               airDateDelayContainer.style.display = shouldShow
                 ? "block"
