@@ -5,14 +5,12 @@ Supports multiple Arr applications running concurrently
 """
 
 import time
-import sys
-import os
 # import socket # No longer used directly
 import signal
 import importlib
 import logging
 import threading
-from typing import Dict, List, Optional, Callable, Union, Tuple
+from typing import Dict
 import datetime
 import traceback
 import pytz
@@ -25,9 +23,9 @@ from src.primary.utils.logger import setup_main_logger, get_logger # Import get_
 logger = setup_main_logger()
 
 # Import necessary modules
-from src.primary import config, settings_manager
+from src.primary import settings_manager
 # Removed keys_manager import as settings_manager handles API details
-from src.primary.state import check_state_reset, calculate_reset_time
+from src.primary.state import check_instance_state_reset, calculate_reset_time
 from src.primary.stats_manager import check_hourly_cap_exceeded
 # Instance list generator has been removed
 from src.primary.scheduler_engine import start_scheduler, stop_scheduler
@@ -68,7 +66,7 @@ def app_specific_loop(app_type: str) -> None:
         app_type: The type of Arr application (sonarr, radarr, lidarr, readarr)
     """
     from src.primary.cycle_tracker import update_next_cycle
-    
+
     app_logger = get_logger(app_type)
     app_logger.info(f"=== [{app_type.upper()}] Thread starting ===")
 
@@ -120,11 +118,11 @@ def app_specific_loop(app_type: str) -> None:
             missing_module = importlib.import_module('src.primary.apps.lidarr.missing')
             upgrade_module = importlib.import_module('src.primary.apps.lidarr.upgrade')
             # Use process_missing_albums as the function name
-            process_missing = getattr(missing_module, 'process_missing_albums') 
+            process_missing = getattr(missing_module, 'process_missing_albums')
             process_upgrades = getattr(upgrade_module, 'process_cutoff_upgrades')
             hunt_missing_setting = "hunt_missing_items"
             # Use hunt_upgrade_items
-            hunt_upgrade_setting = "hunt_upgrade_items" 
+            hunt_upgrade_setting = "hunt_upgrade_items"
         elif app_type == "readarr":
             missing_module = importlib.import_module('src.primary.apps.readarr.missing')
             upgrade_module = importlib.import_module('src.primary.apps.readarr.upgrade')
@@ -157,7 +155,7 @@ def app_specific_loop(app_type: str) -> None:
 
     # Create app-specific logger using provided function
     app_logger = logging.getLogger(f"huntarr.{app_type}")
-    
+
     while not stop_event.is_set():
         # --- Load Settings for this Cycle --- #
         try:
@@ -177,9 +175,6 @@ def app_specific_loop(app_type: str) -> None:
             stop_event.wait(60) # Wait before retrying
             continue
 
-        # --- State Reset Check --- #
-        check_state_reset(app_type)
-
         app_logger.info(f"=== Starting {app_type.upper()} cycle ===")
 
         # Mark cycle as started (set cyclelock to True)
@@ -192,7 +187,7 @@ def app_specific_loop(app_type: str) -> None:
 
         # Check if we need to use multi-instance mode
         instances_to_process = []
-        
+
         # Use the dynamically loaded function (if found)
         if get_instances_func:
             # Multi-instance mode supported
@@ -216,43 +211,46 @@ def app_specific_loop(app_type: str) -> None:
             api_url = app_settings.get("api_url")
             api_key = app_settings.get("api_key")
             instance_name = app_settings.get("name", f"{app_type.capitalize()} Default") # Use 'name' or default
-            
+
             if api_url and api_key:
                 app_logger.info(f"Processing {app_type} as single instance: {instance_name}")
                 # Create a list with a single dict matching the multi-instance structure
                 instances_to_process = [{
-                    "instance_name": instance_name, 
-                    "api_url": api_url, 
+                    "instance_name": instance_name,
+                    "api_url": api_url,
                     "api_key": api_key
                 }]
             else:
                 app_logger.warning(f"No 'get_configured_instances' function found and no valid single instance config (URL/Key) for {app_type}. Skipping cycle.")
                 stop_event.wait(sleep_duration)
                 continue
-            
+
         # If after all checks, instances_to_process is still empty
         if not instances_to_process:
             app_logger.warning(f"No valid {app_type} instances to process this cycle (unexpected state). Skipping.")
             stop_event.wait(sleep_duration)
             continue
-            
+
         # Process each instance dictionary returned by get_configured_instances
         processed_any_items = False
         enabled_instances = []
-        
+
         for instance_details in instances_to_process:
             if stop_event.is_set():
                 break
-                
+
             instance_name = instance_details.get("instance_name", "Default") # Use the dict from get_configured_instances
             app_logger.info(f"Processing {app_type} instance: {instance_name}")
-            
+
             # Get instance-specific settings from the instance_details dict
             api_url = instance_details.get("api_url", "")
             api_key = instance_details.get("api_key", "")
 
             # Get global/shared settings from app_settings loaded at the start of the loop
             # Example: monitored_only = app_settings.get("monitored_only", True)
+
+            # --- State Reset Check --- #
+            check_instance_state_reset(app_type, instance_name)
 
             # --- Connection Check --- #
             if not api_url or not api_key:
@@ -269,7 +267,7 @@ def app_specific_loop(app_type: str) -> None:
             except Exception as e:
                 app_logger.error(f"Error connecting to {app_type} instance '{instance_name}': {e}", exc_info=True)
                 continue # Skip this instance if connection fails
-                
+
             # --- API Cap Check --- #
             try:
                 # Check if hourly API cap is exceeded
@@ -311,7 +309,7 @@ def app_specific_loop(app_type: str) -> None:
 
             hunt_missing_enabled = hunt_missing_value > 0
             hunt_upgrade_enabled = hunt_upgrade_value > 0
-            
+
             # Debug logging for per-instance hunt values
             app_logger.info(f"Instance '{instance_name}' - Missing: {hunt_missing_value} (enabled: {hunt_missing_enabled}), Upgrade: {hunt_upgrade_value} (enabled: {hunt_upgrade_enabled})")
 
@@ -319,8 +317,8 @@ def app_specific_loop(app_type: str) -> None:
             # Get maximum_download_queue_size from general settings (still using minimum_download_queue_size key for backward compatibility)
             general_settings = settings_manager.load_settings('general')
             max_queue_size = general_settings.get("minimum_download_queue_size", -1)
-    
-            
+
+
             if max_queue_size >= 0:
                 try:
                     # Use instance details for queue check
@@ -332,18 +330,18 @@ def app_specific_loop(app_type: str) -> None:
                         app_logger.info(f"Queue size ({current_queue_size}) is below maximum ({max_queue_size}). Proceeding.")
                 except Exception as e:
                     app_logger.warning(f"Could not get download queue size for {instance_name}. Proceeding anyway. Error: {e}", exc_info=False) # Log less verbosely
-            
+
             # Prepare args dictionary for processing functions
             # Combine instance details with general app settings for the processing functions
             # Assuming app_settings already contains most general settings, add instance specifics
             combined_settings = app_settings.copy() # Start with general settings
             combined_settings.update(instance_details) # Add/overwrite with instance specifics (name, url, key)
-            
+
             # Ensure settings from database are consistently used for all apps
             combined_settings["api_timeout"] = settings_manager.get_advanced_setting("api_timeout", 120)
             combined_settings["command_wait_delay"] = settings_manager.get_advanced_setting("command_wait_delay", 1)
             combined_settings["command_wait_attempts"] = settings_manager.get_advanced_setting("command_wait_attempts", 600)
-            
+
             # Define the stop check function
             stop_check_func = stop_event.is_set
 
@@ -360,7 +358,7 @@ def app_specific_loop(app_type: str) -> None:
                     hunt_missing_mode = instance_details.get("hunt_missing_mode", "seasons_packs")
                     command_wait_delay = combined_settings.get("command_wait_delay", 1)
                     command_wait_attempts = combined_settings.get("command_wait_attempts", 600)
-                    
+
                     if app_type == "sonarr":
                         air_date_delay_days = instance_details.get("air_date_delay_days", 0)
                         processed_missing = process_missing(
@@ -380,7 +378,7 @@ def app_specific_loop(app_type: str) -> None:
                     else:
                         # For other apps that still use the old signature
                         processed_missing = process_missing(app_settings=combined_settings, stop_check=stop_check_func)
-                        
+
                     if processed_missing:
                         processed_any_items = True
                 except Exception as e:
@@ -399,7 +397,7 @@ def app_specific_loop(app_type: str) -> None:
                         upgrade_mode = instance_details.get("upgrade_mode", "seasons_packs")
                         command_wait_delay = combined_settings.get("command_wait_delay", 1)
                         command_wait_attempts = combined_settings.get("command_wait_attempts", 600)
-                        
+
                         processed_upgrades = process_upgrades(
                             api_url=api_url,
                             api_key=api_key,
@@ -415,7 +413,7 @@ def app_specific_loop(app_type: str) -> None:
                     else:
                         # For other apps that still use the old signature
                         processed_upgrades = process_upgrades(app_settings=combined_settings, stop_check=stop_check_func)
-                        
+
                     if processed_upgrades:
                         processed_any_items = True
                 except Exception as e:
@@ -436,23 +434,23 @@ def app_specific_loop(app_type: str) -> None:
             app_logger.info(f"=== {app_type.upper()} cycle finished. Processed items across instances. ===")
         else:
             app_logger.info(f"=== {app_type.upper()} cycle finished. No items processed in any instance. ===")
-            
+
         # Add state management summary logging for user clarity (only for hunting apps, not Swaparr)
         if app_type != "swaparr":
             try:
                 from src.primary.stateful_manager import get_state_management_summary
-                
+
                 # Get summary for each enabled instance with per-instance settings
                 instance_summaries = []
                 total_processed = 0
                 has_any_processed = False
-                
+
                 for instance_name in enabled_instances:
                     # Get per-instance settings
                     instance_hours = None
                     instance_enabled = True
                     instance_mode = "custom"
-                    
+
                     try:
                         # Look up the instance in the configured instances
                         if configured_instances and app_type in configured_instances:
@@ -465,10 +463,10 @@ def app_specific_loop(app_type: str) -> None:
                     except Exception as e:
                         app_logger.warning(f"Could not load instance settings for {instance_name}: {e}")
                         instance_hours = 168  # Default fallback
-                    
+
                     # Get summary for this instance
                     summary = get_state_management_summary(app_type, instance_name, instance_hours)
-                    
+
                     # Store instance-specific information
                     instance_summaries.append({
                         "name": instance_name,
@@ -479,16 +477,16 @@ def app_specific_loop(app_type: str) -> None:
                         "next_reset_time": summary["next_reset_time"],
                         "has_processed_items": summary["has_processed_items"]
                     })
-                    
+
                     # Only count if state management is enabled for this instance
                     if instance_enabled and summary["has_processed_items"]:
                         total_processed += summary["processed_count"]
                         has_any_processed = True
-                
+
                 # Log per-instance state management info
                 if instance_summaries:
                     app_logger.info(f"=== STATE MANAGEMENT SUMMARY FOR {app_type.upper()} ===")
-                    
+
                     for inst in instance_summaries:
                         if inst["enabled"]:
                             if inst["processed_count"] > 0:
@@ -497,7 +495,7 @@ def app_specific_loop(app_type: str) -> None:
                                 app_logger.info(f"  {inst['name']}: No items tracked yet, next reset: {inst['next_reset_time']} ({inst['hours']}h interval)")
                         else:
                             app_logger.info(f"  {inst['name']}: State management disabled")
-                    
+
                     # Overall summary
                     if not processed_any_items and has_any_processed:
                         # Items were skipped due to state management
@@ -511,37 +509,37 @@ def app_specific_loop(app_type: str) -> None:
                             app_logger.info(f"RESULT: No new items found. Total tracked across instances: {total_processed}")
                         else:
                             app_logger.info(f"RESULT: No items to process and no items tracked yet")
-                    
+
             except Exception as e:
                 app_logger.warning(f"Could not generate state management summary: {e}")
         else:
             # Swaparr uses its own state management for strikes and removed downloads
             app_logger.debug(f"Swaparr uses its own strike/removal tracking, not the hunting state manager")
-            
+
         # Calculate sleep duration (use configured or default value)
         sleep_seconds = app_settings.get("sleep_duration", 900)  # Default to 15 minutes
-                
+
         # Sleep with periodic checks for reset file
         # Calculate and format the time when the next cycle will begin
         # Use user's selected timezone for all time operations
-        
+
         # Get user's selected timezone
         user_tz = _get_user_timezone()
-        
+
         # Get current time in user's timezone - remove microseconds for clean timestamps
         now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
-        
+
         # Calculate next cycle time in user's timezone without microseconds
         next_cycle_time = now_user_tz + datetime.timedelta(seconds=sleep_seconds)
-        
+
         app_logger.debug(f"Current time ({user_tz}): {now_user_tz.strftime('%Y-%m-%d %H:%M:%S')}")
         app_logger.info(f"Next cycle will begin at {next_cycle_time.strftime('%Y-%m-%d %H:%M:%S')} ({user_tz})")
         app_logger.info(f"Sleep duration: {sleep_seconds} seconds")
-        
+
         # Update cycle tracking with user timezone time
         next_cycle_naive = next_cycle_time.replace(tzinfo=None) if next_cycle_time.tzinfo else next_cycle_time
         update_next_cycle(app_type, next_cycle_naive)
-        
+
         # Mark cycle as ended (set cyclelock to False) and update next cycle time
         # Use user's timezone for internal storage consistency
         try:
@@ -552,9 +550,9 @@ def app_specific_loop(app_type: str) -> None:
         except Exception as e:
             app_logger.warning(f"Failed to mark cycle end for {app_type}: {e}")
             # Non-critical, continue execution
-        
+
         app_logger.debug(f"Sleeping for {sleep_seconds} seconds before next cycle...")
-                
+
         # Use shorter sleep intervals and check for reset file
         wait_interval = 1  # Check every second to be more responsive
         elapsed = 0
@@ -563,7 +561,7 @@ def app_specific_loop(app_type: str) -> None:
             if stop_event.is_set():
                 app_logger.info("Stop event detected during sleep. Breaking out of sleep cycle.")
                 break
-                        
+
             # Check for database reset request
             try:
                 from src.primary.utils.database import get_database
@@ -571,36 +569,36 @@ def app_specific_loop(app_type: str) -> None:
                 reset_timestamp = db.get_pending_reset_request(app_type)
                 if reset_timestamp:
                     app_logger.info(f"!!! RESET REQUEST DETECTED !!! Manual cycle reset triggered for {app_type} (timestamp: {reset_timestamp}). Starting new cycle immediately.")
-                    
+
                     # Mark the reset request as processed
                     db.mark_reset_request_processed(app_type)
                     app_logger.info(f"Reset request processed for {app_type}. Starting new cycle now.")
                     break
             except Exception as e:
                 app_logger.error(f"Error checking reset request for {app_type}: {e}", exc_info=True)
-                        
+
             # Sleep for a short interval
             stop_event.wait(wait_interval)
             elapsed += wait_interval
-                    
+
             # If we've slept for at least 30 seconds, update the logger message every 30 seconds
             if elapsed > 0 and elapsed % 30 == 0:
                 app_logger.debug(f"Still sleeping, {sleep_seconds - elapsed} seconds remaining before next cycle...")
-                
+
     app_logger.info(f"=== [{app_type.upper()}] Thread stopped ====")
 
 def reset_app_cycle(app_type: str) -> bool:
     """
     Trigger a manual reset of an app's cycle.
-    
+
     Args:
         app_type: The type of Arr application (sonarr, radarr, lidarr, readarr, etc.)
-        
+
     Returns:
         bool: True if the reset was triggered, False if the app is not running
     """
     logger.info(f"Manual cycle reset requested for {app_type} - Creating reset request")
-    
+
     # Create a reset request in the database
     try:
         from src.primary.utils.database import get_database
@@ -675,7 +673,7 @@ def shutdown_handler(signum, frame):
     signal_name = "SIGINT" if signum == signal.SIGINT else "SIGTERM" if signum == signal.SIGTERM else f"Signal {signum}"
     logger.info(f"Received {signal_name}. Initiating background tasks shutdown...")
     stop_event.set() # Signal all threads to stop
-    
+
     # Log shutdown progress for Docker diagnostics
     logger.info("Background shutdown initiated - threads will stop gracefully")
 
@@ -684,7 +682,7 @@ def shutdown_threads():
     import time
     shutdown_start = time.time()
     logger.info("Waiting for all app threads to stop...")
-    
+
     # Stop the hourly API cap scheduler
     global hourly_cap_scheduler_thread
     if hourly_cap_scheduler_thread and hourly_cap_scheduler_thread.is_alive():
@@ -695,7 +693,7 @@ def shutdown_threads():
             logger.warning("Hourly API cap scheduler did not stop gracefully")
         else:
             logger.info("Hourly API cap scheduler stopped")
-    
+
     # Stop the Prowlarr stats refresher
     global prowlarr_stats_thread
     if prowlarr_stats_thread and prowlarr_stats_thread.is_alive():
@@ -716,7 +714,7 @@ def shutdown_threads():
             logger.warning("Swaparr thread did not stop gracefully")
         else:
             logger.info("Swaparr thread stopped")
-    
+
     # Stop the scheduler engine
     try:
         logger.info("Stopping schedule action engine...")
@@ -724,12 +722,12 @@ def shutdown_threads():
         logger.info("Schedule action engine stopped successfully")
     except Exception as e:
         logger.error(f"Error stopping schedule action engine: {e}")
-    
+
     # Wait for all app threads to terminate
     active_threads = [name for name, thread in app_threads.items() if thread.is_alive()]
     if active_threads:
         logger.info(f"Waiting for {len(active_threads)} app threads to stop: {', '.join(active_threads)}")
-        
+
         for name, thread in app_threads.items():
             if thread.is_alive():
                 logger.debug(f"Waiting for {name} thread to stop...")
@@ -738,7 +736,7 @@ def shutdown_threads():
                     logger.warning(f"{name} thread did not stop gracefully within 10 seconds")
                 else:
                     logger.debug(f"{name} thread stopped successfully")
-    
+
     shutdown_duration = time.time() - shutdown_start
     logger.info(f"All app threads stopped. Shutdown completed in {shutdown_duration:.2f} seconds")
 
@@ -747,26 +745,26 @@ def hourly_cap_scheduler_loop():
     Checks time every 30 seconds and resets caps if needed at the top of the hour
     """
     logger.info("Starting hourly API cap scheduler loop")
-    
+
     try:
         from src.primary.stats_manager import reset_hourly_caps
-        
+
         # Initial check in case we're starting right at the top of an hour
         current_time = datetime.datetime.now()
         if current_time.minute == 0:
             logger.debug(f"Initial hourly reset triggered at {current_time.hour}:00")
             reset_hourly_caps()
-        
+
         # Main monitoring loop
         while not stop_event.is_set():
             try:
                 # Sleep for 30 seconds between checks
                 # This ensures we won't miss the top of the hour
                 stop_event.wait(30)
-                
+
                 if stop_event.is_set():
                     break
-                    
+
                 # Check if it's the top of the hour (00 minute mark)
                 current_time = datetime.datetime.now()
                 if current_time.minute == 0:
@@ -776,17 +774,17 @@ def hourly_cap_scheduler_loop():
                         logger.debug(f"Successfully reset hourly API caps at {current_time.hour}:00")
                     else:
                         logger.error(f"Failed to reset hourly API caps at {current_time.hour}:00")
-                
+
             except Exception as e:
                 logger.error(f"Error in hourly cap scheduler: {e}")
                 logger.error(traceback.format_exc())
                 # Sleep briefly to avoid spinning in case of repeated errors
                 time.sleep(5)
-                
+
     except Exception as e:
         logger.error(f"Fatal error in hourly cap scheduler: {e}")
         logger.error(traceback.format_exc())
-    
+
     logger.info("Hourly API cap scheduler stopped")
 
 def prowlarr_stats_loop():
@@ -839,17 +837,17 @@ def swaparr_app_loop():
     """Dedicated Swaparr processing loop that follows same patterns as other apps"""
     swaparr_logger = get_logger("swaparr")
     swaparr_logger.info("Swaparr thread started")
-    
+
     try:
         from src.primary.apps.swaparr.handler import run_swaparr
         from src.primary.settings_manager import load_settings
         from src.primary.cycle_tracker import start_cycle, end_cycle, update_next_cycle
-        
+
         while not stop_event.is_set():
             try:
                 # Load Swaparr settings
                 swaparr_settings = load_settings("swaparr")
-                
+
                 if not swaparr_settings or not swaparr_settings.get("enabled", False):
                     # Swaparr is disabled - no need to log this repeatedly
                     # Sleep for 30 seconds when disabled, then check again
@@ -857,23 +855,23 @@ def swaparr_app_loop():
                         continue
                     else:
                         break
-                
+
                 # Get sleep duration from settings
                 sleep_duration = swaparr_settings.get("sleep_duration", 900)
-                
+
                 # Get user's timezone
                 user_tz = _get_user_timezone()
-                
+
                 # Calculate next cycle time in user's timezone
                 now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
                 next_cycle_time = now_user_tz + datetime.timedelta(seconds=sleep_duration)
-                
+
                 # Start cycle tracking
                 start_cycle("swaparr")
-                
+
                 # Start cycle
                 swaparr_logger.info("=== SWAPARR cycle started. Processing stalled downloads across all instances. ===")
-                
+
                 try:
                     # Run Swaparr processing
                     run_swaparr()
@@ -881,17 +879,17 @@ def swaparr_app_loop():
                 except Exception as e:
                     swaparr_logger.error(f"Error during Swaparr processing: {e}", exc_info=True)
                     swaparr_logger.info("=== SWAPARR cycle finished with errors. ===")
-                
+
                 # End cycle tracking
                 next_cycle_naive = next_cycle_time.replace(tzinfo=None) if next_cycle_time.tzinfo else next_cycle_time
                 end_cycle("swaparr", next_cycle_naive)
                 update_next_cycle("swaparr", next_cycle_naive)
-                
+
                 # Sleep duration and next cycle info (like other apps)
                 swaparr_logger.debug(f"Current time ({user_tz}): {now_user_tz.strftime('%Y-%m-%d %H:%M:%S')}")
                 swaparr_logger.info(f"Next cycle will begin at {next_cycle_time.strftime('%Y-%m-%d %H:%M:%S')} ({user_tz})")
                 swaparr_logger.info(f"Sleep duration: {sleep_duration} seconds")
-                
+
                 # Sleep with responsiveness to stop events and reset requests (like other apps)
                 elapsed = 0
                 wait_interval = 5  # Check every 5 seconds for responsiveness
@@ -903,53 +901,53 @@ def swaparr_app_loop():
                         reset_timestamp = db.get_pending_reset_request("swaparr")
                         if reset_timestamp:
                             swaparr_logger.info(f"!!! RESET REQUEST DETECTED !!! Manual cycle reset triggered for swaparr (timestamp: {reset_timestamp}). Starting new cycle immediately.")
-                            
+
                             # Mark the reset request as processed
                             db.mark_reset_request_processed("swaparr")
                             swaparr_logger.info(f"Reset request processed for swaparr. Starting new cycle now.")
                             break
                     except Exception as e:
                         swaparr_logger.error(f"Error checking reset request for swaparr: {e}", exc_info=True)
-                    
+
                     # Check for stop event
                     if stop_event.is_set():
                         swaparr_logger.info("Stop event detected during sleep. Breaking out of sleep cycle.")
                         break
-                    
+
                     # Sleep for a short interval
                     stop_event.wait(wait_interval)
                     elapsed += wait_interval
-                    
+
                     # Log progress every 30 seconds (like other apps)
                     if elapsed > 0 and elapsed % 30 == 0:
                         swaparr_logger.debug(f"Still sleeping, {sleep_duration - elapsed} seconds remaining before next cycle...")
-                
+
             except Exception as e:
                 swaparr_logger.error(f"Unexpected error in Swaparr loop: {e}", exc_info=True)
                 # Sleep briefly to avoid spinning in case of repeated errors
                 time.sleep(60)
-                
+
     except Exception as e:
         swaparr_logger.error(f"Fatal error in Swaparr thread: {e}", exc_info=True)
-    
+
     swaparr_logger.info("Swaparr thread stopped")
 
 def start_hourly_cap_scheduler():
     """Start the hourly API cap scheduler thread"""
     global hourly_cap_scheduler_thread
-    
+
     if hourly_cap_scheduler_thread and hourly_cap_scheduler_thread.is_alive():
         logger.info("Hourly API cap scheduler already running")
         return
-    
+
     # Create and start the scheduler thread
     hourly_cap_scheduler_thread = threading.Thread(
-        target=hourly_cap_scheduler_loop, 
-        name="HourlyCapScheduler", 
+        target=hourly_cap_scheduler_loop,
+        name="HourlyCapScheduler",
         daemon=True
     )
     hourly_cap_scheduler_thread.start()
-    
+
     logger.info(f"Hourly API cap scheduler started. Thread is alive: {hourly_cap_scheduler_thread.is_alive()}")
 
 def start_prowlarr_stats_thread():
@@ -969,56 +967,56 @@ def start_prowlarr_stats_thread():
 def start_swaparr_thread():
     """Start the dedicated Swaparr processing thread"""
     global swaparr_thread
-    
+
     if swaparr_thread and swaparr_thread.is_alive():
         logger.info("Swaparr thread already running")
         return
-    
+
     # Create and start the Swaparr thread
     swaparr_thread = threading.Thread(
-        target=swaparr_app_loop, 
-        name="SwaparrApp", 
+        target=swaparr_app_loop,
+        name="SwaparrApp",
         daemon=True
     )
     swaparr_thread.start()
-    
+
     logger.info(f"Swaparr thread started. Thread is alive: {swaparr_thread.is_alive()}")
 
 def start_huntarr():
     """Main entry point for Huntarr background tasks."""
     logger.info(f"--- Starting Huntarr Background Tasks v{__version__} --- ")
-    
+
 
     # Migration environment variable no longer used
-        
+
     # Start the hourly API cap scheduler
     try:
         start_hourly_cap_scheduler()
         logger.info("Hourly API cap scheduler started successfully")
     except Exception as e:
         logger.error(f"Failed to start hourly API cap scheduler: {e}")
-        
+
     # Start the Swaparr processing thread
     try:
         start_swaparr_thread()
         logger.info("Swaparr thread started successfully")
     except Exception as e:
         logger.error(f"Failed to start Swaparr thread: {e}")
-    
+
     # Start the Prowlarr stats refresher
     try:
         start_prowlarr_stats_thread()
         logger.info("Prowlarr stats refresher started successfully")
     except Exception as e:
         logger.error(f"Failed to start Prowlarr stats refresher: {e}")
-         
+
     # Start the scheduler engine
     try:
         start_scheduler()
         logger.info("Schedule action engine started successfully")
     except Exception as e:
         logger.error(f"Failed to start schedule action engine: {e}")
-        
+
     # Configuration logging has been disabled to reduce log spam
     # Settings are loaded and used internally without verbose logging
 
