@@ -12,9 +12,15 @@ from typing import Dict, Any, Set
 
 import pytz
 
-from src.primary.settings_manager import get_advanced_setting, load_settings
+from src.primary.settings_manager import (
+    get_advanced_setting,
+    load_instance_settings,
+    load_settings,
+)
 from src.primary.utils.database import get_database
+from src.primary.utils.logger import get_logger
 
+logger = get_logger("huntarr")
 stateful_logger = logging.getLogger("stateful_manager")
 
 DEFAULT_HOURS = 168  # Default 7 days (168 hours)
@@ -346,37 +352,22 @@ def get_instance_state_management_summary(app_type: str, instance_name: str) -> 
         Dict containing processed count, next reset time, and other useful info
     """
     try:
+        settings = load_instance_settings(app_type, instance_name)
+
+        if settings["state_management_mode"] == "disabled":
+            return {
+                "state_management_mode": settings["state_management_mode"],
+                "state_management_enabled": False,
+                "processed_count": 0,
+                "next_reset_time": None,
+                "state_management_hours": settings["state_management_hours"],
+                "has_processed_items": False
+            }
+
         db = get_database()
 
-        # Use per-instance hours if found, otherwise fall back to global setting
-        app_settings = load_settings(app_type)
-        if app_settings and 'instances' in app_settings:
-            for instance in app_settings['instances']:
-                if instance.get('name') == instance_name:
-                    instance_mode = instance.get('state_management_mode', 'custom')
-                    state_management_enabled = (instance_mode != "disabled")
-                    if not state_management_enabled:
-                        return {
-                            "instance_mode": "custom",
-                            "state_management_enabled": False,
-                            "processed_count": 0,
-                            "next_reset_time": None,
-                            "expiration_hours": DEFAULT_HOURS,
-                            "has_processed_items": False
-                        }
-                    expiration_hours = instance.get('state_management_hours', DEFAULT_HOURS)
-                    break
-        else:
-            instance_mode = "custom"
-            state_management_enabled = True
-            expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
-
         # Initialize per-instance state management if not already done
-        db.initialize_instance_state_management(app_type, instance_name, expiration_hours)
-
-        # Get processed IDs count
-        processed_ids = get_processed_ids(app_type, instance_name)
-        processed_count = len(processed_ids)
+        db.initialize_instance_state_management(app_type, instance_name, settings["state_management_hours"])
 
         # Get per-instance lock info for accurate next reset time
         lock_info = db.get_instance_lock_info(app_type, instance_name)
@@ -392,24 +383,67 @@ def get_instance_state_management_summary(app_type: str, instance_name: str) -> 
             stateful_logger.warning("No lock info found for %s/%s after initialization", app_type, instance_name)
             next_reset_time = None
 
+        # Get processed IDs count
+        processed_ids = get_processed_ids(app_type, instance_name)
+        processed_count = len(processed_ids)
+
         return {
-            "instance_mode": instance_mode,
-            "state_management_enabled": state_management_enabled,
+            "state_management_mode": settings["state_management_mode"],
+            "state_management_enabled": settings["state_management_mode"] != "disabled",
             "processed_count": processed_count,
             "next_reset_time": next_reset_time,
-            "expiration_hours": expiration_hours,
+            "state_management_hours": settings["state_management_hours"],
             "has_processed_items": processed_count > 0
         }
     except Exception as e:
         stateful_logger.error("Error getting state management summary for %s/%s: %s", app_type, instance_name, e)
         return {
-            "instance_mode": "custom",
+            "state_management_mode": "custom",
             "state_management_enabled": True,
             "processed_count": 0,
             "next_reset_time": None,
-            "expiration_hours": DEFAULT_HOURS,
+            "state_management_hours": DEFAULT_HOURS,
             "has_processed_items": False
         }
+
+
+def has_instance_state_expired(app_type: str, instance_name: str) -> bool:
+    """
+    Check if the instance's state needs to be reset based on the reset interval.
+
+    Args:
+        app_type: The type of app (sonarr, radarr, etc.)
+        instance_name: The name of the instance for which to reset state
+
+    Returns:
+        bool: True if the state has expired, False otherwise.
+    """
+    lock_info = get_database().get_instance_lock_info(app_type, instance_name)
+
+    logger.debug(
+        "State check for %s.%s: %.1f hours since last reset (interval: %dh)",
+        app_type,
+        instance_name,
+        (time.time() - lock_info.get("created_at")) / 3600,  # hours since last reset
+        lock_info.get("expiration_hours"),
+    )
+
+    return int(time.time()) >= lock_info.get("expires_at", float('inf'))
+
+
+def reset_instance_state_management(app_type: str, instance_name: str) -> bool:
+    """
+    Reset the state management for a specific app instance.
+
+    Args:
+        app_type: The type of app (sonarr, radarr, etc.)
+        instance_name: The name of the instance for which to reset state
+
+    Returns:
+        bool: True if successful, False otherwise.
+    """
+    settings = load_instance_settings(app_type, instance_name)
+    return get_database().reset_instance_state_management(app_type, instance_name, settings["state_management_hours"])
 
 
 def _get_user_timezone():

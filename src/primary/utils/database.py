@@ -1438,14 +1438,6 @@ class HuntarrDatabase:
         """Set the last reset time for a specific app type"""
         self.set_state_data(app_type, "last_reset", reset_time)
 
-    def get_instance_last_reset_time_state(self, app_type: str, instance_name: str) -> Optional[str]:
-        """Get the last reset time for a specific app type and instance name"""
-        return self.get_state_data(app_type, f"{instance_name}::last_reset")
-
-    def set_instance_last_reset_time_state(self, app_type: str, instance_name: str, reset_time: str):
-        """Set the last reset time for a specific app type and instance name"""
-        self.set_state_data(app_type, f"{instance_name}::last_reset", reset_time)
-
     # Swaparr State Management Methods
     def get_swaparr_state_data(self, app_name: str, state_type: str) -> Any:
         """Get Swaparr state data for a specific app name and state type"""

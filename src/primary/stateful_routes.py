@@ -11,9 +11,10 @@ from flask import Blueprint, request, Response
 
 from src.primary.stateful_manager import (
     get_stateful_management_info,
+    get_instance_state_management_summary,
+    reset_instance_state_management,
     reset_stateful_management,
     update_lock_expiration,
-    get_instance_state_management_summary
 )
 from src.primary.utils.database import get_database
 from src.primary.utils.logger import get_logger
@@ -68,17 +69,7 @@ def reset_stateful():
         instance_name = data.get('instance_name')
 
         if app_type and instance_name:
-            # Per-instance reset
-            try:
-                summary = get_instance_state_management_summary(app_type, instance_name)
-                instance_hours = summary.get("expiration_hours")
-            except Exception as e:
-                stateful_logger.warning("Could not load instance settings for %s/%s: %s", app_type, instance_name, e)
-
-            # Reset per-instance state management
-            db = get_database()
-            success = db.reset_instance_state_management(app_type, instance_name, instance_hours)
-
+            success = reset_instance_state_management(app_type, instance_name)
             if success:
                 stateful_logger.info("Successfully reset state management for %s/%s", app_type, instance_name)
                 response_data = {"success": True, "message": f"State management reset successfully for {app_type}/{instance_name}"}
@@ -159,7 +150,7 @@ def get_summary():
             "success": True,
             "processed_count": summary.get("processed_count", 0),
             "next_reset_time": summary.get("next_reset_time"),
-            "expiration_hours": summary.get("expiration_hours"),
+            "expiration_hours": summary.get("state_management_hours"),
             "has_processed_items": summary.get("has_processed_items", False),
             "state_management_enabled": summary.get("state_management_enabled")
         })

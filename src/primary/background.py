@@ -22,8 +22,12 @@ from src.primary.apps.swaparr.handler import run_swaparr
 from src.primary.cycle_tracker import end_cycle, start_cycle, update_next_cycle
 from src.primary.scheduler_engine import start_scheduler, stop_scheduler
 from src.primary.settings_manager import load_settings
-from src.primary.state import check_instance_state_reset, calculate_reset_time
-from src.primary.stateful_manager import get_instance_state_management_summary
+from src.primary.state import calculate_reset_time
+from src.primary.stateful_manager import (
+    get_instance_state_management_summary,
+    has_instance_state_expired,
+    reset_instance_state_management,
+)
 from src.primary.stats_manager import check_hourly_cap_exceeded
 from src.primary.utils.database import get_database
 from src.primary.utils.logger import setup_main_logger, get_logger
@@ -243,7 +247,9 @@ def app_specific_loop(app_type: str) -> None:
             api_key = instance_details.get("api_key", "")
 
             # --- State Reset Check --- #
-            check_instance_state_reset(app_type, instance_name)
+            if has_instance_state_expired(app_type, instance_name):
+                app_logger.info("State has expired for %s instance '%s'. Resetting state.", app_type, instance_name)
+                reset_instance_state_management(app_type, instance_name)
 
             # --- Connection Check --- #
             if not api_url or not api_key:
@@ -442,8 +448,8 @@ def app_specific_loop(app_type: str) -> None:
                     instance_summaries.append({
                         "name": instance_name,
                         "enabled": summary["state_management_enabled"],
-                        "mode": summary["instance_mode"],
-                        "hours": summary["expiration_hours"],
+                        "mode": summary["state_management_mode"],
+                        "hours": summary["state_management_hours"],
                         "processed_count": summary["processed_count"],
                         "next_reset_time": summary["next_reset_time"],
                         "has_processed_items": summary["has_processed_items"]
