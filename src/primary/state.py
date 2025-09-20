@@ -5,15 +5,14 @@ Handles all persistence of program state using database
 """
 
 import datetime
+
+import pytz
+
 from src.primary import settings_manager
-
-# Import database
 from src.primary.utils.database import get_database
-
-# Get the logger at module level
 from src.primary.utils.logger import get_logger
-logger = get_logger("huntarr")
 
+logger = get_logger("huntarr")
 
 
 def get_last_reset_time(app_type: str) -> datetime.datetime:
@@ -36,13 +35,14 @@ def get_last_reset_time(app_type: str) -> datetime.datetime:
         if reset_time_str:
             return datetime.datetime.fromisoformat(reset_time_str)
     except Exception as e:
-        logger.error(f"Error reading last reset time for {app_type}: {e}")
+        logger.error("Error reading last reset time for %s: %s", app_type, e)
 
     # If no reset time exists, initialize it with current time and return current time
-    logger.info(f"No reset time found for {app_type}, initializing with current time")
+    logger.info("No reset time found for %s, initializing with current time", app_type)
     current_time = datetime.datetime.now()
     set_last_reset_time(current_time, app_type)
     return current_time
+
 
 def set_last_reset_time(reset_time: datetime.datetime, app_type: str) -> None:
     """
@@ -60,7 +60,8 @@ def set_last_reset_time(reset_time: datetime.datetime, app_type: str) -> None:
         db = get_database()
         db.set_last_reset_time_state(app_type, reset_time.isoformat())
     except Exception as e:
-        logger.error(f"Error writing last reset time for {app_type}: {e}")
+        logger.error("Error writing last reset time for %s: %s", app_type, e)
+
 
 def check_state_reset(app_type: str) -> bool:
     """
@@ -87,26 +88,27 @@ def check_state_reset(app_type: str) -> bool:
     hours_passed = delta.total_seconds() / 3600
 
     # Log every cycle to help diagnose state reset issues
-    logger.debug(f"State check for {app_type}: {hours_passed:.1f} hours since last reset (interval: {reset_interval}h)")
+    logger.debug("State check for %s: %.1f hours since last reset (interval: %dh)", app_type, hours_passed, reset_interval)
 
     if hours_passed >= reset_interval:
-        logger.warning(f"State files for {app_type} will be reset after {hours_passed:.1f} hours (interval: {reset_interval}h)")
-        logger.warning(f"This will cause all previously processed media to be eligible for processing again")
+        logger.warning("State files for %s will be reset after %.1f hours (interval: %dh)", app_type, hours_passed, reset_interval)
+        logger.warning("This will cause all previously processed media to be eligible for processing again")
 
         # Add additional safeguard - only reset if more than double the interval has passed
         # This helps prevent accidental resets due to clock issues or other anomalies
         if hours_passed >= (reset_interval * 2):
-            logger.info(f"Confirmed state reset for {app_type} after {hours_passed:.1f} hours")
+            logger.info("Confirmed state reset for %s after %.1f hours", app_type, hours_passed)
             clear_processed_ids(app_type)
             set_last_reset_time(now, app_type)
             return True
         else:
-            logger.info(f"State reset postponed for {app_type} - will proceed when {reset_interval * 2}h have passed")
+            logger.info("State reset postponed for %s - will proceed when %.1f hours have passed", app_type, reset_interval * 2)
             # Update last reset time partially to avoid immediate reset next cycle
             half_delta = datetime.timedelta(hours=reset_interval/2)
             set_last_reset_time(now - half_delta, app_type)
 
     return False
+
 
 def get_instance_last_reset_time(app_type: str, instance_name: str) -> datetime.datetime:
     """
@@ -133,13 +135,14 @@ def get_instance_last_reset_time(app_type: str, instance_name: str) -> datetime.
         if reset_time_str:
             return datetime.datetime.fromisoformat(reset_time_str)
     except Exception as e:
-        logger.error(f"Error reading last reset time for {app_type} instance '{instance_name}': {e}")
+        logger.error("Error reading last reset time for %s instance '%s': %s", app_type, instance_name, e)
 
     # If no reset time exists, initialize it with current time and return current time
-    logger.info(f"No reset time found for {app_type} instance '{instance_name}', initializing with current time")
+    logger.info("No reset time found for %s instance '%s', initializing with current time", app_type, instance_name)
     current_time = datetime.datetime.now()
     set_instance_last_reset_time(current_time, app_type, instance_name)
     return current_time
+
 
 def set_instance_last_reset_time(reset_time: datetime.datetime, app_type: str, instance_name: str) -> None:
     """
@@ -161,7 +164,8 @@ def set_instance_last_reset_time(reset_time: datetime.datetime, app_type: str, i
         db = get_database()
         db.set_instance_last_reset_time_state(app_type, instance_name, reset_time.isoformat())
     except Exception as e:
-        logger.error(f"Error writing last reset time for {app_type} instance '{instance_name}': {e}")
+        logger.error("Error writing last reset time for %s instance '%s': %s", app_type, instance_name, e)
+
 
 def check_instance_state_reset(app_type: str, instance_name: str) -> None:
     """
@@ -185,7 +189,7 @@ def check_instance_state_reset(app_type: str, instance_name: str) -> None:
 
     app_settings = settings_manager.load_settings(app_type)
     if not app_settings:
-        logger.error(f"Could not load settings for {app_type}.")
+        logger.error("Could not load settings for %s.", app_type)
         return False
 
     # Use a much longer default interval (1 week = 168 hours) to prevent frequent resets
@@ -196,7 +200,7 @@ def check_instance_state_reset(app_type: str, instance_name: str) -> None:
             reset_interval = instance.get("state_management_hours", default_reset_interval)
             break
     else:
-        logger.error(f"Instance '{instance_name}' not found in settings for {app_type}.")
+        logger.error("Instance '%s' not found in settings for %s.", instance_name, app_type)
         return False
 
     last_reset = get_instance_last_reset_time(app_type, instance_name)
@@ -206,26 +210,28 @@ def check_instance_state_reset(app_type: str, instance_name: str) -> None:
     hours_passed = delta.total_seconds() / 3600
 
     # Log every cycle to help diagnose state reset issues
-    logger.debug(f"State check for {app_type} instance '{instance_name}': {hours_passed:.1f} hours since last reset (interval: {reset_interval}h)")
+    logger.debug("State check for %s instance '%s': %.1f hours since last reset (interval: %dh)", app_type, instance_name, hours_passed, reset_interval)
 
     if hours_passed >= reset_interval:
-        logger.warning(f"State files for {app_type} instance '{instance_name}' will be reset after {hours_passed:.1f} hours (interval: {reset_interval}h)")
-        logger.warning(f"This will cause all previously processed media to be eligible for processing again")
+        logger.warning("State files for %s instance '%s' will be reset after %.1f hours (interval: %dh)", app_type, instance_name, hours_passed, reset_interval)
+        logger.warning("This will cause all previously processed media to be eligible for processing again")
 
         # Add additional safeguard - only reset if more than double the interval has passed
         # This helps prevent accidental resets due to clock issues or other anomalies
         if hours_passed >= (reset_interval * 2):
-            logger.info(f"Confirmed state reset for {app_type} instance '{instance_name}' after {hours_passed:.1f} hours")
+            logger.info("Confirmed state reset for %s instance '%s' after %.1f hours", app_type, instance_name, hours_passed)
+            # TODO: db.reset_instance_state_management
             clean_instance_processed_ids(app_type, instance_name)
             set_instance_last_reset_time(now, app_type, instance_name)
             return True
         else:
-            logger.info(f"State reset postponed for {app_type} instance '{instance_name}' - will proceed when {reset_interval * 2}h have passed")
+            logger.info("State reset postponed for %s instance '%s' - will proceed when %.1f hours have passed", app_type, instance_name, reset_interval * 2)
             # Update last reset time partially to avoid immediate reset next cycle
             half_delta = datetime.timedelta(hours=reset_interval/2)
             set_instance_last_reset_time(now - half_delta, app_type, instance_name)
 
     return False
+
 
 def clear_processed_ids(app_type: str) -> None:
     """
@@ -241,9 +247,10 @@ def clear_processed_ids(app_type: str) -> None:
     try:
         db = get_database()
         db.clear_processed_ids_state(app_type)
-        logger.info(f"Cleared processed IDs for {app_type}")
+        logger.info("Cleared processed IDs for %s", app_type)
     except Exception as e:
-        logger.error(f"Error clearing processed IDs for {app_type}: {e}")
+        logger.error("Error clearing processed IDs for %s: %s", app_type, e)
+
 
 def clean_instance_processed_ids(app_type: str, instance_name: str) -> None:
     """
@@ -264,9 +271,10 @@ def clean_instance_processed_ids(app_type: str, instance_name: str) -> None:
     try:
         db = get_database()
         db.clear_instance_processed_ids(app_type, instance_name)
-        logger.info(f"Cleared processed IDs for {app_type} instance '{instance_name}'")
+        logger.info("Cleared processed IDs for %s instance '%s'", app_type, instance_name)
     except Exception as e:
-        logger.error(f"Error clearing processed IDs for {app_type} instance '{instance_name}': {e}")
+        logger.error("Error clearing processed IDs for %s instance '%s': %s", app_type, instance_name, e)
+
 
 def _get_user_timezone():
     """Get the user's selected timezone from general settings"""
@@ -274,9 +282,9 @@ def _get_user_timezone():
         from src.primary.utils.timezone_utils import get_user_timezone
         return get_user_timezone()
     except Exception as e:
-        logger.warning(f"Could not get user timezone, defaulting to UTC: {e}")
-        import pytz
+        logger.warning("Could not get user timezone, defaulting to UTC: %s", e)
         return pytz.UTC
+
 
 def calculate_reset_time(app_type: str) -> str:
     """
@@ -300,7 +308,6 @@ def calculate_reset_time(app_type: str) -> str:
     user_tz = _get_user_timezone()
 
     # Convert last reset to user timezone (assuming it was stored as naive UTC)
-    import pytz
     if last_reset.tzinfo is None:
         last_reset_utc = pytz.UTC.localize(last_reset)
     else:
@@ -327,6 +334,7 @@ def calculate_reset_time(app_type: str) -> str:
         days = hours / 24
         return f"Next reset: in {int(days)} days"
 
+
 def reset_state_file(app_type: str, state_type: str) -> bool:
     """
     Reset a specific state file for an app type.
@@ -345,11 +353,12 @@ def reset_state_file(app_type: str, state_type: str) -> bool:
     try:
         db = get_database()
         db.set_processed_ids_state(app_type, state_type, [])
-        logger.info(f"Reset {state_type} state for {app_type}")
+        logger.info("Reset %s state for %s", state_type, app_type)
         return True
     except Exception as e:
-        logger.error(f"Error resetting {state_type} state for {app_type}: {e}")
+        logger.error("Error resetting %s state for %s: %s", state_type, app_type, e)
         return False
+
 
 def init_state_files() -> None:
     """Initialize state data for all app types in database"""
@@ -368,6 +377,7 @@ def init_state_files() -> None:
             if not db.get_last_reset_time_state(app_type):
                 db.set_last_reset_time_state(app_type, datetime.datetime.fromtimestamp(0).isoformat())
     except Exception as e:
-        logger.error(f"Error initializing state data: {e}")
+        logger.error("Error initializing state data: %s", e)
+
 
 init_state_files()

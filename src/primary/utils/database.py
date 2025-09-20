@@ -4,17 +4,22 @@ Replaces all JSON file operations with SQLite database for better performance an
 Handles both app configurations, general settings, and stateful management data.
 """
 
-import os
+import hashlib
 import json
+import logging
+import platform
+import os
+import random
+import shutil
 import sqlite3
+import threading
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Set
-from datetime import datetime, timedelta
-import logging
-import time
-import shutil
 
 logger = logging.getLogger(__name__)
+
 
 class HuntarrDatabase:
     """Database manager for all Huntarr configurations and settings"""
@@ -54,7 +59,7 @@ class HuntarrDatabase:
             return conn
         except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
             if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
-                logger.error(f"Database corruption detected: {e}")
+                logger.error("Database corruption detected: %s", e)
                 self._handle_database_corruption()
                 # Try connecting again after recovery
                 conn = sqlite3.connect(self.db_path)
@@ -79,7 +84,6 @@ class HuntarrDatabase:
             return config_path / "huntarr.db"
 
         # Check if we're on Windows and use AppData
-        import platform
         if platform.system() == "Windows":
             appdata = os.environ.get("APPDATA", os.path.expanduser("~"))
             windows_config_dir = Path(appdata) / "Huntarr"
@@ -94,33 +98,27 @@ class HuntarrDatabase:
         data_dir.mkdir(parents=True, exist_ok=True)
         return data_dir / "huntarr.db"
 
-
-
     def _handle_database_corruption(self):
         """Handle database corruption by creating backup and starting fresh"""
-        import time
-
-        logger.error(f"Handling database corruption for: {self.db_path}")
-
+        logger.error("Handling database corruption for: %s", self.db_path)
         try:
             # Create backup of corrupted database if it exists
             if self.db_path.exists():
                 backup_path = self.db_path.parent / f"huntarr_corrupted_backup_{int(time.time())}.db"
                 self.db_path.rename(backup_path)
-                logger.warning(f"Corrupted database backed up to: {backup_path}")
+                logger.warning("Corrupted database backed up to: %s", backup_path)
                 logger.warning("Starting with fresh database - all previous data has been backed up but will be lost")
 
             # Ensure the corrupted file is completely removed
             if self.db_path.exists():
                 self.db_path.unlink()
-
         except Exception as backup_error:
-            logger.error(f"Error during database corruption recovery: {backup_error}")
+            logger.error("Error during database corruption recovery: %s", backup_error)
             # Force remove the corrupted file
             try:
                 if self.db_path.exists():
                     self.db_path.unlink()
-            except:
+            except Exception:
                 pass
 
     def _check_database_integrity(self) -> bool:
@@ -132,10 +130,10 @@ class HuntarrDatabase:
                 if result and result[0] == "ok":
                     return True
                 else:
-                    logger.error(f"Database integrity check failed: {result}")
+                    logger.error("Database integrity check failed: %s", result)
                     return False
         except Exception as e:
-            logger.error(f"Database integrity check failed with error: {e}")
+            logger.error("Database integrity check failed with error: %s", e)
             return False
 
     def perform_integrity_check(self, repair: bool = False) -> dict:
@@ -175,7 +173,7 @@ class HuntarrDatabase:
                             else:
                                 logger.error("Database repair failed, corruption persists")
                         except Exception as repair_error:
-                            logger.error(f"Database repair attempt failed: {repair_error}")
+                            logger.error("Database repair attempt failed: %s", repair_error)
 
                 # Check foreign key constraints
                 fk_violations = conn.execute("PRAGMA foreign_key_check").fetchall()
@@ -197,15 +195,12 @@ class HuntarrDatabase:
         except Exception as e:
             results['status'] = 'error'
             results['errors'].append(f"Integrity check failed: {e}")
-            logger.error(f"Failed to perform integrity check: {e}")
+            logger.error("Failed to perform integrity check: %s", e)
 
         return results
 
     def create_backup(self, backup_path: str = None) -> str:
         """Create a backup of the database using SQLite backup API"""
-        import time
-        import shutil
-        from pathlib import Path
 
         if not backup_path:
             timestamp = int(time.time())
@@ -230,7 +225,7 @@ class HuntarrDatabase:
             backup_db.db_path = backup_path
 
             if backup_db._check_database_integrity():
-                logger.info(f"Database backup created successfully: {backup_path}")
+                logger.info("Database backup created successfully: %s", backup_path)
                 return str(backup_path)
             else:
                 logger.error("Backup verification failed, removing corrupt backup")
@@ -238,13 +233,11 @@ class HuntarrDatabase:
                 raise Exception("Backup verification failed")
 
         except Exception as e:
-            logger.error(f"Failed to create database backup: {e}")
+            logger.error("Failed to create database backup: %s", e)
             raise
 
     def schedule_maintenance(self):
         """Schedule regular maintenance tasks"""
-        import threading
-        import time
 
         def maintenance_worker():
             while True:
@@ -270,7 +263,7 @@ class HuntarrDatabase:
                     logger.info("Scheduled database maintenance completed")
 
                 except Exception as e:
-                    logger.error(f"Database maintenance failed: {e}")
+                    logger.error("Database maintenance failed: %s", e)
 
         # Start maintenance thread
         maintenance_thread = threading.Thread(target=maintenance_worker, daemon=True)
@@ -290,19 +283,18 @@ class HuntarrDatabase:
                 test_file.write_text("test")
                 test_file.unlink()
             except Exception as perm_error:
-                logger.error(f"Database directory not writable: {db_dir} - {perm_error}")
+                logger.error("Database directory not writable: %s - %s", db_dir, perm_error)
                 # On Windows, try an alternative location
-                import platform
                 if platform.system() == "Windows":
                     alt_dir = Path(os.path.expanduser("~")) / "Documents" / "Huntarr"
                     alt_dir.mkdir(parents=True, exist_ok=True)
                     self.db_path = alt_dir / "huntarr.db"
-                    logger.info(f"Using alternative database location: {self.db_path}")
+                    logger.info("Using alternative database location: %s", self.db_path)
                 else:
                     raise perm_error
 
         except Exception as e:
-            logger.error(f"Error setting up database directory: {e}")
+            logger.error("Error setting up database directory: %s", e)
             raise
 
         # Create all tables with corruption recovery
@@ -310,7 +302,7 @@ class HuntarrDatabase:
             self._create_all_tables()
         except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
             if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
-                logger.error(f"Database corruption detected during table creation: {e}")
+                logger.error("Database corruption detected during table creation: %s", e)
                 self._handle_database_corruption()
                 # Try creating tables again after recovery
                 self._create_all_tables()
@@ -616,7 +608,7 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_operation_type ON hunt_history(operation_type)')
 
             conn.commit()
-            logger.info(f"Database initialized at: {self.db_path}")
+            logger.info("Database initialized at: %s", self.db_path)
 
     def get_app_config(self, app_type: str) -> Optional[Dict[str, Any]]:
         """Get app configuration from database"""
@@ -631,7 +623,7 @@ class HuntarrDatabase:
                 try:
                     return json.loads(row[0])
                 except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse JSON for {app_type}: {e}")
+                    logger.error("Failed to parse JSON for %s: %s", app_type, e)
                     return None
             return None
 
@@ -763,7 +755,7 @@ class HuntarrDatabase:
                 VALUES (?, ?, ?, CURRENT_TIMESTAMP)
             ''', (key, setting_value, setting_type))
             conn.commit()
-            logger.debug(f"Set general setting {key} = {value}")
+            logger.debug("Set general setting %s = %r", key, value)
 
     def get_version(self) -> str:
         """Get the current version from database"""
@@ -772,7 +764,7 @@ class HuntarrDatabase:
     def set_version(self, version: str):
         """Set the current version in database"""
         self.set_general_setting('current_version', version.strip())
-        logger.debug(f"Version stored in database: {version.strip()}")
+        logger.debug("Version stored in database: %s", version.strip())
 
     def get_all_app_types(self) -> List[str]:
         """Get list of all app types in database"""
@@ -801,9 +793,9 @@ class HuntarrDatabase:
                         else:
                             self.save_app_config(app_type, default_config)
 
-                        logger.info(f"Initialized {app_type} with default configuration")
+                        logger.info("Initialized %s with default configuration", app_type)
                     except Exception as e:
-                        logger.error(f"Failed to initialize {app_type} from defaults: {e}")
+                        logger.error("Failed to initialize %s from defaults: %s", app_type, e)
 
 
 
@@ -830,7 +822,7 @@ class HuntarrDatabase:
                 VALUES (1, ?, ?, CURRENT_TIMESTAMP)
             ''', (created_at, expires_at))
             conn.commit()
-            logger.debug(f"Set stateful lock: created_at={created_at}, expires_at={expires_at}")
+            logger.debug("Set stateful lock: created_at=%d, expires_at=%d", created_at, expires_at)
 
     def get_processed_ids(self, app_type: str, instance_name: str) -> Set[str]:
         """Get processed media IDs for a specific app instance"""
@@ -852,10 +844,10 @@ class HuntarrDatabase:
                     VALUES (?, ?, ?)
                 ''', (app_type, instance_name, str(media_id)))
                 conn.commit()
-                logger.debug(f"Added processed ID {media_id} for {app_type}/{instance_name}")
+                logger.debug("Added processed ID %s for %s/%s", media_id, app_type, instance_name)
                 return True
         except Exception as e:
-            logger.error(f"Error adding processed ID {media_id} for {app_type}/{instance_name}: {e}")
+            logger.error("Error adding processed ID %s for %s/%s: %s", media_id, app_type, instance_name, e)
             return False
 
     def is_processed(self, app_type: str, instance_name: str, media_id: str) -> bool:
@@ -920,7 +912,6 @@ class HuntarrDatabase:
 
     def check_instance_expiration(self, app_type: str, instance_name: str) -> bool:
         """Check if state management has expired for a specific instance"""
-        import time
         current_time = int(time.time())
 
         lock_info = self.get_instance_lock_info(app_type, instance_name)
@@ -938,11 +929,10 @@ class HuntarrDatabase:
                 WHERE app_type = ? AND instance_name = ?
             ''', (app_type, instance_name))
             conn.commit()
-            logger.info(f"Cleared processed IDs for {app_type}/{instance_name}")
+            logger.info("Cleared processed IDs for %s/%s", app_type, instance_name)
 
     def reset_instance_state_management(self, app_type: str, instance_name: str, expiration_hours: int) -> bool:
         """Reset state management for a specific instance"""
-        import time
         try:
             current_time = int(time.time())
             expires_at = current_time + (expiration_hours * 3600)
@@ -953,21 +943,20 @@ class HuntarrDatabase:
             # Set new lock info for this instance
             self.set_instance_lock_info(app_type, instance_name, current_time, expires_at, expiration_hours)
 
-            logger.info(f"Reset state management for {app_type}/{instance_name} with {expiration_hours}h expiration")
+            logger.info("Reset state management for %s/%s with %sh expiration", app_type, instance_name, expiration_hours)
             return True
         except Exception as e:
-            logger.error(f"Error resetting state management for {app_type}/{instance_name}: {e}")
+            logger.error("Error resetting state management for %s/%s: %s", app_type, instance_name, e)
             return False
 
     def initialize_instance_state_management(self, app_type: str, instance_name: str, expiration_hours: int):
         """Initialize state management for a specific instance if not already initialized"""
         lock_info = self.get_instance_lock_info(app_type, instance_name)
         if not lock_info:
-            import time
             current_time = int(time.time())
             expires_at = current_time + (expiration_hours * 3600)
             self.set_instance_lock_info(app_type, instance_name, current_time, expires_at, expiration_hours)
-            logger.info(f"Initialized state management for {app_type}/{instance_name} with {expiration_hours}h expiration")
+            logger.info("Initialized state management for %s/%s with %sh expiration", app_type, instance_name, expiration_hours)
 
     def migrate_instance_state_management(self, app_type: str, old_instance_name: str, new_instance_name: str) -> bool:
         """Migrate state management data from old instance name to new instance name"""
@@ -987,7 +976,7 @@ class HuntarrDatabase:
                 has_processed_data = cursor.fetchone()[0] > 0
 
                 if not has_lock_data and not has_processed_data:
-                    logger.debug(f"No state management data found for {app_type}/{old_instance_name}, skipping migration")
+                    logger.debug("No state management data found for %s/%s, skipping migration", app_type, old_instance_name)
                     return True
 
                 # Check if new instance name already has data (avoid overwriting)
@@ -1004,7 +993,7 @@ class HuntarrDatabase:
                 new_has_processed_data = cursor.fetchone()[0] > 0
 
                 if new_has_lock_data or new_has_processed_data:
-                    logger.warning(f"New instance name {app_type}/{new_instance_name} already has state management data, skipping migration to avoid conflicts")
+                    logger.warning("New instance name %s/%s already has state management data, skipping migration to avoid conflicts", app_type, new_instance_name)
                     return False
 
                 # Migrate lock data
@@ -1014,7 +1003,7 @@ class HuntarrDatabase:
                         SET instance_name = ?, updated_at = CURRENT_TIMESTAMP
                         WHERE app_type = ? AND instance_name = ?
                     ''', (new_instance_name, app_type, old_instance_name))
-                    logger.info(f"Migrated state management lock data from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}")
+                    logger.info("Migrated state management lock data from %s/%s to %s/%s", app_type, old_instance_name, app_type, new_instance_name)
 
                 # Migrate processed IDs
                 if has_processed_data:
@@ -1031,7 +1020,7 @@ class HuntarrDatabase:
                     ''', (app_type, new_instance_name))
                     migrated_count = cursor.fetchone()[0]
 
-                    logger.info(f"Migrated {migrated_count} processed IDs from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}")
+                    logger.info("Migrated %s processed IDs from %s/%s to %s/%s", migrated_count, app_type, old_instance_name, app_type, new_instance_name)
 
                 # Also migrate hunt history data if it exists
                 cursor = conn.execute('''
@@ -1053,14 +1042,14 @@ class HuntarrDatabase:
                     ''', (app_type, new_instance_name))
                     migrated_history_count = cursor.fetchone()[0]
 
-                    logger.info(f"Migrated {migrated_history_count} hunt history entries from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}")
+                    logger.info("Migrated %s hunt history entries from %s/%s to %s/%s", migrated_history_count, app_type, old_instance_name, app_type, new_instance_name)
 
                 conn.commit()
-                logger.info(f"Successfully completed state management migration from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}")
+                logger.info("Successfully completed state management migration from %s/%s to %s/%s", app_type, old_instance_name, app_type, new_instance_name)
                 return True
 
         except Exception as e:
-            logger.error(f"Error migrating state management data from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}: {e}")
+            logger.error("Error migrating state management data from %s/%s to %s/%s: %s", app_type, old_instance_name, app_type, new_instance_name, e)
             return False
 
     # Tally Data Management Methods
@@ -1113,8 +1102,7 @@ class HuntarrDatabase:
     def set_hourly_cap(self, app_type: str, api_hits: int, last_reset_hour: int = None):
         """Set hourly API cap data for an app"""
         if last_reset_hour is None:
-            import datetime
-            last_reset_hour = datetime.datetime.now().hour
+            last_reset_hour = datetime.now().hour
 
         with self.get_connection() as conn:
             conn.execute('''
@@ -1125,19 +1113,17 @@ class HuntarrDatabase:
 
     def increment_hourly_cap(self, app_type: str, increment: int = 1):
         """Increment hourly API usage for an app"""
-        import datetime
         with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO hourly_caps (app_type, api_hits, last_reset_hour, updated_at)
                 VALUES (?, COALESCE((SELECT api_hits FROM hourly_caps WHERE app_type = ?), 0) + ?,
                         COALESCE((SELECT last_reset_hour FROM hourly_caps WHERE app_type = ?), ?), CURRENT_TIMESTAMP)
-            ''', (app_type, app_type, increment, app_type, datetime.datetime.now().hour))
+            ''', (app_type, app_type, increment, app_type, datetime.now().hour))
             conn.commit()
 
     def reset_hourly_caps(self):
         """Reset all hourly API caps"""
-        import datetime
-        current_hour = datetime.datetime.now().hour
+        current_hour = datetime.now().hour
 
         with self.get_connection() as conn:
             conn.execute('''
@@ -1358,7 +1344,7 @@ class HuntarrDatabase:
             ))
             conn.commit()
 
-        logger.info(f"Added/updated schedule {schedule_id}")
+        logger.info("Added/updated schedule %s", schedule_id)
         return schedule_id
 
     def delete_schedule(self, schedule_id: str):
@@ -1368,9 +1354,9 @@ class HuntarrDatabase:
             conn.commit()
 
             if cursor.rowcount > 0:
-                logger.info(f"Deleted schedule {schedule_id}")
+                logger.info("Deleted schedule %s", schedule_id)
             else:
-                logger.warning(f"Schedule {schedule_id} not found for deletion")
+                logger.warning("Schedule %s not found for deletion", schedule_id)
 
     def update_schedule_enabled(self, schedule_id: str, enabled: bool):
         """Update the enabled status of a schedule"""
@@ -1383,9 +1369,9 @@ class HuntarrDatabase:
             conn.commit()
 
             if cursor.rowcount > 0:
-                logger.info(f"Updated schedule {schedule_id} enabled status to {enabled}")
+                logger.info("Updated schedule %s enabled status to %s", schedule_id, enabled)
             else:
-                logger.warning(f"Schedule {schedule_id} not found for update")
+                logger.warning("Schedule %s not found for update", schedule_id)
 
     # State Management Methods
     def get_state_data(self, app_type: str, state_type: str) -> Any:
@@ -1401,7 +1387,7 @@ class HuntarrDatabase:
                 try:
                     return json.loads(row[0])
                 except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse state data for {app_type}/{state_type}: {e}")
+                    logger.error("Failed to parse state data for %s/%s: %s", app_type, state_type, e)
                     return None
             return None
 
@@ -1416,7 +1402,7 @@ class HuntarrDatabase:
                 (app_type, state_type, data_json)
             )
             conn.commit()
-            logger.debug(f"Set state data for {app_type}/{state_type}")
+            logger.debug("Set state data for %s/%s", app_type, state_type)
 
     def get_processed_ids_state(self, app_type: str, state_type: str) -> List[int]:
         """Get processed IDs for a specific app type and state type (missing/upgrades)"""
@@ -1425,7 +1411,7 @@ class HuntarrDatabase:
             return []
         if isinstance(data, list):
             return data
-        logger.error(f"Invalid processed IDs data type for {app_type}/{state_type}: {type(data)}")
+        logger.error("Invalid processed IDs data type for %s/%s: %s", app_type, state_type, type(data))
         return []
 
     def set_processed_ids_state(self, app_type: str, state_type: str, ids: List[int]):
@@ -1474,7 +1460,7 @@ class HuntarrDatabase:
                 try:
                     return json.loads(row[0])
                 except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse Swaparr state data for {app_name}/{state_type}: {e}")
+                    logger.error("Failed to parse Swaparr state data for %s/%s: %s", app_name, state_type, e)
                     return None
             return None
 
@@ -1489,7 +1475,7 @@ class HuntarrDatabase:
                 (app_name, state_type, data_json)
             )
             conn.commit()
-            logger.debug(f"Set Swaparr state data for {app_name}/{state_type}")
+            logger.debug("Set Swaparr state data for %s/%s", app_name, state_type)
 
     def get_swaparr_strike_data(self, app_name: str) -> Dict[str, Any]:
         """Get strike data for a specific Swaparr app"""
@@ -1520,10 +1506,10 @@ class HuntarrDatabase:
                     VALUES (?, ?, 0)
                 ''', (app_type, int(time.time())))
                 conn.commit()
-                logger.info(f"Created reset request for {app_type}")
+                logger.info("Created reset request for %s", app_type)
                 return True
         except Exception as e:
-            logger.error(f"Error creating reset request for {app_type}: {e}")
+            logger.error("Error creating reset request for %s: %s", app_type, e)
             return False
 
     def get_pending_reset_request(self, app_type: str) -> Optional[int]:
@@ -1547,10 +1533,10 @@ class HuntarrDatabase:
                     WHERE app_type = ? AND processed = 0
                 ''', (app_type,))
                 conn.commit()
-                logger.info(f"Marked reset request as processed for {app_type}")
+                logger.info("Marked reset request as processed for %s", app_type)
                 return True
         except Exception as e:
-            logger.error(f"Error marking reset request as processed for {app_type}: {e}")
+            logger.error("Error marking reset request as processed for %s: %s", app_type, e)
             return False
 
     # User Management Methods
@@ -1616,10 +1602,10 @@ class HuntarrDatabase:
                     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ''', (username, password, two_fa_enabled, two_fa_secret, plex_token, plex_data_json))
                 conn.commit()
-                logger.info(f"Created user: {username}")
+                logger.info("Created user: %s", username)
                 return True
         except Exception as e:
-            logger.error(f"Error creating user {username}: {e}")
+            logger.error("Error creating user %s: %s", username, e)
             return False
 
     def update_user_password(self, username: str, new_password: str) -> bool:
@@ -1631,10 +1617,10 @@ class HuntarrDatabase:
                     WHERE username = ?
                 ''', (new_password, username))
                 conn.commit()
-                logger.info(f"Updated password for user: {username}")
+                logger.info("Updated password for user: %s", username)
                 return True
         except Exception as e:
-            logger.error(f"Error updating password for user {username}: {e}")
+            logger.error("Error updating password for user %s: %s", username, e)
             return False
 
     def update_user_username(self, old_username: str, new_username: str) -> bool:
@@ -1646,10 +1632,10 @@ class HuntarrDatabase:
                     WHERE username = ?
                 ''', (new_username, old_username))
                 conn.commit()
-                logger.info(f"Updated username from {old_username} to {new_username}")
+                logger.info("Updated username from %s to %s", old_username, new_username)
                 return True
         except Exception as e:
-            logger.error(f"Error updating username from {old_username} to {new_username}: {e}")
+            logger.error("Error updating username from %s to %s: %s", old_username, new_username, e)
             return False
 
     def update_user_2fa(self, username: str, two_fa_enabled: bool, two_fa_secret: str = None) -> bool:
@@ -1662,10 +1648,10 @@ class HuntarrDatabase:
                     WHERE username = ?
                 ''', (two_fa_enabled, two_fa_secret, username))
                 conn.commit()
-                logger.info(f"Updated 2FA settings for user: {username}")
+                logger.info("Updated 2FA settings for user: %s", username)
                 return True
         except Exception as e:
-            logger.error(f"Error updating 2FA for user {username}: {e}")
+            logger.error("Error updating 2FA for user %s: %s", username, e)
             return False
 
     def update_user_temp_2fa_secret(self, username: str, temp_2fa_secret: str = None) -> bool:
@@ -1677,17 +1663,16 @@ class HuntarrDatabase:
                     WHERE username = ?
                 ''', (temp_2fa_secret, username))
                 conn.commit()
-                logger.info(f"Updated temporary 2FA secret for user: {username}")
+                logger.info("Updated temporary 2FA secret for user: %s", username)
                 return True
         except Exception as e:
-            logger.error(f"Error updating temporary 2FA secret for user {username}: {e}")
+            logger.error("Error updating temporary 2FA secret for user %s: %s", username, e)
             return False
 
     def update_user_plex(self, username: str, plex_token: str = None,
                         plex_user_data: Dict[str, Any] = None) -> bool:
         """Update user Plex settings"""
         try:
-            import time
             plex_data_json = json.dumps(plex_user_data) if plex_user_data else None
 
             # Set the linked timestamp when plex_token is provided (linking account)
@@ -1700,10 +1685,10 @@ class HuntarrDatabase:
                     WHERE username = ?
                 ''', (plex_token, plex_data_json, plex_linked_at, username))
                 conn.commit()
-                logger.info(f"Updated Plex settings for user: {username}")
+                logger.info("Updated Plex settings for user: %s", username)
                 return True
         except Exception as e:
-            logger.error(f"Error updating Plex settings for user {username}: {e}")
+            logger.error("Error updating Plex settings for user %s: %s", username, e)
             return False
 
     def has_users_with_plex(self) -> bool:
@@ -1716,15 +1701,12 @@ class HuntarrDatabase:
                 count = cursor.fetchone()[0]
                 return count > 0
         except Exception as e:
-            logger.error(f"Error checking for Plex users: {e}")
+            logger.error("Error checking for Plex users: %s", e)
             return False
 
     # Recovery Key Methods
     def generate_recovery_key(self, username: str) -> Optional[str]:
         """Generate a new recovery key for a user"""
-        import hashlib
-        import secrets
-        import random
 
         # Word lists for generating human-readable recovery keys
         adjectives = ['ocean', 'storm', 'frost', 'light', 'dark', 'swift', 'calm', 'wild', 'bright', 'deep']
@@ -1747,17 +1729,16 @@ class HuntarrDatabase:
                     WHERE username = ?
                 ''', (recovery_key_hash, username))
                 conn.commit()
-                logger.info(f"Generated new recovery key for user: {username}")
+                logger.info("Generated new recovery key for user: %s", username)
 
                 # Return the plain text recovery key (only time it's shown)
                 return recovery_key
         except Exception as e:
-            logger.error(f"Error generating recovery key for user {username}: {e}")
+            logger.error("Error generating recovery key for user %s: %s", username, e)
             return None
 
     def verify_recovery_key(self, recovery_key: str) -> Optional[str]:
         """Verify a recovery key and return the username if valid"""
-        import hashlib
 
         try:
             # Hash the provided recovery key
@@ -1771,13 +1752,13 @@ class HuntarrDatabase:
                 row = cursor.fetchone()
 
                 if row:
-                    logger.info(f"Recovery key verified for user: {row[0]}")
+                    logger.info("Recovery key verified for user: %s", row[0])
                     return row[0]
                 else:
-                    logger.warning(f"Invalid recovery key attempted")
+                    logger.warning("Invalid recovery key attempted")
                     return None
         except Exception as e:
-            logger.error(f"Error verifying recovery key: {e}")
+            logger.error("Error verifying recovery key: %s", e)
             return None
 
     def clear_recovery_key(self, username: str) -> bool:
@@ -1789,10 +1770,10 @@ class HuntarrDatabase:
                     WHERE username = ?
                 ''', (username,))
                 conn.commit()
-                logger.info(f"Cleared recovery key for user: {username}")
+                logger.info("Cleared recovery key for user: %s", username)
                 return True
         except Exception as e:
-            logger.error(f"Error clearing recovery key for user {username}: {e}")
+            logger.error("Error clearing recovery key for user %s: %s", username, e)
             return False
 
     def check_recovery_key_rate_limit(self, ip_address: str) -> Dict[str, Any]:
@@ -1814,7 +1795,6 @@ class HuntarrDatabase:
                 locked_until = None
                 if row['locked_until']:
                     try:
-                        from datetime import datetime
                         locked_until = datetime.fromisoformat(row['locked_until'])
                         # Check if lockout has expired
                         if datetime.now() >= locked_until:
@@ -1842,14 +1822,12 @@ class HuntarrDatabase:
                     "locked_until": locked_until.isoformat() if locked_until else None
                 }
         except Exception as e:
-            logger.error(f"Error checking recovery key rate limit for IP {ip_address}: {e}")
+            logger.error("Error checking recovery key rate limit for IP %s: %s", ip_address, e)
             return {"locked": False, "failed_attempts": 0}
 
     def record_recovery_key_attempt(self, ip_address: str, username: str = None, success: bool = False) -> Dict[str, Any]:
         """Record a recovery key attempt and apply rate limiting if needed"""
         try:
-            from datetime import datetime, timedelta
-
             with self.get_connection() as conn:
                 if success:
                     # Clear rate limiting on successful attempt
@@ -1904,13 +1882,12 @@ class HuntarrDatabase:
                 }
 
         except Exception as e:
-            logger.error(f"Error recording recovery key attempt for IP {ip_address}: {e}")
+            logger.error("Error recording recovery key attempt for IP %s: %s", ip_address, e)
             return {"locked": False, "failed_attempts": 0}
 
     def cleanup_expired_rate_limits(self):
         """Clean up expired rate limit entries (older than 24 hours)"""
         try:
-            from datetime import datetime, timedelta
             cutoff_time = datetime.now() - timedelta(hours=24)
 
             with self.get_connection() as conn:
@@ -1922,10 +1899,10 @@ class HuntarrDatabase:
                 conn.commit()
 
                 if deleted_count > 0:
-                    logger.debug(f"Cleaned up {deleted_count} expired recovery key rate limit entries")
+                    logger.debug("Cleaned up %s expired recovery key rate limit entries", deleted_count)
 
         except Exception as e:
-            logger.error(f"Error cleaning up expired rate limits: {e}")
+            logger.error("Error cleaning up expired rate limits: %s", e)
 
     def get_sponsors(self) -> List[Dict[str, Any]]:
         """Get all sponsors from database"""
@@ -1959,7 +1936,7 @@ class HuntarrDatabase:
                     sponsor.get('category', 'past')
                 ))
 
-            logger.info(f"Saved {len(sponsors_data)} sponsors to database")
+            logger.info("Saved %s sponsors to database", len(sponsors_data))
 
     def add_sponsor(self, sponsor_data: Dict[str, Any]):
         """Add a new sponsor to the database"""
@@ -1980,7 +1957,7 @@ class HuntarrDatabase:
                 ))
                 conn.commit()
         except Exception as e:
-            logger.error(f"Error adding sponsor: {e}")
+            logger.error("Error adding sponsor: %s", e)
 
     # Logs Database Methods
     def insert_log(self, timestamp: datetime, level: str, app_type: str, message: str, logger_name: str = None):
@@ -1993,7 +1970,7 @@ class HuntarrDatabase:
                 ''', (timestamp.isoformat(), level, app_type, message, logger_name))
                 conn.commit()
         except Exception as e:
-            logger.error(f"Error inserting log entry: {e}")
+            logger.error("Error inserting log entry: %s", e)
 
     def get_logs(self, app_type: str = None, level: str = None, limit: int = 100, offset: int = 0, search: str = None) -> List[Dict[str, Any]]:
         """Get logs with optional filtering"""
@@ -2025,7 +2002,7 @@ class HuntarrDatabase:
 
                 return [dict(row) for row in rows]
         except Exception as e:
-            logger.error(f"Error getting logs: {e}")
+            logger.error("Error getting logs: %s", e)
             return []
 
     def get_log_count(self, app_type: str = None, level: str = None, search: str = None) -> int:
@@ -2050,7 +2027,7 @@ class HuntarrDatabase:
                 cursor = conn.execute(query, params)
                 return cursor.fetchone()[0]
         except Exception as e:
-            logger.error(f"Error getting log count: {e}")
+            logger.error("Error getting log count: %s", e)
             return 0
 
     def cleanup_old_logs(self, days_to_keep: int = 30, max_entries_per_app: int = 10000):
@@ -2084,11 +2061,11 @@ class HuntarrDatabase:
                 conn.commit()
 
                 if deleted_by_age > 0 or total_deleted_by_count > 0:
-                    logger.info(f"Cleaned up logs: {deleted_by_age} by age, {total_deleted_by_count} by count")
+                    logger.info("Cleaned up logs: %s by age, %s by count", deleted_by_age, total_deleted_by_count)
 
                 return deleted_by_age + total_deleted_by_count
         except Exception as e:
-            logger.error(f"Error cleaning up logs: {e}")
+            logger.error("Error cleaning up logs: %s", e)
             return 0
 
     def get_app_types_from_logs(self) -> List[str]:
@@ -2098,7 +2075,7 @@ class HuntarrDatabase:
                 cursor = conn.execute("SELECT DISTINCT app_type FROM logs ORDER BY app_type")
                 return [row[0] for row in cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting app types from logs: {e}")
+            logger.error("Error getting app types from logs: %s", e)
             return []
 
     def get_log_levels(self) -> List[str]:
@@ -2108,7 +2085,7 @@ class HuntarrDatabase:
                 cursor = conn.execute("SELECT DISTINCT level FROM logs ORDER BY level")
                 return [row[0] for row in cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting log levels: {e}")
+            logger.error("Error getting log levels: %s", e)
             return []
 
     def clear_logs(self, app_type: str = None):
@@ -2123,10 +2100,10 @@ class HuntarrDatabase:
                 deleted_count = cursor.rowcount
                 conn.commit()
 
-                logger.info(f"Cleared {deleted_count} logs" + (f" for {app_type}" if app_type else ""))
+                logger.info("Cleared %s logs%s", deleted_count, (" for " + app_type) if app_type else "")
                 return deleted_count
         except Exception as e:
-            logger.error(f"Error clearing logs: {e}")
+            logger.error("Error clearing logs: %s", e)
             return 0
 
     # Hunt History/Manager Database Methods (logs methods removed - now in LogsDatabase)
@@ -2162,7 +2139,7 @@ class HuntarrDatabase:
                 "date_time_readable": date_time_readable
             }
 
-            logger.info(f"Added hunt history entry for {app_type}-{instance_name}: {processed_info}")
+            logger.info("Added hunt history entry for %s-%s: %s", app_type, instance_name, processed_info)
             return entry
 
     def get_hunt_history(self, app_type: str = None, search_query: str = None,
@@ -2224,7 +2201,7 @@ class HuntarrDatabase:
         with self.get_connection() as conn:
             if app_type and app_type != "all":
                 conn.execute("DELETE FROM hunt_history WHERE app_type = ?", (app_type,))
-                logger.info(f"Cleared hunt history for {app_type}")
+                logger.info("Cleared hunt history for %s", app_type)
             else:
                 conn.execute("DELETE FROM hunt_history")
                 logger.info("Cleared all hunt history")
@@ -2254,7 +2231,7 @@ class HuntarrDatabase:
                 """, (json.dumps(progress_data),))
             return True
         except Exception as e:
-            logger.error(f"Failed to save setup progress: {e}")
+            logger.error("Failed to save setup progress: %s", e)
             return False
 
     def get_setup_progress(self) -> dict:
@@ -2279,7 +2256,7 @@ class HuntarrDatabase:
                         'timestamp': datetime.now().isoformat()
                     }
         except Exception as e:
-            logger.error(f"Failed to get setup progress: {e}")
+            logger.error("Failed to get setup progress: %s", e)
             return {
                 'current_step': 1,
                 'completed_steps': [],
@@ -2300,7 +2277,7 @@ class HuntarrDatabase:
                 )
             return True
         except Exception as e:
-            logger.error(f"Failed to clear setup progress: {e}")
+            logger.error("Failed to clear setup progress: %s", e)
             return False
 
     def is_setup_in_progress(self) -> bool:
@@ -2312,7 +2289,7 @@ class HuntarrDatabase:
                 ).fetchone()
                 return result is not None
         except Exception as e:
-            logger.error(f"Failed to check setup progress: {e}")
+            logger.error("Failed to check setup progress: %s", e)
             return False
 
     # Requestarr methods for managing media requests
@@ -2326,7 +2303,7 @@ class HuntarrDatabase:
                 ''', (tmdb_id, media_type, app_type, instance_name)).fetchone()
                 return result is not None
         except Exception as e:
-            logger.error(f"Error checking if media already requested: {e}")
+            logger.error("Error checking if media already requested: %s", e)
             return False
 
     def add_request(self, tmdb_id: int, media_type: str, title: str, year: int, overview: str,
@@ -2342,7 +2319,7 @@ class HuntarrDatabase:
                 conn.commit()
                 return True
         except Exception as e:
-            logger.error(f"Error adding media request: {e}")
+            logger.error("Error adding media request: %s", e)
             return False
 
     def get_requests(self, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
@@ -2393,7 +2370,7 @@ class HuntarrDatabase:
                 }
 
         except Exception as e:
-            logger.error(f"Error getting media requests: {e}")
+            logger.error("Error getting media requests: %s", e)
             return {
                 'requests': [],
                 'total': 0,
@@ -2425,7 +2402,6 @@ class LogsDatabase:
             return config_path / "logs.db"
 
         # Check for Windows AppData
-        import platform
         if platform.system() == "Windows":
             appdata = os.environ.get("APPDATA", os.path.expanduser("~"))
             windows_config_dir = Path(appdata) / "Huntarr"
@@ -2447,7 +2423,7 @@ class LogsDatabase:
             try:
                 conn.execute('PRAGMA journal_mode = WAL')
             except Exception as wal_error:
-                logger.warning(f"WAL mode failed for logs.db, using DELETE mode: {wal_error}")
+                logger.warning("WAL mode failed for logs.db, using DELETE mode: %s", wal_error)
                 conn.execute('PRAGMA journal_mode = DELETE')
 
             # Optimized settings for log writing
@@ -2464,8 +2440,7 @@ class LogsDatabase:
                 conn.execute('PRAGMA journal_size_limit = 134217728') # 128MB journal size for logs
 
         except Exception as e:
-            logger.error(f"Error configuring logs database connection: {e}")
-            pass
+            logger.error("Error configuring logs database connection: %s", e)
 
     def get_logs_connection(self):
         """Get a configured SQLite connection for logs database"""
@@ -2477,7 +2452,7 @@ class LogsDatabase:
             return conn
         except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
             if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
-                logger.error(f"Logs database corruption detected: {e}")
+                logger.error("Logs database corruption detected: %s", e)
                 self._handle_logs_database_corruption()
                 # Try connecting again after recovery
                 conn = sqlite3.connect(self.db_path)
@@ -2488,26 +2463,25 @@ class LogsDatabase:
 
     def _handle_logs_database_corruption(self):
         """Handle logs database corruption"""
-        import time
 
-        logger.error(f"Handling logs database corruption for: {self.db_path}")
+        logger.error("Handling logs database corruption for: %s", self.db_path)
 
         try:
             if self.db_path.exists():
                 backup_path = self.db_path.parent / f"logs_corrupted_backup_{int(time.time())}.db"
                 self.db_path.rename(backup_path)
-                logger.warning(f"Corrupted logs database backed up to: {backup_path}")
+                logger.warning("Corrupted logs database backed up to: %s", backup_path)
                 logger.warning("Starting with fresh logs database - log history will be lost")
 
             if self.db_path.exists():
                 self.db_path.unlink()
 
         except Exception as backup_error:
-            logger.error(f"Error during logs database corruption recovery: {backup_error}")
+            logger.error("Error during logs database corruption recovery: %s", backup_error)
             try:
                 if self.db_path.exists():
                     self.db_path.unlink()
-            except:
+            except Exception:
                 pass
 
     def ensure_logs_database_exists(self):
@@ -2534,11 +2508,11 @@ class LogsDatabase:
                 conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_level ON logs(app_type, level)')
 
                 conn.commit()
-                logger.info(f"Logs database initialized at: {self.db_path}")
+                logger.info("Logs database initialized at: %s", self.db_path)
 
         except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
             if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
-                logger.error(f"Logs database corruption detected during table creation: {e}")
+                logger.error("Logs database corruption detected during table creation: %s", e)
                 self._handle_logs_database_corruption()
                 # Try creating tables again after recovery
                 self.ensure_logs_database_exists()
@@ -2556,7 +2530,7 @@ class LogsDatabase:
                 conn.commit()
         except Exception as e:
             # Don't let log insertion failures crash the app
-            print(f"Error inserting log: {e}")
+            print("Error inserting log: %s", e)
 
     def get_logs(self, app_type: str = None, level: str = None, limit: int = 100, offset: int = 0, search: str = None) -> List[Dict[str, Any]]:
         """Get logs with filtering and pagination"""
@@ -2591,7 +2565,7 @@ class LogsDatabase:
                 return [dict(row) for row in cursor.fetchall()]
 
         except Exception as e:
-            logger.error(f"Error getting logs: {e}")
+            logger.error("Error getting logs: %s", e)
             return []
 
     def get_log_count(self, app_type: str = None, level: str = None, search: str = None) -> int:
@@ -2620,7 +2594,7 @@ class LogsDatabase:
                 return cursor.fetchone()[0]
 
         except Exception as e:
-            logger.error(f"Error getting log count: {e}")
+            logger.error("Error getting log count: %s", e)
             return 0
 
     def cleanup_old_logs(self, days_to_keep: int = 30, max_entries_per_app: int = 10000):
@@ -2660,7 +2634,7 @@ class LogsDatabase:
                 return deleted_by_age + total_deleted_by_count
 
         except Exception as e:
-            logger.error(f"Error cleaning up logs: {e}")
+            logger.error("Error cleaning up logs: %s", e)
             return 0
 
     def get_app_types_from_logs(self) -> List[str]:
@@ -2670,7 +2644,7 @@ class LogsDatabase:
                 cursor = conn.execute("SELECT DISTINCT app_type FROM logs ORDER BY app_type")
                 return [row[0] for row in cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting app types from logs: {e}")
+            logger.error("Error getting app types from logs: %s", e)
             return []
 
     def get_log_levels(self) -> List[str]:
@@ -2680,7 +2654,7 @@ class LogsDatabase:
                 cursor = conn.execute("SELECT DISTINCT level FROM logs ORDER BY level")
                 return [row[0] for row in cursor.fetchall()]
         except Exception as e:
-            logger.error(f"Error getting log levels: {e}")
+            logger.error("Error getting log levels: %s", e)
             return []
 
     def clear_logs(self, app_type: str = None):
@@ -2695,35 +2669,29 @@ class LogsDatabase:
                 deleted_count = cursor.rowcount
                 conn.commit()
 
-                logger.info(f"Cleared {deleted_count} logs" + (f" for {app_type}" if app_type else ""))
+                logger.info("Cleared %s logs%s", deleted_count, (" for " + app_type) if app_type else "")
                 return deleted_count
         except Exception as e:
-            logger.error(f"Error clearing logs: {e}")
+            logger.error("Error clearing logs: %s", e)
             return 0
 
-# Global database instances
-_database_instance = None
-_logs_database_instance = None
 
 def get_database() -> HuntarrDatabase:
     """Get the global database instance"""
-    global _database_instance
-    if _database_instance is None:
-        _database_instance = HuntarrDatabase()
-    return _database_instance
+    if not hasattr(get_database, "db_instance"):
+        get_database.db_instance = HuntarrDatabase()
+    return get_database.db_instance
 
-# Logs Database Functions (consolidated from logs_database.py)
+
 def get_logs_database() -> LogsDatabase:
     """Get the logs database instance for logs operations"""
-    global _logs_database_instance
-    if _logs_database_instance is None:
-        _logs_database_instance = LogsDatabase()
-    return _logs_database_instance
+    if not hasattr(get_logs_database, "logs_db_instance"):
+        get_logs_database.logs_db_instance = LogsDatabase()
+    return get_logs_database.logs_db_instance
+
 
 def schedule_log_cleanup():
     """Schedule periodic log cleanup - call this from background tasks"""
-    import threading
-    import time
 
     def cleanup_worker():
         """Background worker to clean up logs periodically"""
@@ -2733,16 +2701,12 @@ def schedule_log_cleanup():
                 logs_db = get_logs_database()
                 deleted_count = logs_db.cleanup_old_logs(days_to_keep=30, max_entries_per_app=10000)
                 if deleted_count > 0:
-                    logger.info(f"Scheduled cleanup removed {deleted_count} old log entries")
+                    logger.info("Scheduled cleanup removed %s old log entries", deleted_count)
             except Exception as e:
-                logger.error(f"Error in scheduled log cleanup: {e}")
+                logger.error("Error in scheduled log cleanup: %s", e)
 
     # Start cleanup thread
     cleanup_thread = threading.Thread(target=cleanup_worker, daemon=True)
     cleanup_thread.start()
     logger.info("Scheduled log cleanup thread started")
 
-# Manager Database Functions (consolidated from manager_database.py)
-def get_manager_database() -> HuntarrDatabase:
-    """Get the database instance for manager operations"""
-    return get_database()
