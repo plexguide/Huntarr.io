@@ -20,7 +20,6 @@ from src.primary.settings_manager import (
 from src.primary.utils.database import get_database
 from src.primary.utils.logger import get_logger
 
-logger = get_logger("huntarr")
 stateful_logger = logging.getLogger("stateful_manager")
 
 DEFAULT_HOURS = 168  # Default 7 days (168 hours)
@@ -420,7 +419,7 @@ def has_instance_state_expired(app_type: str, instance_name: str) -> bool:
     """
     lock_info = get_database().get_instance_lock_info(app_type, instance_name)
 
-    logger.debug(
+    get_logger(app_type).debug(
         "State check for %s.%s: %.1f hours since last reset (interval: %dh)",
         app_type,
         instance_name,
