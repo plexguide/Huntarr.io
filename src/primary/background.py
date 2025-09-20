@@ -4,17 +4,17 @@ Huntarr - Main entry point for the application
 Supports multiple Arr applications running concurrently
 """
 
+__version__ = "1.0.0" # Consider updating this based on changes
+
 import time
 import importlib
 import logging
 import threading
-from typing import Dict
 import datetime
 import traceback
-import pytz
+from typing import Dict
 
-# Define the version number
-__version__ = "1.0.0" # Consider updating this based on changes
+import pytz
 
 from src.primary import settings_manager
 from src.primary.apps import prowlarr_routes

@@ -5,11 +5,11 @@ Handles storing and retrieving processed media IDs to prevent reprocessing
 Now uses SQLite database instead of JSON files for better performance and reliability.
 """
 
+import datetime
+import logging
 import time
 from typing import Dict, Any, Set
 
-import datetime
-import logging
 import pytz
 
 from src.primary.settings_manager import get_advanced_setting, load_settings
@@ -341,7 +341,6 @@ def get_instance_state_management_summary(app_type: str, instance_name: str) -> 
     Args:
         app_type: The type of app (sonarr, radarr, etc.)
         instance_name: The name of the instance
-        instance_hours: Custom hours for this instance (if provided)
 
     Returns:
         Dict containing processed count, next reset time, and other useful info
