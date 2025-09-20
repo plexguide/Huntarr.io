@@ -334,7 +334,7 @@ def get_stateful_management_info() -> Dict[str, Any]:
     }
 
 
-def get_state_management_summary(app_type: str, instance_name: str, instance_hours: int = None) -> Dict[str, Any]:
+def get_instance_state_management_summary(app_type: str, instance_name: str) -> Dict[str, Any]:
     """
     Get a summary of stateful management for an app instance.
 
@@ -349,10 +349,27 @@ def get_state_management_summary(app_type: str, instance_name: str, instance_hou
     try:
         db = get_database()
 
-        # Use per-instance hours if provided, otherwise fall back to global setting
-        if instance_hours is not None:
-            expiration_hours = instance_hours
+        # Use per-instance hours if found, otherwise fall back to global setting
+        app_settings = load_settings(app_type)
+        if app_settings and 'instances' in app_settings:
+            for instance in app_settings['instances']:
+                if instance.get('name') == instance_name:
+                    instance_mode = instance.get('state_management_mode', 'custom')
+                    state_management_enabled = (instance_mode != "disabled")
+                    if not state_management_enabled:
+                        return {
+                            "instance_mode": "custom",
+                            "state_management_enabled": False,
+                            "processed_count": 0,
+                            "next_reset_time": None,
+                            "expiration_hours": DEFAULT_HOURS,
+                            "has_processed_items": False
+                        }
+                    expiration_hours = instance.get('state_management_hours', DEFAULT_HOURS)
+                    break
         else:
+            instance_mode = "custom"
+            state_management_enabled = True
             expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
 
         # Initialize per-instance state management if not already done
@@ -377,6 +394,8 @@ def get_state_management_summary(app_type: str, instance_name: str, instance_hou
             next_reset_time = None
 
         return {
+            "instance_mode": instance_mode,
+            "state_management_enabled": state_management_enabled,
             "processed_count": processed_count,
             "next_reset_time": next_reset_time,
             "expiration_hours": expiration_hours,
@@ -385,9 +404,11 @@ def get_state_management_summary(app_type: str, instance_name: str, instance_hou
     except Exception as e:
         stateful_logger.error("Error getting state management summary for %s/%s: %s", app_type, instance_name, e)
         return {
+            "instance_mode": "custom",
+            "state_management_enabled": True,
             "processed_count": 0,
             "next_reset_time": None,
-            "expiration_hours": instance_hours or DEFAULT_HOURS,
+            "expiration_hours": DEFAULT_HOURS,
             "has_processed_items": False
         }
 

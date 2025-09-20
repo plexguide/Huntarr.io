@@ -10,7 +10,7 @@ from src.primary.stateful_manager import (
     get_stateful_management_info,
     reset_stateful_management,
     update_lock_expiration,
-    get_state_management_summary
+    get_instance_state_management_summary
 )
 from src.primary.utils.logger import get_logger
 
@@ -52,12 +52,12 @@ def reset_stateful():
         data = request.json or {}
         app_type = data.get('app_type')
         instance_name = data.get('instance_name')
-        
+
         if app_type and instance_name:
             # Per-instance reset
             from src.primary.utils.database import get_database
             from src.primary.settings_manager import load_settings
-            
+
             # Get instance settings for expiration hours
             instance_hours = 168  # Default
             try:
@@ -69,17 +69,17 @@ def reset_stateful():
                             break
             except Exception as e:
                 stateful_logger.warning(f"Could not load instance settings for {app_type}/{instance_name}: {e}")
-            
+
             # Reset per-instance state management
             db = get_database()
             success = db.reset_instance_state_management(app_type, instance_name, instance_hours)
-            
+
             if success:
                 stateful_logger.info(f"Successfully reset state management for {app_type}/{instance_name}")
                 response_data = {"success": True, "message": f"State management reset successfully for {app_type}/{instance_name}"}
             else:
                 response_data = {"success": False, "message": f"Failed to reset state management for {app_type}/{instance_name}"}
-                
+
         else:
             # Global reset (legacy)
             success = reset_stateful_management()
@@ -87,14 +87,14 @@ def reset_stateful():
                 response_data = {"success": True, "message": "Stateful management reset successfully"}
             else:
                 response_data = {"success": False, "message": "Failed to reset stateful management"}
-        
+
         # Add CORS headers to allow access from frontend
         status_code = 200 if response_data["success"] else 500
         response = Response(json.dumps(response_data), status=status_code)
         response.headers['Content-Type'] = 'application/json'
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-        
+
     except Exception as e:
         stateful_logger.error(f"Error resetting stateful management: {e}")
         # Return error response with proper headers
@@ -117,14 +117,14 @@ def update_expiration():
             response.headers['Content-Type'] = 'application/json'
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
-        
+
         updated = update_lock_expiration(hours)
         if updated:
             # Get updated info
             info = get_stateful_management_info()
             # Add CORS headers to allow access from frontend
             response_data = {
-                "success": True, 
+                "success": True,
                 "message": f"Expiration updated to {hours} hours",
                 "expires_at": info.get("expires_at"),
                 "expires_date": info.get("expires_date")
@@ -154,66 +154,30 @@ def get_summary():
     try:
         app_type = request.args.get('app_type')
         instance_name = request.args.get('instance_name')
-        
+
         if not app_type or not instance_name:
             error_data = {"success": False, "message": "app_type and instance_name parameters are required"}
             response = Response(json.dumps(error_data), status=400)
             response.headers['Content-Type'] = 'application/json'
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
-        
-        # Get per-instance settings to retrieve custom hours
-        instance_hours = None
-        try:
-            from src.primary.settings_manager import load_settings
-            settings = load_settings(app_type)
-            
-            if settings and 'instances' in settings:
-                # Find the matching instance
-                for instance in settings['instances']:
-                    if instance.get('name') == instance_name:
-                        # Get per-instance state management hours
-                        instance_hours = instance.get('state_management_hours', 168)
-                        instance_mode = instance.get('state_management_mode', 'custom')
-                        
-                        # If state management is disabled for this instance, return disabled status
-                        if instance_mode == 'disabled':
-                            response_data = {
-                                "success": True,
-                                "processed_count": 0,
-                                "next_reset_time": None,
-                                "expiration_hours": instance_hours,
-                                "has_processed_items": False,
-                                "state_management_enabled": False
-                            }
-                            response = Response(json.dumps(response_data))
-                            response.headers['Content-Type'] = 'application/json'
-                            response.headers['Access-Control-Allow-Origin'] = '*'
-                            return response
-                        
-                        break
-        except Exception as e:
-            stateful_logger.warning(f"Could not load instance settings for {app_type}/{instance_name}: {e}")
-            # Fall back to default hours if settings can't be loaded
-            instance_hours = 168
-        
-        # Get summary for the specific instance with custom hours
-        summary = get_state_management_summary(app_type, instance_name, instance_hours)
-        
+
+        summary = get_instance_state_management_summary(app_type, instance_name)
+
         response_data = {
             "success": True,
             "processed_count": summary.get("processed_count", 0),
             "next_reset_time": summary.get("next_reset_time"),
-            "expiration_hours": summary.get("expiration_hours", instance_hours or 168),
+            "expiration_hours": summary.get("expiration_hours"),
             "has_processed_items": summary.get("has_processed_items", False),
-            "state_management_enabled": True
+            "state_management_enabled": summary.get("state_management_enabled")
         }
-        
+
         response = Response(json.dumps(response_data))
         response.headers['Content-Type'] = 'application/json'
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-        
+
     except Exception as e:
         stateful_logger.error(f"Error getting stateful summary for {app_type}/{instance_name}: {e}")
         error_data = {"success": False, "message": f"Error getting summary: {str(e)}"}
@@ -221,5 +185,3 @@ def get_summary():
         response.headers['Content-Type'] = 'application/json'
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-
-

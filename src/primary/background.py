@@ -23,7 +23,7 @@ from src.primary.cycle_tracker import end_cycle, start_cycle, update_next_cycle
 from src.primary.scheduler_engine import start_scheduler, stop_scheduler
 from src.primary.settings_manager import load_settings
 from src.primary.state import check_instance_state_reset, calculate_reset_time
-from src.primary.stateful_manager import get_state_management_summary
+from src.primary.stateful_manager import get_instance_state_management_summary
 from src.primary.stats_manager import check_hourly_cap_exceeded
 from src.primary.utils.database import get_database
 from src.primary.utils.logger import setup_main_logger, get_logger
@@ -434,40 +434,23 @@ def app_specific_loop(app_type: str) -> None:
                 has_any_processed = False
 
                 for instance_name in enabled_instances:
-                    # Get per-instance settings
-                    instance_hours = None
-                    instance_enabled = True
-                    instance_mode = "custom"
-
-                    try:
-                        # Look up the instance in the configured instances
-                        if configured_instances and app_type in configured_instances:
-                            for instance_details in configured_instances[app_type]:
-                                if instance_details.get("instance_name") == instance_name:
-                                    instance_hours = instance_details.get("state_management_hours", 168)
-                                    instance_mode = instance_details.get("state_management_mode", "custom")
-                                    instance_enabled = (instance_mode != "disabled")
-                                    break
-                    except Exception as e:
-                        app_logger.warning(f"Could not load instance settings for {instance_name}: {e}")
-                        instance_hours = 168  # Default fallback
 
                     # Get summary for this instance
-                    summary = get_state_management_summary(app_type, instance_name, instance_hours)
+                    summary = get_instance_state_management_summary(app_type, instance_name)
 
                     # Store instance-specific information
                     instance_summaries.append({
                         "name": instance_name,
-                        "enabled": instance_enabled,
-                        "mode": instance_mode,
-                        "hours": instance_hours,
+                        "enabled": summary["state_management_enabled"],
+                        "mode": summary["instance_mode"],
+                        "hours": summary["expiration_hours"],
                         "processed_count": summary["processed_count"],
                         "next_reset_time": summary["next_reset_time"],
                         "has_processed_items": summary["has_processed_items"]
                     })
 
                     # Only count if state management is enabled for this instance
-                    if instance_enabled and summary["has_processed_items"]:
+                    if summary["state_management_enabled"] and summary["has_processed_items"]:
                         total_processed += summary["processed_count"]
                         has_any_processed = True
 
