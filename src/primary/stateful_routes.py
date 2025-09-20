@@ -71,7 +71,7 @@ def reset_stateful():
             # Per-instance reset
             try:
                 summary = get_instance_state_management_summary(app_type, instance_name)
-                instance_hours = summary.get("state_management_hours")
+                instance_hours = summary.get("expiration_hours")
             except Exception as e:
                 stateful_logger.warning("Could not load instance settings for %s/%s: %s", app_type, instance_name, e)
 
