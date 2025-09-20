@@ -5,8 +5,6 @@ Supports multiple Arr applications running concurrently
 """
 
 import time
-# import socket # No longer used directly
-import signal
 import importlib
 import logging
 import threading
@@ -18,13 +16,16 @@ import pytz
 # Define the version number
 __version__ = "1.0.0" # Consider updating this based on changes
 
-# Set up logging first
-
 from src.primary import settings_manager
+from src.primary.apps import prowlarr_routes
+from src.primary.apps.swaparr.handler import run_swaparr
+from src.primary.cycle_tracker import end_cycle, start_cycle, update_next_cycle
 from src.primary.scheduler_engine import start_scheduler, stop_scheduler
+from src.primary.settings_manager import load_settings
 from src.primary.state import check_instance_state_reset, calculate_reset_time
 from src.primary.stateful_manager import get_state_management_summary
 from src.primary.stats_manager import check_hourly_cap_exceeded
+from src.primary.utils.database import get_database
 from src.primary.utils.logger import setup_main_logger, get_logger
 
 logger = setup_main_logger()
@@ -62,8 +63,6 @@ def app_specific_loop(app_type: str) -> None:
     Args:
         app_type: The type of Arr application (sonarr, radarr, lidarr, readarr)
     """
-    from src.primary.cycle_tracker import update_next_cycle
-
     app_logger = get_logger(app_type)
     app_logger.info("=== [%s] Thread starting ===", app_type.upper())
 
@@ -152,7 +151,6 @@ def app_specific_loop(app_type: str) -> None:
 
     # Create app-specific logger using provided function
     app_logger = logging.getLogger(f"huntarr.{app_type}")
-
 
     while not stop_event.is_set():
         # --- Load Settings for this Cycle --- #
@@ -244,9 +242,6 @@ def app_specific_loop(app_type: str) -> None:
             api_url = instance_details.get("api_url", "")
             api_key = instance_details.get("api_key", "")
 
-            # Get global/shared settings from app_settings loaded at the start of the loop
-            # Example: monitored_only = app_settings.get("monitored_only", True)
-
             # --- State Reset Check --- #
             check_instance_state_reset(app_type, instance_name)
 
@@ -315,7 +310,6 @@ def app_specific_loop(app_type: str) -> None:
             # Get maximum_download_queue_size from general settings (still using minimum_download_queue_size key for backward compatibility)
             general_settings = settings_manager.load_settings('general')
             max_queue_size = general_settings.get("minimum_download_queue_size", -1)
-
 
             if max_queue_size >= 0:
                 try:
@@ -416,8 +410,6 @@ def app_specific_loop(app_type: str) -> None:
                         processed_any_items = True
                 except Exception as e:
                     app_logger.error("Error during upgrade processing for %s: %s", instance_name, e, exc_info=True)
-
-
 
             # Small delay between instances if needed (optional)
             if not stop_event.is_set():
@@ -539,7 +531,6 @@ def app_specific_loop(app_type: str) -> None:
         # Mark cycle as ended (set cyclelock to False) and update next cycle time
         # Use user's timezone for internal storage consistency
         try:
-            from src.primary.cycle_tracker import end_cycle
             # Convert timezone-aware datetime to naive for clean timestamp generation
             next_cycle_naive = next_cycle_time.replace(tzinfo=None) if next_cycle_time.tzinfo else next_cycle_time
             end_cycle(app_type, next_cycle_naive)
@@ -620,12 +611,6 @@ def start_app_threads():
             if app_type not in CYCLICAL_APP_TYPES:
                 logger.debug("Configured non-cyclical app detected; not starting background thread: %s", app_type)
                 continue
-
-            # Optional: Add an explicit 'enabled' setting check if desired
-            # enabled = settings_manager.get_setting(app_type, "enabled", True)
-            # if not enabled:
-            #     logger.info(f"Skipping {app_type} thread as it is disabled in settings.")
-            #     continue
 
             if app_type not in app_threads or not app_threads[app_type].is_alive():
                 if app_type in app_threads: # If it existed but died
@@ -762,10 +747,6 @@ def prowlarr_stats_loop():
     refresher_logger = get_logger("prowlarr")
     refresher_logger.info("Prowlarr stats refresher thread started")
     try:
-        from src.primary.settings_manager import load_settings
-        # Import inside loop target to avoid circular issues at module import time
-        from src.primary.apps import prowlarr_routes as prow
-
         refresh_interval_seconds = 300  # 5 minutes
 
         # Do an immediate pass on start
@@ -784,7 +765,7 @@ def prowlarr_stats_loop():
 
                 # Trigger cache update (safe even if cache is warm)
                 try:
-                    prow._update_stats_cache()
+                    prowlarr_routes._update_stats_cache()
                 except Exception as e:
                     refresher_logger.error("Prowlarr stats refresh error: %s", e, exc_info=True)
 
@@ -807,10 +788,6 @@ def swaparr_app_loop():
     swaparr_logger.info("Swaparr thread started")
 
     try:
-        from src.primary.apps.swaparr.handler import run_swaparr
-        from src.primary.settings_manager import load_settings
-        from src.primary.cycle_tracker import start_cycle, end_cycle, update_next_cycle
-
         while not stop_event.is_set():
             try:
                 # Load Swaparr settings
@@ -864,7 +841,6 @@ def swaparr_app_loop():
                 while elapsed < sleep_duration and not stop_event.is_set():
                     # Check for database reset request (same logic as other apps)
                     try:
-                        from src.primary.utils.database import get_database
                         db = get_database()
                         reset_timestamp = db.get_pending_reset_request("swaparr")
                         if reset_timestamp:
