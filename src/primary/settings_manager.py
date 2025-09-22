@@ -187,7 +187,7 @@ def load_instance_settings(app_name: str, instance_name: str) -> dict[str, Any]:
         instance_name: The specific instance name to load settings for
 
     Returns:
-        dict: Dictionary containing the merged app and instance settings
+        dict: Dictionary containing the instance settings
     """
     app_settings = load_settings(app_name)
 
