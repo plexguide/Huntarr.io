@@ -7,6 +7,7 @@ Handles storing and retrieving processed media history using manager.db
 import threading
 import logging
 
+from src.primary.notification_manager import send_history_notification
 from src.primary.utils.database import get_database
 
 logger = logging.getLogger(__name__)
@@ -60,10 +61,7 @@ def add_history_entry(app_type, entry_data):
 
             logger.info("Added history entry for %s-%s: %s", app_type, instance_name, entry_data['name'])
 
-            # Send notification about this history entry
             try:
-                # Import here to avoid circular imports
-                from src.primary.notification_manager import send_history_notification
                 send_history_notification(entry)
             except Exception as e:
                 logger.error("Failed to send notification for history entry: %s", e)

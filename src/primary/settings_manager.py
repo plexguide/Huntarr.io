@@ -13,6 +13,7 @@ import time
 from typing import Dict, Any, Optional, List
 
 from src.primary.utils.database import get_database
+from src.primary.utils.timezone_utils import clear_timezone_cache, validate_timezone
 
 # Create a simple logger for settings_manager
 logging.basicConfig(level=logging.INFO)
@@ -190,13 +191,11 @@ def load_instance_settings(app_name: str, instance_name: str) -> dict[str, Any]:
     """
     app_settings = load_settings(app_name)
 
-    instance_settings = {}
-    for instance in app_settings.get("instances", []):
-        if instance.get("name") == instance_name:
-            instance_settings = instance
-            break
+    for instance_settings in app_settings.get("instances", []):
+        if instance_settings.get("name") == instance_name:
+            return instance_settings
 
-    return app_settings | instance_settings
+    raise ValueError(f"Instance '{instance_name}' not found for app '{app_name}'")
 
 
 def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
@@ -281,7 +280,6 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
         # If general settings were saved, also clear timezone cache
         if app_name == 'general':
             try:
-                from src.primary.utils.timezone_utils import clear_timezone_cache
                 clear_timezone_cache()
                 settings_logger.debug("Timezone cache cleared")
             except Exception as e:
@@ -365,7 +363,6 @@ def apply_timezone(timezone: str) -> bool:
 
         # Clear timezone cache to ensure fresh timezone is loaded
         try:
-            from src.primary.utils.timezone_utils import clear_timezone_cache
             clear_timezone_cache()
             settings_logger.debug("Timezone cache cleared")
         except Exception as e:
@@ -421,30 +418,6 @@ def apply_timezone(timezone: str) -> bool:
 
     except Exception as e:
         settings_logger.error("Critical error setting timezone: %s", str(e))
-        return False
-
-
-def validate_timezone(timezone_str: str) -> bool:
-    """
-    Validate if a timezone string is valid using pytz.
-
-    Args:
-        timezone_str: The timezone string to validate (e.g., 'Europe/Bucharest')
-
-    Returns:
-        bool: True if valid, False otherwise
-    """
-    if not timezone_str:
-        return False
-
-    try:
-        import pytz
-        pytz.timezone(timezone_str)
-        return True
-    except pytz.UnknownTimeZoneError:
-        return False
-    except Exception as e:
-        settings_logger.warning("Error validating timezone %s: %s", timezone_str, e)
         return False
 
 

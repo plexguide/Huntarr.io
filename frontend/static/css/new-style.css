@@ -14,7 +14,7 @@
     --error-color: #e74c3c;
     --info-color: #2980b9;
     --debug-color: #7f8c8d;
-    
+
     /* Component Colors */
     --sidebar-bg: #2c3e50;
     --sidebar-text: #ecf0f1;
@@ -24,7 +24,7 @@
     --card-bg: var(--bg-secondary);
     --switch-bg: #cbd2d9;
     --switch-active: #3498db;
-    
+
     /* Button Colors */
     --button-primary-bg: #3498db;
     --button-primary-text: #ffffff;
@@ -33,11 +33,11 @@
     --button-danger-hover: #c0392b;
     --button-success-bg: #27ae60;
     --button-success-hover: #219955;
-    
+
     /* Status Colors */
     --status-connected: #27ae60;
     --status-not-connected: #e74c3c;
-    
+
     /* Logs Colors */
     --log-bg: var(--bg-secondary);
     --log-border: var(--border-color);
@@ -53,7 +53,7 @@
     --border-color: #4a5568;
     --accent-color: #3498db;
     --accent-hover: #2980b9;
-    
+
     /* Component Colors */
     --sidebar-bg: #121212;
     --sidebar-text: #ecf0f1;
@@ -62,7 +62,7 @@
     --topbar-bg: #252a34;
     --card-bg: #252a34;
     --switch-bg: #4a5568;
-    
+
     /* Logs Colors */
     --log-bg: #252a34;
     --log-border: #4a5568;
@@ -424,9 +424,9 @@ div[id*="scheduling"] p:not(.no-schedules-message p),
 }
 
 /* Keep old class references for backward compatibility */
-#addScheduleButton, 
-#saveSchedulesButton, 
-button.save-button, 
+#addScheduleButton,
+#saveSchedulesButton,
+button.save-button,
 button.action-button {
     background-color: #3498db !important;
     border: none !important;
@@ -1425,18 +1425,18 @@ input:checked + .toggle-slider:before {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .section-header {
         flex-direction: column;
         align-items: flex-start;
     }
-    
+
     .app-tabs, .settings-actions {
         width: 100%;
         overflow-x: auto;
         padding-bottom: 5px; /* Prevent cut-off of button shadows */
     }
-    
+
     .app-tab, .settings-tab {
         flex: 1;
         white-space: nowrap;
@@ -1459,21 +1459,21 @@ input:checked + .toggle-slider:before {
         margin-right: 0;
         margin-bottom: 10px;
     }
-    
+
     /* Styles moved from 992px breakpoint */
     .settings-group {
         padding: 15px;
     }
-    
+
     .setting-item label {
         width: 100%;
         margin-bottom: 8px;
     }
-    
+
     .setting-help {
         margin-left: 0;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr;
     }
@@ -1491,53 +1491,53 @@ input:checked + .toggle-slider:before {
         width: 80px; /* Adjust width as needed */
         max-width: 80px;
     }
-    
+
     /* History styles moved from 992px breakpoint */
     .history-table {
         font-size: 13px;
     }
-    
+
     .history-table th, .history-table td {
         padding: 8px 10px;
     }
-    
+
     .history-search input {
         width: 150px;
     }
-    
+
     /* Original mobile history styles */
     .history-controls {
         flex-wrap: wrap;
         gap: 10px;
     }
-    
+
     .history-search {
         width: 100%;
         margin-bottom: 10px;
     }
-    
+
     .history-search input {
         width: calc(100% - 40px);
     }
-    
+
     /* Sidebar styles moved from 950px breakpoint */
     .sidebar {
         width: 60px;
     }
-    
+
     .sidebar h1, .nav-item span, .switch-label {
         display: none;
     }
-    
+
     .nav-item i {
         margin-right: 0;
         font-size: 22px;
     }
-    
+
     .logo-container {
         justify-content: center;
     }
-    
+
     .logo {
         margin-right: 0;
     }
@@ -2144,12 +2144,12 @@ input:checked + .toggle-slider:before {
         flex-wrap: wrap;
         gap: 10px;
     }
-    
+
     .history-search {
         width: 100%;
         margin-bottom: 10px;
     }
-    
+
     .history-search input {
         width: calc(100% - 40px);
     }
@@ -2233,14 +2233,14 @@ input:checked + .toggle-slider:before {
 }
 
 /* Any container elements that might have overflow: hidden */
-.app-container, 
-.content-section, 
-.scheduler-container, 
+.app-container,
+.content-section,
+.scheduler-container,
 .scheduler-panel {
     overflow: auto !important;
 }
 
-#schedulingPage, 
+#schedulingPage,
 #schedulingSection {
     overflow-y: auto !important;
 }
@@ -2256,118 +2256,6 @@ input:checked + .toggle-slider:before {
 .setting-item input.short-number-input {
     width: 100px !important; /* Use !important to override wider default */
     padding: 12px 10px !important;
-}
-
-/* Make number inputs for intervals shorter */
-input[type="number"].interval-input,
-#generalSettings .setting-item input#stateful_management_hours {
-    width: 80px !important; /* Use !important to override potential broader input styles */
-    padding: 12px 8px !important;
-}
-
-/* Stateful management header row with reset button */
-.stateful-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
-    width: 100%;
-}
-
-.stateful-header-row h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-/* Reset button styling */
-#reset_stateful_btn {
-    background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15));
-    color: rgba(231, 76, 60, 0.9);
-    border: 1px solid rgba(231, 76, 60, 0.3);
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-#reset_stateful_btn:hover {
-    background: linear-gradient(145deg, rgba(231, 76, 60, 0.3), rgba(192, 57, 43, 0.25));
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    color: rgba(231, 76, 60, 1);
-}
-
-#reset_stateful_btn i {
-    font-size: 13px;
-}
-
-/* Stateful Management Section Styling */
-#generalSettings .setting-info-block {
-    background: linear-gradient(145deg, rgba(30, 39, 56, 0.4), rgba(22, 28, 40, 0.5));
-    border: 1px solid rgba(90, 109, 137, 0.1);
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 0;
-    margin-bottom: 20px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-#generalSettings .info-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-#generalSettings .date-info-block {
-    background: linear-gradient(145deg, rgba(20, 25, 35, 0.4), rgba(15, 19, 26, 0.3));
-    padding: 12px 15px;
-    border-radius: 6px;
-    border-left: 3px solid var(--accent-color);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-#generalSettings .date-label {
-    font-size: 0.85em;
-    color: var(--text-secondary);
-    margin-bottom: 5px;
-    opacity: 0.85;
-}
-
-#generalSettings .date-value {
-    font-size: 0.95em;
-    font-weight: 600;
-    color: var(--text-primary);
-    font-family: inherit;
-    background-color: transparent;
-    padding: 0;
-}
-
-#generalSettings .setting-item .reset-help {
-    color: var(--warning-color);
-    font-style: normal;
-    font-size: 0.85em;
-    opacity: 0.9;
-}
-
-/* Fix specific input field widths - State Reset Interval */
-#generalSettings .setting-item input#stateful_management_hours,
-input#stateful_management_hours {
-    width: 55px !important; /* Make it significantly narrower to match the red line in the image */
-    padding: 8px 6px !important;
-    text-align: center;
-    margin-right: 10px;
-    min-width: 55px !important;
-    max-width: 55px !important;
-    font-size: 0.9rem;
 }
 
 /* Pagination controls above table - left aligned and compact */

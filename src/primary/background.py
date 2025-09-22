@@ -14,15 +14,12 @@ import datetime
 import traceback
 from typing import Dict
 
-import pytz
-
 from src.primary import settings_manager
 from src.primary.apps import prowlarr_routes
 from src.primary.apps.swaparr.handler import run_swaparr
 from src.primary.cycle_tracker import end_cycle, start_cycle, update_next_cycle
 from src.primary.scheduler_engine import start_scheduler, stop_scheduler
 from src.primary.settings_manager import load_settings
-from src.primary.state import calculate_reset_time
 from src.primary.stateful_manager import (
     get_instance_state_management_summary,
     has_instance_state_expired,
@@ -31,6 +28,7 @@ from src.primary.stateful_manager import (
 from src.primary.stats_manager import check_hourly_cap_exceeded
 from src.primary.utils.database import get_database
 from src.primary.utils.logger import setup_main_logger, get_logger
+from src.primary.utils.timezone_utils import get_user_timezone
 
 logger = setup_main_logger()
 
@@ -49,15 +47,6 @@ prowlarr_stats_thread = None
 
 # Define which apps have background processing cycles
 CYCLICAL_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
-
-
-def _get_user_timezone():
-    """Get the user's selected timezone from general settings"""
-    try:
-        from src.primary.utils.timezone_utils import get_user_timezone
-        return get_user_timezone()
-    except Exception:
-        return pytz.UTC
 
 
 def app_specific_loop(app_type: str) -> None:
@@ -422,9 +411,6 @@ def app_specific_loop(app_type: str) -> None:
                  time.sleep(1) # Short pause
             enabled_instances.append(instance_name)
 
-        # --- Cycle End & Sleep --- #
-        calculate_reset_time(app_type) # Pass app_type here if needed by the function
-
         # Log cycle completion
         if processed_any_items:
             app_logger.info("=== %s cycle finished. Processed items across instances. ===", app_type.upper())
@@ -501,7 +487,7 @@ def app_specific_loop(app_type: str) -> None:
         # Use user's selected timezone for all time operations
 
         # Get user's selected timezone
-        user_tz = _get_user_timezone()
+        user_tz = get_user_timezone()
 
         # Get current time in user's timezone - remove microseconds for clean timestamps
         now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
@@ -794,7 +780,7 @@ def swaparr_app_loop():
                 sleep_duration = swaparr_settings.get("sleep_duration", 900)
 
                 # Get user's timezone
-                user_tz = _get_user_timezone()
+                user_tz = get_user_timezone()
 
                 # Calculate next cycle time in user's timezone
                 now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)

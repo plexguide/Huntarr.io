@@ -10,13 +10,9 @@ from typing import Any
 from flask import Blueprint, request, Response
 
 from src.primary.stateful_manager import (
-    get_stateful_management_info,
     get_instance_state_management_summary,
     reset_instance_state_management,
-    reset_stateful_management,
-    update_lock_expiration,
 )
-from src.primary.utils.database import get_database
 from src.primary.utils.logger import get_logger
 
 stateful_logger = get_logger("stateful")
@@ -41,25 +37,6 @@ def base_response(status: int, data: dict[str, Any]):
     return response
 
 
-@stateful_api.route('/info', methods=['GET'])
-def get_info():
-    """Get stateful management information."""
-    try:
-        info = get_stateful_management_info()
-        return base_response(200, {
-            "success": True,
-            "created_at_ts": info.get("created_at_ts"),
-            "expires_at_ts": info.get("expires_at_ts"),
-            "interval_hours": info.get("interval_hours")
-        })
-    except Exception as e:
-        stateful_logger.error("Error getting stateful info: %s", e)
-        return base_response(500, {
-            "success": False,
-            "message": f"Error getting stateful info: {str(e)}",
-        })
-
-
 @stateful_api.route('/reset', methods=['POST'])
 def reset_stateful():
     """Reset the stateful management system (global or per-instance)."""
@@ -68,21 +45,18 @@ def reset_stateful():
         app_type = data.get('app_type')
         instance_name = data.get('instance_name')
 
-        if app_type and instance_name:
-            success = reset_instance_state_management(app_type, instance_name)
-            if success:
-                stateful_logger.info("Successfully reset state management for %s/%s", app_type, instance_name)
-                response_data = {"success": True, "message": f"State management reset successfully for {app_type}/{instance_name}"}
-            else:
-                response_data = {"success": False, "message": f"Failed to reset state management for {app_type}/{instance_name}"}
+        if not app_type and instance_name:
+            return base_response(400, {
+                "success": False,
+                "message": "app_type and instance_name parameters are required"
+            })
 
+        success = reset_instance_state_management(app_type, instance_name)
+        if success:
+            stateful_logger.info("Successfully reset state management for %s/%s", app_type, instance_name)
+            response_data = {"success": True, "message": f"State management reset successfully for {app_type}/{instance_name}"}
         else:
-            # Global reset (legacy)
-            success = reset_stateful_management()
-            if success:
-                response_data = {"success": True, "message": "Stateful management reset successfully"}
-            else:
-                response_data = {"success": False, "message": "Failed to reset stateful management"}
+            response_data = {"success": False, "message": f"Failed to reset state management for {app_type}/{instance_name}"}
 
         return base_response(200 if response_data["success"] else 500, response_data)
 
@@ -91,43 +65,6 @@ def reset_stateful():
         return base_response(500, {
             "success": False,
             "message": f"Error resetting stateful management: {str(e)}",
-        })
-
-
-@stateful_api.route('/update-expiration', methods=['POST'])
-def update_expiration():
-    """Update the stateful management expiration time."""
-    try:
-        hours = request.json.get('hours')
-        if hours is None or not isinstance(hours, int) or hours <= 0:
-            stateful_logger.error("Invalid hours value for update-expiration: %s", hours)
-            return base_response(400, {
-                "success": False,
-                "message": f"Invalid hours value: {hours}. Must be a positive integer.",
-            })
-
-        updated = update_lock_expiration(hours)
-
-        if updated:
-            info = get_stateful_management_info()
-            # Add CORS headers to allow access from frontend
-            return base_response(200, {
-                "success": True,
-                "message": f"Expiration updated to {hours} hours",
-                "expires_at": info.get("expires_at"),
-                "expires_date": info.get("expires_date"),
-            })
-
-        return base_response(500, {
-            "success": False,
-            "message": "Failed to update expiration",
-        })
-
-    except Exception as e:
-        stateful_logger.error("Error updating expiration: %s", e, exc_info=True)
-        return base_response(500, {
-            "success": False,
-            "message": f"Error updating expiration: {str(e)}",
         })
 
 
