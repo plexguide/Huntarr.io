@@ -24,11 +24,37 @@ def initialize_state_management():
     Initialize reset intervals for all app instances based on their settings.
     """
     for app in APP_TYPES:
-        for instance_settings in load_settings(app).get("instances", []):
-            if not instance_settings["enabled"]:
-                continue  # Skip disabled instances
-            if get_database().get_instance_lock_info(app, instance_settings["name"]):
-                continue  # Already initialized
+
+        try:
+            app_settings = load_settings(app)
+        except Exception as e:
+            logger.error("Skipping %s. Could not load settings: %s", app, e)
+            continue
+
+        for i, instance_settings in enumerate(app_settings.get("instances", [])):
+
+            try:
+                instance_enabled = instance_settings["enabled"]
+                instance_name = instance_settings["name"]
+            except KeyError as e:
+                logger.error(
+                    "Skipping initialization of instance %d in %s app. Missing setting: %s",
+                    i, app, e,
+                )
+                continue
+
+            try:
+                instance_initialized = get_database().get_instance_lock_info(app, instance_name)
+            except Exception as e:
+                logger.error(
+                    "Skipping initialization of %s/%s. Could not verify existing lock: %s",
+                    app, instance_name, e,
+                )
+                continue
+
+            if not instance_enabled or instance_initialized:
+                continue  # Skip disabled or already initialized instances
+
             initialize_instance_state_management(
                 app,
                 instance_settings["name"],
@@ -58,10 +84,16 @@ def initialize_instance_state_management(app: str, instance: str, expiration_hou
     try:
         db = get_database()
         db.set_instance_lock_info(app, instance, current_time, expires_at, expiration_hours)
-        return True
     except Exception as e:
         logger.error("Error initializing state management for %s/%s: %s", app, instance, e)
         return False
+
+    logger.info(
+        "Initialized state management for %s/%s with %dh interval",
+        app, instance, expiration_hours,
+    )
+
+    return True
 
 
 def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
