@@ -11,7 +11,7 @@ from flask import Blueprint, request, Response
 
 from src.primary.stateful_manager import (
     get_instance_state_management_summary,
-    reset_instance_state_management,
+    reset_state_management,
 )
 from src.primary.utils.logger import get_logger
 
@@ -51,7 +51,7 @@ def reset_stateful():
                 "message": "app_type and instance_name parameters are required"
             })
 
-        success = reset_instance_state_management(app_type, instance_name)
+        success = reset_state_management(app_type, instance_name)
         if success:
             stateful_logger.info("Successfully reset state management for %s/%s", app_type, instance_name)
             response_data = {"success": True, "message": f"State management reset successfully for {app_type}/{instance_name}"}

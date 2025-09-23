@@ -23,6 +23,7 @@ from flask import (
 )
 
 from src.primary import settings_manager
+from src.primary.stateful_manager import initialize_state_management
 from src.primary.utils.logger import get_logger, LOG_DIR, update_logging_levels
 from src.primary.auth import authenticate_request
 from src.primary.routes.common import common_bp
@@ -486,10 +487,11 @@ def handle_app_settings(app_name):
             # For apps that don't use instances array
             data['api_url'] = data['api_url'].strip().rstrip('/').rstrip('\\')
 
-        # Settings cleaned - debug spam removed
-
         # Save the app settings
         success = settings_manager.save_settings(app_name, data)
+
+        # Initialize state management for any new instances configured
+        initialize_state_management()
 
         if success:
             # Auto-save enabled - no need to log every successful save

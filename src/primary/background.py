@@ -22,8 +22,8 @@ from src.primary.scheduler_engine import start_scheduler, stop_scheduler
 from src.primary.settings_manager import load_settings
 from src.primary.stateful_manager import (
     get_instance_state_management_summary,
-    has_instance_state_expired,
-    reset_instance_state_management,
+    should_state_management_reset,
+    reset_state_management,
 )
 from src.primary.stats_manager import check_hourly_cap_exceeded
 from src.primary.utils.database import get_database
@@ -236,9 +236,9 @@ def app_specific_loop(app_type: str) -> None:
             api_key = instance_details.get("api_key", "")
 
             # --- State Reset Check --- #
-            if has_instance_state_expired(app_type, instance_name):
+            if should_state_management_reset(app_type, instance_name):
                 app_logger.info("State has expired for %s instance '%s'. Resetting state.", app_type, instance_name)
-                reset_instance_state_management(app_type, instance_name)
+                reset_state_management(app_type, instance_name)
 
             # --- Connection Check --- #
             if not api_url or not api_key:

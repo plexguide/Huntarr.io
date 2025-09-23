@@ -113,10 +113,10 @@ try:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
     from primary.utils.logger import setup_main_logger, get_logger
     from primary.utils.clean_logger import setup_clean_logging
-    
+
     # Initialize main logger
     huntarr_logger = setup_main_logger()
-    
+
     # Initialize timezone from TZ environment variable
     try:
         from primary.settings_manager import initialize_timezone_from_env
@@ -124,13 +124,13 @@ try:
         huntarr_logger.info("Timezone initialization completed.")
     except Exception as e:
         huntarr_logger.warning(f"Failed to initialize timezone from environment: {e}")
-    
 
-    
+
+
     # Initialize clean logging for frontend consumption
     setup_clean_logging()
     huntarr_logger.info("Clean logging system initialized for frontend consumption.")
-    
+
     huntarr_logger.info("Successfully imported application components.")
     # Main function startup message removed to reduce log spam
 except ImportError as e:
@@ -157,19 +157,19 @@ def refresh_sponsors_on_startup():
     """Refresh sponsors database from manifest.json on startup"""
     import os
     import json
-    
+
     try:
         # Get database instance
         from src.primary.utils.database import get_database
         db = get_database()
-        
+
         # Path to manifest.json
         manifest_path = os.path.join(os.path.dirname(__file__), 'manifest.json')
-        
+
         if os.path.exists(manifest_path):
             with open(manifest_path, 'r') as f:
                 manifest_data = json.load(f)
-            
+
             sponsors_list = manifest_data.get('sponsors', [])
             if sponsors_list:
                 # Clear existing sponsors and save new ones
@@ -179,7 +179,7 @@ def refresh_sponsors_on_startup():
                 huntarr_logger.warning("No sponsors found in manifest.json")
         else:
             huntarr_logger.warning(f"manifest.json not found at {manifest_path}")
-            
+
     except Exception as e:
         huntarr_logger.error(f"Error refreshing sponsors on startup: {e}")
         raise
@@ -187,19 +187,19 @@ def refresh_sponsors_on_startup():
 def load_version_to_database():
     """Load current version from version.txt into database on startup"""
     import os
-    
+
     try:
         # Get database instance
         from src.primary.utils.database import get_database
         db = get_database()
-        
+
         # Path to version.txt
         version_path = os.path.join(os.path.dirname(__file__), 'version.txt')
-        
+
         if os.path.exists(version_path):
             with open(version_path, 'r') as f:
                 version = f.read().strip()
-            
+
             if version:
                 # Store version in database
                 db.set_version(version)
@@ -208,7 +208,7 @@ def load_version_to_database():
                 huntarr_logger.warning("version.txt is empty")
         else:
             huntarr_logger.warning(f"version.txt not found at {version_path}")
-            
+
     except Exception as e:
         huntarr_logger.error(f"Error loading version to database: {e}")
         # Don't raise - this is not critical enough to stop startup
@@ -239,11 +239,11 @@ def run_web_server():
         import sys
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
         from primary.settings_manager import load_settings
-        
+
         settings = load_settings("general")
         local_access_bypass = settings.get("local_access_bypass", False)
         proxy_auth_bypass = settings.get("proxy_auth_bypass", False)
-        
+
         if proxy_auth_bypass:
             web_logger.info("🔓 Authentication Mode: NO LOGIN MODE (Proxy authentication bypass enabled)")
         elif local_access_bypass:
@@ -271,16 +271,16 @@ def run_web_server():
             from waitress.server import create_server
             import time
             web_logger.info("Running with Waitress production server.")
-            
+
             # Create the server instance so we can shut it down gracefully
             waitress_server = create_server(app, host=host, port=port, threads=8)
-            
+
             web_logger.info("Waitress server starting...")
-            
+
             # Start the server in a separate thread
             server_thread = threading.Thread(target=waitress_server.run, daemon=True)
             server_thread.start()
-            
+
             # Monitor for shutdown signal in the main thread
             while not shutdown_requested.is_set() and not stop_event.is_set():
                 try:
@@ -289,25 +289,25 @@ def run_web_server():
                         break
                 except KeyboardInterrupt:
                     break
-            
+
             # Shutdown sequence
             web_logger.info("Shutdown signal received. Stopping Waitress server...")
             try:
                 waitress_server.close()
                 web_logger.info("Waitress server close() called.")
-                
+
                 # Wait for server thread to finish
                 server_thread.join(timeout=3.0)
                 if server_thread.is_alive():
                     web_logger.warning("Server thread did not stop within timeout.")
                 else:
                     web_logger.info("Server thread stopped successfully.")
-                    
+
             except Exception as e:
                 web_logger.exception(f"Error during Waitress server shutdown: {e}")
-            
+
             web_logger.info("Waitress server has stopped.")
-            
+
         except ImportError:
             web_logger.error("Waitress not found. Falling back to Flask development server (NOT recommended for production).")
             web_logger.error("Install waitress ('pip install waitress') for production use.")
@@ -328,20 +328,20 @@ def main_shutdown_handler(signum, frame):
     """Gracefully shut down the application."""
     global _global_shutdown_flag
     _global_shutdown_flag = True  # Set global shutdown flag immediately
-    
+
     signal_name = "SIGINT" if signum == signal.SIGINT else "SIGTERM" if signum == signal.SIGTERM else f"Signal {signum}"
     huntarr_logger.info(f"Received {signal_name}. Initiating graceful shutdown...")
-    
+
     # Set a reasonable timeout for shutdown operations
     shutdown_start_time = time.time()
     shutdown_timeout = 30  # 30 seconds total shutdown timeout
-    
+
     # Immediate database checkpoint to prevent corruption
     try:
         from primary.utils.database import get_database, get_logs_database
-        
+
         huntarr_logger.info("Performing emergency database checkpoint...")
-        
+
         # Emergency checkpoint for main database
         try:
             main_db = get_database()
@@ -350,7 +350,7 @@ def main_shutdown_handler(signum, frame):
                 huntarr_logger.info("Main database emergency checkpoint completed")
         except Exception as e:
             huntarr_logger.warning(f"Main database emergency checkpoint failed: {e}")
-        
+
         # Emergency checkpoint for logs database
         try:
             logs_db = get_logs_database()
@@ -359,16 +359,16 @@ def main_shutdown_handler(signum, frame):
                 huntarr_logger.info("Logs database emergency checkpoint completed")
         except Exception as e:
             huntarr_logger.warning(f"Logs database emergency checkpoint failed: {e}")
-            
+
     except Exception as e:
         huntarr_logger.warning(f"Emergency database checkpoint failed: {e}")
-    
+
     # Set both shutdown events
     if not stop_event.is_set():
         stop_event.set()
     if not shutdown_requested.is_set():
         shutdown_requested.set()
-    
+
     # Also shutdown the Waitress server directly if it exists
     global waitress_server
     if waitress_server:
@@ -377,7 +377,7 @@ def main_shutdown_handler(signum, frame):
             waitress_server.close()
         except Exception as e:
             huntarr_logger.warning(f"Error closing Waitress server: {e}")
-    
+
     # Force exit if shutdown takes too long (Docker container update scenario)
     elapsed_time = time.time() - shutdown_start_time
     if elapsed_time > shutdown_timeout:
@@ -388,11 +388,11 @@ def cleanup_handler():
     """Cleanup function called at exit"""
     cleanup_start_time = time.time()
     huntarr_logger.info("Exit cleanup handler called")
-    
+
     # Shutdown databases gracefully with timeout
     try:
         from primary.utils.database import get_database, get_logs_database
-        
+
         # Close main database connections
         main_db = get_database()
         if hasattr(main_db, '_database_instance') and main_db._database_instance is not None:
@@ -405,7 +405,7 @@ def cleanup_handler():
                     huntarr_logger.debug("Main database WAL checkpoint completed")
             except Exception as db_error:
                 huntarr_logger.warning(f"Error during main database cleanup: {db_error}")
-        
+
         # Close logs database connections
         logs_db = get_logs_database()
         if hasattr(logs_db, '_logs_database_instance') and logs_db._logs_database_instance is not None:
@@ -417,18 +417,18 @@ def cleanup_handler():
                     huntarr_logger.debug("Logs database WAL checkpoint completed")
             except Exception as logs_error:
                 huntarr_logger.warning(f"Error during logs database cleanup: {logs_error}")
-                
+
         huntarr_logger.info("Database shutdown completed")
-        
+
     except Exception as e:
         huntarr_logger.warning(f"Error during database shutdown: {e}")
-    
+
     # Ensure stop events are set
     if not stop_event.is_set():
         stop_event.set()
     if not shutdown_requested.is_set():
         shutdown_requested.set()
-    
+
     # Log cleanup timing for Docker update diagnostics
     cleanup_duration = time.time() - cleanup_start_time
     huntarr_logger.info(f"Cleanup completed in {cleanup_duration:.2f} seconds")
@@ -440,30 +440,30 @@ def main():
     # Register signal handlers for graceful shutdown in the main process
     signal.signal(signal.SIGINT, main_shutdown_handler)
     signal.signal(signal.SIGTERM, main_shutdown_handler)
-    
+
     # Register cleanup handler
     atexit.register(cleanup_handler)
-    
+
     # Initialize databases with default configurations
     try:
         from primary.settings_manager import initialize_database
         initialize_database()
         huntarr_logger.info("Main database initialization completed successfully")
-        
+
         # Initialize base URL from BASE_URL environment variable early
         # This needs to happen before web server initialization
         try:
             from primary.settings_manager import initialize_base_url_from_env
             initialize_base_url_from_env()
             huntarr_logger.info("Base URL initialization completed.")
-            
+
             # Reconfigure the web server with the updated base URL
             from primary.web_server import reconfigure_base_url
             reconfigure_base_url()
             huntarr_logger.info("Web server reconfigured with updated base URL.")
         except Exception as e:
             huntarr_logger.warning(f"Failed to initialize base URL from environment: {e}")
-        
+
         # Initialize database logging system (now uses main huntarr.db)
         try:
             from primary.utils.database import get_logs_database, schedule_log_cleanup
@@ -472,22 +472,29 @@ def main():
             huntarr_logger.info("Database logging system initialized with scheduled cleanup.")
         except Exception as e:
             huntarr_logger.warning(f"Failed to initialize database logging: {e}")
-        
+
         # Load version from version.txt into database on startup
         try:
             load_version_to_database()
         except Exception as version_error:
             huntarr_logger.warning(f"Failed to load version to database: {version_error}")
-        
+
         # Refresh sponsors from manifest.json on startup
         try:
             refresh_sponsors_on_startup()
             huntarr_logger.info("Sponsors database refreshed from manifest.json")
         except Exception as sponsor_error:
             huntarr_logger.warning(f"Failed to refresh sponsors on startup: {sponsor_error}")
-        
+
+        # Initialize state management system
+        try:
+            from src.primary.stateful_manager import initialize_state_management
+            initialize_state_management()
+        except Exception as e:
+            huntarr_logger.warning("Failed to initialize state management system: %s", e)
+
     except Exception as e:
-        huntarr_logger.error(f"Failed to initialize databases: {e}")
+        huntarr_logger.error("Failed to initialize databases: %s", e)
         huntarr_logger.error("Application may not function correctly without database")
         # Continue anyway - the app might still work with defaults
 
@@ -542,7 +549,7 @@ def main():
         # shutdown_threads() # Uncomment if primary.main.shutdown_threads() does more cleanup
 
         huntarr_logger.info("--- Huntarr Main Process Exiting ---")
-        
+
         # Return appropriate exit code based on shutdown reason
         if shutdown_requested.is_set() or stop_event.is_set():
             huntarr_logger.info("Clean shutdown completed - Exit code 0")

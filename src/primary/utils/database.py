@@ -336,15 +336,8 @@ class HuntarrDatabase:
                 )
             ''')
 
-            # Create stateful_lock table for stateful management lock info
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS stateful_lock (
-                    id INTEGER PRIMARY KEY CHECK (id = 1),
-                    created_at INTEGER NOT NULL,
-                    expires_at INTEGER NOT NULL,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
+            # Legacy global stateful_lock table removed - drop if it exists
+            conn.execute('DROP TABLE IF EXISTS stateful_lock')
 
             # Create stateful_processed_ids table for processed media IDs
             conn.execute('''
@@ -437,18 +430,8 @@ class HuntarrDatabase:
                 )
             ''')
 
-            # Create state_data table for state management (processed IDs and reset times)
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS state_data (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    app_type TEXT NOT NULL,
-                    state_type TEXT NOT NULL,
-                    state_data TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(app_type, state_type)
-                )
-            ''')
+            # Legacy state_data table removed - drop if it exists
+            conn.execute('DROP TABLE IF EXISTS state_data')
 
             # Create swaparr_state table for Swaparr-specific state management
             conn.execute('''
@@ -597,7 +580,6 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_schedules_app_type ON schedules(app_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_schedules_enabled ON schedules(enabled)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_schedules_time ON schedules(time_hour, time_minute)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_state_data_app_type ON state_data(app_type, state_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_swaparr_state_app_name ON swaparr_state(app_name, state_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_sponsors_login ON sponsors(login)')
@@ -801,29 +783,6 @@ class HuntarrDatabase:
 
     # Stateful Management Methods
 
-    def get_stateful_lock_info(self) -> Dict[str, Any]:
-        """Get stateful management lock information"""
-        with self.get_connection() as conn:
-            cursor = conn.execute('SELECT created_at, expires_at FROM stateful_lock WHERE id = 1')
-            row = cursor.fetchone()
-
-            if row:
-                return {
-                    "created_at": row[0],
-                    "expires_at": row[1]
-                }
-            return {}
-
-    def set_stateful_lock_info(self, created_at: int, expires_at: int):
-        """Set stateful management lock information"""
-        with self.get_connection() as conn:
-            conn.execute('''
-                INSERT OR REPLACE INTO stateful_lock (id, created_at, expires_at, updated_at)
-                VALUES (1, ?, ?, CURRENT_TIMESTAMP)
-            ''', (created_at, expires_at))
-            conn.commit()
-            logger.debug("Set stateful lock: created_at=%d, expires_at=%d", created_at, expires_at)
-
     def get_processed_ids(self, app_type: str, instance_name: str) -> Set[str]:
         """Get processed media IDs for a specific app instance"""
         with self.get_connection() as conn:
@@ -834,21 +793,15 @@ class HuntarrDatabase:
 
             return {row[0] for row in cursor.fetchall()}
 
-    def add_processed_id(self, app_type: str, instance_name: str, media_id: str) -> bool:
+    def add_processed_id(self, app_type: str, instance_name: str, media_id: str):
         """Add a processed media ID for a specific app instance"""
-        try:
-            with self.get_connection() as conn:
-                conn.execute('''
-                    INSERT OR IGNORE INTO stateful_processed_ids
-                    (app_type, instance_name, media_id)
-                    VALUES (?, ?, ?)
-                ''', (app_type, instance_name, str(media_id)))
-                conn.commit()
-                logger.debug("Added processed ID %s for %s/%s", media_id, app_type, instance_name)
-                return True
-        except Exception as e:
-            logger.error("Error adding processed ID %s for %s/%s: %s", media_id, app_type, instance_name, e)
-            return False
+        with self.get_connection() as conn:
+            conn.execute('''
+                INSERT OR IGNORE INTO stateful_processed_ids
+                (app_type, instance_name, media_id)
+                VALUES (?, ?, ?)
+            ''', (app_type, instance_name, str(media_id)))
+            conn.commit()
 
     def is_processed(self, app_type: str, instance_name: str, media_id: str) -> bool:
         """Check if a media ID has been processed for a specific app instance"""
@@ -859,28 +812,6 @@ class HuntarrDatabase:
             ''', (app_type, instance_name, str(media_id)))
 
             return cursor.fetchone() is not None
-
-    def clear_all_stateful_data(self):
-        """Clear all stateful management data (for reset)"""
-        with self.get_connection() as conn:
-            # Clear processed IDs
-            conn.execute('DELETE FROM stateful_processed_ids')
-            # Clear lock info
-            conn.execute('DELETE FROM stateful_lock')
-            # Clear per-instance locks
-            conn.execute('DELETE FROM stateful_instance_locks')
-            conn.commit()
-            logger.info("Cleared all stateful management data from database")
-
-    def get_stateful_summary(self, app_type: str, instance_name: str) -> Dict[str, Any]:
-        """Get summary of stateful data for an app instance"""
-        processed_ids = self.get_processed_ids(app_type, instance_name)
-        return {
-            "processed_count": len(processed_ids),
-            "has_processed_items": len(processed_ids) > 0
-        }
-
-    # Per-Instance State Management Methods
 
     def get_instance_lock_info(self, app_type: str, instance_name: str) -> Dict[str, Any]:
         """Get state management lock information for a specific instance"""
@@ -910,17 +841,6 @@ class HuntarrDatabase:
             ''', (app_type, instance_name, created_at, expires_at, expiration_hours))
             conn.commit()
 
-    def check_instance_expiration(self, app_type: str, instance_name: str) -> bool:
-        """Check if state management has expired for a specific instance"""
-        current_time = int(time.time())
-
-        lock_info = self.get_instance_lock_info(app_type, instance_name)
-        if not lock_info:
-            return False  # No lock info means not expired, just not initialized
-
-        expires_at = lock_info.get("expires_at", 0)
-        return current_time >= expires_at
-
     def clear_instance_processed_ids(self, app_type: str, instance_name: str):
         """Clear processed IDs for a specific instance"""
         with self.get_connection() as conn:
@@ -930,24 +850,6 @@ class HuntarrDatabase:
             ''', (app_type, instance_name))
             conn.commit()
             logger.info("Cleared processed IDs for %s/%s", app_type, instance_name)
-
-    def reset_instance_state_management(self, app_type: str, instance_name: str, expiration_hours: int) -> bool:
-        """Reset state management for a specific instance"""
-        try:
-            current_time = int(time.time())
-            expires_at = current_time + (expiration_hours * 3600)
-
-            # Clear processed IDs for this instance
-            self.clear_instance_processed_ids(app_type, instance_name)
-
-            # Set new lock info for this instance
-            self.set_instance_lock_info(app_type, instance_name, current_time, expires_at, expiration_hours)
-
-            logger.info("Reset state management for %s/%s with %sh expiration", app_type, instance_name, expiration_hours)
-            return True
-        except Exception as e:
-            logger.error("Error resetting state management for %s/%s: %s", app_type, instance_name, e)
-            return False
 
     def initialize_instance_state_management(self, app_type: str, instance_name: str, expiration_hours: int):
         """Initialize state management for a specific instance if not already initialized"""

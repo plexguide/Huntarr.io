@@ -2,7 +2,6 @@
 """
 Stateful Manager for Huntarr
 Handles storing and retrieving processed media IDs to prevent reprocessing
-Now uses SQLite database instead of JSON files for better performance and reliability.
 """
 
 import datetime
@@ -10,18 +9,59 @@ import logging
 import time
 from typing import Any
 
-from src.primary.settings_manager import (
-    load_instance_settings,
-    load_settings,
-)
+from src.primary.settings_manager import load_settings, load_instance_settings
 from src.primary.utils.database import get_database
-from src.primary.utils.logger import get_logger
 from src.primary.utils.timezone_utils import get_user_timezone
 
-stateful_logger = logging.getLogger("stateful_manager")
+logger = logging.getLogger("stateful_manager")
 
 DEFAULT_HOURS = 168  # Default 7 days (168 hours)
 APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
+
+
+def initialize_state_management():
+    """
+    Initialize reset intervals for all app instances based on their settings.
+    """
+    for app in APP_TYPES:
+        for instance_settings in load_settings(app).get("instances", []):
+            if not instance_settings["enabled"]:
+                continue  # Skip disabled instances
+            if get_database().get_instance_lock_info(app, instance_settings["name"]):
+                continue  # Already initialized
+            initialize_instance_state_management(
+                app,
+                instance_settings["name"],
+                instance_settings["state_management_hours"],
+            )
+
+
+def initialize_instance_state_management(app: str, instance: str, expiration_hours: int) -> bool:
+    """
+    Initialize state management for a specific app instance.
+
+    Args:
+        app: The type of app (sonarr, radarr, etc.)
+        instance: The name of the instance
+        expiration_hours: The duration for state management in hours
+
+    Returns:
+        bool: True if initialization was successful, False otherwise
+    """
+    if app not in APP_TYPES:
+        logger.error("Unknown app type: %s", app)
+        return False
+
+    current_time = int(time.time())
+    expires_at = current_time + (expiration_hours * 3600)
+
+    try:
+        db = get_database()
+        db.set_instance_lock_info(app, instance, current_time, expires_at, expiration_hours)
+        return True
+    except Exception as e:
+        logger.error("Error initializing state management for %s/%s: %s", app, instance, e)
+        return False
 
 
 def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
@@ -37,57 +77,21 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
         bool: True if successful, False otherwise (or if state management is disabled)
     """
     if app_type not in APP_TYPES:
-        stateful_logger.warning("Unknown app type: %s", app_type)
+        logger.warning("Unknown app type: %s", app_type)
         return False
+
+    if is_processed(app_type, instance_name, media_id):
+        logger.debug("[add_processed_id] ID %s already in database for %s/%s", media_id, app_type, instance_name)
+        return True
 
     try:
-        # First check if state management is enabled for this instance
-        instance_hours = 168  # Default
-        instance_mode = "custom"
-
-        try:
-            settings = load_settings(app_type)
-
-            if settings and 'instances' in settings:
-                # Find the matching instance
-                for instance in settings['instances']:
-                    if instance.get('name') == instance_name:
-                        instance_mode = instance.get('state_management_mode', 'custom')
-                        instance_hours = instance.get('state_management_hours', 168)
-
-                        # If state management is disabled for this instance, don't add to processed list
-                        if instance_mode == 'disabled':
-                            stateful_logger.debug("State management disabled for %s/%s, not adding item %s to processed list", app_type, instance_name, media_id)
-                            return True  # Return True to indicate "success" (no error), but item wasn't actually added
-                        break
-        except Exception as e:
-            stateful_logger.warning("Could not check state management mode for %s/%s: %s", app_type, instance_name, e)
-            # Fall back to adding anyway if we can't determine the mode
-
-        db = get_database()
-
-        # Initialize per-instance state management if not already done
-        db.initialize_instance_state_management(app_type, instance_name, instance_hours)
-
-        # Check if this instance's state has expired
-        if db.check_instance_expiration(app_type, instance_name):
-            stateful_logger.info("State management expired for %s/%s, resetting before adding new ID...", app_type, instance_name)
-            db.reset_instance_state_management(app_type, instance_name, instance_hours)
-
-        # Check if already processed
-        if db.is_processed(app_type, instance_name, media_id):
-            stateful_logger.debug("[add_processed_id] ID %s already in database for %s/%s", media_id, app_type, instance_name)
-            return True
-
-        # Add the new ID
-        success = db.add_processed_id(app_type, instance_name, media_id)
-        if success:
-            stateful_logger.debug("[add_processed_id] Added ID %s to database for %s/%s", media_id, app_type, instance_name)
-
-        return success
+        get_database().add_processed_id(app_type, instance_name, media_id)
     except Exception as e:
-        stateful_logger.error("Error adding media ID %s to database: %s", media_id, e)
-        return False
+        logger.error("Error adding media ID %s to database: %s", media_id, e)
+
+    logger.debug("[add_processed_id] Added ID %s to database for %s/%s", media_id, app_type, instance_name)
+
+    return True
 
 
 def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
@@ -102,56 +106,27 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
     Returns:
         bool: True if already processed, False otherwise (or if state management is disabled)
     """
-    try:
-        # First check if state management is enabled for this instance
-        instance_hours = 168  # Default
-        instance_mode = "custom"
-
-        try:
-            settings = load_settings(app_type)
-
-            if settings and 'instances' in settings:
-                # Find the matching instance
-                for instance in settings['instances']:
-                    if instance.get('name') == instance_name:
-                        instance_mode = instance.get('state_management_mode', 'custom')
-                        instance_hours = instance.get('state_management_hours', 168)
-
-                        # If state management is disabled for this instance, always return False (not processed)
-                        if instance_mode == 'disabled':
-                            stateful_logger.debug("State management disabled for %s/%s, treating item %s as unprocessed", app_type, instance_name, media_id)
-                            return False
-                        break
-        except Exception as e:
-            stateful_logger.warning("Could not check state management mode for %s/%s: %s", app_type, instance_name, e)
-            # Fall back to checking anyway if we can't determine the mode
-
-        db = get_database()
-
-        # Initialize per-instance state management if not already done
-        db.initialize_instance_state_management(app_type, instance_name, instance_hours)
-
-        # Check if this instance's state has expired
-        if db.check_instance_expiration(app_type, instance_name):
-            stateful_logger.info("State management expired for %s/%s, resetting...", app_type, instance_name)
-            db.reset_instance_state_management(app_type, instance_name, instance_hours)
-            # After reset, item is not processed
-            return False
-
-        # Converting media_id to string since some callers might pass an integer
-        media_id_str = str(media_id)
-        is_in_db = db.is_processed(app_type, instance_name, media_id_str)
-
-        # Get total count for logging
-        processed_ids = db.get_processed_ids(app_type, instance_name)
-        total_count = len(processed_ids)
-
-        stateful_logger.info("is_processed check: %s/%s, ID:%s, Found:%s, Total IDs:%d", app_type, instance_name, media_id_str, is_in_db, total_count)
-
-        return is_in_db
-    except Exception as e:
-        stateful_logger.error("Error checking if processed for %s/%s, ID:%s: %s", app_type, instance_name, media_id, e)
+    if app_type not in APP_TYPES:
+        logger.warning("Unknown app type: %s", app_type)
         return False
+
+    media_id = str(media_id)  # Ensure media_id is a string for consistent checking
+
+    try:
+        processed_ids = get_database().get_processed_ids(app_type, instance_name)
+    except Exception as e:
+        logger.error("Could not load processed IDs for %s/%s: %s", app_type, instance_name, e)
+        return False
+
+    is_item_processed = media_id in processed_ids
+    total_processed_ids = len(processed_ids)
+
+    logger.info(
+        "is_processed check: %s/%s, ID:%s, Found:%s, Total IDs:%d",
+        app_type, instance_name, media_id, is_item_processed, total_processed_ids,
+    )
+
+    return is_item_processed
 
 
 def get_instance_state_management_summary(app_type: str, instance_name: str) -> dict[str, Any]:
@@ -194,7 +169,7 @@ def get_instance_state_management_summary(app_type: str, instance_name: str) -> 
             next_reset_time = local_time.strftime('%Y-%m-%d %H:%M:%S')
         else:
             # This should not happen since initialize_instance_state_management was called above
-            stateful_logger.warning("No lock info found for %s/%s after initialization", app_type, instance_name)
+            logger.warning("No lock info found for %s/%s after initialization", app_type, instance_name)
             next_reset_time = None
 
         # Get processed IDs count
@@ -210,7 +185,7 @@ def get_instance_state_management_summary(app_type: str, instance_name: str) -> 
             "has_processed_items": processed_count > 0
         }
     except Exception as e:
-        stateful_logger.error("Error getting state management summary for %s/%s: %s", app_type, instance_name, e)
+        logger.error("Error getting state management summary for %s/%s: %s", app_type, instance_name, e)
         return {
             "state_management_mode": "custom",
             "state_management_enabled": True,
@@ -221,23 +196,31 @@ def get_instance_state_management_summary(app_type: str, instance_name: str) -> 
         }
 
 
-def has_instance_state_expired(app_type: str, instance_name: str) -> bool:
+def should_state_management_reset(app: str, instance: str) -> bool:
     """
     Check if the instance's state needs to be reset based on the reset interval.
 
     Args:
-        app_type: The type of app (sonarr, radarr, etc.)
-        instance_name: The name of the instance for which to reset state
+        app: The type of app (sonarr, radarr, etc.)
+        instance: The name of the instance for which to reset state
 
     Returns:
         bool: True if the state has expired, False otherwise.
     """
-    lock_info = get_database().get_instance_lock_info(app_type, instance_name)
+    if app not in APP_TYPES:
+        logger.error("Unknown app type: %s", app)
+        return False
 
-    get_logger(app_type).debug(
+    try:
+        lock_info = get_database().get_instance_lock_info(app, instance)
+    except Exception as e:
+        logger.error("Could not load lock info for %s/%s: %s", app, instance, e)
+        return False
+
+    logger.info(
         "State check for %s.%s: %.1f hours since last reset (interval: %dh)",
-        app_type,
-        instance_name,
+        app,
+        instance,
         (time.time() - lock_info.get("created_at")) / 3600,  # hours since last reset
         lock_info.get("expiration_hours"),
     )
@@ -245,20 +228,37 @@ def has_instance_state_expired(app_type: str, instance_name: str) -> bool:
     return int(time.time()) >= lock_info.get("expires_at", float('inf'))
 
 
-def reset_instance_state_management(app_type: str, instance_name: str) -> bool:
+def reset_state_management(app: str, instance: str) -> bool:
     """
     Reset the state management for a specific app instance.
 
     Args:
-        app_type: The type of app (sonarr, radarr, etc.)
-        instance_name: The name of the instance for which to reset state
+        app: The type of app (sonarr, radarr, etc.)
+        instance: The name of the instance for which to reset state
 
     Returns:
         bool: True if successful, False otherwise.
     """
-    settings = load_instance_settings(app_type, instance_name)
-    return get_database().reset_instance_state_management(
-        app_type,
-        instance_name,
-        settings["state_management_hours"],
-    )
+    if app not in APP_TYPES:
+        logger.error("Unknown app type: %s", app)
+        return False
+
+    try:
+        settings = load_instance_settings(app, instance)
+        state_management_hours = settings["state_management_hours"]
+    except Exception as e:
+        logger.error("Could not load settings for %s/%s: %s", app, instance, e)
+        state_management_hours = DEFAULT_HOURS
+
+    now = int(time.time())
+    expires_at = now + (state_management_hours * 3600)
+
+    try:
+        db = get_database()
+        db.clear_instance_processed_ids(app, instance)
+        db.set_instance_lock_info(app, instance, now, expires_at, state_management_hours)
+    except Exception as e:
+        logger.error("Error resetting state management for %s/%s: %s", app, instance, e)
+        return False
+
+    return True

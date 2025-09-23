@@ -10,6 +10,7 @@ import json
 import pathlib
 import logging
 import time
+from pathlib import Path
 from typing import Dict, Any, Optional, List
 
 from src.primary.utils.database import get_database
@@ -603,9 +604,6 @@ def get_custom_tag(app_name: str, tag_type: str, default: str) -> str:
 
 def initialize_database():
     """Initialize database with default configurations if needed"""
-    from .utils.database import get_database
-    from pathlib import Path
-
     # Get database instance and ensure it exists
     db = get_database()
     db.ensure_database_exists()
