@@ -113,7 +113,7 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
         return False
 
     if is_processed(app_type, instance_name, media_id):
-        logger.debug("[add_processed_id] ID %s already in database for %s/%s", media_id, app_type, instance_name)
+        logger.info("[add_processed_id] ID %s already in database for %s/%s", media_id, app_type, instance_name)
         return True
 
     try:
@@ -121,7 +121,7 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
     except Exception as e:
         logger.error("Error adding media ID %s to database: %s", media_id, e)
 
-    logger.debug("[add_processed_id] Added ID %s to database for %s/%s", media_id, app_type, instance_name)
+    logger.info("[add_processed_id] Added ID %s to database for %s/%s", media_id, app_type, instance_name)
 
     return True
 
