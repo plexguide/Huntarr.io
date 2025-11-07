@@ -94,6 +94,46 @@ const BackupRestore = {
                 this.deleteDatabase();
             });
         }
+
+        // Download backup selection
+        const downloadSelect = document.getElementById('download-backup-select');
+        if (downloadSelect) {
+            downloadSelect.addEventListener('change', () => {
+                this.handleDownloadSelection();
+            });
+        }
+
+        // Download backup button
+        const downloadBtn = document.getElementById('download-backup-btn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                this.downloadBackup();
+            });
+        }
+
+        // Upload backup file input
+        const uploadFileInput = document.getElementById('upload-backup-file');
+        if (uploadFileInput) {
+            uploadFileInput.addEventListener('change', () => {
+                this.handleUploadFileSelection();
+            });
+        }
+
+        // Upload confirmation input
+        const uploadConfirmation = document.getElementById('upload-confirmation');
+        if (uploadConfirmation) {
+            uploadConfirmation.addEventListener('input', () => {
+                this.validateUploadConfirmation();
+            });
+        }
+
+        // Upload button
+        const uploadBtn = document.getElementById('upload-backup-btn');
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', () => {
+                this.uploadBackup();
+            });
+        }
     },
 
     loadSettings: function() {
@@ -199,8 +239,11 @@ const BackupRestore = {
             const formattedDate = date.toLocaleString();
             const size = this.formatFileSize(backup.size);
             
+            // Ensure backup ID is properly escaped for HTML attributes
+            const escapedId = backup.id.replace(/'/g, "\\'");
+            
             html += `
-                <div class="backup-item" data-backup-id="${backup.id}">
+                <div class="backup-item" data-backup-id="${escapedId}">
                     <div class="backup-info">
                         <div class="backup-name">${backup.name}</div>
                         <div class="backup-details">
@@ -208,7 +251,7 @@ const BackupRestore = {
                         </div>
                     </div>
                     <div class="backup-actions">
-                        <button class="delete-backup-btn" onclick="BackupRestore.deleteBackup('${backup.id}')">
+                        <button class="delete-backup-btn" onclick="BackupRestore.deleteBackup('${escapedId}')">
                             <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>
@@ -221,23 +264,28 @@ const BackupRestore = {
 
     populateRestoreSelect: function(backups) {
         const restoreSelect = document.getElementById('restore-backup-select');
-        if (!restoreSelect) return;
+        const downloadSelect = document.getElementById('download-backup-select');
+        if (!restoreSelect || !downloadSelect) return;
 
         if (!backups || backups.length === 0) {
             restoreSelect.innerHTML = '<option value="">No backups available</option>';
+            downloadSelect.innerHTML = '<option value="">No backups available</option>';
             return;
         }
 
         let html = '<option value="">Select a backup to restore...</option>';
+        let downloadHtml = '<option value="">Select a backup to download...</option>';
         backups.forEach(backup => {
             const date = new Date(backup.timestamp);
             const formattedDate = date.toLocaleString();
             const size = this.formatFileSize(backup.size);
             
             html += `<option value="${backup.id}">${backup.name} - ${formattedDate} (${size})</option>`;
+            downloadHtml += `<option value="${backup.id}">${backup.name} - ${formattedDate} (${size})</option>`;
         });
 
         restoreSelect.innerHTML = html;
+        downloadSelect.innerHTML = downloadHtml;
     },
 
     updateNextBackupTime: function() {
@@ -286,8 +334,7 @@ const BackupRestore = {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                type: 'manual',
-                name: `Manual Backup ${new Date().toISOString().split('T')[0]}`
+                type: 'manual'
             })
         })
         .then(response => response.json())
@@ -498,6 +545,18 @@ const BackupRestore = {
         }
 
         console.log('[BackupRestore] Deleting backup:', backupId);
+        console.log('[BackupRestore] Backup ID type:', typeof backupId);
+        console.log('[BackupRestore] Backup ID length:', backupId ? backupId.length : 0);
+
+        // Add extra validation for backupId
+        if (!backupId || typeof backupId !== 'string') {
+            this.showError('Invalid backup ID provided for deletion');
+            return;
+        }
+
+        // Additional debugging - check if the backupId contains special characters
+        console.log('[BackupRestore] Backup ID raw:', backupId);
+        console.log('[BackupRestore] Backup ID escaped:', encodeURIComponent(backupId));
 
         fetch('./api/backup/delete', {
             method: 'POST',
@@ -508,7 +567,12 @@ const BackupRestore = {
                 backup_id: backupId
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 this.showSuccess('Backup deleted successfully');
@@ -520,6 +584,148 @@ const BackupRestore = {
         .catch(error => {
             console.error('[BackupRestore] Error deleting backup:', error);
             this.showError('Failed to delete backup: ' + error.message);
+        });
+    },
+
+    // Download backup functions
+    handleDownloadSelection: function() {
+        const downloadSelect = document.getElementById('download-backup-select');
+        const downloadBtn = document.getElementById('download-backup-btn');
+        
+        if (!downloadSelect || !downloadBtn) return;
+        
+        if (downloadSelect.value) {
+            downloadBtn.disabled = false;
+        } else {
+            downloadBtn.disabled = true;
+        }
+    },
+
+    downloadBackup: function() {
+        const downloadSelect = document.getElementById('download-backup-select');
+        
+        if (!downloadSelect) return;
+        
+        const backupId = downloadSelect.value;
+        
+        if (!backupId) {
+            this.showError('Please select a backup to download');
+            return;
+        }
+
+        console.log('[BackupRestore] Downloading backup:', backupId);
+        
+        // Create a temporary link and trigger download
+        const downloadUrl = `./api/backup/download/${backupId}`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${backupId}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.showSuccess('Download started');
+    },
+
+    // Upload backup functions
+    handleUploadFileSelection: function() {
+        const uploadFileInput = document.getElementById('upload-backup-file');
+        const confirmationGroup = document.getElementById('upload-confirmation-group');
+        const actionGroup = document.getElementById('upload-action-group');
+        
+        if (!uploadFileInput) return;
+        
+        if (uploadFileInput.files.length > 0) {
+            if (confirmationGroup) confirmationGroup.style.display = 'block';
+            if (actionGroup) actionGroup.style.display = 'block';
+        } else {
+            if (confirmationGroup) confirmationGroup.style.display = 'none';
+            if (actionGroup) actionGroup.style.display = 'none';
+        }
+        
+        this.validateUploadConfirmation();
+    },
+
+    validateUploadConfirmation: function() {
+        const confirmationInput = document.getElementById('upload-confirmation');
+        const uploadBtn = document.getElementById('upload-backup-btn');
+        
+        if (!confirmationInput || !uploadBtn) return;
+        
+        const isValid = confirmationInput.value.toUpperCase() === 'UPLOAD';
+        uploadBtn.disabled = !isValid;
+        
+        if (isValid) {
+            uploadBtn.style.background = '#e74c3c';
+            uploadBtn.style.cursor = 'pointer';
+        } else {
+            uploadBtn.style.background = '#6b7280';
+            uploadBtn.style.cursor = 'not-allowed';
+        }
+    },
+
+    uploadBackup: function() {
+        const uploadFileInput = document.getElementById('upload-backup-file');
+        const confirmationInput = document.getElementById('upload-confirmation');
+        
+        if (!uploadFileInput || !confirmationInput) return;
+        
+        const file = uploadFileInput.files[0];
+        const confirmation = confirmationInput.value.toUpperCase();
+        
+        if (!file) {
+            this.showError('Please select a backup file to upload');
+            return;
+        }
+        
+        if (confirmation !== 'UPLOAD') {
+            this.showError('Please type UPLOAD to confirm');
+            return;
+        }
+
+        // Final confirmation dialog
+        if (!confirm('This will permanently overwrite your current database with the uploaded backup. Are you absolutely sure?')) {
+            return;
+        }
+
+        console.log('[BackupRestore] Uploading backup:', file.name);
+        
+        const uploadBtn = document.getElementById('upload-backup-btn');
+        if (uploadBtn) {
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading and restoring...';
+        }
+
+        // Create form data
+        const formData = new FormData();
+        formData.append('backup_file', file);
+
+        fetch('./api/backup/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.showSuccess('Backup uploaded and restored successfully! Reloading page...');
+                
+                // Reload the page after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                throw new Error(data.error || 'Failed to upload backup');
+            }
+        })
+        .catch(error => {
+            console.error('[BackupRestore] Error uploading backup:', error);
+            this.showError('Failed to upload backup: ' + error.message);
+        })
+        .finally(() => {
+            if (uploadBtn) {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Upload and Restore Backup';
+            }
         });
     },
 
