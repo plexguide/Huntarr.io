@@ -153,3 +153,6 @@ Learn more about **Cleanuperr** at [https://github.com/flmorg/cleanuperr](https:
 
 ## 📜 Change Log
 Visit: https://github.com/plexguide/Huntarr.io/releases/
+
+## 🔄 Fork Demo
+This change was made as part of a demonstration of forking, pushing changes, and creating a pull request.
