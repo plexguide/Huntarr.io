@@ -806,7 +806,7 @@
                 background: linear-gradient(135deg, rgba(16, 20, 28, 0.8) 0%, rgba(30, 35, 45, 0.6) 100%);
                 border: 1px solid rgba(90, 109, 137, 0.15);
                 border-radius: 8px;
-                padding: 12px;
+                padding: 10px 12px;
                 text-align: center;
                 position: relative;
                 overflow: hidden;
@@ -815,6 +815,7 @@
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
+                align-items: center;
             }
             
             .stat-card:hover {
@@ -840,29 +841,33 @@
             }
             
             .stat-label {
-                font-size: 0.75em;
+                font-size: 0.7em;
                 color: var(--text-secondary);
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                margin-bottom: 2px;
+                margin-bottom: 4px;
                 font-weight: 500;
                 line-height: 1;
             }
             
             .stat-value {
-                font-size: 1.4em;
+                font-size: 1.3em;
                 font-weight: 700;
                 color: var(--text-primary);
                 line-height: 1;
             }
 
             /* Ensure Success Rate label shows and values match other stats sizing */
-            .prowlarr-statistics-card .stat-label {
-                display: block;
-                opacity: 1;
+            .prowlarr-statistics-card .stat-card .stat-label {
+                display: block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
             .prowlarr-statistics-card .stat-value {
-                font-size: 1.4em; /* keep consistent with other stat values */
+                font-size: 1.3em !important;
+                line-height: 1 !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }
             
             .stat-value.success {
