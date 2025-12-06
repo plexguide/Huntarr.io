@@ -12,19 +12,10 @@ from src.primary.auth import (
     verify_session, get_username_from_session, link_plex_account_session_auth
 )
 from src.primary.utils.logger import logger
-from src.primary import settings_manager
 import time
 import requests
 
 plex_auth_bp = Blueprint('plex_auth', __name__)
-
-def get_base_url():
-    base_url = settings_manager.get_setting('general', 'base_url', '')
-    if base_url and not base_url.startswith('/'):
-        base_url = f'/{base_url}'
-    if base_url and base_url != '/' and base_url.endswith('/'):
-        base_url = base_url.rstrip('/')
-    return base_url
 
 @plex_auth_bp.route('/api/auth/plex/pin', methods=['POST'])
 def create_pin():
@@ -499,4 +490,5 @@ def plex_status():
 @plex_auth_bp.route('/auth/plex/callback')
 def plex_callback():
     """Handle Plex authentication callback (redirect back to app)"""
-    return redirect(f'{get_base_url()}/#user')
+    from flask import url_for
+    return redirect(url_for('home') + '#user')
