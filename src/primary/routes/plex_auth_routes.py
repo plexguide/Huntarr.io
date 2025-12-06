@@ -490,5 +490,4 @@ def plex_status():
 @plex_auth_bp.route('/auth/plex/callback')
 def plex_callback():
     """Handle Plex authentication callback (redirect back to app)"""
-    from flask import url_for
     return redirect(url_for('home') + '#user')

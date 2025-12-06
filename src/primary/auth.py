@@ -30,12 +30,16 @@ SESSION_EXPIRY = 60 * 60 * 24 * 7
 SESSION_COOKIE_NAME = "huntarr_session"
 
 def get_base_url_path():
-    base_url = settings_manager.get_setting('general', 'base_url', '')
-    if base_url and not base_url.startswith('/'):
-        base_url = f'/{base_url}'
-    if base_url and base_url != '/' and base_url.endswith('/'):
-        base_url = base_url.rstrip('/')
-    return base_url
+    try:
+        base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+        if not base_url or base_url == '/':
+            return ''
+        base_url = base_url.strip('/')
+        base_url = '/' + base_url
+        return base_url
+    except Exception as e:
+        logger.error(f"Error getting base_url from settings: {e}")
+        return ''
 
 # Plex OAuth settings
 PLEX_CLIENT_IDENTIFIER = None  # Will be generated on first use
