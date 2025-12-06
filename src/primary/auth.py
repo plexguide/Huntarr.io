@@ -302,44 +302,26 @@ def update_session_username(session_id: str, new_username: str) -> bool:
 def authenticate_request():
     """Flask route decorator to check if user is authenticated"""
 
-    # Skip authentication for static files and the login/setup pages
-    static_path = "/static/"
-    login_path = "/login"
-    api_login_path = "/api/login"
-    api_auth_plex_path = "/api/auth/plex"
-    setup_path = "/setup"
-    user_path = "/user"
-    api_setup_path = "/api/setup"
-    favicon_path = "/favicon.ico"
-    health_check_path = "/api/health"
-    ping_path = "/ping"
-
     # Check if this is a commonly polled API endpoint to reduce log verbosity
     is_polling_endpoint = any(endpoint in request.path for endpoint in [
         '/api/logs/', '/api/cycle/', '/api/hourly-caps', '/api/swaparr/status'
     ])
-    
+
     if not is_polling_endpoint:
         pass  # Path checking debug removed to reduce log spam
 
     # FIRST: Always allow setup and user page access - this handles returns from external auth like Plex
-    if request.path in ['/setup', '/user']:
+    if request.path.endswith('/setup') or request.path.endswith('/user'):
         if not is_polling_endpoint:
             logger.debug(f"Allowing setup/user page access for path: {request.path}")
         return None
 
     # Skip authentication for static files, API setup, health check path, ping, and github sponsors
-    if request.path.startswith((static_path, api_setup_path)) or request.path in (favicon_path, health_check_path, ping_path, '/api/github_sponsors', '/api/sponsors/init'):
+    if '/static/' in request.path or '/api/setup' in request.path or request.path.endswith('/favicon.ico') or '/api/health' in request.path or request.path.endswith('/ping') or '/api/github_sponsors' in request.path or '/api/sponsors/init' in request.path:
         return None
-    
+
     # Skip authentication for login pages, Plex auth endpoints, recovery key endpoints, and setup-related user endpoints
-    # This must come BEFORE setup checks to allow API access during setup
-    recovery_key_path = "/auth/recovery-key"
-    api_user_2fa_path = "/api/user/2fa/"
-    api_settings_general_path = "/api/settings/general"
-    
-    # Check if request is for login/auth paths (including Plex auth) - skip authentication
-    if request.path.startswith((login_path, api_login_path, api_auth_plex_path, recovery_key_path, api_user_2fa_path)) or request.path == api_settings_general_path:
+    if request.path.endswith('/login') or '/api/login' in request.path or '/api/auth/plex' in request.path or '/auth/recovery-key' in request.path or '/api/user/2fa/' in request.path or request.path.endswith('/api/settings/general'):
         if not is_polling_endpoint:
             # Reduced logging frequency for common paths to prevent spam
             if hash(request.path) % 20 == 0:  # Log ~5% of auth skips
