@@ -135,18 +135,16 @@ def get_base_url():
     """
     Get the configured base URL from general settings.
     This allows Huntarr to run under a subpath like /huntarr when behind a reverse proxy.
-    
+
     Returns:
         str: The configured base URL (e.g., '/huntarr') or empty string if not configured
     """
     try:
-        base_url = settings_manager.get_setting('general', 'base_url', '')
-        # Ensure base_url always starts with a / if not empty
-        if base_url and not base_url.startswith('/'):
-            base_url = f'/{base_url}'
-        # Remove trailing slash if present
-        if base_url and base_url != '/' and base_url.endswith('/'):
-            base_url = base_url.rstrip('/')
+        base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+        if not base_url or base_url == '/':
+            return ''
+        base_url = base_url.strip('/')
+        base_url = '/' + base_url
         return base_url
     except Exception as e:
         print(f"Error getting base_url from settings: {e}")
@@ -307,7 +305,7 @@ def home():
 @app.route('/user')
 def user():
     """Redirect to main index with user section"""
-    return redirect('./#user')
+    return redirect(get_base_url() + url_for('home') + '#user')
     
 # This section previously contained code for redirecting paths to include the base URL
 # It has been removed as Flask's APPLICATION_ROOT setting provides this functionality

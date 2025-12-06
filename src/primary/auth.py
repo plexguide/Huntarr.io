@@ -23,12 +23,23 @@ from typing import Dict, Any, Optional, Tuple, Union
 from flask import request, redirect, url_for, session
 from .utils.logger import logger # Ensure logger is imported
 
-# Database setup
 from src.primary.utils.database import get_database
+from src.primary import settings_manager
 
-# Session settings
-SESSION_EXPIRY = 60 * 60 * 24 * 7  # 1 week in seconds
+SESSION_EXPIRY = 60 * 60 * 24 * 7
 SESSION_COOKIE_NAME = "huntarr_session"
+
+def get_base_url_path():
+    try:
+        base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+        if not base_url or base_url == '/':
+            return ''
+        base_url = base_url.strip('/')
+        base_url = '/' + base_url
+        return base_url
+    except Exception as e:
+        logger.error(f"Error getting base_url from settings: {e}")
+        return ''
 
 # Plex OAuth settings
 PLEX_CLIENT_IDENTIFIER = None  # Will be generated on first use
@@ -291,95 +302,46 @@ def update_session_username(session_id: str, new_username: str) -> bool:
 def authenticate_request():
     """Flask route decorator to check if user is authenticated"""
 
-    # Skip authentication for static files and the login/setup pages
-    static_path = "/static/"
-    login_path = "/login"
-    api_login_path = "/api/login"
-    api_auth_plex_path = "/api/auth/plex"
-    setup_path = "/setup"
-    user_path = "/user"
-    api_setup_path = "/api/setup"
-    favicon_path = "/favicon.ico"
-    health_check_path = "/api/health"
-    ping_path = "/ping"
-
     # Check if this is a commonly polled API endpoint to reduce log verbosity
     is_polling_endpoint = any(endpoint in request.path for endpoint in [
         '/api/logs/', '/api/cycle/', '/api/hourly-caps', '/api/swaparr/status'
     ])
-    
+
     if not is_polling_endpoint:
         pass  # Path checking debug removed to reduce log spam
 
     # FIRST: Always allow setup and user page access - this handles returns from external auth like Plex
-    if request.path in ['/setup', '/user']:
+    if request.path.endswith('/setup') or request.path.endswith('/user'):
         if not is_polling_endpoint:
             logger.debug(f"Allowing setup/user page access for path: {request.path}")
         return None
 
     # Skip authentication for static files, API setup, health check path, ping, and github sponsors
-    if request.path.startswith((static_path, api_setup_path)) or request.path in (favicon_path, health_check_path, ping_path, '/api/github_sponsors', '/api/sponsors/init'):
+    if '/static/' in request.path or '/api/setup' in request.path or request.path.endswith('/favicon.ico') or '/api/health' in request.path or request.path.endswith('/ping') or '/api/github_sponsors' in request.path or '/api/sponsors/init' in request.path:
         return None
-    
+
     # Skip authentication for login pages, Plex auth endpoints, recovery key endpoints, and setup-related user endpoints
-    # This must come BEFORE setup checks to allow API access during setup
-    recovery_key_path = "/auth/recovery-key"
-    api_user_2fa_path = "/api/user/2fa/"
-    api_settings_general_path = "/api/settings/general"
-    
-    # Check if request is for login/auth paths (including Plex auth) - skip authentication
-    if request.path.startswith((login_path, api_login_path, api_auth_plex_path, recovery_key_path, api_user_2fa_path)) or request.path == api_settings_general_path:
+    if request.path.endswith('/login') or '/api/login' in request.path or '/api/auth/plex' in request.path or '/auth/recovery-key' in request.path or '/api/user/2fa/' in request.path or request.path.endswith('/api/settings/general'):
         if not is_polling_endpoint:
             # Reduced logging frequency for common paths to prevent spam
             if hash(request.path) % 20 == 0:  # Log ~5% of auth skips
                 logger.debug(f"Skipping authentication for login/plex/recovery/2fa/settings path '{request.path}'")
         return None
     
-    # If no user exists, redirect to setup
     if not user_exists():
         if not is_polling_endpoint:
             logger.debug(f"No user exists, redirecting to setup")
-        
-        # Get the base URL from settings to ensure proper subpath redirect
-        try:
-            from src.primary.settings_manager import get_setting
-            base_url = get_setting('general', 'base_url', '')
-            if base_url and not base_url.startswith('/'):
-                base_url = f'/{base_url}'
-            if base_url and base_url.endswith('/'):
-                base_url = base_url.rstrip('/')
-            setup_url = f"{base_url}/setup" if base_url else "/setup"
-            logger.debug(f"Redirecting to setup with base URL: {setup_url}")
-            return redirect(setup_url)
-        except Exception as e:
-            logger.warning(f"Error getting base URL for setup redirect: {e}")
-            return redirect(url_for("common.setup"))
+        return redirect(get_base_url_path() + url_for("common.setup"))
     
-    # If user exists but setup is in progress, redirect to setup
     try:
         from src.primary.utils.database import get_database
         db = get_database()
         if db.is_setup_in_progress():
             if not is_polling_endpoint:
                 logger.debug(f"Setup is in progress, redirecting to setup")
-            
-            # Get the base URL from settings to ensure proper subpath redirect
-            try:
-                from src.primary.settings_manager import get_setting
-                base_url = get_setting('general', 'base_url', '')
-                if base_url and not base_url.startswith('/'):
-                    base_url = f'/{base_url}'
-                if base_url and base_url.endswith('/'):
-                    base_url = base_url.rstrip('/')
-                setup_url = f"{base_url}/setup" if base_url else "/setup"
-                logger.debug(f"Redirecting to setup (in progress) with base URL: {setup_url}")
-                return redirect(setup_url)
-            except Exception as e:
-                logger.warning(f"Error getting base URL for setup redirect: {e}")
-                return redirect(url_for("common.setup"))
+            return redirect(get_base_url_path() + url_for("common.setup"))
     except Exception as e:
         logger.error(f"Error checking setup progress in auth middleware: {e}")
-        # Don't block access if we can't check setup progress
     
     # Load general settings
     local_access_bypass = False
@@ -497,21 +459,7 @@ def authenticate_request():
     # No valid session, redirect to login
     if not is_polling_endpoint:
         logger.debug(f"Redirecting to login for path '{request.path}'")
-    
-    # Get the base URL from settings to ensure proper subpath redirect
-    try:
-        from src.primary.settings_manager import get_setting
-        base_url = get_setting('general', 'base_url', '')
-        if base_url and not base_url.startswith('/'):
-            base_url = f'/{base_url}'
-        if base_url and base_url.endswith('/'):
-            base_url = base_url.rstrip('/')
-        login_url = f"{base_url}/login" if base_url else "/login"
-        logger.debug(f"Redirecting to login with base URL: {login_url}")
-        return redirect(login_url)
-    except Exception as e:
-        logger.warning(f"Error getting base URL for login redirect: {e}")
-        return redirect(url_for("common.login_route"))
+    return redirect(get_base_url_path() + url_for("common.login_route"))
 
 def logout(session_id: str):
     """Log out the current user by invalidating their session"""
@@ -822,17 +770,15 @@ def create_plex_pin(setup_mode: bool = False, user_mode: bool = False) -> Option
             'expires_at': time.time() + 600  # 10 minutes
         }
         
-        # Create auth URL with redirect URI for main window flow
-        # Determine redirect based on mode
-        base_url = request.host_url.rstrip('/') if request else 'http://localhost:9705'
-        
-        # Determine redirect based on mode
+        host_url = request.host_url.rstrip('/') if request else 'http://localhost:9705'
+        base_path = get_base_url_path()
+
         if setup_mode:
-            redirect_uri = f"{base_url}/setup"
+            redirect_uri = f"{host_url}{base_path}/setup"
         elif user_mode:
-            redirect_uri = f"{base_url}/user"
+            redirect_uri = f"{host_url}{base_path}/user"
         else:
-            redirect_uri = f"{base_url}/"
+            redirect_uri = f"{host_url}{base_path}/"
         
         logger.info(f"Created Plex PIN: {pin_id} (setup_mode: {setup_mode}, user_mode: {user_mode})")
         logger.info(f"Plex redirect_uri set to: {redirect_uri}")
