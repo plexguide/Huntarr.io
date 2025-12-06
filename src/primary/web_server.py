@@ -307,7 +307,7 @@ def home():
 @app.route('/user')
 def user():
     """Redirect to main index with user section"""
-    return redirect('./#user')
+    return redirect(f'{get_base_url()}/#user')
     
 # This section previously contained code for redirecting paths to include the base URL
 # It has been removed as Flask's APPLICATION_ROOT setting provides this functionality

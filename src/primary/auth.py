@@ -23,12 +23,19 @@ from typing import Dict, Any, Optional, Tuple, Union
 from flask import request, redirect, url_for, session
 from .utils.logger import logger # Ensure logger is imported
 
-# Database setup
 from src.primary.utils.database import get_database
+from src.primary import settings_manager
 
-# Session settings
-SESSION_EXPIRY = 60 * 60 * 24 * 7  # 1 week in seconds
+SESSION_EXPIRY = 60 * 60 * 24 * 7
 SESSION_COOKIE_NAME = "huntarr_session"
+
+def get_base_url_path():
+    base_url = settings_manager.get_setting('general', 'base_url', '')
+    if base_url and not base_url.startswith('/'):
+        base_url = f'/{base_url}'
+    if base_url and base_url != '/' and base_url.endswith('/'):
+        base_url = base_url.rstrip('/')
+    return base_url
 
 # Plex OAuth settings
 PLEX_CLIENT_IDENTIFIER = None  # Will be generated on first use
@@ -822,17 +829,15 @@ def create_plex_pin(setup_mode: bool = False, user_mode: bool = False) -> Option
             'expires_at': time.time() + 600  # 10 minutes
         }
         
-        # Create auth URL with redirect URI for main window flow
-        # Determine redirect based on mode
-        base_url = request.host_url.rstrip('/') if request else 'http://localhost:9705'
-        
-        # Determine redirect based on mode
+        host_url = request.host_url.rstrip('/') if request else 'http://localhost:9705'
+        base_path = get_base_url_path()
+
         if setup_mode:
-            redirect_uri = f"{base_url}/setup"
+            redirect_uri = f"{host_url}{base_path}/setup"
         elif user_mode:
-            redirect_uri = f"{base_url}/user"
+            redirect_uri = f"{host_url}{base_path}/user"
         else:
-            redirect_uri = f"{base_url}/"
+            redirect_uri = f"{host_url}{base_path}/"
         
         logger.info(f"Created Plex PIN: {pin_id} (setup_mode: {setup_mode}, user_mode: {user_mode})")
         logger.info(f"Plex redirect_uri set to: {redirect_uri}")
