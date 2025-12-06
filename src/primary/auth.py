@@ -349,7 +349,7 @@ def authenticate_request():
     if not user_exists():
         if not is_polling_endpoint:
             logger.debug(f"No user exists, redirecting to setup")
-        return redirect(url_for("common.setup"))
+        return redirect(get_base_url_path() + url_for("common.setup"))
     
     try:
         from src.primary.utils.database import get_database
@@ -357,7 +357,7 @@ def authenticate_request():
         if db.is_setup_in_progress():
             if not is_polling_endpoint:
                 logger.debug(f"Setup is in progress, redirecting to setup")
-            return redirect(url_for("common.setup"))
+            return redirect(get_base_url_path() + url_for("common.setup"))
     except Exception as e:
         logger.error(f"Error checking setup progress in auth middleware: {e}")
     
@@ -477,7 +477,7 @@ def authenticate_request():
     # No valid session, redirect to login
     if not is_polling_endpoint:
         logger.debug(f"Redirecting to login for path '{request.path}'")
-    return redirect(url_for("common.login_route"))
+    return redirect(get_base_url_path() + url_for("common.login_route"))
 
 def logout(session_id: str):
     """Log out the current user by invalidating their session"""

@@ -224,14 +224,26 @@ def login_route():
         # GET request - show login page
         if not user_exists():
              logger.info("No user exists, redirecting to setup.")
-             return redirect(url_for('common.setup'))
+             from src.primary import settings_manager
+             base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+             if base_url and base_url != '/':
+                 base_url = '/' + base_url.strip('/')
+             else:
+                 base_url = ''
+             return redirect(base_url + url_for('common.setup'))
         
         try:
             from src.primary.utils.database import get_database
             db = get_database()
             if db.is_setup_in_progress():
                 logger.info("Setup is in progress, redirecting to setup.")
-                return redirect(url_for('common.setup'))
+                from src.primary import settings_manager
+                base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+                if base_url and base_url != '/':
+                    base_url = '/' + base_url.strip('/')
+                else:
+                    base_url = ''
+                return redirect(base_url + url_for('common.setup'))
         except Exception as e:
             logger.error(f"Error checking setup progress in login route: {e}")
         
