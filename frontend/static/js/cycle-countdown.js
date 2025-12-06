@@ -13,21 +13,17 @@ window.CycleCountdown = (function() {
     // List of apps to track
     const trackedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'whisparr-v3', 'eros', 'swaparr'];
     
-    // Get base URL for API calls, respecting subpath configuration
     function getBaseUrl() {
-        return window.location.origin + window.location.pathname.replace(/\/+$/, '');
+        return (window.HUNTARR_BASE_URL || '');
     }
-    
-    // Build a complete URL with the correct base path
+
     function buildUrl(path) {
-        // Simply return path since we're using absolute paths
-        // Make sure the path starts with a slash
+        const base = getBaseUrl();
+        path = path.replace(/^\.\//, '');
         if (!path.startsWith('/')) {
             path = '/' + path;
         }
-        
-        // For API endpoints, use the current origin without any subpath manipulation
-        return window.location.origin + path;
+        return base + path;
     }
     
     // Set up timer elements in the DOM
