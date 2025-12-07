@@ -1,6 +1,6 @@
 Flask==3.1.2
 requests==2.32.5
-waitress==2.1.2
+waitress==3.0.2
 bcrypt==4.1.2
 qrcode[pil]==7.4.2 # Added qrcode with PIL support
 pyotp==2.9.0       # Added pyotp
