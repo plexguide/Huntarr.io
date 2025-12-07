@@ -407,18 +407,35 @@
                 
                 <h3 id="base-url"><a href="#base-url" class="info-icon"><i class="fas fa-info-circle"></i></a> Base URL</h3>
                 <p>Base URL path for reverse proxy configurations (e.g., '/huntarr'). Leave empty for root path deployment.</p>
-                
+
                 <p>This setting is essential when running Huntarr behind a reverse proxy server like Nginx, Apache, or Cloudflare Tunnel where you want to host Huntarr at a subpath rather than the root domain.</p>
-                
+
+                <p><strong>Configuration methods:</strong></p>
+                <ul>
+                    <li><strong>Environment variable (recommended):</strong> Set <code>BASE_URL</code> environment variable in your Docker configuration</li>
+                    <li><strong>Web UI:</strong> Configure through Settings → Advanced → Base URL</li>
+                </ul>
+
+                <p><strong>Note:</strong> The <code>BASE_URL</code> environment variable takes precedence and will override the web UI setting.</p>
+
                 <p><strong>Example configurations:</strong></p>
                 <ul>
                     <li><strong>Root path:</strong> Leave empty to access Huntarr at <code>https://yourdomain.com/</code></li>
                     <li><strong>Subpath:</strong> Set to <code>/huntarr</code> to access at <code>https://yourdomain.com/huntarr/</code></li>
                     <li><strong>Multiple services:</strong> Set to <code>/media/huntarr</code> for <code>https://yourdomain.com/media/huntarr/</code></li>
                 </ul>
-                
+
+                <p><strong>Docker configuration example:</strong></p>
+                <pre><code>docker run -d --name huntarr \
+  --restart unless-stopped \
+  -p 9705:9705 \
+  -v /path/to/huntarr/config:/config \
+  -e TZ=America/New_York \
+  -e BASE_URL=/huntarr \
+  huntarr/huntarr:latest</code></pre>
+
                 <p><strong>Reverse proxy configuration examples:</strong></p>
-                
+
                 <p><strong>Nginx:</strong></p>
                 <pre><code>location /huntarr {
     proxy_pass http://huntarr:9705;
@@ -427,21 +444,21 @@
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 }</code></pre>
-                
+
                 <p><strong>Cloudflare Tunnel:</strong></p>
                 <pre><code>ingress:
   - hostname: yourdomain.com
     path: /huntarr
     service: http://huntarr:9705</code></pre>
-                
+
                 <p><strong>Important notes:</strong></p>
                 <ul>
                     <li>Always include the leading slash (e.g., <code>/huntarr</code> not <code>huntarr</code>)</li>
                     <li>Do not include trailing slashes</li>
-                    <li>Requires container restart to take effect</li>
+                    <li>Changes take effect immediately without requiring a restart</li>
                     <li>Ensure your reverse proxy is configured to forward requests to this path</li>
                 </ul>
-                
+
                 <p>Credit to <a href="https://github.com/scr4tchy" target="_blank">scr4tchy</a> for implementing this feature.</p>
             </section>
             
