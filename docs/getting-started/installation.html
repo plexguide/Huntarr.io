@@ -101,6 +101,11 @@
   -v /your-path/huntarr:/config \
   -e TZ=America/New_York \
   ghcr.io/plexguide/huntarr:latest</code></pre>
+
+                    <div class="alert alert-info">
+                        <strong>Reverse Proxy Setup:</strong> If running behind a reverse proxy at a subpath, add the BASE_URL environment variable:
+                        <pre class="terminal" style="margin-top: 8px;"><code>-e BASE_URL=/huntarr</code></pre>
+                    </div>
                     
                     <p>To check on the status of the program:</p>
                     <pre class="terminal"><code class="command-prompt">docker logs huntarr</code></pre>
@@ -119,7 +124,8 @@
     volumes:
       - /your-path/huntarr:/config
     environment:
-      - TZ=America/New_York</code></pre>
+      - TZ=America/New_York
+      # - BASE_URL=/huntarr  # Uncomment for reverse proxy subpath</code></pre>
 
                     <h5><i class="fab fa-github" style="margin-right: 8px; color: #333;"></i>Option 2: GitHub Container Registry</h5>
                     <pre class="terminal"><code>services:
@@ -132,7 +138,8 @@
     volumes:
       - /your-path/huntarr:/config
     environment:
-      - TZ=America/New_York</code></pre>
+      - TZ=America/New_York
+      # - BASE_URL=/huntarr  # Uncomment for reverse proxy subpath</code></pre>
                     
                     <p>Then run:</p>
                     <pre class="terminal"><code class="command-prompt">docker-compose up -d huntarr</code></pre>
@@ -191,6 +198,10 @@
   -v /mnt/user/appdata/huntarr:/config \
   -e TZ=America/New_York \
   ghcr.io/plexguide/huntarr:latest</code></pre>
+
+                    <div class="alert alert-info">
+                        <strong>Reverse Proxy Tip:</strong> Add <code>-e BASE_URL=/huntarr</code> if running behind a reverse proxy at a subpath.
+                    </div>
                 </div>
                 
                 <div id="macos">
