@@ -88,20 +88,71 @@ def process_cutoff_upgrades(
     command_wait_delay = get_advanced_setting("command_wait_delay", 1)
     command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
     
-    # Get instance name - check for instance_name first, fall back to legacy "name" key if needed
     instance_name = app_settings.get("instance_name", app_settings.get("name", "Radarr Default"))
-    
-    # Get movies eligible for upgrade
+
+    quality_profiles = radarr_api.get_quality_profiles(api_url, api_key, api_timeout)
+
+    if not quality_profiles:
+        radarr_logger.warning("Failed to retrieve quality profiles.")
+        return False
+
+    profile_upgrade_map = {
+        profile.get('id'): profile.get('upgradeAllowed', False)
+        for profile in quality_profiles
+    }
+
+    profile_name_map = {
+        profile.get('id'): profile.get('name', 'Unknown')
+        for profile in quality_profiles
+    }
+
+    no_upgrade_profiles = [
+        f"{profile.get('name')} (ID: {profile.get('id')})"
+        for profile in quality_profiles
+        if not profile.get('upgradeAllowed', False)
+    ]
+    if no_upgrade_profiles:
+        radarr_logger.info(f"Quality profiles without upgrade allowed: {', '.join(no_upgrade_profiles)}")
+
     radarr_logger.info("Retrieving movies eligible for cutoff upgrade...")
     upgrade_eligible_data = radarr_api.get_cutoff_unmet_movies_random_page(
         api_url, api_key, api_timeout, monitored_only, count=50
     )
-    
+
     if not upgrade_eligible_data:
         radarr_logger.info("No movies found eligible for upgrade or error retrieving them.")
         return False
-        
-    radarr_logger.info(f"Found {len(upgrade_eligible_data)} movies eligible for upgrade.")
+
+    radarr_logger.info(f"Found {len(upgrade_eligible_data)} movies below quality cutoff.")
+
+    upgrade_allowed_movies = []
+    filtered_count = 0
+    for movie in upgrade_eligible_data:
+        movie_id = movie.get('id')
+        movie_title = movie.get('title', 'Unknown Title')
+        quality_profile_id = movie.get('qualityProfileId')
+
+        if quality_profile_id in profile_upgrade_map:
+            if profile_upgrade_map[quality_profile_id]:
+                upgrade_allowed_movies.append(movie)
+            else:
+                profile_name = profile_name_map.get(quality_profile_id, 'Unknown')
+                radarr_logger.debug(f"Skipping movie ID {movie_id} ('{movie_title}') - quality profile '{profile_name}' does not have upgrade allowed")
+                filtered_count += 1
+        else:
+            radarr_logger.warning(f"Movie ID {movie_id} ('{movie_title}') has unknown quality profile ID {quality_profile_id}, including it")
+            upgrade_allowed_movies.append(movie)
+
+    if filtered_count > 0:
+        radarr_logger.info(f"Filtered out {filtered_count} movies without upgrade allowed quality profiles")
+
+    upgrade_eligible_data = upgrade_allowed_movies
+
+    if not upgrade_eligible_data:
+        radarr_logger.info("No movies with upgrade allowed quality profiles.")
+        return False
+
+    radarr_logger.info(f"Found {len(upgrade_eligible_data)} movies with upgrade allowed quality profiles.")
 
     # Skip future releases if enabled (matching missing movies logic)
     if skip_future_releases:
