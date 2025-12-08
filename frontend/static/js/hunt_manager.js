@@ -93,17 +93,17 @@ const huntManagerModule = {
                 
                 console.log('Hunt item clicked:', { appType, instanceName, itemId, title });
 
-                // Process clicks for Sonarr and Radarr
-                if ((appType === 'sonarr' || appType === 'radarr') && instanceName) {
+                // Process clicks for Sonarr, Radarr, and Lidarr
+                if ((appType === 'sonarr' || appType === 'radarr' || appType === 'lidarr') && instanceName) {
                     huntManagerModule.openAppInstance(appType, instanceName, itemId, title);
-                } else if ((appType === 'sonarr' || appType === 'radarr') && window.huntarrUI) {
+                } else if ((appType === 'sonarr' || appType === 'radarr' || appType === 'lidarr') && window.huntarrUI) {
                     // Fallback to Apps section if no instance name
                     window.huntarrUI.switchSection('apps');
                     window.location.hash = '#apps';
                     console.log(`Navigated to apps section for ${appType}`);
                 } else {
                     // For other apps, show a helpful message
-                    console.log(`Clicking disabled for ${appType} - only Sonarr and Radarr links work currently`);
+                    console.log(`Clicking disabled for ${appType} - only Sonarr, Radarr, and Lidarr links work currently`);
                 }
             }
         });
@@ -250,8 +250,8 @@ const huntManagerModule = {
     
     // Format processed info
     formatProcessedInfo: function(entry) {
-        // Sonarr and Radarr entries are clickable with external linking
-        const isClickable = (entry.app_type === 'sonarr' || entry.app_type === 'radarr') && entry.instance_name;
+        // Sonarr, Radarr, and Lidarr entries are clickable with external linking
+        const isClickable = (entry.app_type === 'sonarr' || entry.app_type === 'radarr' || entry.app_type === 'lidarr') && entry.instance_name;
         const dataAttributes = isClickable ? 
             `data-app="${entry.app_type}" data-instance="${entry.instance_name}" data-item-id="${entry.media_id || ''}"` : 
             `data-app="${entry.app_type}"`;
@@ -403,7 +403,8 @@ const huntManagerModule = {
                 path = `/movie/${itemId}`;
                 break;
             case 'lidarr':
-                path = `/artist/${itemId}`;
+                // Lidarr uses foreignAlbumId (MusicBrainz UUID)
+                path = `/album/${itemId}`;
                 break;
             case 'readarr':
                 path = `/author/${itemId}`;
@@ -477,7 +478,7 @@ const huntManagerModule = {
                     let targetUrl;
 
                     // If we have item details, try to create a direct link for supported apps
-                    if (itemId && ['sonarr', 'radarr'].includes(appType.toLowerCase())) {
+                    if (itemId && ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(appType.toLowerCase())) {
                         targetUrl = this.generateDirectLink(appType, instanceSettings.api_url, itemId, title);
                         console.log('Generated direct link:', targetUrl);
                     }
