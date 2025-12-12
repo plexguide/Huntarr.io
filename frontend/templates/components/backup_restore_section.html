@@ -129,6 +129,64 @@
             </div>
         </div>
 
+        <!-- Download Backup -->
+        <div class="settings-group">
+            <h3><i class="fas fa-download"></i> Download Backup</h3>
+
+            <div class="form-group">
+                <label for="download-backup-select">
+                    <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#download-backup"
+                        class="info-icon" target="_blank" rel="noopener">ⓘ</a>
+                    Select Backup to Download
+                </label>
+                <select id="download-backup-select">
+                    <option value="">Loading available backups...</option>
+                </select>
+                <small>Select a backup to download as a ZIP file</small>
+            </div>
+
+            <div class="form-group">
+                <button type="button" id="download-backup-btn" class="action-btn backup-btn" disabled>
+                    <i class="fas fa-file-download"></i> Download Backup
+                </button>
+            </div>
+        </div>
+
+        <!-- Upload Backup -->
+        <div class="settings-group">
+            <h3><i class="fas fa-upload"></i> Upload Backup</h3>
+
+            <div class="form-group">
+                <label for="upload-backup-file">
+                    <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#upload-backup"
+                        class="info-icon" target="_blank" rel="noopener">ⓘ</a>
+                    Select Backup File (ZIP)
+                </label>
+                <input type="file" id="upload-backup-file" accept=".zip">
+                <small>Upload a ZIP file containing a valid Huntarr backup to restore from</small>
+            </div>
+
+            <div class="form-group" id="upload-confirmation-group" style="display: none;">
+                <label for="upload-confirmation">
+                    Type "UPLOAD" to confirm (this will overwrite current data)
+                </label>
+                <input type="text" id="upload-confirmation" placeholder="Type UPLOAD to confirm"
+                    style="border: 2px solid #e74c3c;">
+                <div class="warning-box">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This action will permanently overwrite your current database with the
+                    uploaded backup.
+                    All current data will be lost. Make sure you have a recent backup before proceeding.
+                </div>
+            </div>
+
+            <div class="form-group" id="upload-action-group" style="display: none;">
+                <button type="button" id="upload-backup-btn" class="action-btn danger-btn" disabled>
+                    <i class="fas fa-exclamation-triangle"></i> Upload and Restore Backup
+                </button>
+            </div>
+        </div>
+
         <!-- Backup List -->
         <div class="settings-group">
             <h3><i class="fas fa-list"></i> Available Backups</h3>
@@ -140,7 +198,6 @@
             </div>
         </div>
     </div>
-</section>
 
 <style>
     .backup-restore-container {
