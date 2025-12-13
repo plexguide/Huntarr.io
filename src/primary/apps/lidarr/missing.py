@@ -350,7 +350,9 @@ def process_missing_albums(
                         title = album_info.get('title', f'Album ID {album_id}')
                         artist_name = album_info.get('artist', {}).get('artistName', 'Unknown Artist')
                         media_name = f"{artist_name} - {title}"
-                        log_processed_media("lidarr", media_name, album_id, instance_name, "missing")
+                        # Use foreignAlbumId for Lidarr URLs (falls back to internal ID if not available)
+                        foreign_album_id = album_info.get('foreignAlbumId', album_id)
+                        log_processed_media("lidarr", media_name, foreign_album_id, instance_name, "missing")
                         lidarr_logger.debug(f"Logged history entry for album: {media_name}")
                 
                 time.sleep(command_wait_delay) # Basic delay after the single command

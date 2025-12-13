@@ -92,18 +92,18 @@ const huntManagerModule = {
                 const title = link.textContent; // Use the text content as the title
                 
                 console.log('Hunt item clicked:', { appType, instanceName, itemId, title });
-                
-                // Only process clicks for Sonarr (other apps have URL issues)
-                if (appType === 'sonarr' && instanceName) {
+
+                // Process clicks for Sonarr, Radarr, and Lidarr
+                if ((appType === 'sonarr' || appType === 'radarr' || appType === 'lidarr') && instanceName) {
                     huntManagerModule.openAppInstance(appType, instanceName, itemId, title);
-                } else if (appType === 'sonarr' && window.huntarrUI) {
-                    // Fallback to Apps section for Sonarr if no instance name
+                } else if ((appType === 'sonarr' || appType === 'radarr' || appType === 'lidarr') && window.huntarrUI) {
+                    // Fallback to Apps section if no instance name
                     window.huntarrUI.switchSection('apps');
                     window.location.hash = '#apps';
                     console.log(`Navigated to apps section for ${appType}`);
                 } else {
-                    // For non-Sonarr apps, show a helpful message
-                    console.log(`Clicking disabled for ${appType} - only Sonarr links work properly`);
+                    // For other apps, show a helpful message
+                    console.log(`Clicking disabled for ${appType} - only Sonarr, Radarr, and Lidarr links work currently`);
                 }
             }
         });
@@ -248,10 +248,10 @@ const huntManagerModule = {
         return row;
     },
     
-    // Format processed info  
+    // Format processed info
     formatProcessedInfo: function(entry) {
-        // Only Sonarr entries are clickable with external linking (other apps have URL issues)
-        const isClickable = entry.app_type === 'sonarr' && entry.instance_name;
+        // Sonarr, Radarr, and Lidarr entries are clickable with external linking
+        const isClickable = (entry.app_type === 'sonarr' || entry.app_type === 'radarr' || entry.app_type === 'lidarr') && entry.instance_name;
         const dataAttributes = isClickable ? 
             `data-app="${entry.app_type}" data-instance="${entry.instance_name}" data-item-id="${entry.media_id || ''}"` : 
             `data-app="${entry.app_type}"`;
@@ -399,26 +399,12 @@ const huntManagerModule = {
                 }
                 break;
             case 'radarr':
-                // Radarr also uses title-based slugs
-                if (title) {
-                    // Extract movie title (remove year and other info)
-                    let movieTitle = title.replace(/\s*\(\d{4}\).*$/, ''); // Remove (2023) and anything after
-                    
-                    const slug = movieTitle
-                        .toLowerCase()
-                        .trim()
-                        .replace(/[^\w\s-]/g, '')
-                        .replace(/\s+/g, '-')
-                        .replace(/-+/g, '-')
-                        .replace(/^-|-$/g, '');
-                    
-                    path = `/movie/${slug}`;
-                } else {
-                    path = `/movie/${itemId}`;
-                }
+                // Radarr uses numeric IDs
+                path = `/movie/${itemId}`;
                 break;
             case 'lidarr':
-                path = `/artist/${itemId}`;
+                // Lidarr uses foreignAlbumId (MusicBrainz UUID)
+                path = `/album/${itemId}`;
                 break;
             case 'readarr':
                 path = `/author/${itemId}`;
@@ -490,9 +476,9 @@ const huntManagerModule = {
                 
                 if (instanceSettings && instanceSettings.api_url) {
                     let targetUrl;
-                    
-                    // If we have item details, try to create a direct link for all supported apps
-                    if (itemId && title && ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(appType.toLowerCase())) {
+
+                    // If we have item details, try to create a direct link for supported apps
+                    if (itemId && ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(appType.toLowerCase())) {
                         targetUrl = this.generateDirectLink(appType, instanceSettings.api_url, itemId, title);
                         console.log('Generated direct link:', targetUrl);
                     }
