@@ -58,7 +58,7 @@ If you encounter issues:
 
 The macOS installers are built automatically using GitHub Actions with the following process:
 
-1. Python 3.9 environment is set up on a macOS runner
+1. Python 3.12 environment is set up on a macOS runner
 2. The Huntarr.io icon is converted to macOS .icns format
 3. PyInstaller bundles the application into a native macOS .app
 4. A PKG installer is created using macOS pkgbuild
