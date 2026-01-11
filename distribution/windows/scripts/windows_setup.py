@@ -110,8 +110,8 @@ def check_requirements():
     # Check Python version
     python_version = sys.version_info
     print(f"Python version: {python_version.major}.{python_version.minor}.{python_version.micro}")
-    if python_version.major < 3 or (python_version.major == 3 and python_version.minor < 9):
-        print("WARNING: Huntarr requires Python 3.9 or higher")
+    if python_version.major < 3 or (python_version.major == 3 and python_version.minor < 12):
+        print("WARNING: Huntarr requires Python 3.12 or higher")
         requirements_met = False
     
     # Check for pywin32
