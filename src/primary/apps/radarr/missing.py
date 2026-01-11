@@ -308,7 +308,9 @@ def process_missing_movies(
             # Log to history system
             year = movie.get("year", "Unknown Year")
             media_name = f"{movie_title} ({year})"
-            log_processed_media("radarr", media_name, movie_id, instance_name, "missing")
+            # Use TMDb ID for Radarr URLs (falls back to internal ID if TMDb ID not available)
+            tmdb_id = movie.get("tmdbId", movie_id)
+            log_processed_media("radarr", media_name, tmdb_id, instance_name, "missing")
             radarr_logger.debug(f"Logged history entry for movie: {media_name}")
             
             increment_stat_only("radarr", "hunted")
