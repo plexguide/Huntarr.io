@@ -307,7 +307,6 @@ def _fetch_detailed_stats():
             'recent_success_rate': 0,
             'recent_failed_searches': 0,
             'avg_response_time': 0,
-            'total_api_calls': 0,
             'indexer_performance': []
         }
         
@@ -361,9 +360,6 @@ def _fetch_detailed_stats():
                             prowlarr_logger.debug(f"Fallback: Retrieved {len(all_records)} history records from regular endpoint")
                     
                     if all_records:
-                        # Total records gives us approximate API call count
-                        stats['total_api_calls'] = len(all_records)
-                        
                         # Analyze recent activity (overall and per indexer)
                         
                         searches_today = 0
@@ -484,11 +480,10 @@ def _fetch_detailed_stats():
                                 else:
                                     stats['recent_success_rate'] = 0
                                 
-                                # Update total API calls to match indexerstats
-                                stats['total_api_calls'] = sum(stat.get('numberOfQueries', 0) for stat in indexer_stats)
                                 stats['recent_failed_searches'] = total_failed
+                                stats['grabs_today'] = total_grabs  # Add total grabs to stats
                                 
-                                prowlarr_logger.debug(f"Main stats updated - Success rate: {stats['recent_success_rate']}%, Total API calls: {stats['total_api_calls']}, Failed: {total_failed}")
+                                prowlarr_logger.debug(f"Main stats updated - Success rate: {stats['recent_success_rate']}%, Failed today: {total_failed}")
                                 
                                 # Debug logging to track individual indexer contributions
                                 for idx_id, idx_data in stats.get('indexer_daily_stats', {}).items():
@@ -664,8 +659,8 @@ def get_indexer_stats(indexer_name):
                 'searches_today': indexer_data['searches_today'],
                 'recent_success_rate': indexer_data['today_success_rate'],
                 'avg_response_time': indexer_data['response_time'],
-                'total_api_calls': indexer_data['queries'],
-                'recent_failed_searches': indexer_data['failed_today']
+                'recent_failed_searches': indexer_data['failed_today'],
+                'grabs_today': indexer_data['grabs']
             },
             'cached': True
         })
