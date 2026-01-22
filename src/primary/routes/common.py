@@ -222,49 +222,30 @@ def login_route():
             return jsonify({"success": False, "error": "An internal server error occurred during login."}), 500
     else:
         # GET request - show login page
-        # If user doesn't exist or setup is in progress, redirect to setup
         if not user_exists():
              logger.info("No user exists, redirecting to setup.")
-             
-             # Get the base URL from settings to ensure proper subpath redirect
-             try:
-                 from src.primary.settings_manager import get_setting
-                 base_url = get_setting('general', 'base_url', '')
-                 if base_url and not base_url.startswith('/'):
-                     base_url = f'/{base_url}'
-                 if base_url and base_url.endswith('/'):
-                     base_url = base_url.rstrip('/')
-                 setup_url = f"{base_url}/setup" if base_url else "/setup"
-                 logger.debug(f"Redirecting to setup with base URL: {setup_url}")
-                 return redirect(setup_url)
-             except Exception as e:
-                 logger.warning(f"Error getting base URL for setup redirect: {e}")
-                 return redirect(url_for('common.setup'))
+             from src.primary import settings_manager
+             base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+             if base_url and base_url != '/':
+                 base_url = '/' + base_url.strip('/')
+             else:
+                 base_url = ''
+             return redirect(base_url + url_for('common.setup'))
         
-        # Check if setup is in progress even if user exists
         try:
             from src.primary.utils.database import get_database
             db = get_database()
             if db.is_setup_in_progress():
                 logger.info("Setup is in progress, redirecting to setup.")
-                
-                # Get the base URL from settings to ensure proper subpath redirect
-                try:
-                    from src.primary.settings_manager import get_setting
-                    base_url = get_setting('general', 'base_url', '')
-                    if base_url and not base_url.startswith('/'):
-                        base_url = f'/{base_url}'
-                    if base_url and base_url.endswith('/'):
-                        base_url = base_url.rstrip('/')
-                    setup_url = f"{base_url}/setup" if base_url else "/setup"
-                    logger.debug(f"Redirecting to setup (in progress) with base URL: {setup_url}")
-                    return redirect(setup_url)
-                except Exception as e:
-                    logger.warning(f"Error getting base URL for setup redirect: {e}")
-                    return redirect(url_for('common.setup'))
+                from src.primary import settings_manager
+                base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+                if base_url and base_url != '/':
+                    base_url = '/' + base_url.strip('/')
+                else:
+                    base_url = ''
+                return redirect(base_url + url_for('common.setup'))
         except Exception as e:
             logger.error(f"Error checking setup progress in login route: {e}")
-            # Continue to show login page if we can't check setup progress
         
         # Check if any users have Plex authentication configured
         try:
@@ -317,7 +298,13 @@ def setup():
             # If user exists but setup is in progress, allow continuation
             if user_exists() and not db.is_setup_in_progress():
                 logger.info("User exists and setup is complete, redirecting to login")
-                return redirect(url_for('common.login_route'))
+                from src.primary import settings_manager
+                base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+                if base_url and base_url != '/':
+                    base_url = '/' + base_url.strip('/')
+                else:
+                    base_url = ''
+                return redirect(base_url + url_for('common.login_route'))
             
             # Render setup page with progress data
             return render_template('setup.html', setup_progress=setup_progress)

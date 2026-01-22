@@ -140,13 +140,11 @@ def get_base_url():
         str: The configured base URL (e.g., '/huntarr') or empty string if not configured
     """
     try:
-        base_url = settings_manager.get_setting('general', 'base_url', '')
-        # Ensure base_url always starts with a / if not empty
-        if base_url and not base_url.startswith('/'):
-            base_url = f'/{base_url}'
-        # Remove trailing slash if present
-        if base_url and base_url != '/' and base_url.endswith('/'):
-            base_url = base_url.rstrip('/')
+        base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+        if not base_url or base_url == '/':
+            return ''
+        base_url = base_url.strip('/')
+        base_url = '/' + base_url
         return base_url
     except Exception as e:
         print(f"Error getting base_url from settings: {e}")
@@ -285,6 +283,27 @@ app.register_blueprint(backup_bp)
 # Register the authentication check to run before requests
 app.before_request(authenticate_request)
 
+# WSGI Middleware to handle BASE_URL stripping
+class BaseURLMiddleware:
+    """WSGI middleware to strip base URL prefix before Flask routing"""
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '')
+        current_base = get_base_url()
+
+        if current_base:
+            if path.startswith(current_base + '/'):
+                environ['PATH_INFO'] = path[len(current_base):]
+            elif path == current_base:
+                environ['PATH_INFO'] = '/'
+
+        return self.app(environ, start_response)
+
+# Wrap app with BASE_URL stripping middleware
+app.wsgi_app = BaseURLMiddleware(app.wsgi_app)
+
 # Add base_url to template context so it can be used in templates
 @app.context_processor
 def inject_base_url():
@@ -307,7 +326,7 @@ def home():
 @app.route('/user')
 def user():
     """Redirect to main index with user section"""
-    return redirect('./#user')
+    return redirect(get_base_url() + url_for('home') + '#user')
     
 # This section previously contained code for redirecting paths to include the base URL
 # It has been removed as Flask's APPLICATION_ROOT setting provides this functionality

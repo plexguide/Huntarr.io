@@ -491,6 +491,5 @@ def plex_status():
 @plex_auth_bp.route('/auth/plex/callback')
 def plex_callback():
     """Handle Plex authentication callback (redirect back to app)"""
-    # Redirect to main page with user hash to avoid index.html redirect conflicts
-    # This ensures proper navigation without triggering localStorage redirects
-    return redirect('/#user')
+    from src.primary.web_server import get_base_url
+    return redirect(get_base_url() + url_for('home') + '#user')
