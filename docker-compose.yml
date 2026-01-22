@@ -15,9 +15,10 @@ services:
     # Graceful shutdown configuration
     stop_signal: SIGTERM
     stop_grace_period: 30s
-    # Health check configuration
+    # Health check configuration using Python to avoid spawning curl processes
+    # The SIGCHLD handler in main.py will reap any terminated health check processes
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9705/health"]
+      test: ["CMD", "python3", "-c", "import requests; import sys; r = requests.get('http://localhost:9705/api/health', timeout=5); sys.exit(0 if r.status_code == 200 else 1)"]
       interval: 30s
       timeout: 10s
       start_period: 40s

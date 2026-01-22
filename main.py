@@ -324,11 +324,28 @@ def run_web_server():
             if not stop_event.is_set():
                 stop_event.set()
 
+def sigchld_handler(signum, frame):
+    """Handle SIGCHLD to prevent zombie processes."""
+    # Reap all terminated child processes without blocking
+    while True:
+        try:
+            # WNOHANG returns immediately if no child has exited
+            pid, status = os.waitpid(-1, os.WNOHANG)
+            if pid == 0:
+                # No more zombie children
+                break
+        except ChildProcessError:
+            # No child processes
+            break
+        except OSError:
+            # Error occurred, stop trying
+            break
+
 def main_shutdown_handler(signum, frame):
     """Gracefully shut down the application."""
     global _global_shutdown_flag
     _global_shutdown_flag = True  # Set global shutdown flag immediately
-    
+
     signal_name = "SIGINT" if signum == signal.SIGINT else "SIGTERM" if signum == signal.SIGTERM else f"Signal {signum}"
     huntarr_logger.info(f"Received {signal_name}. Initiating graceful shutdown...")
     
@@ -440,7 +457,10 @@ def main():
     # Register signal handlers for graceful shutdown in the main process
     signal.signal(signal.SIGINT, main_shutdown_handler)
     signal.signal(signal.SIGTERM, main_shutdown_handler)
-    
+
+    # Register SIGCHLD handler to prevent zombie processes (Docker healthchecks)
+    signal.signal(signal.SIGCHLD, sigchld_handler)
+
     # Register cleanup handler
     atexit.register(cleanup_handler)
     

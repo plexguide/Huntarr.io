@@ -30,9 +30,10 @@ ENV TZ=UTC
 # Expose port
 EXPOSE 9705
 
-# Add health check for Docker
+# Add health check for Docker using Python to avoid spawning curl processes
+# The SIGCHLD handler in main.py will reap any terminated health check processes
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:9705/health || exit 1
+    CMD ["python3", "-c", "import requests; import sys; r = requests.get('http://localhost:9705/api/health', timeout=5); sys.exit(0 if r.status_code == 200 else 1)"]
 
 # Run the main application using the new entry point
 CMD ["python3", "main.py"]
