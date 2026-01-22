@@ -75,6 +75,169 @@ conn = sqlite3.connect('/config/huntarr.db')
 - ALWAYS store target section in localStorage for post-refresh navigation
 - This solves toggle visibility issues, stale data, and all frontend caching problems
 
+## 🔀 BASE_URL / REVERSE PROXY SUPPORT (CRITICAL)
+
+### Core Architecture
+- **WSGI Middleware Pattern**: Use `BaseURLMiddleware` in `web_server.py` to strip BASE_URL prefix BEFORE Flask routing
+- Middleware strips `/huntarr` from `/huntarr/api/logs` → Flask sees `/api/logs`
+- This is the ONLY correct way to handle subpath deployments - industry standard pattern
+- NEVER modify individual route definitions to include BASE_URL
+
+### Middleware Implementation
+```python
+# In web_server.py - MUST be present
+class BaseURLMiddleware:
+    """WSGI middleware to strip base URL prefix before Flask routing"""
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '')
+        current_base = get_base_url()
+
+        if current_base:
+            if path.startswith(current_base + '/'):
+                environ['PATH_INFO'] = path[len(current_base):]
+            elif path == current_base:
+                environ['PATH_INFO'] = '/'
+
+        return self.app(environ, start_response)
+
+# Apply middleware after Flask app creation
+app.wsgi_app = BaseURLMiddleware(app.wsgi_app)
+```
+
+### Backend BASE_URL Rules
+1. **Centralized Helper Function**:
+   ```python
+   # In auth.py and any module needing BASE_URL
+   def get_base_url_path():
+       try:
+           base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+           if not base_url or base_url == '/':
+               return ''
+           base_url = base_url.strip('/')
+           base_url = '/' + base_url
+           return base_url
+       except Exception as e:
+           logger.error(f"Error getting base_url from settings: {e}")
+           return ''
+   ```
+
+2. **Redirect Pattern**:
+   ```python
+   # ✅ CORRECT - Use helper + url_for
+   return redirect(get_base_url_path() + url_for('common.setup'))
+   
+   # ❌ WRONG - Hard-coded paths
+   return redirect('/setup')
+   
+   # ❌ WRONG - Inline BASE_URL logic (repetitive, error-prone)
+   base_url = get_setting('general', 'base_url', '')
+   if base_url and not base_url.startswith('/'):
+       base_url = f'/{base_url}'
+   return redirect(f"{base_url}/setup")
+   ```
+
+3. **Path Checking After Middleware**:
+   ```python
+   # ✅ CORRECT - After middleware strips BASE_URL, use startswith()
+   if request.path.startswith('/static/'):
+       return None
+   if request.path.endswith('/setup'):
+       return None
+   
+   # ❌ WRONG - Using 'in' operator (matches unintended paths)
+   if '/static/' in request.path:  # Matches '/api/static/foo' incorrectly
+       return None
+   
+   # ❌ WRONG - Exact path matching (breaks with BASE_URL)
+   if request.path == '/setup':  # Won't match after middleware strips prefix
+       return None
+   ```
+
+4. **Environment Variable Precedence**:
+   ```python
+   # In settings_manager.py - ALWAYS override with env var
+   def initialize_base_url_from_env():
+       if 'BASE_URL' not in os.environ:
+           return
+       
+       base_url_env = os.environ.get('BASE_URL', '').strip()
+       # Format and save - ALWAYS override DB setting
+       general_settings["base_url"] = base_url_env
+       save_settings("general", general_settings)
+   ```
+
+### Frontend BASE_URL Rules
+1. **Use Backend-Injected Value**:
+   ```javascript
+   // ✅ CORRECT - Use window.HUNTARR_BASE_URL injected by backend
+   function getBaseUrl() {
+       return (window.HUNTARR_BASE_URL || '');
+   }
+   
+   function buildUrl(path) {
+       const base = getBaseUrl();
+       path = path.replace(/^\.\//, '');
+       if (!path.startsWith('/')) {
+           path = '/' + path;
+       }
+       return base + path;
+   }
+   
+   // ❌ WRONG - Client-side detection (unreliable behind proxies)
+   function getBaseUrl() {
+       return window.location.origin + window.location.pathname;
+   }
+   ```
+
+2. **Template Injection** (must be present in all templates):
+   ```html
+   <!-- In head.html, index.html, login.html, setup.html, etc. -->
+   <script>window.HUNTARR_BASE_URL = '{{ base_url|default("", true) }}';</script>
+   ```
+
+### BASE_URL Testing Checklist
+- [ ] Test standard deployment (no BASE_URL) - must work at root path
+- [ ] Test with `BASE_URL=/huntarr` - all routes and redirects work
+- [ ] Test changing BASE_URL via environment variable - takes effect immediately
+- [ ] Test authentication redirects (login, setup, logout)
+- [ ] Test API calls from frontend JavaScript
+- [ ] Test static file serving
+- [ ] Test Plex OAuth callbacks
+- [ ] Test deep linking to specific sections
+
+### BASE_URL Anti-Patterns
+- ❌ Modifying Flask route decorators to include BASE_URL
+- ❌ Hard-coding BASE_URL in route definitions
+- ❌ Using `url_for()` without BASE_URL prefix for redirects
+- ❌ Client-side BASE_URL detection instead of backend injection
+- ❌ DB settings taking precedence over environment variables
+- ❌ Path checking with `in` operator after middleware
+- ❌ Exact path matching (`path == '/setup'`) that breaks with subpaths
+- ❌ Repetitive inline BASE_URL formatting in multiple files
+
+### Files to Check When BASE_URL Changes
+- `src/primary/web_server.py` - Middleware must be applied
+- `src/primary/auth.py` - Path checks and redirects
+- `src/primary/routes/common.py` - Setup/login redirects
+- `src/primary/routes/plex_auth_routes.py` - OAuth callbacks
+- `src/primary/settings_manager.py` - Environment variable handling
+- `frontend/static/js/cycle-countdown.js` - API URL building
+- `frontend/templates/*.html` - window.HUNTARR_BASE_URL injection
+
+### Proactive BASE_URL Violation Scanning
+```bash
+# Run before commits to catch BASE_URL issues
+echo "=== BASE_URL VIOLATION SCAN ==="
+echo "1. Hard-coded redirects: $(grep -r "return redirect('/" src/ --include="*.py" | wc -l)"
+echo "2. Hard-coded paths in auth: $(grep -r 'request.path == "/' src/primary/auth.py | wc -l)"
+echo "3. Path checking with 'in': $(grep -r "if.*in request.path" src/primary/auth.py | wc -l)"
+echo "4. Missing middleware: $(grep -q "class BaseURLMiddleware" src/primary/web_server.py && echo "0" || echo "1")"
+echo "5. Missing frontend injection: $(grep -q "window.HUNTARR_BASE_URL" frontend/templates/index.html && echo "0" || echo "1")"
+```
+
 ## 🐛 COMMON ISSUE PREVENTION
 
 ### Log Regex Issues
@@ -231,6 +394,11 @@ conn = sqlite3.connect('/config/huntarr.db')
 13. Synology optimization bypasses: `grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection"`
 14. Endless refresh loop violations: `grep -r "location.reload" frontend/ --include="*.js" | grep -v "isInitialized"`
 15. Missing initialization flag violations: `grep -r "switchSection.*function" frontend/ --include="*.js" | xargs grep -L "isInitialized"`
+16. BASE_URL hard-coded redirects: `grep -r "return redirect('/" src/ --include="*.py" | wc -l`
+17. BASE_URL exact path matching: `grep -r 'request.path == "/' src/primary/auth.py | wc -l`
+18. BASE_URL path checking with 'in': `grep -r "if.*in request.path" src/primary/auth.py | wc -l`
+19. Missing BASE_URL middleware: `grep -q "class BaseURLMiddleware" src/primary/web_server.py && echo "0" || echo "1"`
+20. Missing BASE_URL frontend injection: `grep -q "window.HUNTARR_BASE_URL" frontend/templates/index.html && echo "0" || echo "1"`
 
 ### Violation Scanning Commands
 ```bash
@@ -251,6 +419,11 @@ echo "12. Port 9705 usage in local code: $(grep -r "9705" main.py src/ | grep -v
 echo "13. Synology optimization bypass violations: $(grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection" | wc -l)"
 echo "14. Endless refresh loop violations: $(grep -r "location.reload" frontend/ --include="*.js" | grep -v "isInitialized" | wc -l)"
 echo "15. Missing initialization flag violations: $(grep -r "switchSection.*function" frontend/ --include="*.js" | xargs grep -L "isInitialized" | wc -l)"
+echo "16. BASE_URL hard-coded redirects: $(grep -r "return redirect('/" src/ --include="*.py" | wc -l)"
+echo "17. BASE_URL exact path matching: $(grep -r 'request.path == "/' src/primary/auth.py | wc -l)"
+echo "18. BASE_URL path checking with 'in': $(grep -r "if.*in request.path" src/primary/auth.py | wc -l)"
+echo "19. Missing BASE_URL middleware: $(grep -q "class BaseURLMiddleware" src/primary/web_server.py && echo "0" || echo "1")"
+echo "20. Missing BASE_URL frontend injection: $(grep -q "window.HUNTARR_BASE_URL" frontend/templates/index.html && echo "0" || echo "1")"
 ```
 
 ## 📊 SPECIFIC BUG PATTERNS TO AVOID
@@ -262,6 +435,18 @@ echo "15. Missing initialization flag violations: $(grep -r "switchSection.*func
 ### GitHub Issue #624 Pattern (Settings Persistence)
 - Include all field name variations in form collection logic
 - File: `/frontend/static/js/settings_forms.js`
+
+### GitHub Issue #649, #732 Pattern (BASE_URL / Reverse Proxy Support)
+- **Problem**: BASE_URL support breaks with hard-coded paths, incorrect middleware, or missing frontend injection
+- **Root Cause**: Not using WSGI middleware pattern, hard-coded redirects, path checking before middleware strips prefix
+- **Critical Fix**: Implement `BaseURLMiddleware` in web_server.py to strip BASE_URL before Flask routing
+- **Pattern to Follow**: 
+  - Backend: `return redirect(get_base_url_path() + url_for('route_name'))`
+  - Frontend: `const base = (window.HUNTARR_BASE_URL || ''); fetch(base + '/api/endpoint')`
+  - Middleware: Strips `/huntarr` from `/huntarr/api/logs` → Flask sees `/api/logs`
+- **Anti-Pattern**: Hard-coded paths like `return redirect('/setup')` or `request.path == '/setup'`
+- **Files**: `src/primary/web_server.py`, `src/primary/auth.py`, `src/primary/routes/common.py`, `frontend/static/js/cycle-countdown.js`
+- **Testing**: Must test with BASE_URL=/huntarr to verify all redirects, API calls, and auth flows work
 
 ### GitHub Issue #629 Pattern (Windows Database Access)
 - Use DatabaseManager with proper Windows AppData support
