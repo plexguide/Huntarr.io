@@ -95,12 +95,12 @@ button {
     font-family: inherit;
 }
 
-/* Layout Structure */
+/* Layout Structure - COMPLETE OVERHAUL FOR GAP FIX */
 .app-container {
     display: flex;
     height: 100vh;
     width: 100%;
-    overflow: auto;
+    overflow: hidden; /* Prevent any overflow issues */
 }
 
 .sidebar {
@@ -118,24 +118,42 @@ button {
 
 .main-content {
     flex: 1;
-    min-width: 0; /* Important for flex child to respect parent constraints */
+    display: flex;
+    flex-direction: column;
     height: 100vh;
-    overflow-y: auto;
-    position: relative;
-    box-sizing: border-box;
+    overflow: hidden;
+    min-width: 0;
 }
 
-/* Content Section styles */
+/* Top Bar */
+.top-bar {
+    height: 60px;
+    background-color: var(--topbar-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0; /* Prevent top-bar from shrinking */
+}
+
+/* CRITICAL FIX: Content sections must fill remaining space exactly */
 .content-section {
     display: none;
-    height: calc(100vh - 30px); /* Reduced from 60px to match the new top bar height */
+    flex: 1; /* Take all remaining space after top-bar */
     overflow-y: auto;
     padding: 20px;
+    box-sizing: border-box;
+    height: 0; /* Force flex to calculate height */
 }
 
 .content-section.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
 }
+
+/* REMOVED DUPLICATE - Using flex-based approach above */
 
 /* Sidebar */
 .logo-container {
@@ -273,25 +291,10 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-/* Main Content */
-.main-content {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
+/* Main Content - REMOVED DUPLICATE */
+/* This section was causing conflicts - removed */
 
-/* Top Bar */
-.top-bar {
-    height: 60px;
-    background-color: var(--topbar-bg);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
+/* REMOVED DUPLICATE - Using flex-based approach above */
 
 .page-title {
     font-size: 1.3rem;
@@ -318,26 +321,17 @@ input:checked + .slider:before {
     color: var(--error-color);
 }
 
-/* Content Sections */
-.content-section {
-    display: none;
-    height: calc(100vh - 30px); /* Reduced from 60px to match the new top bar height */
-    overflow-y: auto;
-    padding: 20px;
-}
+/* REMOVED DUPLICATE - Using flex-based approach above */
 
-.content-section.active {
-    display: block;
-}
-
-/* Responsive adjustments for mobile view */
+/* Responsive adjustments for mobile view - FLEX BASED */
 @media (max-width: 768px) {
     .content-section {
-        height: calc(100vh - 50px); /* Account for taller topbar in mobile */
+        /* Flex approach handles height automatically */
+        padding: 15px; /* Slightly less padding on mobile */
     }
     
     .logs {
-        height: calc(100vh - 150px); /* Adjust logs container for mobile topbar */
+        height: calc(100vh - 120px); /* Adjust logs container for mobile */
     }
     
     /* Title alignment with version info */
@@ -358,14 +352,15 @@ input:checked + .slider:before {
     }
 }
 
-/* Phone-specific height adjustments */
+/* Phone-specific height adjustments - FLEX BASED */
 @media (max-width: 480px) {
     .content-section {
-        height: calc(100vh - 80px); /* Account for the taller stacked header on phones */
+        /* Flex approach handles height automatically */
+        padding: 10px; /* Even less padding on phones */
     }
     
     .logs {
-        height: calc(100vh - 180px); /* Adjust logs container for taller phone header */
+        height: calc(100vh - 140px); /* Adjust logs container for phone */
     }
     
     .page-title {
@@ -624,7 +619,7 @@ input:checked + .slider:before {
 }
 
 .logs {
-    height: calc(100vh - 130px); /* Reduced from 160px to account for smaller header */
+    height: calc(100vh - 160px); /* Account for top-bar + section headers + padding */
     background-color: var(--log-bg);
     border: 1px solid var(--log-border);
     border-radius: 8px;
@@ -635,6 +630,7 @@ input:checked + .slider:before {
     word-wrap: break-word;
     line-height: 1.5;
     font-size: 14px;
+    box-sizing: border-box;
 }
 
 .log-entry {
@@ -706,7 +702,8 @@ input:checked + .slider:before {
 .settings-form {
     padding: 0;
     overflow-y: auto;
-    height: calc(100vh - 150px);
+    height: calc(100vh - 160px); /* Account for top-bar + section headers + padding */
+    box-sizing: border-box;
 }
 
 .app-settings-panel {
@@ -987,6 +984,25 @@ input:checked + .toggle-slider:before {
     .main-content {
         margin-left: 0 !important;
         width: calc(100% - 60px) !important;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    /* Ensure content sections use flex properly on mobile */
+    .content-section {
+        flex: 1;
+        height: 0; /* Force flex calculation */
+        overflow-y: auto;
+        padding: 15px;
+        box-sizing: border-box;
+    }
+    
+    .content-section.active {
+        display: flex;
+        flex-direction: column;
     }
     
     /* Navbar item adjustments */

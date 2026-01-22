@@ -1,0 +1,141 @@
+/*
+ * CRITICAL LAYOUT FIX - Bottom Gap Elimination
+ * This file overrides all conflicting CSS rules to fix the bottom gap issue
+ * Load this LAST to ensure it takes precedence
+ */
+
+/* FORCE PROPER LAYOUT STRUCTURE */
+html, body {
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.app-container {
+    display: flex !important;
+    height: 100vh !important;
+    width: 100% !important;
+    overflow: hidden !important;
+}
+
+.sidebar {
+    width: 250px !important;
+    height: 100vh !important;
+    flex-shrink: 0 !important;
+    overflow-y: auto !important;
+}
+
+.main-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    min-width: 0 !important;
+}
+
+/* FORCE TOP BAR TO STAY VISIBLE AND FIXED HEIGHT */
+.top-bar {
+    height: 60px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    background-color: var(--topbar-bg) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 0 20px !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+/* FORCE CONTENT SECTIONS TO FILL REMAINING SPACE */
+.content-section {
+    display: none !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+    height: 0 !important; /* Critical for flex calculation */
+}
+
+.content-section.active {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* OVERRIDE ALL CONFLICTING MOBILE RULES */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 60px !important;
+        min-width: 60px !important;
+        max-width: 60px !important;
+    }
+    
+    .main-content {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+        width: calc(100% - 60px) !important;
+        margin-left: 0 !important;
+    }
+    
+    /* CRITICAL: Keep top-bar visible on mobile */
+    .top-bar {
+        display: flex !important;
+        height: 60px !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .content-section {
+        flex: 1 !important;
+        height: 0 !important;
+        overflow-y: auto !important;
+        padding: 15px !important;
+        box-sizing: border-box !important;
+    }
+    
+    .content-section.active {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        width: 50px !important;
+        min-width: 50px !important;
+        max-width: 50px !important;
+    }
+    
+    .main-content {
+        width: calc(100% - 50px) !important;
+    }
+    
+    .content-section {
+        padding: 10px !important;
+    }
+}
+
+/* OVERRIDE ANY CONFLICTING HEIGHT RULES */
+.settings-form,
+.logs,
+.app-settings-panel,
+.section-wrapper {
+    height: auto !important;
+    max-height: none !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+}
+
+/* ENSURE NO ELEMENTS BREAK THE LAYOUT */
+* {
+    box-sizing: border-box !important;
+}
+
+/* PREVENT ANY OVERFLOW ISSUES */
+.dashboard-grid,
+.settings-group,
+.instance-panel {
+    overflow: visible !important;
+}
