@@ -389,26 +389,15 @@
 /* Modal */
 .media-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 1000;
     display: none;
-    align-items: center;
-    justify-content: center;
-    padding-left: 150px; /* Sidebar width to center in visible area */
 }
 
 .media-modal[style*="display: flex"] {
-    display: flex !important;
-}
-
-/* Mobile responsive - full width on small screens */
-@media (max-width: 768px) {
-    .media-modal {
-        padding-left: 0;
-    }
+    display: block !important;
 }
 
 .modal-backdrop {
