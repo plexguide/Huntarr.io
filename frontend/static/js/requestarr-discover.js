@@ -132,10 +132,18 @@ class RequestarrDiscover {
             }
         }
         
-        // Update views
+        // Update views - explicitly remove active from all, then add to target only
         document.querySelectorAll('.requestarr-view').forEach(container => {
-            container.classList.toggle('active', container.id === `requestarr-${view}-view`);
+            container.classList.remove('active');
+            container.style.display = 'none';
         });
+        
+        // Show only the target view
+        const targetView = document.getElementById(`requestarr-${view}-view`);
+        if (targetView) {
+            targetView.classList.add('active');
+            targetView.style.display = 'block';
+        }
 
         this.currentView = view;
 

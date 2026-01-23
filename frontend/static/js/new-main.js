@@ -689,7 +689,6 @@ let huntarrUI = {
             if (typeof window.RequestarrDiscover !== 'undefined') {
                 window.RequestarrDiscover.switchView('settings');
             }
-            this.showRequestarrView('history');
         } else if (section === 'apps') {
             console.log('[huntarrUI] Apps section requested - redirecting to Sonarr by default');
             // Instead of showing apps dashboard, redirect to Sonarr

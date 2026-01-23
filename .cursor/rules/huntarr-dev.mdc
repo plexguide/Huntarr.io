@@ -502,6 +502,7 @@ echo "5. Missing frontend injection: $(grep -q "window.HUNTARR_BASE_URL" fronten
 20. Missing BASE_URL frontend injection: `grep -q "window.HUNTARR_BASE_URL" frontend/templates/index.html && echo "0" || echo "1"`
 21. Modal centering violations - modals inside section containers: `grep -r "class=\"modal\"" frontend/templates/components/ | xargs grep -l "content-section" | wc -l`
 22. Modal margin-left offset violations: `grep -r "margin-left.*sidebar" frontend/static/css/ --include="*.css" | wc -l`
+23. Requestarr Settings history view contamination: `grep -n "showRequestarrView.*history" frontend/static/js/new-main.js | grep -B2 -A2 "requestarr-settings"`
 
 ### Violation Scanning Commands
 ```bash
@@ -529,6 +530,7 @@ echo "19. Missing BASE_URL middleware: $(grep -q "class BaseURLMiddleware" src/p
 echo "20. Missing BASE_URL frontend injection: $(grep -q "window.HUNTARR_BASE_URL" frontend/templates/index.html && echo "0" || echo "1")"
 echo "21. Modal centering violations - modals inside section containers: $(grep -r "class=\"modal\"" frontend/templates/components/ | xargs grep -l "content-section" | wc -l)"
 echo "22. Modal margin-left offset violations: $(grep -r "margin-left.*sidebar" frontend/static/css/ --include="*.css" | wc -l)"
+echo "23. Requestarr Settings history contamination: $(grep -n "showRequestarrView.*history" frontend/static/js/new-main.js | grep -B2 -A2 "requestarr-settings" | wc -l)"
 ```
 
 ## 📊 SPECIFIC BUG PATTERNS TO AVOID
@@ -815,6 +817,68 @@ echo "22. Modal margin-left offset violations: $(grep -r "margin-left.*sidebar" 
   ```
 - **Debugging**: If endless refresh occurs, check browser console for rapid section switching logs
 - **Prevention**: Always test page load behavior, not just navigation behavior
+
+### Requestarr Settings History View Contamination (Critical - KEEP FIXED)
+- **Problem**: History section shows on Requestarr Settings page even though it should only show settings
+- **Root Cause**: Legacy `this.showRequestarrView('history')` call in `new-main.js` that forces history view to display
+- **Symptom**: Both "Request History" and "Requestarr Settings" sections visible simultaneously on settings page
+- **Critical Fix**: NEVER call `showRequestarrView('history')` in the `requestarr-settings` section handler
+- **Files**: `/frontend/static/js/new-main.js` (around line 678-692)
+- **Pattern to Avoid**:
+  ```javascript
+  // ❌ WRONG - forces history to show on settings page
+  } else if (section === 'requestarr-settings' && document.getElementById('requestarr-section')) {
+      // ... setup code ...
+      if (typeof window.RequestarrDiscover !== 'undefined') {
+          window.RequestarrDiscover.switchView('settings');
+      }
+      this.showRequestarrView('history'); // ← NEVER ADD THIS LINE BACK
+  }
+  ```
+- **Correct Pattern**:
+  ```javascript
+  // ✅ CORRECT - only shows settings view
+  } else if (section === 'requestarr-settings' && document.getElementById('requestarr-section')) {
+      document.getElementById('requestarr-section').classList.add('active');
+      document.getElementById('requestarr-section').style.display = 'block';
+      if (document.getElementById('requestarrSettingsNav')) document.getElementById('requestarrSettingsNav').classList.add('active');
+      newTitle = 'Settings';
+      this.currentSection = 'requestarr-settings';
+      
+      // Switch to Requestarr sidebar
+      this.showRequestarrSidebar();
+      
+      // Show settings view ONLY - no additional view calls
+      if (typeof window.RequestarrDiscover !== 'undefined') {
+          window.RequestarrDiscover.switchView('settings');
+      }
+      // NO this.showRequestarrView('history') here!
+  }
+  ```
+- **View Switching Logic**: The `RequestarrDiscover.switchView()` method handles all view visibility:
+  ```javascript
+  // In requestarr-discover.js switchView function
+  // Explicitly hide ALL views first, then show only target
+  document.querySelectorAll('.requestarr-view').forEach(container => {
+      container.classList.remove('active');
+      container.style.display = 'none';
+  });
+  
+  // Show only the target view
+  const targetView = document.getElementById(`requestarr-${view}-view`);
+  if (targetView) {
+      targetView.classList.add('active');
+      targetView.style.display = 'block';
+  }
+  ```
+- **Important Notes**:
+  1. This bug has been fixed multiple times and keeps getting reintroduced
+  2. User is extremely frustrated with this pattern recurring
+  3. NEVER add `showRequestarrView()` calls in Requestarr section handlers in `new-main.js`
+  4. Let `RequestarrDiscover.switchView()` handle ALL view switching for Requestarr
+  5. The global search bar must also be hidden for settings: handled in `switchView()` with conditional display
+- **Testing**: Navigate to Requestarr Settings and verify ONLY settings content shows (no history, no search bar)
+- **Proactive Scan**: `grep -n "showRequestarrView.*history" frontend/static/js/new-main.js | grep -A5 "requestarr-settings"`
 
 ## 🎯 DEBUGGING APPROACH
 
