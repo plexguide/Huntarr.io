@@ -15,7 +15,6 @@ export class RequestarrDiscover {
         this.searchTimeouts = {};
         this.currentModal = null;
         this.currentModalData = null;
-        this.selectedSeasons = [];
         
         // Initialize modules
         this.content = new RequestarrContent(this);

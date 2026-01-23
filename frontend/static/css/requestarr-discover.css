@@ -1277,3 +1277,80 @@ input:disabled + .toggle-slider {
     font-weight: 400;
     margin-top: 3px;
 }
+
+/* Toast Notifications - Upper Right Corner */
+.requestarr-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #1e1e28;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    min-width: 300px;
+    max-width: 500px;
+    transform: translateX(120%);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    border-left: 4px solid;
+}
+
+.requestarr-notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.requestarr-notification.slideOut {
+    transform: translateX(120%);
+    opacity: 0;
+}
+
+.requestarr-notification i {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.requestarr-notification span {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.requestarr-notification.success {
+    border-left-color: #10b981;
+    background: #1a2e25;
+}
+
+.requestarr-notification.success i {
+    color: #10b981;
+}
+
+.requestarr-notification.error {
+    border-left-color: #ef4444;
+    background: #2e1a1a;
+}
+
+.requestarr-notification.error i {
+    color: #ef4444;
+}
+
+.requestarr-notification.info {
+    border-left-color: #3b82f6;
+    background: #1a2333;
+}
+
+.requestarr-notification.info i {
+    color: #3b82f6;
+}
+
+/* Success state for request button */
+.request-btn.success {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: white !important;
+    cursor: default !important;
+}

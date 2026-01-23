@@ -58,96 +58,29 @@ export class RequestarrModal {
         `;
         
         // Status container and instance selector
-        if (isTVShow) {
-            modalHTML += `
-                <div id="series-status-container"></div>
-                <div class="request-advanced-section">
-                    <div class="advanced-field">
-                        <label>Instance</label>
-                        <select id="modal-instance-select" class="advanced-select" onchange="window.RequestarrDiscover.modal.instanceChanged(this.value)">
-            `;
-            
-            if (instances.length === 0) {
-                modalHTML += `<option value="">No Instance Configured</option>`;
-            } else {
-                instances.forEach((instance, index) => {
-                    const selected = instance.name === rememberedInstance ? 'selected' : '';
-                    modalHTML += `<option value="${instance.name}" ${selected}>Sonarr - ${instance.name}</option>`;
-                });
-            }
-            
-            modalHTML += `
-                        </select>
-                    </div>
-                </div>
-            `;
+        modalHTML += `
+            <div id="${isTVShow ? 'series' : 'movie'}-status-container"></div>
+            <div class="request-advanced-section">
+                <div class="advanced-field">
+                    <label>Instance</label>
+                    <select id="modal-instance-select" class="advanced-select" onchange="window.RequestarrDiscover.modal.instanceChanged(this.value)">
+        `;
+        
+        if (instances.length === 0) {
+            modalHTML += `<option value="">No Instance Configured</option>`;
         } else {
-            modalHTML += `
-                <div id="movie-status-container"></div>
-                <div class="request-advanced-section">
-                    <div class="advanced-field">
-                        <label>Instance</label>
-                        <select id="modal-instance-select" class="advanced-select" onchange="window.RequestarrDiscover.modal.instanceChanged(this.value)">
-            `;
-            
-            if (instances.length === 0) {
-                modalHTML += `<option value="">No Instance Configured</option>`;
-            } else {
-                instances.forEach((instance, index) => {
-                    const selected = instance.name === rememberedInstance ? 'selected' : '';
-                    modalHTML += `<option value="${instance.name}" ${selected}>Radarr - ${instance.name}</option>`;
-                });
-            }
-            
-            modalHTML += `
-                        </select>
-                    </div>
-                </div>
-            `;
+            instances.forEach((instance, index) => {
+                const selected = instance.name === rememberedInstance ? 'selected' : '';
+                const appLabel = isTVShow ? 'Sonarr' : 'Radarr';
+                modalHTML += `<option value="${instance.name}" ${selected}>${appLabel} - ${instance.name}</option>`;
+            });
         }
         
-        // Season selection for TV shows
-        if (isTVShow && data.seasons) {
-            const requestedSeasons = await this.checkRequestedSeasons(data.tmdb_id, rememberedInstance);
-            
-            modalHTML += `
-                <div class="season-selection-container">
-                    <div class="season-selection-header">
-                        <div class="header-col">SEASON</div>
-                        <div class="header-col"># OF EPISODES</div>
-                        <div class="header-col">STATUS</div>
-                    </div>
-                    <div class="season-selection-list">
-            `;
-            
-            data.seasons.forEach((season, index) => {
-                const isRequested = requestedSeasons.includes(season.season_number);
-                const faded = isRequested ? 'requested' : '';
-                
-                modalHTML += `
-                    <div class="season-row ${faded}">
-                        <label class="season-toggle">
-                            <input type="checkbox" 
-                                   class="season-checkbox" 
-                                   data-season="${season.season_number}"
-                                   ${isRequested ? 'checked disabled' : ''}
-                                   onchange="window.RequestarrDiscover.modal.toggleSeason(this)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <div class="season-name">Season ${season.season_number}</div>
-                        <div class="season-episodes">${season.episode_count || 'TBA'}</div>
-                        <div class="season-status">
-                            ${isRequested ? '<span class="status-badge requested">Already Requested</span>' : '<span class="status-badge not-requested">Not Requested</span>'}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            modalHTML += `
-                    </div>
+        modalHTML += `
+                    </select>
                 </div>
-            `;
-        }
+            </div>
+        `;
         
         // Quality Profile section
         const profileKey = `${isTVShow ? 'sonarr' : 'radarr'}-${rememberedInstance || (instances[0]?.name || '')}`;
@@ -176,7 +109,7 @@ export class RequestarrModal {
             <div class="request-modal-actions">
                 <button class="modal-btn cancel-btn" onclick="window.RequestarrDiscover.modal.closeModal()">Cancel</button>
                 <button class="modal-btn request-btn" id="modal-request-btn" onclick="window.RequestarrDiscover.modal.submitRequest()">
-                    ${isTVShow ? 'Select Season(s)' : 'Request'}
+                    Request
                 </button>
             </div>
         </div>
@@ -185,7 +118,6 @@ export class RequestarrModal {
         modalBody.innerHTML = modalHTML;
         
         this.core.currentModalData = data;
-        this.core.selectedSeasons = [];
         
         // Load status if instance is already selected
         if (rememberedInstance) {
@@ -196,8 +128,8 @@ export class RequestarrModal {
             }
         }
         
-        // Disable request button initially for TV shows or if no instances
-        if (isTVShow || instances.length === 0) {
+        // Disable request button if no instances configured
+        if (instances.length === 0) {
             document.getElementById('modal-request-btn').disabled = true;
             document.getElementById('modal-request-btn').classList.add('disabled');
         }
@@ -214,28 +146,7 @@ export class RequestarrModal {
         }
     }
 
-    toggleSeason(checkbox) {
-        const seasonNumber = parseInt(checkbox.dataset.season);
-        
-        if (checkbox.checked && !checkbox.disabled) {
-            if (!this.core.selectedSeasons.includes(seasonNumber)) {
-                this.core.selectedSeasons.push(seasonNumber);
-            }
-        } else {
-            this.core.selectedSeasons = this.core.selectedSeasons.filter(s => s !== seasonNumber);
-        }
-        
-        const requestBtn = document.getElementById('modal-request-btn');
-        if (this.core.selectedSeasons.length > 0) {
-            requestBtn.disabled = false;
-            requestBtn.classList.remove('disabled');
-        } else {
-            requestBtn.disabled = true;
-            requestBtn.classList.add('disabled');
-        }
-        
-        console.log('[RequestarrDiscover] Selected seasons:', this.core.selectedSeasons);
-    }
+    // Season selection removed - we automatically request what's missing
 
     async loadSeriesStatus(instanceName) {
         if (!instanceName || !this.core.currentModalData) {
@@ -459,11 +370,6 @@ export class RequestarrModal {
         
         const isTVShow = this.core.currentModalData.media_type === 'tv';
         
-        if (isTVShow && this.core.selectedSeasons.length === 0) {
-            this.core.showNotification('Please select at least one season', 'error');
-            return;
-        }
-        
         requestBtn.disabled = true;
         requestBtn.textContent = 'Requesting...';
         
@@ -472,13 +378,15 @@ export class RequestarrModal {
                 tmdb_id: this.core.currentModalData.tmdb_id,
                 media_type: this.core.currentModalData.media_type,
                 title: this.core.currentModalData.title,
+                year: this.core.currentModalData.year,
+                overview: this.core.currentModalData.overview || '',
+                poster_path: this.core.currentModalData.poster_path || '',
+                backdrop_path: this.core.currentModalData.backdrop_path || '',
                 instance: instanceSelect.value,
                 quality_profile: qualityProfile
             };
             
-            if (isTVShow) {
-                requestData.seasons = this.core.selectedSeasons;
-            }
+            console.log('[RequestarrDiscover] Submitting request:', requestData);
             
             const response = await fetch('./api/requestarr/request', {
                 method: 'POST',
@@ -487,20 +395,43 @@ export class RequestarrModal {
             });
             
             const result = await response.json();
+            console.log('[RequestarrDiscover] Request result:', result);
             
             if (result.success) {
-                this.core.showNotification(`${isTVShow ? 'Seasons' : 'Movie'} requested successfully!`, 'success');
-                this.closeModal();
+                // Show success state on button
+                requestBtn.textContent = 'Requested ✓';
+                requestBtn.classList.add('success');
+                
+                // Show success notification
+                this.core.showNotification(result.message || `${isTVShow ? 'Series' : 'Movie'} requested successfully!`, 'success');
+                
+                // Wait 2 seconds before closing modal
+                setTimeout(() => {
+                    this.closeModal();
+                }, 2000);
+                
             } else {
-                this.core.showNotification(result.error || 'Request failed', 'error');
+                // Show error notification with detailed message
+                const errorMsg = result.message || result.error || 'Request failed';
+                console.error('[RequestarrDiscover] Request failed:', errorMsg);
+                this.core.showNotification(errorMsg, 'error');
+                
+                // Re-enable button
                 requestBtn.disabled = false;
-                requestBtn.textContent = isTVShow ? 'Select Season(s)' : 'Request';
+                requestBtn.classList.remove('success');
+                requestBtn.textContent = 'Request';
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error submitting request:', error);
-            this.core.showNotification('Request failed', 'error');
+            
+            // Show detailed error
+            const errorMsg = error.message || 'Request failed - check console for details';
+            this.core.showNotification(errorMsg, 'error');
+            
+            // Re-enable button
             requestBtn.disabled = false;
-            requestBtn.textContent = isTVShow ? 'Select Season(s)' : 'Request';
+            requestBtn.classList.remove('success');
+            requestBtn.textContent = 'Request';
         }
     }
 
@@ -508,6 +439,5 @@ export class RequestarrModal {
         const modal = document.getElementById('media-modal');
         modal.style.display = 'none';
         this.core.currentModalData = null;
-        this.core.selectedSeasons = [];
     }
 }

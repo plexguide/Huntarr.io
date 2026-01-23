@@ -78,24 +78,49 @@ def request_media():
     """Request media through app instance"""
     try:
         data = request.get_json()
+        logger.info(f"[Requestarr] Received request: {data}")
         
         # Validate required fields
-        required_fields = ['tmdb_id', 'media_type', 'title', 'app_type', 'instance_name']
+        required_fields = ['tmdb_id', 'media_type', 'title']
         for field in required_fields:
             if field not in data:
-                return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
+                error_msg = f'Missing required field: {field}'
+                logger.error(f"[Requestarr] {error_msg}")
+                return jsonify({'success': False, 'message': error_msg}), 400
+        
+        # Extract instance name from 'instance' field (new modal format) or 'instance_name' (old format)
+        instance_name = data.get('instance') or data.get('instance_name')
+        if not instance_name:
+            error_msg = 'Missing required field: instance'
+            logger.error(f"[Requestarr] {error_msg}")
+            return jsonify({'success': False, 'message': error_msg}), 400
+        
+        # Determine app_type from media_type if not provided
+        media_type = data['media_type']
+        app_type = data.get('app_type')
+        if not app_type:
+            app_type = 'sonarr' if media_type == 'tv' else 'radarr'
+        
+        logger.info(f"[Requestarr] Processing {media_type} request for '{data['title']}' to {app_type} instance '{instance_name}'")
+        
+        # Get quality_profile from request, convert empty string to None
+        quality_profile = data.get('quality_profile')
+        quality_profile_id = int(quality_profile) if quality_profile and quality_profile != '' else None
         
         result = requestarr_api.request_media(
             tmdb_id=data['tmdb_id'],
-            media_type=data['media_type'],
+            media_type=media_type,
             title=data['title'],
             year=data.get('year'),
             overview=data.get('overview', ''),
             poster_path=data.get('poster_path', ''),
             backdrop_path=data.get('backdrop_path', ''),
-            app_type=data['app_type'],
-            instance_name=data['instance_name']
+            app_type=app_type,
+            instance_name=instance_name,
+            quality_profile_id=quality_profile_id
         )
+        
+        logger.info(f"[Requestarr] Request result: {result}")
         
         if result['success']:
             return jsonify(result)
@@ -103,8 +128,9 @@ def request_media():
             return jsonify(result), 400
             
     except Exception as e:
-        logger.error(f"Error requesting media: {e}")
-        return jsonify({'success': False, 'error': 'Request failed'}), 500
+        error_msg = f"Error requesting media: {str(e)}"
+        logger.error(f"[Requestarr] {error_msg}", exc_info=True)
+        return jsonify({'success': False, 'message': error_msg}), 500
 
 @requestarr_bp.route('/requests', methods=['GET'])
 def get_requests():

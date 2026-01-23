@@ -962,7 +962,7 @@ class RequestarrAPI:
     
     def request_media(self, tmdb_id: int, media_type: str, title: str, year: int,
                      overview: str, poster_path: str, backdrop_path: str,
-                     app_type: str, instance_name: str) -> Dict[str, Any]:
+                     app_type: str, instance_name: str, quality_profile_id: int = None) -> Dict[str, Any]:
         """Request media through the specified app instance"""
         try:
             # Check if already requested
@@ -1044,7 +1044,7 @@ class RequestarrAPI:
                     }
             else:
                 # Add new media to the app
-                add_result = self._add_media_to_app(tmdb_id, media_type, target_instance, app_type)
+                add_result = self._add_media_to_app(tmdb_id, media_type, target_instance, app_type, quality_profile_id)
                 
                 if add_result['success']:
                     # Save request to database
@@ -1183,7 +1183,7 @@ class RequestarrAPI:
                 'message': f'Error requesting missing episodes: {str(e)}'
             }
     
-    def _add_media_to_app(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str) -> Dict[str, Any]:
+    def _add_media_to_app(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str, quality_profile_id: int = None) -> Dict[str, Any]:
         """Add media to the app instance"""
         try:
             # Database stores URL as 'api_url', map it to 'url' for consistency
@@ -1197,9 +1197,9 @@ class RequestarrAPI:
                 }
             
             if app_type == 'radarr' and media_type == 'movie':
-                return self._add_movie_to_radarr(tmdb_id, url, api_key)
+                return self._add_movie_to_radarr(tmdb_id, url, api_key, quality_profile_id)
             elif app_type == 'sonarr' and media_type == 'tv':
-                return self._add_series_to_sonarr(tmdb_id, url, api_key)
+                return self._add_series_to_sonarr(tmdb_id, url, api_key, quality_profile_id)
             else:
                 return {
                     'success': False,
@@ -1213,7 +1213,7 @@ class RequestarrAPI:
                 'message': f'Error adding media: {str(e)}'
             }
     
-    def _add_movie_to_radarr(self, tmdb_id: int, url: str, api_key: str) -> Dict[str, Any]:
+    def _add_movie_to_radarr(self, tmdb_id: int, url: str, api_key: str, quality_profile_id: int = None) -> Dict[str, Any]:
         """Add movie to Radarr"""
         try:
             # First, get movie details from Radarr's lookup
@@ -1264,13 +1264,16 @@ class RequestarrAPI:
                     'message': 'No quality profiles configured in Radarr'
                 }
             
+            # Use provided quality profile ID or default to first one
+            selected_profile_id = quality_profile_id if quality_profile_id else profiles[0]['id']
+            
             # Prepare movie data for adding
             add_data = {
                 'title': movie_data['title'],
                 'tmdbId': movie_data['tmdbId'],
                 'year': movie_data['year'],
                 'rootFolderPath': root_folders[0]['path'],
-                'qualityProfileId': profiles[0]['id'],
+                'qualityProfileId': selected_profile_id,
                 'monitored': True,
                 'addOptions': {
                     'searchForMovie': True
@@ -1303,7 +1306,7 @@ class RequestarrAPI:
                 'message': f'Error adding movie to Radarr: {str(e)}'
             }
     
-    def _add_series_to_sonarr(self, tmdb_id: int, url: str, api_key: str) -> Dict[str, Any]:
+    def _add_series_to_sonarr(self, tmdb_id: int, url: str, api_key: str, quality_profile_id: int = None) -> Dict[str, Any]:
         """Add series to Sonarr"""
         try:
             # First, get series details from Sonarr's lookup
@@ -1354,13 +1357,16 @@ class RequestarrAPI:
                     'message': 'No quality profiles configured in Sonarr'
                 }
             
+            # Use provided quality profile ID or default to first one
+            selected_profile_id = quality_profile_id if quality_profile_id else profiles[0]['id']
+            
             # Prepare series data for adding
             add_data = {
                 'title': series_data['title'],
                 'tvdbId': series_data.get('tvdbId'),
                 'year': series_data.get('year'),
                 'rootFolderPath': root_folders[0]['path'],
-                'qualityProfileId': profiles[0]['id'],
+                'qualityProfileId': selected_profile_id,
                 'monitored': True,
                 'addOptions': {
                     'searchForMissingEpisodes': True
