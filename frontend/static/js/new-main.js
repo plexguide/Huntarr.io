@@ -89,7 +89,7 @@ let huntarrUI = {
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user') {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
-        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-history') {
+        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-history') {
             console.log('[huntarrUI] Initialization - showing requestarr sidebar');
             this.showRequestarrSidebar();
         } else if (this.currentSection === 'apps' || this.currentSection === 'sonarr' || this.currentSection === 'radarr' || this.currentSection === 'lidarr' || this.currentSection === 'readarr' || this.currentSection === 'whisparr' || this.currentSection === 'eros' || this.currentSection === 'prowlarr') {
@@ -609,22 +609,62 @@ let huntarrUI = {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
             if (document.getElementById('requestarrNav')) document.getElementById('requestarrNav').classList.add('active');
-            newTitle = 'Requestarr';
+            newTitle = 'Requestarr - Discover';
             this.currentSection = 'requestarr';
             
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
             
-            // Show home view by default
-            this.showRequestarrView('home');
+            // Show discover view by default
+            if (typeof window.RequestarrDiscover !== 'undefined') {
+                window.RequestarrDiscover.switchView('discover');
+            }
+        } else if (section === 'requestarr-discover' && document.getElementById('requestarr-section')) {
+            document.getElementById('requestarr-section').classList.add('active');
+            document.getElementById('requestarr-section').style.display = 'block';
+            if (document.getElementById('requestarrDiscoverNav')) document.getElementById('requestarrDiscoverNav').classList.add('active');
+            newTitle = 'Requestarr - Discover';
+            this.currentSection = 'requestarr-discover';
             
-            // Initialize requestarr module if it exists
-            if (typeof window.requestarrModule !== 'undefined') {
-                window.requestarrModule.loadInstances();
+            // Switch to Requestarr sidebar
+            this.showRequestarrSidebar();
+            
+            // Show discover view
+            if (typeof window.RequestarrDiscover !== 'undefined') {
+                window.RequestarrDiscover.switchView('discover');
+            }
+        } else if (section === 'requestarr-movies' && document.getElementById('requestarr-section')) {
+            document.getElementById('requestarr-section').classList.add('active');
+            document.getElementById('requestarr-section').style.display = 'block';
+            if (document.getElementById('requestarrMoviesNav')) document.getElementById('requestarrMoviesNav').classList.add('active');
+            newTitle = 'Requestarr - Movies';
+            this.currentSection = 'requestarr-movies';
+            
+            // Switch to Requestarr sidebar
+            this.showRequestarrSidebar();
+            
+            // Show movies view
+            if (typeof window.RequestarrDiscover !== 'undefined') {
+                window.RequestarrDiscover.switchView('movies');
+            }
+        } else if (section === 'requestarr-tv' && document.getElementById('requestarr-section')) {
+            document.getElementById('requestarr-section').classList.add('active');
+            document.getElementById('requestarr-section').style.display = 'block';
+            if (document.getElementById('requestarrTVNav')) document.getElementById('requestarrTVNav').classList.add('active');
+            newTitle = 'Requestarr - TV Shows';
+            this.currentSection = 'requestarr-tv';
+            
+            // Switch to Requestarr sidebar
+            this.showRequestarrSidebar();
+            
+            // Show TV view
+            if (typeof window.RequestarrDiscover !== 'undefined') {
+                window.RequestarrDiscover.switchView('tv');
             }
         } else if (section === 'requestarr-history' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
+            if (document.getElementById('requestarrHistoryNav')) document.getElementById('requestarrHistoryNav').classList.add('active');
             newTitle = 'Requestarr - History';
             this.currentSection = 'requestarr-history';
             
@@ -632,6 +672,9 @@ let huntarrUI = {
             this.showRequestarrSidebar();
             
             // Show history view
+            if (typeof window.RequestarrDiscover !== 'undefined') {
+                window.RequestarrDiscover.switchView('history');
+            }
             this.showRequestarrView('history');
         } else if (section === 'apps') {
             console.log('[huntarrUI] Apps section requested - redirecting to Sonarr by default');

@@ -1,109 +1,130 @@
-<!-- Requestarr Section - Overseerr Style -->
+<!-- Requestarr Section - Discover Style -->
 <div id="requestarr-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/requestarr-discover.css">
     
-    <div class="requestarr-discover-container">
-        <!-- Left Sidebar Navigation -->
-        <aside class="requestarr-sidebar">
-            <nav class="requestarr-nav">
-                <a href="#" class="nav-item active" data-view="discover">
-                    <i class="fas fa-compass"></i>
-                    <span>Discover</span>
-                </a>
-                <a href="#" class="nav-item" data-view="movies">
-                    <i class="fas fa-film"></i>
-                    <span>Movies</span>
-                </a>
-                <a href="#" class="nav-item" data-view="tv">
-                    <i class="fas fa-tv"></i>
-                    <span>TV Shows</span>
-                </a>
-                <a href="#" class="nav-item" data-view="history">
-                    <i class="fas fa-history"></i>
-                    <span>History</span>
-                </a>
-            </nav>
-        </aside>
-
-        <!-- Main Content Area -->
-        <main class="requestarr-main">
-            <!-- Discover View -->
-            <div id="discover-view" class="view-container active">
-                <h1 class="view-title">Discover</h1>
-                
-                <!-- Trending Section -->
-                <section class="media-section">
-                    <h2 class="section-title">Trending This Week</h2>
-                    <div id="trending-grid" class="media-grid">
+    <div class="requestarr-content">
+        <!-- Discover View -->
+        <div id="requestarr-discover-view" class="requestarr-view active">
+            <h1 class="page-title">Discover</h1>
+            
+            <!-- Trending Section -->
+            <section class="carousel-section">
+                <h2 class="section-title">Trending This Week</h2>
+                <div class="carousel-container">
+                    <button class="carousel-arrow left" data-target="trending-carousel">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="trending-carousel" class="media-carousel">
                         <div class="loading-spinner">
                             <i class="fas fa-spinner fa-spin"></i>
                             <p>Loading trending content...</p>
                         </div>
                     </div>
-                </section>
+                    <button class="carousel-arrow right" data-target="trending-carousel">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </section>
 
-                <!-- Popular Movies Section -->
-                <section class="media-section">
-                    <h2 class="section-title">Popular Movies</h2>
-                    <div id="popular-movies-grid" class="media-grid">
+            <!-- Popular Movies Section -->
+            <section class="carousel-section">
+                <h2 class="section-title">Popular Movies</h2>
+                <div class="carousel-container">
+                    <button class="carousel-arrow left" data-target="popular-movies-carousel">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="popular-movies-carousel" class="media-carousel">
                         <div class="loading-spinner">
                             <i class="fas fa-spinner fa-spin"></i>
                             <p>Loading movies...</p>
                         </div>
                     </div>
-                </section>
+                    <button class="carousel-arrow right" data-target="popular-movies-carousel">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </section>
 
-                <!-- Popular TV Section -->
-                <section class="media-section">
-                    <h2 class="section-title">Popular TV Shows</h2>
-                    <div id="popular-tv-grid" class="media-grid">
+            <!-- Popular TV Section -->
+            <section class="carousel-section">
+                <h2 class="section-title">Popular TV Shows</h2>
+                <div class="carousel-container">
+                    <button class="carousel-arrow left" data-target="popular-tv-carousel">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="popular-tv-carousel" class="media-carousel">
                         <div class="loading-spinner">
                             <i class="fas fa-spinner fa-spin"></i>
                             <p>Loading TV shows...</p>
                         </div>
                     </div>
-                </section>
-            </div>
+                    <button class="carousel-arrow right" data-target="popular-tv-carousel">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </section>
+        </div>
 
-            <!-- Movies View -->
-            <div id="movies-view" class="view-container">
-                <div class="view-header">
-                    <h1 class="view-title">Movies</h1>
-                    <div class="search-bar">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="movies-search" placeholder="Search movies..." autocomplete="off">
-                    </div>
-                </div>
-                <div id="movies-grid" class="media-grid">
-                    <!-- Movie cards will be populated here -->
+        <!-- Movies View -->
+        <div id="requestarr-movies-view" class="requestarr-view">
+            <div class="view-header">
+                <h1 class="page-title">Movies</h1>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="movies-search" placeholder="Search movies..." autocomplete="off">
                 </div>
             </div>
+            
+            <section class="carousel-section">
+                <div class="carousel-container">
+                    <button class="carousel-arrow left" data-target="movies-carousel">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="movies-carousel" class="media-carousel">
+                        <!-- Movie cards will be populated here -->
+                    </div>
+                    <button class="carousel-arrow right" data-target="movies-carousel">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </section>
+        </div>
 
-            <!-- TV Shows View -->
-            <div id="tv-view" class="view-container">
-                <div class="view-header">
-                    <h1 class="view-title">TV Shows</h1>
-                    <div class="search-bar">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="tv-search" placeholder="Search TV shows..." autocomplete="off">
-                    </div>
-                </div>
-                <div id="tv-grid" class="media-grid">
-                    <!-- TV cards will be populated here -->
+        <!-- TV Shows View -->
+        <div id="requestarr-tv-view" class="requestarr-view">
+            <div class="view-header">
+                <h1 class="page-title">TV Shows</h1>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="tv-search" placeholder="Search TV shows..." autocomplete="off">
                 </div>
             </div>
+            
+            <section class="carousel-section">
+                <div class="carousel-container">
+                    <button class="carousel-arrow left" data-target="tv-carousel">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="tv-carousel" class="media-carousel">
+                        <!-- TV cards will be populated here -->
+                    </div>
+                    <button class="carousel-arrow right" data-target="tv-carousel">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </section>
+        </div>
 
-            <!-- History View -->
-            <div id="history-view" class="view-container">
-                <h1 class="view-title">Request History</h1>
-                <div id="history-list" class="history-container">
-                    <div class="loading-spinner">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <p>Loading history...</p>
-                    </div>
+        <!-- History View -->
+        <div id="requestarr-history-view" class="requestarr-view">
+            <h1 class="page-title">Request History</h1>
+            <div id="history-list" class="history-container">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading history...</p>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
 
     <!-- Modal for Media Details -->

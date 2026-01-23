@@ -1,5 +1,5 @@
 /**
- * Requestarr Discover - Overseerr-style media discovery and request system
+ * Requestarr Discover - Horizontal scrolling media discovery system
  */
 
 class RequestarrDiscover {
@@ -14,50 +14,54 @@ class RequestarrDiscover {
     init() {
         console.log('[RequestarrDiscover] Initializing...');
         this.loadInstances();
-        this.setupNavigation();
+        this.setupCarouselArrows();
         this.setupSearchHandlers();
         this.loadDiscoverContent();
     }
 
-    // Navigation
-    setupNavigation() {
-        const navItems = document.querySelectorAll('.requestarr-nav .nav-item');
-        navItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const view = item.dataset.view;
-                this.switchView(view);
+    // Carousel Arrow Controls
+    setupCarouselArrows() {
+        const arrows = document.querySelectorAll('.carousel-arrow');
+        arrows.forEach(arrow => {
+            arrow.addEventListener('click', (e) => {
+                const targetId = arrow.dataset.target;
+                const carousel = document.getElementById(targetId);
+                const scrollAmount = 600; // Scroll by 3 cards
+                
+                if (arrow.classList.contains('left')) {
+                    carousel.scrollLeft -= scrollAmount;
+                } else {
+                    carousel.scrollLeft += scrollAmount;
+                }
             });
         });
     }
 
+    // View Switching (called from external sidebar)
     switchView(view) {
-        // Update navigation
-        document.querySelectorAll('.requestarr-nav .nav-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.view === view);
-        });
-
+        console.log('[RequestarrDiscover] Switching to view:', view);
+        
         // Update views
-        document.querySelectorAll('.view-container').forEach(container => {
-            container.classList.toggle('active', container.id === `${view}-view`);
+        document.querySelectorAll('.requestarr-view').forEach(container => {
+            container.classList.toggle('active', container.id === `requestarr-${view}-view`);
         });
 
         this.currentView = view;
 
-        // Load content for view
+        // Load content for view if not already loaded
         switch (view) {
             case 'discover':
-                if (!document.getElementById('trending-grid').children.length) {
+                if (!document.getElementById('trending-carousel').children.length) {
                     this.loadDiscoverContent();
                 }
                 break;
             case 'movies':
-                if (!document.getElementById('movies-grid').children.length) {
+                if (!document.getElementById('movies-carousel').children.length) {
                     this.loadMovies();
                 }
                 break;
             case 'tv':
-                if (!document.getElementById('tv-grid').children.length) {
+                if (!document.getElementById('tv-carousel').children.length) {
                     this.loadTV();
                 }
                 break;
@@ -92,108 +96,108 @@ class RequestarrDiscover {
     }
 
     async loadTrending() {
-        const grid = document.getElementById('trending-grid');
+        const carousel = document.getElementById('trending-carousel');
         try {
             const response = await fetch('./api/requestarr/discover/trending');
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
-                grid.innerHTML = '';
+                carousel.innerHTML = '';
                 data.results.forEach(item => {
-                    grid.appendChild(this.createMediaCard(item));
+                    carousel.appendChild(this.createMediaCard(item));
                 });
             } else {
-                grid.innerHTML = '<p style="color: #888; text-align: center;">No trending content available</p>';
+                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No trending content available</p>';
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading trending:', error);
-            grid.innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to load trending content</p>';
+            carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load trending content</p>';
         }
     }
 
     async loadPopularMovies() {
-        const grid = document.getElementById('popular-movies-grid');
+        const carousel = document.getElementById('popular-movies-carousel');
         try {
             const response = await fetch('./api/requestarr/discover/movies?page=1');
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
-                grid.innerHTML = '';
-                data.results.slice(0, 12).forEach(item => {
-                    grid.appendChild(this.createMediaCard(item));
+                carousel.innerHTML = '';
+                data.results.forEach(item => {
+                    carousel.appendChild(this.createMediaCard(item));
                 });
             } else {
-                grid.innerHTML = '<p style="color: #888; text-align: center;">No movies available</p>';
+                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies available</p>';
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading popular movies:', error);
-            grid.innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to load movies</p>';
+            carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies</p>';
         }
     }
 
     async loadPopularTV() {
-        const grid = document.getElementById('popular-tv-grid');
+        const carousel = document.getElementById('popular-tv-carousel');
         try {
             const response = await fetch('./api/requestarr/discover/tv?page=1');
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
-                grid.innerHTML = '';
-                data.results.slice(0, 12).forEach(item => {
-                    grid.appendChild(this.createMediaCard(item));
+                carousel.innerHTML = '';
+                data.results.forEach(item => {
+                    carousel.appendChild(this.createMediaCard(item));
                 });
             } else {
-                grid.innerHTML = '<p style="color: #888; text-align: center;">No TV shows available</p>';
+                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows available</p>';
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading popular TV:', error);
-            grid.innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to load TV shows</p>';
+            carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load TV shows</p>';
         }
     }
 
     // Movies View
     async loadMovies(page = 1) {
-        const grid = document.getElementById('movies-grid');
-        grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
+        const carousel = document.getElementById('movies-carousel');
+        carousel.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
         
         try {
             const response = await fetch(`./api/requestarr/discover/movies?page=${page}`);
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
-                grid.innerHTML = '';
+                carousel.innerHTML = '';
                 data.results.forEach(item => {
-                    grid.appendChild(this.createMediaCard(item));
+                    carousel.appendChild(this.createMediaCard(item));
                 });
             } else {
-                grid.innerHTML = '<p style="color: #888; text-align: center;">No movies found</p>';
+                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies found</p>';
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading movies:', error);
-            grid.innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to load movies</p>';
+            carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies</p>';
         }
     }
 
     // TV View
     async loadTV(page = 1) {
-        const grid = document.getElementById('tv-grid');
-        grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading TV shows...</p></div>';
+        const carousel = document.getElementById('tv-carousel');
+        carousel.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading TV shows...</p></div>';
         
         try {
             const response = await fetch(`./api/requestarr/discover/tv?page=${page}`);
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
-                grid.innerHTML = '';
+                carousel.innerHTML = '';
                 data.results.forEach(item => {
-                    grid.appendChild(this.createMediaCard(item));
+                    carousel.appendChild(this.createMediaCard(item));
                 });
             } else {
-                grid.innerHTML = '<p style="color: #888; text-align: center;">No TV shows found</p>';
+                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows found</p>';
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading TV shows:', error);
-            grid.innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to load TV shows</p>';
+            carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load TV shows</p>';
         }
     }
 
@@ -238,24 +242,24 @@ class RequestarrDiscover {
     }
 
     async performSearch(query, mediaType) {
-        const grid = document.getElementById(mediaType === 'movie' ? 'movies-grid' : 'tv-grid');
-        grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
+        const carousel = document.getElementById(mediaType === 'movie' ? 'movies-carousel' : 'tv-carousel');
+        carousel.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
         
         try {
             const response = await fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=${mediaType === 'movie' ? 'radarr' : 'sonarr'}&instance_name=search`);
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
-                grid.innerHTML = '';
+                carousel.innerHTML = '';
                 data.results.forEach(item => {
-                    grid.appendChild(this.createMediaCard(item));
+                    carousel.appendChild(this.createMediaCard(item));
                 });
             } else {
-                grid.innerHTML = '<p style="color: #888; text-align: center;">No results found</p>';
+                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No results found</p>';
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error searching:', error);
-            grid.innerHTML = '<p style="color: #ef4444; text-align: center;">Search failed</p>';
+            carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Search failed</p>';
         }
     }
 
