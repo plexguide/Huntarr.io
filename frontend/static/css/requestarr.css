@@ -69,6 +69,7 @@
 #requestarr-results {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-auto-rows: 1fr;
     gap: 16px;
     margin-top: 20px;
 }
@@ -144,8 +145,11 @@
     font-size: 14px;
     line-height: 1.4;
     margin: 0 0 15px 0;
-    flex: 1;
-    min-height: 60px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 58px;
 }
 
 .see-more-link {
@@ -395,6 +399,21 @@
 .form-group select:focus {
     border-color: rgba(52, 152, 219, 0.5);
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+/* Attention grabbing effect for unselected instance dropdown */
+#requestarr-instance-select.needs-attention {
+    animation: pulseGlow 2s ease-in-out infinite;
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+@keyframes pulseGlow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4), 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(76, 175, 80, 0), 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    }
 }
 
 .form-group select option {

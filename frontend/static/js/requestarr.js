@@ -14,6 +14,24 @@ class RequestarrModule {
     init() {
         this.loadInstances();
         this.setupEventListeners();
+        this.setupInstanceAttention();
+    }
+    
+    setupInstanceAttention() {
+        const instanceSelect = document.getElementById('requestarr-instance-select');
+        if (instanceSelect) {
+            // Add attention class initially
+            instanceSelect.classList.add('needs-attention');
+            
+            // Remove attention class when instance is selected
+            instanceSelect.addEventListener('change', () => {
+                if (instanceSelect.value) {
+                    instanceSelect.classList.remove('needs-attention');
+                } else {
+                    instanceSelect.classList.add('needs-attention');
+                }
+            });
+        }
     }
 
     setupEventListeners() {
