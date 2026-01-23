@@ -389,15 +389,26 @@
 /* Modal */
 .media-modal {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 1000;
     display: none;
+    align-items: center;
+    justify-content: center;
+    margin-left: 75px; /* Half of sidebar width (150px / 2) to center in content area */
 }
 
 .media-modal[style*="display: flex"] {
-    display: block !important;
+    display: flex !important;
+}
+
+/* Mobile responsive - remove sidebar offset on small screens */
+@media (max-width: 768px) {
+    .media-modal {
+        margin-left: 0;
+    }
 }
 
 .modal-backdrop {
