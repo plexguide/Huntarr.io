@@ -284,8 +284,9 @@ class RequestarrAPI:
     def get_series_status_from_sonarr(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get series status from Sonarr - missing episodes, available, etc."""
         try:
-            # First check if already requested in Requestarr database
-            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'tv', 'sonarr', instance_name)
+            # Check cooldown status (12-hour cooldown period)
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'sonarr', instance_name)
+            already_requested_in_db = cooldown_status['last_requested_at'] is not None
             
             # Get Sonarr instance config
             app_config = self.db.get_app_config('sonarr')
@@ -363,7 +364,7 @@ class RequestarrAPI:
                         # Not in Requestarr DB but in Sonarr with no episodes = requested elsewhere
                         previously_requested = True
                     
-                    logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes, missing: {missing_episodes}, previously_requested: {previously_requested}")
+                    logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes, missing: {missing_episodes}, previously_requested: {previously_requested}, cooldown: {cooldown_status['in_cooldown']}")
                     
                     return {
                         'exists': True,
@@ -372,17 +373,27 @@ class RequestarrAPI:
                         'available_episodes': available_episodes,
                         'missing_episodes': missing_episodes,
                         'previously_requested': previously_requested,
+                        'cooldown_status': cooldown_status,
                         'seasons': series.get('seasons', [])
                     }
             
             logger.info(f"Series with TMDB ID {tmdb_id} not found in Sonarr")
-            return {'exists': False, 'previously_requested': already_requested_in_db}
+            return {
+                'exists': False,
+                'previously_requested': already_requested_in_db,
+                'cooldown_status': cooldown_status
+            }
             
         except Exception as e:
             logger.error(f"Error getting series status from Sonarr: {e}")
-            # Still check if requested in DB even if Sonarr check fails
-            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'tv', 'sonarr', instance_name)
-            return {'exists': False, 'previously_requested': already_requested_in_db}
+            # Still check cooldown even if Sonarr check fails
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'sonarr', instance_name)
+            already_requested_in_db = cooldown_status['last_requested_at'] is not None
+            return {
+                'exists': False,
+                'previously_requested': already_requested_in_db,
+                'cooldown_status': cooldown_status
+            }
     
     def check_seasons_in_sonarr(self, tmdb_id: int, instance_name: str) -> List[int]:
         """Check which seasons of a TV show are already in Sonarr"""
@@ -395,8 +406,9 @@ class RequestarrAPI:
     def get_movie_status_from_radarr(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get movie status from Radarr - in library, previously requested, etc."""
         try:
-            # First check if already requested in Requestarr database
-            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'movie', 'radarr', instance_name)
+            # Check cooldown status (12-hour cooldown period)
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'radarr', instance_name)
+            already_requested_in_db = cooldown_status['last_requested_at'] is not None
             
             # Get Radarr instance config
             app_config = self.db.get_app_config('radarr')
@@ -450,17 +462,27 @@ class RequestarrAPI:
                     return {
                         'in_library': has_file,
                         'previously_requested': previously_requested,
-                        'monitored': movie.get('monitored', False)
+                        'monitored': movie.get('monitored', False),
+                        'cooldown_status': cooldown_status
                     }
             
             logger.info(f"Movie with TMDB ID {tmdb_id} not found in Radarr")
-            return {'in_library': False, 'previously_requested': already_requested_in_db}
+            return {
+                'in_library': False,
+                'previously_requested': already_requested_in_db,
+                'cooldown_status': cooldown_status
+            }
             
         except Exception as e:
             logger.error(f"Error getting movie status from Radarr: {e}")
-            # Still check if requested in DB even if Radarr check fails
-            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'movie', 'radarr', instance_name)
-            return {'in_library': False, 'previously_requested': already_requested_in_db}
+            # Still check cooldown even if Radarr check fails
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'radarr', instance_name)
+            already_requested_in_db = cooldown_status['last_requested_at'] is not None
+            return {
+                'in_library': False,
+                'previously_requested': already_requested_in_db,
+                'cooldown_status': cooldown_status
+            }
     
     def check_library_status_batch(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
@@ -1030,35 +1052,22 @@ class RequestarrAPI:
             # Check if media exists and get detailed info
             exists_result = self._check_media_exists(tmdb_id, media_type, target_instance, app_type)
             
-            # Smart "already requested" check:
-            # - For TV shows with missing episodes: ALLOW re-requesting (for new episodes)
-            # - For movies or TV shows not in Sonarr yet: CHECK if already requested
-            already_requested = self.db.is_already_requested(tmdb_id, media_type, app_type, instance_name)
+            # Check 12-hour cooldown period
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, app_type, instance_name)
             
-            if already_requested:
-                # If it's a TV show that exists in Sonarr with missing episodes, allow the request
-                # This handles the case where new episodes aired after the initial request
-                if app_type == 'sonarr' and exists_result.get('exists') and 'series_id' in exists_result:
-                    episode_file_count = exists_result.get('episode_file_count', 0)
-                    episode_count = exists_result.get('episode_count', 0)
-                    if episode_file_count < episode_count and episode_count > 0:
-                        # Has missing episodes - allow re-request
-                        logger.info(f"Allowing re-request for {title} - has {episode_count - episode_file_count} missing episodes")
-                        pass  # Continue with request
-                    else:
-                        # No missing episodes - reject
-                        return {
-                            'success': False,
-                            'message': f'{title} is already requested for {app_type.title()} - {instance_name}',
-                            'status': 'already_requested'
-                        }
-                else:
-                    # Not a TV show with missing episodes - reject
-                    return {
-                        'success': False,
-                        'message': f'{title} is already requested for {app_type.title()} - {instance_name}',
-                        'status': 'already_requested'
-                    }
+            if cooldown_status['in_cooldown']:
+                hours_remaining = cooldown_status['hours_remaining']
+                hours = int(hours_remaining)
+                minutes = int((hours_remaining - hours) * 60)
+                
+                time_msg = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
+                
+                return {
+                    'success': False,
+                    'message': f'{title} was recently requested. Please wait {time_msg} before requesting again (12-hour cooldown)',
+                    'status': 'in_cooldown',
+                    'hours_remaining': hours_remaining
+                }
             
             if exists_result.get('exists'):
                 if app_type == 'sonarr' and 'series_id' in exists_result:

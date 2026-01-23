@@ -2320,6 +2320,69 @@ class HuntarrDatabase:
         except Exception as e:
             logger.error(f"Error checking if media already requested: {e}")
             return False
+    
+    def get_request_cooldown_status(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str) -> Dict[str, Any]:
+        """
+        Check if media is in cooldown period (12 hours since last request)
+        Returns: {
+            'in_cooldown': bool,
+            'hours_remaining': float,
+            'can_request_at': str (ISO timestamp),
+            'last_requested_at': str (ISO timestamp)
+        }
+        """
+        try:
+            with self.get_connection() as conn:
+                result = conn.execute('''
+                    SELECT updated_at FROM requestarr_requests 
+                    WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
+                ''', (tmdb_id, media_type, app_type, instance_name)).fetchone()
+                
+                if not result:
+                    # Not requested yet
+                    return {
+                        'in_cooldown': False,
+                        'hours_remaining': 0,
+                        'can_request_at': None,
+                        'last_requested_at': None
+                    }
+                
+                from datetime import datetime, timedelta
+                
+                last_requested = datetime.fromisoformat(result[0].replace('Z', '+00:00'))
+                now = datetime.now(last_requested.tzinfo)
+                cooldown_period = timedelta(hours=12)
+                time_since_request = now - last_requested
+                
+                if time_since_request < cooldown_period:
+                    # Still in cooldown
+                    time_remaining = cooldown_period - time_since_request
+                    hours_remaining = time_remaining.total_seconds() / 3600
+                    can_request_at = last_requested + cooldown_period
+                    
+                    return {
+                        'in_cooldown': True,
+                        'hours_remaining': hours_remaining,
+                        'can_request_at': can_request_at.isoformat(),
+                        'last_requested_at': last_requested.isoformat()
+                    }
+                else:
+                    # Cooldown expired, can request again
+                    return {
+                        'in_cooldown': False,
+                        'hours_remaining': 0,
+                        'can_request_at': None,
+                        'last_requested_at': last_requested.isoformat()
+                    }
+                    
+        except Exception as e:
+            logger.error(f"Error checking request cooldown: {e}")
+            return {
+                'in_cooldown': False,
+                'hours_remaining': 0,
+                'can_request_at': None,
+                'last_requested_at': None
+            }
 
     def add_request(self, tmdb_id: int, media_type: str, title: str, year: int, overview: str, 
                    poster_path: str, backdrop_path: str, app_type: str, instance_name: str) -> bool:

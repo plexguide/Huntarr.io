@@ -176,8 +176,28 @@ export class RequestarrModal {
             const requestBtn = document.getElementById('modal-request-btn');
             
             if (status.exists) {
-                if (status.previously_requested) {
-                    // Previously requested - disable request button
+                // Check cooldown status first
+                if (status.cooldown_status && status.cooldown_status.in_cooldown) {
+                    const hours = Math.floor(status.cooldown_status.hours_remaining);
+                    const minutes = Math.floor((status.cooldown_status.hours_remaining - hours) * 60);
+                    const timeMsg = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                    
+                    statusHTML = `
+                        <div class="series-status-box status-requested">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <div class="status-title">Recently requested - Cooldown active</div>
+                                <div class="status-text">You can request again in ${timeMsg} (12-hour cooldown)</div>
+                            </div>
+                        </div>
+                    `;
+                    if (requestBtn) {
+                        requestBtn.disabled = true;
+                        requestBtn.classList.add('disabled');
+                        requestBtn.textContent = `Wait ${timeMsg}`;
+                    }
+                } else if (status.previously_requested && status.missing_episodes === 0) {
+                    // Previously requested but no missing episodes
                     statusHTML = `
                         <div class="series-status-box status-requested">
                             <i class="fas fa-clock"></i>
@@ -312,7 +332,28 @@ export class RequestarrModal {
                     requestBtn.classList.add('disabled');
                     requestBtn.textContent = 'In Library';
                 }
+            } else if (status.cooldown_status && status.cooldown_status.in_cooldown) {
+                // In cooldown period
+                const hours = Math.floor(status.cooldown_status.hours_remaining);
+                const minutes = Math.floor((status.cooldown_status.hours_remaining - hours) * 60);
+                const timeMsg = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                
+                statusHTML = `
+                    <div class="series-status-box status-requested">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <div class="status-title">Recently requested - Cooldown active</div>
+                            <div class="status-text">You can request again in ${timeMsg} (12-hour cooldown)</div>
+                        </div>
+                    </div>
+                `;
+                if (requestBtn) {
+                    requestBtn.disabled = true;
+                    requestBtn.classList.add('disabled');
+                    requestBtn.textContent = `Wait ${timeMsg}`;
+                }
             } else if (status.previously_requested) {
+                // Previously requested but cooldown expired
                 statusHTML = `
                     <div class="series-status-box status-missing-episodes">
                         <i class="fas fa-clock"></i>
