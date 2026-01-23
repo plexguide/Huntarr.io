@@ -379,13 +379,21 @@ class RequestarrDiscover {
         const posterUrl = item.poster_path || './static/images/no-poster.png';
         const year = item.year || 'N/A';
         const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+        const overview = item.overview || 'No description available.';
         
         card.innerHTML = `
             <div class="media-card-poster">
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/no-poster.png'">
-                <button class="media-card-request-btn">
-                    <i class="fas fa-plus"></i> Request
-                </button>
+                <div class="media-card-overlay">
+                    <div class="media-card-overlay-content">
+                        <div class="media-card-overlay-title">${item.title}</div>
+                        <div class="media-card-overlay-year">${year}</div>
+                        <div class="media-card-overlay-description">${overview}</div>
+                    </div>
+                    <button class="media-card-request-btn">
+                        <i class="fas fa-download"></i> Request
+                    </button>
+                </div>
             </div>
             <div class="media-card-info">
                 <div class="media-card-title" title="${item.title}">${item.title}</div>
@@ -401,9 +409,10 @@ class RequestarrDiscover {
         
         // Add click handlers
         const posterDiv = card.querySelector('.media-card-poster');
+        const overlay = card.querySelector('.media-card-overlay');
         const requestBtn = card.querySelector('.media-card-request-btn');
         
-        // Poster click opens modal
+        // Poster/overlay click opens modal (but not when clicking button)
         posterDiv.addEventListener('click', (e) => {
             if (e.target !== requestBtn && !requestBtn.contains(e.target)) {
                 this.openModal(item.tmdb_id, item.media_type);
