@@ -12,9 +12,9 @@ class RequestarrDiscover {
         this.init();
     }
 
-    init() {
+    async init() {
         console.log('[RequestarrDiscover] Initializing...');
-        this.loadInstances();
+        await this.loadInstances();
         this.setupCarouselArrows();
         this.setupSearchHandlers();
         this.setupGlobalSearch();
@@ -121,6 +121,16 @@ class RequestarrDiscover {
         
         // Hide search results view
         document.getElementById('search-results-view').style.display = 'none';
+        
+        // Hide global search bar for settings and history views
+        const globalSearchBar = document.querySelector('.global-search-bar');
+        if (globalSearchBar) {
+            if (view === 'settings' || view === 'history') {
+                globalSearchBar.style.display = 'none';
+            } else {
+                globalSearchBar.style.display = 'flex';
+            }
+        }
         
         // Update views
         document.querySelectorAll('.requestarr-view').forEach(container => {
@@ -1080,41 +1090,87 @@ class RequestarrDiscover {
     async loadSettings() {
         console.log('[RequestarrDiscover] Loading settings...');
         
+        // Ensure instances are loaded
+        if (this.instances.sonarr.length === 0 && this.instances.radarr.length === 0) {
+            console.log('[RequestarrDiscover] Instances not loaded yet, fetching...');
+            await this.loadInstances();
+        }
+        
         // Populate instance dropdowns
         const sonarrSelect = document.getElementById('default-sonarr-instance');
         const radarrSelect = document.getElementById('default-radarr-instance');
         
         if (sonarrSelect && radarrSelect) {
-            // Clear and populate Sonarr instances
-            sonarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
-            this.instances.sonarr.forEach(instance => {
-                const option = document.createElement('option');
-                option.value = instance.name;
-                option.textContent = `Sonarr - ${instance.name}`;
-                sonarrSelect.appendChild(option);
-            });
+            // Populate Sonarr instances
+            sonarrSelect.innerHTML = '';
+            if (this.instances.sonarr.length === 0) {
+                sonarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
+                sonarrSelect.disabled = true;
+            } else {
+                sonarrSelect.disabled = false;
+                this.instances.sonarr.forEach(instance => {
+                    const option = document.createElement('option');
+                    option.value = instance.name;
+                    option.textContent = `Sonarr - ${instance.name}`;
+                    sonarrSelect.appendChild(option);
+                });
+            }
             
-            // Clear and populate Radarr instances
-            radarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
-            this.instances.radarr.forEach(instance => {
-                const option = document.createElement('option');
-                option.value = instance.name;
-                option.textContent = `Radarr - ${instance.name}`;
-                radarrSelect.appendChild(option);
-            });
+            // Populate Radarr instances
+            radarrSelect.innerHTML = '';
+            if (this.instances.radarr.length === 0) {
+                radarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
+                radarrSelect.disabled = true;
+            } else {
+                radarrSelect.disabled = false;
+                this.instances.radarr.forEach(instance => {
+                    const option = document.createElement('option');
+                    option.value = instance.name;
+                    option.textContent = `Radarr - ${instance.name}`;
+                    radarrSelect.appendChild(option);
+                });
+            }
             
             // Load current defaults
             try {
                 const response = await fetch('./api/requestarr/settings/defaults');
                 const data = await response.json();
                 
+                let needsAutoSave = false;
+                
                 if (data.success && data.defaults) {
+                    // Set saved defaults if they exist
                     if (data.defaults.sonarr_instance) {
                         sonarrSelect.value = data.defaults.sonarr_instance;
+                    } else if (this.instances.sonarr.length > 0) {
+                        // No default saved but instances exist - auto-select first
+                        sonarrSelect.value = this.instances.sonarr[0].name;
+                        needsAutoSave = true;
                     }
+                    
                     if (data.defaults.radarr_instance) {
                         radarrSelect.value = data.defaults.radarr_instance;
+                    } else if (this.instances.radarr.length > 0) {
+                        // No default saved but instances exist - auto-select first
+                        radarrSelect.value = this.instances.radarr[0].name;
+                        needsAutoSave = true;
                     }
+                } else {
+                    // No defaults at all - auto-select first instances if available
+                    if (this.instances.sonarr.length > 0) {
+                        sonarrSelect.value = this.instances.sonarr[0].name;
+                        needsAutoSave = true;
+                    }
+                    if (this.instances.radarr.length > 0) {
+                        radarrSelect.value = this.instances.radarr[0].name;
+                        needsAutoSave = true;
+                    }
+                }
+                
+                // Auto-save if we selected first instances
+                if (needsAutoSave) {
+                    console.log('[RequestarrDiscover] Auto-selecting first instances and saving...');
+                    await this.saveSettings(true); // true = silent save
                 }
             } catch (error) {
                 console.error('[RequestarrDiscover] Error loading default instances:', error);
@@ -1128,41 +1184,51 @@ class RequestarrDiscover {
         }
     }
 
-    async saveSettings() {
+    async saveSettings(silent = false) {
         const sonarrSelect = document.getElementById('default-sonarr-instance');
         const radarrSelect = document.getElementById('default-radarr-instance');
         const saveBtn = document.getElementById('save-requestarr-settings');
         
-        if (!sonarrSelect || !radarrSelect || !saveBtn) return;
+        if (!sonarrSelect || !radarrSelect) return;
         
-        // Disable button while saving
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        // Disable button while saving (only if not silent)
+        if (!silent && saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        }
         
         try {
             const response = await fetch('./api/requestarr/settings/defaults', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    sonarr_instance: sonarrSelect.value,
-                    radarr_instance: radarrSelect.value
+                    sonarr_instance: sonarrSelect.value || null,
+                    radarr_instance: radarrSelect.value || null
                 })
             });
             
             const data = await response.json();
             
             if (data.success) {
-                this.showNotification('Settings saved successfully!', 'success');
+                if (!silent) {
+                    this.showNotification('Settings saved successfully!', 'success');
+                }
             } else {
-                this.showNotification('Failed to save settings', 'error');
+                if (!silent) {
+                    this.showNotification('Failed to save settings', 'error');
+                }
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error saving settings:', error);
-            this.showNotification('Failed to save settings', 'error');
+            if (!silent) {
+                this.showNotification('Failed to save settings', 'error');
+            }
         } finally {
-            // Re-enable button
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Settings';
+            // Re-enable button (only if not silent)
+            if (!silent && saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Settings';
+            }
         }
     }
 }
