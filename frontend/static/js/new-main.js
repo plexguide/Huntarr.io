@@ -86,7 +86,7 @@ let huntarrUI = {
         
         // Check which sidebar should be shown based on current section
         console.log(`[huntarrUI] Initialization - current section: ${this.currentSection}`);
-        if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user') {
+        if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'logs-settings' || this.currentSection === 'user') {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-history') {
