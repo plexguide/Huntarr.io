@@ -309,7 +309,7 @@ class RequestarrModule {
         
         // Truncate overview and add "See More" link if needed
         const overview = item.overview || 'No description available.';
-        const truncateLength = 150;
+        const truncateLength = 120; // Shorter to ensure "See More" fits in 3 lines
         const shouldTruncate = overview.length > truncateLength;
         const displayOverview = shouldTruncate ? overview.substring(0, truncateLength) + '... ' : overview;
         const seeMoreLink = shouldTruncate ? `<a href="#" class="see-more-link" data-card-id="${cardId}">See More</a>` : '';
