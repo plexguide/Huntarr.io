@@ -560,25 +560,8 @@ class RequestarrModule {
     }
 
     showNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
-        
-        // Add to page
-        document.body.appendChild(notification);
-        
-        // Start fade out animation after 4 seconds
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease forwards';
-        }, 4000);
-        
-        // Remove from DOM after fade out completes
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 4300);
+        // Toast notifications disabled for Requestarr
+        console.log(`[Requestarr] ${type.toUpperCase()}: ${message}`);
     }
 }
 
