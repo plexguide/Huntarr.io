@@ -304,6 +304,7 @@ def _fetch_detailed_stats():
             'connected': False,
             'searches_today': 0,
             'searches_yesterday': 0,
+            'grabs_today': 0,
             'recent_success_rate': 0,
             'recent_failed_searches': 0,
             'avg_response_time': 0,
