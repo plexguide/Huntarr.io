@@ -197,11 +197,11 @@
     align-items: center;
     gap: 8px;
     margin: 10px 0;
-    padding: 8px 12px;
+    padding: 10px 12px;
     border-radius: 6px;
     font-size: 13px;
     font-weight: 500;
-    height: 38px;
+    height: 42px;
 }
 
 .status-available {
