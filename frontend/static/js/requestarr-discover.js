@@ -16,6 +16,7 @@ class RequestarrDiscover {
         this.loadInstances();
         this.setupCarouselArrows();
         this.setupSearchHandlers();
+        this.setupGlobalSearch();
         this.loadDiscoverContent();
     }
 
@@ -57,6 +58,15 @@ class RequestarrDiscover {
     // View Switching (called from external sidebar)
     switchView(view) {
         console.log('[RequestarrDiscover] Switching to view:', view);
+        
+        // Clear global search
+        const globalSearch = document.getElementById('global-search-input');
+        if (globalSearch) {
+            globalSearch.value = '';
+        }
+        
+        // Hide search results view
+        document.getElementById('search-results-view').style.display = 'none';
         
         // Update views
         document.querySelectorAll('.requestarr-view').forEach(container => {
@@ -215,6 +225,80 @@ class RequestarrDiscover {
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading TV shows:', error);
             carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load TV shows</p>';
+        }
+    }
+
+    // Global Search
+    setupGlobalSearch() {
+        const globalSearch = document.getElementById('global-search-input');
+        
+        if (globalSearch) {
+            globalSearch.addEventListener('input', (e) => {
+                this.handleGlobalSearch(e.target.value);
+            });
+        }
+    }
+
+    handleGlobalSearch(query) {
+        if (this.searchTimeouts['global']) {
+            clearTimeout(this.searchTimeouts['global']);
+        }
+        
+        if (!query.trim()) {
+            // Show discover view, hide search results
+            document.getElementById('search-results-view').style.display = 'none';
+            document.getElementById('requestarr-discover-view').style.display = 'block';
+            document.getElementById('requestarr-movies-view').style.display = 'none';
+            document.getElementById('requestarr-tv-view').style.display = 'none';
+            document.getElementById('requestarr-history-view').style.display = 'none';
+            return;
+        }
+        
+        this.searchTimeouts['global'] = setTimeout(() => {
+            this.performGlobalSearch(query);
+        }, 500);
+    }
+
+    async performGlobalSearch(query) {
+        const resultsView = document.getElementById('search-results-view');
+        const resultsGrid = document.getElementById('search-results-grid');
+        const discoverView = document.getElementById('requestarr-discover-view');
+        
+        // Hide all views except search results
+        discoverView.style.display = 'none';
+        document.getElementById('requestarr-movies-view').style.display = 'none';
+        document.getElementById('requestarr-tv-view').style.display = 'none';
+        document.getElementById('requestarr-history-view').style.display = 'none';
+        resultsView.style.display = 'block';
+        
+        resultsGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
+        
+        try {
+            // Search both movies and TV
+            const [moviesResponse, tvResponse] = await Promise.all([
+                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=radarr&instance_name=search`),
+                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=sonarr&instance_name=search`)
+            ]);
+            
+            const moviesData = await moviesResponse.json();
+            const tvData = await tvResponse.json();
+            
+            const allResults = [
+                ...(moviesData.results || []),
+                ...(tvData.results || [])
+            ];
+            
+            if (allResults.length > 0) {
+                resultsGrid.innerHTML = '';
+                allResults.forEach(item => {
+                    resultsGrid.appendChild(this.createMediaCard(item));
+                });
+            } else {
+                resultsGrid.innerHTML = '<p style="color: #888; text-align: center; padding: 60px; width: 100%;">No results found</p>';
+            }
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error searching:', error);
+            resultsGrid.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px; width: 100%;">Search failed</p>';
         }
     }
 

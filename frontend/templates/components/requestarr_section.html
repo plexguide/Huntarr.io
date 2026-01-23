@@ -3,6 +3,20 @@
     <link rel="stylesheet" href="./static/css/requestarr-discover.css">
     
     <div class="requestarr-content">
+        <!-- Global Search Bar -->
+        <div class="global-search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="global-search-input" placeholder="Search Movies & TV" autocomplete="off">
+        </div>
+        
+        <!-- Search Results View -->
+        <div id="search-results-view" style="display: none;">
+            <h2 class="search-results-title">Search Results</h2>
+            <div id="search-results-grid" class="search-results-grid">
+                <!-- Search results will be populated here -->
+            </div>
+        </div>
+        
         <!-- Discover View -->
         <div id="requestarr-discover-view" class="requestarr-view active">
             <h1 class="page-title">Discover</h1>

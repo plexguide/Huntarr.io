@@ -7,6 +7,58 @@
     overflow: hidden; /* Prevent content from extending beyond viewport */
 }
 
+/* Global Search Bar */
+.global-search-bar {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto 30px;
+}
+
+.global-search-bar i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 18px;
+}
+
+.global-search-bar input {
+    width: 100%;
+    padding: 16px 20px 16px 55px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.global-search-bar input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.global-search-bar input::placeholder {
+    color: #888;
+}
+
+/* Search Results */
+.search-results-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: var(--text-primary, #e0e0e0);
+}
+
+.search-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+    padding: 10px 0;
+}
+
 .requestarr-view {
     display: none;
 }
