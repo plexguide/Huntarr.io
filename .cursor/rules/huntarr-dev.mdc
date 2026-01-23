@@ -86,6 +86,87 @@ conn = sqlite3.connect('/config/huntarr.db')
 - ALWAYS store target section in localStorage for post-refresh navigation
 - This solves toggle visibility issues, stale data, and all frontend caching problems
 
+### Modal Centering Pattern (Critical)
+**Problem**: Modals not centered in viewport, sidebar not blurred, modal offset to left
+**Root Cause**: Modal element positioned inside a container (e.g., `#requestarr-section`) that's scoped to content area only
+**Solution**: Modal MUST be direct child of body/root container to cover full viewport
+
+#### Correct Modal Structure:
+```html
+<!-- WRONG - Modal inside section container -->
+<div id="some-section" class="content-section">
+    <!-- ... section content ... -->
+    <div id="modal" class="modal">...</div>  <!-- ❌ Can't cover sidebar -->
+</div>
+
+<!-- CORRECT - Modal outside section container -->
+<div id="some-section" class="content-section">
+    <!-- ... section content ... -->
+</div>
+<!-- Modal at same level as section -->
+<div id="modal" class="modal">...</div>  <!-- ✅ Covers full viewport -->
+```
+
+#### Correct Modal CSS:
+```css
+/* Modal overlay - covers entire viewport with blur */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: none; /* or flex when shown */
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+/* Modal content - centered inside overlay */
+.modal-content {
+    position: relative;
+    background: rgba(15, 23, 42, 0.95);
+    border-radius: 12px;
+    max-width: 600px;
+    width: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+```
+
+#### Key Requirements:
+- Modal element must be outside any content-scoped containers
+- Use `position: fixed` with `top/left/right/bottom: 0` for full viewport coverage
+- Single element approach: modal itself is the backdrop (no separate backdrop div needed)
+- Use flexbox (`display: flex; align-items: center; justify-content: center`) for true centering
+- `backdrop-filter: blur(8px)` on the modal overlay blurs entire page including sidebar
+- High z-index (9999+) ensures modal appears above all other content
+
+#### Anti-Patterns to Avoid:
+- ❌ Nesting modal inside section/content containers
+- ❌ Using `margin-left` offsets to compensate for sidebar (breaks centering)
+- ❌ Separate backdrop div that interferes with positioning
+- ❌ Relative positioning or limited width/height containers
+- ❌ Low z-index values that allow content to show through
+
+#### Testing Checklist:
+- [ ] Modal covers entire viewport (including sidebar)
+- [ ] Sidebar is blurred when modal is open
+- [ ] Modal is centered horizontally and vertically
+- [ ] Works on desktop and mobile
+- [ ] Click outside modal closes it properly
+
+#### Example Fix:
+See GitHub Issue #XXX or commit YYY for Requestarr Discover modal centering fix
+- Moved `#media-modal` from inside `#requestarr-section` to outside (sibling level)
+- Removed separate `.modal-backdrop` div
+- Applied full viewport overlay pattern
+- Result: Perfect centering with full page blur including sidebar
+
 ## 🔀 BASE_URL / REVERSE PROXY SUPPORT (CRITICAL)
 
 ### Core Architecture
@@ -387,6 +468,15 @@ echo "5. Missing frontend injection: $(grep -q "window.HUNTARR_BASE_URL" fronten
 - ❌ Endless refresh loops due to improper initialization detection
 - ❌ Section switching without proper data refresh
 
+### Modal Centering Anti-Patterns (Critical)
+- ❌ Modal elements nested inside section/content containers
+- ❌ Using margin-left offsets to compensate for sidebar width
+- ❌ Separate backdrop div that interferes with centering
+- ❌ Not using position: fixed with full viewport coverage
+- ❌ Modals that don't blur the entire page including sidebar
+- ❌ Low z-index values that allow content to show through
+- ❌ Relative positioning or limited width/height on modal containers
+
 ## 🚨 PROACTIVE VIOLATION SCANNING
 
 ### Before Every Commit, Check For:
@@ -410,6 +500,8 @@ echo "5. Missing frontend injection: $(grep -q "window.HUNTARR_BASE_URL" fronten
 18. BASE_URL path checking with 'in': `grep -r "if.*in request.path" src/primary/auth.py | wc -l`
 19. Missing BASE_URL middleware: `grep -q "class BaseURLMiddleware" src/primary/web_server.py && echo "0" || echo "1"`
 20. Missing BASE_URL frontend injection: `grep -q "window.HUNTARR_BASE_URL" frontend/templates/index.html && echo "0" || echo "1"`
+21. Modal centering violations - modals inside section containers: `grep -r "class=\"modal\"" frontend/templates/components/ | xargs grep -l "content-section" | wc -l`
+22. Modal margin-left offset violations: `grep -r "margin-left.*sidebar" frontend/static/css/ --include="*.css" | wc -l`
 
 ### Violation Scanning Commands
 ```bash
@@ -435,6 +527,8 @@ echo "17. BASE_URL exact path matching: $(grep -r 'request.path == "/' src/prima
 echo "18. BASE_URL path checking with 'in': $(grep -r "if.*in request.path" src/primary/auth.py | wc -l)"
 echo "19. Missing BASE_URL middleware: $(grep -q "class BaseURLMiddleware" src/primary/web_server.py && echo "0" || echo "1")"
 echo "20. Missing BASE_URL frontend injection: $(grep -q "window.HUNTARR_BASE_URL" frontend/templates/index.html && echo "0" || echo "1")"
+echo "21. Modal centering violations - modals inside section containers: $(grep -r "class=\"modal\"" frontend/templates/components/ | xargs grep -l "content-section" | wc -l)"
+echo "22. Modal margin-left offset violations: $(grep -r "margin-left.*sidebar" frontend/static/css/ --include="*.css" | wc -l)"
 ```
 
 ## 📊 SPECIFIC BUG PATTERNS TO AVOID
@@ -512,6 +606,45 @@ echo "20. Missing BASE_URL frontend injection: $(grep -q "window.HUNTARR_BASE_UR
 - Symptom: Console shows correct API response (totalLogs=7291, totalPages=365) but UI resets to 1 page
 - Fix: Remove all template pagination code, let LogsModule handle all pagination via API calls
 - Files: `/frontend/templates/components/logs_section.html`, `/frontend/static/js/logs.js`
+
+### Requestarr Discover Modal Centering Issue (test8892 branch)
+- **Problem**: Request modal not centered in viewport, sidebar not blurred, modal shifted to left
+- **Root Cause**: Modal element positioned inside `#requestarr-section` container, constrained to content area only
+- **Symptoms**: 
+  - Modal appears off-center to the left
+  - Sidebar remains visible and not blurred
+  - Only content area is blurred, not full viewport
+  - Modal cannot cover full viewport including sidebar
+- **Pattern**: `<div id="requestarr-section">...<div id="media-modal">...</div></div>` (modal inside section)
+- **Critical Fix**: Move modal element outside section container to be sibling/root level
+- **Solution Pattern**:
+  ```html
+  <!-- BEFORE - Wrong -->
+  <div id="requestarr-section">
+      <!-- content -->
+      <div id="media-modal">...</div>
+  </div>
+  
+  <!-- AFTER - Correct -->
+  <div id="requestarr-section">
+      <!-- content -->
+  </div>
+  <div id="media-modal">...</div>  <!-- Modal at root level -->
+  ```
+- **CSS Requirements**:
+  - `position: fixed; top: 0; left: 0; right: 0; bottom: 0;` for full viewport coverage
+  - `backdrop-filter: blur(8px);` directly on modal overlay (not separate backdrop div)
+  - `display: flex; align-items: center; justify-content: center;` for true centering
+  - Remove any `margin-left` offset hacks
+  - High `z-index: 9999;` to appear above all content
+- **Testing**:
+  - Modal covers entire viewport including sidebar
+  - Entire page (including sidebar) is blurred
+  - Modal content is perfectly centered horizontally and vertically
+  - Click outside modal closes it properly
+- **Files**: `/frontend/templates/components/requestarr_section.html`, `/frontend/static/css/requestarr-discover.css`
+- **Key Lesson**: Modals must be positioned at root/body level to achieve full viewport coverage and proper centering
+- **Reference**: See main branch `requestarr.css` `.description-modal-overlay` pattern for working example
 
 ### GitHub Issue #641 Pattern (Lidarr AlbumSearch String/Integer Issue)
 - AlbumSearch fails with 500 error: "The JSON value could not be converted to System.Collections.Generic.List[System.Int32]"
@@ -753,6 +886,26 @@ docker exec huntarr sqlite3 /config/huntarr.db "PRAGMA synchronous; PRAGMA cache
 3. Verify CSS loading order (external files vs inline)
 4. Test specificity with `!important` declarations
 5. Search for conflicting rules: `grep -r "className" frontend/static/css/`
+
+### Modal Centering Issues Debugging
+1. **Check DOM structure**: Verify modal is NOT nested inside section/content containers
+2. **Inspect CSS position**: Modal should use `position: fixed` with `top/left/right/bottom: 0`
+3. **Test viewport coverage**: Open modal and check if sidebar is blurred
+4. **Verify z-index**: Modal should be 9999+ to appear above all content
+5. **Check for margin offsets**: Search for `margin-left` hacks: `grep -r "margin-left" frontend/static/css/`
+6. **Browser DevTools**: 
+   - Inspect modal element structure in Elements tab
+   - Check computed styles for position, width, height
+   - Verify backdrop-filter is applied
+   - Look for parent containers with `overflow: hidden` or limited width
+7. **Template location check**: `grep -r "id=\".*modal\"" frontend/templates/components/ -A 5 -B 5`
+8. **Quick Fix Pattern**:
+   ```bash
+   # Find modal definition in template
+   grep -rn "id=\"media-modal\"" frontend/templates/
+   # Check if it's inside a section
+   # Move it outside the section closing tag if needed
+   ```
 
 ### Documentation Issues Debugging
 1. Test all links manually or with link checker
