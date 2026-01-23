@@ -309,7 +309,7 @@ class RequestarrModule {
         
         // Truncate overview and add "See More" link if needed
         const overview = item.overview || 'No description available.';
-        const truncateLength = 120; // Shorter to ensure "See More" fits in 3 lines
+        const truncateLength = 80; // Shorter to ensure "See More" fits in 3 lines
         const shouldTruncate = overview.length > truncateLength;
         console.log(`[Requestarr] Item: ${item.title}, Overview length: ${overview.length}, Should truncate: ${shouldTruncate}`);
         const displayOverview = shouldTruncate ? overview.substring(0, truncateLength) + '...' : overview;
