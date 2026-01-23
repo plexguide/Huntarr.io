@@ -390,13 +390,14 @@
 .media-modal {
     position: fixed;
     top: 0;
-    left: 145px; /* Sidebar width - start content area here */
+    left: 0;
     right: 0;
     bottom: 0;
     z-index: 1000;
     display: none;
     align-items: center;
     justify-content: center;
+    padding-left: 150px; /* Sidebar width to center in visible area */
 }
 
 .media-modal[style*="display: flex"] {
@@ -406,7 +407,7 @@
 /* Mobile responsive - full width on small screens */
 @media (max-width: 768px) {
     .media-modal {
-        left: 0;
+        padding-left: 0;
     }
 }
 
