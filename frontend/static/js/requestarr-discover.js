@@ -23,6 +23,59 @@ class RequestarrDiscover {
     // Carousel Arrow Controls
     setupCarouselArrows() {
         const arrows = document.querySelectorAll('.carousel-arrow');
+        const carousels = new Set();
+        
+        // Collect all unique carousels
+        arrows.forEach(arrow => {
+            const targetId = arrow.dataset.target;
+            const carousel = document.getElementById(targetId);
+            if (carousel) {
+                carousels.add(carousel);
+            }
+        });
+        
+        // Setup scroll listeners for each carousel
+        carousels.forEach(carousel => {
+            const updateArrowVisibility = () => {
+                const carouselId = carousel.id;
+                const leftArrow = document.querySelector(`.carousel-arrow.left[data-target="${carouselId}"]`);
+                const rightArrow = document.querySelector(`.carousel-arrow.right[data-target="${carouselId}"]`);
+                
+                if (!leftArrow || !rightArrow) return;
+                
+                const scrollLeft = carousel.scrollLeft;
+                const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+                
+                // Hide left arrow if at start
+                if (scrollLeft <= 5) {
+                    leftArrow.style.opacity = '0';
+                    leftArrow.style.pointerEvents = 'none';
+                } else {
+                    leftArrow.style.opacity = '0.8';
+                    leftArrow.style.pointerEvents = 'auto';
+                }
+                
+                // Hide right arrow if at end
+                if (scrollLeft >= maxScroll - 5) {
+                    rightArrow.style.opacity = '0';
+                    rightArrow.style.pointerEvents = 'none';
+                } else {
+                    rightArrow.style.opacity = '0.8';
+                    rightArrow.style.pointerEvents = 'auto';
+                }
+            };
+            
+            // Update on scroll
+            carousel.addEventListener('scroll', updateArrowVisibility);
+            
+            // Initial update after content loads
+            setTimeout(() => updateArrowVisibility(), 100);
+            
+            // Update when window resizes
+            window.addEventListener('resize', updateArrowVisibility);
+        });
+        
+        // Click handlers
         arrows.forEach(arrow => {
             arrow.addEventListener('click', (e) => {
                 const targetId = arrow.dataset.target;
