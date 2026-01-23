@@ -9,8 +9,14 @@ class RequestarrDiscover {
         this.qualityProfiles = {}; // Cache quality profiles by instance
         this.searchTimeouts = {};
         this.currentModal = null;
+        this.currentModalData = null;
+        this.selectedSeasons = [];
         this.init();
     }
+
+    // ========================================
+    // INITIALIZATION
+    // ========================================
 
     init() {
         console.log('[RequestarrDiscover] Initializing...');
@@ -21,7 +27,123 @@ class RequestarrDiscover {
         this.loadDiscoverContent();
     }
 
-    // Carousel Arrow Controls
+    async loadInstances() {
+        try {
+            const response = await fetch('./api/requestarr/instances');
+            const data = await response.json();
+            
+            if (data.sonarr || data.radarr) {
+                this.instances = {
+                    sonarr: data.sonarr || [],
+                    radarr: data.radarr || []
+                };
+                console.log('[RequestarrDiscover] Loaded instances:', this.instances);
+                await this.loadAllQualityProfiles();
+            }
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error loading instances:', error);
+        }
+    }
+    
+    async loadAllQualityProfiles() {
+        console.log('[RequestarrDiscover] Loading quality profiles...');
+        
+        // Load Radarr quality profiles
+        for (const instance of this.instances.radarr) {
+            try {
+                const response = await fetch(`./api/requestarr/quality-profiles/radarr/${instance.name}`);
+                const data = await response.json();
+                if (data.success) {
+                    this.qualityProfiles[`radarr-${instance.name}`] = data.profiles;
+                    console.log(`[RequestarrDiscover] Loaded quality profiles for Radarr - ${instance.name}:`, data.profiles);
+                }
+            } catch (error) {
+                console.error(`[RequestarrDiscover] Error loading Radarr quality profiles for ${instance.name}:`, error);
+            }
+        }
+        
+        // Load Sonarr quality profiles
+        for (const instance of this.instances.sonarr) {
+            try {
+                const response = await fetch(`./api/requestarr/quality-profiles/sonarr/${instance.name}`);
+                const data = await response.json();
+                if (data.success) {
+                    this.qualityProfiles[`sonarr-${instance.name}`] = data.profiles;
+                    console.log(`[RequestarrDiscover] Loaded quality profiles for Sonarr - ${instance.name}:`, data.profiles);
+                }
+            } catch (error) {
+                console.error(`[RequestarrDiscover] Error loading Sonarr quality profiles for ${instance.name}:`, error);
+            }
+        }
+    }
+
+    // ========================================
+    // VIEW MANAGEMENT
+    // ========================================
+
+    switchView(view) {
+        console.log('[RequestarrDiscover] Switching to view:', view);
+        
+        // Clear global search
+        const globalSearch = document.getElementById('global-search-input');
+        if (globalSearch) {
+            globalSearch.value = '';
+        }
+        
+        // Hide/show global search bar based on view
+        const globalSearchBar = document.querySelector('.global-search-bar');
+        if (globalSearchBar) {
+            if (view === 'history' || view === 'settings') {
+                globalSearchBar.style.display = 'none';
+            } else {
+                globalSearchBar.style.display = 'flex';
+            }
+        }
+        
+        // Hide search results view
+        document.getElementById('search-results-view').style.display = 'none';
+        
+        // Hide all views
+        document.querySelectorAll('.requestarr-view').forEach(container => {
+            container.classList.remove('active');
+            container.style.display = 'none';
+        });
+        
+        // Show target view
+        const targetView = document.getElementById(`requestarr-${view}-view`);
+        if (targetView) {
+            targetView.classList.add('active');
+            targetView.style.display = 'block';
+        }
+
+        this.currentView = view;
+
+        // Load content for view if not already loaded
+        switch (view) {
+            case 'discover':
+                if (!document.getElementById('trending-carousel').children.length) {
+                    this.loadDiscoverContent();
+                }
+                break;
+            case 'movies':
+                if (!document.getElementById('movies-carousel').children.length) {
+                    this.loadMovies();
+                }
+                break;
+            case 'tv':
+                if (!document.getElementById('tv-carousel').children.length) {
+                    this.loadTV();
+                }
+                break;
+            case 'history':
+                this.loadHistory();
+                break;
+            case 'settings':
+                this.loadSettings();
+                break;
+        }
+    }
+
     setupCarouselArrows() {
         const arrows = document.querySelectorAll('.carousel-arrow');
         const carousels = new Set();
@@ -66,13 +188,8 @@ class RequestarrDiscover {
                 }
             };
             
-            // Update on scroll
             carousel.addEventListener('scroll', updateArrowVisibility);
-            
-            // Initial update after content loads
             setTimeout(() => updateArrowVisibility(), 100);
-            
-            // Update when window resizes
             window.addEventListener('resize', updateArrowVisibility);
         });
         
@@ -82,153 +199,26 @@ class RequestarrDiscover {
                 const targetId = arrow.dataset.target;
                 const carousel = document.getElementById(targetId);
                 
-                // Calculate scroll amount based on visible items
                 const carouselWidth = carousel.offsetWidth;
-                const cardWidth = 150; // Card width in pixels
-                const gap = 20; // Gap between cards
+                const cardWidth = 150;
+                const gap = 20;
                 const itemWidth = cardWidth + gap;
-                
-                // Calculate how many items are visible
                 const visibleItems = Math.floor(carouselWidth / itemWidth);
-                
-                // Scroll by the number of visible items
                 const scrollAmount = visibleItems * itemWidth;
                 
                 if (arrow.classList.contains('left')) {
-                    carousel.scrollBy({
-                        left: -scrollAmount,
-                        behavior: 'smooth'
-                    });
+                    carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
                 } else {
-                    carousel.scrollBy({
-                        left: scrollAmount,
-                        behavior: 'smooth'
-                    });
+                    carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
                 }
             });
         });
     }
 
-    // View Switching (called from external sidebar)
-    switchView(view) {
-        console.log('[RequestarrDiscover] Switching to view:', view);
-        
-        // Clear global search
-        const globalSearch = document.getElementById('global-search-input');
-        if (globalSearch) {
-            globalSearch.value = '';
-        }
-        
-        // Hide/show global search bar based on view
-        const globalSearchBar = document.querySelector('.global-search-bar');
-        if (globalSearchBar) {
-            // Hide search bar on history and settings views
-            if (view === 'history' || view === 'settings') {
-                globalSearchBar.style.display = 'none';
-            } else {
-                globalSearchBar.style.display = 'flex';
-            }
-        }
-        
-        // Hide search results view
-        document.getElementById('search-results-view').style.display = 'none';
-        
-        // First, explicitly hide ALL views with both class removal and inline style
-        document.querySelectorAll('.requestarr-view').forEach(container => {
-            container.classList.remove('active');
-            container.style.display = 'none';
-        });
-        
-        // Then show only the target view
-        const targetView = document.getElementById(`requestarr-${view}-view`);
-        if (targetView) {
-            targetView.classList.add('active');
-            targetView.style.display = 'block';
-        }
+    // ========================================
+    // CONTENT LOADING
+    // ========================================
 
-        this.currentView = view;
-
-        // Load content for view if not already loaded
-        switch (view) {
-            case 'discover':
-                if (!document.getElementById('trending-carousel').children.length) {
-                    this.loadDiscoverContent();
-                }
-                break;
-            case 'movies':
-                if (!document.getElementById('movies-carousel').children.length) {
-                    this.loadMovies();
-                }
-                break;
-            case 'tv':
-                if (!document.getElementById('tv-carousel').children.length) {
-                    this.loadTV();
-                }
-                break;
-            case 'history':
-                this.loadHistory();
-                break;
-            case 'settings':
-                this.loadSettings();
-                break;
-        }
-    }
-
-    // Load Instances
-    async loadInstances() {
-        try {
-            const response = await fetch('./api/requestarr/instances');
-            const data = await response.json();
-            
-            // API returns {sonarr: [], radarr: []} directly
-            if (data.sonarr || data.radarr) {
-                this.instances = {
-                    sonarr: data.sonarr || [],
-                    radarr: data.radarr || []
-                };
-                console.log('[RequestarrDiscover] Loaded instances:', this.instances);
-                
-                // Load quality profiles for all instances
-                await this.loadAllQualityProfiles();
-            }
-        } catch (error) {
-            console.error('[RequestarrDiscover] Error loading instances:', error);
-        }
-    }
-    
-    async loadAllQualityProfiles() {
-        console.log('[RequestarrDiscover] Loading quality profiles...');
-        
-        // Load Radarr quality profiles
-        for (const instance of this.instances.radarr) {
-            try {
-                const response = await fetch(`./api/requestarr/quality-profiles/radarr/${instance.name}`);
-                const data = await response.json();
-                if (data.success) {
-                    this.qualityProfiles[`radarr-${instance.name}`] = data.profiles;
-                    console.log(`[RequestarrDiscover] Loaded quality profiles for Radarr - ${instance.name}:`, data.profiles);
-                }
-            } catch (error) {
-                console.error(`[RequestarrDiscover] Error loading Radarr quality profiles for ${instance.name}:`, error);
-            }
-        }
-        
-        // Load Sonarr quality profiles
-        for (const instance of this.instances.sonarr) {
-            try {
-                const response = await fetch(`./api/requestarr/quality-profiles/sonarr/${instance.name}`);
-                const data = await response.json();
-                if (data.success) {
-                    this.qualityProfiles[`sonarr-${instance.name}`] = data.profiles;
-                    console.log(`[RequestarrDiscover] Loaded quality profiles for Sonarr - ${instance.name}:`, data.profiles);
-                }
-            } catch (error) {
-                console.error(`[RequestarrDiscover] Error loading Sonarr quality profiles for ${instance.name}:`, error);
-            }
-        }
-    }
-
-    // Discover Content
     async loadDiscoverContent() {
         await Promise.all([
             this.loadTrending(),
@@ -297,7 +287,6 @@ class RequestarrDiscover {
         }
     }
 
-    // Movies View
     async loadMovies(page = 1) {
         const carousel = document.getElementById('movies-carousel');
         carousel.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
@@ -320,7 +309,6 @@ class RequestarrDiscover {
         }
     }
 
-    // TV View
     async loadTV(page = 1) {
         const carousel = document.getElementById('tv-carousel');
         carousel.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading TV shows...</p></div>';
@@ -343,7 +331,10 @@ class RequestarrDiscover {
         }
     }
 
-    // Global Search
+    // ========================================
+    // SEARCH FUNCTIONALITY
+    // ========================================
+
     setupGlobalSearch() {
         const globalSearch = document.getElementById('global-search-input');
         
@@ -360,7 +351,6 @@ class RequestarrDiscover {
         }
         
         if (!query.trim()) {
-            // Show discover view, hide search results
             document.getElementById('search-results-view').style.display = 'none';
             document.getElementById('requestarr-discover-view').style.display = 'block';
             document.getElementById('requestarr-movies-view').style.display = 'none';
@@ -379,7 +369,6 @@ class RequestarrDiscover {
         const resultsGrid = document.getElementById('search-results-grid');
         const discoverView = document.getElementById('requestarr-discover-view');
         
-        // Hide all views except search results
         discoverView.style.display = 'none';
         document.getElementById('requestarr-movies-view').style.display = 'none';
         document.getElementById('requestarr-tv-view').style.display = 'none';
@@ -389,7 +378,6 @@ class RequestarrDiscover {
         resultsGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
         
         try {
-            // Search both movies and TV
             const [moviesResponse, tvResponse] = await Promise.all([
                 fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=radarr&instance_name=search`),
                 fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=sonarr&instance_name=search`)
@@ -403,11 +391,10 @@ class RequestarrDiscover {
                 ...(tvData.results || [])
             ];
             
-            // Sort by popularity (highest first)
             allResults.sort((a, b) => {
                 const popularityA = a.popularity || 0;
                 const popularityB = b.popularity || 0;
-                return popularityB - popularityA; // Descending order
+                return popularityB - popularityA;
             });
             
             if (allResults.length > 0) {
@@ -424,7 +411,6 @@ class RequestarrDiscover {
         }
     }
 
-    // Search
     setupSearchHandlers() {
         const moviesSearch = document.getElementById('movies-search');
         const tvSearch = document.getElementById('tv-search');
@@ -450,7 +436,6 @@ class RequestarrDiscover {
         }
         
         if (!query.trim()) {
-            // Load default content
             if (mediaType === 'movie') {
                 this.loadMovies();
             } else {
@@ -486,7 +471,10 @@ class RequestarrDiscover {
         }
     }
 
-    // Create Media Card
+    // ========================================
+    // MEDIA CARD CREATION
+    // ========================================
+
     createMediaCard(item) {
         const card = document.createElement('div');
         card.className = 'media-card';
@@ -496,7 +484,6 @@ class RequestarrDiscover {
         const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
         const overview = item.overview || 'No description available.';
         
-        // Check if this item has status info (will be added by backend later)
         const inLibrary = item.in_library || false;
         const statusBadgeHTML = inLibrary ? '<div class="media-card-status-badge"><i class="fas fa-check"></i></div>' : '';
         
@@ -529,19 +516,16 @@ class RequestarrDiscover {
             </div>
         `;
         
-        // Add click handlers
         const posterDiv = card.querySelector('.media-card-poster');
         const requestBtn = card.querySelector('.media-card-request-btn');
         
-        // Poster/overlay click opens modal (but not when clicking button)
         posterDiv.addEventListener('click', (e) => {
             if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) {
-                return; // Don't open modal if clicking button
+                return;
             }
             this.openModal(item.tmdb_id, item.media_type);
         });
         
-        // Request button opens modal directly (if it exists)
         if (requestBtn) {
             requestBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -552,12 +536,14 @@ class RequestarrDiscover {
         return card;
     }
 
-    // Modal
+    // ========================================
+    // MODAL SYSTEM
+    // ========================================
+
     async openModal(tmdbId, mediaType) {
         const modal = document.getElementById('media-modal');
         const modalBody = modal.querySelector('.modal-body');
         
-        // Show modal with loading state
         modal.style.display = 'flex';
         modalBody.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading details...</p></div>';
         
@@ -581,16 +567,9 @@ class RequestarrDiscover {
         const modal = document.getElementById('media-modal');
         const modalBody = modal.querySelector('.modal-body');
         
-        // Build modal HTML
         const isTVShow = data.media_type === 'tv';
         const instances = isTVShow ? this.instances.sonarr : this.instances.radarr;
-        console.log('[RequestarrDiscover] Modal instances:', {
-            isTVShow,
-            instances,
-            allInstances: this.instances
-        });
         
-        // Get remembered instance or use first
         const instanceKey = isTVShow ? 'sonarr' : 'radarr';
         const rememberedInstance = localStorage.getItem(`huntarr-requestarr-instance-${instanceKey}`) || (instances[0]?.name || '');
         
@@ -607,7 +586,7 @@ class RequestarrDiscover {
             <div class="request-modal-content">
         `;
         
-        // For TV Shows: Add status container first, then instance selector
+        // Status container and instance selector
         if (isTVShow) {
             modalHTML += `
                 <div id="series-status-container"></div>
@@ -632,7 +611,6 @@ class RequestarrDiscover {
                 </div>
             `;
         } else {
-            // For Movies: Add status container first, then instance selector
             modalHTML += `
                 <div id="movie-status-container"></div>
                 <div class="request-advanced-section">
@@ -657,9 +635,8 @@ class RequestarrDiscover {
             `;
         }
         
-        // For TV Shows: Season selection with toggles
+        // Season selection for TV shows
         if (isTVShow && data.seasons) {
-            // Check which seasons are already in Sonarr
             const requestedSeasons = await this.checkRequestedSeasons(data.tmdb_id, rememberedInstance);
             
             modalHTML += `
@@ -674,7 +651,6 @@ class RequestarrDiscover {
             
             data.seasons.forEach((season, index) => {
                 const isRequested = requestedSeasons.includes(season.season_number);
-                const disabled = isRequested ? 'disabled' : '';
                 const faded = isRequested ? 'requested' : '';
                 
                 modalHTML += `
@@ -702,11 +678,10 @@ class RequestarrDiscover {
             `;
         }
         
-        // Get quality profiles for the first/remembered instance
+        // Quality Profile section
         const profileKey = `${isTVShow ? 'sonarr' : 'radarr'}-${rememberedInstance || (instances[0]?.name || '')}`;
         const profiles = this.qualityProfiles[profileKey] || [];
         
-        // Quality Profile section (for both TV and Movies)
         modalHTML += `
             <div class="request-advanced-section">
                 <div class="advanced-field">
@@ -715,9 +690,11 @@ class RequestarrDiscover {
                         <option value="">Any (Default)</option>
         `;
         
-        // Add quality profile options
+        // Filter out "Any" profile since we already have "Any (Default)"
         profiles.forEach(profile => {
-            modalHTML += `<option value="${profile.id}">${profile.name}</option>`;
+            if (profile.name.toLowerCase() !== 'any') {
+                modalHTML += `<option value="${profile.id}">${profile.name}</option>`;
+            }
         });
         
         modalHTML += `
@@ -736,7 +713,6 @@ class RequestarrDiscover {
         
         modalBody.innerHTML = modalHTML;
         
-        // Store current modal data
         this.currentModalData = data;
         this.selectedSeasons = [];
         
@@ -756,7 +732,6 @@ class RequestarrDiscover {
         }
     }
 
-    // Check which seasons are already requested in Sonarr
     async checkRequestedSeasons(tmdbId, instanceName) {
         try {
             const response = await fetch(`./api/requestarr/check-seasons?tmdb_id=${tmdbId}&instance=${instanceName}`);
@@ -768,7 +743,6 @@ class RequestarrDiscover {
         }
     }
 
-    // Toggle season selection
     toggleSeason(checkbox) {
         const seasonNumber = parseInt(checkbox.dataset.season);
         
@@ -780,7 +754,6 @@ class RequestarrDiscover {
             this.selectedSeasons = this.selectedSeasons.filter(s => s !== seasonNumber);
         }
         
-        // Enable/disable request button based on selection
         const requestBtn = document.getElementById('modal-request-btn');
         if (this.selectedSeasons.length > 0) {
             requestBtn.disabled = false;
@@ -793,7 +766,6 @@ class RequestarrDiscover {
         console.log('[RequestarrDiscover] Selected seasons:', this.selectedSeasons);
     }
 
-    // Load series status from Sonarr
     async loadSeriesStatus(instanceName) {
         if (!instanceName || !this.currentModalData) {
             return;
@@ -806,7 +778,6 @@ class RequestarrDiscover {
         
         console.log('[RequestarrDiscover] Loading series status for instance:', instanceName);
         
-        // Show loading state
         container.innerHTML = `
             <div style="text-align: center; padding: 15px;">
                 <i class="fas fa-spinner fa-spin" style="font-size: 20px; color: #667eea;"></i>
@@ -814,7 +785,6 @@ class RequestarrDiscover {
         `;
         
         try {
-            // Get series status from Sonarr
             const response = await fetch(`./api/requestarr/series-status?tmdb_id=${this.currentModalData.tmdb_id}&instance=${encodeURIComponent(instanceName)}`);
             const status = await response.json();
             
@@ -823,9 +793,7 @@ class RequestarrDiscover {
             let statusHTML = '';
             
             if (status.exists) {
-                // Series exists in Sonarr
                 if (status.missing_episodes === 0 && status.total_episodes > 0) {
-                    // Complete series in library
                     statusHTML = `
                         <div class="series-status-box status-available">
                             <i class="fas fa-check-circle"></i>
@@ -835,7 +803,6 @@ class RequestarrDiscover {
                         </div>
                     `;
                 } else if (status.missing_episodes > 0) {
-                    // Missing episodes
                     statusHTML = `
                         <div class="series-status-box status-missing-episodes">
                             <i class="fas fa-tv"></i>
@@ -845,7 +812,6 @@ class RequestarrDiscover {
                         </div>
                     `;
                 } else {
-                    // Series exists but no episode info
                     statusHTML = `
                         <div class="series-status-box status-available">
                             <i class="fas fa-check-circle"></i>
@@ -856,7 +822,6 @@ class RequestarrDiscover {
                     `;
                 }
             } else {
-                // Series not in Sonarr - available to request
                 statusHTML = `
                     <div class="series-status-box status-requestable">
                         <i class="fas fa-inbox"></i>
@@ -884,7 +849,6 @@ class RequestarrDiscover {
         }
     }
 
-    // Load movie status from Radarr
     async loadMovieStatus(instanceName) {
         if (!instanceName || !this.currentModalData) {
             return;
@@ -897,7 +861,6 @@ class RequestarrDiscover {
         
         console.log('[RequestarrDiscover] Loading movie status for instance:', instanceName);
         
-        // Show loading state
         container.innerHTML = `
             <div style="text-align: center; padding: 15px;">
                 <i class="fas fa-spinner fa-spin" style="font-size: 20px; color: #667eea;"></i>
@@ -905,7 +868,6 @@ class RequestarrDiscover {
         `;
         
         try {
-            // Get movie status from Radarr
             const response = await fetch(`./api/requestarr/movie-status?tmdb_id=${this.currentModalData.tmdb_id}&instance=${encodeURIComponent(instanceName)}`);
             const status = await response.json();
             
@@ -915,7 +877,6 @@ class RequestarrDiscover {
             const requestBtn = document.getElementById('modal-request-btn');
             
             if (status.in_library) {
-                // Movie already in library
                 statusHTML = `
                     <div class="series-status-box status-available">
                         <i class="fas fa-check-circle"></i>
@@ -924,14 +885,12 @@ class RequestarrDiscover {
                         </div>
                     </div>
                 `;
-                // Disable request button
                 if (requestBtn) {
                     requestBtn.disabled = true;
                     requestBtn.classList.add('disabled');
                     requestBtn.textContent = 'In Library';
                 }
             } else if (status.previously_requested) {
-                // Previously requested
                 statusHTML = `
                     <div class="series-status-box status-missing-episodes">
                         <i class="fas fa-clock"></i>
@@ -940,14 +899,12 @@ class RequestarrDiscover {
                         </div>
                     </div>
                 `;
-                // Disable request button
                 if (requestBtn) {
                     requestBtn.disabled = true;
                     requestBtn.classList.add('disabled');
                     requestBtn.textContent = 'Already Requested';
                 }
             } else {
-                // Available to request
                 statusHTML = `
                     <div class="series-status-box status-requestable">
                         <i class="fas fa-inbox"></i>
@@ -957,7 +914,6 @@ class RequestarrDiscover {
                         </div>
                     </div>
                 `;
-                // Enable request button
                 if (requestBtn) {
                     requestBtn.disabled = false;
                     requestBtn.classList.remove('disabled');
@@ -978,7 +934,6 @@ class RequestarrDiscover {
                     </div>
                 </div>
             `;
-            // Enable request button on error
             const requestBtn = document.getElementById('modal-request-btn');
             if (requestBtn) {
                 requestBtn.disabled = false;
@@ -988,16 +943,15 @@ class RequestarrDiscover {
         }
     }
 
-    // Remember instance selection
     instanceChanged(instanceName) {
         const isTVShow = this.currentModalData.media_type === 'tv';
         const instanceKey = isTVShow ? 'sonarr' : 'radarr';
-        const appType = isTVShow ? 'sonarr' : 'radarr';
         
         localStorage.setItem(`huntarr-requestarr-instance-${instanceKey}`, instanceName);
         console.log('[RequestarrDiscover] Instance changed to:', instanceName);
         
         // Update quality profile dropdown
+        const appType = isTVShow ? 'sonarr' : 'radarr';
         const profileKey = `${appType}-${instanceName}`;
         const profiles = this.qualityProfiles[profileKey] || [];
         const qualitySelect = document.getElementById('modal-quality-profile');
@@ -1005,10 +959,12 @@ class RequestarrDiscover {
         if (qualitySelect) {
             qualitySelect.innerHTML = '<option value="">Any (Default)</option>';
             profiles.forEach(profile => {
-                const option = document.createElement('option');
-                option.value = profile.id;
-                option.textContent = profile.name;
-                qualitySelect.appendChild(option);
+                if (profile.name.toLowerCase() !== 'any') {
+                    const option = document.createElement('option');
+                    option.value = profile.id;
+                    option.textContent = profile.name;
+                    qualitySelect.appendChild(option);
+                }
             });
         }
         
@@ -1020,7 +976,6 @@ class RequestarrDiscover {
         }
     }
 
-    // Submit request
     async submitRequest() {
         const instanceSelect = document.getElementById('modal-instance-select');
         const qualityProfile = document.getElementById('modal-quality-profile').value;
@@ -1033,7 +988,6 @@ class RequestarrDiscover {
         
         const isTVShow = this.currentModalData.media_type === 'tv';
         
-        // For TV shows, ensure at least one season is selected
         if (isTVShow && this.selectedSeasons.length === 0) {
             this.showNotification('Please select at least one season', 'error');
             return;
@@ -1079,101 +1033,6 @@ class RequestarrDiscover {
         }
     }
 
-    populateInstanceDropdown(mediaType) {
-        const select = document.getElementById('modal-instance-select');
-        const instances = mediaType === 'movie' ? this.instances.radarr : this.instances.sonarr;
-        
-        select.innerHTML = '<option value="">Select an instance...</option>';
-        
-        instances.forEach(instance => {
-            const option = document.createElement('option');
-            option.value = JSON.stringify({
-                name: instance.name,
-                app_type: mediaType === 'movie' ? 'radarr' : 'sonarr'
-            });
-            option.textContent = `${mediaType === 'movie' ? 'Radarr' : 'Sonarr'} - ${instance.name}`;
-            select.appendChild(option);
-        });
-    }
-
-    setupRequestButton(data) {
-        const select = document.getElementById('modal-instance-select');
-        const btn = document.getElementById('modal-request-btn');
-        const status = document.getElementById('modal-status');
-        
-        // Enable button when instance selected
-        select.onchange = () => {
-            btn.disabled = !select.value;
-        };
-        
-        // Handle request
-        btn.onclick = async () => {
-            if (!select.value) return;
-            
-            const instance = JSON.parse(select.value);
-            status.className = 'modal-status';
-            status.style.display = 'none';
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting...';
-            
-            try {
-                const response = await fetch('./api/requestarr/request', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tmdb_id: data.tmdb_id,
-                        media_type: data.media_type,
-                        title: data.title,
-                        year: data.year || 0,
-                        overview: data.overview || '',
-                        poster_path: data.poster_path || '',
-                        backdrop_path: data.backdrop_path || '',
-                        app_type: instance.app_type,
-                        instance_name: instance.name
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    status.className = 'modal-status success show';
-                    status.textContent = result.message;
-                    btn.innerHTML = '<i class="fas fa-check"></i> Requested';
-                } else {
-                    throw new Error(result.message);
-                }
-            } catch (error) {
-                console.error('[RequestarrDiscover] Request error:', error);
-                status.className = 'modal-status error show';
-                status.textContent = error.message || 'Failed to request';
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-plus"></i> Request';
-            }
-        };
-    }
-
-    showNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `requestarr-notification ${type}`;
-        notification.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-            <span>${message}</span>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        // Show notification
-        setTimeout(() => notification.classList.add('show'), 10);
-        
-        // Hide and remove after 4 seconds
-        setTimeout(() => {
-            notification.classList.remove('show');
-            notification.classList.add('slideOut');
-            setTimeout(() => notification.remove(), 300);
-        }, 4000);
-    }
-
     closeModal() {
         const modal = document.getElementById('media-modal');
         modal.style.display = 'none';
@@ -1181,7 +1040,10 @@ class RequestarrDiscover {
         this.selectedSeasons = [];
     }
 
-    // History
+    // ========================================
+    // HISTORY
+    // ========================================
+
     async loadHistory() {
         const container = document.getElementById('history-list');
         container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading history...</p></div>';
@@ -1227,16 +1089,17 @@ class RequestarrDiscover {
         return item;
     }
 
-    // Settings View
+    // ========================================
+    // SETTINGS
+    // ========================================
+
     async loadSettings() {
         console.log('[RequestarrDiscover] Loading settings...');
         
-        // Populate instance dropdowns
         const sonarrSelect = document.getElementById('default-sonarr-instance');
         const radarrSelect = document.getElementById('default-radarr-instance');
         
         if (sonarrSelect && radarrSelect) {
-            // Clear and populate Sonarr instances
             sonarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
             this.instances.sonarr.forEach(instance => {
                 const option = document.createElement('option');
@@ -1245,7 +1108,6 @@ class RequestarrDiscover {
                 sonarrSelect.appendChild(option);
             });
             
-            // Clear and populate Radarr instances
             radarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
             this.instances.radarr.forEach(instance => {
                 const option = document.createElement('option');
@@ -1254,7 +1116,6 @@ class RequestarrDiscover {
                 radarrSelect.appendChild(option);
             });
             
-            // Load current defaults
             try {
                 const response = await fetch('./api/requestarr/settings/defaults');
                 const data = await response.json();
@@ -1265,7 +1126,6 @@ class RequestarrDiscover {
                     if (data.defaults.sonarr_instance) {
                         sonarrSelect.value = data.defaults.sonarr_instance;
                     } else if (this.instances.sonarr.length > 0) {
-                        // Auto-select first Sonarr instance if none configured
                         sonarrSelect.value = this.instances.sonarr[0].name;
                         needsAutoSelect = true;
                     }
@@ -1273,12 +1133,10 @@ class RequestarrDiscover {
                     if (data.defaults.radarr_instance) {
                         radarrSelect.value = data.defaults.radarr_instance;
                     } else if (this.instances.radarr.length > 0) {
-                        // Auto-select first Radarr instance if none configured
                         radarrSelect.value = this.instances.radarr[0].name;
                         needsAutoSelect = true;
                     }
                 } else {
-                    // No defaults found, auto-select first available instances
                     if (this.instances.sonarr.length > 0) {
                         sonarrSelect.value = this.instances.sonarr[0].name;
                         needsAutoSelect = true;
@@ -1289,15 +1147,13 @@ class RequestarrDiscover {
                     }
                 }
                 
-                // Auto-save if we selected defaults
                 if (needsAutoSelect) {
                     console.log('[RequestarrDiscover] Auto-selecting first available instances');
-                    await this.saveSettings(true); // Pass true to indicate silent auto-save
+                    await this.saveSettings(true);
                 }
                 
             } catch (error) {
                 console.error('[RequestarrDiscover] Error loading default instances:', error);
-                // Even on error, try to auto-select first instances
                 if (this.instances.sonarr.length > 0 && sonarrSelect.value === '') {
                     sonarrSelect.value = this.instances.sonarr[0].name;
                 }
@@ -1307,7 +1163,6 @@ class RequestarrDiscover {
             }
         }
         
-        // Setup save button
         const saveBtn = document.getElementById('save-requestarr-settings');
         if (saveBtn) {
             saveBtn.onclick = () => this.saveSettings();
@@ -1321,7 +1176,6 @@ class RequestarrDiscover {
         
         if (!sonarrSelect || !radarrSelect) return;
         
-        // Disable button while saving (if not silent)
         if (saveBtn && !silent) {
             saveBtn.disabled = true;
             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
@@ -1354,10 +1208,34 @@ class RequestarrDiscover {
                 this.showNotification('Failed to save settings', 'error');
             }
         } finally {
-            // Re-enable button
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Settings';
+            if (saveBtn && !silent) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Settings';
+            }
         }
+    }
+
+    // ========================================
+    // UTILITIES
+    // ========================================
+
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `requestarr-notification ${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => notification.classList.add('show'), 10);
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
+            notification.classList.add('slideOut');
+            setTimeout(() => notification.remove(), 300);
+        }, 4000);
     }
 }
 
