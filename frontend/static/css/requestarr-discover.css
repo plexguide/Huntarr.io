@@ -52,7 +52,7 @@
     width: 100%;
     max-width: none !important;
     margin: 0;
-    padding: 10px 0 20px; /* Extra padding for hover effects */
+    padding: 20px 0 30px; /* Extra padding for hover scale effects */
     box-sizing: border-box;
 }
 
@@ -135,8 +135,8 @@
 
 /* Carousel Sections */
 .carousel-section {
-    margin-bottom: 40px;
-    padding-top: 10px; /* Extra padding for hover effect */
+    margin-bottom: 50px;
+    padding-top: 20px; /* More padding for scaled hover effect */
 }
 
 .section-title {
@@ -200,7 +200,7 @@
     overflow-x: auto;
     overflow-y: visible; /* Allow cards to extend above carousel */
     scroll-behavior: smooth;
-    padding: 10px 60px 20px; /* Extra bottom padding for hover effect */
+    padding: 20px 60px 30px; /* Extra padding top and bottom for hover scale */
     margin: 0 -60px; /* Negative margin to align content */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
@@ -216,7 +216,7 @@
     cursor: pointer;
     border-radius: 8px;
     overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
+    transition: transform 0.2s, border 0.2s;
     background: rgba(255, 255, 255, 0.05);
     border: 2px solid transparent;
     position: relative;
@@ -224,7 +224,6 @@
 
 .media-card:hover {
     transform: translateY(-5px) scale(1.05);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     border: 2px solid #f59e0b; /* Huntarr gold/amber color */
 }
 
