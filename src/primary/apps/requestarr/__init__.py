@@ -22,78 +22,83 @@ class RequestarrAPI:
         return "9265b0bd0cd1962f7f3225989fcd7192"
     
     def get_trending(self, time_window: str = 'week') -> List[Dict[str, Any]]:
-        """Get trending movies and TV shows"""
+        """Get trending movies and TV shows - fetch 3 pages for more content"""
         api_key = self.get_tmdb_api_key()
+        all_results = []
         
         try:
-            url = f"{self.tmdb_base_url}/trending/all/{time_window}"
-            params = {
-                'api_key': api_key
-            }
-            
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            results = []
-            
-            for item in data.get('results', []):
-                # Skip person results
-                if item.get('media_type') == 'person':
-                    continue
+            # Fetch 3 pages to get ~60 items
+            for page in range(1, 4):
+                url = f"{self.tmdb_base_url}/trending/all/{time_window}"
+                params = {
+                    'api_key': api_key,
+                    'page': page
+                }
                 
-                media_type = item.get('media_type')
-                title = item.get('title') or item.get('name', '')
-                release_date = item.get('release_date') or item.get('first_air_date', '')
-                year = None
-                if release_date:
-                    try:
-                        year = int(release_date.split('-')[0])
-                    except (ValueError, IndexError):
-                        pass
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
                 
-                poster_path = item.get('poster_path')
-                poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+                data = response.json()
                 
-                backdrop_path = item.get('backdrop_path')
-                backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
-                
-                results.append({
-                    'tmdb_id': item.get('id'),
-                    'media_type': media_type,
-                    'title': title,
-                    'year': year,
-                    'overview': item.get('overview', ''),
-                    'poster_path': poster_url,
-                    'backdrop_path': backdrop_url,
-                    'vote_average': item.get('vote_average', 0),
-                    'popularity': item.get('popularity', 0)
-                })
+                for item in data.get('results', []):
+                    # Skip person results
+                    if item.get('media_type') == 'person':
+                        continue
+                    
+                    media_type = item.get('media_type')
+                    title = item.get('title') or item.get('name', '')
+                    release_date = item.get('release_date') or item.get('first_air_date', '')
+                    year = None
+                    if release_date:
+                        try:
+                            year = int(release_date.split('-')[0])
+                        except (ValueError, IndexError):
+                            pass
+                    
+                    poster_path = item.get('poster_path')
+                    poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+                    
+                    backdrop_path = item.get('backdrop_path')
+                    backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
+                    
+                    all_results.append({
+                        'tmdb_id': item.get('id'),
+                        'media_type': media_type,
+                        'title': title,
+                        'year': year,
+                        'overview': item.get('overview', ''),
+                        'poster_path': poster_url,
+                        'backdrop_path': backdrop_url,
+                        'vote_average': item.get('vote_average', 0),
+                        'popularity': item.get('popularity', 0)
+                    })
             
-            return results[:20]
+            return all_results
             
         except Exception as e:
             logger.error(f"Error getting trending: {e}")
             return []
     
     def get_popular_movies(self, page: int = 1) -> List[Dict[str, Any]]:
-        """Get popular movies"""
+        """Get popular movies - fetch 3 pages for more content"""
         api_key = self.get_tmdb_api_key()
+        all_results = []
         
         try:
-            url = f"{self.tmdb_base_url}/movie/popular"
-            params = {
-                'api_key': api_key,
-                'page': page
-            }
-            
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            results = []
-            
-            for item in data.get('results', []):
+            # Fetch 3 pages to get ~60 items
+            for current_page in range(1, 4):
+                url = f"{self.tmdb_base_url}/movie/popular"
+                params = {
+                    'api_key': api_key,
+                    'page': current_page
+                }
+                
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                for item in data.get('results', []):
                 release_date = item.get('release_date', '')
                 year = None
                 if release_date:
@@ -108,42 +113,44 @@ class RequestarrAPI:
                 backdrop_path = item.get('backdrop_path')
                 backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
                 
-                results.append({
-                    'tmdb_id': item.get('id'),
-                    'media_type': 'movie',
-                    'title': item.get('title', ''),
-                    'year': year,
-                    'overview': item.get('overview', ''),
-                    'poster_path': poster_url,
-                    'backdrop_path': backdrop_url,
-                    'vote_average': item.get('vote_average', 0),
-                    'popularity': item.get('popularity', 0)
-                })
+                    all_results.append({
+                        'tmdb_id': item.get('id'),
+                        'media_type': 'movie',
+                        'title': item.get('title', ''),
+                        'year': year,
+                        'overview': item.get('overview', ''),
+                        'poster_path': poster_url,
+                        'backdrop_path': backdrop_url,
+                        'vote_average': item.get('vote_average', 0),
+                        'popularity': item.get('popularity', 0)
+                    })
             
-            return results
+            return all_results
             
         except Exception as e:
             logger.error(f"Error getting popular movies: {e}")
             return []
     
     def get_popular_tv(self, page: int = 1) -> List[Dict[str, Any]]:
-        """Get popular TV shows"""
+        """Get popular TV shows - fetch 3 pages for more content"""
         api_key = self.get_tmdb_api_key()
+        all_results = []
         
         try:
-            url = f"{self.tmdb_base_url}/tv/popular"
-            params = {
-                'api_key': api_key,
-                'page': page
-            }
-            
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            results = []
-            
-            for item in data.get('results', []):
+            # Fetch 3 pages to get ~60 items
+            for current_page in range(1, 4):
+                url = f"{self.tmdb_base_url}/tv/popular"
+                params = {
+                    'api_key': api_key,
+                    'page': current_page
+                }
+                
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                for item in data.get('results', []):
                 first_air_date = item.get('first_air_date', '')
                 year = None
                 if first_air_date:
@@ -158,19 +165,19 @@ class RequestarrAPI:
                 backdrop_path = item.get('backdrop_path')
                 backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
                 
-                results.append({
-                    'tmdb_id': item.get('id'),
-                    'media_type': 'tv',
-                    'title': item.get('name', ''),
-                    'year': year,
-                    'overview': item.get('overview', ''),
-                    'poster_path': poster_url,
-                    'backdrop_path': backdrop_url,
-                    'vote_average': item.get('vote_average', 0),
-                    'popularity': item.get('popularity', 0)
-                })
+                    all_results.append({
+                        'tmdb_id': item.get('id'),
+                        'media_type': 'tv',
+                        'title': item.get('name', ''),
+                        'year': year,
+                        'overview': item.get('overview', ''),
+                        'poster_path': poster_url,
+                        'backdrop_path': backdrop_url,
+                        'vote_average': item.get('vote_average', 0),
+                        'popularity': item.get('popularity', 0)
+                    })
             
-            return results
+            return all_results
             
         except Exception as e:
             logger.error(f"Error getting popular TV: {e}")
