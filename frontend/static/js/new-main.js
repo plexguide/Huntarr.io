@@ -2659,23 +2659,23 @@ let huntarrUI = {
         // Build statistics cards HTML
         let statisticsCards = [];
         
-        // Search activity
+        // Search activity (last 24 hours)
         if (stats.searches_today !== undefined) {
             const todayClass = stats.searches_today > 0 ? 'success' : '';
             statisticsCards.push(`
                 <div class="stat-card">
-                    <div class="stat-label">Searches Today</div>
+                    <div class="stat-label">Searches (24h)</div>
                     <div class="stat-value ${todayClass}">${stats.searches_today}</div>
                 </div>
             `);
         }
         
-        // Grabs Today
+        // Grabs (last 24 hours)
         if (stats.grabs_today !== undefined) {
             const grabsClass = stats.grabs_today > 0 ? 'success' : '';
             statisticsCards.push(`
                 <div class="stat-card">
-                    <div class="stat-label">Grabs Today</div>
+                    <div class="stat-label">Grabs (24h)</div>
                     <div class="stat-value ${grabsClass}">${stats.grabs_today}</div>
                 </div>
             `);

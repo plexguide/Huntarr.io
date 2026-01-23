@@ -321,16 +321,15 @@ def _fetch_detailed_stats():
                 
                 # Get API history/usage statistics using the optimized /since endpoint
                 try:
-                    # Calculate date range for today and yesterday
+                    # Calculate rolling 24-hour window (more useful than calendar day)
                     from datetime import datetime, timedelta
                     now = datetime.utcnow()
-                    today = now.date()
-                    yesterday = today - timedelta(days=1)
+                    last_24h = now - timedelta(hours=24)
+                    last_48h = now - timedelta(hours=48)
                     
                     # Use the /history/since endpoint for efficient date-based filtering
-                    # This gets ALL records since yesterday without pagination limits
-                    yesterday_start = datetime.combine(yesterday, datetime.min.time())
-                    since_date = yesterday_start.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                    # Get last 48 hours to have data for both current and previous 24h windows
+                    since_date = last_48h.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
                     
                     history_since_url = f"{api_url.rstrip('/')}/api/v1/history/since"
                     params = {'date': since_date}
@@ -362,35 +361,37 @@ def _fetch_detailed_stats():
                     
                     if all_records:
                         # Analyze recent activity (overall and per indexer)
+                        # Using rolling 24-hour windows instead of calendar days
                         
-                        searches_today = 0
-                        searches_yesterday = 0
+                        searches_last_24h = 0
+                        searches_prev_24h = 0
                         successful_searches = 0
                         failed_searches = 0
                         
                         # Track per-indexer statistics
-                        indexer_daily_stats = {}
+                        indexer_stats_24h = {}
                         
-                        prowlarr_logger.debug(f"Processing {len(all_records)} history records for date analysis")
+                        prowlarr_logger.debug(f"Processing {len(all_records)} history records for rolling 24h analysis")
                         
                         for record in all_records:
                             try:
-                                # Parse the date from the record
-                                record_date = datetime.fromisoformat(record.get('date', '').replace('Z', '+00:00')).date()
+                                # Parse the datetime from the record
+                                record_datetime = datetime.fromisoformat(record.get('date', '').replace('Z', '+00:00'))
                                 is_successful = record.get('successful', False)
                                 indexer_id = record.get('indexerId')
                                 
                                 # Initialize indexer stats if not exists
-                                if indexer_id and indexer_id not in indexer_daily_stats:
-                                    indexer_daily_stats[indexer_id] = {
-                                        'searches_today': 0,
-                                        'searches_yesterday': 0,
-                                        'successful_today': 0,
-                                        'failed_today': 0
+                                if indexer_id and indexer_id not in indexer_stats_24h:
+                                    indexer_stats_24h[indexer_id] = {
+                                        'searches_last_24h': 0,
+                                        'searches_prev_24h': 0,
+                                        'successful_last_24h': 0,
+                                        'failed_last_24h': 0
                                     }
                                 
-                                if record_date == today:
-                                    searches_today += 1
+                                # Check if record is within last 24 hours
+                                if record_datetime >= last_24h:
+                                    searches_last_24h += 1
                                     if is_successful:
                                         successful_searches += 1
                                     else:
@@ -398,44 +399,42 @@ def _fetch_detailed_stats():
                                     
                                     # Per-indexer tracking
                                     if indexer_id:
-                                        indexer_daily_stats[indexer_id]['searches_today'] += 1
+                                        indexer_stats_24h[indexer_id]['searches_last_24h'] += 1
                                         if is_successful:
-                                            indexer_daily_stats[indexer_id]['successful_today'] += 1
+                                            indexer_stats_24h[indexer_id]['successful_last_24h'] += 1
                                         else:
-                                            indexer_daily_stats[indexer_id]['failed_today'] += 1
+                                            indexer_stats_24h[indexer_id]['failed_last_24h'] += 1
                                             
-                                elif record_date == yesterday:
-                                    searches_yesterday += 1
+                                # Check if record is within previous 24-48h window
+                                elif record_datetime >= last_48h and record_datetime < last_24h:
+                                    searches_prev_24h += 1
                                     if indexer_id:
-                                        indexer_daily_stats[indexer_id]['searches_yesterday'] += 1
+                                        indexer_stats_24h[indexer_id]['searches_prev_24h'] += 1
                                         
                             except (ValueError, AttributeError):
                                 continue
                         
-                        stats['searches_today'] = searches_today
-                        stats['searches_yesterday'] = searches_yesterday
-                        stats['recent_success_rate'] = round((successful_searches / max(searches_today, 1)) * 100, 1)
+                        stats['searches_today'] = searches_last_24h
+                        stats['searches_yesterday'] = searches_prev_24h
+                        stats['recent_success_rate'] = round((successful_searches / max(searches_last_24h, 1)) * 100, 1)
                         stats['recent_failed_searches'] = failed_searches
-                        stats['indexer_daily_stats'] = indexer_daily_stats
+                        stats['indexer_daily_stats'] = indexer_stats_24h
                         
-                        prowlarr_logger.debug(f"Calculated stats - Today: {searches_today}, Yesterday: {searches_yesterday}, Success rate: {stats['recent_success_rate']}%")
+                        prowlarr_logger.debug(f"Calculated stats - Last 24h: {searches_last_24h}, Prev 24h: {searches_prev_24h}, Success rate: {stats['recent_success_rate']}%")
                         
                 except Exception as e:
                     prowlarr_logger.debug(f"History endpoint failed: {str(e)}")
                 
-                # Get indexer performance statistics with date filtering for today's data
+                # Get indexer performance statistics with date filtering for rolling 24h window
                 try:
-                    # Use indexerstats endpoint with date filtering for accurate daily statistics
-                    today_start = datetime.combine(today, datetime.min.time())
-                    today_end = datetime.combine(today + timedelta(days=1), datetime.min.time())
-                    
+                    # Use indexerstats endpoint with date filtering for accurate 24h statistics
                     indexerstats_url = f"{api_url.rstrip('/')}/api/v1/indexerstats"
                     indexerstats_params = {
-                        'startDate': today_start.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                        'endDate': today_end.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                        'startDate': last_24h.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                        'endDate': now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
                     }
                     
-                    prowlarr_logger.debug(f"Fetching indexer stats for today: {today_start} to {today_end}")
+                    prowlarr_logger.debug(f"Fetching indexer stats for last 24h: {last_24h} to {now}")
                     indexerstats_response = requests.get(indexerstats_url, headers=headers, timeout=15, params=indexerstats_params)
                     
                     if indexerstats_response.status_code == 200:
@@ -446,24 +445,24 @@ def _fetch_detailed_stats():
                             # Update individual indexer stats with indexerstats data for consistency
                             for indexer_stat in indexer_stats:
                                 indexer_id = indexer_stat.get('indexerId')
-                                queries_today = indexer_stat.get('numberOfQueries', 0)
+                                queries_last_24h = indexer_stat.get('numberOfQueries', 0)
                                 
-                                if indexer_id and queries_today > 0:
+                                if indexer_id and queries_last_24h > 0:
                                     # Update the indexer_daily_stats with indexerstats data for consistency
                                     if indexer_id not in stats.get('indexer_daily_stats', {}):
                                         stats.setdefault('indexer_daily_stats', {})[indexer_id] = {
-                                            'searches_today': 0,
-                                            'searches_yesterday': 0,
-                                            'successful_today': 0,
-                                            'failed_today': 0
+                                            'searches_last_24h': 0,
+                                            'searches_prev_24h': 0,
+                                            'successful_last_24h': 0,
+                                            'failed_last_24h': 0
                                         }
                                     
-                                    # Use indexerstats data as the authoritative source for today's count
-                                    stats['indexer_daily_stats'][indexer_id]['searches_today'] = queries_today
+                                    # Use indexerstats data as the authoritative source for last 24h count
+                                    stats['indexer_daily_stats'][indexer_id]['searches_last_24h'] = queries_last_24h
                             
                             # Calculate main total from updated indexer stats for consistency
-                            total_searches_today = sum(
-                                indexer_data.get('searches_today', 0) 
+                            total_searches_24h = sum(
+                                indexer_data.get('searches_last_24h', 0) 
                                 for indexer_data in stats.get('indexer_daily_stats', {}).values()
                             )
                             
@@ -475,21 +474,21 @@ def _fetch_detailed_stats():
                             stats['grabs_today'] = total_grabs
                             stats['recent_failed_searches'] = total_failed
                             
-                            if total_searches_today > 0:
-                                stats['searches_today'] = total_searches_today
-                                prowlarr_logger.debug(f"Using consistent indexerstats total: {total_searches_today} searches (sum of all indexers)")
+                            if total_searches_24h > 0:
+                                stats['searches_today'] = total_searches_24h
+                                prowlarr_logger.debug(f"Using consistent indexerstats total: {total_searches_24h} searches in last 24h (sum of all indexers)")
                                 
                                 # Update main success rate
-                                stats['recent_success_rate'] = round((total_grabs / total_searches_today) * 100, 1)
+                                stats['recent_success_rate'] = round((total_grabs / total_searches_24h) * 100, 1)
                                 
                                 prowlarr_logger.debug(f"Main stats updated - Success rate: {stats['recent_success_rate']}%, Grabs: {total_grabs}, Failed: {total_failed}")
                             else:
                                 stats['recent_success_rate'] = 0
-                                prowlarr_logger.debug(f"No searches today - Success rate: 0%, Grabs: {total_grabs}, Failed: {total_failed}")
+                                prowlarr_logger.debug(f"No searches in last 24h - Success rate: 0%, Grabs: {total_grabs}, Failed: {total_failed}")
                                 
                                 # Debug logging to track individual indexer contributions
                                 for idx_id, idx_data in stats.get('indexer_daily_stats', {}).items():
-                                    prowlarr_logger.debug(f"Indexer {idx_id}: {idx_data.get('searches_today', 0)} searches today")
+                                    prowlarr_logger.debug(f"Indexer {idx_id}: {idx_data.get('searches_last_24h', 0)} searches in last 24h")
                             
                             # Calculate average response time
                             total_response_time = 0
@@ -504,21 +503,21 @@ def _fetch_detailed_stats():
                                 indexer_id = indexer_stat.get('indexerId')
                                 indexer_name = indexer_stat.get('indexerName', 'Unknown')
                                 
-                                # Get daily stats for this indexer (now updated with consistent indexerstats data)
+                                # Get 24h stats for this indexer (now updated with consistent indexerstats data)
                                 daily_stats = stats.get('indexer_daily_stats', {}).get(indexer_id, {
-                                    'searches_today': 0,
-                                    'searches_yesterday': 0,
-                                    'successful_today': 0,
-                                    'failed_today': 0
+                                    'searches_last_24h': 0,
+                                    'searches_prev_24h': 0,
+                                    'successful_last_24h': 0,
+                                    'failed_last_24h': 0
                                 })
                                 
-                                # Use indexerstats numberOfQueries as the authoritative source for today's searches
-                                indexer_searches_today = queries  # This comes from indexerstats API
+                                # Use indexerstats numberOfQueries as the authoritative source for last 24h searches
+                                indexer_searches_24h = queries  # This comes from indexerstats API
                                 
-                                # Calculate success rate for today using indexerstats data (consistent with main calculation)
-                                today_success_rate = 0
-                                if indexer_searches_today > 0:
-                                    today_success_rate = round((grabs / indexer_searches_today) * 100, 1)
+                                # Calculate success rate for last 24h using indexerstats data (consistent with main calculation)
+                                success_rate_24h = 0
+                                if indexer_searches_24h > 0:
+                                    success_rate_24h = round((grabs / indexer_searches_24h) * 100, 1)
                                 
                                 indexer_data = {
                                     'id': indexer_id,
@@ -526,12 +525,12 @@ def _fetch_detailed_stats():
                                     'response_time': response_time,
                                     'queries': queries,
                                     'grabs': grabs,
-                                    'success_rate': today_success_rate,  # Use consistent calculation method
-                                    'searches_today': indexer_searches_today,  # Use consistent indexerstats data
-                                    'searches_yesterday': daily_stats['searches_yesterday'],  # Keep history data for yesterday
+                                    'success_rate': success_rate_24h,  # Use consistent calculation method
+                                    'searches_today': indexer_searches_24h,  # Use consistent indexerstats data (keep 'today' key for compatibility)
+                                    'searches_yesterday': daily_stats['searches_prev_24h'],  # Keep history data for prev 24h
                                     'successful_today': grabs,  # Use grabs from indexerstats as successful searches
-                                    'failed_today': daily_stats['failed_today'],
-                                    'today_success_rate': today_success_rate
+                                    'failed_today': daily_stats['failed_last_24h'],
+                                    'today_success_rate': success_rate_24h
                                 }
                                 
                                 if queries > 0:
