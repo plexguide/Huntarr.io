@@ -7713,7 +7713,8 @@ const SettingsForms = {
           window.readarrUnsavedChanges ||
           window.whisparrUnsavedChanges ||
           window.erosUnsavedChanges ||
-          window.prowlarrUnsavedChanges
+          window.prowlarrUnsavedChanges ||
+          window.logsUnsavedChanges
         ) {
           e.preventDefault();
           e.returnValue = ""; // Standard way to trigger browser warning
@@ -7741,7 +7742,8 @@ const SettingsForms = {
       !window.readarrUnsavedChanges &&
       !window.whisparrUnsavedChanges &&
       !window.erosUnsavedChanges &&
-      !window.prowlarrUnsavedChanges
+      !window.prowlarrUnsavedChanges &&
+      !window.logsUnsavedChanges
     ) {
       // Remove beforeunload event listener
       if (window.huntarrBeforeUnloadListener) {
@@ -7823,6 +7825,30 @@ const SettingsForms = {
           "[SettingsForms] User chose to leave and lose Notifications changes"
         );
         window.notificationsUnsavedChanges = false;
+        this.removeUnsavedChangesWarning();
+        return true;
+      }
+    }
+
+    if (window.logsUnsavedChanges) {
+      const userChoice = confirm(
+        "You have unsaved changes in Log Management settings.\n\n" +
+          'Click "OK" to stay and save your changes.\n' +
+          'Click "Cancel" to continue and lose your changes.'
+      );
+
+      if (userChoice) {
+        // User chose to stay and save
+        console.log(
+          "[SettingsForms] User chose to stay and save Logs changes"
+        );
+        return false;
+      } else {
+        // User chose to leave and lose changes
+        console.log(
+          "[SettingsForms] User chose to leave and lose Logs changes"
+        );
+        window.logsUnsavedChanges = false;
         this.removeUnsavedChangesWarning();
         return true;
       }

@@ -6,11 +6,18 @@
 (function() {
     'use strict';
     
+    // Initialize unsaved changes flag
+    window.logsUnsavedChanges = false;
+    
+    // Store original settings for change detection
+    let originalSettings = {};
+    
     // Wait for DOM to be ready
     document.addEventListener('DOMContentLoaded', function() {
         console.log('[LogsSettings] Page loaded');
         setupEventHandlers();
         loadLogSettings();
+        setupChangeDetection();
     });
     
     // Setup all event handlers
@@ -85,6 +92,17 @@
                     totalSizeElement.textContent = `${totalLogSize.toFixed(2)} MB across ${fileCount} files`;
                 }
                 
+                // Store original settings for change detection
+                originalSettings = {
+                    rotation_enabled: settings.rotation_enabled !== false,
+                    max_log_size_mb: settings.max_log_size_mb || 50,
+                    backup_count: settings.backup_count || 5,
+                    retention_days: settings.retention_days || 30,
+                    compress_rotated: settings.compress_rotated !== false,
+                    log_level: settings.log_level || 'INFO',
+                    auto_cleanup_enabled: settings.auto_cleanup_enabled !== false
+                };
+                
                 console.log('[LogsSettings] Settings loaded successfully');
             } else {
                 console.error('[LogsSettings] Failed to load settings:', data.error);
@@ -136,6 +154,12 @@
             if (data.success) {
                 showStatus(statusElement, data.message || 'Settings saved successfully. Restart Huntarr for changes to take effect.', 'success');
                 console.log('[LogsSettings] Settings saved successfully');
+                
+                // Clear unsaved changes flag
+                window.logsUnsavedChanges = false;
+                if (window.SettingsForms && typeof window.SettingsForms.removeUnsavedChangesWarning === 'function') {
+                    window.SettingsForms.removeUnsavedChangesWarning();
+                }
                 
                 // Reload stats after saving
                 setTimeout(() => loadLogSettings(), 1500);
@@ -216,5 +240,62 @@
         setTimeout(() => {
             element.style.display = 'none';
         }, hideDelay);
+    }
+    
+    // Setup change detection for all form fields
+    function setupChangeDetection() {
+        console.log('[LogsSettings] Setting up change detection');
+        
+        const formFields = [
+            'rotationEnabled',
+            'maxLogSize',
+            'backupCount',
+            'retentionDays',
+            'compressRotated',
+            'logLevel',
+            'autoCleanup'
+        ];
+        
+        formFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('change', checkForChanges);
+                field.addEventListener('input', checkForChanges);
+            }
+        });
+    }
+    
+    // Check if current form values differ from original settings
+    function checkForChanges() {
+        if (!originalSettings || Object.keys(originalSettings).length === 0) {
+            return; // No original settings loaded yet
+        }
+        
+        const currentSettings = {
+            rotation_enabled: document.getElementById('rotationEnabled')?.checked || false,
+            max_log_size_mb: parseInt(document.getElementById('maxLogSize')?.value) || 50,
+            backup_count: parseInt(document.getElementById('backupCount')?.value) || 5,
+            retention_days: parseInt(document.getElementById('retentionDays')?.value) || 30,
+            compress_rotated: document.getElementById('compressRotated')?.checked || false,
+            log_level: document.getElementById('logLevel')?.value || 'INFO',
+            auto_cleanup_enabled: document.getElementById('autoCleanup')?.checked || false
+        };
+        
+        // Compare current settings with original
+        const hasChanges = JSON.stringify(currentSettings) !== JSON.stringify(originalSettings);
+        
+        if (hasChanges && !window.logsUnsavedChanges) {
+            console.log('[LogsSettings] Changes detected - adding unsaved changes warning');
+            window.logsUnsavedChanges = true;
+            if (window.SettingsForms && typeof window.SettingsForms.addUnsavedChangesWarning === 'function') {
+                window.SettingsForms.addUnsavedChangesWarning();
+            }
+        } else if (!hasChanges && window.logsUnsavedChanges) {
+            console.log('[LogsSettings] Changes reverted - removing unsaved changes warning');
+            window.logsUnsavedChanges = false;
+            if (window.SettingsForms && typeof window.SettingsForms.removeUnsavedChangesWarning === 'function') {
+                window.SettingsForms.removeUnsavedChangesWarning();
+            }
+        }
     }
 })();
