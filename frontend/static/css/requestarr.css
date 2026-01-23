@@ -70,33 +70,38 @@
 .trending-header {
     grid-column: 1 / -1;
     text-align: center;
-    margin: 20px 0 30px 0;
-    padding: 20px;
+    margin: 10px 0 20px 0;
+    padding: 10px 20px;
     background: linear-gradient(145deg, rgba(52, 152, 219, 0.15), rgba(41, 128, 185, 0.1));
     border: 1px solid rgba(52, 152, 219, 0.2);
-    border-radius: 12px;
+    border-radius: 8px;
     backdrop-filter: blur(10px);
+    /* Prevent grid item stretching (was causing huge blank panel) */
+    align-self: start;
 }
 
 .trending-title {
     color: #fff;
-    font-size: 28px;
+    font-size: 18px;
     font-weight: 700;
-    margin: 0 0 8px 0;
+    margin: 0;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    line-height: 1.3;
 }
 
 .trending-subtitle {
     color: #b0b0b0;
-    font-size: 15px;
-    margin: 0;
+    font-size: 12px;
+    margin: 3px 0 0 0;
     font-weight: 400;
+    line-height: 1.3;
 }
 
 #requestarr-results {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    grid-auto-rows: 1fr;
+    grid-auto-rows: auto;
+    align-items: start;
     gap: 16px;
     margin-top: 20px;
 }
@@ -150,6 +155,25 @@
     padding: 5px 10px;
     border-radius: 15px;
     font-size: 14px;
+}
+
+.ranking-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.95), rgba(218, 165, 32, 0.95));
+    color: #000;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    z-index: 10;
 }
 
 .result-info {

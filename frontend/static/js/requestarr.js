@@ -250,6 +250,7 @@ class RequestarrModule {
             const decoder = new TextDecoder();
             let buffer = '';
             let hasResults = false;
+            let rankingCounter = 1; // Track ranking for trending results
             
             // Clear loading message once we start getting results
             const clearLoadingOnce = () => {
@@ -287,8 +288,9 @@ class RequestarrModule {
                                 // This is an availability update for an existing result
                                 this.updateResultAvailability(data);
                             } else {
-                                // This is a new result
-                                this.addResult(data);
+                                // This is a new result - add with ranking
+                                this.addResult(data, rankingCounter);
+                                rankingCounter++; // Increment ranking for next item
                             }
                             
                         } catch (parseError) {
@@ -335,12 +337,12 @@ class RequestarrModule {
         this.setupRequestButtons();
     }
 
-    addResult(item) {
+    addResult(item, ranking = null) {
         const resultsContainer = document.getElementById('requestarr-results');
         if (!resultsContainer) return;
 
         // Create and append the new result card
-        const cardHTML = this.createResultCard(item);
+        const cardHTML = this.createResultCard(item, ranking);
         const cardElement = document.createElement('div');
         cardElement.innerHTML = cardHTML;
         const actualCard = cardElement.firstElementChild;
@@ -395,7 +397,7 @@ class RequestarrModule {
         }
     }
 
-    createResultCard(item) {
+    createResultCard(item, ranking = null) {
         const year = item.year ? `(${item.year})` : '';
         // Use a simple data URL placeholder instead of missing file
         const noPosterPlaceholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgdmlld0JveD0iMCAwIDMwMCA0NTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjE1MCIgeT0iMjI1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIFBvc3RlcjwvdGV4dD4KPC9zdmc+';
@@ -422,10 +424,14 @@ class RequestarrModule {
         const displayOverview = shouldTruncate ? overview.substring(0, truncateLength) + '...' : overview;
         const seeMoreLink = shouldTruncate ? ` <a href="#" class="see-more-link" data-card-id="${cardId}">See More</a>` : '';
         
+        // Add ranking badge if provided
+        const rankingBadge = ranking ? `<div class="ranking-badge">${ranking}</div>` : '';
+        
         return `
             <div class="result-card" data-card-id="${cardId}" data-tmdb-id="${item.tmdb_id}" data-media-type="${item.media_type}">
                 <div class="result-poster">
                     <img src="${poster}" alt="${item.title}" onerror="this.src='${noPosterPlaceholder}'">
+                    ${rankingBadge}
                     <div class="media-type-badge">${mediaTypeIcon}</div>
                 </div>
                 <div class="result-info">
