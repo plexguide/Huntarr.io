@@ -1,25 +1,24 @@
 /* Requestarr Discover - Horizontal Scrolling Style */
 
-.requestarr-content {
+#requestarr-section .requestarr-content {
     padding: 20px 30px;
-    max-width: 100%;
-    margin: 0 auto;
-    overflow: visible; /* Allow content to extend beyond when needed */
+    width: 100%;
+    max-width: none !important;
+    margin: 0;
+    overflow: visible;
+    box-sizing: border-box;
 }
 
-/* Global Search Bar - Full Width across entire page */
+/* Global Search Bar - Full Width */
 .global-search-bar {
     position: relative;
-    width: calc(100% + 60px); /* Extend beyond parent padding */
-    margin-left: -30px;
-    margin-right: -30px;
-    padding: 0 30px;
+    width: 100%;
     margin-bottom: 30px;
 }
 
 .global-search-bar i {
     position: absolute;
-    left: 50px; /* Account for extended padding */
+    left: 20px;
     top: 50%;
     transform: translateY(-50%);
     color: #888;
@@ -35,6 +34,7 @@
     color: #fff;
     font-size: 16px;
     transition: all 0.2s;
+    box-sizing: border-box;
 }
 
 .global-search-bar input:focus {
@@ -47,12 +47,13 @@
     color: #888;
 }
 
-/* Search Results - Full Width across entire page */
+/* Search Results - Full Width Grid Layout */
 #search-results-view {
-    width: calc(100% + 60px); /* Extend beyond parent padding */
-    margin-left: -30px;
-    margin-right: -30px;
-    padding: 0 30px;
+    width: 100%;
+    max-width: none !important;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 .search-results-title {
@@ -66,11 +67,14 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 20px;
-    padding: 10px 0;
+    padding: 0;
     width: 100%;
+    max-width: none !important;
+    box-sizing: border-box;
+    justify-items: start;
 }
 
-/* Ensure search results media cards match carousel cards */
+/* Search results media cards - Let grid control width */
 .search-results-grid .media-card {
     width: 150px;
 }
