@@ -609,7 +609,7 @@ let huntarrUI = {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
             if (document.getElementById('requestarrNav')) document.getElementById('requestarrNav').classList.add('active');
-            newTitle = 'Requestarr - Discover';
+            newTitle = 'Discover';
             this.currentSection = 'requestarr';
             
             // Switch to Requestarr sidebar
@@ -623,7 +623,7 @@ let huntarrUI = {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
             if (document.getElementById('requestarrDiscoverNav')) document.getElementById('requestarrDiscoverNav').classList.add('active');
-            newTitle = 'Requestarr - Discover';
+            newTitle = 'Discover';
             this.currentSection = 'requestarr-discover';
             
             // Switch to Requestarr sidebar
@@ -637,7 +637,7 @@ let huntarrUI = {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
             if (document.getElementById('requestarrMoviesNav')) document.getElementById('requestarrMoviesNav').classList.add('active');
-            newTitle = 'Requestarr - Movies';
+            newTitle = 'Movies';
             this.currentSection = 'requestarr-movies';
             
             // Switch to Requestarr sidebar
@@ -651,7 +651,7 @@ let huntarrUI = {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
             if (document.getElementById('requestarrTVNav')) document.getElementById('requestarrTVNav').classList.add('active');
-            newTitle = 'Requestarr - TV Shows';
+            newTitle = 'TV Shows';
             this.currentSection = 'requestarr-tv';
             
             // Switch to Requestarr sidebar
@@ -665,7 +665,7 @@ let huntarrUI = {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
             if (document.getElementById('requestarrHistoryNav')) document.getElementById('requestarrHistoryNav').classList.add('active');
-            newTitle = 'Requestarr - History';
+            newTitle = 'History';
             this.currentSection = 'requestarr-history';
             
             // Switch to Requestarr sidebar
