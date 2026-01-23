@@ -340,15 +340,30 @@ class RequestarrAPI:
                     available_episodes = statistics.get('episodeFileCount', 0)
                     missing_episodes = total_episodes - available_episodes
                     
-                    # Check if previously requested in Requestarr database
-                    # This takes precedence over Sonarr status
-                    previously_requested = already_requested_in_db
+                    # Determine "previously_requested" status intelligently:
+                    # - Only mark as "previously requested" if series was requested but has NO episodes yet
+                    # - If there are missing episodes, DON'T mark as previously requested (could be new episodes)
+                    # - This allows users to request new episodes that air after their initial request
                     
-                    # If not in Requestarr DB but in Sonarr with no episodes, it was likely requested elsewhere
-                    if not previously_requested and total_episodes > 0 and available_episodes == 0:
+                    previously_requested = False
+                    
+                    if already_requested_in_db:
+                        # Series was requested through Requestarr
+                        if total_episodes > 0 and available_episodes == 0:
+                            # No episodes downloaded yet - still waiting on initial request
+                            previously_requested = True
+                        elif missing_episodes > 0:
+                            # Has missing episodes - could be new episodes that aired
+                            # Don't mark as previously requested so user can request them
+                            previously_requested = False
+                        else:
+                            # All episodes downloaded or no episodes to download
+                            previously_requested = False
+                    elif total_episodes > 0 and available_episodes == 0:
+                        # Not in Requestarr DB but in Sonarr with no episodes = requested elsewhere
                         previously_requested = True
                     
-                    logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes, previously_requested: {previously_requested}")
+                    logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes, missing: {missing_episodes}, previously_requested: {previously_requested}")
                     
                     return {
                         'exists': True,
@@ -989,15 +1004,7 @@ class RequestarrAPI:
                      app_type: str, instance_name: str, quality_profile_id: int = None) -> Dict[str, Any]:
         """Request media through the specified app instance"""
         try:
-            # Check if already requested
-            if self.db.is_already_requested(tmdb_id, media_type, app_type, instance_name):
-                return {
-                    'success': False,
-                    'message': f'{title} is already requested for {app_type.title()} - {instance_name}',
-                    'status': 'already_requested'
-                }
-            
-            # Get instance configuration
+            # Get instance configuration first
             app_config = self.db.get_app_config(app_type)
             if not app_config or not app_config.get('instances'):
                 return {
@@ -1022,6 +1029,36 @@ class RequestarrAPI:
             
             # Check if media exists and get detailed info
             exists_result = self._check_media_exists(tmdb_id, media_type, target_instance, app_type)
+            
+            # Smart "already requested" check:
+            # - For TV shows with missing episodes: ALLOW re-requesting (for new episodes)
+            # - For movies or TV shows not in Sonarr yet: CHECK if already requested
+            already_requested = self.db.is_already_requested(tmdb_id, media_type, app_type, instance_name)
+            
+            if already_requested:
+                # If it's a TV show that exists in Sonarr with missing episodes, allow the request
+                # This handles the case where new episodes aired after the initial request
+                if app_type == 'sonarr' and exists_result.get('exists') and 'series_id' in exists_result:
+                    episode_file_count = exists_result.get('episode_file_count', 0)
+                    episode_count = exists_result.get('episode_count', 0)
+                    if episode_file_count < episode_count and episode_count > 0:
+                        # Has missing episodes - allow re-request
+                        logger.info(f"Allowing re-request for {title} - has {episode_count - episode_file_count} missing episodes")
+                        pass  # Continue with request
+                    else:
+                        # No missing episodes - reject
+                        return {
+                            'success': False,
+                            'message': f'{title} is already requested for {app_type.title()} - {instance_name}',
+                            'status': 'already_requested'
+                        }
+                else:
+                    # Not a TV show with missing episodes - reject
+                    return {
+                        'success': False,
+                        'message': f'{title} is already requested for {app_type.title()} - {instance_name}',
+                        'status': 'already_requested'
+                    }
             
             if exists_result.get('exists'):
                 if app_type == 'sonarr' and 'series_id' in exists_result:
