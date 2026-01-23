@@ -288,6 +288,13 @@ class RequestarrDiscover {
                 ...(tvData.results || [])
             ];
             
+            // Sort by popularity (highest first)
+            allResults.sort((a, b) => {
+                const popularityA = a.popularity || 0;
+                const popularityB = b.popularity || 0;
+                return popularityB - popularityA; // Descending order
+            });
+            
             if (allResults.length > 0) {
                 resultsGrid.innerHTML = '';
                 allResults.forEach(item => {
