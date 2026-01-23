@@ -73,6 +73,9 @@ class RequestarrAPI:
                         'popularity': item.get('popularity', 0)
                     })
             
+            # Check library status for all items
+            all_results = self.check_library_status_batch(all_results)
+            
             return all_results
             
         except Exception as e:
@@ -125,6 +128,9 @@ class RequestarrAPI:
                         'popularity': item.get('popularity', 0)
                     })
             
+            # Check library status for all items
+            all_results = self.check_library_status_batch(all_results)
+            
             return all_results
             
         except Exception as e:
@@ -176,6 +182,9 @@ class RequestarrAPI:
                         'vote_average': item.get('vote_average', 0),
                         'popularity': item.get('popularity', 0)
                     })
+            
+            # Check library status for all items
+            all_results = self.check_library_status_batch(all_results)
             
             return all_results
             
@@ -241,15 +250,6 @@ class RequestarrAPI:
                     director = person.get('name')
                     break
             
-            # Get runtime - handle both movie and TV
-            runtime = None
-            if media_type == 'movie':
-                runtime = data.get('runtime')
-            else:
-                episode_run_time = data.get('episode_run_time', [])
-                if episode_run_time and len(episode_run_time) > 0:
-                    runtime = episode_run_time[0]
-            
             result = {
                 'tmdb_id': tmdb_id,
                 'media_type': media_type,
@@ -262,7 +262,7 @@ class RequestarrAPI:
                 'vote_count': data.get('vote_count', 0),
                 'popularity': data.get('popularity', 0),
                 'genres': [g.get('name') for g in data.get('genres', [])],
-                'runtime': runtime,
+                'runtime': data.get('runtime') or (data.get('episode_run_time', [None])[0] if data.get('episode_run_time') else None),
                 'status': data.get('status'),
                 'trailer': trailer,
                 'cast': cast,
@@ -274,17 +274,6 @@ class RequestarrAPI:
                 result['number_of_seasons'] = data.get('number_of_seasons')
                 result['number_of_episodes'] = data.get('number_of_episodes')
                 result['networks'] = [n.get('name') for n in data.get('networks', [])]
-                
-                # Add seasons information
-                seasons = []
-                for season in data.get('seasons', []):
-                    seasons.append({
-                        'season_number': season.get('season_number'),
-                        'episode_count': season.get('episode_count'),
-                        'name': season.get('name'),
-                        'air_date': season.get('air_date')
-                    })
-                result['seasons'] = seasons
             
             return result
             
@@ -310,11 +299,13 @@ class RequestarrAPI:
                 return {'exists': False}
             
             # Get series from Sonarr
-            sonarr_url = target_instance.get('url', '').rstrip('/')
+            sonarr_url = target_instance.get('api_url', '') or target_instance.get('url', '')
             sonarr_api_key = target_instance.get('api_key', '')
             
             if not sonarr_url or not sonarr_api_key:
                 return {'exists': False}
+            
+            sonarr_url = sonarr_url.rstrip('/')
             
             # Search for series by TMDB ID
             headers = {'X-Api-Key': sonarr_api_key}
@@ -325,19 +316,28 @@ class RequestarrAPI:
             )
             
             if response.status_code != 200:
+                logger.error(f"Failed to get series from Sonarr: {response.status_code}")
                 return {'exists': False}
             
             series_list = response.json()
             
+            logger.info(f"Searching for TMDB ID {tmdb_id} in {len(series_list)} series")
+            
             # Find series with matching TMDB ID
             for series in series_list:
-                if series.get('tvdbId') == tmdb_id or series.get('tmdbId') == tmdb_id:
+                series_tmdb = series.get('tmdbId')
+                logger.debug(f"Checking series: {series.get('title')} - TMDB ID: {series_tmdb}")
+                
+                # Only check tmdbId field (tvdbId is TVDB, not TMDB)
+                if series_tmdb == tmdb_id:
                     # Series exists in Sonarr
                     statistics = series.get('statistics', {})
                     
                     total_episodes = statistics.get('episodeCount', 0)
                     available_episodes = statistics.get('episodeFileCount', 0)
                     missing_episodes = total_episodes - available_episodes
+                    
+                    logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes")
                     
                     return {
                         'exists': True,
@@ -348,6 +348,7 @@ class RequestarrAPI:
                         'seasons': series.get('seasons', [])
                     }
             
+            logger.info(f"Series with TMDB ID {tmdb_id} not found in Sonarr")
             return {'exists': False}
             
         except Exception as e:
@@ -361,6 +362,144 @@ class RequestarrAPI:
             seasons = status.get('seasons', [])
             return [s.get('seasonNumber') for s in seasons if s.get('seasonNumber') is not None]
         return []
+    
+    def get_movie_status_from_radarr(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
+        """Get movie status from Radarr - in library, previously requested, etc."""
+        try:
+            # Get Radarr instance config
+            app_config = self.db.get_app_config('radarr')
+            if not app_config or not app_config.get('instances'):
+                return {'in_library': False, 'previously_requested': False}
+            
+            target_instance = None
+            for instance in app_config['instances']:
+                if instance.get('name') == instance_name:
+                    target_instance = instance
+                    break
+            
+            if not target_instance:
+                return {'in_library': False, 'previously_requested': False}
+            
+            # Get movie from Radarr
+            radarr_url = target_instance.get('api_url', '') or target_instance.get('url', '')
+            radarr_api_key = target_instance.get('api_key', '')
+            
+            if not radarr_url or not radarr_api_key:
+                return {'in_library': False, 'previously_requested': False}
+            
+            radarr_url = radarr_url.rstrip('/')
+            
+            # Search for movie by TMDB ID
+            headers = {'X-Api-Key': radarr_api_key}
+            response = requests.get(
+                f"{radarr_url}/api/v3/movie",
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to get movies from Radarr: {response.status_code}")
+                return {'in_library': False, 'previously_requested': False}
+            
+            movies_list = response.json()
+            
+            logger.info(f"Searching for TMDB ID {tmdb_id} in {len(movies_list)} movies")
+            
+            for movie in movies_list:
+                movie_tmdb = movie.get('tmdbId')
+                if movie_tmdb == tmdb_id:
+                    has_file = movie.get('hasFile', False)
+                    logger.info(f"Found movie in Radarr: {movie.get('title')} - Has file: {has_file}")
+                    return {
+                        'in_library': has_file,
+                        'previously_requested': not has_file,  # In Radarr but no file = previously requested
+                        'monitored': movie.get('monitored', False)
+                    }
+            
+            logger.info(f"Movie with TMDB ID {tmdb_id} not found in Radarr")
+            return {'in_library': False, 'previously_requested': False}
+            
+        except Exception as e:
+            logger.error(f"Error getting movie status from Radarr: {e}")
+            return {'in_library': False, 'previously_requested': False}
+    
+    def check_library_status_batch(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Check library status for a batch of media items.
+        Adds 'in_library' flag to each item based on configured instances.
+        """
+        try:
+            # Get enabled instances
+            instances = self.get_enabled_instances()
+            
+            if not instances['radarr'] and not instances['sonarr']:
+                # No instances configured, mark all as not in library
+                for item in items:
+                    item['in_library'] = False
+                return items
+            
+            # Get all movies from all Radarr instances
+            radarr_tmdb_ids = set()
+            for instance in instances['radarr']:
+                try:
+                    headers = {'X-Api-Key': instance['api_key']}
+                    response = requests.get(
+                        f"{instance['url'].rstrip('/')}/api/v3/movie",
+                        headers=headers,
+                        timeout=10
+                    )
+                    if response.status_code == 200:
+                        movies = response.json()
+                        for movie in movies:
+                            if movie.get('hasFile', False):  # Only count movies with files
+                                radarr_tmdb_ids.add(movie.get('tmdbId'))
+                except Exception as e:
+                    logger.error(f"Error checking Radarr instance {instance['name']}: {e}")
+            
+            # Get all series from all Sonarr instances
+            sonarr_tmdb_ids = set()
+            for instance in instances['sonarr']:
+                try:
+                    headers = {'X-Api-Key': instance['api_key']}
+                    response = requests.get(
+                        f"{instance['url'].rstrip('/')}/api/v3/series",
+                        headers=headers,
+                        timeout=10
+                    )
+                    if response.status_code == 200:
+                        series_list = response.json()
+                        for series in series_list:
+                            # Check if series has all episodes
+                            statistics = series.get('statistics', {})
+                            total_episodes = statistics.get('episodeCount', 0)
+                            available_episodes = statistics.get('episodeFileCount', 0)
+                            
+                            # Only mark as in_library if all episodes are available
+                            if total_episodes > 0 and available_episodes == total_episodes:
+                                sonarr_tmdb_ids.add(series.get('tmdbId'))
+                except Exception as e:
+                    logger.error(f"Error checking Sonarr instance {instance['name']}: {e}")
+            
+            # Mark each item with in_library status
+            for item in items:
+                tmdb_id = item.get('tmdb_id')
+                media_type = item.get('media_type')
+                
+                if media_type == 'movie':
+                    item['in_library'] = tmdb_id in radarr_tmdb_ids
+                elif media_type == 'tv':
+                    item['in_library'] = tmdb_id in sonarr_tmdb_ids
+                else:
+                    item['in_library'] = False
+            
+            return items
+            
+        except Exception as e:
+            logger.error(f"Error checking library status batch: {e}")
+            # On error, mark all as not in library
+            for item in items:
+                item['in_library'] = False
+            return items
     
     def get_quality_profiles(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
         """Get quality profiles from Radarr or Sonarr instance"""
@@ -538,7 +677,12 @@ class RequestarrAPI:
             
             # Sort by popularity
             results.sort(key=lambda x: x['popularity'], reverse=True)
-            return results[:20]  # Limit to top 20 results
+            top_results = results[:20]  # Limit to top 20 results
+            
+            # Check library status for all results
+            top_results = self.check_library_status_batch(top_results)
+            
+            return top_results
             
         except Exception as e:
             logger.error(f"Error searching TMDB: {e}")

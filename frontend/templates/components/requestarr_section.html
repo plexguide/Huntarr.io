@@ -174,67 +174,68 @@
         </div>
     </div>
 
-    <script src="./static/js/requestarr-discover.js"></script>
-</div>
-
-<!-- Modal for Media Details - OUTSIDE section for full viewport coverage -->
-<div id="media-modal" class="media-modal" style="display: none;" onclick="event.target === this && RequestarrDiscover.closeModal()">
-    <div class="modal-content">
-        <button class="modal-close" onclick="RequestarrDiscover.closeModal()">
-            <i class="fas fa-times"></i>
-        </button>
-        
-        <div class="modal-body">
-            <!-- Backdrop -->
-            <div class="modal-backdrop-image"></div>
+    <!-- Modal for Media Details -->
+    <div id="media-modal" class="media-modal" style="display: none;">
+        <div class="modal-backdrop" onclick="RequestarrDiscover.closeModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="RequestarrDiscover.closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
             
-            <!-- Content -->
-            <div class="modal-info">
-                <div class="modal-poster">
-                    <img src="" alt="Poster">
-                </div>
+            <div class="modal-body">
+                <!-- Backdrop -->
+                <div class="modal-backdrop-image"></div>
                 
-                <div class="modal-details">
-                    <h1 class="modal-title"></h1>
-                    <div class="modal-meta">
-                        <span class="year"></span>
-                        <span class="rating"></span>
-                        <span class="runtime"></span>
+                <!-- Content -->
+                <div class="modal-info">
+                    <div class="modal-poster">
+                        <img src="" alt="Poster">
                     </div>
-                    <div class="modal-genres"></div>
-                    <p class="modal-overview"></p>
                     
-                    <!-- Request Options -->
-                    <div class="modal-request-section">
-                        <h3>Request This Title</h3>
+                    <div class="modal-details">
+                        <h1 class="modal-title"></h1>
+                        <div class="modal-meta">
+                            <span class="year"></span>
+                            <span class="rating"></span>
+                            <span class="runtime"></span>
+                        </div>
+                        <div class="modal-genres"></div>
+                        <p class="modal-overview"></p>
                         
-                        <!-- Instance Selection -->
-                        <div class="form-group">
-                            <label>Select Instance</label>
-                            <select id="modal-instance-select" class="modal-select">
-                                <option value="">Select an instance...</option>
-                            </select>
+                        <!-- Request Options -->
+                        <div class="modal-request-section">
+                            <h3>Request This Title</h3>
+                            
+                            <!-- Instance Selection -->
+                            <div class="form-group">
+                                <label>Select Instance</label>
+                                <select id="modal-instance-select" class="modal-select">
+                                    <option value="">Select an instance...</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Request Button -->
+                            <button id="modal-request-btn" class="modal-request-btn" disabled>
+                                <i class="fas fa-plus"></i>
+                                Request
+                            </button>
+                            
+                            <!-- Status Message -->
+                            <div id="modal-status" class="modal-status"></div>
                         </div>
                         
-                        <!-- Request Button -->
-                        <button id="modal-request-btn" class="modal-request-btn" disabled>
-                            <i class="fas fa-plus"></i>
-                            Request
-                        </button>
-                        
-                        <!-- Status Message -->
-                        <div id="modal-status" class="modal-status"></div>
-                    </div>
-                    
-                    <!-- Additional Info -->
-                    <div class="modal-extra-info">
-                        <div class="cast-section">
-                            <h4>Cast</h4>
-                            <div class="cast-list"></div>
+                        <!-- Additional Info -->
+                        <div class="modal-extra-info">
+                            <div class="cast-section">
+                                <h4>Cast</h4>
+                                <div class="cast-list"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script src="./static/js/requestarr-discover.js"></script>
 </div>

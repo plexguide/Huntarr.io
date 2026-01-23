@@ -12,9 +12,9 @@ class RequestarrDiscover {
         this.init();
     }
 
-    async init() {
+    init() {
         console.log('[RequestarrDiscover] Initializing...');
-        await this.loadInstances();
+        this.loadInstances();
         this.setupCarouselArrows();
         this.setupSearchHandlers();
         this.setupGlobalSearch();
@@ -119,26 +119,27 @@ class RequestarrDiscover {
             globalSearch.value = '';
         }
         
-        // Hide search results view
-        document.getElementById('search-results-view').style.display = 'none';
-        
-        // Hide global search bar for settings and history views
+        // Hide/show global search bar based on view
         const globalSearchBar = document.querySelector('.global-search-bar');
         if (globalSearchBar) {
-            if (view === 'settings' || view === 'history') {
+            // Hide search bar on history and settings views
+            if (view === 'history' || view === 'settings') {
                 globalSearchBar.style.display = 'none';
             } else {
                 globalSearchBar.style.display = 'flex';
             }
         }
         
-        // Update views - explicitly remove active from all, then add to target only
+        // Hide search results view
+        document.getElementById('search-results-view').style.display = 'none';
+        
+        // First, explicitly hide ALL views with both class removal and inline style
         document.querySelectorAll('.requestarr-view').forEach(container => {
             container.classList.remove('active');
             container.style.display = 'none';
         });
         
-        // Show only the target view
+        // Then show only the target view
         const targetView = document.getElementById(`requestarr-${view}-view`);
         if (targetView) {
             targetView.classList.add('active');
@@ -495,17 +496,24 @@ class RequestarrDiscover {
         const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
         const overview = item.overview || 'No description available.';
         
+        // Check if this item has status info (will be added by backend later)
+        const inLibrary = item.in_library || false;
+        const statusBadgeHTML = inLibrary ? '<div class="media-card-status-badge"><i class="fas fa-check"></i></div>' : '';
+        
+        if (inLibrary) {
+            card.classList.add('in-library');
+        }
+        
         card.innerHTML = `
             <div class="media-card-poster">
+                ${statusBadgeHTML}
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/no-poster.png'">
                 <div class="media-card-overlay">
                     <div class="media-card-overlay-title">${item.title}</div>
                     <div class="media-card-overlay-content">
                         <div class="media-card-overlay-year">${year}</div>
                         <div class="media-card-overlay-description">${overview}</div>
-                        <button class="media-card-request-btn">
-                            <i class="fas fa-download"></i> Request
-                        </button>
+                        ${!inLibrary ? '<button class="media-card-request-btn"><i class="fas fa-download"></i> Request</button>' : ''}
                     </div>
                 </div>
             </div>
@@ -523,21 +531,23 @@ class RequestarrDiscover {
         
         // Add click handlers
         const posterDiv = card.querySelector('.media-card-poster');
-        const overlay = card.querySelector('.media-card-overlay');
         const requestBtn = card.querySelector('.media-card-request-btn');
         
         // Poster/overlay click opens modal (but not when clicking button)
         posterDiv.addEventListener('click', (e) => {
-            if (e.target !== requestBtn && !requestBtn.contains(e.target)) {
-                this.openModal(item.tmdb_id, item.media_type);
+            if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) {
+                return; // Don't open modal if clicking button
             }
-        });
-        
-        // Request button opens modal directly
-        requestBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
             this.openModal(item.tmdb_id, item.media_type);
         });
+        
+        // Request button opens modal directly (if it exists)
+        if (requestBtn) {
+            requestBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openModal(item.tmdb_id, item.media_type);
+            });
+        }
         
         return card;
     }
@@ -597,69 +607,35 @@ class RequestarrDiscover {
             <div class="request-modal-content">
         `;
         
-        // For TV Shows: Show status after instance selection
+        // For TV Shows: Add status container first, then instance selector
         if (isTVShow) {
             modalHTML += `
+                <div id="series-status-container"></div>
                 <div class="request-advanced-section">
                     <div class="advanced-field">
-                        <label>Sonarr Instance</label>
-                        <select id="modal-instance-select" class="advanced-select" onchange="window.RequestarrDiscover.loadSeriesStatus(this.value)">
-                            <option value="">Select an instance...</option>
+                        <label>Instance</label>
+                        <select id="modal-instance-select" class="advanced-select" onchange="window.RequestarrDiscover.instanceChanged(this.value)">
             `;
             
-            instances.forEach((instance, index) => {
-                const selected = instance.name === rememberedInstance ? 'selected' : '';
-                modalHTML += `<option value="${instance.name}" ${selected}>Sonarr - ${instance.name}</option>`;
-            });
+            if (instances.length === 0) {
+                modalHTML += `<option value="">No Instance Configured</option>`;
+            } else {
+                instances.forEach((instance, index) => {
+                    const selected = instance.name === rememberedInstance ? 'selected' : '';
+                    modalHTML += `<option value="${instance.name}" ${selected}>Sonarr - ${instance.name}</option>`;
+                });
+            }
             
             modalHTML += `
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Status container -->
-                <div id="series-status-container" style="margin-bottom: 15px;"></div>
-                
-                <!-- Tags and Quality Profile -->
-                <div class="request-advanced-section">
-                    <div class="advanced-field">
-                        <label>Tags</label>
-                        <input type="text" id="modal-tags" class="advanced-input" placeholder="Enter tags (comma-separated)">
-                    </div>
-                    <div class="advanced-field">
-                        <label>Quality Profile</label>
-                        <select id="modal-quality-profile" class="advanced-select">
-                            <option value="">Any (Default)</option>
                         </select>
                     </div>
                 </div>
             `;
         } else {
-            // For Movies: Keep existing layout
-            const profileKey = `radarr-${rememberedInstance || (instances[0]?.name || '')}`;
-            const profiles = this.qualityProfiles[profileKey] || [];
-            
+            // For Movies: Add status container first, then instance selector
             modalHTML += `
+                <div id="movie-status-container"></div>
                 <div class="request-advanced-section">
-                    <div class="advanced-field">
-                        <label>Quality Profile</label>
-                        <select id="modal-quality-profile" class="advanced-select">
-                            <option value="">Any (Default)</option>
-            `;
-            
-            profiles.forEach(profile => {
-                modalHTML += `<option value="${profile.id}">${profile.name}</option>`;
-            });
-            
-            modalHTML += `
-                        </select>
-                    </div>
-                    
-                    <div class="advanced-field">
-                        <label>Tags</label>
-                        <input type="text" id="modal-tags" class="advanced-input" placeholder="Enter tags (comma-separated)">
-                    </div>
-                    
                     <div class="advanced-field">
                         <label>Instance</label>
                         <select id="modal-instance-select" class="advanced-select" onchange="window.RequestarrDiscover.instanceChanged(this.value)">
@@ -681,11 +657,78 @@ class RequestarrDiscover {
             `;
         }
         
+        // For TV Shows: Season selection with toggles
+        if (isTVShow && data.seasons) {
+            // Check which seasons are already in Sonarr
+            const requestedSeasons = await this.checkRequestedSeasons(data.tmdb_id, rememberedInstance);
+            
+            modalHTML += `
+                <div class="season-selection-container">
+                    <div class="season-selection-header">
+                        <div class="header-col">SEASON</div>
+                        <div class="header-col"># OF EPISODES</div>
+                        <div class="header-col">STATUS</div>
+                    </div>
+                    <div class="season-selection-list">
+            `;
+            
+            data.seasons.forEach((season, index) => {
+                const isRequested = requestedSeasons.includes(season.season_number);
+                const disabled = isRequested ? 'disabled' : '';
+                const faded = isRequested ? 'requested' : '';
+                
+                modalHTML += `
+                    <div class="season-row ${faded}">
+                        <label class="season-toggle">
+                            <input type="checkbox" 
+                                   class="season-checkbox" 
+                                   data-season="${season.season_number}"
+                                   ${isRequested ? 'checked disabled' : ''}
+                                   onchange="window.RequestarrDiscover.toggleSeason(this)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <div class="season-name">Season ${season.season_number}</div>
+                        <div class="season-episodes">${season.episode_count || 'TBA'}</div>
+                        <div class="season-status">
+                            ${isRequested ? '<span class="status-badge requested">Already Requested</span>' : '<span class="status-badge not-requested">Not Requested</span>'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            modalHTML += `
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Get quality profiles for the first/remembered instance
+        const profileKey = `${isTVShow ? 'sonarr' : 'radarr'}-${rememberedInstance || (instances[0]?.name || '')}`;
+        const profiles = this.qualityProfiles[profileKey] || [];
+        
+        // Quality Profile section (for both TV and Movies)
         modalHTML += `
+            <div class="request-advanced-section">
+                <div class="advanced-field">
+                    <label>Quality Profile</label>
+                    <select id="modal-quality-profile" class="advanced-select">
+                        <option value="">Any (Default)</option>
+        `;
+        
+        // Add quality profile options
+        profiles.forEach(profile => {
+            modalHTML += `<option value="${profile.id}">${profile.name}</option>`;
+        });
+        
+        modalHTML += `
+                    </select>
+                </div>
+            </div>
+            
             <div class="request-modal-actions">
                 <button class="modal-btn cancel-btn" onclick="window.RequestarrDiscover.closeModal()">Cancel</button>
                 <button class="modal-btn request-btn" id="modal-request-btn" onclick="window.RequestarrDiscover.submitRequest()">
-                    Request
+                    ${isTVShow ? 'Select Season(s)' : 'Request'}
                 </button>
             </div>
         </div>
@@ -697,144 +740,19 @@ class RequestarrDiscover {
         this.currentModalData = data;
         this.selectedSeasons = [];
         
-        // Update quality profiles
-        if (isTVShow && rememberedInstance) {
-            const profileKey = `sonarr-${rememberedInstance}`;
-            const profiles = this.qualityProfiles[profileKey] || [];
-            const qualitySelect = document.getElementById('modal-quality-profile');
-            if (qualitySelect) {
-                profiles.forEach(profile => {
-                    const option = document.createElement('option');
-                    option.value = profile.id;
-                    option.textContent = profile.name;
-                    qualitySelect.appendChild(option);
-                });
-            }
-            
-            // Load series status if instance already selected
-            this.loadSeriesStatus(rememberedInstance);
-        }
-        
-        // Enable/disable request button
-        if (instances.length === 0) {
-            const btn = document.getElementById('modal-request-btn');
-            if (btn) {
-                btn.disabled = true;
-                btn.classList.add('disabled');
-            }
-        }
-    }
-
-    // Load series status when instance is selected
-    async loadSeriesStatus(instanceName) {
-        if (!instanceName) {
-            const container = document.getElementById('series-status-container');
-            if (container) {
-                container.innerHTML = '';
-            }
-            return;
-        }
-        
-        console.log('[RequestarrDiscover] Loading series status for instance:', instanceName);
-        
-        // Show loading state
-        const container = document.getElementById('series-status-container');
-        if (container) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #667eea;"></i>
-                    <p style="margin-top: 10px; color: rgba(255, 255, 255, 0.7); font-size: 14px;">Checking series status...</p>
-                </div>
-            `;
-        }
-        
-        try {
-            // Get series status from Sonarr
-            const response = await fetch(`./api/requestarr/series-status?tmdb_id=${this.currentModalData.tmdb_id}&instance=${instanceName}`);
-            const status = await response.json();
-            
-            console.log('[RequestarrDiscover] Series status:', status);
-            
-            let statusHTML = '';
-            
-            if (status.exists) {
-                // Series exists in Sonarr - show status
-                const percentComplete = status.total_episodes > 0 
-                    ? Math.round((status.available_episodes / status.total_episodes) * 100)
-                    : 0;
-                
-                statusHTML = `
-                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                            <i class="fas fa-info-circle" style="color: #f59e0b; font-size: 20px;"></i>
-                            <div>
-                                <div style="font-weight: 600; color: #fff; font-size: 14px;">Series Status in Sonarr</div>
-                                <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-top: 2px;">
-                                    ${status.missing_episodes} of ${status.total_episodes} episodes missing (${percentComplete}% complete)
-                                </div>
-                            </div>
-                        </div>
-                        ${status.missing_episodes > 0 
-                            ? `<div style="font-size: 12px; color: rgba(255, 255, 255, 0.6);">
-                                <i class="fas fa-lightbulb" style="margin-right: 5px;"></i>
-                                Request this series again to search for missing episodes
-                            </div>`
-                            : `<div style="font-size: 12px; color: #22c55e;">
-                                <i class="fas fa-check-circle" style="margin-right: 5px;"></i>
-                                All episodes available!
-                            </div>`
-                        }
-                    </div>
-                `;
+        // Load status if instance is already selected
+        if (rememberedInstance) {
+            if (isTVShow) {
+                this.loadSeriesStatus(rememberedInstance);
             } else {
-                // Series not in Sonarr
-                statusHTML = `
-                    <div style="background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-plus-circle" style="color: #667eea; font-size: 20px;"></i>
-                            <div>
-                                <div style="font-weight: 600; color: #fff; font-size: 14px;">Not in Sonarr</div>
-                                <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-top: 2px;">
-                                    This series is not yet in your library
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                this.loadMovieStatus(rememberedInstance);
             }
-            
-            if (container) {
-                container.innerHTML = statusHTML;
-            }
-            
-            // Update quality profiles for this instance
-            const profileKey = `sonarr-${instanceName}`;
-            const profiles = this.qualityProfiles[profileKey] || [];
-            const qualitySelect = document.getElementById('modal-quality-profile');
-            
-            if (qualitySelect) {
-                qualitySelect.innerHTML = '<option value="">Any (Default)</option>';
-                profiles.forEach(profile => {
-                    const option = document.createElement('option');
-                    option.value = profile.id;
-                    option.textContent = profile.name;
-                    qualitySelect.appendChild(option);
-                });
-            }
-            
-            // Save instance selection
-            localStorage.setItem('huntarr-requestarr-instance-sonarr', instanceName);
-            
-        } catch (error) {
-            console.error('[RequestarrDiscover] Error loading series status:', error);
-            if (container) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: #ef4444;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-                        <p style="font-size: 14px;">Failed to load series status</p>
-                    </div>
-                `;
-            }
+        }
+        
+        // Disable request button initially for TV shows or if no instances
+        if (isTVShow || instances.length === 0) {
+            document.getElementById('modal-request-btn').disabled = true;
+            document.getElementById('modal-request-btn').classList.add('disabled');
         }
     }
 
@@ -850,9 +768,224 @@ class RequestarrDiscover {
         }
     }
 
-    // Toggle season selection (no longer used, but kept for compatibility)
+    // Toggle season selection
     toggleSeason(checkbox) {
-        // No-op - season selection removed
+        const seasonNumber = parseInt(checkbox.dataset.season);
+        
+        if (checkbox.checked && !checkbox.disabled) {
+            if (!this.selectedSeasons.includes(seasonNumber)) {
+                this.selectedSeasons.push(seasonNumber);
+            }
+        } else {
+            this.selectedSeasons = this.selectedSeasons.filter(s => s !== seasonNumber);
+        }
+        
+        // Enable/disable request button based on selection
+        const requestBtn = document.getElementById('modal-request-btn');
+        if (this.selectedSeasons.length > 0) {
+            requestBtn.disabled = false;
+            requestBtn.classList.remove('disabled');
+        } else {
+            requestBtn.disabled = true;
+            requestBtn.classList.add('disabled');
+        }
+        
+        console.log('[RequestarrDiscover] Selected seasons:', this.selectedSeasons);
+    }
+
+    // Load series status from Sonarr
+    async loadSeriesStatus(instanceName) {
+        if (!instanceName || !this.currentModalData) {
+            return;
+        }
+        
+        const container = document.getElementById('series-status-container');
+        if (!container) {
+            return;
+        }
+        
+        console.log('[RequestarrDiscover] Loading series status for instance:', instanceName);
+        
+        // Show loading state
+        container.innerHTML = `
+            <div style="text-align: center; padding: 15px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 20px; color: #667eea;"></i>
+            </div>
+        `;
+        
+        try {
+            // Get series status from Sonarr
+            const response = await fetch(`./api/requestarr/series-status?tmdb_id=${this.currentModalData.tmdb_id}&instance=${encodeURIComponent(instanceName)}`);
+            const status = await response.json();
+            
+            console.log('[RequestarrDiscover] Series status:', status);
+            
+            let statusHTML = '';
+            
+            if (status.exists) {
+                // Series exists in Sonarr
+                if (status.missing_episodes === 0 && status.total_episodes > 0) {
+                    // Complete series in library
+                    statusHTML = `
+                        <div class="series-status-box status-available">
+                            <i class="fas fa-check-circle"></i>
+                            <div>
+                                <div class="status-title">Complete series in library (${status.available_episodes}/${status.total_episodes})</div>
+                            </div>
+                        </div>
+                    `;
+                } else if (status.missing_episodes > 0) {
+                    // Missing episodes
+                    statusHTML = `
+                        <div class="series-status-box status-missing-episodes">
+                            <i class="fas fa-tv"></i>
+                            <div>
+                                <div class="status-title">Request missing episodes (${status.available_episodes}/${status.total_episodes}, ${status.missing_episodes} missing)</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Series exists but no episode info
+                    statusHTML = `
+                        <div class="series-status-box status-available">
+                            <i class="fas fa-check-circle"></i>
+                            <div>
+                                <div class="status-title">In Library</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                // Series not in Sonarr - available to request
+                statusHTML = `
+                    <div class="series-status-box status-requestable">
+                        <i class="fas fa-inbox"></i>
+                        <div>
+                            <div class="status-title">Available to request</div>
+                            <div class="status-text">This series is not yet in your library</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = statusHTML;
+            
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error loading series status:', error);
+            container.innerHTML = `
+                <div class="series-status-box status-requestable">
+                    <i class="fas fa-inbox"></i>
+                    <div>
+                        <div class="status-title">Available to request</div>
+                        <div class="status-text">Unable to check library status</div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // Load movie status from Radarr
+    async loadMovieStatus(instanceName) {
+        if (!instanceName || !this.currentModalData) {
+            return;
+        }
+        
+        const container = document.getElementById('movie-status-container');
+        if (!container) {
+            return;
+        }
+        
+        console.log('[RequestarrDiscover] Loading movie status for instance:', instanceName);
+        
+        // Show loading state
+        container.innerHTML = `
+            <div style="text-align: center; padding: 15px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 20px; color: #667eea;"></i>
+            </div>
+        `;
+        
+        try {
+            // Get movie status from Radarr
+            const response = await fetch(`./api/requestarr/movie-status?tmdb_id=${this.currentModalData.tmdb_id}&instance=${encodeURIComponent(instanceName)}`);
+            const status = await response.json();
+            
+            console.log('[RequestarrDiscover] Movie status:', status);
+            
+            let statusHTML = '';
+            const requestBtn = document.getElementById('modal-request-btn');
+            
+            if (status.in_library) {
+                // Movie already in library
+                statusHTML = `
+                    <div class="series-status-box status-available">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <div class="status-title">Already in library</div>
+                        </div>
+                    </div>
+                `;
+                // Disable request button
+                if (requestBtn) {
+                    requestBtn.disabled = true;
+                    requestBtn.classList.add('disabled');
+                    requestBtn.textContent = 'In Library';
+                }
+            } else if (status.previously_requested) {
+                // Previously requested
+                statusHTML = `
+                    <div class="series-status-box status-missing-episodes">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <div class="status-title">Previously requested</div>
+                        </div>
+                    </div>
+                `;
+                // Disable request button
+                if (requestBtn) {
+                    requestBtn.disabled = true;
+                    requestBtn.classList.add('disabled');
+                    requestBtn.textContent = 'Already Requested';
+                }
+            } else {
+                // Available to request
+                statusHTML = `
+                    <div class="series-status-box status-requestable">
+                        <i class="fas fa-inbox"></i>
+                        <div>
+                            <div class="status-title">Available to request</div>
+                            <div class="status-text">This movie is not yet in your library</div>
+                        </div>
+                    </div>
+                `;
+                // Enable request button
+                if (requestBtn) {
+                    requestBtn.disabled = false;
+                    requestBtn.classList.remove('disabled');
+                    requestBtn.textContent = 'Request';
+                }
+            }
+            
+            container.innerHTML = statusHTML;
+            
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error loading movie status:', error);
+            container.innerHTML = `
+                <div class="series-status-box status-requestable">
+                    <i class="fas fa-inbox"></i>
+                    <div>
+                        <div class="status-title">Available to request</div>
+                        <div class="status-text">Unable to check library status</div>
+                    </div>
+                </div>
+            `;
+            // Enable request button on error
+            const requestBtn = document.getElementById('modal-request-btn');
+            if (requestBtn) {
+                requestBtn.disabled = false;
+                requestBtn.classList.remove('disabled');
+                requestBtn.textContent = 'Request';
+            }
+        }
     }
 
     // Remember instance selection
@@ -879,9 +1012,11 @@ class RequestarrDiscover {
             });
         }
         
-        // For TV shows, reload modal to check requested seasons for new instance
+        // Reload status for new instance
         if (isTVShow) {
-            this.renderModal(this.currentModalData);
+            this.loadSeriesStatus(instanceName);
+        } else {
+            this.loadMovieStatus(instanceName);
         }
     }
 
@@ -889,7 +1024,6 @@ class RequestarrDiscover {
     async submitRequest() {
         const instanceSelect = document.getElementById('modal-instance-select');
         const qualityProfile = document.getElementById('modal-quality-profile').value;
-        const tags = document.getElementById('modal-tags').value;
         const requestBtn = document.getElementById('modal-request-btn');
         
         if (!instanceSelect.value) {
@@ -914,8 +1048,7 @@ class RequestarrDiscover {
                 media_type: this.currentModalData.media_type,
                 title: this.currentModalData.title,
                 instance: instanceSelect.value,
-                quality_profile: qualityProfile,
-                tags: tags.split(',').map(t => t.trim()).filter(t => t)
+                quality_profile: qualityProfile
             };
             
             if (isTVShow) {
@@ -1098,90 +1231,79 @@ class RequestarrDiscover {
     async loadSettings() {
         console.log('[RequestarrDiscover] Loading settings...');
         
-        // Ensure instances are loaded
-        if (this.instances.sonarr.length === 0 && this.instances.radarr.length === 0) {
-            console.log('[RequestarrDiscover] Instances not loaded yet, fetching...');
-            await this.loadInstances();
-        }
-        
         // Populate instance dropdowns
         const sonarrSelect = document.getElementById('default-sonarr-instance');
         const radarrSelect = document.getElementById('default-radarr-instance');
         
         if (sonarrSelect && radarrSelect) {
-            // Populate Sonarr instances
-            sonarrSelect.innerHTML = '';
-            if (this.instances.sonarr.length === 0) {
-                sonarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
-                sonarrSelect.disabled = true;
-            } else {
-                sonarrSelect.disabled = false;
-                this.instances.sonarr.forEach(instance => {
-                    const option = document.createElement('option');
-                    option.value = instance.name;
-                    option.textContent = `Sonarr - ${instance.name}`;
-                    sonarrSelect.appendChild(option);
-                });
-            }
+            // Clear and populate Sonarr instances
+            sonarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
+            this.instances.sonarr.forEach(instance => {
+                const option = document.createElement('option');
+                option.value = instance.name;
+                option.textContent = `Sonarr - ${instance.name}`;
+                sonarrSelect.appendChild(option);
+            });
             
-            // Populate Radarr instances
-            radarrSelect.innerHTML = '';
-            if (this.instances.radarr.length === 0) {
-                radarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
-                radarrSelect.disabled = true;
-            } else {
-                radarrSelect.disabled = false;
-                this.instances.radarr.forEach(instance => {
-                    const option = document.createElement('option');
-                    option.value = instance.name;
-                    option.textContent = `Radarr - ${instance.name}`;
-                    radarrSelect.appendChild(option);
-                });
-            }
+            // Clear and populate Radarr instances
+            radarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
+            this.instances.radarr.forEach(instance => {
+                const option = document.createElement('option');
+                option.value = instance.name;
+                option.textContent = `Radarr - ${instance.name}`;
+                radarrSelect.appendChild(option);
+            });
             
             // Load current defaults
             try {
                 const response = await fetch('./api/requestarr/settings/defaults');
                 const data = await response.json();
                 
-                let needsAutoSave = false;
+                let needsAutoSelect = false;
                 
                 if (data.success && data.defaults) {
-                    // Set saved defaults if they exist
                     if (data.defaults.sonarr_instance) {
                         sonarrSelect.value = data.defaults.sonarr_instance;
                     } else if (this.instances.sonarr.length > 0) {
-                        // No default saved but instances exist - auto-select first
+                        // Auto-select first Sonarr instance if none configured
                         sonarrSelect.value = this.instances.sonarr[0].name;
-                        needsAutoSave = true;
+                        needsAutoSelect = true;
                     }
                     
                     if (data.defaults.radarr_instance) {
                         radarrSelect.value = data.defaults.radarr_instance;
                     } else if (this.instances.radarr.length > 0) {
-                        // No default saved but instances exist - auto-select first
+                        // Auto-select first Radarr instance if none configured
                         radarrSelect.value = this.instances.radarr[0].name;
-                        needsAutoSave = true;
+                        needsAutoSelect = true;
                     }
                 } else {
-                    // No defaults at all - auto-select first instances if available
+                    // No defaults found, auto-select first available instances
                     if (this.instances.sonarr.length > 0) {
                         sonarrSelect.value = this.instances.sonarr[0].name;
-                        needsAutoSave = true;
+                        needsAutoSelect = true;
                     }
                     if (this.instances.radarr.length > 0) {
                         radarrSelect.value = this.instances.radarr[0].name;
-                        needsAutoSave = true;
+                        needsAutoSelect = true;
                     }
                 }
                 
-                // Auto-save if we selected first instances
-                if (needsAutoSave) {
-                    console.log('[RequestarrDiscover] Auto-selecting first instances and saving...');
-                    await this.saveSettings(true); // true = silent save
+                // Auto-save if we selected defaults
+                if (needsAutoSelect) {
+                    console.log('[RequestarrDiscover] Auto-selecting first available instances');
+                    await this.saveSettings(true); // Pass true to indicate silent auto-save
                 }
+                
             } catch (error) {
                 console.error('[RequestarrDiscover] Error loading default instances:', error);
+                // Even on error, try to auto-select first instances
+                if (this.instances.sonarr.length > 0 && sonarrSelect.value === '') {
+                    sonarrSelect.value = this.instances.sonarr[0].name;
+                }
+                if (this.instances.radarr.length > 0 && radarrSelect.value === '') {
+                    radarrSelect.value = this.instances.radarr[0].name;
+                }
             }
         }
         
@@ -1199,8 +1321,8 @@ class RequestarrDiscover {
         
         if (!sonarrSelect || !radarrSelect) return;
         
-        // Disable button while saving (only if not silent)
-        if (!silent && saveBtn) {
+        // Disable button while saving (if not silent)
+        if (saveBtn && !silent) {
             saveBtn.disabled = true;
             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         }
@@ -1210,8 +1332,8 @@ class RequestarrDiscover {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    sonarr_instance: sonarrSelect.value || null,
-                    radarr_instance: radarrSelect.value || null
+                    sonarr_instance: sonarrSelect.value,
+                    radarr_instance: radarrSelect.value
                 })
             });
             
@@ -1232,11 +1354,9 @@ class RequestarrDiscover {
                 this.showNotification('Failed to save settings', 'error');
             }
         } finally {
-            // Re-enable button (only if not silent)
-            if (!silent && saveBtn) {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Settings';
-            }
+            // Re-enable button
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Settings';
         }
     }
 }
