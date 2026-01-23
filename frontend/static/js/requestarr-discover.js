@@ -562,9 +562,9 @@ class RequestarrDiscover {
             allInstances: this.instances
         });
         
-        // Get remembered instance or use first
+        // Get remembered instance or empty for TV shows (force selection)
         const instanceKey = isTVShow ? 'sonarr' : 'radarr';
-        const rememberedInstance = localStorage.getItem(`huntarr-requestarr-instance-${instanceKey}`) || (instances[0]?.name || '');
+        const rememberedInstance = isTVShow ? '' : (localStorage.getItem(`huntarr-requestarr-instance-${instanceKey}`) || (instances[0]?.name || ''));
         
         let modalHTML = `
             <div class="request-modal-header" style="background-image: url(${data.backdrop_path || ''});">
@@ -579,100 +579,100 @@ class RequestarrDiscover {
             <div class="request-modal-content">
         `;
         
-        // For TV Shows: Season selection with toggles
-        if (isTVShow && data.seasons) {
-            // Check which seasons are already in Sonarr
-            const requestedSeasons = await this.checkRequestedSeasons(data.tmdb_id, rememberedInstance);
-            
+        // For TV Shows: Instance selector FIRST
+        if (isTVShow) {
             modalHTML += `
-                <div class="season-selection-container">
-                    <div class="season-selection-header">
-                        <div class="header-col">SEASON</div>
-                        <div class="header-col"># OF EPISODES</div>
-                        <div class="header-col">STATUS</div>
-                    </div>
-                    <div class="season-selection-list">
+                <div class="request-advanced-section" style="margin-bottom: 20px;">
+                    <div class="advanced-title">Select Instance</div>
+                    <div class="advanced-field">
+                        <label>Sonarr Instance</label>
+                        <select id="modal-instance-select" class="advanced-select" onchange="window.RequestarrDiscover.loadSeasons(this.value)">
+                            <option value="">Select an instance...</option>
             `;
             
-            data.seasons.forEach((season, index) => {
-                const isRequested = requestedSeasons.includes(season.season_number);
-                const disabled = isRequested ? 'disabled' : '';
-                const faded = isRequested ? 'requested' : '';
-                
-                modalHTML += `
-                    <div class="season-row ${faded}">
-                        <label class="season-toggle">
-                            <input type="checkbox" 
-                                   class="season-checkbox" 
-                                   data-season="${season.season_number}"
-                                   ${isRequested ? 'checked disabled' : ''}
-                                   onchange="window.RequestarrDiscover.toggleSeason(this)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <div class="season-name">Season ${season.season_number}</div>
-                        <div class="season-episodes">${season.episode_count || 'TBA'}</div>
-                        <div class="season-status">
-                            ${isRequested ? '<span class="status-badge requested">Already Requested</span>' : '<span class="status-badge not-requested">Not Requested</span>'}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            modalHTML += `
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Get quality profiles for the first/remembered instance
-        const profileKey = `${isTVShow ? 'sonarr' : 'radarr'}-${rememberedInstance || (instances[0]?.name || '')}`;
-        const profiles = this.qualityProfiles[profileKey] || [];
-        
-        // Advanced section (for both TV and Movies)
-        modalHTML += `
-            <div class="request-advanced-section">
-                <div class="advanced-field">
-                    <label>Quality Profile</label>
-                    <select id="modal-quality-profile" class="advanced-select">
-                        <option value="">Any (Default)</option>
-        `;
-        
-        // Add quality profile options
-        profiles.forEach(profile => {
-            modalHTML += `<option value="${profile.id}">${profile.name}</option>`;
-        });
-        
-        modalHTML += `
-                    </select>
-                </div>
-                
-                <div class="advanced-field">
-                    <label>Tags</label>
-                    <input type="text" id="modal-tags" class="advanced-input" placeholder="Enter tags (comma-separated)">
-                </div>
-                
-                <div class="advanced-field">
-                    <label>Instance</label>
-                    <select id="modal-instance-select" class="advanced-select" onchange="window.RequestarrDiscover.instanceChanged(this.value)">
-        `;
-        
-        if (instances.length === 0) {
-            modalHTML += `<option value="">No Instance Configured</option>`;
-        } else {
             instances.forEach((instance, index) => {
-                const selected = instance.name === rememberedInstance ? 'selected' : '';
-                modalHTML += `<option value="${instance.name}" ${selected}>${isTVShow ? 'Sonarr' : 'Radarr'} - ${instance.name}</option>`;
+                modalHTML += `<option value="${instance.name}">Sonarr - ${instance.name}</option>`;
             });
+            
+            modalHTML += `
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Seasons container - will be populated when instance is selected -->
+                <div id="seasons-container">
+                    <div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5);">
+                        <i class="fas fa-tv" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+                        <p>Select an instance to view available seasons</p>
+                    </div>
+                </div>
+                
+                <!-- Tags and Quality Profile -->
+                <div class="request-advanced-section" id="advanced-options" style="display: none;">
+                    <div class="advanced-title">Advanced Options</div>
+                    <div class="advanced-field">
+                        <label>Tags</label>
+                        <input type="text" id="modal-tags" class="advanced-input" placeholder="Enter tags (comma-separated)">
+                    </div>
+                    <div class="advanced-field">
+                        <label>Quality Profile</label>
+                        <select id="modal-quality-profile" class="advanced-select">
+                            <option value="">Any (Default)</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        } else {
+            // For Movies: Keep existing layout
+            const profileKey = `radarr-${rememberedInstance || (instances[0]?.name || '')}`;
+            const profiles = this.qualityProfiles[profileKey] || [];
+            
+            modalHTML += `
+                <div class="request-advanced-section">
+                    <div class="advanced-field">
+                        <label>Quality Profile</label>
+                        <select id="modal-quality-profile" class="advanced-select">
+                            <option value="">Any (Default)</option>
+            `;
+            
+            profiles.forEach(profile => {
+                modalHTML += `<option value="${profile.id}">${profile.name}</option>`;
+            });
+            
+            modalHTML += `
+                        </select>
+                    </div>
+                    
+                    <div class="advanced-field">
+                        <label>Tags</label>
+                        <input type="text" id="modal-tags" class="advanced-input" placeholder="Enter tags (comma-separated)">
+                    </div>
+                    
+                    <div class="advanced-field">
+                        <label>Instance</label>
+                        <select id="modal-instance-select" class="advanced-select" onchange="window.RequestarrDiscover.instanceChanged(this.value)">
+            `;
+            
+            if (instances.length === 0) {
+                modalHTML += `<option value="">No Instance Configured</option>`;
+            } else {
+                instances.forEach((instance, index) => {
+                    const selected = instance.name === rememberedInstance ? 'selected' : '';
+                    modalHTML += `<option value="${instance.name}" ${selected}>Radarr - ${instance.name}</option>`;
+                });
+            }
+            
+            modalHTML += `
+                        </select>
+                    </div>
+                </div>
+            `;
         }
         
         modalHTML += `
-                    </select>
-                </div>
-            </div>
-            
             <div class="request-modal-actions">
                 <button class="modal-btn cancel-btn" onclick="window.RequestarrDiscover.closeModal()">Cancel</button>
-                <button class="modal-btn request-btn" id="modal-request-btn" onclick="window.RequestarrDiscover.submitRequest()">
+                <button class="modal-btn request-btn" id="modal-request-btn" onclick="window.RequestarrDiscover.submitRequest()" ${isTVShow ? 'disabled' : ''}>
                     ${isTVShow ? 'Select Season(s)' : 'Request'}
                 </button>
             </div>
@@ -687,8 +687,148 @@ class RequestarrDiscover {
         
         // Disable request button initially for TV shows or if no instances
         if (isTVShow || instances.length === 0) {
-            document.getElementById('modal-request-btn').disabled = true;
-            document.getElementById('modal-request-btn').classList.add('disabled');
+            const btn = document.getElementById('modal-request-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('disabled');
+            }
+        }
+    }
+
+    // Load seasons when instance is selected
+    async loadSeasons(instanceName) {
+        if (!instanceName) {
+            // Clear seasons if no instance selected
+            const container = document.getElementById('seasons-container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5);">
+                        <i class="fas fa-tv" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+                        <p>Select an instance to view available seasons</p>
+                    </div>
+                `;
+            }
+            // Hide advanced options
+            const advancedOptions = document.getElementById('advanced-options');
+            if (advancedOptions) advancedOptions.style.display = 'none';
+            
+            // Disable request button
+            const btn = document.getElementById('modal-request-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('disabled');
+            }
+            return;
+        }
+        
+        console.log('[RequestarrDiscover] Loading seasons for instance:', instanceName);
+        
+        // Show loading state
+        const container = document.getElementById('seasons-container');
+        if (container) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 36px; color: #667eea;"></i>
+                    <p style="margin-top: 15px; color: rgba(255, 255, 255, 0.7);">Loading seasons from Sonarr...</p>
+                </div>
+            `;
+        }
+        
+        try {
+            // Check which seasons are already in Sonarr
+            const requestedSeasons = await this.checkRequestedSeasons(this.currentModalData.tmdb_id, instanceName);
+            console.log('[RequestarrDiscover] Requested seasons:', requestedSeasons);
+            
+            // Render seasons list
+            const seasons = this.currentModalData.seasons || [];
+            let seasonsHTML = `
+                <div class="season-selection-container">
+                    <div class="season-selection-header">
+                        <div style="width: 60px;"></div>
+                        <div style="flex: 2;">SEASON</div>
+                        <div style="flex: 1; text-align: center;"># OF EPISODES</div>
+                        <div style="flex: 1; text-align: center;">STATUS</div>
+                    </div>
+                    <div class="season-selection-list">
+            `;
+            
+            seasons.forEach(season => {
+                const isRequested = requestedSeasons.includes(season.season_number);
+                const rowClass = isRequested ? 'requested' : '';
+                
+                seasonsHTML += `
+                    <div class="season-row ${rowClass}">
+                        <label class="season-toggle">
+                            <input type="checkbox" 
+                                   class="season-checkbox" 
+                                   data-season="${season.season_number}"
+                                   ${isRequested ? 'checked disabled' : ''}
+                                   onchange="window.RequestarrDiscover.toggleSeason(this)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <div class="season-name">Season ${season.season_number}</div>
+                        <div class="season-episodes" style="text-align: center;">${season.episode_count || 'TBA'}</div>
+                        <div class="season-status" style="text-align: center;">
+                            ${isRequested 
+                                ? '<span class="status-badge requested">Available</span>' 
+                                : '<span class="status-badge not-requested">Not Requested</span>'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            seasonsHTML += `
+                    </div>
+                </div>
+            `;
+            
+            if (container) {
+                container.innerHTML = seasonsHTML;
+            }
+            
+            // Show advanced options
+            const advancedOptions = document.getElementById('advanced-options');
+            if (advancedOptions) advancedOptions.style.display = 'block';
+            
+            // Update quality profiles for this instance
+            const profileKey = `sonarr-${instanceName}`;
+            const profiles = this.qualityProfiles[profileKey] || [];
+            const qualitySelect = document.getElementById('modal-quality-profile');
+            
+            if (qualitySelect) {
+                qualitySelect.innerHTML = '<option value="">Any (Default)</option>';
+                profiles.forEach(profile => {
+                    const option = document.createElement('option');
+                    option.value = profile.id;
+                    option.textContent = profile.name;
+                    qualitySelect.appendChild(option);
+                });
+            }
+            
+            // Save instance selection
+            localStorage.setItem('huntarr-requestarr-instance-sonarr', instanceName);
+            
+            // Reset selected seasons
+            this.selectedSeasons = [];
+            
+            // Update request button state
+            const btn = document.getElementById('modal-request-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('disabled');
+                btn.textContent = 'Select Season(s)';
+            }
+            
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error loading seasons:', error);
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #ef4444;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px;"></i>
+                        <p>Failed to load seasons. Please try again.</p>
+                    </div>
+                `;
+            }
         }
     }
 
@@ -721,9 +861,11 @@ class RequestarrDiscover {
         if (this.selectedSeasons.length > 0) {
             requestBtn.disabled = false;
             requestBtn.classList.remove('disabled');
+            requestBtn.textContent = `Request ${this.selectedSeasons.length} Season${this.selectedSeasons.length > 1 ? 's' : ''}`;
         } else {
             requestBtn.disabled = true;
             requestBtn.classList.add('disabled');
+            requestBtn.textContent = 'Select Season(s)';
         }
         
         console.log('[RequestarrDiscover] Selected seasons:', this.selectedSeasons);
