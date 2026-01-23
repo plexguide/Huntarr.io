@@ -676,6 +676,299 @@
     color: #888;
 }
 
+/* Request Modal - Overseerr Style */
+.request-modal-header {
+    position: relative;
+    height: 300px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+}
+
+.request-modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%);
+}
+
+.request-modal-header-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 30px;
+    right: 30px;
+    z-index: 2;
+}
+
+.request-modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 8px;
+}
+
+.request-modal-subtitle {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    z-index: 10;
+    transition: background 0.2s;
+}
+
+.modal-close-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.request-modal-content {
+    padding: 30px;
+    background: rgba(15, 23, 42, 0.95);
+}
+
+/* Season Selection Table */
+.season-selection-container {
+    margin-bottom: 30px;
+}
+
+.season-selection-header {
+    display: grid;
+    grid-template-columns: 60px 2fr 1fr 1fr;
+    gap: 15px;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px 8px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+}
+
+.season-selection-list {
+    border: 2px solid #f59e0b;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+}
+
+.season-row {
+    display: grid;
+    grid-template-columns: 60px 2fr 1fr 1fr;
+    gap: 15px;
+    padding: 15px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.season-row:last-child {
+    border-bottom: none;
+}
+
+.season-row:not(.requested):hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.season-row.requested {
+    opacity: 0.4;
+}
+
+/* Toggle Switch */
+.season-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.season-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: 0.3s;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #f59e0b;
+    border-color: #f59e0b;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+input:disabled + .toggle-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.season-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: #fff;
+}
+
+.season-episodes {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.season-status .status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.requested {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-badge.not-requested {
+    background: rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+/* Advanced Section */
+.request-advanced-section {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+
+.advanced-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.advanced-field {
+    margin-bottom: 16px;
+}
+
+.advanced-field:last-child {
+    margin-bottom: 0;
+}
+
+.advanced-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+}
+
+.advanced-select,
+.advanced-input {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.advanced-select:focus,
+.advanced-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Modal Actions */
+.request-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.modal-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-btn.cancel-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.modal-btn.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.modal-btn.request-btn {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+}
+
+.modal-btn.request-btn:hover:not(.disabled) {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.modal-btn.request-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* History View */
 .history-container {
     display: flex;

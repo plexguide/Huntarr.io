@@ -272,6 +272,56 @@ class RequestarrAPI:
             logger.error(f"Error getting media details: {e}")
             return {}
     
+    def check_seasons_in_sonarr(self, tmdb_id: int, instance_name: str) -> List[int]:
+        """Check which seasons of a TV show are already in Sonarr"""
+        try:
+            # Get Sonarr instance config
+            app_config = self.db.get_app_config('sonarr')
+            if not app_config or not app_config.get('instances'):
+                return []
+            
+            target_instance = None
+            for instance in app_config['instances']:
+                if instance.get('name') == instance_name:
+                    target_instance = instance
+                    break
+            
+            if not target_instance:
+                return []
+            
+            # Get series from Sonarr
+            sonarr_url = target_instance.get('url', '').rstrip('/')
+            sonarr_api_key = target_instance.get('api_key', '')
+            
+            if not sonarr_url or not sonarr_api_key:
+                return []
+            
+            # Search for series by TMDB ID
+            headers = {'X-Api-Key': sonarr_api_key}
+            response = requests.get(
+                f"{sonarr_url}/api/v3/series",
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code != 200:
+                return []
+            
+            series_list = response.json()
+            
+            # Find series with matching TMDB ID
+            for series in series_list:
+                if series.get('tvdbId') == tmdb_id or series.get('tmdbId') == tmdb_id:
+                    # Return list of season numbers that exist
+                    seasons = series.get('seasons', [])
+                    return [s.get('seasonNumber') for s in seasons if s.get('seasonNumber') is not None]
+            
+            return []
+            
+        except Exception as e:
+            logger.error(f"Error checking seasons in Sonarr: {e}")
+            return []
+    
     def search_media_with_availability(self, query: str, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
         """Search for media using TMDB API and check availability in specified app instance"""
         api_key = self.get_tmdb_api_key()

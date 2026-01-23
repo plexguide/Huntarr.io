@@ -170,5 +170,23 @@ def get_media_details(media_type, tmdb_id):
         logger.error(f"Error getting media details: {e}")
         return jsonify({'error': 'Failed to get media details'}), 500
 
+@requestarr_bp.route('/check-seasons', methods=['GET'])
+def check_requested_seasons():
+    """Check which seasons of a TV show are already in Sonarr"""
+    try:
+        tmdb_id = request.args.get('tmdb_id', type=int)
+        instance_name = request.args.get('instance')
+        
+        if not tmdb_id or not instance_name:
+            return jsonify({'error': 'Missing parameters'}), 400
+        
+        # Get requested seasons from Sonarr
+        requested_seasons = requestarr_api.check_seasons_in_sonarr(tmdb_id, instance_name)
+        return jsonify({'requested_seasons': requested_seasons})
+        
+    except Exception as e:
+        logger.error(f"Error checking seasons: {e}")
+        return jsonify({'error': 'Failed to check seasons'}), 500
+
 # Requestarr is always enabled with hardcoded TMDB API key
 logger.info("Requestarr initialized with hardcoded TMDB API key") 
