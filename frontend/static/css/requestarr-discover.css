@@ -2,8 +2,9 @@
 
 .requestarr-content {
     padding: 20px 30px;
-    max-width: 1800px;
+    max-width: 100%;
     margin: 0 auto;
+    overflow: hidden; /* Prevent content from extending beyond viewport */
 }
 
 .requestarr-view {
@@ -73,10 +74,12 @@
 
 .carousel-container {
     position: relative;
-    padding: 0 60px; /* Space for fixed arrows */
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden; /* Constrain arrows within viewport */
 }
 
-/* Carousel Arrows - Fixed at page edges */
+/* Carousel Arrows - Fixed at container edges within viewport */
 .carousel-arrow {
     position: absolute;
     top: 50%;
@@ -104,11 +107,11 @@
 }
 
 .carousel-arrow.left {
-    left: 0;
+    left: 10px;
 }
 
 .carousel-arrow.right {
-    right: 0;
+    right: 10px;
 }
 
 .carousel-arrow:disabled {
@@ -123,7 +126,8 @@
     overflow-x: auto;
     overflow-y: hidden;
     scroll-behavior: smooth;
-    padding: 10px 5px;
+    padding: 10px 60px; /* Padding for arrows on sides */
+    margin: 0 -60px; /* Negative margin to align content */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
 }
@@ -580,8 +584,9 @@
         flex: 1;
     }
     
-    .carousel-container {
-        padding: 0 50px; /* Less padding on mobile */
+    .media-carousel {
+        padding: 10px 50px; /* Less padding on mobile */
+        margin: 0 -50px;
     }
     
     .carousel-arrow {
@@ -591,11 +596,11 @@
     }
     
     .carousel-arrow.left {
-        left: 0;
+        left: 5px;
     }
     
     .carousel-arrow.right {
-        right: 0;
+        right: 5px;
     }
     
     .media-card {
