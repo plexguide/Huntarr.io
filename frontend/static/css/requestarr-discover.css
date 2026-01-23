@@ -4,19 +4,22 @@
     padding: 20px 30px;
     max-width: 100%;
     margin: 0 auto;
-    overflow: hidden; /* Prevent content from extending beyond viewport */
+    overflow: visible; /* Allow content to extend beyond when needed */
 }
 
-/* Global Search Bar - Full Width */
+/* Global Search Bar - Full Width across entire page */
 .global-search-bar {
     position: relative;
-    width: 100%;
+    width: calc(100% + 60px); /* Extend beyond parent padding */
+    margin-left: -30px;
+    margin-right: -30px;
+    padding: 0 30px;
     margin-bottom: 30px;
 }
 
 .global-search-bar i {
     position: absolute;
-    left: 20px;
+    left: 50px; /* Account for extended padding */
     top: 50%;
     transform: translateY(-50%);
     color: #888;
@@ -44,12 +47,12 @@
     color: #888;
 }
 
-/* Search Results - Full Width */
+/* Search Results - Full Width across entire page */
 #search-results-view {
     width: calc(100% + 60px); /* Extend beyond parent padding */
-    margin-left: -30px; /* Negative margin to align to page edge */
+    margin-left: -30px;
     margin-right: -30px;
-    padding: 0 30px; /* Add padding back for content */
+    padding: 0 30px;
 }
 
 .search-results-title {
