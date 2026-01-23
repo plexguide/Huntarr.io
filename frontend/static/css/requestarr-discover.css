@@ -390,7 +390,7 @@
 .media-modal {
     position: fixed;
     top: 0;
-    left: 150px; /* Sidebar width - start content area here */
+    left: 145px; /* Sidebar width - start content area here */
     right: 0;
     bottom: 0;
     z-index: 1000;
