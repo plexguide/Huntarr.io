@@ -238,6 +238,125 @@ class RequestarrAPI:
             logger.error(f"Error in streaming search: {e}")
             yield {'error': str(e)}
     
+    def get_trending_media_stream(self, app_type: str, instance_name: str):
+        """Stream trending weekly movies or TV shows with availability checking"""
+        api_key = self.get_tmdb_api_key()
+        
+        # Determine media type based on app
+        media_type = "movie" if app_type == "radarr" else "tv" if app_type == "sonarr" else None
+        
+        if not media_type:
+            yield {'error': 'Invalid app type'}
+            return
+        
+        try:
+            # Get trending movies or TV shows for the week
+            url = f"{self.tmdb_base_url}/trending/{media_type}/week"
+            params = {
+                'api_key': api_key
+            }
+            
+            # Fetch multiple pages to get up to 100 results (5 pages * 20 results)
+            all_items = []
+            for page in range(1, 6):  # Pages 1-5 for 100 results
+                params['page'] = page
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                all_items.extend(data.get('results', []))
+                
+                # Stop if we've collected enough or there are no more pages
+                if len(all_items) >= 100 or page >= data.get('total_pages', 1):
+                    break
+            
+            # Limit to top 100 results
+            all_items = all_items[:100]
+            
+            # Get instance configuration for availability checking
+            app_config = self.db.get_app_config(app_type)
+            target_instance = None
+            if app_config and app_config.get('instances'):
+                for instance in app_config['instances']:
+                    if instance.get('name') == instance_name:
+                        target_instance = instance
+                        break
+            
+            # Process items
+            processed_items = []
+            
+            for item in all_items:
+                # Get title and year
+                title = item.get('title') or item.get('name', '')
+                release_date = item.get('release_date') or item.get('first_air_date', '')
+                year = None
+                if release_date:
+                    try:
+                        year = int(release_date.split('-')[0])
+                    except (ValueError, IndexError):
+                        pass
+                
+                # Build poster URL
+                poster_path = item.get('poster_path')
+                poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+                
+                # Build backdrop URL
+                backdrop_path = item.get('backdrop_path')
+                backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
+                
+                # Create basic result first (without availability check)
+                basic_result = {
+                    'tmdb_id': item.get('id'),
+                    'media_type': media_type,
+                    'title': title,
+                    'year': year,
+                    'overview': item.get('overview', ''),
+                    'poster_path': poster_url,
+                    'backdrop_path': backdrop_url,
+                    'vote_average': item.get('vote_average', 0),
+                    'popularity': item.get('popularity', 0),
+                    'availability': {
+                        'status': 'checking',
+                        'message': 'Checking availability...',
+                        'in_app': False,
+                        'already_requested': False
+                    }
+                }
+                
+                processed_items.append((basic_result, item.get('id'), media_type))
+            
+            # Yield basic results first
+            for basic_result, tmdb_id, item_type in processed_items:
+                yield basic_result
+            
+            # Now check availability for each item and yield updates
+            for basic_result, tmdb_id, item_type in processed_items:
+                try:
+                    availability_status = self._get_availability_status(tmdb_id, item_type, target_instance, app_type)
+                    
+                    # Yield updated result with availability
+                    updated_result = basic_result.copy()
+                    updated_result['availability'] = availability_status
+                    updated_result['_update'] = True  # Flag to indicate this is an update
+                    
+                    yield updated_result
+                    
+                except Exception as e:
+                    logger.error(f"Error checking availability for {tmdb_id}: {e}")
+                    # Yield error status
+                    error_result = basic_result.copy()
+                    error_result['availability'] = {
+                        'status': 'error',
+                        'message': 'Error checking availability',
+                        'in_app': False,
+                        'already_requested': False
+                    }
+                    error_result['_update'] = True
+                    yield error_result
+            
+        except Exception as e:
+            logger.error(f"Error fetching trending media: {e}")
+            yield {'error': str(e)}
+    
     def _get_availability_status(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str) -> Dict[str, Any]:
         """Get availability status for media item"""
         if not instance:

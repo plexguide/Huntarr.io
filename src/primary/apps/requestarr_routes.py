@@ -63,6 +63,33 @@ def search_media_stream():
         logger.error(f"Error setting up streaming search: {e}")
         return jsonify({'error': 'Search failed'}), 500
 
+@requestarr_bp.route('/trending/stream', methods=['GET'])
+def trending_media_stream():
+    """Stream trending weekly movies or TV shows"""
+    from flask import Response
+    import json
+    
+    try:
+        app_type = request.args.get('app_type', '').strip()
+        instance_name = request.args.get('instance_name', '').strip()
+        
+        if not app_type or not instance_name:
+            return jsonify({'error': 'App type and instance name are required'}), 400
+        
+        def generate():
+            try:
+                for result in requestarr_api.get_trending_media_stream(app_type, instance_name):
+                    yield f"data: {json.dumps(result)}\n\n"
+            except Exception as e:
+                logger.error(f"Error in streaming trending: {e}")
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        
+        return Response(generate(), mimetype='text/plain')
+        
+    except Exception as e:
+        logger.error(f"Error setting up streaming trending: {e}")
+        return jsonify({'error': 'Trending fetch failed'}), 500
+
 @requestarr_bp.route('/instances', methods=['GET'])
 def get_enabled_instances():
     """Get enabled Sonarr and Radarr instances"""

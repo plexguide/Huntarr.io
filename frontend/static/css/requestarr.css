@@ -66,6 +66,33 @@
     margin-bottom: 30px;
 }
 
+/* Trending Header */
+.trending-header {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin: 20px 0 30px 0;
+    padding: 20px;
+    background: linear-gradient(145deg, rgba(52, 152, 219, 0.15), rgba(41, 128, 185, 0.1));
+    border: 1px solid rgba(52, 152, 219, 0.2);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.trending-title {
+    color: #fff;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.trending-subtitle {
+    color: #b0b0b0;
+    font-size: 15px;
+    margin: 0;
+    font-weight: 400;
+}
+
 #requestarr-results {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

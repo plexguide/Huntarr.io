@@ -81,6 +81,9 @@ class RequestarrModule {
                 searchInput.placeholder = `Search for ${appType === 'radarr' ? 'movies' : 'TV shows'}...`;
                 searchInput.value = '';
             }
+            
+            // Load trending content for the selected instance
+            this.loadTrendingMedia();
         } else {
             this.selectedInstance = null;
             const searchInput = document.getElementById('requestarr-search');
@@ -209,6 +212,110 @@ class RequestarrModule {
         } catch (error) {
             console.error('Error searching media:', error);
             resultsContainer.innerHTML = '<div class="error">Search failed. Please try again.</div>';
+        }
+    }
+
+    async loadTrendingMedia() {
+        if (!this.selectedInstance) {
+            return;
+        }
+
+        const resultsContainer = document.getElementById('requestarr-results');
+        if (!resultsContainer) return;
+
+        // Show loading with appropriate heading
+        const mediaTypeText = this.selectedInstance.appType === 'radarr' ? 'Movies' : 'Shows';
+        resultsContainer.innerHTML = `
+            <div class="trending-header">
+                <h2 class="trending-title">📈 Top Weekly ${mediaTypeText}</h2>
+                <p class="trending-subtitle">Trending ${mediaTypeText.toLowerCase()} this week</p>
+            </div>
+            <div class="loading">🔍 Loading trending content...</div>
+        `;
+
+        try {
+            const params = new URLSearchParams({
+                app_type: this.selectedInstance.appType,
+                instance_name: this.selectedInstance.instanceName
+            });
+            
+            // Use streaming endpoint for progressive loading
+            const response = await fetch(`./api/requestarr/trending/stream?${params}`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load trending content');
+            }
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let hasResults = false;
+            
+            // Clear loading message once we start getting results
+            const clearLoadingOnce = () => {
+                if (!hasResults) {
+                    // Remove loading message but keep header
+                    const loadingDiv = resultsContainer.querySelector('.loading');
+                    if (loadingDiv) {
+                        loadingDiv.remove();
+                    }
+                    hasResults = true;
+                }
+            };
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // Keep incomplete line in buffer
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            
+                            if (data.error) {
+                                throw new Error(data.error);
+                            }
+                            
+                            clearLoadingOnce();
+                            
+                            if (data._update) {
+                                // This is an availability update for an existing result
+                                this.updateResultAvailability(data);
+                            } else {
+                                // This is a new result
+                                this.addResult(data);
+                            }
+                            
+                        } catch (parseError) {
+                            console.error('Error parsing streaming data:', parseError);
+                        }
+                    }
+                }
+            }
+            
+            // If no results were found
+            if (!hasResults) {
+                resultsContainer.innerHTML = `
+                    <div class="trending-header">
+                        <h2 class="trending-title">📈 Top Weekly ${mediaTypeText}</h2>
+                    </div>
+                    <div class="no-results">No trending content found.</div>
+                `;
+            }
+            
+        } catch (error) {
+            console.error('Error loading trending media:', error);
+            resultsContainer.innerHTML = `
+                <div class="trending-header">
+                    <h2 class="trending-title">📈 Top Weekly ${mediaTypeText}</h2>
+                </div>
+                <div class="error">Failed to load trending content. Please try again.</div>
+            `;
         }
     }
 
