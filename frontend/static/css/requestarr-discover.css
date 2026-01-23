@@ -435,26 +435,7 @@
 }
 
 .modal-close {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.8);
-    border: none;
-    color: #fff;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    z-index: 10;
-    transition: background 0.2s;
-}
-
-.modal-close:hover {
-    background: #e74c3c;
+    display: none !important;
 }
 
 .modal-backdrop-image {
@@ -732,26 +713,7 @@
 }
 
 .modal-close-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.7);
-    border: none;
-    color: #fff;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    z-index: 10;
-    transition: background 0.2s;
-}
-
-.modal-close-btn:hover {
-    background: rgba(0, 0, 0, 0.9);
+    display: none !important;
 }
 
 .request-modal-content {

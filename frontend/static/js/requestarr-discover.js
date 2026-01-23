@@ -6,6 +6,7 @@ class RequestarrDiscover {
     constructor() {
         this.currentView = 'discover';
         this.instances = { sonarr: [], radarr: [] };
+        this.qualityProfiles = {}; // Cache quality profiles by instance
         this.searchTimeouts = {};
         this.currentModal = null;
         this.init();
@@ -157,12 +158,51 @@ class RequestarrDiscover {
             const response = await fetch('./api/requestarr/instances');
             const data = await response.json();
             
-            if (data.success) {
-                this.instances = data.instances;
+            // API returns {sonarr: [], radarr: []} directly
+            if (data.sonarr || data.radarr) {
+                this.instances = {
+                    sonarr: data.sonarr || [],
+                    radarr: data.radarr || []
+                };
                 console.log('[RequestarrDiscover] Loaded instances:', this.instances);
+                
+                // Load quality profiles for all instances
+                await this.loadAllQualityProfiles();
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading instances:', error);
+        }
+    }
+    
+    async loadAllQualityProfiles() {
+        console.log('[RequestarrDiscover] Loading quality profiles...');
+        
+        // Load Radarr quality profiles
+        for (const instance of this.instances.radarr) {
+            try {
+                const response = await fetch(`./api/requestarr/quality-profiles/radarr/${instance.name}`);
+                const data = await response.json();
+                if (data.success) {
+                    this.qualityProfiles[`radarr-${instance.name}`] = data.profiles;
+                    console.log(`[RequestarrDiscover] Loaded quality profiles for Radarr - ${instance.name}:`, data.profiles);
+                }
+            } catch (error) {
+                console.error(`[RequestarrDiscover] Error loading Radarr quality profiles for ${instance.name}:`, error);
+            }
+        }
+        
+        // Load Sonarr quality profiles
+        for (const instance of this.instances.sonarr) {
+            try {
+                const response = await fetch(`./api/requestarr/quality-profiles/sonarr/${instance.name}`);
+                const data = await response.json();
+                if (data.success) {
+                    this.qualityProfiles[`sonarr-${instance.name}`] = data.profiles;
+                    console.log(`[RequestarrDiscover] Loaded quality profiles for Sonarr - ${instance.name}:`, data.profiles);
+                }
+            } catch (error) {
+                console.error(`[RequestarrDiscover] Error loading Sonarr quality profiles for ${instance.name}:`, error);
+            }
         }
     }
 
@@ -581,15 +621,25 @@ class RequestarrDiscover {
             `;
         }
         
+        // Get quality profiles for the first/remembered instance
+        const profileKey = `${isTVShow ? 'sonarr' : 'radarr'}-${rememberedInstance || (instances[0]?.name || '')}`;
+        const profiles = this.qualityProfiles[profileKey] || [];
+        
         // Advanced section (for both TV and Movies)
         modalHTML += `
             <div class="request-advanced-section">
-                <h4 class="advanced-title">Advanced</h4>
-                
                 <div class="advanced-field">
                     <label>Quality Profile</label>
                     <select id="modal-quality-profile" class="advanced-select">
                         <option value="">Any (Default)</option>
+        `;
+        
+        // Add quality profile options
+        profiles.forEach(profile => {
+            modalHTML += `<option value="${profile.id}">${profile.name}</option>`;
+        });
+        
+        modalHTML += `
                     </select>
                 </div>
                 
@@ -680,8 +730,25 @@ class RequestarrDiscover {
     instanceChanged(instanceName) {
         const isTVShow = this.currentModalData.media_type === 'tv';
         const instanceKey = isTVShow ? 'sonarr' : 'radarr';
+        const appType = isTVShow ? 'sonarr' : 'radarr';
+        
         localStorage.setItem(`huntarr-requestarr-instance-${instanceKey}`, instanceName);
         console.log('[RequestarrDiscover] Instance changed to:', instanceName);
+        
+        // Update quality profile dropdown
+        const profileKey = `${appType}-${instanceName}`;
+        const profiles = this.qualityProfiles[profileKey] || [];
+        const qualitySelect = document.getElementById('modal-quality-profile');
+        
+        if (qualitySelect) {
+            qualitySelect.innerHTML = '<option value="">Any (Default)</option>';
+            profiles.forEach(profile => {
+                const option = document.createElement('option');
+                option.value = profile.id;
+                option.textContent = profile.name;
+                qualitySelect.appendChild(option);
+            });
+        }
         
         // For TV shows, reload modal to check requested seasons for new instance
         if (isTVShow) {

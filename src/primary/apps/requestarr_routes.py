@@ -188,5 +188,15 @@ def check_requested_seasons():
         logger.error(f"Error checking seasons: {e}")
         return jsonify({'error': 'Failed to check seasons'}), 500
 
+@requestarr_bp.route('/quality-profiles/<app_type>/<instance_name>', methods=['GET'])
+def get_quality_profiles(app_type, instance_name):
+    """Get quality profiles from Radarr or Sonarr instance"""
+    try:
+        profiles = requestarr_api.get_quality_profiles(app_type, instance_name)
+        return jsonify({'success': True, 'profiles': profiles})
+    except Exception as e:
+        logger.error(f"Error getting quality profiles: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get quality profiles'}), 500
+
 # Requestarr is always enabled with hardcoded TMDB API key
 logger.info("Requestarr initialized with hardcoded TMDB API key") 

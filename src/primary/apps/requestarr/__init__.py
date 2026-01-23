@@ -322,6 +322,59 @@ class RequestarrAPI:
             logger.error(f"Error checking seasons in Sonarr: {e}")
             return []
     
+    def get_quality_profiles(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
+        """Get quality profiles from Radarr or Sonarr instance"""
+        try:
+            # Get instance config
+            app_config = self.db.get_app_config(app_type)
+            if not app_config or not app_config.get('instances'):
+                return []
+            
+            target_instance = None
+            for instance in app_config['instances']:
+                if instance.get('name') == instance_name:
+                    target_instance = instance
+                    break
+            
+            if not target_instance:
+                return []
+            
+            # Get URL and API key
+            url = target_instance.get('api_url', '') or target_instance.get('url', '')
+            api_key = target_instance.get('api_key', '')
+            
+            if not url or not api_key:
+                return []
+            
+            url = url.rstrip('/')
+            
+            # Fetch quality profiles
+            headers = {'X-Api-Key': api_key}
+            response = requests.get(
+                f"{url}/api/v3/qualityprofile",
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to get quality profiles: {response.status_code}")
+                return []
+            
+            profiles = response.json()
+            
+            # Return simplified profile data
+            return [
+                {
+                    'id': profile.get('id'),
+                    'name': profile.get('name')
+                }
+                for profile in profiles
+            ]
+            
+        except Exception as e:
+            logger.error(f"Error getting quality profiles from {app_type}: {e}")
+            return []
+    
     def search_media_with_availability(self, query: str, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
         """Search for media using TMDB API and check availability in specified app instance"""
         api_key = self.get_tmdb_api_key()
