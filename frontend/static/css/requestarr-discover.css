@@ -45,6 +45,10 @@
 }
 
 /* Search Results */
+#search-results-view {
+    width: 100%;
+}
+
 .search-results-title {
     font-size: 1.3rem;
     font-weight: 600;
@@ -57,6 +61,14 @@
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 20px;
     padding: 10px 0;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Ensure search results media cards match carousel cards */
+.search-results-grid .media-card {
+    flex: 0 0 150px;
+    width: 150px;
 }
 
 .requestarr-view {
