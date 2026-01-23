@@ -1233,6 +1233,12 @@ input:disabled + .toggle-slider {
 
 .series-status-box i {
     font-size: 24px;
+    flex-shrink: 0;
+}
+
+.series-status-box > div {
+    flex: 1;
+    text-align: center;
 }
 
 .status-available {
@@ -1274,6 +1280,20 @@ input:disabled + .toggle-slider {
 
 .status-missing-episodes .status-title {
     color: #f97316;
+    font-weight: 600;
+}
+
+.status-requested {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-requested i {
+    color: #ef4444;
+}
+
+.status-requested .status-title {
+    color: #ef4444;
     font-weight: 600;
 }
 

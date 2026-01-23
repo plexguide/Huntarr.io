@@ -187,7 +187,7 @@ export class RequestarrModal {
                             <i class="fas fa-clock"></i>
                             <div>
                                 <div class="status-title">Recently requested - Cooldown active</div>
-                                <div class="status-text">You can request again in ${timeMsg} (12-hour cooldown)</div>
+                                <div class="status-text">Can request again in ${timeMsg}</div>
                             </div>
                         </div>
                     `;
@@ -232,7 +232,7 @@ export class RequestarrModal {
                         <div class="series-status-box status-missing-episodes">
                             <i class="fas fa-tv"></i>
                             <div>
-                                <div class="status-title">Request missing episodes (${status.available_episodes}/${status.total_episodes}, ${status.missing_episodes} missing)</div>
+                                <div class="status-title">Request missing episodes (${status.available_episodes}/${status.total_episodes} with ${status.missing_episodes} missing)</div>
                             </div>
                         </div>
                     `;
@@ -343,7 +343,7 @@ export class RequestarrModal {
                         <i class="fas fa-clock"></i>
                         <div>
                             <div class="status-title">Recently requested - Cooldown active</div>
-                            <div class="status-text">You can request again in ${timeMsg} (12-hour cooldown)</div>
+                            <div class="status-text">Can request again in ${timeMsg}</div>
                         </div>
                     </div>
                 `;
