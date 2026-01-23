@@ -81,6 +81,8 @@
     border: 1px solid rgba(90, 109, 137, 0.1);
     backdrop-filter: blur(10px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
 }
 
 .result-card:hover {
@@ -124,6 +126,9 @@
 
 .result-info {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .result-title {
@@ -139,6 +144,8 @@
     font-size: 14px;
     line-height: 1.4;
     margin: 0 0 15px 0;
+    flex: 1;
+    min-height: 60px;
 }
 
 .see-more-link {
@@ -182,8 +189,9 @@
     margin: 10px 0;
     padding: 8px 12px;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
+    min-height: 38px;
 }
 
 .status-available {
@@ -234,7 +242,8 @@
 .request-section {
     display: flex;
     justify-content: center;
-    margin-top: 15px;
+    margin-top: auto;
+    padding-top: 10px;
 }
 
 .request-btn {
@@ -245,7 +254,8 @@
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
-    min-width: 120px;
+    width: 100%;
+    font-size: 14px;
 }
 
 .btn-primary {
