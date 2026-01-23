@@ -311,8 +311,9 @@ class RequestarrModule {
         const overview = item.overview || 'No description available.';
         const truncateLength = 120; // Shorter to ensure "See More" fits in 3 lines
         const shouldTruncate = overview.length > truncateLength;
-        const displayOverview = shouldTruncate ? overview.substring(0, truncateLength) + '... ' : overview;
-        const seeMoreLink = shouldTruncate ? `<a href="#" class="see-more-link" data-card-id="${cardId}">See More</a>` : '';
+        console.log(`[Requestarr] Item: ${item.title}, Overview length: ${overview.length}, Should truncate: ${shouldTruncate}`);
+        const displayOverview = shouldTruncate ? overview.substring(0, truncateLength) + '...' : overview;
+        const seeMoreLink = shouldTruncate ? ` <a href="#" class="see-more-link" data-card-id="${cardId}">See More</a>` : '';
         
         return `
             <div class="result-card" data-card-id="${cardId}" data-tmdb-id="${item.tmdb_id}" data-media-type="${item.media_type}">

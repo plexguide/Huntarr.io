@@ -152,13 +152,16 @@
     margin: 0 0 15px 0;
     height: 58px;
     overflow: hidden;
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    position: relative;
 }
 
 .result-overview .overview-text {
     display: inline;
+}
+
+.result-overview .see-more-link {
+    display: inline;
+    margin-left: 4px;
 }
 
 .see-more-link {
