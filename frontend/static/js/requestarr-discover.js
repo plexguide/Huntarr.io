@@ -513,6 +513,11 @@ class RequestarrDiscover {
         // Build modal HTML
         const isTVShow = data.media_type === 'tv';
         const instances = isTVShow ? this.instances.sonarr : this.instances.radarr;
+        console.log('[RequestarrDiscover] Modal instances:', {
+            isTVShow,
+            instances,
+            allInstances: this.instances
+        });
         
         // Get remembered instance or use first
         const instanceKey = isTVShow ? 'sonarr' : 'radarr';
@@ -598,10 +603,14 @@ class RequestarrDiscover {
                     <select id="modal-instance-select" class="advanced-select" onchange="window.RequestarrDiscover.instanceChanged(this.value)">
         `;
         
-        instances.forEach((instance, index) => {
-            const selected = instance.name === rememberedInstance ? 'selected' : '';
-            modalHTML += `<option value="${instance.name}" ${selected}>${isTVShow ? 'Sonarr' : 'Radarr'} - ${instance.name}</option>`;
-        });
+        if (instances.length === 0) {
+            modalHTML += `<option value="">No Instance Configured</option>`;
+        } else {
+            instances.forEach((instance, index) => {
+                const selected = instance.name === rememberedInstance ? 'selected' : '';
+                modalHTML += `<option value="${instance.name}" ${selected}>${isTVShow ? 'Sonarr' : 'Radarr'} - ${instance.name}</option>`;
+            });
+        }
         
         modalHTML += `
                     </select>
@@ -623,8 +632,8 @@ class RequestarrDiscover {
         this.currentModalData = data;
         this.selectedSeasons = [];
         
-        // Disable request button initially for TV shows
-        if (isTVShow) {
+        // Disable request button initially for TV shows or if no instances
+        if (isTVShow || instances.length === 0) {
             document.getElementById('modal-request-btn').disabled = true;
             document.getElementById('modal-request-btn').classList.add('disabled');
         }

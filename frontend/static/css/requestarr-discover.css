@@ -394,10 +394,14 @@
     right: 0;
     bottom: 0;
     z-index: 1000;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 20px;
+}
+
+.media-modal[style*="display: flex"] {
+    display: flex !important;
 }
 
 .modal-backdrop {
@@ -414,11 +418,20 @@
     position: relative;
     background: rgba(15, 23, 42, 0.95);
     border-radius: 12px;
-    max-width: 1000px;
+    max-width: 600px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.modal-body {
+    border: 2px solid #f59e0b;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.95);
+    max-width: 600px;
+    width: 100%;
 }
 
 .modal-close {
@@ -679,7 +692,7 @@
 /* Request Modal - Overseerr Style */
 .request-modal-header {
     position: relative;
-    height: 300px;
+    height: 180px;
     background-size: cover;
     background-position: center;
     border-radius: 12px 12px 0 0;
@@ -693,26 +706,26 @@
     left: 0;
     right: 0;
     height: 100%;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%);
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(15, 23, 42, 0.95) 100%);
 }
 
 .request-modal-header-overlay {
     position: absolute;
-    bottom: 20px;
-    left: 30px;
-    right: 30px;
+    bottom: 15px;
+    left: 25px;
+    right: 25px;
     z-index: 2;
 }
 
 .request-modal-title {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 5px;
 }
 
 .request-modal-subtitle {
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 700;
     color: #fff;
     margin: 0;
@@ -742,7 +755,7 @@
 }
 
 .request-modal-content {
-    padding: 30px;
+    padding: 20px 25px 25px 25px;
     background: rgba(15, 23, 42, 0.95);
 }
 
@@ -879,21 +892,21 @@ input:disabled + .toggle-slider {
 /* Advanced Section */
 .request-advanced-section {
     background: rgba(255, 255, 255, 0.03);
-    padding: 20px;
+    padding: 15px;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .advanced-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: #fff;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .advanced-field {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .advanced-field:last-child {
