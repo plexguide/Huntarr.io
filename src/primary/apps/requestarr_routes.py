@@ -120,5 +120,55 @@ def get_requests():
         logger.error(f"Error getting requests: {e}")
         return jsonify({'error': 'Failed to get requests'}), 500
 
+# Discover routes
+@requestarr_bp.route('/discover/trending', methods=['GET'])
+def get_trending():
+    """Get trending movies and TV shows"""
+    try:
+        time_window = request.args.get('time_window', 'week')
+        results = requestarr_api.get_trending(time_window)
+        return jsonify({'results': results})
+    except Exception as e:
+        logger.error(f"Error getting trending: {e}")
+        return jsonify({'error': 'Failed to get trending'}), 500
+
+@requestarr_bp.route('/discover/movies', methods=['GET'])
+def get_popular_movies():
+    """Get popular movies"""
+    try:
+        page = int(request.args.get('page', 1))
+        results = requestarr_api.get_popular_movies(page)
+        return jsonify({'results': results, 'page': page})
+    except Exception as e:
+        logger.error(f"Error getting popular movies: {e}")
+        return jsonify({'error': 'Failed to get popular movies'}), 500
+
+@requestarr_bp.route('/discover/tv', methods=['GET'])
+def get_popular_tv():
+    """Get popular TV shows"""
+    try:
+        page = int(request.args.get('page', 1))
+        results = requestarr_api.get_popular_tv(page)
+        return jsonify({'results': results, 'page': page})
+    except Exception as e:
+        logger.error(f"Error getting popular TV: {e}")
+        return jsonify({'error': 'Failed to get popular TV'}), 500
+
+@requestarr_bp.route('/details/<media_type>/<int:tmdb_id>', methods=['GET'])
+def get_media_details(media_type, tmdb_id):
+    """Get detailed information about a movie or TV show"""
+    try:
+        if media_type not in ['movie', 'tv']:
+            return jsonify({'error': 'Invalid media type'}), 400
+        
+        details = requestarr_api.get_media_details(tmdb_id, media_type)
+        if not details:
+            return jsonify({'error': 'Media not found'}), 404
+        
+        return jsonify(details)
+    except Exception as e:
+        logger.error(f"Error getting media details: {e}")
+        return jsonify({'error': 'Failed to get media details'}), 500
+
 # Requestarr is always enabled with hardcoded TMDB API key
 logger.info("Requestarr initialized with hardcoded TMDB API key") 

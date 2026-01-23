@@ -1,73 +1,173 @@
-<!-- Requestarr Section -->
+<!-- Requestarr Section - Overseerr Style -->
 <div id="requestarr-section" class="content-section" style="display: none;">
-    <link rel="stylesheet" href="./static/css/requestarr.css">
+    <link rel="stylesheet" href="./static/css/requestarr-discover.css">
     
-    <!-- Home View -->
-    <div id="requestarr-home-view" class="requestarr-view">
-        <div class="requestarr-container">
-            <!-- Header -->
-            <div class="requestarr-header">
-                <h1>🎬 Requestarr</h1>
-                <p>Search and request movies and TV shows for your Sonarr and Radarr instances</p>
+    <div class="requestarr-discover-container">
+        <!-- Left Sidebar Navigation -->
+        <aside class="requestarr-sidebar">
+            <nav class="requestarr-nav">
+                <a href="#" class="nav-item active" data-view="discover">
+                    <i class="fas fa-compass"></i>
+                    <span>Discover</span>
+                </a>
+                <a href="#" class="nav-item" data-view="movies">
+                    <i class="fas fa-film"></i>
+                    <span>Movies</span>
+                </a>
+                <a href="#" class="nav-item" data-view="tv">
+                    <i class="fas fa-tv"></i>
+                    <span>TV Shows</span>
+                </a>
+                <a href="#" class="nav-item" data-view="history">
+                    <i class="fas fa-history"></i>
+                    <span>History</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="requestarr-main">
+            <!-- Discover View -->
+            <div id="discover-view" class="view-container active">
+                <h1 class="view-title">Discover</h1>
+                
+                <!-- Trending Section -->
+                <section class="media-section">
+                    <h2 class="section-title">Trending This Week</h2>
+                    <div id="trending-grid" class="media-grid">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading trending content...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Popular Movies Section -->
+                <section class="media-section">
+                    <h2 class="section-title">Popular Movies</h2>
+                    <div id="popular-movies-grid" class="media-grid">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading movies...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Popular TV Section -->
+                <section class="media-section">
+                    <h2 class="section-title">Popular TV Shows</h2>
+                    <div id="popular-tv-grid" class="media-grid">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading TV shows...</p>
+                        </div>
+                    </div>
+                </section>
             </div>
 
-            <!-- Instance Selection Section -->
-            <div class="settings-section">
-                <h2>📺 Select Target Instance</h2>
-                <div class="form-group">
-                    <label for="requestarr-instance-select">Choose App Instance</label>
-                    <select id="requestarr-instance-select" class="form-control">
-                        <option value="">Select an instance to search...</option>
-                    </select>
-                    <small style="color: #b0b0b0; margin-top: 5px; display: block;">
-                        Select a Sonarr or Radarr instance to search and request media
-                    </small>
+            <!-- Movies View -->
+            <div id="movies-view" class="view-container">
+                <div class="view-header">
+                    <h1 class="view-title">Movies</h1>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="movies-search" placeholder="Search movies..." autocomplete="off">
+                    </div>
+                </div>
+                <div id="movies-grid" class="media-grid">
+                    <!-- Movie cards will be populated here -->
                 </div>
             </div>
 
-            <!-- Search Section -->
-            <div class="search-section">
-                <h2>🔍 Search Media</h2>
-                <div class="search-box">
-                    <input type="text" id="requestarr-search" placeholder="Search for movies and TV shows..." autocomplete="off">
+            <!-- TV Shows View -->
+            <div id="tv-view" class="view-container">
+                <div class="view-header">
+                    <h1 class="view-title">TV Shows</h1>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="tv-search" placeholder="Search TV shows..." autocomplete="off">
+                    </div>
+                </div>
+                <div id="tv-grid" class="media-grid">
+                    <!-- TV cards will be populated here -->
                 </div>
             </div>
 
-            <!-- Results Section -->
-            <div class="results-section">
-                <div id="requestarr-results">
-                    <!-- Search results will be populated here -->
+            <!-- History View -->
+            <div id="history-view" class="view-container">
+                <h1 class="view-title">Request History</h1>
+                <div id="history-list" class="history-container">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading history...</p>
+                    </div>
                 </div>
             </div>
+        </main>
+    </div>
 
-
+    <!-- Modal for Media Details -->
+    <div id="media-modal" class="media-modal" style="display: none;">
+        <div class="modal-backdrop" onclick="RequestarrDiscover.closeModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="RequestarrDiscover.closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="modal-body">
+                <!-- Backdrop -->
+                <div class="modal-backdrop-image"></div>
+                
+                <!-- Content -->
+                <div class="modal-info">
+                    <div class="modal-poster">
+                        <img src="" alt="Poster">
+                    </div>
+                    
+                    <div class="modal-details">
+                        <h1 class="modal-title"></h1>
+                        <div class="modal-meta">
+                            <span class="year"></span>
+                            <span class="rating"></span>
+                            <span class="runtime"></span>
+                        </div>
+                        <div class="modal-genres"></div>
+                        <p class="modal-overview"></p>
+                        
+                        <!-- Request Options -->
+                        <div class="modal-request-section">
+                            <h3>Request This Title</h3>
+                            
+                            <!-- Instance Selection -->
+                            <div class="form-group">
+                                <label>Select Instance</label>
+                                <select id="modal-instance-select" class="modal-select">
+                                    <option value="">Select an instance...</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Request Button -->
+                            <button id="modal-request-btn" class="modal-request-btn" disabled>
+                                <i class="fas fa-plus"></i>
+                                Request
+                            </button>
+                            
+                            <!-- Status Message -->
+                            <div id="modal-status" class="modal-status"></div>
+                        </div>
+                        
+                        <!-- Additional Info -->
+                        <div class="modal-extra-info">
+                            <div class="cast-section">
+                                <h4>Cast</h4>
+                                <div class="cast-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    
-    <!-- History View -->
-    <div id="requestarr-history-view" class="requestarr-view" style="display: none;">
-        <div class="requestarr-container">
-            <!-- Header -->
-            <div class="requestarr-header">
-                <h1>📚 Request History</h1>
-                <p>View your complete request history and track status</p>
-            </div>
 
-            <!-- Placeholder Content -->
-            <div class="settings-section">
-                <h2>🚧 Coming Soon</h2>
-                <div style="text-align: center; padding: 40px 20px;">
-                    <i class="fas fa-history" style="font-size: 48px; color: #666; margin-bottom: 20px;"></i>
-                    <p style="color: #b0b0b0; font-size: 16px; margin-bottom: 10px;">
-                        Request History feature is under development
-                    </p>
-                    <p style="color: #888; font-size: 14px;">
-                        This will show your complete request history, status tracking, and management options.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="./static/js/requestarr.js"></script>
-</div> 
+    <script src="./static/js/requestarr-discover.js"></script>
+</div>

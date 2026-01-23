@@ -21,6 +21,250 @@ class RequestarrAPI:
         """Get hardcoded TMDB API key"""
         return "9265b0bd0cd1962f7f3225989fcd7192"
     
+    def get_trending(self, time_window: str = 'week') -> List[Dict[str, Any]]:
+        """Get trending movies and TV shows"""
+        api_key = self.get_tmdb_api_key()
+        
+        try:
+            url = f"{self.tmdb_base_url}/trending/all/{time_window}"
+            params = {
+                'api_key': api_key
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            results = []
+            
+            for item in data.get('results', []):
+                # Skip person results
+                if item.get('media_type') == 'person':
+                    continue
+                
+                media_type = item.get('media_type')
+                title = item.get('title') or item.get('name', '')
+                release_date = item.get('release_date') or item.get('first_air_date', '')
+                year = None
+                if release_date:
+                    try:
+                        year = int(release_date.split('-')[0])
+                    except (ValueError, IndexError):
+                        pass
+                
+                poster_path = item.get('poster_path')
+                poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+                
+                backdrop_path = item.get('backdrop_path')
+                backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
+                
+                results.append({
+                    'tmdb_id': item.get('id'),
+                    'media_type': media_type,
+                    'title': title,
+                    'year': year,
+                    'overview': item.get('overview', ''),
+                    'poster_path': poster_url,
+                    'backdrop_path': backdrop_url,
+                    'vote_average': item.get('vote_average', 0),
+                    'popularity': item.get('popularity', 0)
+                })
+            
+            return results[:20]
+            
+        except Exception as e:
+            logger.error(f"Error getting trending: {e}")
+            return []
+    
+    def get_popular_movies(self, page: int = 1) -> List[Dict[str, Any]]:
+        """Get popular movies"""
+        api_key = self.get_tmdb_api_key()
+        
+        try:
+            url = f"{self.tmdb_base_url}/movie/popular"
+            params = {
+                'api_key': api_key,
+                'page': page
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            results = []
+            
+            for item in data.get('results', []):
+                release_date = item.get('release_date', '')
+                year = None
+                if release_date:
+                    try:
+                        year = int(release_date.split('-')[0])
+                    except (ValueError, IndexError):
+                        pass
+                
+                poster_path = item.get('poster_path')
+                poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+                
+                backdrop_path = item.get('backdrop_path')
+                backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
+                
+                results.append({
+                    'tmdb_id': item.get('id'),
+                    'media_type': 'movie',
+                    'title': item.get('title', ''),
+                    'year': year,
+                    'overview': item.get('overview', ''),
+                    'poster_path': poster_url,
+                    'backdrop_path': backdrop_url,
+                    'vote_average': item.get('vote_average', 0),
+                    'popularity': item.get('popularity', 0)
+                })
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error getting popular movies: {e}")
+            return []
+    
+    def get_popular_tv(self, page: int = 1) -> List[Dict[str, Any]]:
+        """Get popular TV shows"""
+        api_key = self.get_tmdb_api_key()
+        
+        try:
+            url = f"{self.tmdb_base_url}/tv/popular"
+            params = {
+                'api_key': api_key,
+                'page': page
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            results = []
+            
+            for item in data.get('results', []):
+                first_air_date = item.get('first_air_date', '')
+                year = None
+                if first_air_date:
+                    try:
+                        year = int(first_air_date.split('-')[0])
+                    except (ValueError, IndexError):
+                        pass
+                
+                poster_path = item.get('poster_path')
+                poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+                
+                backdrop_path = item.get('backdrop_path')
+                backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
+                
+                results.append({
+                    'tmdb_id': item.get('id'),
+                    'media_type': 'tv',
+                    'title': item.get('name', ''),
+                    'year': year,
+                    'overview': item.get('overview', ''),
+                    'poster_path': poster_url,
+                    'backdrop_path': backdrop_url,
+                    'vote_average': item.get('vote_average', 0),
+                    'popularity': item.get('popularity', 0)
+                })
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error getting popular TV: {e}")
+            return []
+    
+    def get_media_details(self, tmdb_id: int, media_type: str) -> Dict[str, Any]:
+        """Get detailed information about a movie or TV show"""
+        api_key = self.get_tmdb_api_key()
+        
+        try:
+            endpoint = "movie" if media_type == "movie" else "tv"
+            url = f"{self.tmdb_base_url}/{endpoint}/{tmdb_id}"
+            params = {
+                'api_key': api_key,
+                'append_to_response': 'credits,videos'
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Build poster and backdrop URLs
+            poster_path = data.get('poster_path')
+            poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+            
+            backdrop_path = data.get('backdrop_path')
+            backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
+            
+            # Get year
+            release_date = data.get('release_date') or data.get('first_air_date', '')
+            year = None
+            if release_date:
+                try:
+                    year = int(release_date.split('-')[0])
+                except (ValueError, IndexError):
+                    pass
+            
+            # Get trailer
+            videos = data.get('videos', {}).get('results', [])
+            trailer = None
+            for video in videos:
+                if video.get('type') == 'Trailer' and video.get('site') == 'YouTube':
+                    trailer = f"https://www.youtube.com/watch?v={video.get('key')}"
+                    break
+            
+            # Get cast
+            cast = []
+            credits = data.get('credits', {})
+            for person in credits.get('cast', [])[:5]:  # Top 5 cast
+                cast.append({
+                    'name': person.get('name'),
+                    'character': person.get('character'),
+                    'profile_path': f"{self.tmdb_image_base_url}{person.get('profile_path')}" if person.get('profile_path') else None
+                })
+            
+            # Get crew (director)
+            director = None
+            for person in credits.get('crew', []):
+                if person.get('job') == 'Director':
+                    director = person.get('name')
+                    break
+            
+            result = {
+                'tmdb_id': tmdb_id,
+                'media_type': media_type,
+                'title': data.get('title') or data.get('name', ''),
+                'year': year,
+                'overview': data.get('overview', ''),
+                'poster_path': poster_url,
+                'backdrop_path': backdrop_url,
+                'vote_average': data.get('vote_average', 0),
+                'vote_count': data.get('vote_count', 0),
+                'popularity': data.get('popularity', 0),
+                'genres': [g.get('name') for g in data.get('genres', [])],
+                'runtime': data.get('runtime') or data.get('episode_run_time', [None])[0],
+                'status': data.get('status'),
+                'trailer': trailer,
+                'cast': cast,
+                'director': director
+            }
+            
+            # TV-specific fields
+            if media_type == 'tv':
+                result['number_of_seasons'] = data.get('number_of_seasons')
+                result['number_of_episodes'] = data.get('number_of_episodes')
+                result['networks'] = [n.get('name') for n in data.get('networks', [])]
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error getting media details: {e}")
+            return {}
+    
     def search_media_with_availability(self, query: str, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
         """Search for media using TMDB API and check availability in specified app instance"""
         api_key = self.get_tmdb_api_key()
