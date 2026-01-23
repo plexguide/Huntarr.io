@@ -208,4 +208,174 @@ def get_log_stats():
         return jsonify({
             'success': False,
             'error': str(e)
+        }), 500
+
+@log_routes_bp.route('/api/logs/settings', methods=['GET'])
+def get_log_settings():
+    """Get log rotation settings"""
+    try:
+        from src.primary.settings_manager import load_settings
+        
+        settings = load_settings('logs')
+        
+        # Add current log file sizes
+        import os
+        from src.primary.utils.config_paths import get_logs_dir
+        
+        log_dir = get_logs_dir()
+        log_files = {}
+        total_size = 0
+        
+        if os.path.exists(log_dir):
+            for filename in os.listdir(log_dir):
+                if filename.endswith('.log') or filename.endswith('.gz'):
+                    filepath = os.path.join(log_dir, filename)
+                    try:
+                        size = os.path.getsize(filepath)
+                        log_files[filename] = {
+                            'size': size,
+                            'size_mb': round(size / (1024 * 1024), 2)
+                        }
+                        total_size += size
+                    except:
+                        pass
+        
+        return jsonify({
+            'success': True,
+            'settings': settings,
+            'log_files': log_files,
+            'total_size': total_size,
+            'total_size_mb': round(total_size / (1024 * 1024), 2)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting log settings: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@log_routes_bp.route('/api/logs/settings', methods=['POST'])
+def save_log_settings():
+    """Save log rotation settings"""
+    try:
+        from src.primary.settings_manager import save_settings
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        # Validate settings
+        if 'max_log_size_mb' in data:
+            try:
+                data['max_log_size_mb'] = int(data['max_log_size_mb'])
+                if data['max_log_size_mb'] < 1 or data['max_log_size_mb'] > 1000:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Max log size must be between 1 and 1000 MB'
+                    }), 400
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid max log size value'
+                }), 400
+        
+        if 'backup_count' in data:
+            try:
+                data['backup_count'] = int(data['backup_count'])
+                if data['backup_count'] < 0 or data['backup_count'] > 50:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Backup count must be between 0 and 50'
+                    }), 400
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid backup count value'
+                }), 400
+        
+        if 'retention_days' in data:
+            try:
+                data['retention_days'] = int(data['retention_days'])
+                if data['retention_days'] < 0 or data['retention_days'] > 365:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Retention days must be between 0 and 365'
+                    }), 400
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid retention days value'
+                }), 400
+        
+        # Save settings
+        save_settings('logs', data)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Log settings saved successfully. Restart Huntarr for changes to take effect.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error saving log settings: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@log_routes_bp.route('/api/logs/cleanup-now', methods=['POST'])
+def cleanup_logs_now():
+    """Manually trigger log cleanup"""
+    try:
+        from src.primary.settings_manager import load_settings
+        import os
+        import glob
+        from datetime import datetime, timedelta
+        from src.primary.utils.config_paths import get_logs_dir
+        
+        settings = load_settings('logs')
+        retention_days = settings.get('retention_days', 30)
+        
+        log_dir = get_logs_dir()
+        if not os.path.exists(log_dir):
+            return jsonify({
+                'success': True,
+                'message': 'No log directory found',
+                'deleted_count': 0
+            })
+        
+        deleted_count = 0
+        deleted_size = 0
+        
+        if retention_days > 0:
+            # Delete logs older than retention days
+            cutoff_date = datetime.now() - timedelta(days=retention_days)
+            
+            for log_file in glob.glob(os.path.join(log_dir, '*.log*')):
+                try:
+                    file_mtime = datetime.fromtimestamp(os.path.getmtime(log_file))
+                    if file_mtime < cutoff_date:
+                        file_size = os.path.getsize(log_file)
+                        os.remove(log_file)
+                        deleted_count += 1
+                        deleted_size += file_size
+                        logger.info(f"Deleted old log file: {log_file}")
+                except Exception as e:
+                    logger.error(f"Error deleting log file {log_file}: {e}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Cleaned up {deleted_count} old log files ({round(deleted_size / (1024 * 1024), 2)} MB)',
+            'deleted_count': deleted_count,
+            'deleted_size_mb': round(deleted_size / (1024 * 1024), 2)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error cleaning up logs: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
         }), 500 

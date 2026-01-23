@@ -1,0 +1,414 @@
+<section id="logsSettingsSection" class="content-section">
+    <div class="logs-settings-container">
+        <div class="settings-card">
+            <div class="card-header">
+                <h2><i class="fas fa-file-alt"></i> Log Management</h2>
+                <p class="card-description">Configure log rotation, retention, and compression settings</p>
+            </div>
+            
+            <div class="settings-group">
+                <h3>Current Usage</h3>
+                <div class="usage-display">
+                    <div class="usage-stat">
+                        <i class="fas fa-hdd"></i>
+                        <span id="totalLogSize" class="stat-value">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-group">
+                <h3>Rotation Settings</h3>
+                
+                <div class="form-group">
+                    <label for="rotationEnabled">
+                        <span class="label-text">Enable Log Rotation</span>
+                        <span class="label-description">Automatically rotate logs when they reach the maximum size</span>
+                    </label>
+                    <div class="toggle-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="rotationEnabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="maxLogSize">
+                        <span class="label-text">Max Log File Size</span>
+                        <span class="label-description">Maximum size before rotating to a new file</span>
+                    </label>
+                    <select id="maxLogSize" class="form-control">
+                        <option value="10">10 MB</option>
+                        <option value="25">25 MB</option>
+                        <option value="50" selected>50 MB</option>
+                        <option value="100">100 MB</option>
+                        <option value="200">200 MB</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="backupCount">
+                        <span class="label-text">Backup Files to Keep</span>
+                        <span class="label-description">Number of rotated log files to retain (0-50)</span>
+                    </label>
+                    <input type="number" id="backupCount" class="form-control" min="0" max="50" value="5">
+                </div>
+            </div>
+            
+            <div class="settings-group">
+                <h3>Retention & Cleanup</h3>
+                
+                <div class="form-group">
+                    <label for="retentionDays">
+                        <span class="label-text">Retention Days</span>
+                        <span class="label-description">Delete logs older than this many days (0 = unlimited)</span>
+                    </label>
+                    <input type="number" id="retentionDays" class="form-control" min="0" max="365" value="30">
+                </div>
+                
+                <div class="form-group">
+                    <label for="autoCleanup">
+                        <span class="label-text">Auto-Cleanup on Startup</span>
+                        <span class="label-description">Automatically clean up old logs when Huntarr starts</span>
+                    </label>
+                    <div class="toggle-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoCleanup" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-group">
+                <h3>Advanced Settings</h3>
+                
+                <div class="form-group">
+                    <label for="compressRotated">
+                        <span class="label-text">Compress Rotated Logs</span>
+                        <span class="label-description">Save disk space by compressing old logs (70-80% smaller)</span>
+                    </label>
+                    <div class="toggle-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="compressRotated" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="logLevel">
+                        <span class="label-text">Log Level</span>
+                        <span class="label-description">Minimum log level to record</span>
+                    </label>
+                    <select id="logLevel" class="form-control">
+                        <option value="DEBUG">DEBUG</option>
+                        <option value="INFO" selected>INFO</option>
+                        <option value="WARNING">WARNING</option>
+                        <option value="ERROR">ERROR</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button id="saveLogSettings" class="action-button primary-button">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+                <button id="cleanupLogsNow" class="action-button secondary-button">
+                    <i class="fas fa-broom"></i> Clean Old Logs Now
+                </button>
+            </div>
+            
+            <div id="logSettingsStatus" class="status-message" style="display: none;"></div>
+        </div>
+    </div>
+</section>
+
+<style>
+    #logsSettingsSection {
+        display: none;
+        width: 100%;
+        padding: 20px;
+        overflow-y: auto;
+        max-height: calc(100vh - 120px);
+    }
+    
+    #logsSettingsSection.active {
+        display: block;
+    }
+    
+    .logs-settings-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .settings-card {
+        background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        padding: 30px;
+        border: 1px solid rgba(90, 109, 137, 0.15);
+    }
+    
+    .card-header {
+        margin-bottom: 30px;
+        border-bottom: 1px solid rgba(90, 109, 137, 0.2);
+        padding-bottom: 20px;
+    }
+    
+    .card-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 8px 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #ffffff !important;
+    }
+    
+    .card-header i {
+        color: #ffffff !important;
+        font-size: 22px;
+    }
+    
+    .card-description {
+        color: rgba(255, 255, 255, 0.8) !important;
+        font-size: 14px;
+        margin: 0;
+    }
+    
+    .settings-group {
+        margin-bottom: 30px;
+    }
+    
+    .settings-group h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff !important;
+        margin: 0 0 20px 0;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, rgba(65, 105, 225, 0.8), rgba(65, 105, 225, 0.6));
+        border-radius: 8px;
+        border-bottom: none;
+    }
+    
+    .usage-display {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .usage-stat {
+        flex: 1;
+        min-width: 200px;
+        padding: 15px 20px;
+        background: rgba(28, 36, 54, 0.6);
+        border-radius: 8px;
+        border: 1px solid rgba(90, 109, 137, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .usage-stat i {
+        font-size: 24px;
+        color: rgba(52, 152, 219, 0.8);
+    }
+    
+    .stat-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff !important;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+    }
+    
+    .label-text {
+        display: block;
+        color: #ffffff !important;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+    
+    .label-description {
+        display: block;
+        color: rgba(255, 255, 255, 0.7) !important;
+        font-size: 12px;
+        font-weight: 400;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid rgba(90, 109, 137, 0.2);
+        border-radius: 8px;
+        background-color: rgba(28, 36, 54, 0.6);
+        color: #fff;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: rgba(65, 105, 225, 0.6);
+        box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.2);
+        outline: none;
+    }
+    
+    .toggle-group {
+        display: flex;
+        align-items: center;
+    }
+    
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 28px;
+    }
+    
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(90, 109, 137, 0.3);
+        transition: .4s;
+        border-radius: 28px;
+        border: 1px solid rgba(90, 109, 137, 0.4);
+    }
+    
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 4px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    input:checked + .toggle-slider {
+        background: linear-gradient(135deg, #3a71e4 0%, #5481e6 100%);
+        border-color: rgba(58, 113, 228, 0.6);
+    }
+    
+    input:checked + .toggle-slider:before {
+        transform: translateX(22px);
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(90, 109, 137, 0.2);
+    }
+    
+    .action-button {
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .primary-button {
+        background: linear-gradient(135deg, #3a71e4 0%, #5481e6 100%);
+        color: white;
+        box-shadow: 0 4px 10px rgba(58, 113, 228, 0.3);
+    }
+    
+    .primary-button:hover:not(:disabled) {
+        background: linear-gradient(135deg, #4a7deb 0%, #6491fa 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(58, 113, 228, 0.4);
+    }
+    
+    .primary-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .secondary-button {
+        background: linear-gradient(135deg, #38495a 0%, #465b70 100%);
+        color: white;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+    
+    .secondary-button:hover:not(:disabled) {
+        background: linear-gradient(135deg, #465b70 0%, #546d84 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+    }
+    
+    .secondary-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .status-message {
+        margin-top: 20px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .status-message.success {
+        background: rgba(46, 204, 113, 0.2);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        color: #2ecc71;
+    }
+    
+    .status-message.error {
+        background: rgba(231, 76, 60, 0.2);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: #e74c3c;
+    }
+    
+    @media (max-width: 768px) {
+        .logs-settings-container {
+            padding: 10px;
+        }
+        
+        .settings-card {
+            padding: 20px;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .action-button {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script src="./static/js/logs-settings.js"></script>

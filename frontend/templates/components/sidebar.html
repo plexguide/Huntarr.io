@@ -299,6 +299,13 @@
                 </div>
                 <span>Backup / Restore</span>
             </a>
+            
+            <a href="./#logs-settings" class="nav-item" id="settingsLogsNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <span>Logs</span>
+            </a>
 
             <a href="./user" class="nav-item" id="settingsUserNav">
                 <div class="nav-icon-wrapper">
@@ -908,6 +915,10 @@
             selector = '#settingsSchedulingNav';
         } else if (currentHash === '#notifications') {
             selector = '#settingsNotificationsNav';
+        } else if (currentHash === '#backup-restore') {
+            selector = '#settingsBackupRestoreNav';
+        } else if (currentHash === '#logs-settings') {
+            selector = '#settingsLogsNav';
         } else if (currentHash === '#user') {
             selector = '#settingsUserNav';
         }

@@ -796,6 +796,18 @@ let huntarrUI = {
             
             // Initialize backup/restore functionality if not already done
             this.initializeBackupRestore();
+        } else if (section === 'logs-settings' && document.getElementById('logsSettingsSection')) {
+            document.getElementById('logsSettingsSection').classList.add('active');
+            document.getElementById('logsSettingsSection').style.display = 'block';
+            if (document.getElementById('settingsLogsNav')) document.getElementById('settingsLogsNav').classList.add('active');
+            newTitle = 'Logs';
+            this.currentSection = 'logs-settings';
+            
+            // Switch to Settings sidebar for logs
+            this.showSettingsSidebar();
+            
+            // Set localStorage to maintain Settings sidebar preference
+            localStorage.setItem('huntarr-settings-sidebar', 'true');
         } else if (section === 'prowlarr' && document.getElementById('prowlarrSection')) {
             document.getElementById('prowlarrSection').classList.add('active');
             document.getElementById('prowlarrSection').style.display = 'block';

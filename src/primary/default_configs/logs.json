@@ -1,0 +1,9 @@
+{
+  "rotation_enabled": true,
+  "max_log_size_mb": 50,
+  "backup_count": 5,
+  "retention_days": 30,
+  "compress_rotated": true,
+  "log_level": "INFO",
+  "auto_cleanup_enabled": true
+}

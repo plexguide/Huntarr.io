@@ -525,6 +525,18 @@
         color: #e74c3c;
     }
     
+    .status-badge.linked {
+        background: rgba(46, 204, 113, 0.2);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        color: #2ecc71;
+    }
+    
+    .status-badge.not-linked {
+        background: rgba(158, 158, 158, 0.2);
+        border: 1px solid rgba(158, 158, 158, 0.3);
+        color: #9e9e9e;
+    }
+    
     /* Modal Styles */
     .modal {
         position: fixed;
@@ -631,5 +643,72 @@
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+    }
+    
+    /* Toggle Switch Styles */
+    .toggle-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+    }
+    
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(90, 109, 137, 0.3);
+        transition: .4s;
+        border-radius: 24px;
+        border: 1px solid rgba(90, 109, 137, 0.4);
+    }
+    
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 4px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    input:checked + .toggle-slider {
+        background: linear-gradient(135deg, #3a71e4 0%, #5481e6 100%);
+        border-color: rgba(58, 113, 228, 0.6);
+    }
+    
+    input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+    }
+    
+    /* Log Stats */
+    .log-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .log-stats .current-value {
+        font-weight: 600;
+        color: #3498db;
     }
 </style> 

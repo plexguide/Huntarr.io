@@ -87,5 +87,13 @@ def get_path(*args):
     """Get a path relative to the config directory"""
     return CONFIG_PATH.joinpath(*args)
 
+def get_logs_dir():
+    """Get the logs directory path"""
+    return str(LOG_DIR)
+
+def get_config_dir():
+    """Get the config directory path"""
+    return str(CONFIG_PATH)
+
 # Legacy JSON config path functions removed - all settings now stored in database
 # Reset file functions removed - all reset requests now stored in database
