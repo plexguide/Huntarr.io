@@ -375,7 +375,6 @@ class RequestarrDiscover {
     createMediaCard(item) {
         const card = document.createElement('div');
         card.className = 'media-card';
-        card.onclick = () => this.openModal(item.tmdb_id, item.media_type);
         
         const posterUrl = item.poster_path || './static/images/no-poster.png';
         const year = item.year || 'N/A';
@@ -384,6 +383,9 @@ class RequestarrDiscover {
         card.innerHTML = `
             <div class="media-card-poster">
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/no-poster.png'">
+                <button class="media-card-request-btn">
+                    <i class="fas fa-plus"></i> Request
+                </button>
             </div>
             <div class="media-card-info">
                 <div class="media-card-title" title="${item.title}">${item.title}</div>
@@ -396,6 +398,23 @@ class RequestarrDiscover {
                 </div>
             </div>
         `;
+        
+        // Add click handlers
+        const posterDiv = card.querySelector('.media-card-poster');
+        const requestBtn = card.querySelector('.media-card-request-btn');
+        
+        // Poster click opens modal
+        posterDiv.addEventListener('click', (e) => {
+            if (e.target !== requestBtn && !requestBtn.contains(e.target)) {
+                this.openModal(item.tmdb_id, item.media_type);
+            }
+        });
+        
+        // Request button opens modal directly
+        requestBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.openModal(item.tmdb_id, item.media_type);
+        });
         
         return card;
     }
