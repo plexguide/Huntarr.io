@@ -52,7 +52,7 @@
     width: 100%;
     max-width: none !important;
     margin: 0;
-    padding: 0;
+    padding: 10px 0 20px; /* Extra padding for hover effects */
     box-sizing: border-box;
 }
 
@@ -72,6 +72,7 @@
     max-width: none !important;
     box-sizing: border-box;
     justify-items: start;
+    overflow: visible; /* Allow cards to extend on hover */
 }
 
 /* Search results media cards - Let grid control width */
@@ -135,6 +136,7 @@
 /* Carousel Sections */
 .carousel-section {
     margin-bottom: 40px;
+    padding-top: 10px; /* Extra padding for hover effect */
 }
 
 .section-title {
@@ -148,7 +150,7 @@
     position: relative;
     width: 100%;
     max-width: 100%;
-    overflow: hidden; /* Constrain arrows within viewport */
+    overflow: visible; /* Allow cards to extend outside on hover */
 }
 
 /* Carousel Arrows - Fixed at container edges within viewport */
@@ -196,9 +198,9 @@
     display: flex;
     gap: 20px;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: visible; /* Allow cards to extend above carousel */
     scroll-behavior: smooth;
-    padding: 10px 60px; /* Padding for arrows on sides */
+    padding: 10px 60px 20px; /* Extra bottom padding for hover effect */
     margin: 0 -60px; /* Negative margin to align content */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
@@ -244,7 +246,7 @@
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.9) 100%);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: space-between; /* Space between title (top) and bottom content */
     padding: 15px;
     opacity: 0;
     transition: opacity 0.3s;
@@ -257,12 +259,7 @@
     pointer-events: auto;
 }
 
-.media-card-overlay-content {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
+/* Title stays at top */
 .media-card-overlay-title {
     font-size: 15px;
     font-weight: 600;
@@ -272,6 +269,13 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* Content section with year, description, and button at bottom */
+.media-card-overlay-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .media-card-overlay-year {
@@ -288,6 +292,7 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    margin-bottom: 8px; /* Space before button */
 }
 
 /* Request Button at Bottom */

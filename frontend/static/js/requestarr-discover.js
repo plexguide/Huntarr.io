@@ -385,14 +385,14 @@ class RequestarrDiscover {
             <div class="media-card-poster">
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/no-poster.png'">
                 <div class="media-card-overlay">
+                    <div class="media-card-overlay-title">${item.title}</div>
                     <div class="media-card-overlay-content">
-                        <div class="media-card-overlay-title">${item.title}</div>
                         <div class="media-card-overlay-year">${year}</div>
                         <div class="media-card-overlay-description">${overview}</div>
+                        <button class="media-card-request-btn">
+                            <i class="fas fa-download"></i> Request
+                        </button>
                     </div>
-                    <button class="media-card-request-btn">
-                        <i class="fas fa-download"></i> Request
-                    </button>
                 </div>
             </div>
             <div class="media-card-info">
