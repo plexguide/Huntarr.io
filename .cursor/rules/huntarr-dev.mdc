@@ -19,6 +19,17 @@ alwaysApply: true
 - Test in both Docker and local environments
 - Docker uses port 9705, local testing uses port 9706 to avoid conflicts
 
+### VERSION MANAGEMENT
+- Version bumps should ONLY occur when merging to main branch
+- Work on feature branches without bumping version.txt
+- Only bump version.txt in the final commit before merging to main
+- Keep version consistent across all commits in a feature branch
+- Example workflow:
+  1. Create feature branch (version stays same)
+  2. Make multiple commits (version stays same)
+  3. Final commit before merge to main: bump version
+  4. Merge to main branch
+
 ### CROSS-PLATFORM REQUIREMENTS
 - NEVER use hard-coded absolute paths (e.g., `/config/file.json`)
 - ALWAYS use `os.path.join()` for path construction
