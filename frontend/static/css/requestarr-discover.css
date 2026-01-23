@@ -1,7 +1,7 @@
 /* Requestarr Discover - Horizontal Scrolling Style */
 
 .requestarr-content {
-    padding: 30px;
+    padding: 20px 30px;
     max-width: 1800px;
     margin: 0 auto;
 }
@@ -15,9 +15,9 @@
 }
 
 .page-title {
-    font-size: 28px;
+    font-size: 1.3rem;
     font-weight: 600;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     color: var(--text-primary, #e0e0e0);
 }
 
@@ -61,13 +61,13 @@
 
 /* Carousel Sections */
 .carousel-section {
-    margin-bottom: 50px;
+    margin-bottom: 40px;
 }
 
 .section-title {
-    font-size: 20px;
+    font-size: 1.1rem;
     font-weight: 600;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     color: var(--text-primary, #e0e0e0);
 }
 

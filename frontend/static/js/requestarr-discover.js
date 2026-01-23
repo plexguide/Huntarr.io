@@ -26,12 +26,29 @@ class RequestarrDiscover {
             arrow.addEventListener('click', (e) => {
                 const targetId = arrow.dataset.target;
                 const carousel = document.getElementById(targetId);
-                const scrollAmount = 600; // Scroll by 3 cards
+                
+                // Calculate scroll amount based on visible items
+                const carouselWidth = carousel.offsetWidth;
+                const cardWidth = 150; // Card width in pixels
+                const gap = 20; // Gap between cards
+                const itemWidth = cardWidth + gap;
+                
+                // Calculate how many items are visible
+                const visibleItems = Math.floor(carouselWidth / itemWidth);
+                
+                // Scroll by the number of visible items
+                const scrollAmount = visibleItems * itemWidth;
                 
                 if (arrow.classList.contains('left')) {
-                    carousel.scrollLeft -= scrollAmount;
+                    carousel.scrollBy({
+                        left: -scrollAmount,
+                        behavior: 'smooth'
+                    });
                 } else {
-                    carousel.scrollLeft += scrollAmount;
+                    carousel.scrollBy({
+                        left: scrollAmount,
+                        behavior: 'smooth'
+                    });
                 }
             });
         });
