@@ -68,8 +68,8 @@
 
 #requestarr-results {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
     margin-top: 20px;
 }
 
@@ -569,7 +569,8 @@ input:checked + .toggle-slider:before {
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: modalSlideIn 0.3s ease;
-    position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-closing .description-modal {
@@ -603,49 +604,50 @@ input:checked + .toggle-slider:before {
     font-size: 24px;
     font-weight: 600;
     margin: 0 0 20px 0;
-    padding-right: 40px;
     line-height: 1.3;
+    text-align: left;
 }
 
 .modal-content {
     color: #d0d0d0;
     font-size: 16px;
     line-height: 1.6;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
+    text-align: left;
+    flex-grow: 1;
 }
 
 .modal-content p {
     margin: 0;
+    text-align: left;
 }
 
 .modal-close-btn {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
+    align-self: flex-end;
+    gap: 6px;
+    padding: 8px 16px;
     background: linear-gradient(135deg, #e74c3c, #c0392b);
     color: #fff;
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 6px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
 }
 
 .modal-close-btn:hover {
     background: linear-gradient(135deg, #c0392b, #a93226);
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(231, 76, 60, 0.4);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
 }
 
 .modal-close-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
 }
 
 /* Responsive Design */
@@ -685,21 +687,16 @@ input:checked + .toggle-slider:before {
     
     .modal-title {
         font-size: 20px;
-        padding-right: 0;
         margin-bottom: 15px;
     }
     
     .modal-content {
         font-size: 15px;
-        margin-bottom: 60px;
+        margin-bottom: 20px;
     }
     
     .modal-close-btn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        left: 20px;
-        width: calc(100% - 40px);
+        align-self: stretch;
         justify-content: center;
     }
 } 
