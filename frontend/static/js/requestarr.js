@@ -227,6 +227,15 @@ class RequestarrModule {
         if (requestBtn) {
             requestBtn.addEventListener('click', (e) => this.handleRequest(e.target));
         }
+        
+        // Add event listener to "See More" link
+        const seeMoreLink = actualCard.querySelector('.see-more-link');
+        if (seeMoreLink) {
+            seeMoreLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showDescriptionModal(e.target.dataset.cardId);
+            });
+        }
     }
 
     updateResultAvailability(updatedItem) {
@@ -280,6 +289,13 @@ class RequestarrModule {
         this.itemData = this.itemData || {};
         this.itemData[cardId] = item;
         
+        // Truncate overview and add "See More" link if needed
+        const overview = item.overview || 'No description available.';
+        const truncateLength = 150;
+        const shouldTruncate = overview.length > truncateLength;
+        const displayOverview = shouldTruncate ? overview.substring(0, truncateLength) + '... ' : overview;
+        const seeMoreLink = shouldTruncate ? `<a href="#" class="see-more-link" data-card-id="${cardId}">See More</a>` : '';
+        
         return `
             <div class="result-card" data-card-id="${cardId}" data-tmdb-id="${item.tmdb_id}" data-media-type="${item.media_type}">
                 <div class="result-poster">
@@ -288,7 +304,7 @@ class RequestarrModule {
                 </div>
                 <div class="result-info">
                     <h3 class="result-title">${item.title} ${year}</h3>
-                    <p class="result-overview">${item.overview.substring(0, 150)}${item.overview.length > 150 ? '...' : ''}</p>
+                    <p class="result-overview">${displayOverview}${seeMoreLink}</p>
                     <div class="result-meta">
                         <span class="rating">${rating}</span>
                         <span class="media-type">${item.media_type === 'movie' ? 'Movie' : 'TV Show'}</span>
@@ -372,6 +388,74 @@ class RequestarrModule {
         document.querySelectorAll('.request-btn:not([disabled])').forEach(button => {
             button.addEventListener('click', (e) => this.handleRequest(e.target));
         });
+        
+        // Setup "See More" links
+        document.querySelectorAll('.see-more-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showDescriptionModal(e.target.dataset.cardId);
+            });
+        });
+    }
+    
+    showDescriptionModal(cardId) {
+        const item = this.itemData[cardId];
+        if (!item) return;
+        
+        const year = item.year ? `(${item.year})` : '';
+        const overview = item.overview || 'No description available.';
+        
+        // Create modal HTML
+        const modalHTML = `
+            <div class="description-modal-overlay">
+                <div class="description-modal">
+                    <h3 class="modal-title">${item.title} ${year}</h3>
+                    <div class="modal-content">
+                        <p>${overview}</p>
+                    </div>
+                    <button class="modal-close-btn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Close
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to page
+        const modalElement = document.createElement('div');
+        modalElement.innerHTML = modalHTML;
+        document.body.appendChild(modalElement.firstElementChild);
+        
+        // Add event listeners
+        const overlay = document.querySelector('.description-modal-overlay');
+        const closeBtn = document.querySelector('.modal-close-btn');
+        
+        const closeModal = () => {
+            overlay.classList.add('modal-closing');
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+            }, 300);
+        };
+        
+        closeBtn.addEventListener('click', closeModal);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeModal();
+            }
+        });
+        
+        // Allow ESC key to close
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                document.removeEventListener('keydown', handleEsc);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
     }
 
     async handleRequest(button) {
