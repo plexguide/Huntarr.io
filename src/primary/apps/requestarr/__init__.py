@@ -284,10 +284,13 @@ class RequestarrAPI:
     def get_series_status_from_sonarr(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get series status from Sonarr - missing episodes, available, etc."""
         try:
+            # First check if already requested in Requestarr database
+            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'tv', 'sonarr', instance_name)
+            
             # Get Sonarr instance config
             app_config = self.db.get_app_config('sonarr')
             if not app_config or not app_config.get('instances'):
-                return {'exists': False}
+                return {'exists': False, 'previously_requested': already_requested_in_db}
             
             target_instance = None
             for instance in app_config['instances']:
@@ -296,14 +299,14 @@ class RequestarrAPI:
                     break
             
             if not target_instance:
-                return {'exists': False}
+                return {'exists': False, 'previously_requested': already_requested_in_db}
             
             # Get series from Sonarr
             sonarr_url = target_instance.get('api_url', '') or target_instance.get('url', '')
             sonarr_api_key = target_instance.get('api_key', '')
             
             if not sonarr_url or not sonarr_api_key:
-                return {'exists': False}
+                return {'exists': False, 'previously_requested': already_requested_in_db}
             
             sonarr_url = sonarr_url.rstrip('/')
             
@@ -317,7 +320,7 @@ class RequestarrAPI:
             
             if response.status_code != 200:
                 logger.error(f"Failed to get series from Sonarr: {response.status_code}")
-                return {'exists': False}
+                return {'exists': False, 'previously_requested': already_requested_in_db}
             
             series_list = response.json()
             
@@ -337,7 +340,15 @@ class RequestarrAPI:
                     available_episodes = statistics.get('episodeFileCount', 0)
                     missing_episodes = total_episodes - available_episodes
                     
-                    logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes")
+                    # Check if previously requested in Requestarr database
+                    # This takes precedence over Sonarr status
+                    previously_requested = already_requested_in_db
+                    
+                    # If not in Requestarr DB but in Sonarr with no episodes, it was likely requested elsewhere
+                    if not previously_requested and total_episodes > 0 and available_episodes == 0:
+                        previously_requested = True
+                    
+                    logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes, previously_requested: {previously_requested}")
                     
                     return {
                         'exists': True,
@@ -345,15 +356,18 @@ class RequestarrAPI:
                         'total_episodes': total_episodes,
                         'available_episodes': available_episodes,
                         'missing_episodes': missing_episodes,
+                        'previously_requested': previously_requested,
                         'seasons': series.get('seasons', [])
                     }
             
             logger.info(f"Series with TMDB ID {tmdb_id} not found in Sonarr")
-            return {'exists': False}
+            return {'exists': False, 'previously_requested': already_requested_in_db}
             
         except Exception as e:
             logger.error(f"Error getting series status from Sonarr: {e}")
-            return {'exists': False}
+            # Still check if requested in DB even if Sonarr check fails
+            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'tv', 'sonarr', instance_name)
+            return {'exists': False, 'previously_requested': already_requested_in_db}
     
     def check_seasons_in_sonarr(self, tmdb_id: int, instance_name: str) -> List[int]:
         """Check which seasons of a TV show are already in Sonarr"""
@@ -366,10 +380,13 @@ class RequestarrAPI:
     def get_movie_status_from_radarr(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get movie status from Radarr - in library, previously requested, etc."""
         try:
+            # First check if already requested in Requestarr database
+            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'movie', 'radarr', instance_name)
+            
             # Get Radarr instance config
             app_config = self.db.get_app_config('radarr')
             if not app_config or not app_config.get('instances'):
-                return {'in_library': False, 'previously_requested': False}
+                return {'in_library': False, 'previously_requested': already_requested_in_db}
             
             target_instance = None
             for instance in app_config['instances']:
@@ -378,14 +395,14 @@ class RequestarrAPI:
                     break
             
             if not target_instance:
-                return {'in_library': False, 'previously_requested': False}
+                return {'in_library': False, 'previously_requested': already_requested_in_db}
             
             # Get movie from Radarr
             radarr_url = target_instance.get('api_url', '') or target_instance.get('url', '')
             radarr_api_key = target_instance.get('api_key', '')
             
             if not radarr_url or not radarr_api_key:
-                return {'in_library': False, 'previously_requested': False}
+                return {'in_library': False, 'previously_requested': already_requested_in_db}
             
             radarr_url = radarr_url.rstrip('/')
             
@@ -399,7 +416,7 @@ class RequestarrAPI:
             
             if response.status_code != 200:
                 logger.error(f"Failed to get movies from Radarr: {response.status_code}")
-                return {'in_library': False, 'previously_requested': False}
+                return {'in_library': False, 'previously_requested': already_requested_in_db}
             
             movies_list = response.json()
             
@@ -410,18 +427,25 @@ class RequestarrAPI:
                 if movie_tmdb == tmdb_id:
                     has_file = movie.get('hasFile', False)
                     logger.info(f"Found movie in Radarr: {movie.get('title')} - Has file: {has_file}")
+                    
+                    # Check if previously requested
+                    # Priority: Requestarr DB > Radarr status
+                    previously_requested = already_requested_in_db or (not has_file)
+                    
                     return {
                         'in_library': has_file,
-                        'previously_requested': not has_file,  # In Radarr but no file = previously requested
+                        'previously_requested': previously_requested,
                         'monitored': movie.get('monitored', False)
                     }
             
             logger.info(f"Movie with TMDB ID {tmdb_id} not found in Radarr")
-            return {'in_library': False, 'previously_requested': False}
+            return {'in_library': False, 'previously_requested': already_requested_in_db}
             
         except Exception as e:
             logger.error(f"Error getting movie status from Radarr: {e}")
-            return {'in_library': False, 'previously_requested': False}
+            # Still check if requested in DB even if Radarr check fails
+            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'movie', 'radarr', instance_name)
+            return {'in_library': False, 'previously_requested': already_requested_in_db}
     
     def check_library_status_batch(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """

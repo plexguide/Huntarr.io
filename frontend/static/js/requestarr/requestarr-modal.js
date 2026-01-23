@@ -176,7 +176,22 @@ export class RequestarrModal {
             const requestBtn = document.getElementById('modal-request-btn');
             
             if (status.exists) {
-                if (status.missing_episodes === 0 && status.total_episodes > 0) {
+                if (status.previously_requested) {
+                    // Previously requested - disable request button
+                    statusHTML = `
+                        <div class="series-status-box status-requested">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <div class="status-title">Previously requested</div>
+                            </div>
+                        </div>
+                    `;
+                    if (requestBtn) {
+                        requestBtn.disabled = true;
+                        requestBtn.classList.add('disabled');
+                        requestBtn.textContent = 'Already Requested';
+                    }
+                } else if (status.missing_episodes === 0 && status.total_episodes > 0) {
                     // Complete series - disable request button
                     statusHTML = `
                         <div class="series-status-box status-available">
