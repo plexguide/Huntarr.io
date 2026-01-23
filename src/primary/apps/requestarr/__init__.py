@@ -151,20 +151,20 @@ class RequestarrAPI:
                 data = response.json()
                 
                 for item in data.get('results', []):
-                first_air_date = item.get('first_air_date', '')
-                year = None
-                if first_air_date:
-                    try:
-                        year = int(first_air_date.split('-')[0])
-                    except (ValueError, IndexError):
-                        pass
-                
-                poster_path = item.get('poster_path')
-                poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
-                
-                backdrop_path = item.get('backdrop_path')
-                backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
-                
+                    first_air_date = item.get('first_air_date', '')
+                    year = None
+                    if first_air_date:
+                        try:
+                            year = int(first_air_date.split('-')[0])
+                        except (ValueError, IndexError):
+                            pass
+                    
+                    poster_path = item.get('poster_path')
+                    poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+                    
+                    backdrop_path = item.get('backdrop_path')
+                    backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
+                    
                     all_results.append({
                         'tmdb_id': item.get('id'),
                         'media_type': 'tv',
