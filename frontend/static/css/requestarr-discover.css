@@ -7,11 +7,11 @@
     overflow: hidden; /* Prevent content from extending beyond viewport */
 }
 
-/* Global Search Bar */
+/* Global Search Bar - Full Width */
 .global-search-bar {
     position: relative;
-    max-width: 600px;
-    margin: 0 auto 30px;
+    width: 100%;
+    margin-bottom: 30px;
 }
 
 .global-search-bar i {
@@ -44,9 +44,12 @@
     color: #888;
 }
 
-/* Search Results */
+/* Search Results - Full Width */
 #search-results-view {
-    width: 100%;
+    width: calc(100% + 60px); /* Extend beyond parent padding */
+    margin-left: -30px; /* Negative margin to align to page edge */
+    margin-right: -30px;
+    padding: 0 30px; /* Add padding back for content */
 }
 
 .search-results-title {
@@ -62,12 +65,10 @@
     gap: 20px;
     padding: 10px 0;
     width: 100%;
-    max-width: 100%;
 }
 
 /* Ensure search results media cards match carousel cards */
 .search-results-grid .media-card {
-    flex: 0 0 150px;
     width: 150px;
 }
 
