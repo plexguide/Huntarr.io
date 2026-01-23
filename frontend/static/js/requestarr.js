@@ -322,7 +322,9 @@ class RequestarrModule {
                 </div>
                 <div class="result-info">
                     <h3 class="result-title">${item.title} ${year}</h3>
-                    <p class="result-overview">${displayOverview}${seeMoreLink}</p>
+                    <div class="result-overview">
+                        <span class="overview-text">${displayOverview}</span>${seeMoreLink}
+                    </div>
                     <div class="result-meta">
                         <span class="rating">${rating}</span>
                         <span class="media-type">${item.media_type === 'movie' ? 'Movie' : 'TV Show'}</span>
