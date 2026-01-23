@@ -466,24 +466,25 @@ def _fetch_detailed_stats():
                                 for indexer_data in stats.get('indexer_daily_stats', {}).values()
                             )
                             
+                            # Calculate main statistics from indexerstats data (always, even if 0)
+                            total_grabs = sum(stat.get('numberOfGrabs', 0) for stat in indexer_stats)
+                            total_failed = sum(stat.get('numberOfFailedQueries', 0) for stat in indexer_stats)
+                            
+                            # Always set these stats, even if 0
+                            stats['grabs_today'] = total_grabs
+                            stats['recent_failed_searches'] = total_failed
+                            
                             if total_searches_today > 0:
                                 stats['searches_today'] = total_searches_today
                                 prowlarr_logger.debug(f"Using consistent indexerstats total: {total_searches_today} searches (sum of all indexers)")
                                 
-                                # Calculate main statistics from indexerstats data for consistency
-                                total_grabs = sum(stat.get('numberOfGrabs', 0) for stat in indexer_stats)
-                                total_failed = sum(stat.get('numberOfFailedQueries', 0) for stat in indexer_stats)
+                                # Update main success rate
+                                stats['recent_success_rate'] = round((total_grabs / total_searches_today) * 100, 1)
                                 
-                                # Update main success rate to match indexer calculations
-                                if total_searches_today > 0:
-                                    stats['recent_success_rate'] = round((total_grabs / total_searches_today) * 100, 1)
-                                else:
-                                    stats['recent_success_rate'] = 0
-                                
-                                stats['recent_failed_searches'] = total_failed
-                                stats['grabs_today'] = total_grabs  # Add total grabs to stats
-                                
-                                prowlarr_logger.debug(f"Main stats updated - Success rate: {stats['recent_success_rate']}%, Failed today: {total_failed}")
+                                prowlarr_logger.debug(f"Main stats updated - Success rate: {stats['recent_success_rate']}%, Grabs: {total_grabs}, Failed: {total_failed}")
+                            else:
+                                stats['recent_success_rate'] = 0
+                                prowlarr_logger.debug(f"No searches today - Success rate: 0%, Grabs: {total_grabs}, Failed: {total_failed}")
                                 
                                 # Debug logging to track individual indexer contributions
                                 for idx_id, idx_data in stats.get('indexer_daily_stats', {}).items():
