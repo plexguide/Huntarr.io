@@ -241,6 +241,15 @@ class RequestarrAPI:
                     director = person.get('name')
                     break
             
+            # Get runtime - handle both movie and TV
+            runtime = None
+            if media_type == 'movie':
+                runtime = data.get('runtime')
+            else:
+                episode_run_time = data.get('episode_run_time', [])
+                if episode_run_time and len(episode_run_time) > 0:
+                    runtime = episode_run_time[0]
+            
             result = {
                 'tmdb_id': tmdb_id,
                 'media_type': media_type,
@@ -253,7 +262,7 @@ class RequestarrAPI:
                 'vote_count': data.get('vote_count', 0),
                 'popularity': data.get('popularity', 0),
                 'genres': [g.get('name') for g in data.get('genres', [])],
-                'runtime': data.get('runtime') or data.get('episode_run_time', [None])[0],
+                'runtime': runtime,
                 'status': data.get('status'),
                 'trailer': trailer,
                 'cast': cast,
@@ -265,6 +274,17 @@ class RequestarrAPI:
                 result['number_of_seasons'] = data.get('number_of_seasons')
                 result['number_of_episodes'] = data.get('number_of_episodes')
                 result['networks'] = [n.get('name') for n in data.get('networks', [])]
+                
+                # Add seasons information
+                seasons = []
+                for season in data.get('seasons', []):
+                    seasons.append({
+                        'season_number': season.get('season_number'),
+                        'episode_count': season.get('episode_count'),
+                        'name': season.get('name'),
+                        'air_date': season.get('air_date')
+                    })
+                result['seasons'] = seasons
             
             return result
             
@@ -272,13 +292,13 @@ class RequestarrAPI:
             logger.error(f"Error getting media details: {e}")
             return {}
     
-    def check_seasons_in_sonarr(self, tmdb_id: int, instance_name: str) -> List[int]:
-        """Check which seasons of a TV show are already in Sonarr"""
+    def get_series_status_from_sonarr(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
+        """Get series status from Sonarr - missing episodes, available, etc."""
         try:
             # Get Sonarr instance config
             app_config = self.db.get_app_config('sonarr')
             if not app_config or not app_config.get('instances'):
-                return []
+                return {'exists': False}
             
             target_instance = None
             for instance in app_config['instances']:
@@ -287,14 +307,14 @@ class RequestarrAPI:
                     break
             
             if not target_instance:
-                return []
+                return {'exists': False}
             
             # Get series from Sonarr
             sonarr_url = target_instance.get('url', '').rstrip('/')
             sonarr_api_key = target_instance.get('api_key', '')
             
             if not sonarr_url or not sonarr_api_key:
-                return []
+                return {'exists': False}
             
             # Search for series by TMDB ID
             headers = {'X-Api-Key': sonarr_api_key}
@@ -305,22 +325,42 @@ class RequestarrAPI:
             )
             
             if response.status_code != 200:
-                return []
+                return {'exists': False}
             
             series_list = response.json()
             
             # Find series with matching TMDB ID
             for series in series_list:
                 if series.get('tvdbId') == tmdb_id or series.get('tmdbId') == tmdb_id:
-                    # Return list of season numbers that exist
-                    seasons = series.get('seasons', [])
-                    return [s.get('seasonNumber') for s in seasons if s.get('seasonNumber') is not None]
+                    # Series exists in Sonarr
+                    statistics = series.get('statistics', {})
+                    
+                    total_episodes = statistics.get('episodeCount', 0)
+                    available_episodes = statistics.get('episodeFileCount', 0)
+                    missing_episodes = total_episodes - available_episodes
+                    
+                    return {
+                        'exists': True,
+                        'monitored': series.get('monitored', False),
+                        'total_episodes': total_episodes,
+                        'available_episodes': available_episodes,
+                        'missing_episodes': missing_episodes,
+                        'seasons': series.get('seasons', [])
+                    }
             
-            return []
+            return {'exists': False}
             
         except Exception as e:
-            logger.error(f"Error checking seasons in Sonarr: {e}")
-            return []
+            logger.error(f"Error getting series status from Sonarr: {e}")
+            return {'exists': False}
+    
+    def check_seasons_in_sonarr(self, tmdb_id: int, instance_name: str) -> List[int]:
+        """Check which seasons of a TV show are already in Sonarr"""
+        status = self.get_series_status_from_sonarr(tmdb_id, instance_name)
+        if status.get('exists'):
+            seasons = status.get('seasons', [])
+            return [s.get('seasonNumber') for s in seasons if s.get('seasonNumber') is not None]
+        return []
     
     def get_quality_profiles(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
         """Get quality profiles from Radarr or Sonarr instance"""

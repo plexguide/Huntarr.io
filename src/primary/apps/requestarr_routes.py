@@ -170,6 +170,24 @@ def get_media_details(media_type, tmdb_id):
         logger.error(f"Error getting media details: {e}")
         return jsonify({'error': 'Failed to get media details'}), 500
 
+@requestarr_bp.route('/series-status', methods=['GET'])
+def get_series_status():
+    """Get series status from Sonarr - exists, missing episodes, etc."""
+    try:
+        tmdb_id = request.args.get('tmdb_id', type=int)
+        instance_name = request.args.get('instance')
+        
+        if not tmdb_id or not instance_name:
+            return jsonify({'error': 'Missing parameters'}), 400
+        
+        # Get series status from Sonarr
+        status = requestarr_api.get_series_status_from_sonarr(tmdb_id, instance_name)
+        return jsonify(status)
+        
+    except Exception as e:
+        logger.error(f"Error getting series status: {e}")
+        return jsonify({'error': 'Failed to get series status'}), 500
+
 @requestarr_bp.route('/check-seasons', methods=['GET'])
 def check_requested_seasons():
     """Check which seasons of a TV show are already in Sonarr"""
