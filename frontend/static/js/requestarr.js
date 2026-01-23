@@ -565,12 +565,17 @@ class RequestarrModule {
         // Add to page
         document.body.appendChild(notification);
         
-        // Remove after 3 seconds
+        // Start fade out animation after 4 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease forwards';
+        }, 4000);
+        
+        // Remove from DOM after fade out completes
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.parentNode.removeChild(notification);
             }
-        }, 3000);
+        }, 4300);
     }
 }
 
