@@ -173,9 +173,11 @@ export class RequestarrModal {
             console.log('[RequestarrDiscover] Series status:', status);
             
             let statusHTML = '';
+            const requestBtn = document.getElementById('modal-request-btn');
             
             if (status.exists) {
                 if (status.missing_episodes === 0 && status.total_episodes > 0) {
+                    // Complete series - disable request button
                     statusHTML = `
                         <div class="series-status-box status-available">
                             <i class="fas fa-check-circle"></i>
@@ -184,7 +186,13 @@ export class RequestarrModal {
                             </div>
                         </div>
                     `;
+                    if (requestBtn) {
+                        requestBtn.disabled = true;
+                        requestBtn.classList.add('disabled');
+                        requestBtn.textContent = 'Complete';
+                    }
                 } else if (status.missing_episodes > 0) {
+                    // Has missing episodes - enable request button
                     statusHTML = `
                         <div class="series-status-box status-missing-episodes">
                             <i class="fas fa-tv"></i>
@@ -193,7 +201,13 @@ export class RequestarrModal {
                             </div>
                         </div>
                     `;
+                    if (requestBtn) {
+                        requestBtn.disabled = false;
+                        requestBtn.classList.remove('disabled');
+                        requestBtn.textContent = 'Request';
+                    }
                 } else {
+                    // In library but status unclear - disable request button
                     statusHTML = `
                         <div class="series-status-box status-available">
                             <i class="fas fa-check-circle"></i>
@@ -202,8 +216,14 @@ export class RequestarrModal {
                             </div>
                         </div>
                     `;
+                    if (requestBtn) {
+                        requestBtn.disabled = true;
+                        requestBtn.classList.add('disabled');
+                        requestBtn.textContent = 'In Library';
+                    }
                 }
             } else {
+                // Not in library - enable request button
                 statusHTML = `
                     <div class="series-status-box status-requestable">
                         <i class="fas fa-inbox"></i>
@@ -213,6 +233,11 @@ export class RequestarrModal {
                         </div>
                     </div>
                 `;
+                if (requestBtn) {
+                    requestBtn.disabled = false;
+                    requestBtn.classList.remove('disabled');
+                    requestBtn.textContent = 'Request';
+                }
             }
             
             container.innerHTML = statusHTML;

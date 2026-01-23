@@ -991,8 +991,14 @@ input:disabled + .toggle-slider {
 }
 
 .modal-btn.request-btn.disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
+    pointer-events: none;
+}
+
+.modal-btn.request-btn.disabled:hover {
+    box-shadow: none !important;
+    transform: none !important;
 }
 
 /* History View */
