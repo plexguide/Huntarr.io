@@ -2519,69 +2519,6 @@ let huntarrUI = {
             });
     },
 
-    // Load detailed Prowlarr statistics
-    loadProwlarrStats: function() {
-        HuntarrUtils.fetchWithTimeout('./api/prowlarr/stats')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    this.updateProwlarrStatsDisplay(data.stats);
-                } else {
-                    console.error('Failed to load Prowlarr stats:', data.error);
-                    this.updateProwlarrStatsDisplay({
-                        active_indexers: '--',
-                        total_api_calls: '--',
-                        throttled_indexers: '--',
-                        failed_indexers: '--',
-                        health_status: 'Error loading stats'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error loading Prowlarr stats:', error);
-                this.updateProwlarrStatsDisplay({
-                    active_indexers: '--',
-                    total_api_calls: '--',
-                    throttled_indexers: '--',
-                    failed_indexers: '--',
-                    health_status: 'Connection error'
-                });
-            });
-    },
-
-    // Update Prowlarr stats display
-    updateProwlarrStatsDisplay: function(stats) {
-        // Update stat numbers
-        const activeElement = document.getElementById('prowlarr-active-indexers');
-        if (activeElement) activeElement.textContent = stats.active_indexers;
-        
-        const callsElement = document.getElementById('prowlarr-total-calls');
-        if (callsElement) callsElement.textContent = this.formatLargeNumber(stats.total_api_calls);
-        
-        const throttledElement = document.getElementById('prowlarr-throttled');
-        if (throttledElement) throttledElement.textContent = stats.throttled_indexers;
-        
-        const failedElement = document.getElementById('prowlarr-failed');
-        if (failedElement) failedElement.textContent = stats.failed_indexers;
-        
-        // Update health status
-        const healthElement = document.getElementById('prowlarr-health-status');
-        if (healthElement) {
-            healthElement.textContent = stats.health_status || 'Unknown';
-            
-            // Add color coding based on health
-            if (stats.health_status && stats.health_status.includes('throttled')) {
-                healthElement.style.color = '#f59e0b'; // amber
-            } else if (stats.health_status && (stats.health_status.includes('failed') || stats.health_status.includes('disabled'))) {
-                healthElement.style.color = '#ef4444'; // red
-            } else if (stats.health_status && stats.health_status.includes('healthy')) {
-                healthElement.style.color = '#10b981'; // green
-            } else {
-                healthElement.style.color = '#9ca3af'; // gray
-            }
-        }
-    },
-
     // Load Prowlarr indexers quickly
     loadProwlarrIndexers: function() {
         HuntarrUtils.fetchWithTimeout('./api/prowlarr/indexers')
@@ -2733,13 +2670,23 @@ let huntarrUI = {
             `);
         }
         
+        // Grabs Today
+        if (stats.grabs_today !== undefined) {
+            const grabsClass = stats.grabs_today > 0 ? 'success' : '';
+            statisticsCards.push(`
+                <div class="stat-card">
+                    <div class="stat-label">Grabs Today</div>
+                    <div class="stat-value ${grabsClass}">${stats.grabs_today}</div>
+                </div>
+            `);
+        }
+        
         // Success rate (always show, even if 0 or undefined)
         let successRate = 0;
         if (stats.recent_success_rate !== undefined && stats.recent_success_rate !== null) {
             successRate = stats.recent_success_rate;
         }
-        const successClass = successRate >= 80 ? 'success' : 
-                            successRate >= 60 ? 'warning' : 'error';
+        const successClass = successRate > 0 ? 'success' : 'error';
         statisticsCards.push(`
             <div class="stat-card">
                 <div class="stat-label">Success Rate</div>
@@ -2759,16 +2706,6 @@ let huntarrUI = {
                 <div class="stat-card">
                     <div class="stat-label">Avg Response</div>
                     <div class="stat-value ${responseClass}">${responseTime}</div>
-                </div>
-            `);
-        }
-        
-        // Total API calls
-        if (stats.total_api_calls !== undefined) {
-            statisticsCards.push(`
-                <div class="stat-card">
-                    <div class="stat-label">Total Searches</div>
-                    <div class="stat-value">${stats.total_api_calls.toLocaleString()}</div>
                 </div>
             `);
         }
