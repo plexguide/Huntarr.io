@@ -397,10 +397,18 @@
     display: none;
     align-items: center;
     justify-content: center;
+    padding-left: 75px; /* Offset for sidebar to center in content area */
 }
 
 .media-modal[style*="display: flex"] {
     display: flex !important;
+}
+
+/* Mobile responsive - remove sidebar offset on small screens */
+@media (max-width: 768px) {
+    .media-modal {
+        padding-left: 0;
+    }
 }
 
 .modal-backdrop {
