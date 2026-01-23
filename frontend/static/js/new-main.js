@@ -89,7 +89,7 @@ let huntarrUI = {
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user') {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
-        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-history') {
+        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-history' || this.currentSection === 'requestarr-settings') {
             console.log('[huntarrUI] Initialization - showing requestarr sidebar');
             this.showRequestarrSidebar();
         } else if (this.currentSection === 'apps' || this.currentSection === 'sonarr' || this.currentSection === 'radarr' || this.currentSection === 'lidarr' || this.currentSection === 'readarr' || this.currentSection === 'whisparr' || this.currentSection === 'eros' || this.currentSection === 'prowlarr') {
@@ -674,6 +674,20 @@ let huntarrUI = {
             // Show history view
             if (typeof window.RequestarrDiscover !== 'undefined') {
                 window.RequestarrDiscover.switchView('history');
+            }
+        } else if (section === 'requestarr-settings' && document.getElementById('requestarr-section')) {
+            document.getElementById('requestarr-section').classList.add('active');
+            document.getElementById('requestarr-section').style.display = 'block';
+            if (document.getElementById('requestarrSettingsNav')) document.getElementById('requestarrSettingsNav').classList.add('active');
+            newTitle = 'Settings';
+            this.currentSection = 'requestarr-settings';
+            
+            // Switch to Requestarr sidebar
+            this.showRequestarrSidebar();
+            
+            // Show settings view
+            if (typeof window.RequestarrDiscover !== 'undefined') {
+                window.RequestarrDiscover.switchView('settings');
             }
             this.showRequestarrView('history');
         } else if (section === 'apps') {

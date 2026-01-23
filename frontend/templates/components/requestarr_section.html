@@ -139,6 +139,39 @@
                 </div>
             </div>
         </div>
+
+        <!-- Settings View -->
+        <div id="requestarr-settings-view" class="requestarr-view">
+            <h1 class="page-title">Requestarr Settings</h1>
+            <div class="requestarr-settings-container">
+                <div class="settings-card">
+                    <h3>Default Instances</h3>
+                    <p class="settings-description">Select default instances for checking availability and pre-selecting in request forms.</p>
+                    
+                    <div class="settings-field">
+                        <label for="default-sonarr-instance">Default Sonarr Instance</label>
+                        <select id="default-sonarr-instance" class="settings-select">
+                            <option value="">No Instance Configured</option>
+                        </select>
+                        <small>Used for TV show availability checks</small>
+                    </div>
+                    
+                    <div class="settings-field">
+                        <label for="default-radarr-instance">Default Radarr Instance</label>
+                        <select id="default-radarr-instance" class="settings-select">
+                            <option value="">No Instance Configured</option>
+                        </select>
+                        <small>Used for movie availability checks</small>
+                    </div>
+                    
+                    <div class="settings-actions">
+                        <button id="save-requestarr-settings" class="btn-primary">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal for Media Details -->

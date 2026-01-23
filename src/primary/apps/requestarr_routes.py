@@ -198,5 +198,29 @@ def get_quality_profiles(app_type, instance_name):
         logger.error(f"Error getting quality profiles: {e}")
         return jsonify({'success': False, 'error': 'Failed to get quality profiles'}), 500
 
+@requestarr_bp.route('/settings/defaults', methods=['GET'])
+def get_default_instances():
+    """Get default Sonarr and Radarr instances"""
+    try:
+        defaults = requestarr_api.get_default_instances()
+        return jsonify({'success': True, 'defaults': defaults})
+    except Exception as e:
+        logger.error(f"Error getting default instances: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get default instances'}), 500
+
+@requestarr_bp.route('/settings/defaults', methods=['POST'])
+def set_default_instances():
+    """Set default Sonarr and Radarr instances"""
+    try:
+        data = request.get_json()
+        sonarr_default = data.get('sonarr_instance')
+        radarr_default = data.get('radarr_instance')
+        
+        requestarr_api.set_default_instances(sonarr_default, radarr_default)
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error setting default instances: {e}")
+        return jsonify({'success': False, 'error': 'Failed to set default instances'}), 500
+
 # Requestarr is always enabled with hardcoded TMDB API key
 logger.info("Requestarr initialized with hardcoded TMDB API key") 

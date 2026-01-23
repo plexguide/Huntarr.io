@@ -149,6 +149,9 @@ class RequestarrDiscover {
             case 'history':
                 this.loadHistory();
                 break;
+            case 'settings':
+                this.loadSettings();
+                break;
         }
     }
 
@@ -963,6 +966,96 @@ class RequestarrDiscover {
         `;
         
         return item;
+    }
+
+    // Settings View
+    async loadSettings() {
+        console.log('[RequestarrDiscover] Loading settings...');
+        
+        // Populate instance dropdowns
+        const sonarrSelect = document.getElementById('default-sonarr-instance');
+        const radarrSelect = document.getElementById('default-radarr-instance');
+        
+        if (sonarrSelect && radarrSelect) {
+            // Clear and populate Sonarr instances
+            sonarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
+            this.instances.sonarr.forEach(instance => {
+                const option = document.createElement('option');
+                option.value = instance.name;
+                option.textContent = `Sonarr - ${instance.name}`;
+                sonarrSelect.appendChild(option);
+            });
+            
+            // Clear and populate Radarr instances
+            radarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
+            this.instances.radarr.forEach(instance => {
+                const option = document.createElement('option');
+                option.value = instance.name;
+                option.textContent = `Radarr - ${instance.name}`;
+                radarrSelect.appendChild(option);
+            });
+            
+            // Load current defaults
+            try {
+                const response = await fetch('./api/requestarr/settings/defaults');
+                const data = await response.json();
+                
+                if (data.success && data.defaults) {
+                    if (data.defaults.sonarr_instance) {
+                        sonarrSelect.value = data.defaults.sonarr_instance;
+                    }
+                    if (data.defaults.radarr_instance) {
+                        radarrSelect.value = data.defaults.radarr_instance;
+                    }
+                }
+            } catch (error) {
+                console.error('[RequestarrDiscover] Error loading default instances:', error);
+            }
+        }
+        
+        // Setup save button
+        const saveBtn = document.getElementById('save-requestarr-settings');
+        if (saveBtn) {
+            saveBtn.onclick = () => this.saveSettings();
+        }
+    }
+
+    async saveSettings() {
+        const sonarrSelect = document.getElementById('default-sonarr-instance');
+        const radarrSelect = document.getElementById('default-radarr-instance');
+        const saveBtn = document.getElementById('save-requestarr-settings');
+        
+        if (!sonarrSelect || !radarrSelect || !saveBtn) return;
+        
+        // Disable button while saving
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        
+        try {
+            const response = await fetch('./api/requestarr/settings/defaults', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sonarr_instance: sonarrSelect.value,
+                    radarr_instance: radarrSelect.value
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showNotification('Settings saved successfully!', 'success');
+            } else {
+                this.showNotification('Failed to save settings', 'error');
+            }
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error saving settings:', error);
+            this.showNotification('Failed to save settings', 'error');
+        } finally {
+            // Re-enable button
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Settings';
+        }
     }
 }
 
