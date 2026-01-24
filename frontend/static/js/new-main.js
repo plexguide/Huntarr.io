@@ -255,6 +255,14 @@ let huntarrUI = {
                 e.preventDefault();
                 this.handleNavigation(e);
             }
+
+            // Main sidebar active state handling (including external links)
+            const sidebarNavItem = e.target.closest('#sidebar .nav-item');
+            if (sidebarNavItem) {
+                const mainSidebarNavItems = document.querySelectorAll('#sidebar .nav-item');
+                mainSidebarNavItems.forEach(item => item.classList.remove('active'));
+                sidebarNavItem.classList.add('active');
+            }
             
             // Handle cycle reset button clicks
             if (e.target.matches('.cycle-reset-button') || e.target.closest('.cycle-reset-button')) {

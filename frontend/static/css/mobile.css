@@ -24,18 +24,31 @@
         font-size: 22px !important;
     }
     
-    /* Add spacer below heart icon on mobile - half space */
-    .sidebar .heart-icon {
-        margin-bottom: 24px !important;
+    /* Fix hover effect causing layout shift - disable all transitions and size changes */
+    .sidebar .nav-item {
+        transition: none !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .sidebar .nav-item:hover,
+    .sidebar .nav-item.active {
+        width: auto !important;
+        margin: 0 !important;
+        margin-bottom: 10px !important;
+        padding: 14px 24px !important;
+        transform: none !important;
+    }
+    
+    /* Add spacer below sponsor icon on mobile - half space */
+    .sidebar .sponsor-nav::after {
+        content: '';
+        display: block;
+        height: 24px;
     }
     
     /* Add spacing between nav items on mobile */
     .sidebar .nav-menu {
         gap: 0 !important;
-    }
-    
-    .sidebar .nav-item {
-        margin-bottom: 10px !important;
     }
     
     /* Add spacing between nav groups */
