@@ -135,8 +135,8 @@
 
 /* Carousel Sections */
 .carousel-section {
-    margin-bottom: 50px;
-    padding-top: 20px; /* More padding for scaled hover effect */
+    margin-bottom: 20px;
+    padding-top: 8px; /* More padding for scaled hover effect */
 }
 
 .section-title {
