@@ -502,5 +502,29 @@ def get_hidden_media():
         logger.error(f"Error getting hidden media: {e}")
         return jsonify({'error': 'Failed to get hidden media'}), 500
 
+@requestarr_bp.route('/instances/<app_type>', methods=['GET'])
+def get_instances(app_type):
+    """Get list of configured instances for an app type (radarr/sonarr)"""
+    try:
+        from src.primary.settings_manager import get_setting
+        
+        # Get instances from settings
+        instances_data = get_setting(app_type, 'instances', [])
+        
+        # Format response
+        instances = []
+        for instance in instances_data:
+            if isinstance(instance, dict) and 'name' in instance:
+                instances.append({
+                    'name': instance['name'],
+                    'url': instance.get('url', '')
+                })
+        
+        return jsonify({'instances': instances, 'app_type': app_type})
+        
+    except Exception as e:
+        logger.error(f"Error getting {app_type} instances: {e}")
+        return jsonify({'error': f'Failed to get {app_type} instances'}), 500
+
 # Requestarr is always enabled with hardcoded TMDB API key
 logger.info("Requestarr initialized with hardcoded TMDB API key") 

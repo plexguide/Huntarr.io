@@ -1696,7 +1696,7 @@ input:disabled + .toggle-slider {
 
 .movies-controls {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     margin: 20px 0;
     padding: 0 20px;
@@ -1704,25 +1704,16 @@ input:disabled + .toggle-slider {
 }
 
 .instance-selector-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.instance-label {
-    color: #9ca3af;
-    font-size: 14px;
-    font-weight: 500;
-    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .instance-select {
-    min-width: 180px;
+    min-width: 200px;
 }
 
 .sort-dropdown {
-    flex: 1;
-    max-width: 300px;
+    flex-shrink: 0;
+    min-width: 250px;
 }
 
 .control-select {
@@ -1765,6 +1756,7 @@ input:disabled + .toggle-slider {
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
+    margin-left: auto;
 }
 
 .filter-button:hover {
