@@ -2752,3 +2752,140 @@ input:disabled + .toggle-slider {
 .dual-range-slider .range-min:active {
     z-index: 5;
 }
+
+/* Dual Range Slider with Visible Track and Gold Fill */
+.dual-range-slider {
+    position: relative;
+    height: 30px;
+    display: flex;
+    align-items: center;
+}
+
+/* Background track (grey) */
+.slider-track {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background: rgba(75, 85, 99, 0.4);
+    border-radius: 3px;
+    z-index: 1;
+}
+
+/* Active range fill (gold) */
+.slider-range {
+    position: absolute;
+    height: 6px;
+    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 3px;
+    z-index: 2;
+}
+
+/* Range inputs */
+.dual-range-slider input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background: transparent;
+    pointer-events: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Remove backgrounds from range inputs */
+.dual-range-slider .range-max,
+.dual-range-slider .range-min {
+    background: transparent;
+}
+
+/* Webkit track (make transparent) */
+.dual-range-slider input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    background: transparent;
+    border: none;
+}
+
+/* Firefox track (make transparent) */
+.dual-range-slider input[type="range"]::-moz-range-track {
+    height: 6px;
+    background: transparent;
+    border: none;
+}
+
+/* Thumbs for both sliders */
+.dual-range-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    border: 3px solid #1f2937;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.5);
+    transition: all 0.2s;
+    position: relative;
+    z-index: 3;
+}
+
+.dual-range-slider input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    border: 3px solid #1f2937;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.5);
+    transition: all 0.2s;
+    position: relative;
+    z-index: 3;
+}
+
+/* Hover effects */
+.dual-range-slider input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.7);
+}
+
+.dual-range-slider input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.7);
+}
+
+/* Active/dragging state */
+.dual-range-slider input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2), 0 4px 16px rgba(245, 158, 11, 0.7);
+}
+
+.dual-range-slider input[type="range"]:active::-moz-range-thumb {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2), 0 4px 16px rgba(245, 158, 11, 0.7);
+}
+
+/* Focus state */
+.dual-range-slider input[type="range"]:focus {
+    outline: none;
+}
+
+.dual-range-slider input[type="range"]:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2), 0 4px 16px rgba(245, 158, 11, 0.7);
+}
+
+.dual-range-slider input[type="range"]:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2), 0 4px 16px rgba(245, 158, 11, 0.7);
+}
+
+/* Z-index management for overlapping thumbs */
+.dual-range-slider .range-min {
+    z-index: 4;
+}
+
+.dual-range-slider .range-max {
+    z-index: 3;
+}
+
+.dual-range-slider .range-min:active {
+    z-index: 5;
+}

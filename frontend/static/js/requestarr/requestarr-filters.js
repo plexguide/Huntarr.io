@@ -198,12 +198,16 @@ export class RequestarrFilters {
         if (runtimeMin && runtimeMax) {
             runtimeMin.addEventListener('input', () => {
                 this.updateRuntimeDisplay();
+                this.updateSliderRange('runtime', runtimeMin, runtimeMax);
                 this.updateModalFilterCount();
             });
             runtimeMax.addEventListener('input', () => {
                 this.updateRuntimeDisplay();
+                this.updateSliderRange('runtime', runtimeMin, runtimeMax);
                 this.updateModalFilterCount();
             });
+            // Initial range fill
+            this.updateSliderRange('runtime', runtimeMin, runtimeMax);
         }
 
         // Rating range inputs
@@ -212,12 +216,16 @@ export class RequestarrFilters {
         if (ratingMin && ratingMax) {
             ratingMin.addEventListener('input', () => {
                 this.updateRatingDisplay();
+                this.updateSliderRange('rating', ratingMin, ratingMax);
                 this.updateModalFilterCount();
             });
             ratingMax.addEventListener('input', () => {
                 this.updateRatingDisplay();
+                this.updateSliderRange('rating', ratingMin, ratingMax);
                 this.updateModalFilterCount();
             });
+            // Initial range fill
+            this.updateSliderRange('rating', ratingMin, ratingMax);
         }
 
         // Votes range inputs
@@ -226,13 +234,33 @@ export class RequestarrFilters {
         if (votesMin && votesMax) {
             votesMin.addEventListener('input', () => {
                 this.updateVotesDisplay();
+                this.updateSliderRange('votes', votesMin, votesMax);
                 this.updateModalFilterCount();
             });
             votesMax.addEventListener('input', () => {
                 this.updateVotesDisplay();
+                this.updateSliderRange('votes', votesMin, votesMax);
                 this.updateModalFilterCount();
             });
+            // Initial range fill
+            this.updateSliderRange('votes', votesMin, votesMax);
         }
+    }
+
+    updateSliderRange(type, minInput, maxInput) {
+        const rangeElement = document.getElementById(`${type}-range`);
+        if (!rangeElement) return;
+
+        const min = parseFloat(minInput.value);
+        const max = parseFloat(maxInput.value);
+        const minValue = parseFloat(minInput.min);
+        const maxValue = parseFloat(minInput.max);
+
+        const percentMin = ((min - minValue) / (maxValue - minValue)) * 100;
+        const percentMax = ((max - minValue) / (maxValue - minValue)) * 100;
+
+        rangeElement.style.left = percentMin + '%';
+        rangeElement.style.width = (percentMax - percentMin) + '%';
     }
 
     updateRuntimeDisplay() {
