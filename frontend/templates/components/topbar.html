@@ -238,40 +238,9 @@
     
     /* Responsive styling */
     @media (max-width: 768px) {
+        /* Completely hide the desktop topbar on mobile */
         .top-bar {
-            height: 40px; /* Single bar height for mobile */
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-        }
-        
-        /* Ensure color line spans full width on mobile */
-        .top-color-line {
-            width: 100%;
-        }
-        
-        /* Show only the page title on mobile */
-        .topbar-section.left {
-            flex: 1;
-            justify-content: center;
-            margin: 0;
-        }
-        
-        /* Hide version bar on mobile */
-        .topbar-section.center {
             display: none !important;
-        }
-        
-        .topbar-section.right {
-            display: none !important; /* Hide user info on mobile to save space */
-        }
-        
-        /* Make page title more prominent on mobile */
-        .page-title {
-            font-size: 18px !important;
-            font-weight: 700 !important;
-            text-align: center;
-            width: 100%;
         }
         
         /* Sidebar related styles, preserved */
@@ -310,12 +279,9 @@
     
     /* Phone-specific styling for very small screens */
     @media (max-width: 480px) {
+        /* Ensure desktop topbar stays hidden */
         .top-bar {
-            height: 40px; /* Same height as tablet */
-        }
-        
-        .page-title {
-            font-size: 16px !important;
+            display: none !important;
         }
     }
 </style>
