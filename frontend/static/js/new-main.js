@@ -944,6 +944,10 @@ let huntarrUI = {
         const pageTitleElement = document.getElementById('currentPageTitle');
         if (pageTitleElement) {
             pageTitleElement.textContent = newTitle;
+            // Also update mobile page title
+            if (typeof window.updateMobilePageTitle === 'function') {
+                window.updateMobilePageTitle(newTitle);
+            }
         } else {
             console.warn("[huntarrUI] currentPageTitle element not found during section switch.");
         }

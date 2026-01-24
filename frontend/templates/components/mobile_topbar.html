@@ -1,9 +1,9 @@
 <!-- Mobile-specific topbar - clean and simple design -->
 <div id="mobile-topbar" class="mobile-topbar">
     <div class="mobile-topbar-content">
-        <!-- Left side: Menu toggle (if needed) -->
+        <!-- Left side: Current section title -->
         <div class="mobile-topbar-left">
-            <span class="mobile-app-title">Huntarr</span>
+            <span class="mobile-app-title" id="mobilePageTitle">Home</span>
         </div>
         
         <!-- Right side: Version info -->
@@ -123,38 +123,74 @@
 </style>
 
 <script>
+// Update mobile topbar with current section title
+function updateMobilePageTitle(title) {
+    const mobileTitleElement = document.getElementById('mobilePageTitle');
+    if (mobileTitleElement) {
+        mobileTitleElement.textContent = title || 'Home';
+    }
+}
+
 // Update mobile topbar version info
 function updateMobileVersionInfo() {
-    // Get version info from the main topbar or API
-    const currentVersionElement = document.querySelector('#mobile-current-version');
-    const latestVersionElement = document.querySelector('#mobile-latest-version');
-    
-    if (currentVersionElement && latestVersionElement) {
-        // Try to get version from main topbar first
-        const mainCurrentVersion = document.querySelector('.version-item:nth-child(1)')?.textContent?.replace('Version ', '').trim();
-        const mainLatestVersion = document.querySelector('.version-item:nth-child(3)')?.textContent?.replace('Latest: ', '').trim();
-        
-        if (mainCurrentVersion) {
-            currentVersionElement.textContent = mainCurrentVersion;
+    // Get version info from localStorage (same as main topbar)
+    try {
+        const versionInfo = localStorage.getItem('huntarr-version-info');
+        if (versionInfo) {
+            const parsedInfo = JSON.parse(versionInfo);
+            const currentVersionElement = document.getElementById('mobile-current-version');
+            const latestVersionElement = document.getElementById('mobile-latest-version');
+            
+            if (parsedInfo.currentVersion && currentVersionElement) {
+                currentVersionElement.textContent = parsedInfo.currentVersion;
+            }
+            if (parsedInfo.latestVersion && latestVersionElement) {
+                latestVersionElement.textContent = parsedInfo.latestVersion;
+            }
         }
-        
-        if (mainLatestVersion) {
-            latestVersionElement.textContent = mainLatestVersion;
-        }
+    } catch (e) {
+        console.error('Error updating mobile version info:', e);
     }
 }
 
 // Initialize mobile topbar when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     updateMobileVersionInfo();
+    
+    // Watch for page title changes in the main topbar
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                const pageTitleElement = document.getElementById('currentPageTitle');
+                if (pageTitleElement) {
+                    updateMobilePageTitle(pageTitleElement.textContent);
+                }
+            }
+        });
+    });
+    
+    // Observe the main page title for changes
+    const pageTitleElement = document.getElementById('currentPageTitle');
+    if (pageTitleElement) {
+        // Set initial title
+        updateMobilePageTitle(pageTitleElement.textContent);
+        
+        // Observe for changes
+        observer.observe(pageTitleElement, {
+            childList: true,
+            characterData: true,
+            subtree: true
+        });
+    }
+    
+    // Watch for localStorage version changes
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'huntarr-version-info') {
+            updateMobileVersionInfo();
+        }
+    });
 });
 
-// Update mobile topbar when main topbar updates
-if (typeof window.updateVersionInfo === 'function') {
-    const originalUpdateVersionInfo = window.updateVersionInfo;
-    window.updateVersionInfo = function() {
-        originalUpdateVersionInfo.apply(this, arguments);
-        updateMobileVersionInfo();
-    };
-}
+// Make updateMobilePageTitle available globally so it can be called from switchSection
+window.updateMobilePageTitle = updateMobilePageTitle;
 </script> 

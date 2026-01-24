@@ -239,10 +239,10 @@
     /* Responsive styling */
     @media (max-width: 768px) {
         .top-bar {
-            height: 50px; /* Increased height for mobile to fit version info */
+            height: 40px; /* Single bar height for mobile */
             display: flex;
             align-items: center;
-            padding: 0 10px;
+            padding: 0 15px;
         }
         
         /* Ensure color line spans full width on mobile */
@@ -250,54 +250,28 @@
             width: 100%;
         }
         
-        .topbar-section.left,
-        .topbar-section.center {
-            display: inline-flex;
-            align-items: center;
-        }
-        
+        /* Show only the page title on mobile */
         .topbar-section.left {
-            margin-right: 10px;
+            flex: 1;
+            justify-content: center;
+            margin: 0;
         }
         
+        /* Hide version bar on mobile */
         .topbar-section.center {
-            flex-grow: 1;
-            justify-content: flex-start;
+            display: none !important;
         }
         
         .topbar-section.right {
-            display: none; /* Hide user info on mobile to save space */
+            display: none !important; /* Hide user info on mobile to save space */
         }
         
-        .version-bar {
-            display: flex !important;
-            gap: 8px !important;
-            flex-wrap: nowrap;
-        }
-        
-        .version-item {
-            display: none !important;
-        }
-        
-        .version-item:nth-child(1),
-        .version-item:nth-child(3) {
-            display: flex !important;
-            font-size: 13px !important;
-            background: rgba(30, 39, 56, 0.6);
-            border-radius: 4px;
-            padding: 2px 5px;
-            margin: 0;
-            border: 1px solid rgba(90, 109, 137, 0.2);
-        }
-        
-        .version-divider {
-            display: none !important;
-        }
-        
-        .version-divider:nth-child(2) {
-            display: block !important;
-            height: 12px;
-            margin: 0 5px;
+        /* Make page title more prominent on mobile */
+        .page-title {
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            text-align: center;
+            width: 100%;
         }
         
         /* Sidebar related styles, preserved */
@@ -337,34 +311,11 @@
     /* Phone-specific styling for very small screens */
     @media (max-width: 480px) {
         .top-bar {
-            height: 80px; /* Increased height for phones to accommodate wrapped version info */
-            flex-direction: column;
-            justify-content: center;
-            padding: 5px 10px;
+            height: 40px; /* Same height as tablet */
         }
         
-        .topbar-section.left {
-            margin: 0 0 5px 0;
-            justify-content: center;
-            width: 100%;
-        }
-        
-        .topbar-section.center {
-            justify-content: center;
-            width: 100%;
-        }
-        
-        .version-bar {
-            justify-content: center;
-            flex-wrap: wrap !important;
-            gap: 5px !important;
-        }
-        
-        /* Make the page title centered */
         .page-title {
-            width: 100%;
-            text-align: center;
-            margin: 0 0 4px 0;
+            font-size: 16px !important;
         }
     }
 </style>
