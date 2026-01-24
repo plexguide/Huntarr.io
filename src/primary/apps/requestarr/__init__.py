@@ -24,54 +24,64 @@ class RequestarrAPI:
     def get_trending(self, time_window: str = 'week') -> List[Dict[str, Any]]:
         """Get trending movies and TV shows - fetch 3 pages for more content"""
         api_key = self.get_tmdb_api_key()
+        filters = self.get_discover_filters()
+        region = filters.get('region', '')
+        languages = filters.get('languages', [])
+        
         all_results = []
         
         try:
-            # Fetch 3 pages to get ~60 items
-            for page in range(1, 4):
-                url = f"{self.tmdb_base_url}/trending/all/{time_window}"
-                params = {
-                    'api_key': api_key,
-                    'page': page
-                }
-                
-                response = requests.get(url, params=params, timeout=10)
-                response.raise_for_status()
-                
-                data = response.json()
-                
-                for item in data.get('results', []):
-                    # Skip person results
-                    if item.get('media_type') == 'person':
-                        continue
+            # Use discover endpoint for better filtering
+            # Get both movies and TV shows
+            for media_type in ['movie', 'tv']:
+                for page in range(1, 3):  # 2 pages per type = ~40 items total
+                    url = f"{self.tmdb_base_url}/discover/{media_type}"
+                    params = {
+                        'api_key': api_key,
+                        'page': page,
+                        'sort_by': 'popularity.desc'
+                    }
                     
-                    media_type = item.get('media_type')
-                    title = item.get('title') or item.get('name', '')
-                    release_date = item.get('release_date') or item.get('first_air_date', '')
-                    year = None
-                    if release_date:
-                        try:
-                            year = int(release_date.split('-')[0])
-                        except (ValueError, IndexError):
-                            pass
+                    # Add region filter if set (not empty string)
+                    if region:
+                        params['region'] = region
                     
-                    poster_path = item.get('poster_path')
-                    poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+                    # Add language filter if languages are selected
+                    if languages:
+                        params['with_original_language'] = '|'.join(languages)
                     
-                    backdrop_path = item.get('backdrop_path')
-                    backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
+                    response = requests.get(url, params=params, timeout=10)
+                    response.raise_for_status()
                     
-                    all_results.append({
-                        'tmdb_id': item.get('id'),
-                        'media_type': media_type,
-                        'title': title,
-                        'year': year,
-                        'overview': item.get('overview', ''),
-                        'poster_path': poster_url,
-                        'backdrop_path': backdrop_url,
-                        'vote_average': item.get('vote_average', 0),
-                        'popularity': item.get('popularity', 0)
-                    })
+                    data = response.json()
+                    
+                    for item in data.get('results', []):
+                        title = item.get('title') or item.get('name', '')
+                        release_date = item.get('release_date') or item.get('first_air_date', '')
+                        year = None
+                        if release_date:
+                            try:
+                                year = int(release_date.split('-')[0])
+                            except (ValueError, IndexError):
+                                pass
+                        
+                        poster_path = item.get('poster_path')
+                        poster_url = f"{self.tmdb_image_base_url}{poster_path}" if poster_path else None
+                        
+                        backdrop_path = item.get('backdrop_path')
+                        backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
+                        
+                        all_results.append({
+                            'tmdb_id': item.get('id'),
+                            'media_type': media_type,
+                            'title': title,
+                            'year': year,
+                            'overview': item.get('overview', ''),
+                            'poster_path': poster_url,
+                            'backdrop_path': backdrop_url,
+                            'vote_average': item.get('vote_average', 0),
+                            'popularity': item.get('popularity', 0)
+                        })
             
             # Check library status for all items
             all_results = self.check_library_status_batch(all_results)
@@ -85,16 +95,29 @@ class RequestarrAPI:
     def get_popular_movies(self, page: int = 1) -> List[Dict[str, Any]]:
         """Get popular movies - fetch 3 pages for more content"""
         api_key = self.get_tmdb_api_key()
+        filters = self.get_discover_filters()
+        region = filters.get('region', '')
+        languages = filters.get('languages', [])
+        
         all_results = []
         
         try:
-            # Fetch 3 pages to get ~60 items
+            # Use discover endpoint for filtering support
             for current_page in range(1, 4):
-                url = f"{self.tmdb_base_url}/movie/popular"
+                url = f"{self.tmdb_base_url}/discover/movie"
                 params = {
                     'api_key': api_key,
-                    'page': current_page
+                    'page': current_page,
+                    'sort_by': 'popularity.desc'
                 }
+                
+                # Add region filter if set
+                if region:
+                    params['region'] = region
+                
+                # Add language filter if languages are selected
+                if languages:
+                    params['with_original_language'] = '|'.join(languages)
                 
                 response = requests.get(url, params=params, timeout=10)
                 response.raise_for_status()
@@ -140,16 +163,29 @@ class RequestarrAPI:
     def get_popular_tv(self, page: int = 1) -> List[Dict[str, Any]]:
         """Get popular TV shows - fetch 3 pages for more content"""
         api_key = self.get_tmdb_api_key()
+        filters = self.get_discover_filters()
+        region = filters.get('region', '')
+        languages = filters.get('languages', [])
+        
         all_results = []
         
         try:
-            # Fetch 3 pages to get ~60 items
+            # Use discover endpoint for filtering support
             for current_page in range(1, 4):
-                url = f"{self.tmdb_base_url}/tv/popular"
+                url = f"{self.tmdb_base_url}/discover/tv"
                 params = {
                     'api_key': api_key,
-                    'page': current_page
+                    'page': current_page,
+                    'sort_by': 'popularity.desc'
                 }
+                
+                # Add region filter if set
+                if region:
+                    params['region'] = region
+                
+                # Add language filter if languages are selected
+                if languages:
+                    params['with_original_language'] = '|'.join(languages)
                 
                 response = requests.get(url, params=params, timeout=10)
                 response.raise_for_status()

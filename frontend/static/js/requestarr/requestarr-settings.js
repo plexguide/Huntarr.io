@@ -434,7 +434,7 @@ export class RequestarrSettings {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    region: this.selectedRegion || 'US',
+                    region: this.selectedRegion || '',
                     languages: this.selectedLanguages || []
                 })
             });
@@ -442,7 +442,12 @@ export class RequestarrSettings {
             const data = await response.json();
             
             if (data.success) {
-                this.core.showNotification('Discover filters saved successfully!', 'success');
+                this.core.showNotification('Filters saved! Reloading discover content...', 'success');
+                
+                // Reload all discover content with new filters
+                setTimeout(() => {
+                    this.core.content.loadDiscoverContent();
+                }, 500);
             } else {
                 this.core.showNotification('Failed to save discover filters', 'error');
             }
