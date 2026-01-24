@@ -24,6 +24,20 @@
         font-size: 22px !important;
     }
     
+    /* Add spacer below heart icon on mobile - half space */
+    .sidebar .heart-icon {
+        margin-bottom: 24px !important;
+    }
+    
+    /* Add spacing between nav items on mobile */
+    .sidebar .nav-menu {
+        gap: 8px !important;
+    }
+    
+    .sidebar .nav-item {
+        margin-bottom: 0 !important;
+    }
+    
     /* Center logo in mobile */
     .logo-container {
         justify-content: center !important;
