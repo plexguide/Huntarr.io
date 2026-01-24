@@ -326,12 +326,27 @@ def set_discover_filters():
         data = request.get_json()
         region = data.get('region', '')
         languages = data.get('languages', [])
+        providers = data.get('providers', [])
         
-        requestarr_api.set_discover_filters(region, languages)
+        requestarr_api.set_discover_filters(region, languages, providers)
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"Error setting discover filters: {e}")
         return jsonify({'success': False, 'error': 'Failed to set discover filters'}), 500
+
+@requestarr_bp.route('/watch-providers/<media_type>', methods=['GET'])
+def get_watch_providers(media_type):
+    """Get watch providers for a media type and region"""
+    try:
+        if media_type not in ['movie', 'tv']:
+            return jsonify({'error': 'Invalid media type'}), 400
+        
+        region = request.args.get('region', '').strip().upper()
+        providers = requestarr_api.get_watch_providers(media_type, region)
+        return jsonify({'providers': providers})
+    except Exception as e:
+        logger.error(f"Error getting watch providers: {e}")
+        return jsonify({'error': 'Failed to get watch providers'}), 500
 
 @requestarr_bp.route('/reset-cooldowns', methods=['POST'])
 def reset_cooldowns():

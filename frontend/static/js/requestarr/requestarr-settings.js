@@ -166,6 +166,9 @@ export class RequestarrSettings {
         
         // Initialize language multi-select
         this.initializeLanguageSelect();
+
+        // Initialize provider multi-select
+        this.initializeProviderSelect();
         
         // Load saved filters
         try {
@@ -185,12 +188,18 @@ export class RequestarrSettings {
                     this.selectedLanguages = ['en'];
                     this.renderLanguageTags();
                 }
+                if (data.filters.providers && data.filters.providers.length > 0) {
+                    this.selectedProviders = data.filters.providers;
+                } else {
+                    this.selectedProviders = [];
+                }
             } else {
                 // No saved filters - default to US and English
                 this.selectedRegion = 'US';
                 this.updateRegionDisplay();
                 this.selectedLanguages = ['en'];
                 this.renderLanguageTags();
+                this.selectedProviders = [];
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading discover filters:', error);
@@ -199,7 +208,10 @@ export class RequestarrSettings {
             this.updateRegionDisplay();
             this.selectedLanguages = ['en'];
             this.renderLanguageTags();
+            this.selectedProviders = [];
         }
+
+        await this.loadProviders(this.selectedRegion);
     }
     
     initializeRegionSelect() {
@@ -276,6 +288,7 @@ export class RequestarrSettings {
                 this.renderRegionList(); // Re-render to update selected state
                 document.getElementById('region-dropdown').style.display = 'none';
                 document.getElementById('region-select-display').classList.remove('open');
+                this.handleRegionChange();
             };
             
             list.appendChild(option);
@@ -350,6 +363,40 @@ export class RequestarrSettings {
         });
         
         this.languageSelectInitialized = true;
+    }
+
+    initializeProviderSelect() {
+        const input = document.getElementById('discover-providers');
+        const dropdown = document.getElementById('provider-dropdown');
+        const providerList = document.getElementById('provider-list');
+
+        if (!input || !dropdown || !providerList) {
+            return;
+        }
+
+        if (this.providerSelectInitialized) {
+            return;
+        }
+
+        this.selectedProviders = this.selectedProviders || [];
+        this.providers = this.providers || [];
+
+        this.renderProviderList();
+        this.renderProviderTags();
+
+        input.onclick = (e) => {
+            e.stopPropagation();
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+        };
+
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target) && e.target !== input) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        this.providerSelectInitialized = true;
     }
     
     renderLanguageList(filter = '') {
@@ -426,6 +473,109 @@ export class RequestarrSettings {
             tagsContainer.appendChild(tag);
         });
     }
+
+    async loadProviders(region) {
+        try {
+            const response = await fetch(`./api/requestarr/watch-providers/movie?region=${encodeURIComponent(region || '')}`);
+            const data = await response.json();
+            this.providers = data.providers || [];
+            const available = new Set(this.providers.map(provider => String(provider.provider_id)));
+            this.selectedProviders = (this.selectedProviders || []).filter(code => available.has(code));
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error loading watch providers:', error);
+            this.providers = [];
+        }
+
+        this.renderProviderList();
+        this.renderProviderTags();
+    }
+
+    renderProviderList() {
+        const providerList = document.getElementById('provider-list');
+        if (!providerList) return;
+
+        providerList.innerHTML = '';
+
+        if (!this.providers || this.providers.length === 0) {
+            providerList.innerHTML = '<div class="language-item" style="color: #888;">No providers found</div>';
+            return;
+        }
+
+        this.providers.forEach(provider => {
+            const providerId = String(provider.provider_id);
+            const item = document.createElement('div');
+            item.className = 'language-item';
+            item.textContent = provider.provider_name;
+            item.dataset.code = providerId;
+
+            if (this.selectedProviders.includes(providerId)) {
+                item.classList.add('selected');
+            }
+
+            item.addEventListener('click', () => {
+                const code = item.dataset.code;
+                const index = this.selectedProviders.indexOf(code);
+
+                if (index > -1) {
+                    this.selectedProviders.splice(index, 1);
+                    item.classList.remove('selected');
+                } else {
+                    this.selectedProviders.push(code);
+                    item.classList.add('selected');
+                }
+
+                this.renderProviderTags();
+
+                const dropdown = document.getElementById('provider-dropdown');
+                if (dropdown) {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            providerList.appendChild(item);
+        });
+    }
+
+    renderProviderTags() {
+        const tagsContainer = document.getElementById('provider-tags');
+        if (!tagsContainer) return;
+
+        tagsContainer.innerHTML = '';
+
+        if (!this.selectedProviders || this.selectedProviders.length === 0) {
+            tagsContainer.innerHTML = '<span style="color: #888; font-size: 13px;">All Providers</span>';
+            return;
+        }
+
+        this.selectedProviders.forEach(code => {
+            const provider = (this.providers || []).find(p => String(p.provider_id) === code);
+            if (!provider) return;
+
+            const tag = document.createElement('div');
+            tag.className = 'language-tag';
+            tag.innerHTML = `
+                ${provider.provider_name}
+                <span class="language-tag-remove" data-code="${code}">×</span>
+            `;
+
+            tag.querySelector('.language-tag-remove').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const removeCode = e.target.dataset.code;
+                this.selectedProviders = this.selectedProviders.filter(c => c !== removeCode);
+                this.renderProviderTags();
+                this.renderProviderList();
+            });
+
+            tagsContainer.appendChild(tag);
+        });
+    }
+
+    handleRegionChange() {
+        this.selectedProviders = [];
+        this.renderProviderTags();
+        this.renderProviderList();
+        this.loadProviders(this.selectedRegion);
+    }
     
     async saveDiscoverFilters() {
         const saveBtn = document.getElementById('save-discover-filters');
@@ -441,7 +591,8 @@ export class RequestarrSettings {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     region: this.selectedRegion || '',
-                    languages: this.selectedLanguages || []
+                    languages: this.selectedLanguages || [],
+                    providers: this.selectedProviders || []
                 })
             });
             

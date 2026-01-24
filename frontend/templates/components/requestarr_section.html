@@ -185,6 +185,20 @@
                         </div>
                         <small>Filter via Original Language(s)</small>
                     </div>
+
+                <div class="settings-field">
+                    <label for="discover-providers">Discover Providers</label>
+                    <div class="language-select-wrapper">
+                        <div id="provider-tags" class="language-tags"></div>
+                        <input type="text" id="discover-providers" class="settings-input" placeholder="Select providers..." readonly>
+                        <div id="provider-dropdown" class="language-dropdown" style="display: none;">
+                            <div id="provider-list" class="language-list">
+                                <!-- Options will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    <small>Filter via Streaming Providers (uses selected region)</small>
+                </div>
                     
                     <div class="settings-actions">
                         <button id="save-discover-filters" class="btn-primary">

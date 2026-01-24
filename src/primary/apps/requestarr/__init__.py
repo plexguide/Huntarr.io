@@ -27,6 +27,7 @@ class RequestarrAPI:
         filters = self.get_discover_filters()
         region = filters.get('region', '')
         languages = filters.get('languages', [])
+        providers = filters.get('providers', [])
         
         all_results = []
         
@@ -48,6 +49,12 @@ class RequestarrAPI:
                 # Add language filter if languages are selected
                 if languages:
                     params['with_original_language'] = '|'.join(languages)
+
+                # Add watch provider filters if selected
+                if providers:
+                    if region:
+                        params['watch_region'] = region
+                    params['with_watch_providers'] = '|'.join([str(p) for p in providers])
                 
                 response = requests.get(url, params=params, timeout=10)
                 response.raise_for_status()
@@ -97,6 +104,7 @@ class RequestarrAPI:
         filters = self.get_discover_filters()
         region = filters.get('region', '')
         languages = filters.get('languages', [])
+        providers = filters.get('providers', [])
         
         all_results = []
         
@@ -116,6 +124,12 @@ class RequestarrAPI:
             # Add language filter if languages are selected
             if languages:
                 params['with_original_language'] = '|'.join(languages)
+
+            # Add watch provider filters if selected
+            if providers:
+                if region:
+                    params['watch_region'] = region
+                params['with_watch_providers'] = '|'.join([str(p) for p in providers])
             
             # Add custom filter parameters
             if kwargs.get('with_genres'):
@@ -190,6 +204,7 @@ class RequestarrAPI:
         filters = self.get_discover_filters()
         region = filters.get('region', '')
         languages = filters.get('languages', [])
+        providers = filters.get('providers', [])
         
         all_results = []
         
@@ -209,6 +224,12 @@ class RequestarrAPI:
             # Add language filter if languages are selected
             if languages:
                 params['with_original_language'] = '|'.join(languages)
+
+            # Add watch provider filters if selected
+            if providers:
+                if region:
+                    params['watch_region'] = region
+                params['with_watch_providers'] = '|'.join([str(p) for p in providers])
             
             logger.info(f"Fetching TV shows from TMDB - Page: {page}, Sort: popularity.desc")
             
@@ -784,27 +805,56 @@ class RequestarrAPI:
         try:
             requestarr_config = self.db.get_app_config('requestarr')
             if requestarr_config and 'discover_filters' in requestarr_config:
-                return requestarr_config['discover_filters']
+                filters = requestarr_config['discover_filters']
+                if 'providers' not in filters:
+                    filters['providers'] = []
+                if 'languages' not in filters:
+                    filters['languages'] = []
+                if 'region' not in filters:
+                    filters['region'] = 'US'
+                return filters
             # Default to US region
-            return {'region': 'US', 'languages': []}
+            return {'region': 'US', 'languages': [], 'providers': []}
         except Exception as e:
             logger.error(f"Error getting discover filters: {e}")
-            return {'region': 'US', 'languages': []}
+            return {'region': 'US', 'languages': [], 'providers': []}
     
-    def set_discover_filters(self, region: str, languages: list):
+    def set_discover_filters(self, region: str, languages: list, providers: list):
         """Set discover filter settings in database"""
         try:
             # Get existing config or create new one
             requestarr_config = self.db.get_app_config('requestarr') or {}
             requestarr_config['discover_filters'] = {
                 'region': region,
-                'languages': languages
+                'languages': languages,
+                'providers': providers
             }
             self.db.save_app_config('requestarr', requestarr_config)
-            logger.info(f"Set discover filters - Region: {region}, Languages: {languages}")
+            logger.info(f"Set discover filters - Region: {region}, Languages: {languages}, Providers: {providers}")
         except Exception as e:
             logger.error(f"Error setting discover filters: {e}")
             raise
+
+    def get_watch_providers(self, media_type: str, region: str = '') -> List[Dict[str, Any]]:
+        """Get watch providers for a media type and region"""
+        api_key = self.get_tmdb_api_key()
+
+        try:
+            url = f"{self.tmdb_base_url}/watch/providers/{media_type}"
+            params = {'api_key': api_key}
+            if region:
+                params['watch_region'] = region
+
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            providers = data.get('results', [])
+            providers.sort(key=lambda p: p.get('display_priority', 9999))
+            return providers
+        except Exception as e:
+            logger.error(f"Error getting watch providers: {e}")
+            return []
     
     def reset_cooldowns(self) -> int:
         """Reset all cooldowns with 25+ hours remaining. Returns count of reset items."""
