@@ -233,12 +233,20 @@
     position: relative;
     overflow: hidden;
     border-radius: 8px;
-    background: linear-gradient(135deg, #1a1d2e 0%, #2d3348 100%);
-    /* Add Huntarr logo as background for missing posters */
-    background-image: url('/static/logo/Huntarr.svg');
-    background-size: 50%;
-    background-repeat: no-repeat;
-    background-position: center;
+    background: #000;
+    /* Blackout background with Huntarr logo on top for missing posters */
+    background-image: 
+        url('./static/logo/Huntarr.svg'),
+        url('./static/images/blackout.jpg');
+    background-size: 
+        40%,
+        cover;
+    background-repeat: 
+        no-repeat,
+        no-repeat;
+    background-position: 
+        center,
+        center;
 }
 
 /* Hover Overlay with Info */
@@ -2997,12 +3005,12 @@ input:disabled + .toggle-slider {
 /* Fix Movies grid stretching columns */
 .media-grid {
     grid-template-columns: repeat(auto-fill, 150px) !important;
-    justify-content: start;
+    justify-content: center;
 }
 
 @media (max-width: 768px) {
     .media-grid {
         grid-template-columns: repeat(auto-fill, 120px) !important;
-        justify-content: start;
+        justify-content: center;
     }
 }

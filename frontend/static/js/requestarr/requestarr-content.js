@@ -225,7 +225,7 @@ export class RequestarrContent {
         card.setAttribute('data-tmdb-id', item.tmdb_id);
         card.setAttribute('data-media-type', item.media_type);
         
-        const posterUrl = item.poster_path || './static/images/no-poster.png';
+        const posterUrl = item.poster_path || './static/images/blackout.jpg';
         const year = item.year || 'N/A';
         const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
         const overview = item.overview || 'No description available.';
@@ -257,7 +257,7 @@ export class RequestarrContent {
         card.innerHTML = `
             <div class="media-card-poster">
                 ${statusBadgeHTML}
-                <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/no-poster.png'">
+                <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
                 <div class="media-card-overlay">
                     <div class="media-card-overlay-title">${item.title}</div>
                     <div class="media-card-overlay-content">
