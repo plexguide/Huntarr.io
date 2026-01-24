@@ -532,6 +532,9 @@ export class RequestarrFilters {
         const votesMin = parseInt(document.getElementById('filter-votes-min')?.value || 0);
         const votesMax = parseInt(document.getElementById('filter-votes-max')?.value || 10000);
         if (votesMin > 0 || votesMax < 10000) count++;
+        
+        const hideAvailable = document.getElementById('hide-available-movies')?.checked || false;
+        if (hideAvailable) count++;
 
         const modalCountElement = document.getElementById('filter-active-count');
         const text = count === 0 ? '0 Active Filters' : count === 1 ? '1 Active Filter' : `${count} Active Filters`;
