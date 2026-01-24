@@ -114,6 +114,7 @@ export class RequestarrFilters {
                 
                 this.renderSelectedGenres();
                 this.updateModalFilterCount();
+                this.autoApplyFilters(); // Auto-apply when genre selection changes
                 
                 // Close dropdown after selection
                 const dropdown = document.getElementById('genre-dropdown');
@@ -160,6 +161,7 @@ export class RequestarrFilters {
                 }
                 this.renderSelectedGenres();
                 this.updateModalFilterCount();
+                this.autoApplyFilters(); // Auto-apply when genre is removed
                 // Update genre list items
                 const genreItems = document.querySelectorAll('.genre-item');
                 genreItems.forEach(item => {

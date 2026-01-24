@@ -109,6 +109,7 @@ export class RequestarrTVFilters {
                 
                 this.renderSelectedGenres();
                 this.updateModalFilterCount();
+                this.autoApplyFilters(); // Auto-apply when genre selection changes
                 
                 // Close dropdown after selection
                 const dropdown = document.getElementById('tv-genre-dropdown');
@@ -155,6 +156,7 @@ export class RequestarrTVFilters {
                 }
                 this.renderSelectedGenres();
                 this.updateModalFilterCount();
+                this.autoApplyFilters(); // Auto-apply when genre is removed
                 // Update genre list items
                 const genreItems = document.querySelectorAll('#tv-genre-list .genre-item');
                 genreItems.forEach(item => {
