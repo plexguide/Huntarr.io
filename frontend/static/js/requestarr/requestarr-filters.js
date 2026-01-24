@@ -92,6 +92,12 @@ export class RequestarrFilters {
                 
                 this.renderSelectedGenres();
                 this.updateModalFilterCount();
+                
+                // Close dropdown after selection
+                const dropdown = document.getElementById('genre-dropdown');
+                if (dropdown) {
+                    dropdown.style.display = 'none';
+                }
             });
             
             list.appendChild(item);
