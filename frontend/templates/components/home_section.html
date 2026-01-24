@@ -70,10 +70,13 @@
             margin-top: -3px !important;
         }
         
-        /* Reduce Live Hunts Executed header height by 50% */
+        /* Match Live Hunts header style to Support/Resources */
         .stats-card .card-header {
-            padding: 8px 20px !important; /* 50% reduction from original 16px */
+            padding: 0 0 8px !important;
             min-height: 0 !important;
+            margin-bottom: 12px !important;
+            background-color: transparent !important;
+            border-bottom: 1px solid rgba(90, 109, 137, 0.2) !important;
             /* Firefox-specific fix for text blurriness on hover */
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
@@ -88,8 +91,8 @@
         }
         
         .stats-card .card-header h3 {
-            font-size: 16px !important; /* Slightly smaller font size */
-            line-height: 1.2 !important; /* Tighter line height */
+            font-size: 0.75em !important;
+            line-height: 1.2 !important;
             /* Additional Firefox text clarity fixes */
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
@@ -1133,17 +1136,18 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 16px 20px;
-        background-color: rgba(32, 38, 50, 0.6);
+        padding: 0 0 8px;
+        margin-bottom: 12px;
+        background-color: transparent;
         border-bottom: 1px solid rgba(90, 109, 137, 0.2);
-        margin-bottom: 0;
     }
     
     .stats-card .card-header h3 {
         margin: 0;
         color: #e0e6ed;
-        font-size: 18px;
+        font-size: 0.75em;
         font-weight: 600;
+        line-height: 1.2;
     }
     
     .media-stats-container {
