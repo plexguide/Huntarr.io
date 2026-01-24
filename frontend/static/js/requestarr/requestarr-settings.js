@@ -195,10 +195,9 @@ export class RequestarrSettings {
     initializeRegionSelect() {
         const display = document.getElementById('region-select-display');
         const dropdown = document.getElementById('region-dropdown');
-        const search = document.getElementById('region-search');
         const list = document.getElementById('region-list');
         
-        if (!display || !dropdown || !search || !list) {
+        if (!display || !dropdown || !list) {
             return;
         }
         
@@ -223,11 +222,6 @@ export class RequestarrSettings {
                 display.classList.remove('open');
             }
         };
-        
-        // Search regions
-        search.addEventListener('input', (e) => {
-            this.renderRegionList(e.target.value.toLowerCase());
-        });
         
         // Prevent dropdown from closing when clicking inside it
         dropdown.onclick = (e) => {
