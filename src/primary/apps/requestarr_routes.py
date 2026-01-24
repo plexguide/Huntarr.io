@@ -197,10 +197,32 @@ def get_popular_movies():
 
 @requestarr_bp.route('/discover/tv', methods=['GET'])
 def get_popular_tv():
-    """Get popular TV shows"""
+    """Get popular TV shows with optional filters"""
     try:
         page = int(request.args.get('page', 1))
-        results = requestarr_api.get_popular_tv(page)
+        
+        # Collect filter parameters
+        filter_params = {}
+        if request.args.get('sort_by'):
+            filter_params['sort_by'] = request.args.get('sort_by')
+        if request.args.get('with_genres'):
+            filter_params['with_genres'] = request.args.get('with_genres')
+        if request.args.get('with_original_language'):
+            filter_params['with_original_language'] = request.args.get('with_original_language')
+        if request.args.get('first_air_date.gte'):
+            filter_params['first_air_date.gte'] = request.args.get('first_air_date.gte')
+        if request.args.get('first_air_date.lte'):
+            filter_params['first_air_date.lte'] = request.args.get('first_air_date.lte')
+        if request.args.get('vote_average.gte'):
+            filter_params['vote_average.gte'] = request.args.get('vote_average.gte')
+        if request.args.get('vote_average.lte'):
+            filter_params['vote_average.lte'] = request.args.get('vote_average.lte')
+        if request.args.get('vote_count.gte'):
+            filter_params['vote_count.gte'] = request.args.get('vote_count.gte')
+        if request.args.get('vote_count.lte'):
+            filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
+        
+        results = requestarr_api.get_popular_tv(page, **filter_params)
         return jsonify({'results': results, 'page': page})
     except Exception as e:
         logger.error(f"Error getting popular TV: {e}")

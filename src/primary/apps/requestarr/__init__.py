@@ -198,8 +198,8 @@ class RequestarrAPI:
             logger.error(f"Error getting popular movies: {e}")
             return []
     
-    def get_popular_tv(self, page: int = 1) -> List[Dict[str, Any]]:
-        """Get popular TV shows sorted by popularity descending"""
+    def get_popular_tv(self, page: int = 1, **kwargs) -> List[Dict[str, Any]]:
+        """Get popular TV shows sorted by popularity descending with optional filters"""
         api_key = self.get_tmdb_api_key()
         filters = self.get_discover_filters()
         region = filters.get('region', '')
@@ -214,7 +214,7 @@ class RequestarrAPI:
             params = {
                 'api_key': api_key,
                 'page': page,
-                'sort_by': 'popularity.desc'
+                'sort_by': kwargs.get('sort_by', 'popularity.desc')
             }
             
             # Add region filter if set
@@ -231,7 +231,25 @@ class RequestarrAPI:
                     params['watch_region'] = region
                 params['with_watch_providers'] = '|'.join([str(p) for p in providers])
             
-            logger.info(f"Fetching TV shows from TMDB - Page: {page}, Sort: popularity.desc")
+            # Add custom filter parameters
+            if kwargs.get('with_genres'):
+                params['with_genres'] = kwargs['with_genres']
+            if kwargs.get('with_original_language'):
+                params['with_original_language'] = kwargs['with_original_language']
+            if kwargs.get('first_air_date.gte'):
+                params['first_air_date.gte'] = kwargs['first_air_date.gte']
+            if kwargs.get('first_air_date.lte'):
+                params['first_air_date.lte'] = kwargs['first_air_date.lte']
+            if kwargs.get('vote_average.gte'):
+                params['vote_average.gte'] = kwargs['vote_average.gte']
+            if kwargs.get('vote_average.lte'):
+                params['vote_average.lte'] = kwargs['vote_average.lte']
+            if kwargs.get('vote_count.gte'):
+                params['vote_count.gte'] = kwargs['vote_count.gte']
+            if kwargs.get('vote_count.lte'):
+                params['vote_count.lte'] = kwargs['vote_count.lte']
+            
+            logger.info(f"Fetching TV shows from TMDB - Page: {page}, Sort: {params['sort_by']}")
             
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
