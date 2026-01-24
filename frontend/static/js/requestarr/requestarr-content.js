@@ -439,21 +439,27 @@ export class RequestarrContent {
         const inLibrary = item.in_library || false;
         const partial = item.partial || false;
         const inCooldown = item.in_cooldown || false;
+        const hasInstance = item.media_type === 'movie'
+            ? (this.core.instances.radarr || []).length > 0
+            : (this.core.instances.sonarr || []).length > 0;
+        const metaClassName = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
         
         // Determine status badge
         let statusBadgeHTML = '';
-        if (inCooldown) {
-            // Red stop sign for cooldown
-            statusBadgeHTML = '<div class="media-card-status-badge cooldown"><i class="fas fa-hand"></i></div>';
-        } else if (inLibrary) {
-            // Green checkmark for complete
-            statusBadgeHTML = '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
-        } else if (partial) {
-            // Orange exclamation for partial
-            statusBadgeHTML = '<div class="media-card-status-badge partial"><i class="fas fa-exclamation"></i></div>';
-        } else {
-            // Blue download icon for available
-            statusBadgeHTML = '<div class="media-card-status-badge available"><i class="fas fa-download"></i></div>';
+        if (hasInstance) {
+            if (inCooldown) {
+                // Red stop sign for cooldown
+                statusBadgeHTML = '<div class="media-card-status-badge cooldown"><i class="fas fa-hand"></i></div>';
+            } else if (inLibrary) {
+                // Green checkmark for complete
+                statusBadgeHTML = '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
+            } else if (partial) {
+                // Orange exclamation for partial
+                statusBadgeHTML = '<div class="media-card-status-badge partial"><i class="fas fa-exclamation"></i></div>';
+            } else {
+                // Blue download icon for available
+                statusBadgeHTML = '<div class="media-card-status-badge available"><i class="fas fa-download"></i></div>';
+            }
         }
         
         if (inLibrary) {
@@ -475,15 +481,17 @@ export class RequestarrContent {
             </div>
             <div class="media-card-info">
                 <div class="media-card-title" title="${item.title}">${item.title}</div>
-                <div class="media-card-meta">
+                <div class="${metaClassName}">
                     <span class="media-card-year">${year}</span>
                     <span class="media-card-rating">
                         <i class="fas fa-star"></i>
                         ${rating}
                     </span>
-                    <button class="media-card-hide-btn" title="Hide this media permanently">
-                        <i class="fas fa-eye-slash"></i>
-                    </button>
+                    ${hasInstance ? `
+                        <button class="media-card-hide-btn" title="Hide this media permanently">
+                            <i class="fas fa-eye-slash"></i>
+                        </button>
+                    ` : ''}
                 </div>
             </div>
         `;

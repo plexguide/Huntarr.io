@@ -424,6 +424,11 @@
     gap: 8px;
 }
 
+.media-card-meta.no-hide .media-card-rating {
+    flex: 0;
+    justify-content: flex-end;
+}
+
 .media-card-year {
     color: #888;
     flex-shrink: 0;
