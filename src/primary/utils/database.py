@@ -557,6 +557,20 @@ class HuntarrDatabase:
                 )
             ''')
             
+            # Create requestarr_hidden_media table for permanently hidden media
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS requestarr_hidden_media (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tmdb_id INTEGER NOT NULL,
+                    media_type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    poster_path TEXT,
+                    hidden_at INTEGER NOT NULL,
+                    hidden_at_readable TEXT NOT NULL,
+                    UNIQUE(tmdb_id, media_type)
+                )
+            ''')
+            
             # Add temp_2fa_secret column if it doesn't exist (for existing databases)
             try:
                 conn.execute('ALTER TABLE users ADD COLUMN temp_2fa_secret TEXT')
@@ -2492,6 +2506,112 @@ class HuntarrDatabase:
             logger.error(f"Error getting media requests: {e}")
             return {
                 'requests': [],
+                'total': 0,
+                'page': page,
+                'page_size': page_size,
+                'total_pages': 0
+            }
+
+    # ========================================
+    # HIDDEN MEDIA MANAGEMENT
+    # ========================================
+    
+    def add_hidden_media(self, tmdb_id: int, media_type: str, title: str, poster_path: str = None) -> bool:
+        """Add media to hidden list"""
+        try:
+            with self._get_connection() as conn:
+                now = int(time.time())
+                readable_time = datetime.fromtimestamp(now).strftime('%Y-%m-%d %H:%M:%S')
+                
+                conn.execute('''
+                    INSERT OR REPLACE INTO requestarr_hidden_media 
+                    (tmdb_id, media_type, title, poster_path, hidden_at, hidden_at_readable)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (tmdb_id, media_type, title, poster_path, now, readable_time))
+                
+                logger.info(f"Added hidden media: {title} (TMDB ID: {tmdb_id}, Type: {media_type})")
+                return True
+        except Exception as e:
+            logger.error(f"Error adding hidden media: {e}")
+            return False
+    
+    def remove_hidden_media(self, tmdb_id: int, media_type: str) -> bool:
+        """Remove media from hidden list"""
+        try:
+            with self._get_connection() as conn:
+                conn.execute('''
+                    DELETE FROM requestarr_hidden_media 
+                    WHERE tmdb_id = ? AND media_type = ?
+                ''', (tmdb_id, media_type))
+                
+                logger.info(f"Removed hidden media: TMDB ID {tmdb_id}, Type: {media_type}")
+                return True
+        except Exception as e:
+            logger.error(f"Error removing hidden media: {e}")
+            return False
+    
+    def is_media_hidden(self, tmdb_id: int, media_type: str) -> bool:
+        """Check if media is hidden"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT 1 FROM requestarr_hidden_media 
+                    WHERE tmdb_id = ? AND media_type = ?
+                ''', (tmdb_id, media_type))
+                return cursor.fetchone() is not None
+        except Exception as e:
+            logger.error(f"Error checking if media is hidden: {e}")
+            return False
+    
+    def get_hidden_media(self, page: int = 1, page_size: int = 20, media_type: str = None) -> Dict[str, Any]:
+        """Get paginated list of hidden media"""
+        try:
+            offset = (page - 1) * page_size
+            
+            with self._get_connection() as conn:
+                # Build query based on media_type filter
+                where_clause = "WHERE media_type = ?" if media_type else ""
+                params = [media_type] if media_type else []
+                
+                # Get total count
+                count_query = f"SELECT COUNT(*) FROM requestarr_hidden_media {where_clause}"
+                total_count = conn.execute(count_query, params).fetchone()[0]
+                total_pages = (total_count + page_size - 1) // page_size
+                
+                # Get paginated results
+                query = f'''
+                    SELECT * FROM requestarr_hidden_media 
+                    {where_clause}
+                    ORDER BY hidden_at DESC 
+                    LIMIT ? OFFSET ?
+                '''
+                params.extend([page_size, offset])
+                cursor = conn.execute(query, params)
+                
+                hidden_list = []
+                for row in cursor.fetchall():
+                    hidden_list.append({
+                        'id': row['id'],
+                        'tmdb_id': row['tmdb_id'],
+                        'media_type': row['media_type'],
+                        'title': row['title'],
+                        'poster_path': row['poster_path'],
+                        'hidden_at': row['hidden_at'],
+                        'hidden_at_readable': row['hidden_at_readable']
+                    })
+                
+                return {
+                    'hidden_media': hidden_list,
+                    'total': total_count,
+                    'page': page,
+                    'page_size': page_size,
+                    'total_pages': total_pages
+                }
+                
+        except Exception as e:
+            logger.error(f"Error getting hidden media: {e}")
+            return {
+                'hidden_media': [],
                 'total': 0,
                 'page': page,
                 'page_size': page_size,

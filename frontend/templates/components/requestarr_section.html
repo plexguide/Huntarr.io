@@ -156,6 +156,44 @@
             </div>
         </div>
 
+        <!-- Hidden Media View -->
+        <div id="requestarr-hidden-view" class="requestarr-view">
+            <h1 class="page-title">Hidden Media</h1>
+            <p class="page-subtitle">Media you've permanently hidden from discovery</p>
+            
+            <!-- Filter Tabs -->
+            <div class="hidden-media-filters">
+                <button class="filter-tab active" data-filter="all">
+                    <i class="fas fa-th"></i> All
+                </button>
+                <button class="filter-tab" data-filter="movie">
+                    <i class="fas fa-film"></i> Movies
+                </button>
+                <button class="filter-tab" data-filter="tv">
+                    <i class="fas fa-tv"></i> TV Shows
+                </button>
+            </div>
+            
+            <!-- Hidden Media Grid -->
+            <div id="hidden-media-grid" class="media-grid">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading hidden media...</p>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div id="hidden-media-pagination" class="pagination-container" style="display: none;">
+                <button id="hidden-prev-page" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <span id="hidden-page-info" class="page-info">Page 1 of 1</span>
+                <button id="hidden-next-page" class="pagination-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
         <!-- Settings View -->
         <div id="requestarr-settings-view" class="requestarr-view">
             <div class="requestarr-settings-container">

@@ -421,10 +421,12 @@
     align-items: center;
     font-size: 11px;
     color: #888;
+    gap: 8px;
 }
 
 .media-card-year {
     color: #888;
+    flex-shrink: 0;
 }
 
 .media-card-rating {
@@ -432,10 +434,38 @@
     align-items: center;
     gap: 4px;
     color: #fbbf24;
+    flex: 1;
+    justify-content: center;
 }
 
 .media-card-rating i {
     font-size: 11px;
+}
+
+.media-card-hide-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.media-card-hide-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.media-card-hide-btn i {
+    font-size: 12px;
+}
+
+/* Smooth card removal animation */
+.media-card {
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 /* Loading Spinner */
@@ -3039,3 +3069,109 @@ input:disabled + .toggle-slider {
         justify-content: center;
     }
 }
+
+/* Hidden Media Page Styles */
+.hidden-media-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.filter-tab {
+    padding: 10px 20px;
+    background: rgba(31, 41, 55, 0.5);
+    border: 1px solid rgba(75, 85, 99, 0.5);
+    border-radius: 8px;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-tab:hover {
+    background: rgba(31, 41, 55, 0.8);
+    border-color: #f59e0b;
+    color: #fff;
+}
+
+.filter-tab.active {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: #fff;
+}
+
+.filter-tab i {
+    font-size: 14px;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 40px;
+    padding: 20px 0;
+}
+
+.pagination-btn {
+    padding: 10px 20px;
+    background: rgba(31, 41, 55, 0.5);
+    border: 1px solid rgba(75, 85, 99, 0.5);
+    border-radius: 8px;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: rgba(31, 41, 55, 0.8);
+    border-color: #f59e0b;
+    color: #fff;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.page-info {
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.page-subtitle {
+    color: #888;
+    font-size: 14px;
+    margin-top: -10px;
+    margin-bottom: 25px;
+}
+
+/* Unhide button on hidden media cards */
+.media-card .media-card-unhide-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(239, 68, 68, 0.9);
+    border: none;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+    z-index: 10;
+}
+
+.media-card .media-card-unhide-btn:hover {
+    background: #ef4444;
+    transform: scale(1.05);
+}
+

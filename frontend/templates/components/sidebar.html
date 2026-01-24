@@ -146,23 +146,29 @@
                 </div>
                 <span>Discover</span>
             </a>
-            <a href="./#requestarr-movies" class="nav-item" id="requestarrMoviesNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-film"></i>
-                </div>
-                <span>Movies</span>
-            </a>
             <a href="./#requestarr-tv" class="nav-item" id="requestarrTVNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-tv"></i>
                 </div>
                 <span>TV Shows</span>
             </a>
+            <a href="./#requestarr-movies" class="nav-item" id="requestarrMoviesNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-film"></i>
+                </div>
+                <span>Movies</span>
+            </a>
             <a href="./#requestarr-history" class="nav-item" id="requestarrHistoryNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-history"></i>
                 </div>
                 <span>History</span>
+            </a>
+            <a href="./#requestarr-hidden" class="nav-item" id="requestarrHiddenNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-eye-slash"></i>
+                </div>
+                <span>Hidden Media</span>
             </a>
             <a href="./#requestarr-settings" class="nav-item" id="requestarrSettingsNav">
                 <div class="nav-icon-wrapper">
@@ -932,8 +938,18 @@
         // Requestarr sidebar items
         else if (currentHash === '#requestarr') {
             selector = '#requestarrHomeNav';
+        } else if (currentHash === '#requestarr-discover') {
+            selector = '#requestarrDiscoverNav';
+        } else if (currentHash === '#requestarr-tv') {
+            selector = '#requestarrTVNav';
+        } else if (currentHash === '#requestarr-movies') {
+            selector = '#requestarrMoviesNav';
         } else if (currentHash === '#requestarr-history') {
             selector = '#requestarrHistoryNav';
+        } else if (currentHash === '#requestarr-hidden') {
+            selector = '#requestarrHiddenNav';
+        } else if (currentHash === '#requestarr-settings') {
+            selector = '#requestarrSettingsNav';
         }
         // Default to home
         else {

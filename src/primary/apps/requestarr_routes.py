@@ -192,6 +192,9 @@ def get_popular_movies():
         
         results = requestarr_api.get_popular_movies(page, **filter_params)
         
+        # ALWAYS filter out hidden media first
+        results = requestarr_api.filter_hidden_media(results)
+        
         # Filter out available movies if hide_available is true
         original_count = len(results)
         if hide_available:
@@ -241,6 +244,9 @@ def get_popular_tv():
             filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
         
         results = requestarr_api.get_popular_tv(page, **filter_params)
+        
+        # ALWAYS filter out hidden media first
+        results = requestarr_api.filter_hidden_media(results)
         
         # Filter out available TV shows if hide_available is true
         original_count = len(results)
@@ -426,6 +432,61 @@ def get_genres(media_type):
     except Exception as e:
         logger.error(f"Error getting genres: {e}")
         return jsonify({'error': 'Failed to get genres'}), 500
+
+# Hidden Media Management
+@requestarr_bp.route('/hidden-media', methods=['POST'])
+def add_hidden_media():
+    """Add media to hidden list"""
+    try:
+        data = request.get_json()
+        tmdb_id = data.get('tmdb_id')
+        media_type = data.get('media_type')
+        title = data.get('title')
+        poster_path = data.get('poster_path')
+        
+        if not all([tmdb_id, media_type, title]):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        success = requestarr_api.db.add_hidden_media(tmdb_id, media_type, title, poster_path)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Media hidden successfully'})
+        else:
+            return jsonify({'error': 'Failed to hide media'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error hiding media: {e}")
+        return jsonify({'error': 'Failed to hide media'}), 500
+
+@requestarr_bp.route('/hidden-media/<int:tmdb_id>/<media_type>', methods=['DELETE'])
+def remove_hidden_media(tmdb_id, media_type):
+    """Remove media from hidden list (unhide)"""
+    try:
+        success = requestarr_api.db.remove_hidden_media(tmdb_id, media_type)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Media unhidden successfully'})
+        else:
+            return jsonify({'error': 'Failed to unhide media'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error unhiding media: {e}")
+        return jsonify({'error': 'Failed to unhide media'}), 500
+
+@requestarr_bp.route('/hidden-media', methods=['GET'])
+def get_hidden_media():
+    """Get list of hidden media with pagination"""
+    try:
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('page_size', 20))
+        media_type = request.args.get('media_type')  # Optional filter
+        
+        result = requestarr_api.db.get_hidden_media(page, page_size, media_type)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error getting hidden media: {e}")
+        return jsonify({'error': 'Failed to get hidden media'}), 500
 
 # Requestarr is always enabled with hardcoded TMDB API key
 logger.info("Requestarr initialized with hardcoded TMDB API key") 

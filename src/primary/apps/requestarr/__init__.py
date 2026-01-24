@@ -724,6 +724,33 @@ class RequestarrAPI:
             logger.error(f"Error filtering available media: {e}")
             return items  # Return all items on error
     
+    def filter_hidden_media(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Filter out media items that have been permanently hidden by the user.
+        
+        Args:
+            items: List of media items with 'tmdb_id' and 'media_type'
+            
+        Returns:
+            Filtered list excluding hidden media
+        """
+        try:
+            # Get set of hidden media IDs for faster lookup
+            filtered_items = []
+            for item in items:
+                tmdb_id = item.get('tmdb_id')
+                media_type = item.get('media_type')
+                if not self.db.is_media_hidden(tmdb_id, media_type):
+                    filtered_items.append(item)
+            
+            if len(filtered_items) < len(items):
+                logger.info(f"Filtered hidden media: {len(items)} total -> {len(filtered_items)} after removing hidden")
+            
+            return filtered_items
+        except Exception as e:
+            logger.error(f"Error filtering hidden media: {e}")
+            return items  # Return all items on error
+    
     def get_quality_profiles(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
         """Get quality profiles from Radarr or Sonarr instance"""
         try:

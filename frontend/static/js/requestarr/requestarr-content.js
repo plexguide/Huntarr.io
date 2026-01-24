@@ -326,6 +326,8 @@ export class RequestarrContent {
         // Store tmdb_id and media_type as data attributes for easy updates
         card.setAttribute('data-tmdb-id', item.tmdb_id);
         card.setAttribute('data-media-type', item.media_type);
+        // Store full item data for hide functionality
+        card.itemData = item;
         
         const posterUrl = item.poster_path || './static/images/blackout.jpg';
         const year = item.year || 'N/A';
@@ -377,15 +379,22 @@ export class RequestarrContent {
                         <i class="fas fa-star"></i>
                         ${rating}
                     </span>
+                    <button class="media-card-hide-btn" title="Hide this media permanently">
+                        <i class="fas fa-eye-slash"></i>
+                    </button>
                 </div>
             </div>
         `;
         
         const posterDiv = card.querySelector('.media-card-poster');
         const requestBtn = card.querySelector('.media-card-request-btn');
+        const hideBtn = card.querySelector('.media-card-hide-btn');
         
         posterDiv.addEventListener('click', (e) => {
             if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) {
+                return;
+            }
+            if (hideBtn && (e.target === hideBtn || hideBtn.contains(e.target))) {
                 return;
             }
             this.core.modal.openModal(item.tmdb_id, item.media_type);
@@ -398,6 +407,51 @@ export class RequestarrContent {
             });
         }
         
+        if (hideBtn) {
+            hideBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await this.hideMedia(item.tmdb_id, item.media_type, item.title, card);
+            });
+        }
+        
         return card;
+    }
+
+    async hideMedia(tmdbId, mediaType, title, cardElement) {
+        try {
+            const confirmed = confirm(`Hide "${title}" permanently?\n\nThis will remove it from all discovery pages. You can unhide it later from the Hidden Media page.`);
+            if (!confirmed) return;
+
+            // Get item data from card
+            const item = cardElement.itemData || {};
+            const posterPath = item.poster_path || null;
+
+            const response = await fetch('./api/requestarr/hidden-media', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tmdb_id: tmdbId,
+                    media_type: mediaType,
+                    title: title,
+                    poster_path: posterPath
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to hide media');
+            }
+
+            // Remove the card from view with animation
+            cardElement.style.opacity = '0';
+            cardElement.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                cardElement.remove();
+            }, 300);
+
+            console.log(`[RequestarrContent] Hidden media: ${title} (${mediaType})`);
+        } catch (error) {
+            console.error('[RequestarrContent] Error hiding media:', error);
+            alert('Failed to hide media. Please try again.');
+        }
     }
 }

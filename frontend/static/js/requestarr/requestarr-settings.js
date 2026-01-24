@@ -57,6 +57,158 @@ export class RequestarrSettings {
     }
 
     // ========================================
+    // HIDDEN MEDIA
+    // ========================================
+
+    async loadHiddenMedia(mediaType = null, page = 1) {
+        const container = document.getElementById('hidden-media-grid');
+        const paginationContainer = document.getElementById('hidden-media-pagination');
+        
+        if (page === 1) {
+            container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading hidden media...</p></div>';
+        }
+        
+        try {
+            let url = `./api/requestarr/hidden-media?page=${page}&page_size=20`;
+            if (mediaType) {
+                url += `&media_type=${mediaType}`;
+            }
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.hidden_media && data.hidden_media.length > 0) {
+                container.innerHTML = '';
+                data.hidden_media.forEach(item => {
+                    container.appendChild(this.createHiddenMediaCard(item));
+                });
+                
+                // Show pagination
+                paginationContainer.style.display = 'flex';
+                document.getElementById('hidden-page-info').textContent = `Page ${data.page} of ${data.total_pages}`;
+                document.getElementById('hidden-prev-page').disabled = data.page === 1;
+                document.getElementById('hidden-next-page').disabled = data.page === data.total_pages;
+            } else {
+                container.innerHTML = '<p style="color: #888; text-align: center; padding: 60px;">No hidden media</p>';
+                paginationContainer.style.display = 'none';
+            }
+            
+            // Setup pagination handlers
+            this.setupHiddenMediaPagination(mediaType, data.page, data.total_pages);
+            
+        } catch (error) {
+            console.error('[RequestarrSettings] Error loading hidden media:', error);
+            container.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px;">Failed to load hidden media</p>';
+        }
+    }
+
+    setupHiddenMediaPagination(mediaType, currentPage, totalPages) {
+        const prevBtn = document.getElementById('hidden-prev-page');
+        const nextBtn = document.getElementById('hidden-next-page');
+        
+        prevBtn.onclick = () => {
+            if (currentPage > 1) {
+                this.loadHiddenMedia(mediaType, currentPage - 1);
+            }
+        };
+        
+        nextBtn.onclick = () => {
+            if (currentPage < totalPages) {
+                this.loadHiddenMedia(mediaType, currentPage + 1);
+            }
+        };
+        
+        // Setup filter tabs
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.onclick = () => {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const filter = tab.dataset.filter;
+                const mediaTypeFilter = filter === 'all' ? null : filter;
+                this.loadHiddenMedia(mediaTypeFilter, 1);
+            };
+        });
+    }
+
+    createHiddenMediaCard(item) {
+        const card = document.createElement('div');
+        card.className = 'media-card';
+        card.setAttribute('data-tmdb-id', item.tmdb_id);
+        card.setAttribute('data-media-type', item.media_type);
+        
+        const posterUrl = item.poster_path || './static/images/blackout.jpg';
+        const hiddenDate = new Date(item.hidden_at * 1000).toLocaleDateString();
+        
+        card.innerHTML = `
+            <div class="media-card-poster">
+                <button class="media-card-unhide-btn" title="Unhide this media">
+                    <i class="fas fa-eye"></i> Unhide
+                </button>
+                <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
+                <div class="media-card-overlay">
+                    <div class="media-card-overlay-title">${item.title}</div>
+                    <div class="media-card-overlay-content">
+                        <div class="media-card-overlay-year">Hidden on ${hiddenDate}</div>
+                        <div class="media-card-overlay-description">
+                            This ${item.media_type === 'movie' ? 'movie' : 'TV show'} is hidden from all discovery pages.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="media-card-info">
+                <div class="media-card-title" title="${item.title}">${item.title}</div>
+                <div class="media-card-meta">
+                    <span class="media-card-year">${item.media_type === 'movie' ? 'Movie' : 'TV Show'}</span>
+                </div>
+            </div>
+        `;
+        
+        const unhideBtn = card.querySelector('.media-card-unhide-btn');
+        if (unhideBtn) {
+            unhideBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await this.unhideMedia(item.tmdb_id, item.media_type, item.title, card);
+            });
+        }
+        
+        return card;
+    }
+
+    async unhideMedia(tmdbId, mediaType, title, cardElement) {
+        try {
+            const confirmed = confirm(`Unhide "${title}"?\n\nThis will make it visible in discovery again.`);
+            if (!confirmed) return;
+
+            const response = await fetch(`./api/requestarr/hidden-media/${tmdbId}/${mediaType}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to unhide media');
+            }
+
+            // Remove the card from view with animation
+            cardElement.style.opacity = '0';
+            cardElement.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                cardElement.remove();
+                
+                // Check if grid is empty
+                const grid = document.getElementById('hidden-media-grid');
+                if (grid && grid.children.length === 0) {
+                    grid.innerHTML = '<p style="color: #888; text-align: center; padding: 60px;">No hidden media</p>';
+                }
+            }, 300);
+
+            console.log(`[RequestarrSettings] Unhidden media: ${title} (${mediaType})`);
+        } catch (error) {
+            console.error('[RequestarrSettings] Error unhiding media:', error);
+            alert('Failed to unhide media. Please try again.');
+        }
+    }
+
+    // ========================================
     // SETTINGS
     // ========================================
 

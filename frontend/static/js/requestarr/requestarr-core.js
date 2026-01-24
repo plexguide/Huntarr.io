@@ -100,7 +100,7 @@ export class RequestarrDiscover {
         // Hide/show global search bar based on view
         const globalSearchBar = document.querySelector('.global-search-bar');
         if (globalSearchBar) {
-            if (view === 'history' || view === 'settings') {
+            if (view === 'history' || view === 'hidden' || view === 'settings') {
                 globalSearchBar.style.display = 'none';
             } else {
                 globalSearchBar.style.display = 'flex';
@@ -151,6 +151,9 @@ export class RequestarrDiscover {
                 break;
             case 'history':
                 this.settings.loadHistory();
+                break;
+            case 'hidden':
+                this.settings.loadHiddenMedia();
                 break;
             case 'settings':
                 this.settings.loadSettings();
