@@ -103,6 +103,7 @@ export class RequestarrSettings {
     async loadDiscoverFilters() {
         // Load regions - Full TMDB region list
         const regions = [
+            { code: '', name: 'All Regions', flag: '🌐' },
             { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
             { code: 'AU', name: 'Australia', flag: '🇦🇺' },
             { code: 'AT', name: 'Austria', flag: '🇦🇹' },
@@ -153,10 +154,11 @@ export class RequestarrSettings {
             { code: 'US', name: 'United States', flag: '🇺🇸' }
         ];
         
-        // Sort alphabetically by name
-        regions.sort((a, b) => a.name.localeCompare(b.name));
+        // Keep All Regions at top, sort the rest alphabetically
+        const allRegions = regions[0];
+        const otherRegions = regions.slice(1).sort((a, b) => a.name.localeCompare(b.name));
+        this.regions = [allRegions, ...otherRegions];
         
-        this.regions = regions;
         this.selectedRegion = 'US'; // Default
         
         // Initialize custom region select
@@ -171,24 +173,32 @@ export class RequestarrSettings {
             const data = await response.json();
             
             if (data.success && data.filters) {
-                if (data.filters.region) {
+                if (data.filters.region !== undefined) {
                     this.selectedRegion = data.filters.region;
                     this.updateRegionDisplay();
                 }
                 if (data.filters.languages && data.filters.languages.length > 0) {
                     this.selectedLanguages = data.filters.languages;
                     this.renderLanguageTags();
+                } else {
+                    // Default to English if no languages saved
+                    this.selectedLanguages = ['en'];
+                    this.renderLanguageTags();
                 }
             } else {
-                // No saved filters - default to US
+                // No saved filters - default to US and English
                 this.selectedRegion = 'US';
                 this.updateRegionDisplay();
+                this.selectedLanguages = ['en'];
+                this.renderLanguageTags();
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading discover filters:', error);
-            // On error, default to US
+            // On error, default to US and English
             this.selectedRegion = 'US';
             this.updateRegionDisplay();
+            this.selectedLanguages = ['en'];
+            this.renderLanguageTags();
         }
     }
     
@@ -286,18 +296,13 @@ export class RequestarrSettings {
         const input = document.getElementById('discover-language');
         const dropdown = document.getElementById('language-dropdown');
         const languageList = document.getElementById('language-list');
-        const search = document.getElementById('language-search');
         
-        console.log('[RequestarrSettings] Initializing language select...', { input, dropdown, languageList, search });
-        
-        if (!input || !dropdown || !languageList || !search) {
-            console.warn('[RequestarrSettings] Language select elements not found');
+        if (!input || !dropdown || !languageList) {
             return;
         }
         
         // Check if already initialized
         if (this.languageSelectInitialized) {
-            console.log('[RequestarrSettings] Language select already initialized');
             return;
         }
         
@@ -330,22 +335,12 @@ export class RequestarrSettings {
         // Populate language list
         this.renderLanguageList();
         
-        // Toggle dropdown - use function to preserve 'this' context
-        const toggleDropdown = (e) => {
+        // Toggle dropdown
+        input.onclick = (e) => {
             e.stopPropagation();
-            console.log('[RequestarrSettings] Language input clicked, toggling dropdown');
             const isVisible = dropdown.style.display === 'block';
             dropdown.style.display = isVisible ? 'none' : 'block';
-            console.log('[RequestarrSettings] Dropdown now:', dropdown.style.display);
         };
-        
-        input.addEventListener('click', toggleDropdown);
-        
-        // Search languages
-        search.addEventListener('input', (e) => {
-            console.log('[RequestarrSettings] Search input:', e.target.value);
-            this.renderLanguageList(e.target.value.toLowerCase());
-        });
         
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
@@ -355,20 +350,15 @@ export class RequestarrSettings {
         });
         
         this.languageSelectInitialized = true;
-        console.log('[RequestarrSettings] Language select initialized successfully');
     }
     
     renderLanguageList(filter = '') {
         const languageList = document.getElementById('language-list');
         if (!languageList) return;
         
-        const filteredLanguages = this.languages.filter(lang => 
-            lang.name.toLowerCase().includes(filter)
-        );
-        
         languageList.innerHTML = '';
         
-        filteredLanguages.forEach(lang => {
+        this.languages.forEach(lang => {
             const item = document.createElement('div');
             item.className = 'language-item';
             item.textContent = lang.name;
