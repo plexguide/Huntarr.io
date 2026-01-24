@@ -575,7 +575,12 @@ export class RequestarrSettings {
         tagsContainer.innerHTML = '';
 
         if (!this.selectedProviders || this.selectedProviders.length === 0) {
-            tagsContainer.innerHTML = '<span style="color: #888; font-size: 13px;">All Providers</span>';
+            // Show "All Providers" as a tag/bubble instead of plain text
+            const tag = document.createElement('div');
+            tag.className = 'language-tag';
+            tag.innerHTML = 'All Providers';
+            tag.style.cursor = 'default'; // No remove action for "All Providers"
+            tagsContainer.appendChild(tag);
             return;
         }
 
