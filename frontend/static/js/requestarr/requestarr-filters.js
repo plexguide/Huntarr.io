@@ -373,7 +373,7 @@ export class RequestarrFilters {
             setTimeout(() => {
                 modal.style.display = 'none';
                 document.body.style.overflow = '';
-            }, 300);
+            }, 150); // Reduced from 300ms to 150ms for faster close
         }
     }
 
