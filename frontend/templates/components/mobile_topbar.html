@@ -9,6 +9,12 @@
         <!-- Right side: Version info -->
         <div class="mobile-topbar-right">
             <div class="mobile-version-container">
+                <div class="mobile-version-item mobile-star-item">
+                    <i class="fas fa-star"></i>
+                    <a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener">
+                        <span id="mobile-github-stars">--</span>
+                    </a>
+                </div>
                 <div class="mobile-version-item">
                     <i class="fas fa-info-circle"></i>
                     <span id="mobile-current-version">8.1.4</span>
@@ -105,6 +111,21 @@
     white-space: nowrap;
 }
 
+.mobile-version-item.mobile-star-item {
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.35);
+    color: #f5c542;
+}
+
+.mobile-version-item.mobile-star-item a {
+    color: inherit;
+    font-weight: inherit;
+}
+
+.mobile-version-item.mobile-star-item i {
+    color: #ffd166;
+}
+
 .mobile-version-item i {
     font-size: 10px;
     opacity: 0.8;
@@ -174,6 +195,19 @@ function updateMobileVersionInfo() {
                 latestVersionElement.textContent = parsedInfo.latestVersion;
             }
         }
+
+        const starsInfo = localStorage.getItem('huntarr-github-stars');
+        const starsElement = document.getElementById('mobile-github-stars');
+        if (starsInfo && starsElement) {
+            try {
+                const parsedStars = JSON.parse(starsInfo);
+                if (parsedStars && parsedStars.stars !== undefined) {
+                    starsElement.textContent = Number(parsedStars.stars).toLocaleString();
+                }
+            } catch (e) {
+                starsElement.textContent = starsInfo;
+            }
+        }
     } catch (e) {
         console.error('Error updating mobile version info:', e);
     }
@@ -211,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Watch for localStorage version changes
     window.addEventListener('storage', function(e) {
-        if (e.key === 'huntarr-version-info') {
+        if (e.key === 'huntarr-version-info' || e.key === 'huntarr-github-stars') {
             updateMobileVersionInfo();
         }
     });

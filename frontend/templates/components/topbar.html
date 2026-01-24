@@ -16,9 +16,9 @@
                 <span>Latest: <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank"><span id="latest-version-value" style="display: none;"></span></a></span>
             </div>
             <div class="version-divider"></div>
-            <div class="version-item">
+            <div class="version-item version-bubble star-bubble">
                 <i class="fas fa-star version-icon star-icon"></i>
-                <span><a href="https://github.com/plexguide/huntarr" target="_blank"><span id="github-stars-value">764</span></a></span>
+                <span><a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener"><span id="github-stars-value">764</span></a></span>
             </div>
             <div class="version-divider"></div>
             <div class="version-item">
@@ -137,6 +137,24 @@
         font-size: 12px;
         color: #e0e6ed;
         transition: all 0.2s ease;
+    }
+
+    .version-item.version-bubble {
+        background: rgba(52, 152, 219, 0.12);
+        border: 1px solid rgba(52, 152, 219, 0.25);
+        border-radius: 6px;
+        padding: 2px 8px;
+    }
+
+    .version-item.star-bubble {
+        background: rgba(255, 193, 7, 0.15);
+        border-color: rgba(255, 193, 7, 0.35);
+        color: #f5c542;
+    }
+
+    .version-item.star-bubble a {
+        color: inherit;
+        font-weight: inherit;
     }
     
     .version-item:hover {
@@ -320,7 +338,14 @@
                 // Stars
                 const starsInfo = localStorage.getItem('huntarr-github-stars');
                 if (starsInfo) {
-                    starsElement.textContent = starsInfo;
+                    try {
+                        const parsedStars = JSON.parse(starsInfo);
+                        if (parsedStars && parsedStars.stars !== undefined) {
+                            starsElement.textContent = Number(parsedStars.stars).toLocaleString();
+                        }
+                    } catch (e) {
+                        starsElement.textContent = starsInfo;
+                    }
                 }
             } catch (e) {
                 console.error('Error updating version info:', e);
