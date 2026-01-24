@@ -152,12 +152,12 @@
         <!-- Settings View -->
         <div id="requestarr-settings-view" class="requestarr-view">
             <div class="requestarr-settings-container">
-                <!-- Discover Filters Card -->
+                <!-- Filters Card -->
                 <div class="settings-card">
-                    <h3>Discover Filters</h3>
+                    <h3>Filters</h3>
                     
                     <div class="settings-field">
-                        <label for="discover-region">Discover Region</label>
+                        <label for="discover-region">Region</label>
                         <div class="custom-select-wrapper">
                             <div id="region-select-display" class="custom-select-display">
                                 <span id="region-selected-text">🇺🇸 United States</span>
@@ -171,23 +171,9 @@
                         </div>
                         <small>Filter via Regional Availability</small>
                     </div>
-                    
-                    <div class="settings-field">
-                        <label for="discover-language">Discover Language</label>
-                        <div class="language-select-wrapper">
-                            <div id="language-tags" class="language-tags"></div>
-                            <input type="text" id="discover-language" class="settings-input" placeholder="Select languages..." readonly>
-                            <div id="language-dropdown" class="language-dropdown" style="display: none;">
-                                <div id="language-list" class="language-list">
-                                    <div class="language-item" data-code="">All Languages</div>
-                                </div>
-                            </div>
-                        </div>
-                        <small>Filter via Original Language(s)</small>
-                    </div>
 
                 <div class="settings-field">
-                    <label for="discover-providers">Discover Providers</label>
+                    <label for="discover-providers">Providers</label>
                     <div class="language-select-wrapper">
                         <div id="provider-tags" class="language-tags"></div>
                         <input type="text" id="discover-providers" class="settings-input" placeholder="Select providers..." readonly>
@@ -199,6 +185,20 @@
                     </div>
                     <small>Filter via Streaming Providers (uses selected region)</small>
                 </div>
+                    
+                    <div class="settings-field">
+                        <label for="discover-language">Language(s)</label>
+                        <div class="language-select-wrapper">
+                            <div id="language-tags" class="language-tags"></div>
+                            <input type="text" id="discover-language" class="settings-input" placeholder="Select languages..." readonly>
+                            <div id="language-dropdown" class="language-dropdown" style="display: none;">
+                                <div id="language-list" class="language-list">
+                                    <div class="language-item" data-code="">All Languages</div>
+                                </div>
+                            </div>
+                        </div>
+                        <small>Filter via Original Language(s)</small>
+                    </div>
                     
                     <div class="settings-actions">
                         <button id="save-discover-filters" class="btn-primary">
