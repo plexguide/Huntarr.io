@@ -93,6 +93,8 @@ export class RequestarrDiscover {
     // ========================================
 
     switchView(view) {
+        console.log(`[RequestarrDiscover] switchView called with: ${view}`);
+        
         // Clear global search
         const globalSearch = document.getElementById('global-search-input');
         if (globalSearch) {
@@ -124,13 +126,17 @@ export class RequestarrDiscover {
         // Show target view
         const targetView = document.getElementById(`requestarr-${view}-view`);
         if (targetView) {
+            console.log(`[RequestarrDiscover] Showing view: requestarr-${view}-view`);
             targetView.classList.add('active');
             targetView.style.display = 'block';
+        } else {
+            console.error(`[RequestarrDiscover] View not found: requestarr-${view}-view`);
         }
 
         this.currentView = view;
 
         // Load content for view if not already loaded
+        console.log(`[RequestarrDiscover] Loading content for view: ${view}`);
         switch (view) {
             case 'discover':
                 if (!document.getElementById('trending-carousel').children.length) {
@@ -138,14 +144,17 @@ export class RequestarrDiscover {
                 }
                 break;
             case 'movies':
+                console.log('[RequestarrDiscover] Movies case - resetting pagination');
                 // Reset movies page state and load
                 this.content.moviesPage = 1;
                 this.content.moviesHasMore = true;
+                console.log('[RequestarrDiscover] Calling loadMovies()...');
                 this.content.loadMovies();
                 
                 // Setup load more button
                 const loadMoreBtn = document.getElementById('movies-load-more');
                 if (loadMoreBtn && !loadMoreBtn.hasAttribute('data-initialized')) {
+                    console.log('[RequestarrDiscover] Setting up load more button');
                     loadMoreBtn.setAttribute('data-initialized', 'true');
                     loadMoreBtn.addEventListener('click', () => {
                         this.content.loadMoreMovies();

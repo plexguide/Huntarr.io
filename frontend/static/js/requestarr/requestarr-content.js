@@ -5,6 +5,8 @@
 export class RequestarrContent {
     constructor(core) {
         this.core = core;
+        this.moviesPage = 1;
+        this.moviesHasMore = true;
     }
 
     // ========================================
@@ -80,49 +82,78 @@ export class RequestarrContent {
     }
 
     async loadMovies(page = 1) {
+        console.log(`[RequestarrContent] loadMovies called - page: ${page}, this.moviesPage: ${this.moviesPage}`);
+        
         const grid = document.getElementById('movies-grid');
         const loadMoreBtn = document.getElementById('movies-load-more');
         
-        if (!this.moviesPage) {
-            this.moviesPage = 1;
-            this.moviesHasMore = true;
+        if (!grid) {
+            console.error('[RequestarrContent] movies-grid element not found!');
+            return;
+        }
+        
+        if (!loadMoreBtn) {
+            console.error('[RequestarrContent] movies-load-more button not found!');
+        }
+        
+        // Show loading spinner on first page
+        if (this.moviesPage === 1) {
+            console.log('[RequestarrContent] Showing loading spinner...');
             grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
         }
         
         try {
-            const response = await fetch(`./api/requestarr/discover/movies?page=${this.moviesPage}`);
+            const url = `./api/requestarr/discover/movies?page=${this.moviesPage}`;
+            console.log(`[RequestarrContent] Fetching from: ${url}`);
+            
+            const response = await fetch(url);
+            console.log(`[RequestarrContent] Response status: ${response.status}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
+            console.log(`[RequestarrContent] Received data:`, data);
+            console.log(`[RequestarrContent] Number of movies: ${data.results?.length || 0}`);
             
             if (data.results && data.results.length > 0) {
+                console.log('[RequestarrContent] Processing movies...');
                 if (this.moviesPage === 1) {
                     grid.innerHTML = '';
                 }
                 
-                data.results.forEach(item => {
-                    grid.appendChild(this.createMediaCard(item));
+                data.results.forEach((item, index) => {
+                    console.log(`[RequestarrContent] Creating card ${index + 1}/${data.results.length}: ${item.title}`);
+                    const card = this.createMediaCard(item);
+                    grid.appendChild(card);
                 });
+                
+                console.log('[RequestarrContent] All cards added to grid');
                 
                 // Show load more button if there are more results
                 if (data.results.length >= 20) {
-                    loadMoreBtn.style.display = 'block';
+                    if (loadMoreBtn) loadMoreBtn.style.display = 'block';
                     this.moviesHasMore = true;
                 } else {
-                    loadMoreBtn.style.display = 'none';
+                    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
                     this.moviesHasMore = false;
                 }
             } else {
+                console.log('[RequestarrContent] No movies found in response');
                 if (this.moviesPage === 1) {
                     grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies found</p>';
                 }
-                loadMoreBtn.style.display = 'none';
+                if (loadMoreBtn) loadMoreBtn.style.display = 'none';
                 this.moviesHasMore = false;
             }
         } catch (error) {
-            console.error('[RequestarrDiscover] Error loading movies:', error);
+            console.error('[RequestarrContent] Error loading movies:', error);
+            console.error('[RequestarrContent] Error stack:', error.stack);
             if (this.moviesPage === 1) {
-                grid.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies</p>';
+                grid.innerHTML = `<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies: ${error.message}</p>`;
             }
-            loadMoreBtn.style.display = 'none';
+            if (loadMoreBtn) loadMoreBtn.style.display = 'none';
         }
     }
     

@@ -171,6 +171,27 @@ let huntarrUI = {
             console.log('[huntarrUI] Initialization complete - refresh on section change enabled');
         }, 50); // Reduced from implicit longer delay
     },
+
+    runWhenRequestarrReady: function(actionName, callback) {
+        if (typeof window.RequestarrDiscover !== 'undefined') {
+            callback();
+            return;
+        }
+
+        const startTime = Date.now();
+        const checkInterval = setInterval(() => {
+            if (typeof window.RequestarrDiscover !== 'undefined') {
+                clearInterval(checkInterval);
+                callback();
+                return;
+            }
+
+            if (Date.now() - startTime > 2000) {
+                clearInterval(checkInterval);
+                console.warn(`[huntarrUI] RequestarrDiscover not ready for ${actionName} after 2s`);
+            }
+        }, 50);
+    },
     
     // Cache DOM elements for better performance
     cacheElements: function() {
@@ -616,9 +637,9 @@ let huntarrUI = {
             this.showRequestarrSidebar();
             
             // Show discover view by default
-            if (typeof window.RequestarrDiscover !== 'undefined') {
+            this.runWhenRequestarrReady('discover', () => {
                 window.RequestarrDiscover.switchView('discover');
-            }
+            });
         } else if (section === 'requestarr-discover' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
@@ -630,9 +651,9 @@ let huntarrUI = {
             this.showRequestarrSidebar();
             
             // Show discover view
-            if (typeof window.RequestarrDiscover !== 'undefined') {
+            this.runWhenRequestarrReady('discover', () => {
                 window.RequestarrDiscover.switchView('discover');
-            }
+            });
         } else if (section === 'requestarr-movies' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
@@ -664,9 +685,9 @@ let huntarrUI = {
             }
 
             // Show movies view
-            if (typeof window.RequestarrDiscover !== 'undefined') {
+            this.runWhenRequestarrReady('movies', () => {
                 window.RequestarrDiscover.switchView('movies');
-            }
+            });
         } else if (section === 'requestarr-tv' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
@@ -678,9 +699,9 @@ let huntarrUI = {
             this.showRequestarrSidebar();
             
             // Show TV view
-            if (typeof window.RequestarrDiscover !== 'undefined') {
+            this.runWhenRequestarrReady('tv', () => {
                 window.RequestarrDiscover.switchView('tv');
-            }
+            });
         } else if (section === 'requestarr-history' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
@@ -692,9 +713,9 @@ let huntarrUI = {
             this.showRequestarrSidebar();
             
             // Show history view
-            if (typeof window.RequestarrDiscover !== 'undefined') {
+            this.runWhenRequestarrReady('history', () => {
                 window.RequestarrDiscover.switchView('history');
-            }
+            });
         } else if (section === 'requestarr-settings' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
@@ -705,20 +726,10 @@ let huntarrUI = {
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
             
-            // Show settings view - wait for RequestarrDiscover to be ready
-            if (typeof window.RequestarrDiscover !== 'undefined') {
+            // Show settings view
+            this.runWhenRequestarrReady('settings', () => {
                 window.RequestarrDiscover.switchView('settings');
-            } else {
-                // Wait for RequestarrDiscover to initialize
-                const checkInterval = setInterval(() => {
-                    if (typeof window.RequestarrDiscover !== 'undefined') {
-                        clearInterval(checkInterval);
-                        window.RequestarrDiscover.switchView('settings');
-                    }
-                }, 50);
-                // Timeout after 2 seconds
-                setTimeout(() => clearInterval(checkInterval), 2000);
-            }
+            });
         } else if (section === 'apps') {
             console.log('[huntarrUI] Apps section requested - redirecting to Sonarr by default');
             // Instead of showing apps dashboard, redirect to Sonarr
