@@ -189,8 +189,16 @@ class RequestarrAPI:
             
             logger.info(f"Found {len(all_results)} movies on page {page}")
             
-            # Check library status for all items
-            all_results = self.check_library_status_batch(all_results)
+            # Check library status for all items - pass instance info if available from kwargs
+            app_type = kwargs.get('app_type', 'radarr')
+            instance_name = kwargs.get('instance_name')
+            
+            if instance_name:
+                logger.debug(f"Checking library status for Radarr instance: {instance_name}")
+                all_results = self.check_library_status_batch(all_results, app_type, instance_name)
+            else:
+                # No instance specified, check all instances (old behavior)
+                all_results = self.check_library_status_batch(all_results)
             
             return all_results
             
@@ -285,8 +293,16 @@ class RequestarrAPI:
             
             logger.info(f"Found {len(all_results)} TV shows on page {page}")
             
-            # Check library status for all items
-            all_results = self.check_library_status_batch(all_results)
+            # Check library status for all items - pass instance info if available from kwargs
+            app_type = kwargs.get('app_type', 'sonarr')
+            instance_name = kwargs.get('instance_name')
+            
+            if instance_name:
+                logger.debug(f"Checking library status for Sonarr instance: {instance_name}")
+                all_results = self.check_library_status_batch(all_results, app_type, instance_name)
+            else:
+                # No instance specified, check all instances (old behavior)
+                all_results = self.check_library_status_batch(all_results)
             
             return all_results
             
@@ -590,13 +606,18 @@ class RequestarrAPI:
                 'cooldown_status': cooldown_status
             }
     
-    def check_library_status_batch(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def check_library_status_batch(self, items: List[Dict[str, Any]], app_type: str = None, instance_name: str = None) -> List[Dict[str, Any]]:
         """
         Check library status for a batch of media items.
         Adds status flags to each item:
         - 'in_library': Complete (all episodes for TV, has file for movies)
         - 'partial': TV shows with some but not all episodes
         - 'in_cooldown': Recently requested (within 12 hours)
+        
+        Args:
+            items: List of media items to check
+            app_type: Optional app type to check (radarr/sonarr). If None, checks all instances.
+            instance_name: Optional instance name to check. If None, checks all instances.
         """
         try:
             # Get enabled instances
@@ -610,9 +631,23 @@ class RequestarrAPI:
                     item['in_cooldown'] = False
                 return items
             
-            # Get all movies from all Radarr instances
+            # Filter instances based on app_type and instance_name if provided
+            radarr_instances = instances['radarr']
+            sonarr_instances = instances['sonarr']
+            
+            if app_type and instance_name:
+                if app_type == 'radarr':
+                    radarr_instances = [inst for inst in radarr_instances if inst['name'] == instance_name]
+                    sonarr_instances = []  # Don't check Sonarr if Radarr is specified
+                    logger.debug(f"Checking library status for Radarr instance: {instance_name}")
+                elif app_type == 'sonarr':
+                    sonarr_instances = [inst for inst in sonarr_instances if inst['name'] == instance_name]
+                    radarr_instances = []  # Don't check Radarr if Sonarr is specified
+                    logger.debug(f"Checking library status for Sonarr instance: {instance_name}")
+            
+            # Get all movies from filtered Radarr instances
             radarr_tmdb_ids = set()
-            for instance in instances['radarr']:
+            for instance in radarr_instances:
                 try:
                     headers = {'X-Api-Key': instance['api_key']}
                     response = requests.get(
@@ -625,13 +660,14 @@ class RequestarrAPI:
                         for movie in movies:
                             if movie.get('hasFile', False):  # Only count movies with files
                                 radarr_tmdb_ids.add(movie.get('tmdbId'))
+                        logger.debug(f"Found {len(radarr_tmdb_ids)} movies with files in Radarr instance {instance['name']}")
                 except Exception as e:
                     logger.error(f"Error checking Radarr instance {instance['name']}: {e}")
             
-            # Get all series from all Sonarr instances
+            # Get all series from filtered Sonarr instances
             sonarr_tmdb_ids = set()
             sonarr_partial_tmdb_ids = set()
-            for instance in instances['sonarr']:
+            for instance in sonarr_instances:
                 try:
                     headers = {'X-Api-Key': instance['api_key']}
                     response = requests.get(
@@ -654,6 +690,7 @@ class RequestarrAPI:
                             # Mark as partial if some episodes are available
                             elif available_episodes > 0 and available_episodes < total_episodes:
                                 sonarr_partial_tmdb_ids.add(tmdb_id)
+                        logger.debug(f"Found {len(sonarr_tmdb_ids)} complete series and {len(sonarr_partial_tmdb_ids)} partial series in Sonarr instance {instance['name']}")
                 except Exception as e:
                     logger.error(f"Error checking Sonarr instance {instance['name']}: {e}")
             
@@ -662,25 +699,30 @@ class RequestarrAPI:
                 tmdb_id = item.get('tmdb_id')
                 media_type = item.get('media_type')
                 
-                # Check cooldown status across ALL instances (not just first one)
+                # Check cooldown status for the specified instance or all instances
                 item['in_cooldown'] = False
                 cooldown_hours = self.get_cooldown_hours()
-                if instances['radarr'] and media_type == 'movie':
-                    # Check ALL Radarr instances for cooldown
-                    for instance in instances['radarr']:
-                        instance_name = instance['name']
-                        cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'radarr', instance_name, cooldown_hours)
-                        if cooldown_status['in_cooldown']:
-                            item['in_cooldown'] = True
-                            break  # Found cooldown, no need to check other instances
-                elif instances['sonarr'] and media_type == 'tv':
-                    # Check ALL Sonarr instances for cooldown
-                    for instance in instances['sonarr']:
-                        instance_name = instance['name']
-                        cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'sonarr', instance_name, cooldown_hours)
-                        if cooldown_status['in_cooldown']:
-                            item['in_cooldown'] = True
-                            break  # Found cooldown, no need to check other instances
+                
+                if app_type and instance_name:
+                    # Check only the specified instance
+                    cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, app_type, instance_name, cooldown_hours)
+                    item['in_cooldown'] = cooldown_status['in_cooldown']
+                else:
+                    # Check ALL instances for cooldown (old behavior)
+                    if instances['radarr'] and media_type == 'movie':
+                        for instance in instances['radarr']:
+                            instance_name_check = instance['name']
+                            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'radarr', instance_name_check, cooldown_hours)
+                            if cooldown_status['in_cooldown']:
+                                item['in_cooldown'] = True
+                                break
+                    elif instances['sonarr'] and media_type == 'tv':
+                        for instance in instances['sonarr']:
+                            instance_name_check = instance['name']
+                            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'sonarr', instance_name_check, cooldown_hours)
+                            if cooldown_status['in_cooldown']:
+                                item['in_cooldown'] = True
+                                break
                 
                 # Set library status
                 if media_type == 'movie':

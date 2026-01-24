@@ -13,6 +13,10 @@ export class RequestarrContent {
         this.tvHasMore = true;
         this.isLoadingTV = false;
         this.tvObserver = null;
+        this.moviesRequestToken = 0;
+        this.tvRequestToken = 0;
+        this.activeMovieInstance = null;
+        this.activeTVInstance = null;
         
         // Instance tracking
         this.selectedMovieInstance = null;
@@ -53,9 +57,17 @@ export class RequestarrContent {
                 // Setup change handler
                 select.addEventListener('change', () => {
                     this.selectedMovieInstance = select.value;
-                    // Reload movies with new instance
+                    console.log(`[RequestarrContent] Switched to movie instance: ${this.selectedMovieInstance}`);
+                    
+                    // Reset pagination state FIRST
                     this.moviesPage = 1;
                     this.moviesHasMore = true;
+                    this.isLoadingMovies = false; // Reset loading state to allow new request
+                    
+                    // Increment request token to cancel any pending requests
+                    this.moviesRequestToken++;
+                    
+                    // Reload movies with new instance (loadMovies will handle the loading spinner)
                     this.loadMovies();
                 });
             } else {
@@ -92,9 +104,17 @@ export class RequestarrContent {
                 // Setup change handler
                 select.addEventListener('change', () => {
                     this.selectedTVInstance = select.value;
-                    // Reload TV shows with new instance
+                    console.log(`[RequestarrContent] Switched to TV instance: ${this.selectedTVInstance}`);
+                    
+                    // Reset pagination state FIRST
                     this.tvPage = 1;
                     this.tvHasMore = true;
+                    this.isLoadingTV = false; // Reset loading state to allow new request
+                    
+                    // Increment request token to cancel any pending requests
+                    this.tvRequestToken++;
+                    
+                    // Reload TV shows with new instance (loadTV will handle the loading spinner)
                     this.loadTV();
                 });
             } else {
@@ -210,11 +230,14 @@ export class RequestarrContent {
             return;
         }
 
-        if (this.isLoadingMovies) {
+        if (this.isLoadingMovies && this.selectedMovieInstance === this.activeMovieInstance) {
             return;
         }
 
         this.isLoadingMovies = true;
+        const requestToken = ++this.moviesRequestToken;
+        const requestedInstance = this.selectedMovieInstance;
+        this.activeMovieInstance = requestedInstance;
 
         // Show loading spinner on first page
         if (this.moviesPage === 1) {
@@ -244,6 +267,10 @@ export class RequestarrContent {
             }
             
             const data = await response.json();
+
+            if (requestToken !== this.moviesRequestToken || requestedInstance !== this.selectedMovieInstance) {
+                return;
+            }
             
             if (data.results && data.results.length > 0) {
                 if (this.moviesPage === 1) {
@@ -305,11 +332,14 @@ export class RequestarrContent {
             return;
         }
 
-        if (this.isLoadingTV) {
+        if (this.isLoadingTV && this.selectedTVInstance === this.activeTVInstance) {
             return;
         }
 
         this.isLoadingTV = true;
+        const requestToken = ++this.tvRequestToken;
+        const requestedInstance = this.selectedTVInstance;
+        this.activeTVInstance = requestedInstance;
 
         // Show loading spinner on first page
         if (this.tvPage === 1) {
@@ -339,6 +369,10 @@ export class RequestarrContent {
             }
             
             const data = await response.json();
+
+            if (requestToken !== this.tvRequestToken || requestedInstance !== this.selectedTVInstance) {
+                return;
+            }
             
             if (data.results && data.results.length > 0) {
                 if (this.tvPage === 1) {

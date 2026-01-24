@@ -190,6 +190,12 @@ def get_popular_movies():
         if request.args.get('vote_count.lte'):
             filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
         
+        # Add instance info for per-instance library status checking
+        if request.args.get('app_type'):
+            filter_params['app_type'] = request.args.get('app_type')
+        if request.args.get('instance_name'):
+            filter_params['instance_name'] = request.args.get('instance_name')
+        
         results = requestarr_api.get_popular_movies(page, **filter_params)
         
         # Get instance info from request for filtering hidden media
@@ -247,6 +253,12 @@ def get_popular_tv():
             filter_params['vote_count.gte'] = request.args.get('vote_count.gte')
         if request.args.get('vote_count.lte'):
             filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
+        
+        # Add instance info for per-instance library status checking
+        if request.args.get('app_type'):
+            filter_params['app_type'] = request.args.get('app_type')
+        if request.args.get('instance_name'):
+            filter_params['instance_name'] = request.args.get('instance_name')
         
         results = requestarr_api.get_popular_tv(page, **filter_params)
         
