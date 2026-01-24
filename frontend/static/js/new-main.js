@@ -685,9 +685,19 @@ let huntarrUI = {
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
             
-            // Show settings view
+            // Show settings view - wait for RequestarrDiscover to be ready
             if (typeof window.RequestarrDiscover !== 'undefined') {
                 window.RequestarrDiscover.switchView('settings');
+            } else {
+                // Wait for RequestarrDiscover to initialize
+                const checkInterval = setInterval(() => {
+                    if (typeof window.RequestarrDiscover !== 'undefined') {
+                        clearInterval(checkInterval);
+                        window.RequestarrDiscover.switchView('settings');
+                    }
+                }, 50);
+                // Timeout after 2 seconds
+                setTimeout(() => clearInterval(checkInterval), 2000);
             }
         } else if (section === 'apps') {
             console.log('[huntarrUI] Apps section requested - redirecting to Sonarr by default');
