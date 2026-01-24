@@ -35,12 +35,12 @@
     }
     
     .sidebar .nav-item {
-        margin-bottom: 6px !important;
+        margin-bottom: 10px !important;
     }
     
     /* Add spacing between nav groups */
     .sidebar .nav-group {
-        margin-bottom: 6px !important;
+        margin-bottom: 10px !important;
     }
     
     /* Remove extra spacing from last nav item in groups */
