@@ -112,6 +112,39 @@
             padding: 4px 10px !important; /* Smaller button padding */
             font-size: 0.85em !important; /* Smaller font size */
         }
+
+        /* Requestarr home discovery block */
+        .requestarr-home-card {
+            padding: 16px 22px 10px;
+        }
+
+        .requestarr-home-content {
+            width: 100%;
+        }
+
+        #home-search-results-view {
+            width: 100%;
+            max-width: none !important;
+            margin: 0;
+            padding: 10px 0 20px;
+            box-sizing: border-box;
+        }
+
+        #home-search-results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            padding: 0;
+            width: 100%;
+            max-width: none !important;
+            box-sizing: border-box;
+            justify-items: start;
+            overflow: visible;
+        }
+
+        #home-search-results-grid .media-card {
+            width: 150px;
+        }
         
         /* Sponsor Widget Styles */
         .sponsor-widget .link-description {
@@ -254,6 +287,41 @@
     </style>
     <!-- Add initially hidden class to prevent flickering before JS initializes -->  
     <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.15s ease;">
+        <div class="card requestarr-home-card">
+            <div class="requestarr-home-content">
+                <div class="global-search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="home-requestarr-search-input" placeholder="Search Movies & TV" autocomplete="off">
+                </div>
+
+                <div id="home-search-results-view" style="display: none;">
+                    <h2 class="search-results-title">Search Results</h2>
+                    <div id="home-search-results-grid">
+                        <!-- Search results will be populated here -->
+                    </div>
+                </div>
+
+                <div id="home-requestarr-discover-view" style="display: block;">
+                    <section class="carousel-section">
+                        <h2 class="section-title">Trending This Week</h2>
+                        <div class="carousel-container">
+                            <button class="carousel-arrow left" data-target="home-trending-carousel">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div id="home-trending-carousel" class="media-carousel">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <p>Loading trending content...</p>
+                                </div>
+                            </div>
+                            <button class="carousel-arrow right" data-target="home-trending-carousel">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
         <!-- Updated statistics card with new layout -->
         <div class="card stats-card">
             <div class="card-header">
@@ -2742,4 +2810,5 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchSponsors();
 });
 </script>
+<script type="module" src="./static/js/requestarr-home.js"></script>
 </section>
