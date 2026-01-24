@@ -500,7 +500,6 @@
     display: none;
     align-items: center;
     justify-content: center;
-    margin-left: 75px; /* Half of sidebar width (150px / 2) to center in content area */
 }
 
 .media-modal[style*="display: flex"] {
@@ -523,6 +522,15 @@
     background: rgba(0, 0, 0, 0.9);
     backdrop-filter: blur(10px);
     z-index: 999;
+}
+
+/* Blur everything behind Requestarr modal (full page incl. top bar) */
+body.requestarr-modal-open .app-container {
+    filter: blur(10px);
+}
+
+body.requestarr-modal-open {
+    overflow: hidden;
 }
 
 .modal-content {

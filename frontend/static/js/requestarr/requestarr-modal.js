@@ -31,6 +31,9 @@ export class RequestarrModal {
     async openModal(tmdbId, mediaType) {
         const modal = document.getElementById('media-modal');
         const modalBody = modal.querySelector('.modal-body');
+
+        this.ensureModalInBody(modal);
+        document.body.classList.add('requestarr-modal-open');
         
         modal.style.display = 'flex';
         modalBody.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading details...</p></div>';
@@ -530,9 +533,18 @@ export class RequestarrModal {
         });
     }
 
+    ensureModalInBody(modal) {
+        if (!modal || modal.parentElement === document.body) {
+            return;
+        }
+
+        document.body.appendChild(modal);
+    }
+
     closeModal() {
         const modal = document.getElementById('media-modal');
         modal.style.display = 'none';
         this.core.currentModalData = null;
+        document.body.classList.remove('requestarr-modal-open');
     }
 }
