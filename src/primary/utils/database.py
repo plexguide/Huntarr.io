@@ -2387,24 +2387,29 @@ class HuntarrDatabase:
     def reset_cooldowns_over_threshold(self, threshold_hours: int = 25) -> int:
         """Delete all cooldown entries with more than threshold_hours remaining. Returns count."""
         try:
-            from datetime import datetime, timedelta
+            from datetime import datetime, timedelta, timezone
             
-            # Get cooldown period from settings (default 168 hours)
+            # Get cooldown period from requestarr config (default 168 hours)
             cooldown_hours = 168
             try:
-                cooldown_setting = self.get_setting('requestarr', 'cooldown_hours')
-                if cooldown_setting:
-                    cooldown_hours = int(cooldown_setting)
+                requestarr_config = self.get_app_config('requestarr')
+                if requestarr_config and 'cooldown_hours' in requestarr_config:
+                    cooldown_hours = int(requestarr_config['cooldown_hours'])
             except:
                 pass
             
             with self.get_connection() as conn:
-                # Calculate the timestamp for threshold
-                # If cooldown is 168 hours and threshold is 25, we delete items requested less than 143 hours ago
-                cutoff_time = datetime.now() - timedelta(hours=(cooldown_hours - threshold_hours))
+                # Calculate the cutoff timestamp
+                # If cooldown is 168 hours (7 days) and threshold is 25:
+                # - Current time minus (168 - 25) = time 143 hours ago
+                # - Any request made AFTER 143 hours ago has MORE than 25 hours remaining
+                # - Any request made BEFORE 143 hours ago has LESS than 25 hours remaining
+                
+                now = datetime.now(timezone.utc)
+                cutoff_time = now - timedelta(hours=(cooldown_hours - threshold_hours))
                 cutoff_str = cutoff_time.isoformat()
                 
-                # Delete requests that are still in cooldown with 25+ hours remaining
+                # Delete requests that are MORE recent than the cutoff (have 25+ hours remaining)
                 cursor = conn.execute('''
                     DELETE FROM requestarr_requests
                     WHERE updated_at > ?
@@ -2412,6 +2417,8 @@ class HuntarrDatabase:
                 
                 count = cursor.rowcount
                 conn.commit()
+                
+                logger.info(f"Reset {count} cooldowns with {threshold_hours}+ hours remaining (cutoff: {cutoff_str})")
                 
                 return count
         except Exception as e:

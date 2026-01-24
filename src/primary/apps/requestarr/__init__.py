@@ -696,8 +696,10 @@ class RequestarrAPI:
     def get_cooldown_hours(self) -> int:
         """Get cooldown period in hours from database (default: 168 hours / 7 days)"""
         try:
-            cooldown = self.db.get_setting('requestarr', 'cooldown_hours')
-            return int(cooldown) if cooldown else 168
+            requestarr_config = self.db.get_app_config('requestarr')
+            if requestarr_config and 'cooldown_hours' in requestarr_config:
+                return int(requestarr_config['cooldown_hours'])
+            return 168  # Default to 7 days
         except Exception as e:
             logger.error(f"Error getting cooldown hours: {e}")
             return 168
@@ -705,7 +707,11 @@ class RequestarrAPI:
     def set_cooldown_hours(self, hours: int):
         """Set cooldown period in hours in database"""
         try:
-            self.db.set_setting('requestarr', 'cooldown_hours', str(hours))
+            # Get existing config or create new one
+            requestarr_config = self.db.get_app_config('requestarr') or {}
+            requestarr_config['cooldown_hours'] = hours
+            self.db.save_app_config('requestarr', requestarr_config)
+            logger.info(f"Set cooldown hours to {hours}")
         except Exception as e:
             logger.error(f"Error setting cooldown hours: {e}")
             raise

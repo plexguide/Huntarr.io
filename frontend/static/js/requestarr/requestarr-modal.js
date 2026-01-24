@@ -504,10 +504,18 @@ export class RequestarrModal {
     }
 
     updateCardStatusAfterRequest(tmdbId) {
-        // Find the specific media card with this TMDB ID and update its status badge
-        const card = document.querySelector(`.media-card[data-tmdb-id="${tmdbId}"]`);
+        // Find ALL media cards with this TMDB ID (could be in trending, popular, movies, or tv sections)
+        const cards = document.querySelectorAll(`.media-card[data-tmdb-id="${tmdbId}"]`);
         
-        if (card) {
+        console.log(`[RequestarrDiscover] Looking for cards with TMDB ID: ${tmdbId}, found: ${cards.length}`);
+        
+        if (cards.length === 0) {
+            console.warn(`[RequestarrDiscover] No cards found with TMDB ID: ${tmdbId}`);
+            return;
+        }
+        
+        // Update all matching cards (since item might appear in multiple sections)
+        cards.forEach((card, index) => {
             const badge = card.querySelector('.media-card-status-badge');
             
             if (badge) {
@@ -515,13 +523,11 @@ export class RequestarrModal {
                 badge.className = 'media-card-status-badge cooldown';
                 badge.innerHTML = '<i class="fas fa-hand"></i>';
                 
-                console.log(`[RequestarrDiscover] Updated card status badge to cooldown for TMDB ID: ${tmdbId}`);
+                console.log(`[RequestarrDiscover] Updated card ${index + 1}/${cards.length} status badge to cooldown for TMDB ID: ${tmdbId}`);
             } else {
-                console.warn(`[RequestarrDiscover] No status badge found for card with TMDB ID: ${tmdbId}`);
+                console.warn(`[RequestarrDiscover] No status badge found for card ${index + 1} with TMDB ID: ${tmdbId}`);
             }
-        } else {
-            console.warn(`[RequestarrDiscover] No card found with TMDB ID: ${tmdbId}`);
-        }
+        });
     }
 
     closeModal() {
