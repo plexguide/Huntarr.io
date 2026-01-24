@@ -91,8 +91,8 @@ class RequestarrAPI:
             logger.error(f"Error getting trending: {e}")
             return []
     
-    def get_popular_movies(self, page: int = 1) -> List[Dict[str, Any]]:
-        """Get popular movies sorted by popularity descending"""
+    def get_popular_movies(self, page: int = 1, **kwargs) -> List[Dict[str, Any]]:
+        """Get popular movies sorted by popularity descending with optional filters"""
         api_key = self.get_tmdb_api_key()
         filters = self.get_discover_filters()
         region = filters.get('region', '')
@@ -106,7 +106,7 @@ class RequestarrAPI:
             params = {
                 'api_key': api_key,
                 'page': page,
-                'sort_by': 'popularity.desc'
+                'sort_by': kwargs.get('sort_by', 'popularity.desc')
             }
             
             # Add region filter if set
@@ -117,7 +117,29 @@ class RequestarrAPI:
             if languages:
                 params['with_original_language'] = '|'.join(languages)
             
-            logger.info(f"Fetching movies from TMDB - Page: {page}, Sort: popularity.desc")
+            # Add custom filter parameters
+            if kwargs.get('with_genres'):
+                params['with_genres'] = kwargs['with_genres']
+            if kwargs.get('with_original_language'):
+                params['with_original_language'] = kwargs['with_original_language']
+            if kwargs.get('release_date.gte'):
+                params['release_date.gte'] = kwargs['release_date.gte']
+            if kwargs.get('release_date.lte'):
+                params['release_date.lte'] = kwargs['release_date.lte']
+            if kwargs.get('with_runtime.gte'):
+                params['with_runtime.gte'] = kwargs['with_runtime.gte']
+            if kwargs.get('with_runtime.lte'):
+                params['with_runtime.lte'] = kwargs['with_runtime.lte']
+            if kwargs.get('vote_average.gte'):
+                params['vote_average.gte'] = kwargs['vote_average.gte']
+            if kwargs.get('vote_average.lte'):
+                params['vote_average.lte'] = kwargs['vote_average.lte']
+            if kwargs.get('vote_count.gte'):
+                params['vote_count.gte'] = kwargs['vote_count.gte']
+            if kwargs.get('vote_count.lte'):
+                params['vote_count.lte'] = kwargs['vote_count.lte']
+            
+            logger.info(f"Fetching movies from TMDB - Page: {page}, Sort: {params['sort_by']}")
             
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
@@ -793,6 +815,24 @@ class RequestarrAPI:
         except Exception as e:
             logger.error(f"Error resetting cooldowns: {e}")
             raise
+    
+    def get_genres(self, media_type: str) -> List[Dict[str, Any]]:
+        """Get genre list from TMDB"""
+        api_key = self.get_tmdb_api_key()
+        
+        try:
+            url = f"{self.tmdb_base_url}/genre/{media_type}/list"
+            params = {'api_key': api_key}
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            return data.get('genres', [])
+            
+        except Exception as e:
+            logger.error(f"Error getting genres: {e}")
+            return []
     
     def search_media_with_availability(self, query: str, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
         """Search for media using TMDB API and check availability in specified app instance"""

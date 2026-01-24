@@ -126,7 +126,16 @@ export class RequestarrContent {
         }
         
         try {
-            const url = `./api/requestarr/discover/movies?page=${this.moviesPage}`;
+            let url = `./api/requestarr/discover/movies?page=${this.moviesPage}`;
+            
+            // Add filter parameters
+            if (this.core.filters) {
+                const filterParams = this.core.filters.getFilterParams();
+                if (filterParams) {
+                    url += `&${filterParams}`;
+                }
+            }
+            
             const response = await fetch(url);
             
             if (!response.ok) {

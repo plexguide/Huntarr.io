@@ -160,10 +160,36 @@ def get_trending():
 
 @requestarr_bp.route('/discover/movies', methods=['GET'])
 def get_popular_movies():
-    """Get popular movies"""
+    """Get popular movies with optional filters"""
     try:
         page = int(request.args.get('page', 1))
-        results = requestarr_api.get_popular_movies(page)
+        
+        # Collect filter parameters
+        filter_params = {}
+        if request.args.get('sort_by'):
+            filter_params['sort_by'] = request.args.get('sort_by')
+        if request.args.get('with_genres'):
+            filter_params['with_genres'] = request.args.get('with_genres')
+        if request.args.get('with_original_language'):
+            filter_params['with_original_language'] = request.args.get('with_original_language')
+        if request.args.get('release_date.gte'):
+            filter_params['release_date.gte'] = request.args.get('release_date.gte')
+        if request.args.get('release_date.lte'):
+            filter_params['release_date.lte'] = request.args.get('release_date.lte')
+        if request.args.get('with_runtime.gte'):
+            filter_params['with_runtime.gte'] = request.args.get('with_runtime.gte')
+        if request.args.get('with_runtime.lte'):
+            filter_params['with_runtime.lte'] = request.args.get('with_runtime.lte')
+        if request.args.get('vote_average.gte'):
+            filter_params['vote_average.gte'] = request.args.get('vote_average.gte')
+        if request.args.get('vote_average.lte'):
+            filter_params['vote_average.lte'] = request.args.get('vote_average.lte')
+        if request.args.get('vote_count.gte'):
+            filter_params['vote_count.gte'] = request.args.get('vote_count.gte')
+        if request.args.get('vote_count.lte'):
+            filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
+        
+        results = requestarr_api.get_popular_movies(page, **filter_params)
         return jsonify({'results': results, 'page': page})
     except Exception as e:
         logger.error(f"Error getting popular movies: {e}")
@@ -316,6 +342,19 @@ def reset_cooldowns():
     except Exception as e:
         logger.error(f"Error resetting cooldowns: {e}")
         return jsonify({'success': False, 'error': 'Failed to reset cooldowns'}), 500
+
+@requestarr_bp.route('/genres/<media_type>', methods=['GET'])
+def get_genres(media_type):
+    """Get genres for movie or tv"""
+    try:
+        if media_type not in ['movie', 'tv']:
+            return jsonify({'error': 'Invalid media type'}), 400
+        
+        genres = requestarr_api.get_genres(media_type)
+        return jsonify({'genres': genres})
+    except Exception as e:
+        logger.error(f"Error getting genres: {e}")
+        return jsonify({'error': 'Failed to get genres'}), 500
 
 # Requestarr is always enabled with hardcoded TMDB API key
 logger.info("Requestarr initialized with hardcoded TMDB API key") 

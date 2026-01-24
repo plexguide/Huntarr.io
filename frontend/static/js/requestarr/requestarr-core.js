@@ -6,6 +6,7 @@ import { RequestarrContent } from './requestarr-content.js';
 import { RequestarrSearch } from './requestarr-search.js';
 import { RequestarrModal } from './requestarr-modal.js';
 import { RequestarrSettings } from './requestarr-settings.js';
+import { RequestarrFilters } from './requestarr-filters.js';
 
 export class RequestarrDiscover {
     constructor() {
@@ -21,6 +22,7 @@ export class RequestarrDiscover {
         this.search = new RequestarrSearch(this);
         this.modal = new RequestarrModal(this);
         this.settings = new RequestarrSettings(this);
+        this.filters = new RequestarrFilters(this);
         
         this.init();
     }
@@ -226,6 +228,24 @@ export class RequestarrDiscover {
     // ========================================
     // UTILITIES
     // ========================================
+
+    closeFiltersModal() {
+        if (this.filters) {
+            this.filters.closeFiltersModal();
+        }
+    }
+
+    applyFilters() {
+        if (this.filters) {
+            this.filters.applyFilters();
+        }
+    }
+
+    clearFilters() {
+        if (this.filters) {
+            this.filters.clearFilters();
+        }
+    }
 
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');

@@ -223,6 +223,125 @@
         </div>
     </div>
 
+    <!-- Movies Filters Side Panel -->
+    <div id="movies-filter-modal" class="filter-panel" style="display: none;">
+        <div class="filter-backdrop" onclick="window.RequestarrDiscover.closeFiltersModal()"></div>
+        <div class="filter-panel-content">
+            <div class="filter-panel-header">
+                <h2>Filters</h2>
+                <button class="filter-close" onclick="window.RequestarrDiscover.closeFiltersModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="filter-panel-body">
+                <div class="filter-active-badge">
+                    <span id="filter-active-count">0 Active Filters</span>
+                </div>
+                
+                <!-- Release Date -->
+                <div class="filter-group">
+                    <label class="filter-label">Release Date</label>
+                    <div class="filter-row">
+                        <div class="filter-col">
+                            <label class="filter-sublabel">From</label>
+                            <input type="date" id="filter-release-from" class="filter-date-input">
+                        </div>
+                        <div class="filter-col">
+                            <label class="filter-sublabel">To</label>
+                            <input type="date" id="filter-release-to" class="filter-date-input">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Genres -->
+                <div class="filter-group">
+                    <label class="filter-label">Genres</label>
+                    
+                    <!-- Selected Genre Pills -->
+                    <div class="selected-genres-container" id="selected-genres" style="display: none;">
+                        <!-- Pills will be added here -->
+                    </div>
+                    
+                    <!-- Genre Dropdown -->
+                    <div class="genre-select-wrapper">
+                        <input 
+                            type="text" 
+                            id="genre-search-input" 
+                            class="genre-search-input" 
+                            placeholder="Select genres..." 
+                            readonly
+                        >
+                        <div id="genre-dropdown" class="genre-dropdown" style="display: none;">
+                            <div id="genre-list" class="genre-list">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Original Language -->
+                <div class="filter-group">
+                    <label class="filter-label">Original Language</label>
+                    <select id="filter-language" class="filter-select-compact">
+                        <option value="">All Languages</option>
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="it">Italian</option>
+                        <option value="ja">Japanese</option>
+                        <option value="ko">Korean</option>
+                        <option value="zh">Chinese</option>
+                    </select>
+                </div>
+                
+                <!-- Runtime -->
+                <div class="filter-group">
+                    <label class="filter-label">Runtime</label>
+                    <div class="filter-range-text" id="runtime-display">0-400 minute runtime</div>
+                    <div class="filter-range-compact">
+                        <input type="number" id="filter-runtime-min" class="filter-number-input" value="0" min="0" max="400" placeholder="0">
+                        <span class="filter-range-separator">to</span>
+                        <input type="number" id="filter-runtime-max" class="filter-number-input" value="400" min="0" max="400" placeholder="400">
+                        <span class="filter-range-unit">minutes</span>
+                    </div>
+                </div>
+                
+                <!-- TMDB User Score -->
+                <div class="filter-group">
+                    <label class="filter-label">TMDB User Score</label>
+                    <div class="filter-range-text" id="rating-display">Ratings between 0 and 10</div>
+                    <div class="filter-range-compact">
+                        <input type="number" id="filter-rating-min" class="filter-number-input" value="0" min="0" max="10" step="0.1" placeholder="0">
+                        <span class="filter-range-separator">to</span>
+                        <input type="number" id="filter-rating-max" class="filter-number-input" value="10" min="0" max="10" step="0.1" placeholder="10">
+                    </div>
+                </div>
+                
+                <!-- TMDB User Vote Count -->
+                <div class="filter-group">
+                    <label class="filter-label">TMDB User Vote Count</label>
+                    <div class="filter-range-text" id="votes-display">Number of votes between 0 and 1000</div>
+                    <div class="filter-range-compact">
+                        <input type="number" id="filter-votes-min" class="filter-number-input" value="0" min="0" max="10000" placeholder="0">
+                        <span class="filter-range-separator">to</span>
+                        <input type="number" id="filter-votes-max" class="filter-number-input" value="10000" min="0" max="10000" placeholder="1000">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-panel-footer">
+                <button class="filter-btn-clear" onclick="window.RequestarrDiscover.clearFilters()">
+                    Clear All
+                </button>
+                <button class="filter-btn-apply" onclick="window.RequestarrDiscover.applyFilters()">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal for Media Details -->
     <div id="media-modal" class="media-modal" style="display: none;">
         <div class="modal-backdrop" onclick="RequestarrDiscover.closeModal()"></div>
