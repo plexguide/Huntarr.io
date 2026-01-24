@@ -18,7 +18,7 @@
         </div>
         
         <!-- Discover View -->
-        <div id="requestarr-discover-view" class="requestarr-view active">
+        <div id="requestarr-discover-view" class="requestarr-view active" style="display: block;">
             <!-- Trending Section -->
             <section class="carousel-section">
                 <h2 class="section-title">Trending This Week</h2>
@@ -78,28 +78,41 @@
         </div>
 
         <!-- Movies View -->
-        <div id="requestarr-movies-view" class="requestarr-view">
-            <div class="view-header">
-                <h1 class="page-title">Movies</h1>
-                <div class="search-bar">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="movies-search" placeholder="Search movies..." autocomplete="off">
+        <div id="requestarr-movies-view" class="requestarr-view" style="display: none;">
+            <!-- Controls Bar -->
+            <div class="movies-controls">
+                <div class="sort-dropdown">
+                    <select id="movies-sort" class="control-select">
+                        <option value="popularity.desc">Popularity Descending</option>
+                        <option value="popularity.asc">Popularity Ascending</option>
+                        <option value="vote_average.desc">Rating Descending</option>
+                        <option value="vote_average.asc">Rating Ascending</option>
+                        <option value="release_date.desc">Release Date Descending</option>
+                        <option value="release_date.asc">Release Date Ascending</option>
+                        <option value="title.asc">Title (A-Z)</option>
+                        <option value="title.desc">Title (Z-A)</option>
+                    </select>
+                </div>
+                <button class="filter-button" id="movies-filter-btn">
+                    <i class="fas fa-filter"></i>
+                    <span id="movies-filter-count">0 Active Filters</span>
+                </button>
+            </div>
+            
+            <!-- Movies Grid -->
+            <div id="movies-grid" class="media-grid">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading movies...</p>
                 </div>
             </div>
             
-            <section class="carousel-section">
-                <div class="carousel-container">
-                    <button class="carousel-arrow left" data-target="movies-carousel">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <div id="movies-carousel" class="media-carousel">
-                        <!-- Movie cards will be populated here -->
-                    </div>
-                    <button class="carousel-arrow right" data-target="movies-carousel">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </section>
+            <!-- Load More Button -->
+            <div class="load-more-container">
+                <button id="movies-load-more" class="btn-load-more" style="display: none;">
+                    Load More
+                </button>
+            </div>
         </div>
 
         <!-- TV Shows View -->

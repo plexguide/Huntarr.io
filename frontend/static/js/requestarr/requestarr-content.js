@@ -80,24 +80,56 @@ export class RequestarrContent {
     }
 
     async loadMovies(page = 1) {
-        const carousel = document.getElementById('movies-carousel');
-        carousel.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
+        const grid = document.getElementById('movies-grid');
+        const loadMoreBtn = document.getElementById('movies-load-more');
+        
+        if (!this.moviesPage) {
+            this.moviesPage = 1;
+            this.moviesHasMore = true;
+            grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
+        }
         
         try {
-            const response = await fetch(`./api/requestarr/discover/movies?page=${page}`);
+            const response = await fetch(`./api/requestarr/discover/movies?page=${this.moviesPage}`);
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
-                carousel.innerHTML = '';
+                if (this.moviesPage === 1) {
+                    grid.innerHTML = '';
+                }
+                
                 data.results.forEach(item => {
-                    carousel.appendChild(this.createMediaCard(item));
+                    grid.appendChild(this.createMediaCard(item));
                 });
+                
+                // Show load more button if there are more results
+                if (data.results.length >= 20) {
+                    loadMoreBtn.style.display = 'block';
+                    this.moviesHasMore = true;
+                } else {
+                    loadMoreBtn.style.display = 'none';
+                    this.moviesHasMore = false;
+                }
             } else {
-                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies found</p>';
+                if (this.moviesPage === 1) {
+                    grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies found</p>';
+                }
+                loadMoreBtn.style.display = 'none';
+                this.moviesHasMore = false;
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading movies:', error);
-            carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies</p>';
+            if (this.moviesPage === 1) {
+                grid.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies</p>';
+            }
+            loadMoreBtn.style.display = 'none';
+        }
+    }
+    
+    loadMoreMovies() {
+        if (this.moviesHasMore) {
+            this.moviesPage++;
+            this.loadMovies(this.moviesPage);
         }
     }
 

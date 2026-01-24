@@ -1652,3 +1652,116 @@ input:disabled + .toggle-slider {
     color: white !important;
     cursor: default !important;
 }
+
+/* ============================================
+   MOVIES GRID VIEW
+   ============================================ */
+
+.movies-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+    padding: 0 20px;
+    gap: 15px;
+}
+
+.sort-dropdown {
+    flex: 1;
+    max-width: 300px;
+}
+
+.control-select {
+    width: 100%;
+    padding: 10px 16px;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.control-select:hover {
+    background: #374151;
+    border-color: #718096;
+}
+
+.control-select:focus {
+    outline: none;
+    border-color: #f59e0b;
+}
+
+.control-select option {
+    background: #2d3748;
+    color: #fff;
+    padding: 8px;
+}
+
+.filter-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-button:hover {
+    background: #374151;
+    border-color: #718096;
+}
+
+.filter-button i {
+    font-size: 14px;
+}
+
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+    padding: 0 20px 40px 20px;
+    min-height: 400px;
+}
+
+@media (max-width: 768px) {
+    .media-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 15px;
+    }
+}
+
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    margin-bottom: 40px;
+}
+
+.btn-load-more {
+    padding: 12px 32px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-load-more:hover {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.btn-load-more:active {
+    transform: translateY(0);
+}

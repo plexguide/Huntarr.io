@@ -93,8 +93,6 @@ export class RequestarrDiscover {
     // ========================================
 
     switchView(view) {
-        console.log('[RequestarrDiscover] Switching to view:', view);
-        
         // Clear global search
         const globalSearch = document.getElementById('global-search-input');
         if (globalSearch) {
@@ -112,7 +110,10 @@ export class RequestarrDiscover {
         }
         
         // Hide search results view
-        document.getElementById('search-results-view').style.display = 'none';
+        const searchResultsView = document.getElementById('search-results-view');
+        if (searchResultsView) {
+            searchResultsView.style.display = 'none';
+        }
         
         // Hide all views
         document.querySelectorAll('.requestarr-view').forEach(container => {
@@ -137,8 +138,18 @@ export class RequestarrDiscover {
                 }
                 break;
             case 'movies':
-                if (!document.getElementById('movies-carousel').children.length) {
-                    this.content.loadMovies();
+                // Reset movies page state and load
+                this.content.moviesPage = 1;
+                this.content.moviesHasMore = true;
+                this.content.loadMovies();
+                
+                // Setup load more button
+                const loadMoreBtn = document.getElementById('movies-load-more');
+                if (loadMoreBtn && !loadMoreBtn.hasAttribute('data-initialized')) {
+                    loadMoreBtn.setAttribute('data-initialized', 'true');
+                    loadMoreBtn.addEventListener('click', () => {
+                        this.content.loadMoreMovies();
+                    });
                 }
                 break;
             case 'tv':

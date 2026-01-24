@@ -643,6 +643,26 @@ let huntarrUI = {
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
             
+            // Force movies view layout immediately
+            const viewIds = [
+                'requestarr-discover-view',
+                'requestarr-movies-view',
+                'requestarr-tv-view',
+                'requestarr-history-view',
+                'requestarr-settings-view'
+            ];
+            viewIds.forEach((viewId) => {
+                const view = document.getElementById(viewId);
+                if (!view) return;
+                view.classList.remove('active');
+                view.style.display = 'none';
+            });
+            const moviesView = document.getElementById('requestarr-movies-view');
+            if (moviesView) {
+                moviesView.classList.add('active');
+                moviesView.style.display = 'block';
+            }
+
             // Show movies view
             if (typeof window.RequestarrDiscover !== 'undefined') {
                 window.RequestarrDiscover.switchView('movies');
