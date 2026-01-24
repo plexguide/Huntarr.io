@@ -556,19 +556,24 @@ class RequestarrAPI:
                 tmdb_id = item.get('tmdb_id')
                 media_type = item.get('media_type')
                 
-                # Check cooldown status for all items
+                # Check cooldown status across ALL instances (not just first one)
+                item['in_cooldown'] = False
                 if instances['radarr'] and media_type == 'movie':
-                    # Check against first Radarr instance for cooldown
-                    instance_name = instances['radarr'][0]['name']
-                    cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'radarr', instance_name)
-                    item['in_cooldown'] = cooldown_status['in_cooldown']
+                    # Check ALL Radarr instances for cooldown
+                    for instance in instances['radarr']:
+                        instance_name = instance['name']
+                        cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'radarr', instance_name)
+                        if cooldown_status['in_cooldown']:
+                            item['in_cooldown'] = True
+                            break  # Found cooldown, no need to check other instances
                 elif instances['sonarr'] and media_type == 'tv':
-                    # Check against first Sonarr instance for cooldown
-                    instance_name = instances['sonarr'][0]['name']
-                    cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'sonarr', instance_name)
-                    item['in_cooldown'] = cooldown_status['in_cooldown']
-                else:
-                    item['in_cooldown'] = False
+                    # Check ALL Sonarr instances for cooldown
+                    for instance in instances['sonarr']:
+                        instance_name = instance['name']
+                        cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'sonarr', instance_name)
+                        if cooldown_status['in_cooldown']:
+                            item['in_cooldown'] = True
+                            break  # Found cooldown, no need to check other instances
                 
                 # Set library status
                 if media_type == 'movie':
@@ -1135,8 +1140,61 @@ class RequestarrAPI:
                             'message': f'{title} is already complete in your library',
                             'status': 'already_complete'
                         }
+                elif app_type == 'radarr':
+                    # Movie exists in Radarr - check if it has file
+                    has_file = exists_result.get('has_file', False)
+                    if has_file:
+                        # Movie is already downloaded
+                        return {
+                            'success': False,
+                            'message': f'{title} already exists in {app_type.title()} - {instance_name}',
+                            'status': 'already_exists'
+                        }
+                    else:
+                        # Movie is monitored but not downloaded yet - trigger search
+                        movie_data = exists_result.get('movie_data', {})
+                        movie_id = movie_data.get('id')
+                        
+                        if movie_id:
+                            # Trigger movie search
+                            try:
+                                url = (target_instance.get('api_url', '') or target_instance.get('url', '')).rstrip('/')
+                                api_key = target_instance.get('api_key', '')
+                                
+                                search_response = requests.post(
+                                    f"{url}/api/v3/command",
+                                    headers={'X-Api-Key': api_key},
+                                    json={'name': 'MoviesSearch', 'movieIds': [movie_id]},
+                                    timeout=10
+                                )
+                                search_response.raise_for_status()
+                                
+                                # Save request to database
+                                self.db.add_request(
+                                    tmdb_id, media_type, title, year, overview, 
+                                    poster_path, backdrop_path, app_type, instance_name
+                                )
+                                
+                                return {
+                                    'success': True,
+                                    'message': f'Search initiated for {title} (already in Radarr, triggering download)',
+                                    'status': 'requested'
+                                }
+                            except Exception as e:
+                                logger.error(f"Error triggering movie search: {e}")
+                                return {
+                                    'success': False,
+                                    'message': f'{title} is in Radarr but search failed: {str(e)}',
+                                    'status': 'request_failed'
+                                }
+                        else:
+                            return {
+                                'success': False,
+                                'message': f'{title} already exists in {app_type.title()} - {instance_name}',
+                                'status': 'already_exists'
+                            }
                 else:
-                    # Media exists in Radarr or other app - can't add again
+                    # Media exists in app - can't add again
                     return {
                         'success': False,
                         'message': f'{title} already exists in {app_type.title()} - {instance_name}',
@@ -1195,7 +1253,18 @@ class RequestarrAPI:
                 )
                 response.raise_for_status()
                 movies = response.json()
-                return {'exists': len(movies) > 0}
+                
+                # Check if movie exists AND has file
+                if len(movies) > 0:
+                    movie = movies[0]
+                    has_file = movie.get('hasFile', False)
+                    return {
+                        'exists': True,
+                        'has_file': has_file,
+                        'movie_data': movie
+                    }
+                
+                return {'exists': False}
                 
             elif app_type == 'sonarr':
                 # Search for series

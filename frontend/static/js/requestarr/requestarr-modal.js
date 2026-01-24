@@ -196,21 +196,6 @@ export class RequestarrModal {
                         requestBtn.classList.add('disabled');
                         requestBtn.textContent = `Wait ${timeMsg}`;
                     }
-                } else if (status.previously_requested && status.missing_episodes === 0) {
-                    // Previously requested but no missing episodes
-                    statusHTML = `
-                        <div class="series-status-box status-requested">
-                            <i class="fas fa-clock"></i>
-                            <div>
-                                <div class="status-title">Previously requested</div>
-                            </div>
-                        </div>
-                    `;
-                    if (requestBtn) {
-                        requestBtn.disabled = true;
-                        requestBtn.classList.add('disabled');
-                        requestBtn.textContent = 'Already Requested';
-                    }
                 } else if (status.missing_episodes === 0 && status.total_episodes > 0) {
                     // Complete series - disable request button
                     statusHTML = `
@@ -352,22 +337,8 @@ export class RequestarrModal {
                     requestBtn.classList.add('disabled');
                     requestBtn.textContent = `Wait ${timeMsg}`;
                 }
-            } else if (status.previously_requested) {
-                // Previously requested but cooldown expired
-                statusHTML = `
-                    <div class="series-status-box status-missing-episodes">
-                        <i class="fas fa-clock"></i>
-                        <div>
-                            <div class="status-title">Previously requested</div>
-                        </div>
-                    </div>
-                `;
-                if (requestBtn) {
-                    requestBtn.disabled = true;
-                    requestBtn.classList.add('disabled');
-                    requestBtn.textContent = 'Already Requested';
-                }
             } else {
+                // Available to request (cooldown expired or never requested)
                 statusHTML = `
                     <div class="series-status-box status-requestable">
                         <i class="fas fa-inbox"></i>
