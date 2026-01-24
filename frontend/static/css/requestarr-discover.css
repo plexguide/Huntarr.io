@@ -234,19 +234,11 @@
     overflow: hidden;
     border-radius: 8px;
     background: #000;
-    /* Blackout background with Huntarr logo on top for missing posters */
-    background-image: 
-        url('./static/logo/Huntarr.svg'),
-        url('./static/images/blackout.jpg');
-    background-size: 
-        40%,
-        cover;
-    background-repeat: 
-        no-repeat,
-        no-repeat;
-    background-position: 
-        center,
-        center;
+    /* Blackout background for missing posters */
+    background-image: url('./static/images/blackout.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 /* Hover Overlay with Info */
