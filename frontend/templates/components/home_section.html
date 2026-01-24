@@ -72,11 +72,12 @@
         
         /* Match Live Hunts header style to Support/Resources */
         .stats-card .card-header {
-            padding: 0 0 8px !important;
+            padding: 6px 0 8px !important;
             min-height: 0 !important;
             margin-bottom: 12px !important;
             background-color: transparent !important;
             border-bottom: 1px solid rgba(90, 109, 137, 0.2) !important;
+            align-items: flex-end !important;
             /* Firefox-specific fix for text blurriness on hover */
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
@@ -91,7 +92,7 @@
         }
         
         .stats-card .card-header h3 {
-            font-size: 0.75em !important;
+            font-size: 0.94em !important;
             line-height: 1.2 !important;
             /* Additional Firefox text clarity fixes */
             backface-visibility: hidden;
@@ -1135,8 +1136,8 @@
     .stats-card .card-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        padding: 0 0 8px;
+        align-items: flex-end;
+        padding: 6px 0 8px;
         margin-bottom: 12px;
         background-color: transparent;
         border-bottom: 1px solid rgba(90, 109, 137, 0.2);
@@ -1145,7 +1146,7 @@
     .stats-card .card-header h3 {
         margin: 0;
         color: #e0e6ed;
-        font-size: 0.75em;
+        font-size: 0.94em;
         font-weight: 600;
         line-height: 1.2;
     }
