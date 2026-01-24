@@ -1,0 +1,514 @@
+/**
+ * Requestarr TV Filters - Filter management for TV shows
+ */
+
+export class RequestarrTVFilters {
+    constructor(core) {
+        this.core = core;
+        
+        // Calculate max year (current year + 3)
+        const currentYear = new Date().getFullYear();
+        this.maxYear = currentYear + 3;
+        this.minYear = 1900;
+        
+        this.activeFilters = {
+            genres: [],
+            yearMin: this.minYear,
+            yearMax: this.maxYear,
+            ratingMin: 0,
+            ratingMax: 10,
+            votesMin: 0,
+            votesMax: 10000
+        };
+        this.genres = [];
+        this.init();
+    }
+
+    init() {
+        this.loadGenres();
+        this.setupYearRangeSlider();
+        this.setupEventListeners();
+        this.updateFilterDisplay();
+    }
+    
+    setupYearRangeSlider() {
+        // Set dynamic year range in HTML
+        const yearMin = document.getElementById('tv-filter-year-min');
+        const yearMax = document.getElementById('tv-filter-year-max');
+        
+        if (yearMin && yearMax) {
+            yearMin.max = this.maxYear;
+            yearMin.value = this.minYear;
+            yearMax.max = this.maxYear;
+            yearMax.value = this.maxYear;
+            
+            this.updateYearDisplay();
+            this.updateSliderRange('tv-year', yearMin, yearMax);
+        }
+    }
+
+    async loadGenres() {
+        try {
+            const response = await fetch('./api/requestarr/genres/tv');
+            const data = await response.json();
+            if (data.genres) {
+                this.genres = data.genres;
+                this.populateGenresSelect();
+            }
+        } catch (error) {
+            console.error('[RequestarrTVFilters] Error loading genres:', error);
+            // Use default TV genres if API fails
+            this.genres = [
+                { id: 10759, name: 'Action & Adventure' },
+                { id: 16, name: 'Animation' },
+                { id: 35, name: 'Comedy' },
+                { id: 80, name: 'Crime' },
+                { id: 99, name: 'Documentary' },
+                { id: 18, name: 'Drama' },
+                { id: 10751, name: 'Family' },
+                { id: 10762, name: 'Kids' },
+                { id: 9648, name: 'Mystery' },
+                { id: 10763, name: 'News' },
+                { id: 10764, name: 'Reality' },
+                { id: 10765, name: 'Sci-Fi & Fantasy' },
+                { id: 10766, name: 'Soap' },
+                { id: 10767, name: 'Talk' },
+                { id: 10768, name: 'War & Politics' },
+                { id: 37, name: 'Western' }
+            ];
+            this.populateGenresSelect();
+        }
+    }
+
+    populateGenresSelect() {
+        const list = document.getElementById('tv-genre-list');
+        if (!list) return;
+
+        list.innerHTML = '';
+        this.genres.forEach(genre => {
+            const item = document.createElement('div');
+            item.className = 'genre-item';
+            item.textContent = genre.name;
+            item.dataset.genreId = genre.id;
+            
+            if (this.activeFilters.genres.includes(genre.id)) {
+                item.classList.add('selected');
+            }
+            
+            item.addEventListener('click', () => {
+                const genreId = parseInt(item.dataset.genreId);
+                const index = this.activeFilters.genres.indexOf(genreId);
+                
+                if (index > -1) {
+                    this.activeFilters.genres.splice(index, 1);
+                    item.classList.remove('selected');
+                } else {
+                    this.activeFilters.genres.push(genreId);
+                    item.classList.add('selected');
+                }
+                
+                this.renderSelectedGenres();
+                this.updateModalFilterCount();
+                
+                // Close dropdown after selection
+                const dropdown = document.getElementById('tv-genre-dropdown');
+                if (dropdown) {
+                    dropdown.style.display = 'none';
+                }
+            });
+            
+            list.appendChild(item);
+        });
+    }
+
+    renderSelectedGenres() {
+        const container = document.getElementById('tv-selected-genres');
+        if (!container) return;
+
+        container.innerHTML = '';
+        
+        if (this.activeFilters.genres.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+        
+        container.style.display = 'flex';
+        
+        this.activeFilters.genres.forEach(genreId => {
+            const genre = this.genres.find(g => g.id === genreId);
+            if (!genre) return;
+            
+            const pill = document.createElement('div');
+            pill.className = 'selected-genre-pill';
+            
+            const text = document.createElement('span');
+            text.textContent = genre.name;
+            
+            const remove = document.createElement('span');
+            remove.className = 'remove-genre';
+            remove.innerHTML = '×';
+            remove.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = this.activeFilters.genres.indexOf(genreId);
+                if (index > -1) {
+                    this.activeFilters.genres.splice(index, 1);
+                }
+                this.renderSelectedGenres();
+                this.updateModalFilterCount();
+                // Update genre list items
+                const genreItems = document.querySelectorAll('#tv-genre-list .genre-item');
+                genreItems.forEach(item => {
+                    if (parseInt(item.dataset.genreId) === genreId) {
+                        item.classList.remove('selected');
+                    }
+                });
+            });
+            
+            pill.appendChild(text);
+            pill.appendChild(remove);
+            container.appendChild(pill);
+        });
+    }
+
+    setupEventListeners() {
+        // Filter button click
+        const filterBtn = document.getElementById('tv-filter-btn');
+        if (filterBtn) {
+            filterBtn.addEventListener('click', () => this.openFiltersModal());
+        }
+
+        // Sort dropdown change
+        const sortSelect = document.getElementById('tv-sort');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                this.applySortChange(e.target.value);
+            });
+        }
+
+        // Genre dropdown toggle
+        const genreInput = document.getElementById('tv-genre-search-input');
+        const genreDropdown = document.getElementById('tv-genre-dropdown');
+        
+        if (genreInput && genreDropdown) {
+            genreInput.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = genreDropdown.style.display === 'block';
+                genreDropdown.style.display = isVisible ? 'none' : 'block';
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!genreDropdown.contains(e.target) && e.target !== genreInput) {
+                    genreDropdown.style.display = 'none';
+                }
+            });
+            
+            // Prevent dropdown from closing when clicking inside
+            genreDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+
+        // Year range inputs - auto-apply on change
+        const yearMin = document.getElementById('tv-filter-year-min');
+        const yearMax = document.getElementById('tv-filter-year-max');
+        if (yearMin && yearMax) {
+            yearMin.addEventListener('input', () => {
+                this.updateYearDisplay();
+                this.updateSliderRange('tv-year', yearMin, yearMax);
+                this.updateModalFilterCount();
+            });
+            yearMin.addEventListener('change', () => {
+                this.autoApplyFilters();
+            });
+            yearMax.addEventListener('input', () => {
+                this.updateYearDisplay();
+                this.updateSliderRange('tv-year', yearMin, yearMax);
+                this.updateModalFilterCount();
+            });
+            yearMax.addEventListener('change', () => {
+                this.autoApplyFilters();
+            });
+            // Initial range fill
+            this.updateSliderRange('tv-year', yearMin, yearMax);
+        }
+
+        // Rating range inputs
+        const ratingMin = document.getElementById('tv-filter-rating-min');
+        const ratingMax = document.getElementById('tv-filter-rating-max');
+        if (ratingMin && ratingMax) {
+            ratingMin.addEventListener('input', () => {
+                this.updateRatingDisplay();
+                this.updateSliderRange('tv-rating', ratingMin, ratingMax);
+                this.updateModalFilterCount();
+            });
+            ratingMax.addEventListener('input', () => {
+                this.updateRatingDisplay();
+                this.updateSliderRange('tv-rating', ratingMin, ratingMax);
+                this.updateModalFilterCount();
+            });
+            // Initial range fill
+            this.updateSliderRange('tv-rating', ratingMin, ratingMax);
+        }
+
+        // Votes range inputs
+        const votesMin = document.getElementById('tv-filter-votes-min');
+        const votesMax = document.getElementById('tv-filter-votes-max');
+        if (votesMin && votesMax) {
+            votesMin.addEventListener('input', () => {
+                this.updateVotesDisplay();
+                this.updateSliderRange('tv-votes', votesMin, votesMax);
+                this.updateModalFilterCount();
+            });
+            votesMax.addEventListener('input', () => {
+                this.updateVotesDisplay();
+                this.updateSliderRange('tv-votes', votesMin, votesMax);
+                this.updateModalFilterCount();
+            });
+            // Initial range fill
+            this.updateSliderRange('tv-votes', votesMin, votesMax);
+        }
+    }
+
+    updateSliderRange(type, minInput, maxInput) {
+        const rangeElement = document.getElementById(`${type}-range`);
+        if (!rangeElement) return;
+
+        const min = parseFloat(minInput.value);
+        const max = parseFloat(maxInput.value);
+        const minValue = parseFloat(minInput.min);
+        const maxValue = parseFloat(minInput.max);
+
+        const percentMin = ((min - minValue) / (maxValue - minValue)) * 100;
+        const percentMax = ((max - minValue) / (maxValue - minValue)) * 100;
+
+        rangeElement.style.left = percentMin + '%';
+        rangeElement.style.width = (percentMax - percentMin) + '%';
+    }
+
+    updateYearDisplay() {
+        const min = parseInt(document.getElementById('tv-filter-year-min').value);
+        const max = parseInt(document.getElementById('tv-filter-year-max').value);
+        const display = document.getElementById('tv-year-display');
+        if (display) {
+            display.textContent = `TV shows from ${min} to ${max}`;
+        }
+    }
+
+    updateRatingDisplay() {
+        const min = parseFloat(document.getElementById('tv-filter-rating-min').value);
+        const max = parseFloat(document.getElementById('tv-filter-rating-max').value);
+        const display = document.getElementById('tv-rating-display');
+        if (display) {
+            display.textContent = `Ratings between ${min} and ${max}`;
+        }
+    }
+
+    updateVotesDisplay() {
+        const min = parseInt(document.getElementById('tv-filter-votes-min').value);
+        const max = parseInt(document.getElementById('tv-filter-votes-max').value);
+        const display = document.getElementById('tv-votes-display');
+        if (display) {
+            display.textContent = `Number of votes between ${min} and ${max}`;
+        }
+    }
+
+    openFiltersModal() {
+        const modal = document.getElementById('tv-filter-modal');
+        if (modal) {
+            // Load current filter values
+            this.loadFilterValues();
+            modal.style.display = 'flex';
+            // Add show class for animation
+            setTimeout(() => modal.classList.add('show'), 10);
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    closeFiltersModal() {
+        const modal = document.getElementById('tv-filter-modal');
+        if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }, 150);
+        }
+    }
+
+    loadFilterValues() {
+        // Load current active filters into the modal
+        document.getElementById('tv-filter-year-min').value = this.activeFilters.yearMin;
+        document.getElementById('tv-filter-year-max').value = this.activeFilters.yearMax;
+        document.getElementById('tv-filter-rating-min').value = this.activeFilters.ratingMin;
+        document.getElementById('tv-filter-rating-max').value = this.activeFilters.ratingMax;
+        document.getElementById('tv-filter-votes-min').value = this.activeFilters.votesMin;
+        document.getElementById('tv-filter-votes-max').value = this.activeFilters.votesMax;
+
+        // Render selected genres and update genre list
+        this.renderSelectedGenres();
+        
+        // Update genre dropdown items
+        const genreItems = document.querySelectorAll('#tv-genre-list .genre-item');
+        genreItems.forEach(item => {
+            const genreId = parseInt(item.dataset.genreId);
+            if (this.activeFilters.genres.includes(genreId)) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+
+        this.updateYearDisplay();
+        this.updateRatingDisplay();
+        this.updateVotesDisplay();
+        this.updateModalFilterCount();
+    }
+
+    autoApplyFilters() {
+        // Auto-apply filters without closing the modal
+        this.activeFilters.yearMin = parseInt(document.getElementById('tv-filter-year-min')?.value || this.minYear);
+        this.activeFilters.yearMax = parseInt(document.getElementById('tv-filter-year-max')?.value || this.maxYear);
+        this.activeFilters.ratingMin = parseFloat(document.getElementById('tv-filter-rating-min')?.value || 0);
+        this.activeFilters.ratingMax = parseFloat(document.getElementById('tv-filter-rating-max')?.value || 10);
+        this.activeFilters.votesMin = parseInt(document.getElementById('tv-filter-votes-min')?.value || 0);
+        this.activeFilters.votesMax = parseInt(document.getElementById('tv-filter-votes-max')?.value || 10000);
+
+        // Update filter count display
+        this.updateFilterDisplay();
+
+        // Reload TV shows with new filters (without closing modal)
+        this.core.content.tvPage = 1;
+        this.core.content.tvHasMore = true;
+        this.core.content.loadTV();
+    }
+
+    applyFilters() {
+        this.activeFilters.yearMin = parseInt(document.getElementById('tv-filter-year-min').value);
+        this.activeFilters.yearMax = parseInt(document.getElementById('tv-filter-year-max').value);
+        this.activeFilters.ratingMin = parseFloat(document.getElementById('tv-filter-rating-min').value);
+        this.activeFilters.ratingMax = parseFloat(document.getElementById('tv-filter-rating-max').value);
+        this.activeFilters.votesMin = parseInt(document.getElementById('tv-filter-votes-min').value);
+        this.activeFilters.votesMax = parseInt(document.getElementById('tv-filter-votes-max').value);
+
+        // Update filter count display
+        this.updateFilterDisplay();
+
+        // Close modal
+        this.closeFiltersModal();
+
+        // Reload TV shows with new filters
+        this.core.content.tvPage = 1;
+        this.core.content.tvHasMore = true;
+        this.core.content.loadTV();
+    }
+
+    clearFilters() {
+        this.activeFilters = {
+            genres: [],
+            yearMin: this.minYear,
+            yearMax: this.maxYear,
+            ratingMin: 0,
+            ratingMax: 10,
+            votesMin: 0,
+            votesMax: 10000
+        };
+
+        // Reset sort to default
+        const sortSelect = document.getElementById('tv-sort');
+        if (sortSelect) {
+            sortSelect.value = 'popularity.desc';
+        }
+
+        this.updateFilterDisplay();
+        this.loadFilterValues();
+        this.closeFiltersModal();
+
+        // Reload TV shows
+        this.core.content.tvPage = 1;
+        this.core.content.tvHasMore = true;
+        this.core.content.loadTV();
+    }
+
+    updateFilterDisplay() {
+        let count = 0;
+        
+        if (this.activeFilters.genres.length > 0) count++;
+        if (this.activeFilters.yearMin > this.minYear || this.activeFilters.yearMax < this.maxYear) count++;
+        if (this.activeFilters.ratingMin > 0 || this.activeFilters.ratingMax < 10) count++;
+        if (this.activeFilters.votesMin > 0 || this.activeFilters.votesMax < 10000) count++;
+
+        const filterCountElement = document.getElementById('tv-filter-count');
+        
+        const text = count === 0 ? '0 Active Filters' : count === 1 ? '1 Active Filter' : `${count} Active Filters`;
+        
+        if (filterCountElement) filterCountElement.textContent = text;
+        
+        // Also update modal count if open
+        this.updateModalFilterCount();
+    }
+
+    updateModalFilterCount() {
+        let count = 0;
+        
+        // Count from UI elements
+        const selectedGenres = document.querySelectorAll('#tv-genre-list .genre-item.selected').length;
+        if (selectedGenres > 0) count++;
+        
+        const yearMin = parseInt(document.getElementById('tv-filter-year-min')?.value || this.minYear);
+        const yearMax = parseInt(document.getElementById('tv-filter-year-max')?.value || this.maxYear);
+        if (yearMin > this.minYear || yearMax < this.maxYear) count++;
+        
+        const ratingMin = parseFloat(document.getElementById('tv-filter-rating-min')?.value || 0);
+        const ratingMax = parseFloat(document.getElementById('tv-filter-rating-max')?.value || 10);
+        if (ratingMin > 0 || ratingMax < 10) count++;
+        
+        const votesMin = parseInt(document.getElementById('tv-filter-votes-min')?.value || 0);
+        const votesMax = parseInt(document.getElementById('tv-filter-votes-max')?.value || 10000);
+        if (votesMin > 0 || votesMax < 10000) count++;
+
+        const modalCountElement = document.getElementById('tv-filter-active-count');
+        const text = count === 0 ? '0 Active Filters' : count === 1 ? '1 Active Filter' : `${count} Active Filters`;
+        
+        if (modalCountElement) modalCountElement.textContent = text;
+    }
+
+    applySortChange(sortBy) {
+        // Reload TV shows with new sort
+        this.core.content.tvPage = 1;
+        this.core.content.tvHasMore = true;
+        this.core.content.loadTV();
+    }
+
+    getFilterParams() {
+        const params = new URLSearchParams();
+        
+        // Get sort
+        const sortSelect = document.getElementById('tv-sort');
+        if (sortSelect) {
+            params.append('sort_by', sortSelect.value);
+        }
+
+        // Add filter params
+        if (this.activeFilters.genres.length > 0) {
+            params.append('with_genres', this.activeFilters.genres.join(','));
+        }
+        // Convert years to dates (Jan 1 for min year, Dec 31 for max year)
+        if (this.activeFilters.yearMin > this.minYear) {
+            params.append('first_air_date.gte', `${this.activeFilters.yearMin}-01-01`);
+        }
+        if (this.activeFilters.yearMax < this.maxYear) {
+            params.append('first_air_date.lte', `${this.activeFilters.yearMax}-12-31`);
+        }
+        if (this.activeFilters.ratingMin > 0 || this.activeFilters.ratingMax < 10) {
+            params.append('vote_average.gte', this.activeFilters.ratingMin);
+            params.append('vote_average.lte', this.activeFilters.ratingMax);
+        }
+        if (this.activeFilters.votesMin > 0 || this.activeFilters.votesMax < 10000) {
+            params.append('vote_count.gte', this.activeFilters.votesMin);
+            params.append('vote_count.lte', this.activeFilters.votesMax);
+        }
+
+        return params.toString();
+    }
+}

@@ -9,6 +9,10 @@ export class RequestarrContent {
         this.moviesHasMore = true;
         this.isLoadingMovies = false;
         this.moviesObserver = null;
+        this.tvPage = 1;
+        this.tvHasMore = true;
+        this.isLoadingTV = false;
+        this.tvObserver = null;
     }
 
     // ========================================
@@ -192,24 +196,110 @@ export class RequestarrContent {
     }
 
     async loadTV(page = 1) {
-        const carousel = document.getElementById('tv-carousel');
-        carousel.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading TV shows...</p></div>';
+        const grid = document.getElementById('tv-grid');
+        
+        if (!grid) {
+            return;
+        }
+
+        if (this.isLoadingTV) {
+            return;
+        }
+
+        this.isLoadingTV = true;
+
+        // Show loading spinner on first page
+        if (this.tvPage === 1) {
+            grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading TV shows...</p></div>';
+        }
         
         try {
-            const response = await fetch(`./api/requestarr/discover/tv?page=${page}`);
+            let url = `./api/requestarr/discover/tv?page=${this.tvPage}`;
+            
+            // Add filter parameters
+            if (this.core.tvFilters) {
+                const filterParams = this.core.tvFilters.getFilterParams();
+                if (filterParams) {
+                    url += `&${filterParams}`;
+                }
+            }
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
-                carousel.innerHTML = '';
-                data.results.forEach(item => {
-                    carousel.appendChild(this.createMediaCard(item));
+                if (this.tvPage === 1) {
+                    grid.innerHTML = '';
+                }
+                
+                data.results.forEach((item) => {
+                    grid.appendChild(this.createMediaCard(item));
                 });
+
+                // Determine if more results are available
+                if (data.results.length >= 20) {
+                    this.tvHasMore = true;
+                } else {
+                    this.tvHasMore = false;
+                }
             } else {
-                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows found</p>';
+                if (this.tvPage === 1) {
+                    grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows found</p>';
+                }
+                this.tvHasMore = false;
             }
         } catch (error) {
-            console.error('[RequestarrDiscover] Error loading TV shows:', error);
-            carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load TV shows</p>';
+            console.error('[RequestarrContent] Error loading TV shows:', error);
+            if (this.tvPage === 1) {
+                grid.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load TV shows</p>';
+            }
+        } finally {
+            this.isLoadingTV = false;
+
+            const sentinel = document.getElementById('tv-scroll-sentinel');
+            if (sentinel && this.tvHasMore) {
+                const rect = sentinel.getBoundingClientRect();
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                if (rect.top <= viewportHeight + 200) {
+                    this.loadMoreTV();
+                }
+            }
+        }
+    }
+    
+    setupTVInfiniteScroll() {
+        const sentinel = document.getElementById('tv-scroll-sentinel');
+        if (!sentinel || this.tvObserver) {
+            return;
+        }
+
+        this.tvObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) {
+                    return;
+                }
+                if (this.tvHasMore && !this.isLoadingTV) {
+                    this.loadMoreTV();
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '200px 0px',
+            threshold: 0
+        });
+
+        this.tvObserver.observe(sentinel);
+    }
+    
+    loadMoreTV() {
+        if (this.tvHasMore && !this.isLoadingTV) {
+            this.tvPage++;
+            this.loadTV(this.tvPage);
         }
     }
 

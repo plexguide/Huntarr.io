@@ -114,28 +114,39 @@
         </div>
 
         <!-- TV Shows View -->
-        <div id="requestarr-tv-view" class="requestarr-view">
-            <div class="view-header">
-                <h1 class="page-title">TV Shows</h1>
-                <div class="search-bar">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="tv-search" placeholder="Search TV shows..." autocomplete="off">
+        <div id="requestarr-tv-view" class="requestarr-view" style="display: none;">
+            <!-- Controls Bar -->
+            <div class="movies-controls">
+                <div class="sort-dropdown">
+                    <select id="tv-sort" class="control-select">
+                        <option value="popularity.desc">Popularity Descending</option>
+                        <option value="popularity.asc">Popularity Ascending</option>
+                        <option value="vote_average.desc">Rating Descending</option>
+                        <option value="vote_average.asc">Rating Ascending</option>
+                        <option value="first_air_date.desc">First Air Date Descending</option>
+                        <option value="first_air_date.asc">First Air Date Ascending</option>
+                        <option value="name.asc">Title (A-Z)</option>
+                        <option value="name.desc">Title (Z-A)</option>
+                    </select>
+                </div>
+                <button class="filter-button" id="tv-filter-btn">
+                    <i class="fas fa-filter"></i>
+                    <span id="tv-filter-count">0 Active Filters</span>
+                </button>
+            </div>
+            
+            <!-- TV Shows Grid -->
+            <div id="tv-grid" class="media-grid">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading TV shows...</p>
                 </div>
             </div>
             
-            <section class="carousel-section">
-                <div class="carousel-container">
-                    <button class="carousel-arrow left" data-target="tv-carousel">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <div id="tv-carousel" class="media-carousel">
-                        <!-- TV cards will be populated here -->
-                    </div>
-                    <button class="carousel-arrow right" data-target="tv-carousel">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </section>
+            <!-- Infinite scroll sentinel -->
+            <div class="load-more-container">
+                <div id="tv-scroll-sentinel" style="height: 1px; width: 100%;"></div>
+            </div>
         </div>
 
         <!-- History View -->
@@ -324,6 +335,87 @@
                         <div class="slider-range" id="votes-range"></div>
                         <input type="range" id="filter-votes-min" class="range-min" value="0" min="0" max="10000" step="10">
                         <input type="range" id="filter-votes-max" class="range-max" value="10000" min="0" max="10000" step="10">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TV Shows Filters Side Panel -->
+    <div id="tv-filter-modal" class="filter-panel" style="display: none;">
+        <div class="filter-backdrop" onclick="window.RequestarrDiscover.closeTVFiltersModal()"></div>
+        <div class="filter-panel-content">
+            <div class="filter-panel-header">
+                <h2>Filters</h2>
+                <button class="filter-close" onclick="window.RequestarrDiscover.closeTVFiltersModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="filter-panel-body">
+                <div class="filter-active-badge">
+                    <span id="tv-filter-active-count">0 Active Filters</span>
+                </div>
+                
+                <!-- Genres -->
+                <div class="filter-group">
+                    <label class="filter-label">Genres</label>
+                    
+                    <!-- Selected Genre Pills -->
+                    <div class="selected-genres-container" id="tv-selected-genres" style="display: none;">
+                        <!-- Pills will be added here -->
+                    </div>
+                    
+                    <!-- Genre Dropdown -->
+                    <div class="genre-select-wrapper">
+                        <input 
+                            type="text" 
+                            id="tv-genre-search-input" 
+                            class="genre-search-input" 
+                            placeholder="Select genres..." 
+                            readonly
+                        >
+                        <div id="tv-genre-dropdown" class="genre-dropdown" style="display: none;">
+                            <div id="tv-genre-list" class="genre-list">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- First Air Year Range -->
+                <div class="filter-group">
+                    <label class="filter-label">First Air Year</label>
+                    <div class="filter-range-text" id="tv-year-display">TV shows from 1900 to 2029</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="tv-year-range"></div>
+                        <input type="range" id="tv-filter-year-min" class="range-min" value="1900" min="1900" max="2029" step="1">
+                        <input type="range" id="tv-filter-year-max" class="range-max" value="2029" min="1900" max="2029" step="1">
+                    </div>
+                </div>
+                
+                <!-- TMDB User Score -->
+                <div class="filter-group">
+                    <label class="filter-label">TMDB User Score</label>
+                    <div class="filter-range-text" id="tv-rating-display">Ratings between 0 and 10</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="tv-rating-range"></div>
+                        <input type="range" id="tv-filter-rating-min" class="range-min" value="0" min="0" max="10" step="0.1">
+                        <input type="range" id="tv-filter-rating-max" class="range-max" value="10" min="0" max="10" step="0.1">
+                    </div>
+                </div>
+                
+                <!-- TMDB User Vote Count -->
+                <div class="filter-group">
+                    <label class="filter-label">TMDB User Vote Count</label>
+                    <div class="filter-range-text" id="tv-votes-display">Number of votes between 0 and 10000</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="tv-votes-range"></div>
+                        <input type="range" id="tv-filter-votes-min" class="range-min" value="0" min="0" max="10000" step="10">
+                        <input type="range" id="tv-filter-votes-max" class="range-max" value="10000" min="0" max="10000" step="10">
                     </div>
                 </div>
             </div>

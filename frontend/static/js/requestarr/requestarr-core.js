@@ -7,6 +7,7 @@ import { RequestarrSearch } from './requestarr-search.js';
 import { RequestarrModal } from './requestarr-modal.js';
 import { RequestarrSettings } from './requestarr-settings.js';
 import { RequestarrFilters } from './requestarr-filters.js';
+import { RequestarrTVFilters } from './requestarr-tv-filters.js';
 
 export class RequestarrDiscover {
     constructor() {
@@ -23,6 +24,7 @@ export class RequestarrDiscover {
         this.modal = new RequestarrModal(this);
         this.settings = new RequestarrSettings(this);
         this.filters = new RequestarrFilters(this);
+        this.tvFilters = new RequestarrTVFilters(this);
         
         this.init();
     }
@@ -141,9 +143,11 @@ export class RequestarrDiscover {
                 this.content.setupMoviesInfiniteScroll();
                 break;
             case 'tv':
-                if (!document.getElementById('tv-carousel').children.length) {
-                    this.content.loadTV();
-                }
+                // Reset TV page state and load
+                this.content.tvPage = 1;
+                this.content.tvHasMore = true;
+                this.content.loadTV();
+                this.content.setupTVInfiniteScroll();
                 break;
             case 'history':
                 this.settings.loadHistory();
@@ -232,6 +236,12 @@ export class RequestarrDiscover {
     closeFiltersModal() {
         if (this.filters) {
             this.filters.closeFiltersModal();
+        }
+    }
+    
+    closeTVFiltersModal() {
+        if (this.tvFilters) {
+            this.tvFilters.closeFiltersModal();
         }
     }
 
