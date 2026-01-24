@@ -474,7 +474,12 @@ export class RequestarrSettings {
         tagsContainer.innerHTML = '';
         
         if (this.selectedLanguages.length === 0) {
-            tagsContainer.innerHTML = '<span style="color: #888; font-size: 13px;">All Languages</span>';
+            // Show "All Languages" as a tag/bubble instead of plain text
+            const tag = document.createElement('div');
+            tag.className = 'language-tag';
+            tag.innerHTML = 'All Languages';
+            tag.style.cursor = 'default'; // No remove action for "All Languages"
+            tagsContainer.appendChild(tag);
             return;
         }
         
