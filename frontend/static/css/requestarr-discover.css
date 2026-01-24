@@ -232,7 +232,13 @@
     height: 225px;
     position: relative;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1a1d2e 0%, #2d3348 100%);
+    /* Add Huntarr logo as background for missing posters */
+    background-image: url('/static/logo/Huntarr.svg');
+    background-size: 50%;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 /* Hover Overlay with Info */
@@ -441,6 +447,7 @@
     padding: 60px 20px;
     color: #888;
     width: 100%;
+    grid-column: 1 / -1; /* Span all columns in the grid */
 }
 
 .loading-spinner i {
