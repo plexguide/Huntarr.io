@@ -1768,6 +1768,34 @@ input:disabled + .toggle-slider {
     font-size: 14px;
 }
 
+/* Mobile responsive controls */
+@media (max-width: 768px) {
+    .movies-controls {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0 15px;
+        margin: 15px 0;
+        gap: 12px;
+    }
+    
+    .instance-selector-container,
+    .sort-dropdown {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .instance-select,
+    .control-select {
+        width: 100%;
+    }
+    
+    .filter-button {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
+    }
+}
+
 .media-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
