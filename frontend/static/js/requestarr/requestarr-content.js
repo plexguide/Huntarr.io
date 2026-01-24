@@ -7,6 +7,8 @@ export class RequestarrContent {
         this.core = core;
         this.moviesPage = 1;
         this.moviesHasMore = true;
+        this.isLoadingMovies = false;
+        this.moviesObserver = null;
     }
 
     // ========================================
@@ -81,84 +83,100 @@ export class RequestarrContent {
         }
     }
 
-    async loadMovies(page = 1) {
-        console.log(`[RequestarrContent] loadMovies called - page: ${page}, this.moviesPage: ${this.moviesPage}`);
-        
-        const grid = document.getElementById('movies-grid');
-        const loadMoreBtn = document.getElementById('movies-load-more');
-        
-        if (!grid) {
-            console.error('[RequestarrContent] movies-grid element not found!');
+    setupMoviesInfiniteScroll() {
+        const sentinel = document.getElementById('movies-scroll-sentinel');
+        if (!sentinel || this.moviesObserver) {
             return;
         }
+
+        this.moviesObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) {
+                    return;
+                }
+                if (this.moviesHasMore && !this.isLoadingMovies) {
+                    this.loadMoreMovies();
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '200px 0px',
+            threshold: 0
+        });
+
+        this.moviesObserver.observe(sentinel);
+    }
+
+    async loadMovies(page = 1) {
+        const grid = document.getElementById('movies-grid');
         
-        if (!loadMoreBtn) {
-            console.error('[RequestarrContent] movies-load-more button not found!');
+        if (!grid) {
+            return;
         }
-        
+
+        if (this.isLoadingMovies) {
+            return;
+        }
+
+        this.isLoadingMovies = true;
+
         // Show loading spinner on first page
         if (this.moviesPage === 1) {
-            console.log('[RequestarrContent] Showing loading spinner...');
             grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
         }
         
         try {
             const url = `./api/requestarr/discover/movies?page=${this.moviesPage}`;
-            console.log(`[RequestarrContent] Fetching from: ${url}`);
-            
             const response = await fetch(url);
-            console.log(`[RequestarrContent] Response status: ${response.status}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
-            console.log(`[RequestarrContent] Received data:`, data);
-            console.log(`[RequestarrContent] Number of movies: ${data.results?.length || 0}`);
             
             if (data.results && data.results.length > 0) {
-                console.log('[RequestarrContent] Processing movies...');
                 if (this.moviesPage === 1) {
                     grid.innerHTML = '';
                 }
                 
-                data.results.forEach((item, index) => {
-                    console.log(`[RequestarrContent] Creating card ${index + 1}/${data.results.length}: ${item.title}`);
-                    const card = this.createMediaCard(item);
-                    grid.appendChild(card);
+                data.results.forEach((item) => {
+                    grid.appendChild(this.createMediaCard(item));
                 });
-                
-                console.log('[RequestarrContent] All cards added to grid');
-                
-                // Show load more button if there are more results
+
+                // Determine if more results are available
                 if (data.results.length >= 20) {
-                    if (loadMoreBtn) loadMoreBtn.style.display = 'block';
                     this.moviesHasMore = true;
                 } else {
-                    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
                     this.moviesHasMore = false;
                 }
             } else {
-                console.log('[RequestarrContent] No movies found in response');
                 if (this.moviesPage === 1) {
                     grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies found</p>';
                 }
-                if (loadMoreBtn) loadMoreBtn.style.display = 'none';
                 this.moviesHasMore = false;
             }
         } catch (error) {
             console.error('[RequestarrContent] Error loading movies:', error);
-            console.error('[RequestarrContent] Error stack:', error.stack);
             if (this.moviesPage === 1) {
-                grid.innerHTML = `<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies: ${error.message}</p>`;
+                grid.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies</p>';
             }
-            if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+        } finally {
+            this.isLoadingMovies = false;
+
+            const sentinel = document.getElementById('movies-scroll-sentinel');
+            if (sentinel && this.moviesHasMore) {
+                const rect = sentinel.getBoundingClientRect();
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                if (rect.top <= viewportHeight + 200) {
+                    this.loadMoreMovies();
+                }
+            }
         }
     }
     
     loadMoreMovies() {
-        if (this.moviesHasMore) {
+        if (this.moviesHasMore && !this.isLoadingMovies) {
             this.moviesPage++;
             this.loadMovies(this.moviesPage);
         }

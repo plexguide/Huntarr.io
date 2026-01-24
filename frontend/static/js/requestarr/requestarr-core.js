@@ -30,7 +30,6 @@ export class RequestarrDiscover {
     // ========================================
 
     init() {
-        console.log('[RequestarrDiscover] Initializing...');
         this.loadInstances();
         this.setupCarouselArrows();
         this.search.setupSearchHandlers();
@@ -48,7 +47,6 @@ export class RequestarrDiscover {
                     sonarr: data.sonarr || [],
                     radarr: data.radarr || []
                 };
-                console.log('[RequestarrDiscover] Loaded instances:', this.instances);
                 await this.loadAllQualityProfiles();
             }
         } catch (error) {
@@ -57,8 +55,6 @@ export class RequestarrDiscover {
     }
     
     async loadAllQualityProfiles() {
-        console.log('[RequestarrDiscover] Loading quality profiles...');
-        
         // Load Radarr quality profiles
         for (const instance of this.instances.radarr) {
             try {
@@ -66,7 +62,6 @@ export class RequestarrDiscover {
                 const data = await response.json();
                 if (data.success) {
                     this.qualityProfiles[`radarr-${instance.name}`] = data.profiles;
-                    console.log(`[RequestarrDiscover] Loaded quality profiles for Radarr - ${instance.name}:`, data.profiles);
                 }
             } catch (error) {
                 console.error(`[RequestarrDiscover] Error loading Radarr quality profiles for ${instance.name}:`, error);
@@ -80,7 +75,6 @@ export class RequestarrDiscover {
                 const data = await response.json();
                 if (data.success) {
                     this.qualityProfiles[`sonarr-${instance.name}`] = data.profiles;
-                    console.log(`[RequestarrDiscover] Loaded quality profiles for Sonarr - ${instance.name}:`, data.profiles);
                 }
             } catch (error) {
                 console.error(`[RequestarrDiscover] Error loading Sonarr quality profiles for ${instance.name}:`, error);
@@ -93,8 +87,6 @@ export class RequestarrDiscover {
     // ========================================
 
     switchView(view) {
-        console.log(`[RequestarrDiscover] switchView called with: ${view}`);
-        
         // Clear global search
         const globalSearch = document.getElementById('global-search-input');
         if (globalSearch) {
@@ -126,17 +118,13 @@ export class RequestarrDiscover {
         // Show target view
         const targetView = document.getElementById(`requestarr-${view}-view`);
         if (targetView) {
-            console.log(`[RequestarrDiscover] Showing view: requestarr-${view}-view`);
             targetView.classList.add('active');
             targetView.style.display = 'block';
-        } else {
-            console.error(`[RequestarrDiscover] View not found: requestarr-${view}-view`);
         }
 
         this.currentView = view;
 
         // Load content for view if not already loaded
-        console.log(`[RequestarrDiscover] Loading content for view: ${view}`);
         switch (view) {
             case 'discover':
                 if (!document.getElementById('trending-carousel').children.length) {
@@ -144,22 +132,11 @@ export class RequestarrDiscover {
                 }
                 break;
             case 'movies':
-                console.log('[RequestarrDiscover] Movies case - resetting pagination');
                 // Reset movies page state and load
                 this.content.moviesPage = 1;
                 this.content.moviesHasMore = true;
-                console.log('[RequestarrDiscover] Calling loadMovies()...');
                 this.content.loadMovies();
-                
-                // Setup load more button
-                const loadMoreBtn = document.getElementById('movies-load-more');
-                if (loadMoreBtn && !loadMoreBtn.hasAttribute('data-initialized')) {
-                    console.log('[RequestarrDiscover] Setting up load more button');
-                    loadMoreBtn.setAttribute('data-initialized', 'true');
-                    loadMoreBtn.addEventListener('click', () => {
-                        this.content.loadMoreMovies();
-                    });
-                }
+                this.content.setupMoviesInfiniteScroll();
                 break;
             case 'tv':
                 if (!document.getElementById('tv-carousel').children.length) {
