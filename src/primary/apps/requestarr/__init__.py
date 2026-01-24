@@ -716,6 +716,33 @@ class RequestarrAPI:
             logger.error(f"Error setting cooldown hours: {e}")
             raise
     
+    def get_discover_filters(self) -> dict:
+        """Get discover filter settings from database"""
+        try:
+            requestarr_config = self.db.get_app_config('requestarr')
+            if requestarr_config and 'discover_filters' in requestarr_config:
+                return requestarr_config['discover_filters']
+            # Default to US region
+            return {'region': 'US', 'languages': []}
+        except Exception as e:
+            logger.error(f"Error getting discover filters: {e}")
+            return {'region': 'US', 'languages': []}
+    
+    def set_discover_filters(self, region: str, languages: list):
+        """Set discover filter settings in database"""
+        try:
+            # Get existing config or create new one
+            requestarr_config = self.db.get_app_config('requestarr') or {}
+            requestarr_config['discover_filters'] = {
+                'region': region,
+                'languages': languages
+            }
+            self.db.save_app_config('requestarr', requestarr_config)
+            logger.info(f"Set discover filters - Region: {region}, Languages: {languages}")
+        except Exception as e:
+            logger.error(f"Error setting discover filters: {e}")
+            raise
+    
     def reset_cooldowns(self) -> int:
         """Reset all cooldowns with 25+ hours remaining. Returns count of reset items."""
         try:

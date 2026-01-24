@@ -283,6 +283,30 @@ def set_cooldown_settings():
         logger.error(f"Error setting cooldown settings: {e}")
         return jsonify({'success': False, 'error': 'Failed to set cooldown settings'}), 500
 
+@requestarr_bp.route('/settings/filters', methods=['GET'])
+def get_discover_filters():
+    """Get discover filter settings"""
+    try:
+        filters = requestarr_api.get_discover_filters()
+        return jsonify({'success': True, 'filters': filters})
+    except Exception as e:
+        logger.error(f"Error getting discover filters: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get discover filters'}), 500
+
+@requestarr_bp.route('/settings/filters', methods=['POST'])
+def set_discover_filters():
+    """Set discover filter settings"""
+    try:
+        data = request.get_json()
+        region = data.get('region', '')
+        languages = data.get('languages', [])
+        
+        requestarr_api.set_discover_filters(region, languages)
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error setting discover filters: {e}")
+        return jsonify({'success': False, 'error': 'Failed to set discover filters'}), 500
+
 @requestarr_bp.route('/reset-cooldowns', methods=['POST'])
 def reset_cooldowns():
     """Reset all cooldowns with 25+ hours remaining"""

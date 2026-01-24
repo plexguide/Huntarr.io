@@ -63,6 +63,7 @@ export class RequestarrSettings {
     async loadSettings() {
         console.log('[RequestarrDiscover] Loading settings...');
         
+        // Load cooldown settings
         const cooldownSelect = document.getElementById('cooldown-period');
         
         if (cooldownSelect) {
@@ -82,14 +83,292 @@ export class RequestarrSettings {
             }
         }
         
+        // Load discover filters
+        await this.loadDiscoverFilters();
+        
         const saveBtn = document.getElementById('save-requestarr-settings');
         if (saveBtn) {
             saveBtn.onclick = () => this.saveSettings();
         }
         
+        const saveFiltersBtn = document.getElementById('save-discover-filters');
+        if (saveFiltersBtn) {
+            saveFiltersBtn.onclick = () => this.saveDiscoverFilters();
+        }
+        
         const resetBtn = document.getElementById('reset-cooldowns-btn');
         if (resetBtn) {
             resetBtn.onclick = () => this.showResetCooldownsConfirmation();
+        }
+    }
+    
+    async loadDiscoverFilters() {
+        // Load regions - Full TMDB region list
+        const regionSelect = document.getElementById('discover-region');
+        if (regionSelect) {
+            // TMDB regions list (complete list from TMDB API)
+            const regions = [
+                { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
+                { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+                { code: 'AT', name: 'Austria', flag: '🇦🇹' },
+                { code: 'BE', name: 'Belgium', flag: '🇧🇪' },
+                { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
+                { code: 'CA', name: 'Canada', flag: '🇨🇦' },
+                { code: 'CL', name: 'Chile', flag: '🇨🇱' },
+                { code: 'CN', name: 'China', flag: '🇨🇳' },
+                { code: 'CO', name: 'Colombia', flag: '🇨🇴' },
+                { code: 'CZ', name: 'Czech Republic', flag: '🇨🇿' },
+                { code: 'DK', name: 'Denmark', flag: '🇩🇰' },
+                { code: 'FI', name: 'Finland', flag: '🇫🇮' },
+                { code: 'FR', name: 'France', flag: '🇫🇷' },
+                { code: 'DE', name: 'Germany', flag: '🇩🇪' },
+                { code: 'GR', name: 'Greece', flag: '🇬🇷' },
+                { code: 'HK', name: 'Hong Kong', flag: '🇭🇰' },
+                { code: 'HU', name: 'Hungary', flag: '🇭🇺' },
+                { code: 'IS', name: 'Iceland', flag: '🇮🇸' },
+                { code: 'IN', name: 'India', flag: '🇮🇳' },
+                { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
+                { code: 'IE', name: 'Ireland', flag: '🇮🇪' },
+                { code: 'IL', name: 'Israel', flag: '🇮🇱' },
+                { code: 'IT', name: 'Italy', flag: '🇮🇹' },
+                { code: 'JP', name: 'Japan', flag: '🇯🇵' },
+                { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
+                { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
+                { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
+                { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
+                { code: 'NZ', name: 'New Zealand', flag: '🇳🇿' },
+                { code: 'NO', name: 'Norway', flag: '🇳🇴' },
+                { code: 'PH', name: 'Philippines', flag: '🇵🇭' },
+                { code: 'PL', name: 'Poland', flag: '🇵🇱' },
+                { code: 'PT', name: 'Portugal', flag: '🇵🇹' },
+                { code: 'RO', name: 'Romania', flag: '🇷🇴' },
+                { code: 'RU', name: 'Russia', flag: '🇷🇺' },
+                { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' },
+                { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
+                { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
+                { code: 'ES', name: 'Spain', flag: '🇪🇸' },
+                { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
+                { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
+                { code: 'TW', name: 'Taiwan', flag: '🇹🇼' },
+                { code: 'TH', name: 'Thailand', flag: '🇹🇭' },
+                { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
+                { code: 'UA', name: 'Ukraine', flag: '🇺🇦' },
+                { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪' },
+                { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
+                { code: 'US', name: 'United States', flag: '🇺🇸' }
+            ];
+            
+            // Sort alphabetically by name
+            regions.sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Clear and rebuild select
+            regionSelect.innerHTML = '';
+            
+            regions.forEach(region => {
+                const option = document.createElement('option');
+                option.value = region.code;
+                option.textContent = `${region.flag} ${region.name}`;
+                regionSelect.appendChild(option);
+            });
+        }
+        
+        // Initialize language multi-select
+        this.initializeLanguageSelect();
+        
+        // Load saved filters
+        try {
+            const response = await fetch('./api/requestarr/settings/filters');
+            const data = await response.json();
+            
+            if (data.success && data.filters) {
+                if (regionSelect) {
+                    // Set saved region or default to US
+                    regionSelect.value = data.filters.region || 'US';
+                }
+                if (data.filters.languages && data.filters.languages.length > 0) {
+                    this.selectedLanguages = data.filters.languages;
+                    this.renderLanguageTags();
+                }
+            } else {
+                // No saved filters - default to US
+                if (regionSelect) {
+                    regionSelect.value = 'US';
+                }
+            }
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error loading discover filters:', error);
+            // On error, default to US
+            if (regionSelect) {
+                regionSelect.value = 'US';
+            }
+        }
+    }
+    
+    initializeLanguageSelect() {
+        const input = document.getElementById('discover-language');
+        const dropdown = document.getElementById('language-dropdown');
+        const languageList = document.getElementById('language-list');
+        const search = document.getElementById('language-search');
+        
+        if (!input || !dropdown || !languageList || !search) return;
+        
+        this.selectedLanguages = [];
+        
+        // Common languages list
+        this.languages = [
+            { code: 'en', name: 'English' },
+            { code: 'es', name: 'Spanish' },
+            { code: 'fr', name: 'French' },
+            { code: 'de', name: 'German' },
+            { code: 'it', name: 'Italian' },
+            { code: 'pt', name: 'Portuguese' },
+            { code: 'ja', name: 'Japanese' },
+            { code: 'ko', name: 'Korean' },
+            { code: 'zh', name: 'Chinese' },
+            { code: 'ru', name: 'Russian' },
+            { code: 'ar', name: 'Arabic' },
+            { code: 'hi', name: 'Hindi' },
+            { code: 'nl', name: 'Dutch' },
+            { code: 'sv', name: 'Swedish' },
+            { code: 'no', name: 'Norwegian' },
+            { code: 'da', name: 'Danish' },
+            { code: 'fi', name: 'Finnish' },
+            { code: 'pl', name: 'Polish' },
+            { code: 'tr', name: 'Turkish' },
+            { code: 'th', name: 'Thai' }
+        ];
+        
+        // Populate language list
+        this.renderLanguageList();
+        
+        // Toggle dropdown
+        input.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        // Search languages
+        search.addEventListener('input', (e) => {
+            this.renderLanguageList(e.target.value.toLowerCase());
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target) && e.target !== input) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+    
+    renderLanguageList(filter = '') {
+        const languageList = document.getElementById('language-list');
+        if (!languageList) return;
+        
+        const filteredLanguages = this.languages.filter(lang => 
+            lang.name.toLowerCase().includes(filter)
+        );
+        
+        languageList.innerHTML = '';
+        
+        filteredLanguages.forEach(lang => {
+            const item = document.createElement('div');
+            item.className = 'language-item';
+            item.textContent = lang.name;
+            item.dataset.code = lang.code;
+            
+            if (this.selectedLanguages.includes(lang.code)) {
+                item.classList.add('selected');
+            }
+            
+            item.addEventListener('click', () => {
+                const code = item.dataset.code;
+                const index = this.selectedLanguages.indexOf(code);
+                
+                if (index > -1) {
+                    this.selectedLanguages.splice(index, 1);
+                    item.classList.remove('selected');
+                } else {
+                    this.selectedLanguages.push(code);
+                    item.classList.add('selected');
+                }
+                
+                this.renderLanguageTags();
+            });
+            
+            languageList.appendChild(item);
+        });
+    }
+    
+    renderLanguageTags() {
+        const tagsContainer = document.getElementById('language-tags');
+        if (!tagsContainer) return;
+        
+        tagsContainer.innerHTML = '';
+        
+        if (this.selectedLanguages.length === 0) {
+            tagsContainer.innerHTML = '<span style="color: #888; font-size: 13px;">All Languages</span>';
+            return;
+        }
+        
+        this.selectedLanguages.forEach(code => {
+            const lang = this.languages.find(l => l.code === code);
+            if (!lang) return;
+            
+            const tag = document.createElement('div');
+            tag.className = 'language-tag';
+            tag.innerHTML = `
+                ${lang.name}
+                <span class="language-tag-remove" data-code="${code}">×</span>
+            `;
+            
+            tag.querySelector('.language-tag-remove').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const removeCode = e.target.dataset.code;
+                this.selectedLanguages = this.selectedLanguages.filter(c => c !== removeCode);
+                this.renderLanguageTags();
+                this.renderLanguageList();
+            });
+            
+            tagsContainer.appendChild(tag);
+        });
+    }
+    
+    async saveDiscoverFilters() {
+        const regionSelect = document.getElementById('discover-region');
+        const saveBtn = document.getElementById('save-discover-filters');
+        
+        if (!regionSelect) return;
+        
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        }
+        
+        try {
+            const response = await fetch('./api/requestarr/settings/filters', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    region: regionSelect.value,
+                    languages: this.selectedLanguages
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.core.showNotification('Discover filters saved successfully!', 'success');
+            } else {
+                this.core.showNotification('Failed to save discover filters', 'error');
+            }
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error saving discover filters:', error);
+            this.core.showNotification('Failed to save discover filters', 'error');
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Filters';
+            }
         }
     }
 

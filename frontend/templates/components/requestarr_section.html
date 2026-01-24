@@ -144,6 +144,7 @@
         <div id="requestarr-settings-view" class="requestarr-view">
             <h1 class="page-title">Requestarr Settings</h1>
             <div class="requestarr-settings-container">
+                <!-- Cooldown Settings Card -->
                 <div class="settings-card">
                     <h3>Request Cooldown Period</h3>
                     <p class="settings-description">Set how long users must wait before requesting the same item again.</p>
@@ -167,6 +168,41 @@
                         </button>
                         <button id="reset-cooldowns-btn" class="btn-secondary" style="margin-left: 10px;">
                             <i class="fas fa-undo"></i> Reset All Cooldowns (25h+)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Discover Filters Card -->
+                <div class="settings-card">
+                    <h3>Discover Filters</h3>
+                    <p class="settings-description">Filter content by regional availability and original language.</p>
+                    
+                    <div class="settings-field">
+                        <label for="discover-region">Discover Region</label>
+                        <select id="discover-region" class="settings-select" size="6">
+                            <option value="">Loading regions...</option>
+                        </select>
+                        <small>Filter content by regional availability</small>
+                    </div>
+                    
+                    <div class="settings-field">
+                        <label for="discover-language">Discover Language</label>
+                        <div class="language-select-wrapper">
+                            <div id="language-tags" class="language-tags"></div>
+                            <input type="text" id="discover-language" class="settings-input" placeholder="Select languages..." readonly>
+                            <div id="language-dropdown" class="language-dropdown" style="display: none;">
+                                <input type="text" id="language-search" class="language-search" placeholder="Search languages...">
+                                <div id="language-list" class="language-list">
+                                    <div class="language-item" data-code="">All Languages</div>
+                                </div>
+                            </div>
+                        </div>
+                        <small>Filter content by original language</small>
+                    </div>
+                    
+                    <div class="settings-actions">
+                        <button id="save-discover-filters" class="btn-primary">
+                            <i class="fas fa-save"></i> Save Filters
                         </button>
                     </div>
                 </div>
