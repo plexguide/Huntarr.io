@@ -300,11 +300,9 @@
                 <div class="filter-group">
                     <label class="filter-label">Runtime</label>
                     <div class="filter-range-text" id="runtime-display">0-400 minute runtime</div>
-                    <div class="filter-range-compact">
-                        <input type="number" id="filter-runtime-min" class="filter-number-input" value="0" min="0" max="400" placeholder="0">
-                        <span class="filter-range-separator">to</span>
-                        <input type="number" id="filter-runtime-max" class="filter-number-input" value="400" min="0" max="400" placeholder="400">
-                        <span class="filter-range-unit">minutes</span>
+                    <div class="dual-range-slider">
+                        <input type="range" id="filter-runtime-min" class="range-min" value="0" min="0" max="400" step="1">
+                        <input type="range" id="filter-runtime-max" class="range-max" value="400" min="0" max="400" step="1">
                     </div>
                 </div>
                 
@@ -312,21 +310,19 @@
                 <div class="filter-group">
                     <label class="filter-label">TMDB User Score</label>
                     <div class="filter-range-text" id="rating-display">Ratings between 0 and 10</div>
-                    <div class="filter-range-compact">
-                        <input type="number" id="filter-rating-min" class="filter-number-input" value="0" min="0" max="10" step="0.1" placeholder="0">
-                        <span class="filter-range-separator">to</span>
-                        <input type="number" id="filter-rating-max" class="filter-number-input" value="10" min="0" max="10" step="0.1" placeholder="10">
+                    <div class="dual-range-slider">
+                        <input type="range" id="filter-rating-min" class="range-min" value="0" min="0" max="10" step="0.1">
+                        <input type="range" id="filter-rating-max" class="range-max" value="10" min="0" max="10" step="0.1">
                     </div>
                 </div>
                 
                 <!-- TMDB User Vote Count -->
                 <div class="filter-group">
                     <label class="filter-label">TMDB User Vote Count</label>
-                    <div class="filter-range-text" id="votes-display">Number of votes between 0 and 1000</div>
-                    <div class="filter-range-compact">
-                        <input type="number" id="filter-votes-min" class="filter-number-input" value="0" min="0" max="10000" placeholder="0">
-                        <span class="filter-range-separator">to</span>
-                        <input type="number" id="filter-votes-max" class="filter-number-input" value="10000" min="0" max="10000" placeholder="1000">
+                    <div class="filter-range-text" id="votes-display">Number of votes between 0 and 10000</div>
+                    <div class="dual-range-slider">
+                        <input type="range" id="filter-votes-min" class="range-min" value="0" min="0" max="10000" step="10">
+                        <input type="range" id="filter-votes-max" class="range-max" value="10000" min="0" max="10000" step="10">
                     </div>
                 </div>
             </div>

@@ -2543,3 +2543,212 @@ input:disabled + .toggle-slider {
 .filter-btn-apply:hover {
     background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
 }
+
+/* Range Slider Styling - Huntarr Gold Theme */
+.filter-slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.filter-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: rgba(75, 85, 99, 0.3);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.filter-slider:hover {
+    background: rgba(75, 85, 99, 0.4);
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+.filter-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #1a1d2e;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    transition: all 0.2s;
+}
+
+.filter-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 12px rgba(245, 158, 11, 0.6);
+}
+
+.filter-slider::-webkit-slider-thumb:active {
+    transform: scale(1.05);
+}
+
+/* Firefox */
+.filter-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #1a1d2e;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    transition: all 0.2s;
+}
+
+.filter-slider::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 12px rgba(245, 158, 11, 0.6);
+}
+
+.filter-slider::-moz-range-thumb:active {
+    transform: scale(1.05);
+}
+
+.filter-slider::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(75, 85, 99, 0.3);
+    border-radius: 3px;
+}
+
+/* Focus states */
+.filter-slider:focus {
+    outline: none;
+}
+
+.filter-slider:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2), 0 3px 12px rgba(245, 158, 11, 0.6);
+}
+
+.filter-slider:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2), 0 3px 12px rgba(245, 158, 11, 0.6);
+}
+
+/* Dual Range Slider - Single Bar with Two Thumbs */
+.dual-range-slider {
+    position: relative;
+    height: 30px;
+    display: flex;
+    align-items: center;
+}
+
+.dual-range-slider input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background: transparent;
+    pointer-events: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Background track (only show for the max slider) */
+.dual-range-slider .range-max {
+    background: rgba(75, 85, 99, 0.3);
+    border-radius: 3px;
+}
+
+.dual-range-slider .range-min {
+    background: transparent;
+}
+
+/* Thumbs for both sliders */
+.dual-range-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    border: 2px solid #1a1d2e;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    transition: all 0.2s;
+    position: relative;
+    z-index: 3;
+}
+
+.dual-range-slider input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    border: 2px solid #1a1d2e;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    transition: all 0.2s;
+    position: relative;
+    z-index: 3;
+}
+
+/* Hover effects */
+.dual-range-slider input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 12px rgba(245, 158, 11, 0.6);
+}
+
+.dual-range-slider input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 12px rgba(245, 158, 11, 0.6);
+}
+
+/* Active/dragging state */
+.dual-range-slider input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2), 0 3px 12px rgba(245, 158, 11, 0.6);
+}
+
+.dual-range-slider input[type="range"]:active::-moz-range-thumb {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2), 0 3px 12px rgba(245, 158, 11, 0.6);
+}
+
+/* Focus state */
+.dual-range-slider input[type="range"]:focus {
+    outline: none;
+}
+
+.dual-range-slider input[type="range"]:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2), 0 3px 12px rgba(245, 158, 11, 0.6);
+}
+
+.dual-range-slider input[type="range"]:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2), 0 3px 12px rgba(245, 158, 11, 0.6);
+}
+
+/* Track styling for Firefox */
+.dual-range-slider input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    background: transparent;
+    border: none;
+}
+
+.dual-range-slider .range-max::-moz-range-track {
+    background: rgba(75, 85, 99, 0.3);
+    border-radius: 3px;
+}
+
+/* Make sure min slider is on top when values are close */
+.dual-range-slider .range-min {
+    z-index: 4;
+}
+
+.dual-range-slider .range-max {
+    z-index: 3;
+}
+
+/* When min slider is being used, put it on top */
+.dual-range-slider .range-min:active {
+    z-index: 5;
+}

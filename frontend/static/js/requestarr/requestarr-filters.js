@@ -236,8 +236,8 @@ export class RequestarrFilters {
     }
 
     updateRuntimeDisplay() {
-        const min = document.getElementById('filter-runtime-min').value;
-        const max = document.getElementById('filter-runtime-max').value;
+        const min = parseInt(document.getElementById('filter-runtime-min').value);
+        const max = parseInt(document.getElementById('filter-runtime-max').value);
         const display = document.getElementById('runtime-display');
         if (display) {
             display.textContent = `${min}-${max} minute runtime`;
@@ -245,8 +245,8 @@ export class RequestarrFilters {
     }
 
     updateRatingDisplay() {
-        const min = document.getElementById('filter-rating-min').value;
-        const max = document.getElementById('filter-rating-max').value;
+        const min = parseFloat(document.getElementById('filter-rating-min').value);
+        const max = parseFloat(document.getElementById('filter-rating-max').value);
         const display = document.getElementById('rating-display');
         if (display) {
             display.textContent = `Ratings between ${min} and ${max}`;
@@ -254,8 +254,8 @@ export class RequestarrFilters {
     }
 
     updateVotesDisplay() {
-        const min = document.getElementById('filter-votes-min').value;
-        const max = document.getElementById('filter-votes-max').value;
+        const min = parseInt(document.getElementById('filter-votes-min').value);
+        const max = parseInt(document.getElementById('filter-votes-max').value);
         const display = document.getElementById('votes-display');
         if (display) {
             display.textContent = `Number of votes between ${min} and ${max}`;
