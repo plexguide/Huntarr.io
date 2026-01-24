@@ -5,11 +5,17 @@
 export class RequestarrFilters {
     constructor(core) {
         this.core = core;
+        
+        // Calculate max year (current year + 3)
+        const currentYear = new Date().getFullYear();
+        this.maxYear = currentYear + 3;
+        this.minYear = 1900;
+        
         this.activeFilters = {
             genres: [],
             language: '',
-            releaseFrom: '',
-            releaseTo: '',
+            yearMin: this.minYear,
+            yearMax: this.maxYear,
             runtimeMin: 0,
             runtimeMax: 400,
             ratingMin: 0,
@@ -23,8 +29,25 @@ export class RequestarrFilters {
 
     init() {
         this.loadGenres();
+        this.setupYearRangeSlider();
         this.setupEventListeners();
         this.updateFilterDisplay();
+    }
+    
+    setupYearRangeSlider() {
+        // Set dynamic year range in HTML
+        const yearMin = document.getElementById('filter-year-min');
+        const yearMax = document.getElementById('filter-year-max');
+        
+        if (yearMin && yearMax) {
+            yearMin.max = this.maxYear;
+            yearMin.value = this.minYear;
+            yearMax.max = this.maxYear;
+            yearMax.value = this.maxYear;
+            
+            this.updateYearDisplay();
+            this.updateSliderRange('year', yearMin, yearMax);
+        }
     }
 
     async loadGenres() {
@@ -192,6 +215,38 @@ export class RequestarrFilters {
             });
         }
 
+        // Language dropdown - auto-apply
+        const languageSelect = document.getElementById('filter-language');
+        if (languageSelect) {
+            languageSelect.addEventListener('change', () => {
+                this.autoApplyFilters();
+            });
+        }
+
+        // Year range inputs - auto-apply on change
+        const yearMin = document.getElementById('filter-year-min');
+        const yearMax = document.getElementById('filter-year-max');
+        if (yearMin && yearMax) {
+            yearMin.addEventListener('input', () => {
+                this.updateYearDisplay();
+                this.updateSliderRange('year', yearMin, yearMax);
+                this.updateModalFilterCount();
+            });
+            yearMin.addEventListener('change', () => {
+                this.autoApplyFilters();
+            });
+            yearMax.addEventListener('input', () => {
+                this.updateYearDisplay();
+                this.updateSliderRange('year', yearMin, yearMax);
+                this.updateModalFilterCount();
+            });
+            yearMax.addEventListener('change', () => {
+                this.autoApplyFilters();
+            });
+            // Initial range fill
+            this.updateSliderRange('year', yearMin, yearMax);
+        }
+
         // Runtime range inputs
         const runtimeMin = document.getElementById('filter-runtime-min');
         const runtimeMax = document.getElementById('filter-runtime-max');
@@ -263,6 +318,15 @@ export class RequestarrFilters {
         rangeElement.style.width = (percentMax - percentMin) + '%';
     }
 
+    updateYearDisplay() {
+        const min = parseInt(document.getElementById('filter-year-min').value);
+        const max = parseInt(document.getElementById('filter-year-max').value);
+        const display = document.getElementById('year-display');
+        if (display) {
+            display.textContent = `Movies from ${min} to ${max}`;
+        }
+    }
+
     updateRuntimeDisplay() {
         const min = parseInt(document.getElementById('filter-runtime-min').value);
         const max = parseInt(document.getElementById('filter-runtime-max').value);
@@ -315,9 +379,9 @@ export class RequestarrFilters {
 
     loadFilterValues() {
         // Load current active filters into the modal
-        document.getElementById('filter-release-from').value = this.activeFilters.releaseFrom || '';
-        document.getElementById('filter-release-to').value = this.activeFilters.releaseTo || '';
         document.getElementById('filter-language').value = this.activeFilters.language || '';
+        document.getElementById('filter-year-min').value = this.activeFilters.yearMin;
+        document.getElementById('filter-year-max').value = this.activeFilters.yearMax;
         document.getElementById('filter-runtime-min').value = this.activeFilters.runtimeMin;
         document.getElementById('filter-runtime-max').value = this.activeFilters.runtimeMax;
         document.getElementById('filter-rating-min').value = this.activeFilters.ratingMin;
@@ -339,18 +403,42 @@ export class RequestarrFilters {
             }
         });
 
+        this.updateYearDisplay();
         this.updateRuntimeDisplay();
         this.updateRatingDisplay();
         this.updateVotesDisplay();
         this.updateModalFilterCount();
     }
 
+    autoApplyFilters() {
+        // Auto-apply filters without closing the modal (Overseerr-style)
+        // Genres are already tracked in activeFilters.genres
+        
+        this.activeFilters.language = document.getElementById('filter-language')?.value || '';
+        this.activeFilters.yearMin = parseInt(document.getElementById('filter-year-min')?.value || this.minYear);
+        this.activeFilters.yearMax = parseInt(document.getElementById('filter-year-max')?.value || this.maxYear);
+        this.activeFilters.runtimeMin = parseInt(document.getElementById('filter-runtime-min')?.value || 0);
+        this.activeFilters.runtimeMax = parseInt(document.getElementById('filter-runtime-max')?.value || 400);
+        this.activeFilters.ratingMin = parseFloat(document.getElementById('filter-rating-min')?.value || 0);
+        this.activeFilters.ratingMax = parseFloat(document.getElementById('filter-rating-max')?.value || 10);
+        this.activeFilters.votesMin = parseInt(document.getElementById('filter-votes-min')?.value || 0);
+        this.activeFilters.votesMax = parseInt(document.getElementById('filter-votes-max')?.value || 10000);
+
+        // Update filter count display
+        this.updateFilterDisplay();
+
+        // Reload movies with new filters (without closing modal)
+        this.core.content.moviesPage = 1;
+        this.core.content.moviesHasMore = true;
+        this.core.content.loadMovies();
+    }
+
     applyFilters() {
         // Genres are already tracked in activeFilters.genres via renderSelectedGenres
         
         this.activeFilters.language = document.getElementById('filter-language').value;
-        this.activeFilters.releaseFrom = document.getElementById('filter-release-from').value;
-        this.activeFilters.releaseTo = document.getElementById('filter-release-to').value;
+        this.activeFilters.yearMin = parseInt(document.getElementById('filter-year-min').value);
+        this.activeFilters.yearMax = parseInt(document.getElementById('filter-year-max').value);
         this.activeFilters.runtimeMin = parseInt(document.getElementById('filter-runtime-min').value);
         this.activeFilters.runtimeMax = parseInt(document.getElementById('filter-runtime-max').value);
         this.activeFilters.ratingMin = parseFloat(document.getElementById('filter-rating-min').value);
@@ -374,8 +462,8 @@ export class RequestarrFilters {
         this.activeFilters = {
             genres: [],
             language: '',
-            releaseFrom: '',
-            releaseTo: '',
+            yearMin: this.minYear,
+            yearMax: this.maxYear,
             runtimeMin: 0,
             runtimeMax: 400,
             ratingMin: 0,
@@ -405,7 +493,7 @@ export class RequestarrFilters {
         
         if (this.activeFilters.genres.length > 0) count++;
         if (this.activeFilters.language) count++;
-        if (this.activeFilters.releaseFrom || this.activeFilters.releaseTo) count++;
+        if (this.activeFilters.yearMin > this.minYear || this.activeFilters.yearMax < this.maxYear) count++;
         if (this.activeFilters.runtimeMin > 0 || this.activeFilters.runtimeMax < 400) count++;
         if (this.activeFilters.ratingMin > 0 || this.activeFilters.ratingMax < 10) count++;
         if (this.activeFilters.votesMin > 0 || this.activeFilters.votesMax < 10000) count++;
@@ -430,9 +518,9 @@ export class RequestarrFilters {
         const language = document.getElementById('filter-language')?.value;
         if (language) count++;
         
-        const releaseFrom = document.getElementById('filter-release-from')?.value;
-        const releaseTo = document.getElementById('filter-release-to')?.value;
-        if (releaseFrom || releaseTo) count++;
+        const yearMin = parseInt(document.getElementById('filter-year-min')?.value || this.minYear);
+        const yearMax = parseInt(document.getElementById('filter-year-max')?.value || this.maxYear);
+        if (yearMin > this.minYear || yearMax < this.maxYear) count++;
         
         const runtimeMin = parseInt(document.getElementById('filter-runtime-min')?.value || 0);
         const runtimeMax = parseInt(document.getElementById('filter-runtime-max')?.value || 400);
@@ -475,11 +563,12 @@ export class RequestarrFilters {
         if (this.activeFilters.language) {
             params.append('with_original_language', this.activeFilters.language);
         }
-        if (this.activeFilters.releaseFrom) {
-            params.append('release_date.gte', this.activeFilters.releaseFrom);
+        // Convert years to dates (Jan 1 for min year, Dec 31 for max year)
+        if (this.activeFilters.yearMin > this.minYear) {
+            params.append('release_date.gte', `${this.activeFilters.yearMin}-01-01`);
         }
-        if (this.activeFilters.releaseTo) {
-            params.append('release_date.lte', this.activeFilters.releaseTo);
+        if (this.activeFilters.yearMax < this.maxYear) {
+            params.append('release_date.lte', `${this.activeFilters.yearMax}-12-31`);
         }
         if (this.activeFilters.runtimeMin > 0 || this.activeFilters.runtimeMax < 400) {
             params.append('with_runtime.gte', this.activeFilters.runtimeMin);

@@ -239,21 +239,6 @@
                     <span id="filter-active-count">0 Active Filters</span>
                 </div>
                 
-                <!-- Release Date -->
-                <div class="filter-group">
-                    <label class="filter-label">Release Date</label>
-                    <div class="filter-row">
-                        <div class="filter-col">
-                            <label class="filter-sublabel">From</label>
-                            <input type="date" id="filter-release-from" class="filter-date-input">
-                        </div>
-                        <div class="filter-col">
-                            <label class="filter-sublabel">To</label>
-                            <input type="date" id="filter-release-to" class="filter-date-input">
-                        </div>
-                    </div>
-                </div>
-                
                 <!-- Genres -->
                 <div class="filter-group">
                     <label class="filter-label">Genres</label>
@@ -294,6 +279,18 @@
                         <option value="ko">Korean</option>
                         <option value="zh">Chinese</option>
                     </select>
+                </div>
+                
+                <!-- Release Year Range -->
+                <div class="filter-group">
+                    <label class="filter-label">Release Year</label>
+                    <div class="filter-range-text" id="year-display">Movies from 1900 to 2029</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="year-range"></div>
+                        <input type="range" id="filter-year-min" class="range-min" value="1900" min="1900" max="2029" step="1">
+                        <input type="range" id="filter-year-max" class="range-max" value="2029" min="1900" max="2029" step="1">
+                    </div>
                 </div>
                 
                 <!-- Runtime -->
