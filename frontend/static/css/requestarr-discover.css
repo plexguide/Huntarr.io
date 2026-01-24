@@ -2889,3 +2889,107 @@ input:disabled + .toggle-slider {
 .dual-range-slider .range-min:active {
     z-index: 5;
 }
+
+/* Fix overflow issue in movies view */
+#requestarr-section .requestarr-content {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.requestarr-view {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.movies-controls {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.media-grid {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Fix Movies view padding to match Discover view */
+.movies-controls {
+    padding: 0 !important;
+    margin: 20px 0 !important;
+}
+
+.media-grid {
+    padding: 0 0 40px 0 !important;
+}
+
+/* Ensure no extra space on the right */
+#requestarr-movies-view {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+/* Match Movies view layout exactly to Discover view */
+#requestarr-section .requestarr-content {
+    padding: 20px 30px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+#requestarr-movies-view {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+}
+
+.movies-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 0 20px 0;
+    padding: 0;
+    gap: 15px;
+}
+
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+    padding: 0;
+    min-height: 400px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Ensure proper alignment */
+.requestarr-view {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+}
+
+@media (max-width: 768px) {
+    #requestarr-section .requestarr-content {
+        padding: 20px 15px;
+    }
+    
+    .media-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 15px;
+    }
+}
+
+/* Fix Movies grid stretching columns */
+.media-grid {
+    grid-template-columns: repeat(auto-fill, 150px) !important;
+    justify-content: start;
+}
+
+@media (max-width: 768px) {
+    .media-grid {
+        grid-template-columns: repeat(auto-fill, 120px) !important;
+        justify-content: start;
+    }
+}
