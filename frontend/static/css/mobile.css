@@ -31,10 +31,20 @@
     
     /* Add spacing between nav items on mobile */
     .sidebar .nav-menu {
-        gap: 8px !important;
+        gap: 0 !important;
     }
     
     .sidebar .nav-item {
+        margin-bottom: 6px !important;
+    }
+    
+    /* Add spacing between nav groups */
+    .sidebar .nav-group {
+        margin-bottom: 6px !important;
+    }
+    
+    /* Remove extra spacing from last nav item in groups */
+    .sidebar .nav-group .nav-item:last-child {
         margin-bottom: 0 !important;
     }
     
