@@ -61,8 +61,6 @@ export class RequestarrSettings {
     // ========================================
 
     async loadSettings() {
-        console.log('[RequestarrDiscover] Loading settings...');
-        
         // Load cooldown settings
         const cooldownSelect = document.getElementById('cooldown-period');
         
@@ -104,73 +102,65 @@ export class RequestarrSettings {
     
     async loadDiscoverFilters() {
         // Load regions - Full TMDB region list
-        const regionSelect = document.getElementById('discover-region');
-        if (regionSelect) {
-            // TMDB regions list (complete list from TMDB API)
-            const regions = [
-                { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
-                { code: 'AU', name: 'Australia', flag: '🇦🇺' },
-                { code: 'AT', name: 'Austria', flag: '🇦🇹' },
-                { code: 'BE', name: 'Belgium', flag: '🇧🇪' },
-                { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
-                { code: 'CA', name: 'Canada', flag: '🇨🇦' },
-                { code: 'CL', name: 'Chile', flag: '🇨🇱' },
-                { code: 'CN', name: 'China', flag: '🇨🇳' },
-                { code: 'CO', name: 'Colombia', flag: '🇨🇴' },
-                { code: 'CZ', name: 'Czech Republic', flag: '🇨🇿' },
-                { code: 'DK', name: 'Denmark', flag: '🇩🇰' },
-                { code: 'FI', name: 'Finland', flag: '🇫🇮' },
-                { code: 'FR', name: 'France', flag: '🇫🇷' },
-                { code: 'DE', name: 'Germany', flag: '🇩🇪' },
-                { code: 'GR', name: 'Greece', flag: '🇬🇷' },
-                { code: 'HK', name: 'Hong Kong', flag: '🇭🇰' },
-                { code: 'HU', name: 'Hungary', flag: '🇭🇺' },
-                { code: 'IS', name: 'Iceland', flag: '🇮🇸' },
-                { code: 'IN', name: 'India', flag: '🇮🇳' },
-                { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
-                { code: 'IE', name: 'Ireland', flag: '🇮🇪' },
-                { code: 'IL', name: 'Israel', flag: '🇮🇱' },
-                { code: 'IT', name: 'Italy', flag: '🇮🇹' },
-                { code: 'JP', name: 'Japan', flag: '🇯🇵' },
-                { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
-                { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
-                { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
-                { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
-                { code: 'NZ', name: 'New Zealand', flag: '🇳🇿' },
-                { code: 'NO', name: 'Norway', flag: '🇳🇴' },
-                { code: 'PH', name: 'Philippines', flag: '🇵🇭' },
-                { code: 'PL', name: 'Poland', flag: '🇵🇱' },
-                { code: 'PT', name: 'Portugal', flag: '🇵🇹' },
-                { code: 'RO', name: 'Romania', flag: '🇷🇴' },
-                { code: 'RU', name: 'Russia', flag: '🇷🇺' },
-                { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' },
-                { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
-                { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
-                { code: 'ES', name: 'Spain', flag: '🇪🇸' },
-                { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
-                { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
-                { code: 'TW', name: 'Taiwan', flag: '🇹🇼' },
-                { code: 'TH', name: 'Thailand', flag: '🇹🇭' },
-                { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
-                { code: 'UA', name: 'Ukraine', flag: '🇺🇦' },
-                { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪' },
-                { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
-                { code: 'US', name: 'United States', flag: '🇺🇸' }
-            ];
-            
-            // Sort alphabetically by name
-            regions.sort((a, b) => a.name.localeCompare(b.name));
-            
-            // Clear and rebuild select
-            regionSelect.innerHTML = '';
-            
-            regions.forEach(region => {
-                const option = document.createElement('option');
-                option.value = region.code;
-                option.textContent = `${region.flag} ${region.name}`;
-                regionSelect.appendChild(option);
-            });
-        }
+        const regions = [
+            { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
+            { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+            { code: 'AT', name: 'Austria', flag: '🇦🇹' },
+            { code: 'BE', name: 'Belgium', flag: '🇧🇪' },
+            { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
+            { code: 'CA', name: 'Canada', flag: '🇨🇦' },
+            { code: 'CL', name: 'Chile', flag: '🇨🇱' },
+            { code: 'CN', name: 'China', flag: '🇨🇳' },
+            { code: 'CO', name: 'Colombia', flag: '🇨🇴' },
+            { code: 'CZ', name: 'Czech Republic', flag: '🇨🇿' },
+            { code: 'DK', name: 'Denmark', flag: '🇩🇰' },
+            { code: 'FI', name: 'Finland', flag: '🇫🇮' },
+            { code: 'FR', name: 'France', flag: '🇫🇷' },
+            { code: 'DE', name: 'Germany', flag: '🇩🇪' },
+            { code: 'GR', name: 'Greece', flag: '🇬🇷' },
+            { code: 'HK', name: 'Hong Kong', flag: '🇭🇰' },
+            { code: 'HU', name: 'Hungary', flag: '🇭🇺' },
+            { code: 'IS', name: 'Iceland', flag: '🇮🇸' },
+            { code: 'IN', name: 'India', flag: '🇮🇳' },
+            { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
+            { code: 'IE', name: 'Ireland', flag: '🇮🇪' },
+            { code: 'IL', name: 'Israel', flag: '🇮🇱' },
+            { code: 'IT', name: 'Italy', flag: '🇮🇹' },
+            { code: 'JP', name: 'Japan', flag: '🇯🇵' },
+            { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
+            { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
+            { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
+            { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
+            { code: 'NZ', name: 'New Zealand', flag: '🇳🇿' },
+            { code: 'NO', name: 'Norway', flag: '🇳🇴' },
+            { code: 'PH', name: 'Philippines', flag: '🇵🇭' },
+            { code: 'PL', name: 'Poland', flag: '🇵🇱' },
+            { code: 'PT', name: 'Portugal', flag: '🇵🇹' },
+            { code: 'RO', name: 'Romania', flag: '🇷🇴' },
+            { code: 'RU', name: 'Russia', flag: '🇷🇺' },
+            { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' },
+            { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
+            { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
+            { code: 'ES', name: 'Spain', flag: '🇪🇸' },
+            { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
+            { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
+            { code: 'TW', name: 'Taiwan', flag: '🇹🇼' },
+            { code: 'TH', name: 'Thailand', flag: '🇹🇭' },
+            { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
+            { code: 'UA', name: 'Ukraine', flag: '🇺🇦' },
+            { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪' },
+            { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
+            { code: 'US', name: 'United States', flag: '🇺🇸' }
+        ];
+        
+        // Sort alphabetically by name
+        regions.sort((a, b) => a.name.localeCompare(b.name));
+        
+        this.regions = regions;
+        this.selectedRegion = 'US'; // Default
+        
+        // Initialize custom region select
+        this.initializeRegionSelect();
         
         // Initialize language multi-select
         this.initializeLanguageSelect();
@@ -181,9 +171,9 @@ export class RequestarrSettings {
             const data = await response.json();
             
             if (data.success && data.filters) {
-                if (regionSelect) {
-                    // Set saved region or default to US
-                    regionSelect.value = data.filters.region || 'US';
+                if (data.filters.region) {
+                    this.selectedRegion = data.filters.region;
+                    this.updateRegionDisplay();
                 }
                 if (data.filters.languages && data.filters.languages.length > 0) {
                     this.selectedLanguages = data.filters.languages;
@@ -191,16 +181,110 @@ export class RequestarrSettings {
                 }
             } else {
                 // No saved filters - default to US
-                if (regionSelect) {
-                    regionSelect.value = 'US';
-                }
+                this.selectedRegion = 'US';
+                this.updateRegionDisplay();
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading discover filters:', error);
             // On error, default to US
-            if (regionSelect) {
-                regionSelect.value = 'US';
+            this.selectedRegion = 'US';
+            this.updateRegionDisplay();
+        }
+    }
+    
+    initializeRegionSelect() {
+        const display = document.getElementById('region-select-display');
+        const dropdown = document.getElementById('region-dropdown');
+        const search = document.getElementById('region-search');
+        const list = document.getElementById('region-list');
+        
+        if (!display || !dropdown || !search || !list) {
+            return;
+        }
+        
+        // Check if already initialized
+        if (this.regionSelectInitialized) {
+            return;
+        }
+        
+        // Populate region list first
+        this.renderRegionList();
+        
+        // Toggle dropdown - Direct approach
+        display.onclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            if (dropdown.style.display === 'none' || !dropdown.style.display) {
+                dropdown.style.display = 'block';
+                display.classList.add('open');
+            } else {
+                dropdown.style.display = 'none';
+                display.classList.remove('open');
             }
+        };
+        
+        // Search regions
+        search.addEventListener('input', (e) => {
+            this.renderRegionList(e.target.value.toLowerCase());
+        });
+        
+        // Prevent dropdown from closing when clicking inside it
+        dropdown.onclick = (e) => {
+            e.stopPropagation();
+        };
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!display.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+                display.classList.remove('open');
+            }
+        });
+        
+        this.regionSelectInitialized = true;
+    }
+    
+    renderRegionList(filter = '') {
+        const list = document.getElementById('region-list');
+        if (!list) return;
+        
+        const filteredRegions = this.regions.filter(region => 
+            region.name.toLowerCase().includes(filter)
+        );
+        
+        list.innerHTML = '';
+        
+        filteredRegions.forEach(region => {
+            const option = document.createElement('div');
+            option.className = 'custom-select-option';
+            option.textContent = `${region.flag} ${region.name}`;
+            option.dataset.code = region.code;
+            
+            if (this.selectedRegion === region.code) {
+                option.classList.add('selected');
+            }
+            
+            option.onclick = (e) => {
+                e.stopPropagation();
+                this.selectedRegion = region.code;
+                this.updateRegionDisplay();
+                this.renderRegionList(); // Re-render to update selected state
+                document.getElementById('region-dropdown').style.display = 'none';
+                document.getElementById('region-select-display').classList.remove('open');
+            };
+            
+            list.appendChild(option);
+        });
+    }
+    
+    updateRegionDisplay() {
+        const selectedText = document.getElementById('region-selected-text');
+        if (!selectedText) return;
+        
+        const region = this.regions.find(r => r.code === this.selectedRegion);
+        if (region) {
+            selectedText.textContent = `${region.flag} ${region.name}`;
         }
     }
     
@@ -210,9 +294,20 @@ export class RequestarrSettings {
         const languageList = document.getElementById('language-list');
         const search = document.getElementById('language-search');
         
-        if (!input || !dropdown || !languageList || !search) return;
+        console.log('[RequestarrSettings] Initializing language select...', { input, dropdown, languageList, search });
         
-        this.selectedLanguages = [];
+        if (!input || !dropdown || !languageList || !search) {
+            console.warn('[RequestarrSettings] Language select elements not found');
+            return;
+        }
+        
+        // Check if already initialized
+        if (this.languageSelectInitialized) {
+            console.log('[RequestarrSettings] Language select already initialized');
+            return;
+        }
+        
+        this.selectedLanguages = this.selectedLanguages || [];
         
         // Common languages list
         this.languages = [
@@ -241,14 +336,20 @@ export class RequestarrSettings {
         // Populate language list
         this.renderLanguageList();
         
-        // Toggle dropdown
-        input.addEventListener('click', (e) => {
+        // Toggle dropdown - use function to preserve 'this' context
+        const toggleDropdown = (e) => {
             e.stopPropagation();
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        });
+            console.log('[RequestarrSettings] Language input clicked, toggling dropdown');
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+            console.log('[RequestarrSettings] Dropdown now:', dropdown.style.display);
+        };
+        
+        input.addEventListener('click', toggleDropdown);
         
         // Search languages
         search.addEventListener('input', (e) => {
+            console.log('[RequestarrSettings] Search input:', e.target.value);
             this.renderLanguageList(e.target.value.toLowerCase());
         });
         
@@ -258,6 +359,9 @@ export class RequestarrSettings {
                 dropdown.style.display = 'none';
             }
         });
+        
+        this.languageSelectInitialized = true;
+        console.log('[RequestarrSettings] Language select initialized successfully');
     }
     
     renderLanguageList(filter = '') {
@@ -334,10 +438,7 @@ export class RequestarrSettings {
     }
     
     async saveDiscoverFilters() {
-        const regionSelect = document.getElementById('discover-region');
         const saveBtn = document.getElementById('save-discover-filters');
-        
-        if (!regionSelect) return;
         
         if (saveBtn) {
             saveBtn.disabled = true;
@@ -349,8 +450,8 @@ export class RequestarrSettings {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    region: regionSelect.value,
-                    languages: this.selectedLanguages
+                    region: this.selectedRegion || 'US',
+                    languages: this.selectedLanguages || []
                 })
             });
             

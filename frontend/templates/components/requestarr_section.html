@@ -179,9 +179,20 @@
                     
                     <div class="settings-field">
                         <label for="discover-region">Discover Region</label>
-                        <select id="discover-region" class="settings-select" size="6">
-                            <option value="">Loading regions...</option>
-                        </select>
+                        <div class="custom-select-wrapper">
+                            <div id="region-select-display" class="custom-select-display">
+                                <span id="region-selected-text">🇺🇸 United States</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div id="region-dropdown" class="custom-select-dropdown" style="display: none;">
+                                <div class="custom-select-search">
+                                    <input type="text" id="region-search" placeholder="Search regions..." />
+                                </div>
+                                <div id="region-list" class="custom-select-list">
+                                    <!-- Options will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
                         <small>Filter content by regional availability</small>
                     </div>
                     
