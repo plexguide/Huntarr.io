@@ -1703,6 +1703,23 @@ input:disabled + .toggle-slider {
     gap: 15px;
 }
 
+.instance-selector-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.instance-label {
+    color: #9ca3af;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.instance-select {
+    min-width: 180px;
+}
+
 .sort-dropdown {
     flex: 1;
     max-width: 300px;

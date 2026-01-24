@@ -159,7 +159,7 @@ export class RequestarrSettings {
             <div class="media-card-info">
                 <div class="media-card-title" title="${item.title}">${item.title}</div>
                 <div class="media-card-meta">
-                    <span class="media-card-year">${item.media_type === 'movie' ? 'Movie' : 'TV Show'}</span>
+                    <span class="media-card-year">${item.app_type}/${item.instance_name}</span>
                 </div>
             </div>
         `;
@@ -168,19 +168,19 @@ export class RequestarrSettings {
         if (unhideBtn) {
             unhideBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                await this.unhideMedia(item.tmdb_id, item.media_type, item.title, card);
+                await this.unhideMedia(item.tmdb_id, item.media_type, item.app_type, item.instance_name, item.title, card);
             });
         }
         
         return card;
     }
 
-    async unhideMedia(tmdbId, mediaType, title, cardElement) {
+    async unhideMedia(tmdbId, mediaType, appType, instanceName, title, cardElement) {
         try {
-            const confirmed = confirm(`Unhide "${title}"?\n\nThis will make it visible in discovery again.`);
+            const confirmed = confirm(`Unhide "${title}"?\n\nThis will make it visible in ${appType}/${instanceName} again.`);
             if (!confirmed) return;
 
-            const response = await fetch(`./api/requestarr/hidden-media/${tmdbId}/${mediaType}`, {
+            const response = await fetch(`./api/requestarr/hidden-media/${tmdbId}/${mediaType}/${appType}/${instanceName}`, {
                 method: 'DELETE'
             });
 

@@ -81,6 +81,12 @@
         <div id="requestarr-movies-view" class="requestarr-view" style="display: none;">
             <!-- Controls Bar -->
             <div class="movies-controls">
+                <div class="instance-selector-container">
+                    <label for="movies-instance-select" class="instance-label">Instance:</label>
+                    <select id="movies-instance-select" class="control-select instance-select">
+                        <option value="">Loading instances...</option>
+                    </select>
+                </div>
                 <div class="sort-dropdown">
                     <select id="movies-sort" class="control-select">
                         <option value="popularity.desc">Popularity</option>
@@ -115,6 +121,12 @@
         <div id="requestarr-tv-view" class="requestarr-view" style="display: none;">
             <!-- Controls Bar -->
             <div class="movies-controls">
+                <div class="instance-selector-container">
+                    <label for="tv-instance-select" class="instance-label">Instance:</label>
+                    <select id="tv-instance-select" class="control-select instance-select">
+                        <option value="">Loading instances...</option>
+                    </select>
+                </div>
                 <div class="sort-dropdown">
                     <select id="tv-sort" class="control-select">
                         <option value="popularity.desc">Popularity</option>

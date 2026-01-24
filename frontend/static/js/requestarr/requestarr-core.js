@@ -136,18 +136,40 @@ export class RequestarrDiscover {
                 }
                 break;
             case 'movies':
-                // Reset movies page state and load
-                this.content.moviesPage = 1;
-                this.content.moviesHasMore = true;
-                this.content.loadMovies();
-                this.content.setupMoviesInfiniteScroll();
+                // Setup instance selector if not done yet
+                if (!this.content.selectedMovieInstance) {
+                    this.content.setupInstanceSelectors().then(() => {
+                        // Reset movies page state and load
+                        this.content.moviesPage = 1;
+                        this.content.moviesHasMore = true;
+                        this.content.loadMovies();
+                        this.content.setupMoviesInfiniteScroll();
+                    });
+                } else {
+                    // Reset movies page state and load
+                    this.content.moviesPage = 1;
+                    this.content.moviesHasMore = true;
+                    this.content.loadMovies();
+                    this.content.setupMoviesInfiniteScroll();
+                }
                 break;
             case 'tv':
-                // Reset TV page state and load
-                this.content.tvPage = 1;
-                this.content.tvHasMore = true;
-                this.content.loadTV();
-                this.content.setupTVInfiniteScroll();
+                // Setup instance selector if not done yet
+                if (!this.content.selectedTVInstance) {
+                    this.content.setupInstanceSelectors().then(() => {
+                        // Reset TV page state and load
+                        this.content.tvPage = 1;
+                        this.content.tvHasMore = true;
+                        this.content.loadTV();
+                        this.content.setupTVInfiniteScroll();
+                    });
+                } else {
+                    // Reset TV page state and load
+                    this.content.tvPage = 1;
+                    this.content.tvHasMore = true;
+                    this.content.loadTV();
+                    this.content.setupTVInfiniteScroll();
+                }
                 break;
             case 'history':
                 this.settings.loadHistory();

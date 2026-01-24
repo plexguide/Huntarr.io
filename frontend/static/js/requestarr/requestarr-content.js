@@ -13,6 +13,98 @@ export class RequestarrContent {
         this.tvHasMore = true;
         this.isLoadingTV = false;
         this.tvObserver = null;
+        
+        // Instance tracking
+        this.selectedMovieInstance = null;
+        this.selectedTVInstance = null;
+    }
+
+    // ========================================
+    // INSTANCE MANAGEMENT
+    // ========================================
+
+    async setupInstanceSelectors() {
+        // Load and populate instance selectors
+        await this.loadMovieInstances();
+        await this.loadTVInstances();
+    }
+
+    async loadMovieInstances() {
+        const select = document.getElementById('movies-instance-select');
+        if (!select) return;
+
+        try {
+            const response = await fetch('./api/requestarr/instances/radarr');
+            const data = await response.json();
+            
+            if (data.instances && data.instances.length > 0) {
+                select.innerHTML = '';
+                data.instances.forEach((instance, index) => {
+                    const option = document.createElement('option');
+                    option.value = instance.name;
+                    option.textContent = `Radarr - ${instance.name}`;
+                    if (index === 0) option.selected = true;
+                    select.appendChild(option);
+                });
+                
+                // Set initial selected instance
+                this.selectedMovieInstance = data.instances[0].name;
+                
+                // Setup change handler
+                select.addEventListener('change', () => {
+                    this.selectedMovieInstance = select.value;
+                    // Reload movies with new instance
+                    this.moviesPage = 1;
+                    this.moviesHasMore = true;
+                    this.loadMovies();
+                });
+            } else {
+                select.innerHTML = '<option value="">No Radarr instances configured</option>';
+                this.selectedMovieInstance = null;
+            }
+        } catch (error) {
+            console.error('[RequestarrContent] Error loading movie instances:', error);
+            select.innerHTML = '<option value="">Error loading instances</option>';
+        }
+    }
+
+    async loadTVInstances() {
+        const select = document.getElementById('tv-instance-select');
+        if (!select) return;
+
+        try {
+            const response = await fetch('./api/requestarr/instances/sonarr');
+            const data = await response.json();
+            
+            if (data.instances && data.instances.length > 0) {
+                select.innerHTML = '';
+                data.instances.forEach((instance, index) => {
+                    const option = document.createElement('option');
+                    option.value = instance.name;
+                    option.textContent = `Sonarr - ${instance.name}`;
+                    if (index === 0) option.selected = true;
+                    select.appendChild(option);
+                });
+                
+                // Set initial selected instance
+                this.selectedTVInstance = data.instances[0].name;
+                
+                // Setup change handler
+                select.addEventListener('change', () => {
+                    this.selectedTVInstance = select.value;
+                    // Reload TV shows with new instance
+                    this.tvPage = 1;
+                    this.tvHasMore = true;
+                    this.loadTV();
+                });
+            } else {
+                select.innerHTML = '<option value="">No Sonarr instances configured</option>';
+                this.selectedTVInstance = null;
+            }
+        } catch (error) {
+            console.error('[RequestarrContent] Error loading TV instances:', error);
+            select.innerHTML = '<option value="">Error loading instances</option>';
+        }
     }
 
     // ========================================
@@ -132,6 +224,11 @@ export class RequestarrContent {
         try {
             let url = `./api/requestarr/discover/movies?page=${this.moviesPage}`;
             
+            // Add instance info for hidden media filtering
+            if (this.selectedMovieInstance) {
+                url += `&app_type=radarr&instance_name=${encodeURIComponent(this.selectedMovieInstance)}`;
+            }
+            
             // Add filter parameters
             if (this.core.filters) {
                 const filterParams = this.core.filters.getFilterParams();
@@ -221,6 +318,11 @@ export class RequestarrContent {
         
         try {
             let url = `./api/requestarr/discover/tv?page=${this.tvPage}`;
+            
+            // Add instance info for hidden media filtering
+            if (this.selectedTVInstance) {
+                url += `&app_type=sonarr&instance_name=${encodeURIComponent(this.selectedTVInstance)}`;
+            }
             
             // Add filter parameters
             if (this.core.tvFilters) {
@@ -425,6 +527,15 @@ export class RequestarrContent {
             // Get item data from card
             const item = cardElement.itemData || {};
             const posterPath = item.poster_path || null;
+            
+            // Determine app_type and instance from media_type
+            const appType = mediaType === 'movie' ? 'radarr' : 'sonarr';
+            const instanceName = mediaType === 'movie' ? this.selectedMovieInstance : this.selectedTVInstance;
+            
+            if (!instanceName) {
+                alert('No instance selected. Please select an instance first.');
+                return;
+            }
 
             const response = await fetch('./api/requestarr/hidden-media', {
                 method: 'POST',
@@ -433,7 +544,9 @@ export class RequestarrContent {
                     tmdb_id: tmdbId,
                     media_type: mediaType,
                     title: title,
-                    poster_path: posterPath
+                    poster_path: posterPath,
+                    app_type: appType,
+                    instance_name: instanceName
                 })
             });
 
@@ -448,7 +561,7 @@ export class RequestarrContent {
                 cardElement.remove();
             }, 300);
 
-            console.log(`[RequestarrContent] Hidden media: ${title} (${mediaType})`);
+            console.log(`[RequestarrContent] Hidden media: ${title} (${mediaType}) for ${appType}/${instanceName}`);
         } catch (error) {
             console.error('[RequestarrContent] Error hiding media:', error);
             alert('Failed to hide media. Please try again.');

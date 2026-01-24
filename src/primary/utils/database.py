@@ -565,11 +565,26 @@ class HuntarrDatabase:
                     media_type TEXT NOT NULL,
                     title TEXT NOT NULL,
                     poster_path TEXT,
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
                     hidden_at INTEGER NOT NULL,
                     hidden_at_readable TEXT NOT NULL,
-                    UNIQUE(tmdb_id, media_type)
+                    UNIQUE(tmdb_id, media_type, app_type, instance_name)
                 )
             ''')
+            
+            # Add app_type and instance_name columns if they don't exist (for existing databases)
+            try:
+                conn.execute('ALTER TABLE requestarr_hidden_media ADD COLUMN app_type TEXT')
+                logger.info("Added app_type column to requestarr_hidden_media table")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+            
+            try:
+                conn.execute('ALTER TABLE requestarr_hidden_media ADD COLUMN instance_name TEXT')
+                logger.info("Added instance_name column to requestarr_hidden_media table")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
             
             # Add temp_2fa_secret column if it doesn't exist (for existing databases)
             try:
@@ -2516,62 +2531,76 @@ class HuntarrDatabase:
     # HIDDEN MEDIA MANAGEMENT
     # ========================================
     
-    def add_hidden_media(self, tmdb_id: int, media_type: str, title: str, poster_path: str = None) -> bool:
-        """Add media to hidden list"""
+    def add_hidden_media(self, tmdb_id: int, media_type: str, title: str, app_type: str, instance_name: str, poster_path: str = None) -> bool:
+        """Add media to hidden list for specific instance"""
         try:
-            with self._get_connection() as conn:
+            with self.get_connection() as conn:
                 now = int(time.time())
                 readable_time = datetime.fromtimestamp(now).strftime('%Y-%m-%d %H:%M:%S')
                 
                 conn.execute('''
                     INSERT OR REPLACE INTO requestarr_hidden_media 
-                    (tmdb_id, media_type, title, poster_path, hidden_at, hidden_at_readable)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (tmdb_id, media_type, title, poster_path, now, readable_time))
+                    (tmdb_id, media_type, title, poster_path, app_type, instance_name, hidden_at, hidden_at_readable)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (tmdb_id, media_type, title, poster_path, app_type, instance_name, now, readable_time))
                 
-                logger.info(f"Added hidden media: {title} (TMDB ID: {tmdb_id}, Type: {media_type})")
+                logger.info(f"Added hidden media: {title} (TMDB ID: {tmdb_id}, Type: {media_type}, Instance: {app_type}/{instance_name})")
                 return True
         except Exception as e:
             logger.error(f"Error adding hidden media: {e}")
             return False
     
-    def remove_hidden_media(self, tmdb_id: int, media_type: str) -> bool:
-        """Remove media from hidden list"""
+    def remove_hidden_media(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str) -> bool:
+        """Remove media from hidden list for specific instance"""
         try:
-            with self._get_connection() as conn:
+            with self.get_connection() as conn:
                 conn.execute('''
                     DELETE FROM requestarr_hidden_media 
-                    WHERE tmdb_id = ? AND media_type = ?
-                ''', (tmdb_id, media_type))
+                    WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
+                ''', (tmdb_id, media_type, app_type, instance_name))
                 
-                logger.info(f"Removed hidden media: TMDB ID {tmdb_id}, Type: {media_type}")
+                logger.info(f"Removed hidden media: TMDB ID {tmdb_id}, Type: {media_type}, Instance: {app_type}/{instance_name}")
                 return True
         except Exception as e:
             logger.error(f"Error removing hidden media: {e}")
             return False
     
-    def is_media_hidden(self, tmdb_id: int, media_type: str) -> bool:
-        """Check if media is hidden"""
+    def is_media_hidden(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str) -> bool:
+        """Check if media is hidden for specific instance"""
         try:
-            with self._get_connection() as conn:
+            with self.get_connection() as conn:
                 cursor = conn.execute('''
                     SELECT 1 FROM requestarr_hidden_media 
-                    WHERE tmdb_id = ? AND media_type = ?
-                ''', (tmdb_id, media_type))
+                    WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
+                ''', (tmdb_id, media_type, app_type, instance_name))
                 return cursor.fetchone() is not None
         except Exception as e:
             logger.error(f"Error checking if media is hidden: {e}")
             return False
     
-    def get_hidden_media(self, page: int = 1, page_size: int = 20, media_type: str = None) -> Dict[str, Any]:
-        """Get paginated list of hidden media"""
+    def get_hidden_media(self, page: int = 1, page_size: int = 20, media_type: str = None, app_type: str = None, instance_name: str = None) -> Dict[str, Any]:
+        """Get paginated list of hidden media, optionally filtered by media_type, app_type, and instance"""
         try:
             offset = (page - 1) * page_size
             
-            with self._get_connection() as conn:
-                # Build query based on media_type filter
-                where_clause = "WHERE media_type = ?" if media_type else ""
-                params = [media_type] if media_type else []
+            with self.get_connection() as conn:
+                # Build query based on filters
+                where_clauses = []
+                params = []
+                
+                if media_type:
+                    where_clauses.append("media_type = ?")
+                    params.append(media_type)
+                
+                if app_type:
+                    where_clauses.append("app_type = ?")
+                    params.append(app_type)
+                
+                if instance_name:
+                    where_clauses.append("instance_name = ?")
+                    params.append(instance_name)
+                
+                where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
                 
                 # Get total count
                 count_query = f"SELECT COUNT(*) FROM requestarr_hidden_media {where_clause}"
@@ -2596,6 +2625,8 @@ class HuntarrDatabase:
                         'media_type': row['media_type'],
                         'title': row['title'],
                         'poster_path': row['poster_path'],
+                        'app_type': row['app_type'],
+                        'instance_name': row['instance_name'],
                         'hidden_at': row['hidden_at'],
                         'hidden_at_readable': row['hidden_at_readable']
                     })

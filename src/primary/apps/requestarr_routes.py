@@ -192,8 +192,13 @@ def get_popular_movies():
         
         results = requestarr_api.get_popular_movies(page, **filter_params)
         
-        # ALWAYS filter out hidden media first
-        results = requestarr_api.filter_hidden_media(results)
+        # Get instance info from request for filtering hidden media
+        app_type = request.args.get('app_type', 'radarr')
+        instance_name = request.args.get('instance_name')
+        
+        # Filter out hidden media for this specific instance
+        if instance_name:
+            results = requestarr_api.filter_hidden_media(results, app_type, instance_name)
         
         # Filter out available movies if hide_available is true
         original_count = len(results)
@@ -245,8 +250,13 @@ def get_popular_tv():
         
         results = requestarr_api.get_popular_tv(page, **filter_params)
         
-        # ALWAYS filter out hidden media first
-        results = requestarr_api.filter_hidden_media(results)
+        # Get instance info from request for filtering hidden media
+        app_type = request.args.get('app_type', 'sonarr')
+        instance_name = request.args.get('instance_name')
+        
+        # Filter out hidden media for this specific instance
+        if instance_name:
+            results = requestarr_api.filter_hidden_media(results, app_type, instance_name)
         
         # Filter out available TV shows if hide_available is true
         original_count = len(results)
@@ -443,11 +453,13 @@ def add_hidden_media():
         media_type = data.get('media_type')
         title = data.get('title')
         poster_path = data.get('poster_path')
+        app_type = data.get('app_type')
+        instance_name = data.get('instance_name')
         
-        if not all([tmdb_id, media_type, title]):
-            return jsonify({'error': 'Missing required fields'}), 400
+        if not all([tmdb_id, media_type, title, app_type, instance_name]):
+            return jsonify({'error': 'Missing required fields: tmdb_id, media_type, title, app_type, instance_name'}), 400
         
-        success = requestarr_api.db.add_hidden_media(tmdb_id, media_type, title, poster_path)
+        success = requestarr_api.db.add_hidden_media(tmdb_id, media_type, title, app_type, instance_name, poster_path)
         
         if success:
             return jsonify({'success': True, 'message': 'Media hidden successfully'})
@@ -458,11 +470,11 @@ def add_hidden_media():
         logger.error(f"Error hiding media: {e}")
         return jsonify({'error': 'Failed to hide media'}), 500
 
-@requestarr_bp.route('/hidden-media/<int:tmdb_id>/<media_type>', methods=['DELETE'])
-def remove_hidden_media(tmdb_id, media_type):
-    """Remove media from hidden list (unhide)"""
+@requestarr_bp.route('/hidden-media/<int:tmdb_id>/<media_type>/<app_type>/<instance_name>', methods=['DELETE'])
+def remove_hidden_media(tmdb_id, media_type, app_type, instance_name):
+    """Remove media from hidden list (unhide) for specific instance"""
     try:
-        success = requestarr_api.db.remove_hidden_media(tmdb_id, media_type)
+        success = requestarr_api.db.remove_hidden_media(tmdb_id, media_type, app_type, instance_name)
         
         if success:
             return jsonify({'success': True, 'message': 'Media unhidden successfully'})
@@ -475,13 +487,15 @@ def remove_hidden_media(tmdb_id, media_type):
 
 @requestarr_bp.route('/hidden-media', methods=['GET'])
 def get_hidden_media():
-    """Get list of hidden media with pagination"""
+    """Get list of hidden media with pagination and optional filters"""
     try:
         page = int(request.args.get('page', 1))
         page_size = int(request.args.get('page_size', 20))
         media_type = request.args.get('media_type')  # Optional filter
+        app_type = request.args.get('app_type')  # Optional filter
+        instance_name = request.args.get('instance_name')  # Optional filter
         
-        result = requestarr_api.db.get_hidden_media(page, page_size, media_type)
+        result = requestarr_api.db.get_hidden_media(page, page_size, media_type, app_type, instance_name)
         return jsonify(result)
         
     except Exception as e:

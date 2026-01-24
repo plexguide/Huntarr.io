@@ -724,12 +724,14 @@ class RequestarrAPI:
             logger.error(f"Error filtering available media: {e}")
             return items  # Return all items on error
     
-    def filter_hidden_media(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def filter_hidden_media(self, items: List[Dict[str, Any]], app_type: str = None, instance_name: str = None) -> List[Dict[str, Any]]:
         """
-        Filter out media items that have been permanently hidden by the user.
+        Filter out media items that have been permanently hidden by the user for a specific instance.
         
         Args:
             items: List of media items with 'tmdb_id' and 'media_type'
+            app_type: App type (radarr/sonarr) - if None, checks all instances
+            instance_name: Instance name - if None, checks all instances
             
         Returns:
             Filtered list excluding hidden media
@@ -740,11 +742,18 @@ class RequestarrAPI:
             for item in items:
                 tmdb_id = item.get('tmdb_id')
                 media_type = item.get('media_type')
-                if not self.db.is_media_hidden(tmdb_id, media_type):
+                
+                # If instance specified, check only for that instance
+                # Otherwise, skip filtering (show all)
+                if app_type and instance_name:
+                    if not self.db.is_media_hidden(tmdb_id, media_type, app_type, instance_name):
+                        filtered_items.append(item)
+                else:
+                    # No instance specified, show all
                     filtered_items.append(item)
             
             if len(filtered_items) < len(items):
-                logger.info(f"Filtered hidden media: {len(items)} total -> {len(filtered_items)} after removing hidden")
+                logger.info(f"Filtered hidden media: {len(items)} total -> {len(filtered_items)} after removing hidden for {app_type}/{instance_name}")
             
             return filtered_items
         except Exception as e:
