@@ -381,6 +381,12 @@ export class RequestarrSettings {
                 }
                 
                 this.renderLanguageTags();
+                
+                // Close dropdown after selection
+                const dropdown = document.getElementById('language-dropdown');
+                if (dropdown) {
+                    dropdown.style.display = 'none';
+                }
             });
             
             languageList.appendChild(item);
