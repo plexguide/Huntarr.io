@@ -182,31 +182,29 @@ export class RequestarrSettings {
                 }
                 if (data.filters.languages && data.filters.languages.length > 0) {
                     this.selectedLanguages = data.filters.languages;
-                    this.renderLanguageTags();
                 } else {
-                    // Default to English if no languages saved
-                    this.selectedLanguages = ['en'];
-                    this.renderLanguageTags();
+                    this.selectedLanguages = [];
                 }
+                this.renderLanguageTags();
                 if (data.filters.providers && data.filters.providers.length > 0) {
                     this.selectedProviders = data.filters.providers;
                 } else {
                     this.selectedProviders = [];
                 }
             } else {
-                // No saved filters - default to US and English
+                // No saved filters - default to US and All Languages
                 this.selectedRegion = 'US';
                 this.updateRegionDisplay();
-                this.selectedLanguages = ['en'];
+                this.selectedLanguages = [];
                 this.renderLanguageTags();
                 this.selectedProviders = [];
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading discover filters:', error);
-            // On error, default to US and English
+            // On error, default to US and All Languages
             this.selectedRegion = 'US';
             this.updateRegionDisplay();
-            this.selectedLanguages = ['en'];
+            this.selectedLanguages = [];
             this.renderLanguageTags();
             this.selectedProviders = [];
         }
@@ -404,8 +402,37 @@ export class RequestarrSettings {
         if (!languageList) return;
         
         languageList.innerHTML = '';
-        
+
+        const normalizedFilter = filter.trim().toLowerCase();
+        const showAllLanguages = !normalizedFilter || 'all languages'.includes(normalizedFilter);
+        if (showAllLanguages) {
+            const allItem = document.createElement('div');
+            allItem.className = 'language-item';
+            allItem.textContent = 'All Languages';
+            allItem.dataset.code = '';
+
+            if (this.selectedLanguages.length === 0) {
+                allItem.classList.add('selected');
+            }
+
+            allItem.addEventListener('click', () => {
+                this.selectedLanguages = [];
+                this.renderLanguageTags();
+                this.renderLanguageList(filter);
+
+                const dropdown = document.getElementById('language-dropdown');
+                if (dropdown) {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            languageList.appendChild(allItem);
+        }
+
         this.languages.forEach(lang => {
+            if (normalizedFilter && !lang.name.toLowerCase().includes(normalizedFilter)) {
+                return;
+            }
             const item = document.createElement('div');
             item.className = 'language-item';
             item.textContent = lang.name;
