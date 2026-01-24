@@ -26,15 +26,41 @@
 /* Mobile topbar styling */
 .mobile-topbar {
     display: none; /* Hidden by default, shown only in mobile */
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+    background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
     padding: 12px 16px;
     position: sticky;
     top: 0;
     z-index: 100;
     width: 100%;
     box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+/* Top color line - matching desktop topbar */
+.mobile-topbar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(52, 152, 219, 0.6), rgba(155, 89, 182, 0.6)); /* Sonarr blue to Whisparr purple */
+    box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); /* Add subtle glow */
+    z-index: 2;
+}
+
+/* Bottom color line - matching desktop topbar */
+.mobile-topbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(52, 152, 219, 0.6), rgba(155, 89, 182, 0.6)); /* Sonarr blue to Whisparr purple */
+    z-index: 1;
 }
 
 .mobile-topbar-content {
