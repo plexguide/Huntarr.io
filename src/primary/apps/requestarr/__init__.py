@@ -704,6 +704,26 @@ class RequestarrAPI:
                 item['in_cooldown'] = False
             return items
     
+    def filter_available_media(self, items: List[Dict[str, Any]], media_type: str) -> List[Dict[str, Any]]:
+        """
+        Filter out media items that are already available in library.
+        Returns only items where in_library is False (not available).
+        
+        Args:
+            items: List of media items with 'in_library' status
+            media_type: 'movie' or 'tv'
+            
+        Returns:
+            Filtered list excluding items already in library
+        """
+        try:
+            filtered_items = [item for item in items if not item.get('in_library', False)]
+            logger.info(f"Filtered {media_type} results: {len(items)} total -> {len(filtered_items)} not in library")
+            return filtered_items
+        except Exception as e:
+            logger.error(f"Error filtering available media: {e}")
+            return items  # Return all items on error
+    
     def get_quality_profiles(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
         """Get quality profiles from Radarr or Sonarr instance"""
         try:

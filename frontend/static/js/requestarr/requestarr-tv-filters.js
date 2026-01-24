@@ -18,7 +18,8 @@ export class RequestarrTVFilters {
             ratingMin: 0,
             ratingMax: 10,
             votesMin: 0,
-            votesMax: 10000
+            votesMax: 10000,
+            hideAvailable: false
         };
         this.genres = [];
         this.init();
@@ -187,6 +188,16 @@ export class RequestarrTVFilters {
             });
         }
 
+        // Hide Available TV Shows checkbox
+        const hideAvailableCheckbox = document.getElementById('hide-available-tv');
+        if (hideAvailableCheckbox) {
+            hideAvailableCheckbox.addEventListener('change', (e) => {
+                this.activeFilters.hideAvailable = e.target.checked;
+                this.updateModalFilterCount();
+                this.autoApplyFilters();
+            });
+        }
+
         // Genre dropdown toggle
         const genreInput = document.getElementById('tv-genre-search-input');
         const genreDropdown = document.getElementById('tv-genre-dropdown');
@@ -346,6 +357,7 @@ export class RequestarrTVFilters {
         document.getElementById('tv-filter-rating-max').value = this.activeFilters.ratingMax;
         document.getElementById('tv-filter-votes-min').value = this.activeFilters.votesMin;
         document.getElementById('tv-filter-votes-max').value = this.activeFilters.votesMax;
+        document.getElementById('hide-available-tv').checked = this.activeFilters.hideAvailable;
 
         // Render selected genres and update genre list
         this.renderSelectedGenres();
@@ -413,7 +425,8 @@ export class RequestarrTVFilters {
             ratingMin: 0,
             ratingMax: 10,
             votesMin: 0,
-            votesMax: 10000
+            votesMax: 10000,
+            hideAvailable: false
         };
 
         // Reset sort to default
@@ -439,6 +452,7 @@ export class RequestarrTVFilters {
         if (this.activeFilters.yearMin > this.minYear || this.activeFilters.yearMax < this.maxYear) count++;
         if (this.activeFilters.ratingMin > 0 || this.activeFilters.ratingMax < 10) count++;
         if (this.activeFilters.votesMin > 0 || this.activeFilters.votesMax < 10000) count++;
+        if (this.activeFilters.hideAvailable) count++;
 
         const filterCountElement = document.getElementById('tv-filter-count');
         
@@ -468,6 +482,9 @@ export class RequestarrTVFilters {
         const votesMin = parseInt(document.getElementById('tv-filter-votes-min')?.value || 0);
         const votesMax = parseInt(document.getElementById('tv-filter-votes-max')?.value || 10000);
         if (votesMin > 0 || votesMax < 10000) count++;
+        
+        const hideAvailable = document.getElementById('hide-available-tv')?.checked || false;
+        if (hideAvailable) count++;
 
         const modalCountElement = document.getElementById('tv-filter-active-count');
         const text = count === 0 ? '0 Active Filters' : count === 1 ? '1 Active Filter' : `${count} Active Filters`;
@@ -509,6 +526,9 @@ export class RequestarrTVFilters {
         if (this.activeFilters.votesMin > 0 || this.activeFilters.votesMax < 10000) {
             params.append('vote_count.gte', this.activeFilters.votesMin);
             params.append('vote_count.lte', this.activeFilters.votesMax);
+        }
+        if (this.activeFilters.hideAvailable) {
+            params.append('hide_available', 'true');
         }
 
         return params.toString();

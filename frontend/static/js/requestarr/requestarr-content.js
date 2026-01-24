@@ -157,17 +157,23 @@ export class RequestarrContent {
                     grid.appendChild(this.createMediaCard(item));
                 });
 
-                // Determine if more results are available
-                if (data.results.length >= 20) {
-                    this.moviesHasMore = true;
+                // Use has_more from API if available, otherwise check result count
+                if (data.has_more !== undefined) {
+                    this.moviesHasMore = data.has_more;
                 } else {
-                    this.moviesHasMore = false;
+                    // Fallback to old logic if API doesn't provide has_more
+                    this.moviesHasMore = data.results.length >= 20;
                 }
             } else {
                 if (this.moviesPage === 1) {
                     grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies found</p>';
                 }
-                this.moviesHasMore = false;
+                // Use has_more from API if available
+                if (data.has_more !== undefined) {
+                    this.moviesHasMore = data.has_more;
+                } else {
+                    this.moviesHasMore = false;
+                }
             }
         } catch (error) {
             console.error('[RequestarrContent] Error loading movies:', error);
@@ -241,17 +247,23 @@ export class RequestarrContent {
                     grid.appendChild(this.createMediaCard(item));
                 });
 
-                // Determine if more results are available
-                if (data.results.length >= 20) {
-                    this.tvHasMore = true;
+                // Use has_more from API if available, otherwise check result count
+                if (data.has_more !== undefined) {
+                    this.tvHasMore = data.has_more;
                 } else {
-                    this.tvHasMore = false;
+                    // Fallback to old logic if API doesn't provide has_more
+                    this.tvHasMore = data.results.length >= 20;
                 }
             } else {
                 if (this.tvPage === 1) {
                     grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows found</p>';
                 }
-                this.tvHasMore = false;
+                // Use has_more from API if available
+                if (data.has_more !== undefined) {
+                    this.tvHasMore = data.has_more;
+                } else {
+                    this.tvHasMore = false;
+                }
             }
         } catch (error) {
             console.error('[RequestarrContent] Error loading TV shows:', error);

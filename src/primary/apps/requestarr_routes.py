@@ -163,6 +163,7 @@ def get_popular_movies():
     """Get popular movies with optional filters"""
     try:
         page = int(request.args.get('page', 1))
+        hide_available = request.args.get('hide_available', 'false').lower() == 'true'
         
         # Collect filter parameters
         filter_params = {}
@@ -190,7 +191,23 @@ def get_popular_movies():
             filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
         
         results = requestarr_api.get_popular_movies(page, **filter_params)
-        return jsonify({'results': results, 'page': page})
+        
+        # Filter out available movies if hide_available is true
+        original_count = len(results)
+        if hide_available:
+            results = requestarr_api.filter_available_media(results, 'movie')
+        
+        # Always allow more pages when filtering (TMDB has 500+ pages)
+        # Frontend should continue loading until no results
+        has_more = len(results) > 0 or page < 100  # Reasonable upper limit
+        
+        return jsonify({
+            'results': results, 
+            'page': page,
+            'has_more': has_more,
+            'filtered': hide_available,
+            'original_count': original_count if hide_available else None
+        })
     except Exception as e:
         logger.error(f"Error getting popular movies: {e}")
         return jsonify({'error': 'Failed to get popular movies'}), 500
@@ -200,6 +217,7 @@ def get_popular_tv():
     """Get popular TV shows with optional filters"""
     try:
         page = int(request.args.get('page', 1))
+        hide_available = request.args.get('hide_available', 'false').lower() == 'true'
         
         # Collect filter parameters
         filter_params = {}
@@ -223,7 +241,23 @@ def get_popular_tv():
             filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
         
         results = requestarr_api.get_popular_tv(page, **filter_params)
-        return jsonify({'results': results, 'page': page})
+        
+        # Filter out available TV shows if hide_available is true
+        original_count = len(results)
+        if hide_available:
+            results = requestarr_api.filter_available_media(results, 'tv')
+        
+        # Always allow more pages when filtering (TMDB has 500+ pages)
+        # Frontend should continue loading until no results
+        has_more = len(results) > 0 or page < 100  # Reasonable upper limit
+        
+        return jsonify({
+            'results': results, 
+            'page': page,
+            'has_more': has_more,
+            'filtered': hide_available,
+            'original_count': original_count if hide_available else None
+        })
     except Exception as e:
         logger.error(f"Error getting popular TV: {e}")
         return jsonify({'error': 'Failed to get popular TV'}), 500

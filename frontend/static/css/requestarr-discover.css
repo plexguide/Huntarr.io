@@ -2125,6 +2125,39 @@ input:disabled + .toggle-slider {
     margin-bottom: 10px;
 }
 
+/* Hide Available Toggle */
+.filter-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 12px;
+    background: rgba(31, 41, 55, 0.3);
+    border: 1px solid rgba(75, 85, 99, 0.3);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.filter-toggle-label:hover {
+    background: rgba(31, 41, 55, 0.5);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.filter-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #f59e0b;
+    border-radius: 4px;
+}
+
+.filter-toggle-text {
+    color: #e5e7eb;
+    font-size: 0.9rem;
+    font-weight: 500;
+    user-select: none;
+}
+
 .filter-sublabel {
     display: block;
     font-size: 0.75rem;

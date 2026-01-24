@@ -20,7 +20,8 @@ export class RequestarrFilters {
             ratingMin: 0,
             ratingMax: 10,
             votesMin: 0,
-            votesMax: 10000
+            votesMax: 10000,
+            hideAvailable: false
         };
         this.genres = [];
         this.init();
@@ -189,6 +190,16 @@ export class RequestarrFilters {
         if (sortSelect) {
             sortSelect.addEventListener('change', (e) => {
                 this.applySortChange(e.target.value);
+            });
+        }
+
+        // Hide Available Movies checkbox
+        const hideAvailableCheckbox = document.getElementById('hide-available-movies');
+        if (hideAvailableCheckbox) {
+            hideAvailableCheckbox.addEventListener('change', (e) => {
+                this.activeFilters.hideAvailable = e.target.checked;
+                this.updateModalFilterCount();
+                this.autoApplyFilters();
             });
         }
 
@@ -380,6 +391,7 @@ export class RequestarrFilters {
         document.getElementById('filter-rating-max').value = this.activeFilters.ratingMax;
         document.getElementById('filter-votes-min').value = this.activeFilters.votesMin;
         document.getElementById('filter-votes-max').value = this.activeFilters.votesMax;
+        document.getElementById('hide-available-movies').checked = this.activeFilters.hideAvailable;
 
         // Render selected genres and update genre list
         this.renderSelectedGenres();
@@ -458,7 +470,8 @@ export class RequestarrFilters {
             ratingMin: 0,
             ratingMax: 10,
             votesMin: 0,
-            votesMax: 10000
+            votesMax: 10000,
+            hideAvailable: false
         };
 
         // Reset sort to default
@@ -485,6 +498,7 @@ export class RequestarrFilters {
         if (this.activeFilters.runtimeMin > 0 || this.activeFilters.runtimeMax < 400) count++;
         if (this.activeFilters.ratingMin > 0 || this.activeFilters.ratingMax < 10) count++;
         if (this.activeFilters.votesMin > 0 || this.activeFilters.votesMax < 10000) count++;
+        if (this.activeFilters.hideAvailable) count++;
 
         const filterCountElement = document.getElementById('movies-filter-count');
         
@@ -563,6 +577,9 @@ export class RequestarrFilters {
         if (this.activeFilters.votesMin > 0 || this.activeFilters.votesMax < 10000) {
             params.append('vote_count.gte', this.activeFilters.votesMin);
             params.append('vote_count.lte', this.activeFilters.votesMax);
+        }
+        if (this.activeFilters.hideAvailable) {
+            params.append('hide_available', 'true');
         }
 
         return params.toString();
