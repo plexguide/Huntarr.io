@@ -268,15 +268,18 @@ export class RequestarrContent {
             
             const data = await response.json();
 
+            // Always clear the grid first to remove loading spinner (even for stale requests)
+            if (this.moviesPage === 1) {
+                grid.innerHTML = '';
+            }
+
+            // Check if this request is still valid (not cancelled by a newer request)
             if (requestToken !== this.moviesRequestToken || requestedInstance !== this.selectedMovieInstance) {
+                console.log('[RequestarrContent] Cancelled stale movies request, but spinner already cleared');
                 return;
             }
             
             if (data.results && data.results.length > 0) {
-                if (this.moviesPage === 1) {
-                    grid.innerHTML = '';
-                }
-                
                 data.results.forEach((item) => {
                     grid.appendChild(this.createMediaCard(item));
                 });
@@ -289,9 +292,7 @@ export class RequestarrContent {
                     this.moviesHasMore = data.results.length >= 20;
                 }
             } else {
-                if (this.moviesPage === 1) {
-                    grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies found</p>';
-                }
+                grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies found</p>';
                 // Use has_more from API if available
                 if (data.has_more !== undefined) {
                     this.moviesHasMore = data.has_more;
@@ -370,15 +371,18 @@ export class RequestarrContent {
             
             const data = await response.json();
 
+            // Always clear the grid first to remove loading spinner (even for stale requests)
+            if (this.tvPage === 1) {
+                grid.innerHTML = '';
+            }
+
+            // Check if this request is still valid (not cancelled by a newer request)
             if (requestToken !== this.tvRequestToken || requestedInstance !== this.selectedTVInstance) {
+                console.log('[RequestarrContent] Cancelled stale TV request, but spinner already cleared');
                 return;
             }
             
             if (data.results && data.results.length > 0) {
-                if (this.tvPage === 1) {
-                    grid.innerHTML = '';
-                }
-                
                 data.results.forEach((item) => {
                     grid.appendChild(this.createMediaCard(item));
                 });
@@ -391,9 +395,7 @@ export class RequestarrContent {
                     this.tvHasMore = data.results.length >= 20;
                 }
             } else {
-                if (this.tvPage === 1) {
-                    grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows found</p>';
-                }
+                grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows found</p>';
                 // Use has_more from API if available
                 if (data.has_more !== undefined) {
                     this.tvHasMore = data.has_more;
