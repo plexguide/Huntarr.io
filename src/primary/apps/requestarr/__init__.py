@@ -487,7 +487,10 @@ class RequestarrAPI:
     def check_library_status_batch(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Check library status for a batch of media items.
-        Adds 'in_library' flag to each item based on configured instances.
+        Adds status flags to each item:
+        - 'in_library': Complete (all episodes for TV, has file for movies)
+        - 'partial': TV shows with some but not all episodes
+        - 'in_cooldown': Recently requested (within 12 hours)
         """
         try:
             # Get enabled instances
@@ -497,6 +500,8 @@ class RequestarrAPI:
                 # No instances configured, mark all as not in library
                 for item in items:
                     item['in_library'] = False
+                    item['partial'] = False
+                    item['in_cooldown'] = False
                 return items
             
             # Get all movies from all Radarr instances
@@ -519,6 +524,7 @@ class RequestarrAPI:
             
             # Get all series from all Sonarr instances
             sonarr_tmdb_ids = set()
+            sonarr_partial_tmdb_ids = set()
             for instance in instances['sonarr']:
                 try:
                     headers = {'X-Api-Key': instance['api_key']}
@@ -535,23 +541,45 @@ class RequestarrAPI:
                             total_episodes = statistics.get('episodeCount', 0)
                             available_episodes = statistics.get('episodeFileCount', 0)
                             
-                            # Only mark as in_library if all episodes are available
+                            tmdb_id = series.get('tmdbId')
+                            # Mark as in_library if all episodes are available
                             if total_episodes > 0 and available_episodes == total_episodes:
-                                sonarr_tmdb_ids.add(series.get('tmdbId'))
+                                sonarr_tmdb_ids.add(tmdb_id)
+                            # Mark as partial if some episodes are available
+                            elif available_episodes > 0 and available_episodes < total_episodes:
+                                sonarr_partial_tmdb_ids.add(tmdb_id)
                 except Exception as e:
                     logger.error(f"Error checking Sonarr instance {instance['name']}: {e}")
             
-            # Mark each item with in_library status
+            # Mark each item with status
             for item in items:
                 tmdb_id = item.get('tmdb_id')
                 media_type = item.get('media_type')
                 
+                # Check cooldown status for all items
+                if instances['radarr'] and media_type == 'movie':
+                    # Check against first Radarr instance for cooldown
+                    instance_name = instances['radarr'][0]['name']
+                    cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'radarr', instance_name)
+                    item['in_cooldown'] = cooldown_status['in_cooldown']
+                elif instances['sonarr'] and media_type == 'tv':
+                    # Check against first Sonarr instance for cooldown
+                    instance_name = instances['sonarr'][0]['name']
+                    cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'sonarr', instance_name)
+                    item['in_cooldown'] = cooldown_status['in_cooldown']
+                else:
+                    item['in_cooldown'] = False
+                
+                # Set library status
                 if media_type == 'movie':
                     item['in_library'] = tmdb_id in radarr_tmdb_ids
+                    item['partial'] = False
                 elif media_type == 'tv':
                     item['in_library'] = tmdb_id in sonarr_tmdb_ids
+                    item['partial'] = tmdb_id in sonarr_partial_tmdb_ids
                 else:
                     item['in_library'] = False
+                    item['partial'] = False
             
             return items
             
@@ -560,6 +588,8 @@ class RequestarrAPI:
             # On error, mark all as not in library
             for item in items:
                 item['in_library'] = False
+                item['partial'] = False
+                item['in_cooldown'] = False
             return items
     
     def get_quality_profiles(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:

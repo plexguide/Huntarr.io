@@ -137,7 +137,24 @@ export class RequestarrContent {
         const overview = item.overview || 'No description available.';
         
         const inLibrary = item.in_library || false;
-        const statusBadgeHTML = inLibrary ? '<div class="media-card-status-badge"><i class="fas fa-check"></i></div>' : '';
+        const partial = item.partial || false;
+        const inCooldown = item.in_cooldown || false;
+        
+        // Determine status badge
+        let statusBadgeHTML = '';
+        if (inCooldown) {
+            // Red stop sign for cooldown
+            statusBadgeHTML = '<div class="media-card-status-badge cooldown"><i class="fas fa-hand"></i></div>';
+        } else if (inLibrary) {
+            // Green checkmark for complete
+            statusBadgeHTML = '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
+        } else if (partial) {
+            // Orange exclamation for partial
+            statusBadgeHTML = '<div class="media-card-status-badge partial"><i class="fas fa-exclamation"></i></div>';
+        } else {
+            // Blue download icon for available
+            statusBadgeHTML = '<div class="media-card-status-badge available"><i class="fas fa-download"></i></div>';
+        }
         
         if (inLibrary) {
             card.classList.add('in-library');

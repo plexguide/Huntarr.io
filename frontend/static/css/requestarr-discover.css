@@ -334,11 +334,9 @@
     position: absolute;
     top: 8px;
     right: 8px;
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    border: 2px solid #fbbf24;
     border-radius: 50%;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -348,13 +346,31 @@
 
 .media-card-status-badge i {
     color: #fff;
-    font-size: 8px;
+    font-size: 12px;
 }
 
-/* Partial availability badge for TV shows */
+/* Complete - Green with checkmark */
+.media-card-status-badge.complete {
+    background: #22c55e;
+    border: 2px solid #16a34a;
+}
+
+/* Partial/Missing - Orange with exclamation */
 .media-card-status-badge.partial {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    border: 2px solid #fbbf24;
+    background: #f97316;
+    border: 2px solid #ea580c;
+}
+
+/* Available - Blue with download icon */
+.media-card-status-badge.available {
+    background: #3b82f6;
+    border: 2px solid #2563eb;
+}
+
+/* Cooldown - Red with stop sign */
+.media-card-status-badge.cooldown {
+    background: #ef4444;
+    border: 2px solid #dc2626;
 }
 
 /* When media is in library, adjust overlay to remove button space */
