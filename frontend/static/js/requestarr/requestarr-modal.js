@@ -6,6 +6,23 @@ export class RequestarrModal {
     constructor(core) {
         this.core = core;
     }
+    
+    formatCooldownTime(hours_remaining) {
+        // Format time display based on duration
+        if (hours_remaining <= 24) {
+            // 24 hours or less: show as hours and minutes (12h 23m)
+            const hours = Math.floor(hours_remaining);
+            const minutes = Math.floor((hours_remaining - hours) * 60);
+            return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+        } else {
+            // More than 24 hours: show as days, hours, minutes (1d 1h 5m)
+            const days = Math.floor(hours_remaining / 24);
+            const remaining_hours = hours_remaining - (days * 24);
+            const hours = Math.floor(remaining_hours);
+            const minutes = Math.floor((remaining_hours - hours) * 60);
+            return `${days}d ${hours}h ${minutes}m`;
+        }
+    }
 
     // ========================================
     // MODAL SYSTEM
@@ -178,9 +195,7 @@ export class RequestarrModal {
             if (status.exists) {
                 // Check cooldown status first
                 if (status.cooldown_status && status.cooldown_status.in_cooldown) {
-                    const hours = Math.floor(status.cooldown_status.hours_remaining);
-                    const minutes = Math.floor((status.cooldown_status.hours_remaining - hours) * 60);
-                    const timeMsg = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                    const timeMsg = this.formatCooldownTime(status.cooldown_status.hours_remaining);
                     
                     statusHTML = `
                         <div class="series-status-box status-requested">
@@ -319,9 +334,7 @@ export class RequestarrModal {
                 }
             } else if (status.cooldown_status && status.cooldown_status.in_cooldown) {
                 // In cooldown period
-                const hours = Math.floor(status.cooldown_status.hours_remaining);
-                const minutes = Math.floor((status.cooldown_status.hours_remaining - hours) * 60);
-                const timeMsg = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                const timeMsg = this.formatCooldownTime(status.cooldown_status.hours_remaining);
                 
                 statusHTML = `
                     <div class="series-status-box status-requested">

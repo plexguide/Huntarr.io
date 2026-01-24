@@ -284,8 +284,9 @@ class RequestarrAPI:
     def get_series_status_from_sonarr(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get series status from Sonarr - missing episodes, available, etc."""
         try:
-            # Check cooldown status (12-hour cooldown period)
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'sonarr', instance_name)
+            # Check cooldown status (configurable cooldown period)
+            cooldown_hours = self.get_cooldown_hours()
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'sonarr', instance_name, cooldown_hours)
             already_requested_in_db = cooldown_status['last_requested_at'] is not None
             
             # Get Sonarr instance config
@@ -387,7 +388,8 @@ class RequestarrAPI:
         except Exception as e:
             logger.error(f"Error getting series status from Sonarr: {e}")
             # Still check cooldown even if Sonarr check fails
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'sonarr', instance_name)
+            cooldown_hours = self.get_cooldown_hours()
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'sonarr', instance_name, cooldown_hours)
             already_requested_in_db = cooldown_status['last_requested_at'] is not None
             return {
                 'exists': False,
@@ -406,8 +408,9 @@ class RequestarrAPI:
     def get_movie_status_from_radarr(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get movie status from Radarr - in library, previously requested, etc."""
         try:
-            # Check cooldown status (12-hour cooldown period)
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'radarr', instance_name)
+            # Check cooldown status (configurable cooldown period)
+            cooldown_hours = self.get_cooldown_hours()
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'radarr', instance_name, cooldown_hours)
             already_requested_in_db = cooldown_status['last_requested_at'] is not None
             
             # Get Radarr instance config
@@ -476,7 +479,8 @@ class RequestarrAPI:
         except Exception as e:
             logger.error(f"Error getting movie status from Radarr: {e}")
             # Still check cooldown even if Radarr check fails
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'radarr', instance_name)
+            cooldown_hours = self.get_cooldown_hours()
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'radarr', instance_name, cooldown_hours)
             already_requested_in_db = cooldown_status['last_requested_at'] is not None
             return {
                 'in_library': False,
@@ -558,11 +562,12 @@ class RequestarrAPI:
                 
                 # Check cooldown status across ALL instances (not just first one)
                 item['in_cooldown'] = False
+                cooldown_hours = self.get_cooldown_hours()
                 if instances['radarr'] and media_type == 'movie':
                     # Check ALL Radarr instances for cooldown
                     for instance in instances['radarr']:
                         instance_name = instance['name']
-                        cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'radarr', instance_name)
+                        cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'radarr', instance_name, cooldown_hours)
                         if cooldown_status['in_cooldown']:
                             item['in_cooldown'] = True
                             break  # Found cooldown, no need to check other instances
@@ -570,7 +575,7 @@ class RequestarrAPI:
                     # Check ALL Sonarr instances for cooldown
                     for instance in instances['sonarr']:
                         instance_name = instance['name']
-                        cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'sonarr', instance_name)
+                        cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'sonarr', instance_name, cooldown_hours)
                         if cooldown_status['in_cooldown']:
                             item['in_cooldown'] = True
                             break  # Found cooldown, no need to check other instances
@@ -686,6 +691,33 @@ class RequestarrAPI:
                 self.db.set_setting('requestarr', 'default_radarr_instance', radarr_instance)
         except Exception as e:
             logger.error(f"Error setting default instances: {e}")
+            raise
+    
+    def get_cooldown_hours(self) -> int:
+        """Get cooldown period in hours from database (default: 168 hours / 7 days)"""
+        try:
+            cooldown = self.db.get_setting('requestarr', 'cooldown_hours')
+            return int(cooldown) if cooldown else 168
+        except Exception as e:
+            logger.error(f"Error getting cooldown hours: {e}")
+            return 168
+    
+    def set_cooldown_hours(self, hours: int):
+        """Set cooldown period in hours in database"""
+        try:
+            self.db.set_setting('requestarr', 'cooldown_hours', str(hours))
+        except Exception as e:
+            logger.error(f"Error setting cooldown hours: {e}")
+            raise
+    
+    def reset_cooldowns(self) -> int:
+        """Reset all cooldowns with 25+ hours remaining. Returns count of reset items."""
+        try:
+            count = self.db.reset_cooldowns_over_threshold(25)
+            logger.info(f"Reset {count} cooldowns with 25+ hours remaining")
+            return count
+        except Exception as e:
+            logger.error(f"Error resetting cooldowns: {e}")
             raise
     
     def search_media_with_availability(self, query: str, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
@@ -1087,19 +1119,30 @@ class RequestarrAPI:
             # Check if media exists and get detailed info
             exists_result = self._check_media_exists(tmdb_id, media_type, target_instance, app_type)
             
-            # Check 12-hour cooldown period
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, app_type, instance_name)
+            # Check configurable cooldown period
+            cooldown_hours = self.get_cooldown_hours()
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, app_type, instance_name, cooldown_hours)
             
             if cooldown_status['in_cooldown']:
                 hours_remaining = cooldown_status['hours_remaining']
-                hours = int(hours_remaining)
-                minutes = int((hours_remaining - hours) * 60)
                 
-                time_msg = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
+                # Format time display based on duration
+                if hours_remaining <= 24:
+                    # 24 hours or less: show as hours and minutes (12h 23m)
+                    hours = int(hours_remaining)
+                    minutes = int((hours_remaining - hours) * 60)
+                    time_msg = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
+                else:
+                    # More than 24 hours: show as days, hours, minutes (1d 1h 5m)
+                    days = int(hours_remaining / 24)
+                    remaining_hours = hours_remaining - (days * 24)
+                    hours = int(remaining_hours)
+                    minutes = int((remaining_hours - hours) * 60)
+                    time_msg = f"{days}d {hours}h {minutes}m"
                 
                 return {
                     'success': False,
-                    'message': f'{title} was recently requested. Please wait {time_msg} before requesting again (12-hour cooldown)',
+                    'message': f'{title} was recently requested. Please wait {time_msg} before requesting again',
                     'status': 'in_cooldown',
                     'hours_remaining': hours_remaining
                 }

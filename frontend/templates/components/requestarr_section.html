@@ -145,28 +145,28 @@
             <h1 class="page-title">Requestarr Settings</h1>
             <div class="requestarr-settings-container">
                 <div class="settings-card">
-                    <h3>Default Instances</h3>
-                    <p class="settings-description">Select default instances for checking availability and pre-selecting in request forms.</p>
+                    <h3>Request Cooldown Period</h3>
+                    <p class="settings-description">Set how long users must wait before requesting the same item again.</p>
                     
                     <div class="settings-field">
-                        <label for="default-sonarr-instance">Default Sonarr Instance</label>
-                        <select id="default-sonarr-instance" class="settings-select">
-                            <option value="">No Instance Configured</option>
+                        <label for="cooldown-period">Cooldown Duration</label>
+                        <select id="cooldown-period" class="settings-select">
+                            <option value="12">12 Hours</option>
+                            <option value="24">24 Hours</option>
+                            <option value="72">3 Days</option>
+                            <option value="168" selected>7 Days</option>
+                            <option value="720">30 Days</option>
+                            <option value="8760">1 Year</option>
                         </select>
-                        <small>Used for TV show availability checks</small>
-                    </div>
-                    
-                    <div class="settings-field">
-                        <label for="default-radarr-instance">Default Radarr Instance</label>
-                        <select id="default-radarr-instance" class="settings-select">
-                            <option value="">No Instance Configured</option>
-                        </select>
-                        <small>Used for movie availability checks</small>
+                        <small>Time users must wait before re-requesting the same item</small>
                     </div>
                     
                     <div class="settings-actions">
                         <button id="save-requestarr-settings" class="btn-primary">
                             <i class="fas fa-save"></i> Save Settings
+                        </button>
+                        <button id="reset-cooldowns-btn" class="btn-secondary" style="margin-left: 10px;">
+                            <i class="fas fa-undo"></i> Reset All Cooldowns (25h+)
                         </button>
                     </div>
                 </div>

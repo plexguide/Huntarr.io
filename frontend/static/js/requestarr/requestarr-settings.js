@@ -63,70 +63,22 @@ export class RequestarrSettings {
     async loadSettings() {
         console.log('[RequestarrDiscover] Loading settings...');
         
-        const sonarrSelect = document.getElementById('default-sonarr-instance');
-        const radarrSelect = document.getElementById('default-radarr-instance');
+        const cooldownSelect = document.getElementById('cooldown-period');
         
-        if (sonarrSelect && radarrSelect) {
-            sonarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
-            this.core.instances.sonarr.forEach(instance => {
-                const option = document.createElement('option');
-                option.value = instance.name;
-                option.textContent = `Sonarr - ${instance.name}`;
-                sonarrSelect.appendChild(option);
-            });
-            
-            radarrSelect.innerHTML = '<option value="">No Instance Configured</option>';
-            this.core.instances.radarr.forEach(instance => {
-                const option = document.createElement('option');
-                option.value = instance.name;
-                option.textContent = `Radarr - ${instance.name}`;
-                radarrSelect.appendChild(option);
-            });
-            
+        if (cooldownSelect) {
             try {
-                const response = await fetch('./api/requestarr/settings/defaults');
+                const response = await fetch('./api/requestarr/settings/cooldown');
                 const data = await response.json();
                 
-                let needsAutoSelect = false;
-                
-                if (data.success && data.defaults) {
-                    if (data.defaults.sonarr_instance) {
-                        sonarrSelect.value = data.defaults.sonarr_instance;
-                    } else if (this.core.instances.sonarr.length > 0) {
-                        sonarrSelect.value = this.core.instances.sonarr[0].name;
-                        needsAutoSelect = true;
-                    }
-                    
-                    if (data.defaults.radarr_instance) {
-                        radarrSelect.value = data.defaults.radarr_instance;
-                    } else if (this.core.instances.radarr.length > 0) {
-                        radarrSelect.value = this.core.instances.radarr[0].name;
-                        needsAutoSelect = true;
-                    }
+                if (data.success && data.cooldown_hours) {
+                    cooldownSelect.value = data.cooldown_hours.toString();
                 } else {
-                    if (this.core.instances.sonarr.length > 0) {
-                        sonarrSelect.value = this.core.instances.sonarr[0].name;
-                        needsAutoSelect = true;
-                    }
-                    if (this.core.instances.radarr.length > 0) {
-                        radarrSelect.value = this.core.instances.radarr[0].name;
-                        needsAutoSelect = true;
-                    }
+                    // Default to 7 days (168 hours)
+                    cooldownSelect.value = '168';
                 }
-                
-                if (needsAutoSelect) {
-                    console.log('[RequestarrDiscover] Auto-selecting first available instances');
-                    await this.saveSettings(true);
-                }
-                
             } catch (error) {
-                console.error('[RequestarrDiscover] Error loading default instances:', error);
-                if (this.core.instances.sonarr.length > 0 && sonarrSelect.value === '') {
-                    sonarrSelect.value = this.core.instances.sonarr[0].name;
-                }
-                if (this.core.instances.radarr.length > 0 && radarrSelect.value === '') {
-                    radarrSelect.value = this.core.instances.radarr[0].name;
-                }
+                console.error('[RequestarrDiscover] Error loading cooldown settings:', error);
+                cooldownSelect.value = '168'; // Default to 7 days
             }
         }
         
@@ -134,14 +86,18 @@ export class RequestarrSettings {
         if (saveBtn) {
             saveBtn.onclick = () => this.saveSettings();
         }
+        
+        const resetBtn = document.getElementById('reset-cooldowns-btn');
+        if (resetBtn) {
+            resetBtn.onclick = () => this.showResetCooldownsConfirmation();
+        }
     }
 
     async saveSettings(silent = false) {
-        const sonarrSelect = document.getElementById('default-sonarr-instance');
-        const radarrSelect = document.getElementById('default-radarr-instance');
+        const cooldownSelect = document.getElementById('cooldown-period');
         const saveBtn = document.getElementById('save-requestarr-settings');
         
-        if (!sonarrSelect || !radarrSelect) return;
+        if (!cooldownSelect) return;
         
         if (saveBtn && !silent) {
             saveBtn.disabled = true;
@@ -149,12 +105,11 @@ export class RequestarrSettings {
         }
         
         try {
-            const response = await fetch('./api/requestarr/settings/defaults', {
+            const response = await fetch('./api/requestarr/settings/cooldown', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    sonarr_instance: sonarrSelect.value,
-                    radarr_instance: radarrSelect.value
+                    cooldown_hours: parseInt(cooldownSelect.value)
                 })
             });
             
@@ -178,6 +133,110 @@ export class RequestarrSettings {
             if (saveBtn && !silent) {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Settings';
+            }
+        }
+    }
+    
+    showResetCooldownsConfirmation() {
+        // Create confirmation modal
+        const modal = document.createElement('div');
+        modal.className = 'confirmation-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        `;
+        
+        modal.innerHTML = `
+            <div style="
+                background: #1e293b;
+                padding: 30px;
+                border-radius: 12px;
+                max-width: 500px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            ">
+                <h3 style="margin: 0 0 15px 0; color: #fff; font-size: 20px;">
+                    <i class="fas fa-exclamation-triangle" style="color: #f59e0b; margin-right: 10px;"></i>
+                    Reset Cooldowns?
+                </h3>
+                <p style="color: #94a3b8; margin-bottom: 25px; line-height: 1.6;">
+                    This will reset all cooldowns with <strong style="color: #fff;">25 hours or more</strong> remaining. 
+                    Users will be able to immediately re-request these items.
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button id="cancel-reset-btn" style="
+                        padding: 10px 20px;
+                        background: #475569;
+                        border: none;
+                        border-radius: 6px;
+                        color: #fff;
+                        cursor: pointer;
+                        font-size: 14px;
+                    ">
+                        Cancel
+                    </button>
+                    <button id="confirm-reset-btn" style="
+                        padding: 10px 20px;
+                        background: #ef4444;
+                        border: none;
+                        border-radius: 6px;
+                        color: #fff;
+                        cursor: pointer;
+                        font-size: 14px;
+                    ">
+                        <i class="fas fa-undo"></i> Reset Cooldowns
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        document.getElementById('cancel-reset-btn').onclick = () => {
+            document.body.removeChild(modal);
+        };
+        
+        document.getElementById('confirm-reset-btn').onclick = async () => {
+            await this.resetCooldowns();
+            document.body.removeChild(modal);
+        };
+    }
+    
+    async resetCooldowns() {
+        const resetBtn = document.getElementById('reset-cooldowns-btn');
+        
+        if (resetBtn) {
+            resetBtn.disabled = true;
+            resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+        }
+        
+        try {
+            const response = await fetch('./api/requestarr/reset-cooldowns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.core.showNotification(`Reset ${data.count} cooldown(s) successfully!`, 'success');
+            } else {
+                this.core.showNotification('Failed to reset cooldowns', 'error');
+            }
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error resetting cooldowns:', error);
+            this.core.showNotification('Failed to reset cooldowns', 'error');
+        } finally {
+            if (resetBtn) {
+                resetBtn.disabled = false;
+                resetBtn.innerHTML = '<i class="fas fa-undo"></i> Reset All Cooldowns (25h+)';
             }
         }
     }

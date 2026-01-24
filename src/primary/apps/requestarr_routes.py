@@ -260,29 +260,38 @@ def get_quality_profiles(app_type, instance_name):
         logger.error(f"Error getting quality profiles: {e}")
         return jsonify({'success': False, 'error': 'Failed to get quality profiles'}), 500
 
-@requestarr_bp.route('/settings/defaults', methods=['GET'])
-def get_default_instances():
-    """Get default Sonarr and Radarr instances"""
+@requestarr_bp.route('/settings/cooldown', methods=['GET'])
+def get_cooldown_settings():
+    """Get cooldown period setting"""
     try:
-        defaults = requestarr_api.get_default_instances()
-        return jsonify({'success': True, 'defaults': defaults})
+        cooldown_hours = requestarr_api.get_cooldown_hours()
+        return jsonify({'success': True, 'cooldown_hours': cooldown_hours})
     except Exception as e:
-        logger.error(f"Error getting default instances: {e}")
-        return jsonify({'success': False, 'error': 'Failed to get default instances'}), 500
+        logger.error(f"Error getting cooldown settings: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get cooldown settings'}), 500
 
-@requestarr_bp.route('/settings/defaults', methods=['POST'])
-def set_default_instances():
-    """Set default Sonarr and Radarr instances"""
+@requestarr_bp.route('/settings/cooldown', methods=['POST'])
+def set_cooldown_settings():
+    """Set cooldown period setting"""
     try:
         data = request.get_json()
-        sonarr_default = data.get('sonarr_instance')
-        radarr_default = data.get('radarr_instance')
+        cooldown_hours = data.get('cooldown_hours', 168)
         
-        requestarr_api.set_default_instances(sonarr_default, radarr_default)
+        requestarr_api.set_cooldown_hours(cooldown_hours)
         return jsonify({'success': True})
     except Exception as e:
-        logger.error(f"Error setting default instances: {e}")
-        return jsonify({'success': False, 'error': 'Failed to set default instances'}), 500
+        logger.error(f"Error setting cooldown settings: {e}")
+        return jsonify({'success': False, 'error': 'Failed to set cooldown settings'}), 500
+
+@requestarr_bp.route('/reset-cooldowns', methods=['POST'])
+def reset_cooldowns():
+    """Reset all cooldowns with 25+ hours remaining"""
+    try:
+        count = requestarr_api.reset_cooldowns()
+        return jsonify({'success': True, 'count': count})
+    except Exception as e:
+        logger.error(f"Error resetting cooldowns: {e}")
+        return jsonify({'success': False, 'error': 'Failed to reset cooldowns'}), 500
 
 # Requestarr is always enabled with hardcoded TMDB API key
 logger.info("Requestarr initialized with hardcoded TMDB API key") 

@@ -1182,6 +1182,32 @@ input:disabled + .toggle-slider {
     margin-right: 6px;
 }
 
+.btn-secondary {
+    padding: 12px 24px;
+    background: #475569;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #64748b;
+    transform: scale(1.02);
+}
+
+.btn-secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-secondary i {
+    margin-right: 6px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .requestarr-content {

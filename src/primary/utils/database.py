@@ -2321,9 +2321,9 @@ class HuntarrDatabase:
             logger.error(f"Error checking if media already requested: {e}")
             return False
     
-    def get_request_cooldown_status(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str) -> Dict[str, Any]:
+    def get_request_cooldown_status(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str, cooldown_hours: int = 168) -> Dict[str, Any]:
         """
-        Check if media is in cooldown period (12 hours since last request)
+        Check if media is in cooldown period (configurable hours since last request, default 168 hours / 7 days)
         Returns: {
             'in_cooldown': bool,
             'hours_remaining': float,
@@ -2351,7 +2351,7 @@ class HuntarrDatabase:
                 
                 last_requested = datetime.fromisoformat(result[0].replace('Z', '+00:00'))
                 now = datetime.now(last_requested.tzinfo)
-                cooldown_period = timedelta(hours=12)
+                cooldown_period = timedelta(hours=cooldown_hours)
                 time_since_request = now - last_requested
                 
                 if time_since_request < cooldown_period:
@@ -2383,6 +2383,40 @@ class HuntarrDatabase:
                 'can_request_at': None,
                 'last_requested_at': None
             }
+    
+    def reset_cooldowns_over_threshold(self, threshold_hours: int = 25) -> int:
+        """Delete all cooldown entries with more than threshold_hours remaining. Returns count."""
+        try:
+            from datetime import datetime, timedelta
+            
+            # Get cooldown period from settings (default 168 hours)
+            cooldown_hours = 168
+            try:
+                cooldown_setting = self.get_setting('requestarr', 'cooldown_hours')
+                if cooldown_setting:
+                    cooldown_hours = int(cooldown_setting)
+            except:
+                pass
+            
+            with self.get_connection() as conn:
+                # Calculate the timestamp for threshold
+                # If cooldown is 168 hours and threshold is 25, we delete items requested less than 143 hours ago
+                cutoff_time = datetime.now() - timedelta(hours=(cooldown_hours - threshold_hours))
+                cutoff_str = cutoff_time.isoformat()
+                
+                # Delete requests that are still in cooldown with 25+ hours remaining
+                cursor = conn.execute('''
+                    DELETE FROM requestarr_requests
+                    WHERE updated_at > ?
+                ''', (cutoff_str,))
+                
+                count = cursor.rowcount
+                conn.commit()
+                
+                return count
+        except Exception as e:
+            logger.error(f"Error resetting cooldowns: {e}")
+            return 0
 
     def add_request(self, tmdb_id: int, media_type: str, title: str, year: int, overview: str, 
                    poster_path: str, backdrop_path: str, app_type: str, instance_name: str) -> bool:
