@@ -1,7 +1,7 @@
 /* Requestarr Discover - Horizontal Scrolling Style */
 
 #requestarr-section .requestarr-content {
-    padding: 20px 30px;
+    padding: 12px 30px 20px 30px;
     width: 100%;
     max-width: none !important;
     margin: 0;
@@ -13,7 +13,7 @@
 .global-search-bar {
     position: relative;
     width: 100%;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .global-search-bar i {
