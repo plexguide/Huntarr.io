@@ -32,17 +32,22 @@
             font-size: 0.8em !important;
         }
         
-        /* Reduce Community & Resources header height */
-        .community-hub-card .card-header {
-            padding: 4px 15px !important; /* Reduced padding further */
-            min-height: 0 !important;
-            height: auto !important;
+        /* Compact headers for Support + Resources */
+        .community-hub-card .card-header,
+        .support-links-card .card-header {
+            padding: 0 0 8px;
+            min-height: 0;
+            height: auto;
+            margin-bottom: 12px;
+            background-color: transparent;
+            border-bottom: 1px solid rgba(90, 109, 137, 0.2);
         }
         
-        .community-hub-card .card-header h3 {
-            margin: 0 !important;
-            font-size: 15px !important; /* Slightly smaller font size */
-            line-height: 1.3 !important; /* Tighter line height */
+        .community-hub-card .card-header h3,
+        .support-links-card .card-header h3 {
+            margin: 0;
+            font-size: 0.75em;
+            line-height: 1.2;
         }
         
         /* Reduce height of both container cards by 35% */
@@ -1959,20 +1964,24 @@
         overflow: hidden;
     }
     
-    .community-hub-card .card-header {
+    .community-hub-card .card-header,
+    .support-links-card .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 16px 20px;
-        background-color: rgba(32, 38, 50, 0.6);
+        padding: 0 0 8px;
+        margin-bottom: 12px;
+        background-color: transparent;
         border-bottom: 1px solid rgba(90, 109, 137, 0.2);
     }
     
-    .community-hub-card .card-header h3 {
+    .community-hub-card .card-header h3,
+    .support-links-card .card-header h3 {
         margin: 0;
         color: #e0e6ed;
-        font-size: 18px;
+        font-size: 0.75em;
         font-weight: 600;
+        line-height: 1.2;
     }
     
     /* Enhanced Community Hub Card with Glass Effect */
