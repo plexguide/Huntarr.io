@@ -13,7 +13,6 @@ export class RequestarrFilters {
         
         this.activeFilters = {
             genres: [],
-            language: '',
             yearMin: this.minYear,
             yearMax: this.maxYear,
             runtimeMin: 0,
@@ -215,14 +214,6 @@ export class RequestarrFilters {
             });
         }
 
-        // Language dropdown - auto-apply
-        const languageSelect = document.getElementById('filter-language');
-        if (languageSelect) {
-            languageSelect.addEventListener('change', () => {
-                this.autoApplyFilters();
-            });
-        }
-
         // Year range inputs - auto-apply on change
         const yearMin = document.getElementById('filter-year-min');
         const yearMax = document.getElementById('filter-year-max');
@@ -379,7 +370,6 @@ export class RequestarrFilters {
 
     loadFilterValues() {
         // Load current active filters into the modal
-        document.getElementById('filter-language').value = this.activeFilters.language || '';
         document.getElementById('filter-year-min').value = this.activeFilters.yearMin;
         document.getElementById('filter-year-max').value = this.activeFilters.yearMax;
         document.getElementById('filter-runtime-min').value = this.activeFilters.runtimeMin;
@@ -414,7 +404,6 @@ export class RequestarrFilters {
         // Auto-apply filters without closing the modal (Overseerr-style)
         // Genres are already tracked in activeFilters.genres
         
-        this.activeFilters.language = document.getElementById('filter-language')?.value || '';
         this.activeFilters.yearMin = parseInt(document.getElementById('filter-year-min')?.value || this.minYear);
         this.activeFilters.yearMax = parseInt(document.getElementById('filter-year-max')?.value || this.maxYear);
         this.activeFilters.runtimeMin = parseInt(document.getElementById('filter-runtime-min')?.value || 0);
@@ -436,7 +425,6 @@ export class RequestarrFilters {
     applyFilters() {
         // Genres are already tracked in activeFilters.genres via renderSelectedGenres
         
-        this.activeFilters.language = document.getElementById('filter-language').value;
         this.activeFilters.yearMin = parseInt(document.getElementById('filter-year-min').value);
         this.activeFilters.yearMax = parseInt(document.getElementById('filter-year-max').value);
         this.activeFilters.runtimeMin = parseInt(document.getElementById('filter-runtime-min').value);
@@ -461,7 +449,6 @@ export class RequestarrFilters {
     clearFilters() {
         this.activeFilters = {
             genres: [],
-            language: '',
             yearMin: this.minYear,
             yearMax: this.maxYear,
             runtimeMin: 0,
@@ -492,7 +479,6 @@ export class RequestarrFilters {
         let count = 0;
         
         if (this.activeFilters.genres.length > 0) count++;
-        if (this.activeFilters.language) count++;
         if (this.activeFilters.yearMin > this.minYear || this.activeFilters.yearMax < this.maxYear) count++;
         if (this.activeFilters.runtimeMin > 0 || this.activeFilters.runtimeMax < 400) count++;
         if (this.activeFilters.ratingMin > 0 || this.activeFilters.ratingMax < 10) count++;
@@ -514,9 +500,6 @@ export class RequestarrFilters {
         // Count from UI elements
         const selectedGenres = document.querySelectorAll('.filter-genre-item.selected').length;
         if (selectedGenres > 0) count++;
-        
-        const language = document.getElementById('filter-language')?.value;
-        if (language) count++;
         
         const yearMin = parseInt(document.getElementById('filter-year-min')?.value || this.minYear);
         const yearMax = parseInt(document.getElementById('filter-year-max')?.value || this.maxYear);
@@ -559,9 +542,6 @@ export class RequestarrFilters {
         // Add filter params
         if (this.activeFilters.genres.length > 0) {
             params.append('with_genres', this.activeFilters.genres.join(','));
-        }
-        if (this.activeFilters.language) {
-            params.append('with_original_language', this.activeFilters.language);
         }
         // Convert years to dates (Jan 1 for min year, Dec 31 for max year)
         if (this.activeFilters.yearMin > this.minYear) {
