@@ -2084,14 +2084,14 @@ input:disabled + .toggle-slider {
 .filter-active-badge {
     margin-bottom: 20px;
     padding: 10px 14px;
-    background: rgba(245, 158, 11, 0.15);
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
     border-radius: 6px;
     text-align: center;
 }
 
 .filter-active-badge span {
-    color: #fbbf24;
+    color: #a78bfa;
     font-size: 0.875rem;
     font-weight: 600;
 }
@@ -2148,7 +2148,7 @@ input:disabled + .toggle-slider {
 .filter-select-compact:focus,
 .filter-number-input:focus {
     outline: none;
-    border-color: #f59e0b;
+    border-color: #8b5cf6;
     background: rgba(31, 41, 55, 0.7);
 }
 
@@ -2186,13 +2186,13 @@ input:disabled + .toggle-slider {
 
 .filter-genre-item:hover {
     background: rgba(31, 41, 55, 0.7);
-    border-color: rgba(245, 158, 11, 0.5);
+    border-color: rgba(139, 92, 246, 0.5);
 }
 
 .filter-genre-item.selected {
-    background: rgba(245, 158, 11, 0.2);
-    border-color: #f59e0b;
-    color: #fbbf24;
+    background: rgba(139, 92, 246, 0.2);
+    border-color: #8b5cf6;
+    color: #a78bfa;
     font-weight: 600;
 }
 
@@ -2262,12 +2262,12 @@ input:disabled + .toggle-slider {
 }
 
 .filter-btn-apply {
-    background: #f59e0b;
+    background: #8b5cf6;
     color: white;
 }
 
 .filter-btn-apply:hover {
-    background: #d97706;
+    background: #7c3aed;
 }
 
 /* Mobile Responsive */
@@ -2304,13 +2304,13 @@ input:disabled + .toggle-slider {
 
 .filter-panel-body::-webkit-scrollbar-thumb,
 .filter-genre-list::-webkit-scrollbar-thumb {
-    background: rgba(245, 158, 11, 0.3);
+    background: rgba(139, 92, 246, 0.3);
     border-radius: 4px;
 }
 
 .filter-panel-body::-webkit-scrollbar-thumb:hover,
 .filter-genre-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(245, 158, 11, 0.5);
+    background: rgba(139, 92, 246, 0.5);
 }
 
 /* Genre Dropdown - Overseerr Style */
@@ -2330,17 +2330,17 @@ input:disabled + .toggle-slider {
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    background: rgba(245, 158, 11, 0.2);
-    border: 1px solid #f59e0b;
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid #8b5cf6;
     border-radius: 6px;
-    color: #fbbf24;
+    color: #a78bfa;
     font-size: 0.8125rem;
     font-weight: 600;
 }
 
 .selected-genre-pill .remove-genre {
     cursor: pointer;
-    color: #fbbf24;
+    color: #a78bfa;
     font-size: 14px;
     display: flex;
     align-items: center;
@@ -2370,7 +2370,7 @@ input:disabled + .toggle-slider {
 
 .genre-search-input:focus {
     outline: none;
-    border-color: #f59e0b;
+    border-color: #8b5cf6;
     background: rgba(31, 41, 55, 0.7);
 }
 
@@ -2404,20 +2404,20 @@ input:disabled + .toggle-slider {
 }
 
 .genre-item:hover {
-    background: rgba(245, 158, 11, 0.1);
+    background: rgba(139, 92, 246, 0.1);
     color: #e5e7eb;
 }
 
 .genre-item.selected {
-    background: rgba(245, 158, 11, 0.2);
-    color: #fbbf24;
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
     font-weight: 600;
 }
 
 .genre-item.selected::after {
     content: '✓';
     float: right;
-    color: #f59e0b;
+    color: #8b5cf6;
     font-weight: bold;
 }
 
@@ -2432,114 +2432,10 @@ input:disabled + .toggle-slider {
 }
 
 .genre-dropdown::-webkit-scrollbar-thumb {
-    background: rgba(245, 158, 11, 0.3);
+    background: rgba(139, 92, 246, 0.3);
     border-radius: 4px;
 }
 
 .genre-dropdown::-webkit-scrollbar-thumb:hover {
-    background: rgba(245, 158, 11, 0.5);
-}
-
-/* Update Filter Panel Colors to Huntarr Gold */
-.filter-active-badge {
-    margin-bottom: 20px;
-    padding: 10px 14px;
-    background: rgba(245, 158, 11, 0.15);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    border-radius: 6px;
-    text-align: center;
-}
-
-.filter-active-badge span {
-    color: #fbbf24;
-    font-size: 0.875rem;
-    font-weight: 600;
-}
-
-.filter-date-input:focus,
-.filter-select-compact:focus,
-.filter-number-input:focus {
-    outline: none;
-    border-color: #f59e0b;
-    background: rgba(31, 41, 55, 0.7);
-}
-
-/* Selected Genre Pills - Gold Theme */
-.selected-genre-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    background: rgba(245, 158, 11, 0.2);
-    border: 1px solid #f59e0b;
-    border-radius: 6px;
-    color: #fbbf24;
-    font-size: 0.8125rem;
-    font-weight: 600;
-}
-
-.selected-genre-pill .remove-genre {
-    cursor: pointer;
-    color: #fbbf24;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s;
-}
-
-.genre-search-input:focus {
-    outline: none;
-    border-color: #f59e0b;
-    background: rgba(31, 41, 55, 0.7);
-}
-
-.genre-item:hover {
-    background: rgba(245, 158, 11, 0.1);
-    color: #e5e7eb;
-}
-
-.genre-item.selected {
-    background: rgba(245, 158, 11, 0.2);
-    color: #fbbf24;
-    font-weight: 600;
-}
-
-.genre-item.selected::after {
-    content: '✓';
-    float: right;
-    color: #f59e0b;
-    font-weight: bold;
-}
-
-/* Scrollbar for dropdown - Gold */
-.genre-dropdown::-webkit-scrollbar-thumb {
-    background: rgba(245, 158, 11, 0.3);
-    border-radius: 4px;
-}
-
-.genre-dropdown::-webkit-scrollbar-thumb:hover {
-    background: rgba(245, 158, 11, 0.5);
-}
-
-/* Filter Panel Scrollbar - Gold */
-.filter-panel-body::-webkit-scrollbar-thumb,
-.filter-genre-list::-webkit-scrollbar-thumb {
-    background: rgba(245, 158, 11, 0.3);
-    border-radius: 4px;
-}
-
-.filter-panel-body::-webkit-scrollbar-thumb:hover,
-.filter-genre-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(245, 158, 11, 0.5);
-}
-
-/* Apply Button - Gold Gradient */
-.filter-btn-apply {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: white;
-}
-
-.filter-btn-apply:hover {
-    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    background: rgba(139, 92, 246, 0.5);
 }
