@@ -131,6 +131,10 @@ export class RequestarrContent {
         const card = document.createElement('div');
         card.className = 'media-card';
         
+        // Store tmdb_id and media_type as data attributes for easy updates
+        card.setAttribute('data-tmdb-id', item.tmdb_id);
+        card.setAttribute('data-media-type', item.media_type);
+        
         const posterUrl = item.poster_path || './static/images/no-poster.png';
         const year = item.year || 'N/A';
         const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';

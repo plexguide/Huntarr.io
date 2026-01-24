@@ -457,6 +457,9 @@ export class RequestarrModal {
                 // Show success notification
                 this.core.showNotification(result.message || `${isTVShow ? 'Series' : 'Movie'} requested successfully!`, 'success');
                 
+                // Update the card icon to show cooldown status
+                this.updateCardStatusAfterRequest(this.core.currentModalData.tmdb_id);
+                
                 // Wait 2 seconds before closing modal
                 setTimeout(() => {
                     this.closeModal();
@@ -484,6 +487,27 @@ export class RequestarrModal {
             requestBtn.disabled = false;
             requestBtn.classList.remove('success');
             requestBtn.textContent = 'Request';
+        }
+    }
+
+    updateCardStatusAfterRequest(tmdbId) {
+        // Find the specific media card with this TMDB ID and update its status badge
+        const card = document.querySelector(`.media-card[data-tmdb-id="${tmdbId}"]`);
+        
+        if (card) {
+            const badge = card.querySelector('.media-card-status-badge');
+            
+            if (badge) {
+                // Update badge to cooldown status (red with stop hand)
+                badge.className = 'media-card-status-badge cooldown';
+                badge.innerHTML = '<i class="fas fa-hand"></i>';
+                
+                console.log(`[RequestarrDiscover] Updated card status badge to cooldown for TMDB ID: ${tmdbId}`);
+            } else {
+                console.warn(`[RequestarrDiscover] No status badge found for card with TMDB ID: ${tmdbId}`);
+            }
+        } else {
+            console.warn(`[RequestarrDiscover] No card found with TMDB ID: ${tmdbId}`);
         }
     }
 
