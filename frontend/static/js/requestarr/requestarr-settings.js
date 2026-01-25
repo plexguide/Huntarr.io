@@ -301,6 +301,10 @@ export class RequestarrSettings {
         const pageItems = filtered.slice(startIndex, startIndex + pageSize);
 
         if (pageItems.length > 0) {
+            container.style.display = 'grid';
+            container.style.alignItems = '';
+            container.style.justifyContent = '';
+            
             container.innerHTML = '';
             pageItems.forEach(item => {
                 container.appendChild(this.createHiddenMediaCard(item));
@@ -315,7 +319,16 @@ export class RequestarrSettings {
                 paginationContainer.style.display = 'none';
             }
         } else {
-            container.innerHTML = '<p style="color: #888; text-align: center; padding: 60px;">No hidden media</p>';
+            container.style.display = 'flex';
+            container.style.alignItems = 'center';
+            container.style.justifyContent = 'center';
+            container.innerHTML = `
+                <div style="text-align: center; color: #9ca3af; max-width: 600px;">
+                    <i class="fas fa-inbox" style="font-size: 64px; margin-bottom: 30px; opacity: 0.4; display: block;"></i>
+                    <p style="font-size: 20px; margin-bottom: 15px; font-weight: 500; white-space: nowrap;">No Hidden Media</p>
+                    <p style="font-size: 15px; line-height: 1.6; opacity: 0.8;">There are no hidden items for this instance.</p>
+                </div>
+            `;
             paginationContainer.style.display = 'none';
         }
 
