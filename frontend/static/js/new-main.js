@@ -89,7 +89,7 @@ let huntarrUI = {
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user') {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
-        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-history' || this.currentSection === 'requestarr-settings') {
+        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings') {
             console.log('[huntarrUI] Initialization - showing requestarr sidebar');
             this.showRequestarrSidebar();
         } else if (this.currentSection === 'apps' || this.currentSection === 'sonarr' || this.currentSection === 'radarr' || this.currentSection === 'lidarr' || this.currentSection === 'readarr' || this.currentSection === 'whisparr' || this.currentSection === 'eros' || this.currentSection === 'prowlarr') {
@@ -677,7 +677,7 @@ let huntarrUI = {
                 'requestarr-discover-view',
                 'requestarr-movies-view',
                 'requestarr-tv-view',
-                'requestarr-history-view',
+                'requestarr-hidden-view',
                 'requestarr-settings-view'
             ];
             viewIds.forEach((viewId) => {
@@ -710,19 +710,19 @@ let huntarrUI = {
             this.runWhenRequestarrReady('tv', () => {
                 window.RequestarrDiscover.switchView('tv');
             });
-        } else if (section === 'requestarr-history' && document.getElementById('requestarr-section')) {
+        } else if (section === 'requestarr-hidden' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
-            if (document.getElementById('requestarrHistoryNav')) document.getElementById('requestarrHistoryNav').classList.add('active');
-            newTitle = 'History';
-            this.currentSection = 'requestarr-history';
+            if (document.getElementById('requestarrHiddenNav')) document.getElementById('requestarrHiddenNav').classList.add('active');
+            newTitle = 'Hidden Media';
+            this.currentSection = 'requestarr-hidden';
             
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
             
-            // Show history view
-            this.runWhenRequestarrReady('history', () => {
-                window.RequestarrDiscover.switchView('history');
+            // Show hidden view
+            this.runWhenRequestarrReady('hidden', () => {
+                window.RequestarrDiscover.switchView('hidden');
             });
         } else if (section === 'requestarr-settings' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
@@ -4635,16 +4635,12 @@ let huntarrUI = {
     showRequestarrView: function(view) {
         // Hide all Requestarr views
         const homeView = document.getElementById('requestarr-home-view');
-        const historyView = document.getElementById('requestarr-history-view');
         
         if (homeView) homeView.style.display = 'none';
-        if (historyView) historyView.style.display = 'none';
         
         // Show selected view
         if (view === 'home' && homeView) {
             homeView.style.display = 'block';
-        } else if (view === 'history' && historyView) {
-            historyView.style.display = 'block';
         }
         
         // Update navigation states
@@ -4783,9 +4779,9 @@ let huntarrUI = {
         if (this.currentSection === 'requestarr') {
             const homeNav = document.getElementById('requestarrHomeNav');
             if (homeNav) homeNav.classList.add('active');
-        } else if (this.currentSection === 'requestarr-history') {
-            const historyNav = document.getElementById('requestarrHistoryNav');
-            if (historyNav) historyNav.classList.add('active');
+        } else if (this.currentSection === 'requestarr-hidden') {
+            const hiddenNav = document.getElementById('requestarrHiddenNav');
+            if (hiddenNav) hiddenNav.classList.add('active');
         }
     },
 
@@ -4798,9 +4794,9 @@ let huntarrUI = {
         if (view === 'home') {
             const homeNav = document.getElementById('requestarrHomeNav');
             if (homeNav) homeNav.classList.add('active');
-        } else if (view === 'history') {
-            const historyNav = document.getElementById('requestarrHistoryNav');
-            if (historyNav) historyNav.classList.add('active');
+        } else if (view === 'hidden') {
+            const hiddenNav = document.getElementById('requestarrHiddenNav');
+            if (hiddenNav) hiddenNav.classList.add('active');
         }
     },
 
@@ -4823,14 +4819,6 @@ let huntarrUI = {
             });
         }
         
-        // History button - shows Requestarr history
-        const historyNav = document.getElementById('requestarrHistoryNav');
-        if (historyNav) {
-            historyNav.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.location.hash = '#requestarr-history';
-            });
-        }
     },
 
     updateAppsSidebarActive: function() {

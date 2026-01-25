@@ -5,6 +5,15 @@
 export class RequestarrSettings {
     constructor(core) {
         this.core = core;
+        this.hiddenMediaControlsInitialized = false;
+        this.hiddenMediaItems = [];
+        this.hiddenMediaState = {
+            mediaType: null,
+            instanceValue: '',
+            searchQuery: '',
+            page: 1,
+            pageSize: 20
+        };
     }
 
     // ========================================
@@ -62,73 +71,250 @@ export class RequestarrSettings {
 
     async loadHiddenMedia(mediaType = null, page = 1) {
         const container = document.getElementById('hidden-media-grid');
-        const paginationContainer = document.getElementById('hidden-media-pagination');
-        
-        if (page === 1) {
-            container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading hidden media...</p></div>';
+        if (!container) {
+            return;
         }
-        
+
+        this.initializeHiddenMediaControls();
+
+        const mediaTypeChanged = this.hiddenMediaState.mediaType !== mediaType;
+        if (mediaTypeChanged) {
+            this.hiddenMediaState.mediaType = mediaType;
+            this.hiddenMediaState.page = 1;
+        } else {
+            this.hiddenMediaState.page = page;
+        }
+
+        container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading hidden media...</p></div>';
+
         try {
-            let url = `./api/requestarr/hidden-media?page=${page}&page_size=20`;
-            if (mediaType) {
-                url += `&media_type=${mediaType}`;
+            const instanceFilter = this.parseHiddenMediaInstanceValue(this.hiddenMediaState.instanceValue);
+            const fetchKey = `${mediaType || 'all'}|${instanceFilter.appType || 'all'}|${instanceFilter.instanceName || 'all'}`;
+
+            if (this.hiddenMediaFetchKey !== fetchKey) {
+                this.hiddenMediaFetchKey = fetchKey;
+                this.hiddenMediaItems = await this.fetchHiddenMediaItems(mediaType, instanceFilter);
             }
-            
-            const response = await fetch(url);
-            const data = await response.json();
-            
-            if (data.hidden_media && data.hidden_media.length > 0) {
-                container.innerHTML = '';
-                data.hidden_media.forEach(item => {
-                    container.appendChild(this.createHiddenMediaCard(item));
-                });
-                
-                // Show pagination
-                paginationContainer.style.display = 'flex';
-                document.getElementById('hidden-page-info').textContent = `Page ${data.page} of ${data.total_pages}`;
-                document.getElementById('hidden-prev-page').disabled = data.page === 1;
-                document.getElementById('hidden-next-page').disabled = data.page === data.total_pages;
-            } else {
-                container.innerHTML = '<p style="color: #888; text-align: center; padding: 60px;">No hidden media</p>';
-                paginationContainer.style.display = 'none';
-            }
-            
-            // Setup pagination handlers
-            this.setupHiddenMediaPagination(mediaType, data.page, data.total_pages);
-            
+
+            this.renderHiddenMediaPage();
         } catch (error) {
             console.error('[RequestarrSettings] Error loading hidden media:', error);
             container.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px;">Failed to load hidden media</p>';
         }
     }
 
-    setupHiddenMediaPagination(mediaType, currentPage, totalPages) {
-        const prevBtn = document.getElementById('hidden-prev-page');
-        const nextBtn = document.getElementById('hidden-next-page');
-        
-        prevBtn.onclick = () => {
-            if (currentPage > 1) {
-                this.loadHiddenMedia(mediaType, currentPage - 1);
-            }
-        };
-        
-        nextBtn.onclick = () => {
-            if (currentPage < totalPages) {
-                this.loadHiddenMedia(mediaType, currentPage + 1);
-            }
-        };
-        
-        // Setup filter tabs
+    initializeHiddenMediaControls() {
+        if (this.hiddenMediaControlsInitialized) {
+            return;
+        }
+
+        const searchInput = document.getElementById('hidden-media-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (event) => {
+                const value = event.target.value || '';
+                clearTimeout(this.hiddenMediaSearchTimeout);
+                this.hiddenMediaSearchTimeout = setTimeout(() => {
+                    this.hiddenMediaState.searchQuery = value.trim();
+                    this.hiddenMediaState.page = 1;
+                    this.renderHiddenMediaPage();
+                }, 200);
+            });
+        }
+
+        const instanceSelect = document.getElementById('hidden-media-instance');
+        if (instanceSelect) {
+            instanceSelect.addEventListener('change', () => {
+                this.hiddenMediaState.instanceValue = instanceSelect.value || '';
+                this.hiddenMediaState.page = 1;
+                this.hiddenMediaFetchKey = null;
+                this.loadHiddenMedia(this.hiddenMediaState.mediaType, 1);
+            });
+        }
+
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.onclick = () => {
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                
+
                 const filter = tab.dataset.filter;
                 const mediaTypeFilter = filter === 'all' ? null : filter;
                 this.loadHiddenMedia(mediaTypeFilter, 1);
             };
         });
+
+        this.loadHiddenMediaInstances();
+        this.hiddenMediaControlsInitialized = true;
+    }
+
+    async loadHiddenMediaInstances() {
+        const instanceSelect = document.getElementById('hidden-media-instance');
+        if (!instanceSelect) {
+            return;
+        }
+
+        try {
+            const [radarrResponse, sonarrResponse] = await Promise.all([
+                fetch('./api/requestarr/instances/radarr'),
+                fetch('./api/requestarr/instances/sonarr')
+            ]);
+
+            const radarrData = await radarrResponse.json();
+            const sonarrData = await sonarrResponse.json();
+
+            const instanceOptions = [];
+
+            (radarrData.instances || []).forEach(instance => {
+                if (instance && instance.name) {
+                    instanceOptions.push({
+                        value: `radarr::${instance.name}`,
+                        label: `Radarr - ${instance.name}`
+                    });
+                }
+            });
+
+            (sonarrData.instances || []).forEach(instance => {
+                if (instance && instance.name) {
+                    instanceOptions.push({
+                        value: `sonarr::${instance.name}`,
+                        label: `Sonarr - ${instance.name}`
+                    });
+                }
+            });
+
+            instanceOptions.sort((a, b) => a.label.localeCompare(b.label));
+
+            instanceSelect.innerHTML = '<option value="">All Instances</option>';
+            instanceOptions.forEach(optionData => {
+                const option = document.createElement('option');
+                option.value = optionData.value;
+                option.textContent = optionData.label;
+                instanceSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('[RequestarrSettings] Error loading hidden media instances:', error);
+            instanceSelect.innerHTML = '<option value="">All Instances</option>';
+        }
+    }
+
+    parseHiddenMediaInstanceValue(value) {
+        if (!value) {
+            return { appType: null, instanceName: null };
+        }
+        const [appType, instanceName] = value.split('::');
+        if (!appType || !instanceName) {
+            return { appType: null, instanceName: null };
+        }
+        return { appType, instanceName };
+    }
+
+    async fetchHiddenMediaItems(mediaType, instanceFilter) {
+        const allItems = [];
+        const pageSize = 200;
+        let currentPage = 1;
+        let totalPages = 1;
+        const maxPages = 50;
+
+        while (currentPage <= totalPages && currentPage <= maxPages) {
+            let url = `./api/requestarr/hidden-media?page=${currentPage}&page_size=${pageSize}`;
+            if (mediaType) {
+                url += `&media_type=${mediaType}`;
+            }
+            if (instanceFilter.appType && instanceFilter.instanceName) {
+                url += `&app_type=${encodeURIComponent(instanceFilter.appType)}&instance_name=${encodeURIComponent(instanceFilter.instanceName)}`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.hidden_media && data.hidden_media.length > 0) {
+                allItems.push(...data.hidden_media);
+            }
+
+            totalPages = data.total_pages || 1;
+            currentPage += 1;
+        }
+
+        return allItems;
+    }
+
+    getFilteredHiddenMedia() {
+        const query = (this.hiddenMediaState.searchQuery || '').toLowerCase();
+        let filtered = this.hiddenMediaItems.slice();
+
+        if (query) {
+            filtered = filtered.filter(item => (item.title || '').toLowerCase().includes(query));
+        }
+
+        filtered.sort((a, b) => {
+            const titleA = (a.title || '').toLowerCase();
+            const titleB = (b.title || '').toLowerCase();
+            return titleA.localeCompare(titleB);
+        });
+
+        return filtered;
+    }
+
+    renderHiddenMediaPage() {
+        const container = document.getElementById('hidden-media-grid');
+        const paginationContainer = document.getElementById('hidden-media-pagination');
+        if (!container || !paginationContainer) {
+            return;
+        }
+
+        const filtered = this.getFilteredHiddenMedia();
+        const pageSize = this.hiddenMediaState.pageSize;
+        const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+        if (this.hiddenMediaState.page > totalPages) {
+            this.hiddenMediaState.page = 1;
+        }
+
+        const startIndex = (this.hiddenMediaState.page - 1) * pageSize;
+        const pageItems = filtered.slice(startIndex, startIndex + pageSize);
+
+        if (pageItems.length > 0) {
+            container.innerHTML = '';
+            pageItems.forEach(item => {
+                container.appendChild(this.createHiddenMediaCard(item));
+            });
+
+            if (totalPages > 1) {
+                paginationContainer.style.display = 'flex';
+                document.getElementById('hidden-page-info').textContent = `Page ${this.hiddenMediaState.page} of ${totalPages}`;
+                document.getElementById('hidden-prev-page').disabled = this.hiddenMediaState.page === 1;
+                document.getElementById('hidden-next-page').disabled = this.hiddenMediaState.page === totalPages;
+            } else {
+                paginationContainer.style.display = 'none';
+            }
+        } else {
+            container.innerHTML = '<p style="color: #888; text-align: center; padding: 60px;">No hidden media</p>';
+            paginationContainer.style.display = 'none';
+        }
+
+        this.setupHiddenMediaPagination(totalPages);
+    }
+
+    setupHiddenMediaPagination(totalPages) {
+        const prevBtn = document.getElementById('hidden-prev-page');
+        const nextBtn = document.getElementById('hidden-next-page');
+
+        if (!prevBtn || !nextBtn) {
+            return;
+        }
+
+        prevBtn.onclick = () => {
+            if (this.hiddenMediaState.page > 1) {
+                this.hiddenMediaState.page -= 1;
+                this.renderHiddenMediaPage();
+            }
+        };
+
+        nextBtn.onclick = () => {
+            if (this.hiddenMediaState.page < totalPages) {
+                this.hiddenMediaState.page += 1;
+                this.renderHiddenMediaPage();
+            }
+        };
     }
 
     createHiddenMediaCard(item) {
@@ -143,7 +329,7 @@ export class RequestarrSettings {
         card.innerHTML = `
             <div class="media-card-poster">
                 <button class="media-card-unhide-btn" title="Unhide this media">
-                    <i class="fas fa-eye"></i> Unhide
+                    <i class="fas fa-eye"></i>
                 </button>
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
                 <div class="media-card-overlay">
@@ -188,18 +374,14 @@ export class RequestarrSettings {
                 throw new Error('Failed to unhide media');
             }
 
-            // Remove the card from view with animation
-            cardElement.style.opacity = '0';
-            cardElement.style.transform = 'scale(0.8)';
-            setTimeout(() => {
-                cardElement.remove();
-                
-                // Check if grid is empty
-                const grid = document.getElementById('hidden-media-grid');
-                if (grid && grid.children.length === 0) {
-                    grid.innerHTML = '<p style="color: #888; text-align: center; padding: 60px;">No hidden media</p>';
-                }
-            }, 300);
+            // Remove from local cache and re-render
+            this.hiddenMediaItems = this.hiddenMediaItems.filter(item => {
+                return !(item.tmdb_id === tmdbId &&
+                    item.media_type === mediaType &&
+                    item.app_type === appType &&
+                    item.instance_name === instanceName);
+            });
+            this.renderHiddenMediaPage();
 
             console.log(`[RequestarrSettings] Unhidden media: ${title} (${mediaType})`);
         } catch (error) {

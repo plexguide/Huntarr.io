@@ -141,21 +141,22 @@
             </div>
         </div>
 
-        <!-- History View -->
-        <div id="requestarr-history-view" class="requestarr-view">
-            <h1 class="page-title">Request History</h1>
-            <div id="history-list" class="history-container">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading history...</p>
-                </div>
-            </div>
-        </div>
-
         <!-- Hidden Media View -->
         <div id="requestarr-hidden-view" class="requestarr-view">
             <h1 class="page-title">Hidden Media</h1>
             <p class="page-subtitle">Media you've permanently hidden from discovery</p>
+
+            <div class="hidden-media-controls">
+                <div class="hidden-media-search">
+                    <i class="fas fa-search"></i>
+                    <input id="hidden-media-search" class="hidden-media-search-input" type="text" placeholder="Search hidden media...">
+                </div>
+                <div class="hidden-media-instance">
+                    <select id="hidden-media-instance" class="control-select instance-select">
+                        <option value="">All Instances</option>
+                    </select>
+                </div>
+            </div>
             
             <!-- Filter Tabs -->
             <div class="hidden-media-filters">
