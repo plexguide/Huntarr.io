@@ -91,6 +91,8 @@ export class RequestarrDiscover {
     // ========================================
 
     switchView(view) {
+        console.log(`[RequestarrDiscover] switchView called with: ${view}`);
+        
         // Clear global search
         const globalSearch = document.getElementById('global-search-input');
         if (globalSearch) {
@@ -98,13 +100,26 @@ export class RequestarrDiscover {
         }
         
         // Hide/show global search bar based on view
-        const globalSearchBar = document.querySelector('.global-search-bar');
+        // Use ID to find input, then get parent to ensure we have the right element
+        let globalSearchBar = null;
+        if (globalSearch) {
+            globalSearchBar = globalSearch.closest('.global-search-bar');
+        } else {
+            // Fallback
+            globalSearchBar = document.querySelector('#requestarr-section .global-search-bar');
+        }
+
         if (globalSearchBar) {
+            console.log(`[RequestarrDiscover] Found global search bar, applying visibility for ${view}`);
             if (view === 'hidden' || view === 'settings') {
-                globalSearchBar.style.display = 'none';
+                globalSearchBar.style.setProperty('display', 'none', 'important');
+                console.log('[RequestarrDiscover] Hiding global search bar');
             } else {
-                globalSearchBar.style.display = 'flex';
+                globalSearchBar.style.setProperty('display', 'flex', 'important');
+                console.log('[RequestarrDiscover] Showing global search bar');
             }
+        } else {
+            console.error('[RequestarrDiscover] Global search bar not found!');
         }
         
         // Hide search results view
