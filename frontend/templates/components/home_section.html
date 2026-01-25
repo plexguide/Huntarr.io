@@ -329,6 +329,20 @@
                 <button id="reset-stats" class="cycle-reset-button"><i class="fas fa-sync-alt"></i> Reset Stats</button>
             </div>
             <div class="media-stats-container">
+                <!-- Empty State for Live Hunts -->
+                <div id="live-hunts-empty-state" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; color: #9ca3af; width: 100%;">
+                    <div style="margin-bottom: 20px; opacity: 0.4;">
+                        <img src="./static/logo/512.png" alt="Huntarr Logo" style="width: 80px; height: 80px; filter: grayscale(1);">
+                    </div>
+                    <p style="font-size: 18px; margin-bottom: 10px; font-weight: 500; color: #e2e8f0;">No Instances Configured</p>
+                    <p style="font-size: 14px; line-height: 1.6; opacity: 0.8; max-width: 400px; margin-bottom: 20px;">
+                        Visit the Apps section to configure your instances and start tracking your live hunts.
+                    </p>
+                    <button onclick="window.location.hash = '#apps'" class="action-button" style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <i class="fas fa-rocket" style="margin-right: 8px;"></i> Configure Instances
+                    </button>
+                </div>
+
                 <div class="app-stats-grid">
                     <!-- Sonarr Card -->
                     <div class="app-stats-card sonarr" style="display: none;">

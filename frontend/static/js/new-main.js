@@ -2402,11 +2402,37 @@ let huntarrUI = {
             if (this.elements[`${app}HomeStatus`].closest('.app-stats-card')) {
                 this.elements[`${app}HomeStatus`].closest('.app-stats-card').style.display = ''; 
             }
+            // Hide the empty state if it exists
+            const emptyState = document.getElementById('live-hunts-empty-state');
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+            // Show the stats grid
+            const statsGrid = document.querySelector('.app-stats-grid');
+            if (statsGrid) {
+                statsGrid.style.display = 'grid';
+            }
         } else {
             // Not configured - HIDE the box
             if (this.elements[`${app}HomeStatus`].closest('.app-stats-card')) {
                 this.elements[`${app}HomeStatus`].closest('.app-stats-card').style.display = 'none';
             }
+            
+            // Check if ANY apps are configured
+            const anyConfigured = Object.values(this.configuredApps).some(val => val === true);
+            if (!anyConfigured) {
+                // Show the empty state
+                const emptyState = document.getElementById('live-hunts-empty-state');
+                if (emptyState) {
+                    emptyState.style.display = 'flex';
+                }
+                // Hide the stats grid
+                const statsGrid = document.querySelector('.app-stats-grid');
+                if (statsGrid) {
+                    statsGrid.style.display = 'none';
+                }
+            }
+
             // Update badge even if hidden (optional, but good practice)
             statusElement.className = 'status-badge not-configured';
             statusElement.innerHTML = '<i class="fas fa-times-circle"></i> Not Configured';
