@@ -127,6 +127,34 @@ def get_logs(app_type):
             'total': 0
         }), 500
 
+@log_routes_bp.route('/api/logs/usage')
+def get_log_usage():
+    """Get log file usage statistics (size and count)"""
+    try:
+        from src.primary.utils.config_paths import LOG_DIR
+        import os
+        import glob
+        
+        log_files = glob.glob(os.path.join(LOG_DIR, "*.log*"))
+        total_size = sum(os.path.getsize(f) for f in log_files if os.path.isfile(f))
+        file_count = len(log_files)
+        
+        # Format size for display
+        size_str = f"{total_size / (1024 * 1024):.2f} MB" if total_size > 1024 * 1024 else f"{total_size / 1024:.2f} KB"
+        
+        return jsonify({
+            'success': True,
+            'total_size': total_size,
+            'total_size_formatted': size_str,
+            'file_count': file_count
+        })
+    except Exception as e:
+        logger.error(f"Error getting log usage: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @log_routes_bp.route('/api/logs/<app_type>/clear', methods=['POST'])
 def clear_logs(app_type):
     """Clear logs for a specific app type"""

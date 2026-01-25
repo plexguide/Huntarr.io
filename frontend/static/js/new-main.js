@@ -86,7 +86,7 @@ let huntarrUI = {
         
         // Check which sidebar should be shown based on current section
         console.log(`[huntarrUI] Initialization - current section: ${this.currentSection}`);
-        if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user') {
+        if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user' || this.currentSection === 'settings-logs') {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings') {
@@ -5000,25 +5000,39 @@ let huntarrUI = {
     },
 
     initializeLogsSettings: function() {
+        console.log('[huntarrUI] initializeLogsSettings called');
         const container = document.getElementById('logsSettingsContainer');
-        if (!container) return;
+        if (!container) {
+            console.error('[huntarrUI] logsSettingsContainer not found');
+            return;
+        }
         
-        // Check if already initialized (check for content)
-        if (container.innerHTML.trim() !== '') {
+        // Check if already initialized (check for actual content, not just comments)
+        const currentContent = container.innerHTML.trim();
+        console.log('[huntarrUI] Current logs container content length:', currentContent.length);
+        
+        if (currentContent !== '' && !currentContent.includes('<!-- Content will be loaded here -->')) {
             console.log('[huntarrUI] Logs settings already initialized, skipping');
             return;
         }
         
         console.log('[huntarrUI] Initializing logs settings...');
         
+        // Clear the container first to ensure we're starting fresh
+        container.innerHTML = '<div class="loading-spinner" style="text-align: center; padding: 20px;"><i class="fas fa-circle-notch fa-spin"></i> Loading settings...</div>';
+        
         // Load general settings which contain log settings
         HuntarrUtils.fetchWithTimeout('./api/settings')
             .then(response => response.json())
             .then(settings => {
+                console.log('[huntarrUI] Loaded settings for logs:', settings);
                 // Ensure general settings exist
                 const generalSettings = settings.general || {};
                 
                 if (window.SettingsForms && typeof window.SettingsForms.generateLogsSettingsForm === 'function') {
+                    console.log('[huntarrUI] Calling SettingsForms.generateLogsSettingsForm');
+                    // Clear loading spinner before generating form
+                    container.innerHTML = '';
                     window.SettingsForms.generateLogsSettingsForm(container, generalSettings);
                 } else {
                     console.error('[huntarrUI] SettingsForms.generateLogsSettingsForm not found');
@@ -5032,12 +5046,21 @@ let huntarrUI = {
     },
 
     initializeSettings: function() {
+        console.log('[huntarrUI] initializeSettings called');
         // Check if settings are already initialized
         const generalSettings = document.getElementById('generalSettings');
-        if (!generalSettings || generalSettings.innerHTML.trim() !== '') {
+        if (!generalSettings) {
+            console.error('[huntarrUI] generalSettings element not found');
+            return;
+        }
+
+        const currentContent = generalSettings.innerHTML.trim();
+        if (currentContent !== '' && !currentContent.includes('<!-- Content will be loaded here -->')) {
+            console.log('[huntarrUI] Settings already initialized, skipping');
             return; // Already initialized
         }
 
+        console.log('[huntarrUI] Initializing settings...');
         // Load settings from API and generate the form
         fetch('./api/settings')
             .then(response => response.json())

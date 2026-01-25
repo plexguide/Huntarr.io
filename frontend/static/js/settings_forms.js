@@ -3901,6 +3901,18 @@ const SettingsForms = {
 
     // Capture the actual form state as baseline instead of guessing defaults
     let normalizedSettings = {};
+    
+    // Normalize original settings for comparison
+    if (appType === 'general') {
+        // For general settings, we care about specific keys
+        const keys = [
+            'log_rotation_enabled', 'log_max_size_mb', 'log_backup_count',
+            'log_retention_days', 'log_auto_cleanup', 'log_refresh_interval_seconds'
+        ];
+        keys.forEach(key => {
+            normalizedSettings[key] = originalSettings[key];
+        });
+    }
 
     // Initialize button in disabled/grey state immediately
     saveButton.disabled = true;
@@ -4925,6 +4937,11 @@ const SettingsForms = {
         "#log_refresh_interval_seconds",
         30
       );
+      settings.log_rotation_enabled = getInputValue("#log_rotation_enabled", true);
+      settings.log_max_size_mb = getInputValue("#log_max_size_mb", 50);
+      settings.log_backup_count = getInputValue("#log_backup_count", 5);
+      settings.log_retention_days = getInputValue("#log_retention_days", 30);
+      settings.log_auto_cleanup = getInputValue("#log_auto_cleanup", true);
       settings.base_url = getInputValue("#base_url", "");
 
       // Notification settings - check both container and notifications container
@@ -5510,7 +5527,7 @@ const SettingsForms = {
     // Add save button at the top
     let logsSaveButtonHtml = `
             <div style="margin-bottom: 20px;">
-                <button type="button" id="logs-save-button" disabled style="
+                <button type="button" id="general-save-button" disabled style="
                     background: #6b7280;
                     color: #9ca3af;
                     border: 1px solid #4b5563;
@@ -5531,6 +5548,17 @@ const SettingsForms = {
         `;
 
     let logsHtml = `
+            <div class="settings-group">
+                <h3>Current Usage</h3>
+                <div id="log-usage-info" style="display: flex; align-items: center; gap: 15px; padding: 10px; background: rgba(30, 41, 59, 0.3); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <i class="fas fa-hdd" style="font-size: 24px; color: #3b82f6;"></i>
+                    <div>
+                        <div id="log-usage-size" style="font-size: 18px; font-weight: 700; color: #f1f5f9;">Loading...</div>
+                        <div id="log-usage-files" style="font-size: 13px; color: #94a3b8;">Calculating files...</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="settings-group">
                 <h3>Rotation Settings</h3>
                 <div class="setting-item">
@@ -5599,6 +5627,19 @@ const SettingsForms = {
         `;
 
     container.innerHTML = logsSaveButtonHtml + logsHtml;
+
+    // Fetch and display log usage info
+    HuntarrUtils.fetchWithTimeout('./api/logs/usage')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const sizeEl = container.querySelector('#log-usage-size');
+                const filesEl = container.querySelector('#log-usage-files');
+                if (sizeEl) sizeEl.textContent = data.total_size_formatted;
+                if (filesEl) filesEl.textContent = `${data.file_count} files across log directory`;
+            }
+        })
+        .catch(err => console.error('Error fetching log usage:', err));
 
     // Set up manual save functionality for Logs (using 'general' app type)
     this.setupAppManualSave(container, "general", settings);
