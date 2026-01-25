@@ -92,27 +92,23 @@
     
     /* CRITICAL: Make logs container flow naturally instead of fixed height with internal scrolling */
     #logsSection .logs {
-        height: auto; /* Changed from fixed calc() height to auto */
-        min-height: 400px; /* Minimum height to ensure container isn't too small */
-        max-height: calc(100vh - 250px); /* Maximum height to prevent overflow */
-        overflow-y: auto;
-        background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
-        border-radius: 10px;
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
-        border: 1px solid rgba(90, 109, 137, 0.15);
-        padding: 15px;
+        height: auto;
+        min-height: 400px;
+        overflow: visible !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 15px 0;
         font-family: 'Fira Code', 'Courier New', monospace;
         font-size: 12px;
         line-height: 1.4;
-        padding-bottom: 70px; /* Extra padding at bottom to ensure content isn't cut off */
-        position: relative; /* For accent line positioning */
-        z-index: 1; /* Ensure it's below the header */
-        margin-top: 2px; /* Reduced from 5px to match header spacing reduction */
-        
-        /* Flex properties for better content alignment - REMOVED column-reverse */
+        padding-bottom: 80px; /* Extra padding at bottom */
+        position: relative;
+        z-index: 1;
+        margin-top: 10px;
         display: flex;
         flex-direction: column;
-        justify-content: flex-start; /* Start from top to show newest entries first */
+        justify-content: flex-start;
     }
     
     /* Modern Logs Section Styling */
@@ -327,29 +323,24 @@
     
     /* Logs container styling with modern gradient */
     .logs {
-        height: auto; /* Changed from fixed calc() height to auto */
-        min-height: 400px; /* Minimum height to ensure container isn't too small */
-        max-height: calc(100vh - 250px); /* Maximum height to prevent overflow */
-        overflow-y: auto;
-        background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
-        border-radius: 10px;
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
-        border: 1px solid rgba(90, 109, 137, 0.15);
-        padding: 15px;
+        height: auto;
+        min-height: 400px;
+        overflow: visible !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 15px 0;
         font-family: 'Fira Code', 'Courier New', monospace;
         line-height: 1.5;
         font-size: 13px;
         color: rgba(255, 255, 255, 0.9);
-        -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
-        padding-bottom: 70px; /* Extra padding at bottom to ensure content isn't cut off */
-        position: relative; /* For accent line positioning */
-        z-index: 1; /* Ensure it's below the header */
-        margin-top: 2px; /* Reduced from 5px to match header spacing reduction */
-        
-        /* Flex properties for better content alignment */
+        padding-bottom: 80px;
+        position: relative;
+        z-index: 1;
+        margin-top: 10px;
         display: flex;
         flex-direction: column;
-        justify-content: flex-start; /* Start from top when there are few logs */
+        justify-content: flex-start;
     }
     
     .logs::-webkit-scrollbar {
@@ -376,35 +367,24 @@
         background: linear-gradient(180deg, rgba(52, 152, 219, 0.6), rgba(155, 89, 182, 0.6));
     }
     
-    /* Log entry styling with modern look */
     .log-entry {
-        padding: 6px 8px;
-        margin-bottom: 3px;
-        border-radius: 6px;
+        padding: 8px 12px;
+        margin-bottom: 4px;
+        border-radius: 8px;
         display: flex;
         flex-wrap: wrap;
         align-items: flex-start;
-        gap: 8px;
+        gap: 12px;
         line-height: 1.4;
         transition: all 0.3s ease;
-        background: rgba(16, 20, 30, 0.3);
-        border-left: 2px solid transparent;
-    }
-    
-    /* Alternating log entry styling with subtle gradients */
-    .log-entry:nth-child(odd) {
-        background: linear-gradient(90deg, rgba(24, 32, 48, 0.4) 0%, rgba(16, 22, 38, 0.3) 100%);
-    }
-    
-    .log-entry:nth-child(even) {
-        background: linear-gradient(90deg, rgba(20, 28, 44, 0.3) 0%, rgba(16, 20, 34, 0.2) 100%);
+        background: rgba(30, 41, 59, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.03);
     }
     
     .log-entry:hover {
-        background: linear-gradient(90deg, rgba(40, 58, 90, 0.15), rgba(30, 40, 65, 0.1));
-        border-left: 2px solid rgba(52, 152, 219, 0.4);
+        background: rgba(59, 130, 246, 0.05);
+        border-color: rgba(59, 130, 246, 0.1);
         transform: translateX(2px);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
     }
     
     .log-timestamp {
