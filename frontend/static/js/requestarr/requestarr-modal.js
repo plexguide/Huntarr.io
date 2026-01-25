@@ -28,7 +28,7 @@ export class RequestarrModal {
     // MODAL SYSTEM
     // ========================================
 
-    async openModal(tmdbId, mediaType) {
+    async openModal(tmdbId, mediaType, suggestedInstance = null) {
         const modal = document.getElementById('media-modal');
         const modalBody = modal.querySelector('.modal-body');
 
@@ -37,6 +37,9 @@ export class RequestarrModal {
         
         modal.style.display = 'flex';
         modalBody.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading details...</p></div>';
+        
+        // Store suggested instance for use in renderModal
+        this.suggestedInstance = suggestedInstance;
         
         try {
             const response = await fetch(`./api/requestarr/details/${mediaType}/${tmdbId}`);
@@ -61,9 +64,18 @@ export class RequestarrModal {
         const isTVShow = data.media_type === 'tv';
         const instances = isTVShow ? this.core.instances.sonarr : this.core.instances.radarr;
         
-        // Use the currently selected instance from the discover view dropdown
+        // Determine default instance:
+        // 1. Use suggested instance (from Discovery home)
+        // 2. Use currently selected instance (from Movies/TV browsing views)
+        // 3. Fall back to first available instance
         const currentlySelectedInstance = isTVShow ? this.core.content.selectedTVInstance : this.core.content.selectedMovieInstance;
-        const defaultInstance = currentlySelectedInstance || instances[0]?.name || '';
+        const defaultInstance = this.suggestedInstance || currentlySelectedInstance || instances[0]?.name || '';
+        
+        console.log('[RequestarrModal] Default instance selection:', {
+            suggestedInstance: this.suggestedInstance,
+            currentlySelectedInstance: currentlySelectedInstance,
+            finalDefault: defaultInstance
+        });
         
         let modalHTML = `
             <div class="request-modal-header" style="background-image: url(${data.backdrop_path || ''});">

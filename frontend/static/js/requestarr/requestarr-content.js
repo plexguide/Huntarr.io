@@ -242,6 +242,24 @@ export class RequestarrContent {
     // ========================================
 
     async loadDiscoverContent() {
+        // Load default instances first
+        try {
+            const settingsResponse = await fetch('./api/requestarr/settings/default-instances');
+            const settingsData = await settingsResponse.json();
+            if (settingsData.success && settingsData.defaults) {
+                this.defaultMovieInstance = settingsData.defaults.movie_instance || '';
+                this.defaultTVInstance = settingsData.defaults.tv_instance || '';
+                console.log('[RequestarrContent] Loaded default instances:', {
+                    movie: this.defaultMovieInstance,
+                    tv: this.defaultTVInstance
+                });
+            }
+        } catch (error) {
+            console.error('[RequestarrContent] Error loading default instances:', error);
+            this.defaultMovieInstance = '';
+            this.defaultTVInstance = '';
+        }
+        
         await Promise.all([
             this.loadTrending(),
             this.loadPopularMovies(),
@@ -258,7 +276,9 @@ export class RequestarrContent {
             if (data.results && data.results.length > 0) {
                 carousel.innerHTML = '';
                 data.results.forEach(item => {
-                    carousel.appendChild(this.createMediaCard(item));
+                    // Use the appropriate default instance based on media type
+                    const suggestedInstance = item.media_type === 'movie' ? this.defaultMovieInstance : this.defaultTVInstance;
+                    carousel.appendChild(this.createMediaCard(item, suggestedInstance));
                 });
             } else {
                 carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No trending content available</p>';
@@ -272,26 +292,8 @@ export class RequestarrContent {
     async loadPopularMovies() {
         const carousel = document.getElementById('popular-movies-carousel');
         try {
-            // Get default movie instance from settings
-            let instanceName = '';
-            try {
-                const settingsResponse = await fetch('./api/requestarr/settings/default-instances');
-                const settingsData = await settingsResponse.json();
-                if (settingsData.success && settingsData.defaults && settingsData.defaults.movie_instance) {
-                    instanceName = settingsData.defaults.movie_instance;
-                }
-            } catch (error) {
-                console.error('[RequestarrContent] Error loading default movie instance:', error);
-            }
-            
-            // If no default, try to get first available instance
-            if (!instanceName) {
-                const instancesResponse = await fetch('./api/requestarr/instances/radarr');
-                const instancesData = await instancesResponse.json();
-                if (instancesData.instances && instancesData.instances.length > 0) {
-                    instanceName = instancesData.instances[0].name;
-                }
-            }
+            // Use the default movie instance we loaded in loadDiscoverContent
+            const instanceName = this.defaultMovieInstance;
             
             // Build URL with instance info if available
             let url = './api/requestarr/discover/movies?page=1';
@@ -305,7 +307,7 @@ export class RequestarrContent {
             if (data.results && data.results.length > 0) {
                 carousel.innerHTML = '';
                 data.results.forEach(item => {
-                    carousel.appendChild(this.createMediaCard(item));
+                    carousel.appendChild(this.createMediaCard(item, this.defaultMovieInstance));
                 });
             } else {
                 carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies available</p>';
@@ -319,26 +321,8 @@ export class RequestarrContent {
     async loadPopularTV() {
         const carousel = document.getElementById('popular-tv-carousel');
         try {
-            // Get default TV instance from settings
-            let instanceName = '';
-            try {
-                const settingsResponse = await fetch('./api/requestarr/settings/default-instances');
-                const settingsData = await settingsResponse.json();
-                if (settingsData.success && settingsData.defaults && settingsData.defaults.tv_instance) {
-                    instanceName = settingsData.defaults.tv_instance;
-                }
-            } catch (error) {
-                console.error('[RequestarrContent] Error loading default TV instance:', error);
-            }
-            
-            // If no default, try to get first available instance
-            if (!instanceName) {
-                const instancesResponse = await fetch('./api/requestarr/instances/sonarr');
-                const instancesData = await instancesResponse.json();
-                if (instancesData.instances && instancesData.instances.length > 0) {
-                    instanceName = instancesData.instances[0].name;
-                }
-            }
+            // Use the default TV instance we loaded in loadDiscoverContent
+            const instanceName = this.defaultTVInstance;
             
             // Build URL with instance info if available
             let url = './api/requestarr/discover/tv?page=1';
@@ -352,7 +336,7 @@ export class RequestarrContent {
             if (data.results && data.results.length > 0) {
                 carousel.innerHTML = '';
                 data.results.forEach(item => {
-                    carousel.appendChild(this.createMediaCard(item));
+                    carousel.appendChild(this.createMediaCard(item, this.defaultTVInstance));
                 });
             } else {
                 carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows available</p>';
@@ -621,7 +605,7 @@ export class RequestarrContent {
     // MEDIA CARD CREATION
     // ========================================
 
-    createMediaCard(item) {
+    createMediaCard(item, suggestedInstance = null) {
         const card = document.createElement('div');
         card.className = 'media-card';
         
@@ -630,6 +614,9 @@ export class RequestarrContent {
         card.setAttribute('data-media-type', item.media_type);
         // Store full item data for hide functionality
         card.itemData = item;
+        
+        // Store suggested instance for modal
+        card.suggestedInstance = suggestedInstance;
         
         const posterUrl = item.poster_path || './static/images/blackout.jpg';
         const year = item.year || 'N/A';
@@ -707,13 +694,13 @@ export class RequestarrContent {
             if (hideBtn && (e.target === hideBtn || hideBtn.contains(e.target))) {
                 return;
             }
-            this.core.modal.openModal(item.tmdb_id, item.media_type);
+            this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
         });
         
         if (requestBtn) {
             requestBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.core.modal.openModal(item.tmdb_id, item.media_type);
+                this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
             });
         }
         
