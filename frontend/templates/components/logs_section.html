@@ -136,7 +136,7 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 10px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap; /* Prevent wrapping to keep on one line */
         gap: 15px;
         position: sticky;
         top: 0;
@@ -250,150 +250,79 @@
         flex-wrap: wrap;
     }
     
-    /* Log search styling */
+    /* Logs search styling */
     .log-search {
         display: flex;
         align-items: center;
-        border-radius: 8px;
-        overflow: hidden;
-        background: linear-gradient(135deg, rgba(30, 39, 56, 0.7) 0%, rgba(14, 20, 32, 0.7) 100%);
-        border: 1px solid rgba(90, 109, 137, 0.3);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        gap: 10px;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
         position: relative;
+        flex: 1; /* Allow search to take up available space */
     }
-    
-    /* Container for search results info */
-    .search-results-info {
-        display: none; /* Hidden by default, shown when search is active */
-        position: absolute;
-        top: -25px;
-        left: 0;
-        right: 0;
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.7);
-        text-align: center;
-        padding: 2px 0;
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(155, 89, 182, 0.2));
-        border-radius: 4px;
-        backdrop-filter: blur(3px);
-    }
-    
+
     .log-search::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, rgba(52, 152, 219, 0.4), rgba(155, 89, 182, 0.4));
+        display: none !important;
     }
-    
+
     .log-search input {
-        background: transparent;
-        border: none;
+        background: #1e293b;
+        border: 1px solid #334155;
         color: rgba(255, 255, 255, 0.9);
-        padding: 8px 12px;
+        padding: 10px 12px 10px 38px;
         font-size: 14px;
-        width: 200px;
+        width: 100%;
         outline: none;
+        border-radius: 8px;
+        height: 42px;
     }
-    
-    .log-search input::placeholder {
-        color: rgba(255, 255, 255, 0.5);
-    }
-    
-    .log-search button {
-        background: rgba(52, 152, 219, 0.2);
+
+    .log-search button#logSearchButton {
+        background: #3b82f6;
         border: none;
-        color: rgba(255, 255, 255, 0.8);
-        padding: 8px 12px;
+        color: white;
+        padding: 0 20px;
+        border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s ease;
-    }
-    
-    .log-search button:hover {
-        background: rgba(52, 152, 219, 0.4);
-    }
-    
-    .clear-search-button {
-        background: rgba(231, 76, 60, 0.2) !important;
-    }
-    
-    .clear-search-button:hover {
-        background: rgba(231, 76, 60, 0.4) !important;
-    }
-    
-    .connection-status {
+        height: 42px;
         display: flex;
         align-items: center;
-        gap: 5px;
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.9);
-        padding: 5px 10px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, rgba(30, 39, 56, 0.6) 0%, rgba(14, 20, 32, 0.6) 100%);
-        border: 1px solid rgba(90, 109, 137, 0.3);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    #logConnectionStatus {
+        justify-content: center;
         font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 12px;
     }
-    
-    #logConnectionStatus.status-connected {
-        color: #2ecc71;
-        background: linear-gradient(135deg, rgba(46, 204, 113, 0.1) 0%, rgba(46, 204, 113, 0.2) 100%);
-        border: 1px solid rgba(46, 204, 113, 0.3);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+
+    .log-search button#logSearchButton:hover {
+        background: #2563eb;
     }
-    
-    #logConnectionStatus.status-disconnected {
-        color: #95a5a6;
-        background: linear-gradient(135deg, rgba(149, 165, 166, 0.1) 0%, rgba(149, 165, 166, 0.2) 100%);
-        border: 1px solid rgba(149, 165, 166, 0.3);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-    }
-    
-    #logConnectionStatus.status-error {
-        color: #ff6b6b;
-        background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(231, 76, 60, 0.2) 100%);
-        border: 1px solid rgba(231, 76, 60, 0.3);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-    }
-    
+
     .log-options {
         display: flex;
         align-items: center;
         gap: 10px;
     }
-    
-    /* Auto-scroll styles removed to prevent pagination interference */
-    
+
     .clear-button {
-        padding: 8px 16px;
-        background: linear-gradient(135deg, #e74c3c 0%, #f15846 100%);
-        border: none;
+        padding: 0 16px;
+        background: transparent;
+        border: 1px solid #ef4444;
         border-radius: 8px;
-        color: white;
+        color: #ef4444;
         font-weight: 500;
         cursor: pointer;
         display: flex;
         align-items: center;
         gap: 8px;
         transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+        height: 42px;
+        white-space: nowrap;
     }
-    
+
     .clear-button:hover {
-        background: linear-gradient(135deg, #f15846 0%, #f3695a 100%);
+        background: #ef4444;
+        color: white;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
     }
     
     /* Logs container styling with modern gradient */

@@ -8,7 +8,7 @@ const huntManagerModule = {
     currentApp: 'all',
     currentPage: 1,
     totalPages: 1,
-    pageSize: 100,
+    pageSize: 20,
     searchQuery: '',
     isLoading: false,
     
