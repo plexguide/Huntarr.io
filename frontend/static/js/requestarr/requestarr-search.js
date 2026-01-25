@@ -27,11 +27,12 @@ export class RequestarrSearch {
         }
         
         if (!query.trim()) {
-            document.getElementById('search-results-view').style.display = 'none';
-            document.getElementById('requestarr-discover-view').style.display = 'block';
-            document.getElementById('requestarr-movies-view').style.display = 'none';
-            document.getElementById('requestarr-tv-view').style.display = 'none';
-            document.getElementById('requestarr-history-view').style.display = 'none';
+            this.hideElement('search-results-view');
+            this.showElement('requestarr-discover-view');
+            this.hideElement('requestarr-movies-view');
+            this.hideElement('requestarr-tv-view');
+            this.hideElement('requestarr-hidden-view');
+            this.hideElement('requestarr-settings-view');
             return;
         }
         
@@ -43,15 +44,23 @@ export class RequestarrSearch {
     async performGlobalSearch(query) {
         const resultsView = document.getElementById('search-results-view');
         const resultsGrid = document.getElementById('search-results-grid');
-        const discoverView = document.getElementById('requestarr-discover-view');
         
-        discoverView.style.display = 'none';
-        document.getElementById('requestarr-movies-view').style.display = 'none';
-        document.getElementById('requestarr-tv-view').style.display = 'none';
-        document.getElementById('requestarr-history-view').style.display = 'none';
-        resultsView.style.display = 'block';
+        this.hideElement('requestarr-discover-view');
+        this.hideElement('requestarr-movies-view');
+        this.hideElement('requestarr-tv-view');
+        this.hideElement('requestarr-hidden-view');
+        this.hideElement('requestarr-settings-view');
         
-        resultsGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
+        if (resultsView) {
+            resultsView.style.display = 'block';
+        }
+        
+        if (resultsGrid) {
+            resultsGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
+        } else {
+            console.error('[RequestarrSearch] search-results-grid not found');
+            return;
+        }
         
         try {
             const [moviesResponse, tvResponse] = await Promise.all([
@@ -85,6 +94,18 @@ export class RequestarrSearch {
             console.error('[RequestarrDiscover] Error searching:', error);
             resultsGrid.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px; width: 100%;">Search failed</p>';
         }
+    }
+
+    // Helper to safely hide elements
+    hideElement(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    }
+
+    // Helper to safely show elements
+    showElement(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'block';
     }
 
     // ========================================
