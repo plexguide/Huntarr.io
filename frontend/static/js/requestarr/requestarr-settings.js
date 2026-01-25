@@ -127,20 +127,9 @@ export class RequestarrSettings {
                 this.hiddenMediaState.instanceValue = instanceSelect.value || '';
                 this.hiddenMediaState.page = 1;
                 this.hiddenMediaFetchKey = null;
-                this.loadHiddenMedia(this.hiddenMediaState.mediaType, 1);
+                this.loadHiddenMedia(null, 1);
             });
         }
-
-        document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.onclick = () => {
-                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                const filter = tab.dataset.filter;
-                const mediaTypeFilter = filter === 'all' ? null : filter;
-                this.loadHiddenMedia(mediaTypeFilter, 1);
-            };
-        });
 
         this.loadHiddenMediaInstances();
         this.hiddenMediaControlsInitialized = true;

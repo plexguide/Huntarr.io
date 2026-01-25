@@ -3184,52 +3184,14 @@ input:disabled + .toggle-slider {
     color: #888;
 }
 
-/* Filter Tabs with Instance Selector */
-.hidden-media-filters {
-    display: flex;
-    gap: 12px;
+/* Instance Selector Row */
+.hidden-media-instance-row {
     margin-bottom: 30px;
-    flex-wrap: wrap;
-    align-items: center;
 }
 
-.filter-tab {
-    padding: 10px 20px;
-    background: rgba(31, 41, 55, 0.5);
-    border: 1px solid rgba(75, 85, 99, 0.5);
-    border-radius: 8px;
-    color: #9ca3af;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.filter-tab:hover {
-    background: rgba(31, 41, 55, 0.8);
-    border-color: #f59e0b;
-    color: #fff;
-}
-
-.filter-tab.active {
-    background: #f59e0b;
-    border-color: #f59e0b;
-    color: #fff;
-}
-
-.filter-tab i {
-    font-size: 14px;
-}
-
-/* Instance Selector in Filter Row */
-.hidden-media-filters .hidden-media-instance {
-    margin-left: auto;
-}
-
-.hidden-media-filters .hidden-media-instance .control-select {
-    min-width: 220px;
+.hidden-media-instance-row .control-select {
+    min-width: 125px;
+    max-width: 200px;
 }
 
 .pagination-container {
