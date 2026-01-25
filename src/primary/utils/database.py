@@ -2543,6 +2543,7 @@ class HuntarrDatabase:
                     (tmdb_id, media_type, title, poster_path, app_type, instance_name, hidden_at, hidden_at_readable)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (tmdb_id, media_type, title, poster_path, app_type, instance_name, now, readable_time))
+                conn.commit()
                 
                 logger.info(f"Added hidden media: {title} (TMDB ID: {tmdb_id}, Type: {media_type}, Instance: {app_type}/{instance_name})")
                 return True
@@ -2558,6 +2559,7 @@ class HuntarrDatabase:
                     DELETE FROM requestarr_hidden_media 
                     WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
                 ''', (tmdb_id, media_type, app_type, instance_name))
+                conn.commit()
                 
                 logger.info(f"Removed hidden media: TMDB ID {tmdb_id}, Type: {media_type}, Instance: {app_type}/{instance_name}")
                 return True

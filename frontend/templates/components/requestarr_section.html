@@ -143,22 +143,13 @@
 
         <!-- Hidden Media View -->
         <div id="requestarr-hidden-view" class="requestarr-view">
-            <h1 class="page-title">Hidden Media</h1>
-            <p class="page-subtitle">Media you've permanently hidden from discovery</p>
-
-            <div class="hidden-media-controls">
-                <div class="hidden-media-search">
-                    <i class="fas fa-search"></i>
-                    <input id="hidden-media-search" class="hidden-media-search-input" type="text" placeholder="Search hidden media...">
-                </div>
-                <div class="hidden-media-instance">
-                    <select id="hidden-media-instance" class="control-select instance-select">
-                        <option value="">All Instances</option>
-                    </select>
-                </div>
+            <!-- Search Bar - Full Width -->
+            <div class="hidden-media-search">
+                <i class="fas fa-search"></i>
+                <input id="hidden-media-search" class="hidden-media-search-input" type="text" placeholder="Search hidden media...">
             </div>
             
-            <!-- Filter Tabs -->
+            <!-- Filter Tabs with Instance Selector -->
             <div class="hidden-media-filters">
                 <button class="filter-tab active" data-filter="all">
                     <i class="fas fa-th"></i> All
@@ -169,6 +160,11 @@
                 <button class="filter-tab" data-filter="tv">
                     <i class="fas fa-tv"></i> TV Shows
                 </button>
+                <div class="hidden-media-instance">
+                    <select id="hidden-media-instance" class="control-select instance-select">
+                        <option value="">All Instances</option>
+                    </select>
+                </div>
             </div>
             
             <!-- Hidden Media Grid -->
