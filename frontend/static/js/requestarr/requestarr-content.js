@@ -44,8 +44,28 @@ export class RequestarrContent {
             if (data.instances && data.instances.length > 0) {
                 select.innerHTML = '';
                 
-                // Check localStorage for saved instance
-                const savedInstance = localStorage.getItem('requestarr-selected-movie-instance');
+                // Priority: 1) Saved settings default, 2) localStorage, 3) First instance
+                let defaultInstanceName = null;
+                
+                // Try to get default from settings
+                try {
+                    const settingsResponse = await fetch('./api/requestarr/settings/default-instances');
+                    const settingsData = await settingsResponse.json();
+                    if (settingsData.success && settingsData.defaults && settingsData.defaults.movie_instance) {
+                        defaultInstanceName = settingsData.defaults.movie_instance;
+                    }
+                } catch (error) {
+                    console.log('[RequestarrContent] No default movie instance in settings');
+                }
+                
+                // Fall back to localStorage if no settings default
+                if (!defaultInstanceName) {
+                    const savedInstance = localStorage.getItem('requestarr-selected-movie-instance');
+                    if (savedInstance) {
+                        defaultInstanceName = savedInstance;
+                    }
+                }
+                
                 let selectedIndex = 0;
                 
                 data.instances.forEach((instance, index) => {
@@ -53,11 +73,11 @@ export class RequestarrContent {
                     option.value = instance.name;
                     option.textContent = `Radarr - ${instance.name}`;
                     
-                    // Select saved instance if it exists, otherwise first one
-                    if (savedInstance && instance.name === savedInstance) {
+                    // Select the instance based on priority
+                    if (defaultInstanceName && instance.name === defaultInstanceName) {
                         option.selected = true;
                         selectedIndex = index;
-                    } else if (!savedInstance && index === 0) {
+                    } else if (!defaultInstanceName && index === 0) {
                         option.selected = true;
                     }
                     
@@ -66,13 +86,14 @@ export class RequestarrContent {
                 
                 // Set initial selected instance
                 this.selectedMovieInstance = data.instances[selectedIndex].name;
+                console.log(`[RequestarrContent] Using movie instance: ${this.selectedMovieInstance}`);
                 
                 // Setup change handler
                 select.addEventListener('change', async () => {
                     this.selectedMovieInstance = select.value;
                     console.log(`[RequestarrContent] Switched to movie instance: ${this.selectedMovieInstance}`);
                     
-                    // Save to localStorage
+                    // Save to localStorage (session preference)
                     localStorage.setItem('requestarr-selected-movie-instance', this.selectedMovieInstance);
                     
                     // Clear the grid immediately
@@ -125,8 +146,28 @@ export class RequestarrContent {
             if (data.instances && data.instances.length > 0) {
                 select.innerHTML = '';
                 
-                // Check localStorage for saved instance
-                const savedInstance = localStorage.getItem('requestarr-selected-tv-instance');
+                // Priority: 1) Saved settings default, 2) localStorage, 3) First instance
+                let defaultInstanceName = null;
+                
+                // Try to get default from settings
+                try {
+                    const settingsResponse = await fetch('./api/requestarr/settings/default-instances');
+                    const settingsData = await settingsResponse.json();
+                    if (settingsData.success && settingsData.defaults && settingsData.defaults.tv_instance) {
+                        defaultInstanceName = settingsData.defaults.tv_instance;
+                    }
+                } catch (error) {
+                    console.log('[RequestarrContent] No default TV instance in settings');
+                }
+                
+                // Fall back to localStorage if no settings default
+                if (!defaultInstanceName) {
+                    const savedInstance = localStorage.getItem('requestarr-selected-tv-instance');
+                    if (savedInstance) {
+                        defaultInstanceName = savedInstance;
+                    }
+                }
+                
                 let selectedIndex = 0;
                 
                 data.instances.forEach((instance, index) => {
@@ -134,11 +175,11 @@ export class RequestarrContent {
                     option.value = instance.name;
                     option.textContent = `Sonarr - ${instance.name}`;
                     
-                    // Select saved instance if it exists, otherwise first one
-                    if (savedInstance && instance.name === savedInstance) {
+                    // Select the instance based on priority
+                    if (defaultInstanceName && instance.name === defaultInstanceName) {
                         option.selected = true;
                         selectedIndex = index;
-                    } else if (!savedInstance && index === 0) {
+                    } else if (!defaultInstanceName && index === 0) {
                         option.selected = true;
                     }
                     
@@ -147,13 +188,14 @@ export class RequestarrContent {
                 
                 // Set initial selected instance
                 this.selectedTVInstance = data.instances[selectedIndex].name;
+                console.log(`[RequestarrContent] Using TV instance: ${this.selectedTVInstance}`);
                 
                 // Setup change handler
                 select.addEventListener('change', async () => {
                     this.selectedTVInstance = select.value;
                     console.log(`[RequestarrContent] Switched to TV instance: ${this.selectedTVInstance}`);
                     
-                    // Save to localStorage
+                    // Save to localStorage (session preference)
                     localStorage.setItem('requestarr-selected-tv-instance', this.selectedTVInstance);
                     
                     // Clear the grid immediately

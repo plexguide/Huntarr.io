@@ -3,20 +3,6 @@
     <link rel="stylesheet" href="./static/css/requestarr-discover.css">
     
     <div class="requestarr-content">
-        <!-- Global Search Bar -->
-        <div class="global-search-bar">
-            <i class="fas fa-search"></i>
-            <input type="text" id="global-search-input" placeholder="Search Movies & TV" autocomplete="off">
-        </div>
-        
-        <!-- Search Results View -->
-        <div id="search-results-view" style="display: none;">
-            <h2 class="search-results-title">Search Results</h2>
-            <div id="search-results-grid" class="search-results-grid">
-                <!-- Search results will be populated here -->
-            </div>
-        </div>
-        
         <!-- Discover View -->
         <div id="requestarr-discover-view" class="requestarr-view active" style="display: block;">
             <!-- Trending Section -->
@@ -207,6 +193,37 @@
         <!-- Settings View -->
         <div id="requestarr-settings-view" class="requestarr-view">
             <div class="requestarr-settings-container">
+                <!-- Default Discovery Instances Card -->
+                <div class="settings-card">
+                    <h3>Default Discovery Instances</h3>
+                    <p style="color: #888; margin-bottom: 20px; font-size: 14px;">
+                        Set which instances to use by default when loading the Discovery home view. 
+                        If no instance is selected, the first available instance will be used automatically.
+                    </p>
+                    
+                    <div class="settings-field">
+                        <label for="default-movie-instance">Default Movie Instance</label>
+                        <select id="default-movie-instance" class="settings-select">
+                            <option value="">No instance selected (will use first available)</option>
+                        </select>
+                        <small>Radarr instance used when loading the Discovery home page</small>
+                    </div>
+                    
+                    <div class="settings-field">
+                        <label for="default-tv-instance">Default TV Instance</label>
+                        <select id="default-tv-instance" class="settings-select">
+                            <option value="">No instance selected (will use first available)</option>
+                        </select>
+                        <small>Sonarr instance used when loading the Discovery home page</small>
+                    </div>
+                    
+                    <div class="settings-actions">
+                        <button id="save-default-instances" class="btn-primary">
+                            <i class="fas fa-save"></i> Save Default Instances
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Filters Card -->
                 <div class="settings-card">
                     <h3>Filters</h3>

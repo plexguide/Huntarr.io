@@ -952,6 +952,37 @@ class RequestarrAPI:
         except Exception as e:
             logger.error(f"Error setting discover filters: {e}")
             raise
+    
+    def get_default_instances(self) -> dict:
+        """Get default instance settings for discovery"""
+        try:
+            requestarr_config = self.db.get_app_config('requestarr')
+            if requestarr_config and 'default_instances' in requestarr_config:
+                defaults = requestarr_config['default_instances']
+                return {
+                    'movie_instance': defaults.get('movie_instance', ''),
+                    'tv_instance': defaults.get('tv_instance', '')
+                }
+            # No defaults set
+            return {'movie_instance': '', 'tv_instance': ''}
+        except Exception as e:
+            logger.error(f"Error getting default instances: {e}")
+            return {'movie_instance': '', 'tv_instance': ''}
+    
+    def set_default_instances(self, movie_instance: str, tv_instance: str):
+        """Set default instance settings for discovery"""
+        try:
+            # Get existing config or create new one
+            requestarr_config = self.db.get_app_config('requestarr') or {}
+            requestarr_config['default_instances'] = {
+                'movie_instance': movie_instance,
+                'tv_instance': tv_instance
+            }
+            self.db.save_app_config('requestarr', requestarr_config)
+            logger.info(f"Set default instances - Movies: {movie_instance or 'None'}, TV: {tv_instance or 'None'}")
+        except Exception as e:
+            logger.error(f"Error setting default instances: {e}")
+            raise
 
     def get_watch_providers(self, media_type: str, region: str = '') -> List[Dict[str, Any]]:
         """Get watch providers for a media type and region"""

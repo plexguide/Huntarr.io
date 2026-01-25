@@ -418,6 +418,30 @@ def set_discover_filters():
         logger.error(f"Error setting discover filters: {e}")
         return jsonify({'success': False, 'error': 'Failed to set discover filters'}), 500
 
+@requestarr_bp.route('/settings/default-instances', methods=['GET'])
+def get_default_instances():
+    """Get default instance settings for discovery"""
+    try:
+        defaults = requestarr_api.get_default_instances()
+        return jsonify({'success': True, 'defaults': defaults})
+    except Exception as e:
+        logger.error(f"Error getting default instances: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get default instances'}), 500
+
+@requestarr_bp.route('/settings/default-instances', methods=['POST'])
+def set_default_instances():
+    """Set default instance settings for discovery"""
+    try:
+        data = request.get_json()
+        movie_instance = data.get('movie_instance', '')
+        tv_instance = data.get('tv_instance', '')
+        
+        requestarr_api.set_default_instances(movie_instance, tv_instance)
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error setting default instances: {e}")
+        return jsonify({'success': False, 'error': 'Failed to set default instances'}), 500
+
 @requestarr_bp.route('/watch-providers/<media_type>', methods=['GET'])
 def get_watch_providers(media_type):
     """Get watch providers for a media type and region"""
