@@ -9,3 +9,4 @@ pywin32==308; sys_platform == 'win32' # For Windows service support
 apprise==1.6.0     # Added for notification support
 markdown==3.4.3    # Required by apprise
 pyyaml==6.0.1       # Required by apprise (6.0.1 has pre-built Windows wheels)
+pystray==0.19.5; sys_platform == 'win32' # For Windows system tray icon

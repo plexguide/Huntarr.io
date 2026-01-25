@@ -39,6 +39,7 @@ block_cipher = None
 datas = [
     (str(project_dir / 'frontend'), 'frontend'),
     (str(project_dir / 'src'), 'src'),
+    (str(project_dir / 'distribution' / 'windows' / 'resources'), 'distribution/windows/resources'),
 ]
 
 # Add apprise data files to fix attachment directory error
@@ -176,6 +177,11 @@ a = Analysis(
         'cryptography.hazmat.primitives.ciphers',
         'cryptography.hazmat.backends',
         'cryptography.hazmat.backends.openssl',
+        # System tray support (Windows)
+        'pystray',
+        'pystray._win32',
+        'PIL',
+        'PIL._tkinter_finder',
     ],
     hookspath=[],
     hooksconfig={},
@@ -199,7 +205,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
+    console=False,  # Hide console window - Huntarr runs as background service
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
