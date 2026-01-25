@@ -153,11 +153,11 @@ export class RequestarrModal {
         this.core.currentModalData = data;
         
         // Load status if instance is already selected
-        if (rememberedInstance) {
+        if (defaultInstance) {
             if (isTVShow) {
-                this.loadSeriesStatus(rememberedInstance);
+                this.loadSeriesStatus(defaultInstance);
             } else {
-                this.loadMovieStatus(rememberedInstance);
+                this.loadMovieStatus(defaultInstance);
             }
         }
         
