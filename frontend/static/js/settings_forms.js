@@ -83,7 +83,7 @@ const SettingsForms = {
           name: "Default",
           api_url: settings.api_url || "", // Legacy support
           api_key: settings.api_key || "", // Legacy support
-          enabled: true,
+          enabled: false,
         },
       ];
     }
@@ -161,7 +161,7 @@ const SettingsForms = {
                             <label for="sonarr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                                 <input type="checkbox" id="sonarr-enabled-${index}" name="enabled" ${
-        instance.enabled !== false ? "checked" : ""
+        instance.enabled === true ? "checked" : ""
       }>
                                 <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                             </label>
@@ -839,7 +839,7 @@ const SettingsForms = {
           name: "Default",
           api_url: settings.api_url || "",
           api_key: settings.api_key || "",
-          enabled: true,
+          enabled: false,
         },
       ];
     }
@@ -896,7 +896,7 @@ const SettingsForms = {
                             <label for="radarr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                                 <input type="checkbox" id="radarr-enabled-${index}" name="enabled" ${
-        instance.enabled !== false ? "checked" : ""
+        instance.enabled === true ? "checked" : ""
       }>
                                 <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                             </label>
@@ -1337,7 +1337,7 @@ const SettingsForms = {
           name: "Default",
           api_url: settings.api_url || "", // Legacy support
           api_key: settings.api_key || "", // Legacy support
-          enabled: true,
+          enabled: false,
         },
       ];
     }
@@ -1394,7 +1394,7 @@ const SettingsForms = {
                             <label for="lidarr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                                 <input type="checkbox" id="lidarr-enabled-${index}" name="enabled" ${
-        instance.enabled !== false ? "checked" : ""
+        instance.enabled === true ? "checked" : ""
       }>
                                 <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                             </label>
@@ -1713,7 +1713,7 @@ const SettingsForms = {
           name: "Default",
           api_url: settings.api_url || "", // Legacy support
           api_key: settings.api_key || "", // Legacy support
-          enabled: true,
+          enabled: false,
         },
       ];
     }
@@ -1770,7 +1770,7 @@ const SettingsForms = {
                             <label for="readarr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                                 <input type="checkbox" id="readarr-enabled-${index}" name="enabled" ${
-        instance.enabled !== false ? "checked" : ""
+        instance.enabled === true ? "checked" : ""
       }>
                                 <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                             </label>
@@ -2072,7 +2072,7 @@ const SettingsForms = {
           name: "Default",
           api_url: "",
           api_key: "",
-          enabled: true,
+          enabled: false,
         },
       ];
     }
@@ -2129,7 +2129,7 @@ const SettingsForms = {
                             <label for="whisparr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                                 <input type="checkbox" id="whisparr-enabled-${index}" name="enabled" ${
-        instance.enabled !== false ? "checked" : ""
+        instance.enabled === true ? "checked" : ""
       }>
                                 <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                             </label>
@@ -2525,7 +2525,7 @@ const SettingsForms = {
           name: "Default",
           api_url: "",
           api_key: "",
-          enabled: true,
+          enabled: false,
         },
       ];
     }
@@ -2582,7 +2582,7 @@ const SettingsForms = {
                             <label for="eros-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-enabled" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
                             <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                                 <input type="checkbox" id="eros-enabled-${index}" name="enabled" ${
-        instance.enabled !== false ? "checked" : ""
+        instance.enabled === true ? "checked" : ""
       }>
                                 <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                             </label>
@@ -5207,7 +5207,7 @@ const SettingsForms = {
           name: "Default",
           api_url: "",
           api_key: "",
-          enabled: true,
+          enabled: false,
         };
 
         // Add per-instance missing/upgrade defaults for apps that support it
@@ -6460,6 +6460,63 @@ const SettingsForms = {
       `Setting up instance management for ${appType} with ${initialCount} instances`
     );
 
+    // Function to toggle fields based on enabled state
+    const toggleInstanceFields = (instanceItem) => {
+      const enabledCheckbox = instanceItem.querySelector('input[name="enabled"]');
+      const contentDiv = instanceItem.querySelector(".instance-content");
+      if (!enabledCheckbox || !contentDiv) return;
+
+      const isEnabled = enabledCheckbox.checked;
+      const inputs = contentDiv.querySelectorAll("input, select, button");
+
+      inputs.forEach((input) => {
+        // Don't disable the enabled checkbox itself
+        if (input === enabledCheckbox) return;
+        
+        // Don't disable the reset state button if we want to allow resetting even when disabled
+        // Actually, the user said "nothing should be able to be selectable or you should not be able to type anything"
+        // So I will disable everything except the toggle itself.
+        
+        input.disabled = !isEnabled;
+        
+        // Add a visual class for disabled state
+        if (!isEnabled) {
+          input.classList.add("field-disabled");
+          if (input.parentElement.classList.contains("toggle-switch")) {
+            input.parentElement.classList.add("toggle-disabled");
+          }
+        } else {
+          input.classList.remove("field-disabled");
+          if (input.parentElement.classList.contains("toggle-switch")) {
+            input.parentElement.classList.remove("toggle-disabled");
+          }
+        }
+      });
+
+      // Special handling for labels and help text opacity
+      const labels = contentDiv.querySelectorAll("label, .setting-help, h4, .info-icon");
+      labels.forEach(el => {
+        // Skip the label for the enabled checkbox itself
+        if (el.getAttribute("for") === enabledCheckbox.id || el.contains(enabledCheckbox)) return;
+        
+        // Also skip if this is the toggle switch container for the enabled checkbox
+        if (el.classList.contains("toggle-switch") && el.contains(enabledCheckbox)) return;
+
+        el.style.opacity = isEnabled ? "1" : "0.5";
+        el.style.pointerEvents = isEnabled ? "auto" : "none";
+      });
+    };
+
+    // Apply to existing instances
+    const existingInstances = container.querySelectorAll(".instance-item");
+    existingInstances.forEach((instanceItem) => {
+      toggleInstanceFields(instanceItem);
+      const enabledCheckbox = instanceItem.querySelector('input[name="enabled"]');
+      if (enabledCheckbox) {
+        enabledCheckbox.addEventListener("change", () => toggleInstanceFields(instanceItem));
+      }
+    });
+
     // Make sure container has the app type set
     const form = container.closest("#settingsSection");
     if (form && !form.hasAttribute("data-app-type")) {
@@ -6742,7 +6799,7 @@ const SettingsForms = {
                             <div class="setting-item">
                                 <label for="${appType}-enabled-${newIndex}">Enabled:</label>
                                 <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                                    <input type="checkbox" id="${appType}-enabled-${newIndex}" name="enabled" checked>
+                                    <input type="checkbox" id="${appType}-enabled-${newIndex}" name="enabled">
                                     <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                                 </label>
                                 <p class="setting-help">Enable or disable this ${
@@ -6872,6 +6929,13 @@ const SettingsForms = {
         const newInstance = instancesContainer.querySelector(
           `[data-instance-id="${newIndex}"]`
         );
+
+        // Apply field toggling for new instance
+        toggleInstanceFields(newInstance);
+        const enabledCheckbox = newInstance.querySelector('input[name="enabled"]');
+        if (enabledCheckbox) {
+          enabledCheckbox.addEventListener("change", () => toggleInstanceFields(newInstance));
+        }
 
         // Set up event listeners for the new instance's buttons
         const newRemoveBtn = newInstance.querySelector(".remove-instance-btn");

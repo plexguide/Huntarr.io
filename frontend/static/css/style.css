@@ -1871,3 +1871,21 @@ label .info-icon ~ text {
         font-size: 16px;
     }
 }
+
+/* Disabled Field Styles */
+.field-disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    filter: grayscale(0.5);
+}
+
+.toggle-disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+.toggle-disabled .toggle-slider {
+    cursor: not-allowed !important;
+}
