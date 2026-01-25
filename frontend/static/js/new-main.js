@@ -1620,6 +1620,9 @@ let huntarrUI = {
                     } else if (event.target.id === 'check_for_updates') {
                         console.log('[huntarrUI] Update checking toggled, applying immediately');
                         this.applyUpdateCheckingChange(event.target.checked);
+                    } else if (event.target.id === 'show_trending') {
+                        console.log('[huntarrUI] Show Trending toggled, applying immediately');
+                        this.applyShowTrendingChange(event.target.checked);
                     }
                     
                     this.triggerSettingsAutoSave();
@@ -4112,6 +4115,17 @@ let huntarrUI = {
     applyUpdateCheckingChange: function(enabled) {
         console.log(`[huntarrUI] Update checking ${enabled ? 'enabled' : 'disabled'}`);
         // Settings auto-save notification removed per user request
+    },
+
+    applyShowTrendingChange: function(enabled) {
+        console.log(`[huntarrUI] Show Trending ${enabled ? 'enabled' : 'disabled'}`);
+        // Update HomeRequestarr if it exists
+        if (window.HomeRequestarr) {
+            window.HomeRequestarr.showTrending = enabled;
+            if (typeof window.HomeRequestarr.applyTrendingVisibility === 'function') {
+                window.HomeRequestarr.applyTrendingVisibility();
+            }
+        }
     },
 
     // Refresh time displays after timezone change

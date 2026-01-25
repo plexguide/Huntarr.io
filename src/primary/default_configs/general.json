@@ -4,6 +4,7 @@
   "log_refresh_interval_seconds": 30,
   "ui_theme": "dark",
   "check_for_updates": true,
+  "show_trending": true,
   "enable_notifications": false,
   "notification_level": "info",
   "apprise_urls": [],

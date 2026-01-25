@@ -8,25 +8,80 @@ const HomeRequestarr = {
     elements: {},
     defaultMovieInstance: null,
     defaultTVInstance: null,
+    showTrending: true,
 
     init() {
         this.cacheElements();
 
-        if (!this.elements.searchInput || !this.elements.trendingCarousel) {
+        if (!this.elements.searchInput) {
             return;
         }
 
-        this.waitForCore()
-            .then((core) => {
-                this.core = core;
-                this.setupSearch();
-                this.loadDefaultInstances().then(() => {
-                    this.loadTrending();
-                });
-            })
-            .catch(() => {
-                this.showTrendingError('Requestarr modules not ready');
+        // Make this module globally accessible for auto-save visibility updates
+        window.HomeRequestarr = this;
+
+        // Force hide initially if we can't determine setting yet
+        if (this.elements.discoverView) {
+            this.elements.discoverView.style.setProperty('display', 'none', 'important');
+        }
+
+        // Load settings first to determine if trending should be shown
+        this.loadSettings()
+            .then(() => {
+                // Apply trending visibility based on settings
+                this.applyTrendingVisibility();
+
+                // Only proceed with trending if it's enabled
+                if (!this.showTrending || !this.elements.trendingCarousel) {
+                    this.setupSearch();
+                    return;
+                }
+
+                this.waitForCore()
+                    .then((core) => {
+                        this.core = core;
+                        this.setupSearch();
+                        this.loadDefaultInstances().then(() => {
+                            this.loadTrending();
+                        });
+                    })
+                    .catch(() => {
+                        this.showTrendingError('Requestarr modules not ready');
+                    });
             });
+    },
+
+    async loadSettings() {
+        try {
+            const response = await fetch('./api/settings');
+            const data = await response.json();
+            if (data && data.general) {
+                this.showTrending = data.general.show_trending !== false;
+                console.log('[HomeRequestarr] Show trending setting:', this.showTrending);
+            }
+        } catch (error) {
+            console.error('[HomeRequestarr] Error loading settings:', error);
+            this.showTrending = true; // Default to showing if error
+        }
+    },
+
+    applyTrendingVisibility() {
+        const discoverView = this.elements.discoverView;
+        if (discoverView) {
+            console.log('[HomeRequestarr] Applying visibility to discoverView:', this.showTrending);
+            if (this.showTrending) {
+                discoverView.style.setProperty('display', 'block', 'important');
+                // Load trending if not already loaded
+                if (!this.elements.trendingCarousel.children.length || 
+                    this.elements.trendingCarousel.querySelector('.loading-spinner')) {
+                    this.loadTrending();
+                }
+            } else {
+                discoverView.style.setProperty('display', 'none', 'important');
+            }
+        } else {
+            console.warn('[HomeRequestarr] discoverView element not found in applyTrendingVisibility');
+        }
     },
 
     cacheElements() {
@@ -105,7 +160,11 @@ const HomeRequestarr = {
             this.elements.searchResultsView.style.display = 'none';
         }
         if (this.elements.discoverView) {
-            this.elements.discoverView.style.display = 'block';
+            if (this.showTrending) {
+                this.elements.discoverView.style.setProperty('display', 'block', 'important');
+            } else {
+                this.elements.discoverView.style.setProperty('display', 'none', 'important');
+            }
         }
     },
 
