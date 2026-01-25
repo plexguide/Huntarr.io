@@ -2772,6 +2772,7 @@ class LogsDatabase:
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         timestamp DATETIME NOT NULL,
                         level TEXT NOT NULL,
+                        level_num INTEGER DEFAULT 20,
                         app_type TEXT NOT NULL,
                         message TEXT NOT NULL,
                         logger_name TEXT,
@@ -2779,11 +2780,20 @@ class LogsDatabase:
                     )
                 ''')
                 
+                # Add level_num column if it doesn't exist (for existing databases)
+                try:
+                    conn.execute('ALTER TABLE logs ADD COLUMN level_num INTEGER DEFAULT 20')
+                    logger.info("Added level_num column to logs table")
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
+                
                 # Create indexes for logs performance
                 conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)')
                 conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_type ON logs(app_type)')
                 conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_level ON logs(level)')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_level_num ON logs(level_num)')
                 conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_level ON logs(app_type, level)')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_level_num ON logs(app_type, level_num)')
                 
                 conn.commit()
                 logger.info(f"Logs database initialized at: {self.db_path}")
@@ -2797,14 +2807,29 @@ class LogsDatabase:
             else:
                 raise
     
+    def _get_level_num(self, level: str) -> int:
+        """Map log level string to numeric value for inclusive filtering"""
+        level_map = {
+            'DEBUG': 10,
+            'INFO': 20,
+            'INFORMATION': 20,
+            'WARNING': 30,
+            'WARN': 30,
+            'ERROR': 40,
+            'CRITICAL': 50,
+            'FATAL': 50
+        }
+        return level_map.get(level.upper(), 20)
+
     def insert_log(self, timestamp: datetime, level: str, app_type: str, message: str, logger_name: str = None):
         """Insert a log entry into the logs database"""
         try:
+            level_num = self._get_level_num(level)
             with self.get_logs_connection() as conn:
                 conn.execute('''
-                    INSERT INTO logs (timestamp, level, app_type, message, logger_name)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (timestamp, level, app_type, message, logger_name))
+                    INSERT INTO logs (timestamp, level, level_num, app_type, message, logger_name)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (timestamp, level, level_num, app_type, message, logger_name))
                 conn.commit()
         except Exception as e:
             # Don't let log insertion failures crash the app
@@ -2824,8 +2849,10 @@ class LogsDatabase:
                     params.append(app_type)
                 
                 if level and level != "all":
-                    where_conditions.append("level = ?")
-                    params.append(level)
+                    # Use inclusive filtering: show selected level and above
+                    level_num = self._get_level_num(level)
+                    where_conditions.append("level_num >= ?")
+                    params.append(level_num)
                 
                 if search:
                     where_conditions.append("message LIKE ?")
@@ -2858,8 +2885,10 @@ class LogsDatabase:
                     params.append(app_type)
                 
                 if level and level != "all":
-                    where_conditions.append("level = ?")
-                    params.append(level)
+                    # Use inclusive filtering: show selected level and above
+                    level_num = self._get_level_num(level)
+                    where_conditions.append("level_num >= ?")
+                    params.append(level_num)
                 
                 if search:
                     where_conditions.append("message LIKE ?")

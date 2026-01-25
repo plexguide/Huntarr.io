@@ -849,7 +849,7 @@ window.LogsModule = {
                     break;
                 case 'fatal':
                 case 'critical':
-                    entryLevel = 'error';
+                    entryLevel = 'critical';
                     break;
                 default:
                     if (levelBadge.classList.contains('log-level-error')) {
@@ -860,12 +860,26 @@ window.LogsModule = {
                         entryLevel = 'info';
                     } else if (levelBadge.classList.contains('log-level-debug')) {
                         entryLevel = 'debug';
+                    } else if (levelBadge.classList.contains('log-level-fatal')) {
+                        entryLevel = 'critical';
                     } else {
                         entryLevel = null;
                     }
             }
             
-            if (entryLevel && entryLevel === selectedLevel) {
+            // Map levels to numeric values for inclusive filtering
+            const levelValues = {
+                'debug': 10,
+                'info': 20,
+                'warning': 30,
+                'error': 40,
+                'critical': 50
+            };
+            
+            const selectedValue = levelValues[selectedLevel.toLowerCase()] || 0;
+            const entryValue = levelValues[entryLevel] || 0;
+            
+            if (entryLevel && entryValue >= selectedValue) {
                 logEntry.style.display = '';
             } else {
                 logEntry.style.display = 'none';
