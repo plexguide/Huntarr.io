@@ -48,7 +48,7 @@ jobs:
         # Explicitly install apprise and its dependencies for Windows build
         pip install apprise==1.6.0
         pip install markdown==3.4.3
-        pip install pyyaml==6.0
+        pip install pyyaml==6.0.1
 
     - name: Create directories
       run: |
