@@ -11,15 +11,44 @@ import signal
 import logging # Use standard logging for initial setup
 import atexit
 import time
-import time
+
+# --- CRITICAL: Handle noconsole mode (PyInstaller) ---
+# In noconsole mode, sys.stdout and sys.stderr are None.
+# Any attempt to print() will cause an AttributeError and crash the app immediately.
+# We must redirect them to a dummy stream or a file.
+class SafeStream:
+    def __init__(self, original_stream):
+        self.original_stream = original_stream
+        self.encoding = 'utf-8' # Some libraries check this
+    def write(self, data):
+        if self.original_stream:
+            try:
+                self.original_stream.write(data)
+                self.original_stream.flush()
+            except Exception:
+                pass
+    def flush(self):
+        if self.original_stream:
+            try:
+                self.original_stream.flush()
+            except Exception:
+                pass
+    def isatty(self):
+        return False
+
+# Only replace if they are None (which happens in noconsole mode)
+if sys.stdout is None:
+    sys.stdout = SafeStream(None)
+if sys.stderr is None:
+    sys.stderr = SafeStream(None)
 
 # Import path configuration early to set up environment
 try:
     from src.primary.utils import config_paths
-    print(f"Using config directory: {config_paths.CONFIG_DIR}")
+    # Removed print statement to prevent noconsole crash
 except Exception as e:
-    print(f"Warning: Failed to initialize config paths: {str(e)}")
-    # Continue anyway - we'll handle this later
+    # Removed print statement to prevent noconsole crash
+    pass
 
 # Ensure the 'src' directory is in the Python path
 # This allows importing modules from 'src.primary' etc.

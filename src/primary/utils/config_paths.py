@@ -42,7 +42,6 @@ try:
     # Create essential directories
     LOG_DIR.mkdir(exist_ok=True)
     
-    print(f"Using configuration directory: {CONFIG_DIR}")
     # Check write permissions with a test file
     test_file = CONFIG_PATH / f"write_test_{int(time.time())}.tmp"
     with open(test_file, "w") as f:
@@ -50,13 +49,11 @@ try:
     if test_file.exists():
         test_file.unlink()  # Remove the test file
 except Exception as e:
-    print(f"Warning: Could not create or write to config directory at {CONFIG_DIR}: {str(e)}")
     # Fall back to temp directory as last resort
     temp_base = tempfile.gettempdir()
     CONFIG_DIR = os.path.join(temp_base, f"huntarr_config_{os.getpid()}")
     CONFIG_PATH = pathlib.Path(CONFIG_DIR)
     CONFIG_PATH.mkdir(parents=True, exist_ok=True)
-    print(f"Using temporary config directory: {CONFIG_DIR}")
     
     # Also write to desktop log for visibility in case of issues
     try:
@@ -75,7 +72,7 @@ for dir_path in [LOG_DIR]:
     try:
         dir_path.mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        print(f"Warning: Could not create directory {dir_path}: {str(e)}")
+        pass
 
 # Set environment variables for backwards compatibility
 os.environ["HUNTARR_CONFIG_DIR"] = str(CONFIG_PATH)
