@@ -504,7 +504,9 @@
     @media (max-width: 768px) {
         .section-header {
             flex-direction: column;
-            align-items: flex-start;
+            align-items: stretch;
+            gap: 10px;
+            position: static;
         }
         
         .log-app-filter, .log-controls {
@@ -513,74 +515,114 @@
         
         .log-controls {
             flex-direction: column;
-            align-items: flex-start;
+            align-items: stretch;
             gap: 10px;
         }
         
         .log-options {
             width: 100%;
-            justify-content: space-between;
+            justify-content: flex-start;
         }
         
-        /* Hide connection status and clear button on mobile */
+        /* Hide connection status on mobile */
         .connection-status {
             display: none;
         }
         
-        /* More specific rules to ensure the clear button is hidden on mobile */
-        .clear-button, 
-        #clearLogsButton, 
-        button[id="clearLogsButton"],
-        .log-options .clear-button {
-            display: none !important;
-        }
-        
-        /* Hide search box on mobile */
-        .log-search,
-        #logSearchInput,
-        #logSearchButton,
-        #clearSearchButton,
-        .search-results-info {
-            display: none !important;
-        }
-        
-        /* Keep log level filter and app filter visible on mobile but adjust styling */
-        .log-level-filter, .log-app-filter {
+        /* Clear button styling for mobile */
+        .clear-button {
             width: 100%;
-            justify-content: space-between;
-            padding: 8px 12px;
+            justify-content: center;
         }
         
-        .log-level-filter select, .log-app-filter select {
-            min-width: 120px;
-            font-size: 14px; /* Prevent zoom on iOS */
-            padding: 6px 10px;
+        /* Hide search box on mobile to save space */
+        .log-search {
+            display: none !important;
         }
         
         /* Mobile specific log container styling */
         .logs {
-            height: calc(100vh - 300px); /* Adjusted height for mobile + account for header */
-            padding-bottom: 120px; /* Extra padding to ensure no content is hidden */
-            margin-bottom: 60px; /* Space for mobile browser UI */
-        }
-        
-        /* Make space for fixed elements at bottom on mobile */
-        #logsSection {
+            overflow: visible !important;
             padding-bottom: 80px;
+            margin-top: 15px;
         }
         
         /* Mobile pagination controls */
         .pagination-controls {
-            flex-wrap: wrap;
-            justify-content: flex-start !important;
-            gap: 10px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
             margin: 15px 0;
-            padding: 0;
         }
         
         .page-size-selector {
             margin-left: 0;
+            width: 100%;
+            justify-content: flex-start;
+            gap: 10px;
+            padding-left: 2px;
+        }
+
+        /* Transform log entries into cards for mobile */
+        .log-entry {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 12px;
+            gap: 10px;
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 12px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .log-entry-row {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .log-timestamp {
+            font-size: 11px;
+            align-self: flex-start;
+            margin-bottom: 4px;
+        }
+
+        .log-header-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .log-message {
+            border-left: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-left: 0;
+            padding-top: 10px;
             margin-top: 5px;
+            font-size: 12px;
+            width: 100%;
+            word-break: break-word;
+            white-space: pre-wrap;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.5;
+        }
+
+        .log-source {
+            font-size: 11px;
+            font-weight: 700;
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .log-level-badge {
+            font-size: 10px;
+            padding: 2px 6px;
         }
     }
     

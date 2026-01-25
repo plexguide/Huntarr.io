@@ -562,12 +562,14 @@ window.LogsModule = {
                 
                 logEntry.innerHTML = `
                     <div class="log-entry-row">
-                        <span class="log-timestamp">
-                            <span class="date">${date}</span>
-                            <span class="time">${time}</span>
-                        </span>
-                        ${levelBadge}
-                        <span class="log-source">${appSource}</span>
+                        <div class="log-header-row">
+                            <span class="log-timestamp">
+                                <span class="date">${date}</span>
+                                <span class="time">${time}</span>
+                            </span>
+                            ${levelBadge}
+                            <span class="log-source">${appSource}</span>
+                        </div>
                         <span class="log-message">${cleanMessage}</span>
                     </div>
                 `;
