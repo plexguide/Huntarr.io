@@ -534,11 +534,14 @@ def add_hidden_media():
 def remove_hidden_media(tmdb_id, media_type, app_type, instance_name):
     """Remove media from hidden list (unhide) for specific instance"""
     try:
+        logger.info(f"DELETE /hidden-media called: tmdb_id={tmdb_id}, media_type={media_type}, app_type={app_type}, instance_name={instance_name}")
         success = requestarr_api.db.remove_hidden_media(tmdb_id, media_type, app_type, instance_name)
         
         if success:
+            logger.info(f"Successfully unhidden media: {tmdb_id}")
             return jsonify({'success': True, 'message': 'Media unhidden successfully'})
         else:
+            logger.error(f"Failed to unhide media: {tmdb_id}")
             return jsonify({'error': 'Failed to unhide media'}), 500
             
     except Exception as e:

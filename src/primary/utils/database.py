@@ -2554,14 +2554,16 @@ class HuntarrDatabase:
     def remove_hidden_media(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str) -> bool:
         """Remove media from hidden list for specific instance"""
         try:
+            logger.debug(f"remove_hidden_media called with: tmdb_id={tmdb_id}, media_type={media_type}, app_type={app_type}, instance_name={instance_name}")
             with self.get_connection() as conn:
-                conn.execute('''
+                cursor = conn.execute('''
                     DELETE FROM requestarr_hidden_media 
                     WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
                 ''', (tmdb_id, media_type, app_type, instance_name))
+                rows_deleted = cursor.rowcount
                 conn.commit()
                 
-                logger.info(f"Removed hidden media: TMDB ID {tmdb_id}, Type: {media_type}, Instance: {app_type}/{instance_name}")
+                logger.info(f"Removed hidden media: TMDB ID {tmdb_id}, Type: {media_type}, Instance: {app_type}/{instance_name}, Rows deleted: {rows_deleted}")
                 return True
         except Exception as e:
             logger.error(f"Error removing hidden media: {e}")
@@ -2611,7 +2613,8 @@ class HuntarrDatabase:
                 
                 # Get paginated results
                 query = f'''
-                    SELECT * FROM requestarr_hidden_media 
+                    SELECT id, tmdb_id, media_type, title, poster_path, app_type, instance_name, hidden_at, hidden_at_readable 
+                    FROM requestarr_hidden_media 
                     {where_clause}
                     ORDER BY hidden_at DESC 
                     LIMIT ? OFFSET ?
