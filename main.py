@@ -234,9 +234,50 @@ def run_web_server():
     
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
     
-    # TODO: System tray implementation temporarily disabled
-    # Will be re-enabled in a future update after thorough testing
-    # For now, console=False in PyInstaller spec provides silent background operation
+    # Initialize Windows system tray on Windows platform
+    system_tray = None
+    if sys.platform == 'win32' and not debug_mode:
+        try:
+            # Only import and use system tray on Windows
+            # Try multiple import paths for different execution contexts
+            try:
+                # PyInstaller bundle path
+                import sys
+                if getattr(sys, 'frozen', False):
+                    # Running in PyInstaller bundle - add the resources directory to path
+                    # This is where system_tray.py will be located in the bundle
+                    resources_path = os.path.join(sys._MEIPASS, 'distribution', 'windows', 'resources')
+                    if resources_path not in sys.path:
+                        sys.path.insert(0, resources_path)
+                    
+                    # Also try importing directly if it's in the root of the bundle
+                    # (depending on how PyInstaller packaged it)
+                    if sys._MEIPASS not in sys.path:
+                        sys.path.insert(0, sys._MEIPASS)
+                
+                # Try importing the module
+                try:
+                    from distribution.windows.resources.system_tray import create_system_tray
+                except ImportError:
+                    # Fallback for flat bundle structure
+                    import system_tray
+                    create_system_tray = system_tray.create_system_tray
+                    
+            except ImportError:
+                # Try direct import for development environment
+                sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'distribution', 'windows', 'resources'))
+                from system_tray import create_system_tray
+            
+            system_tray = create_system_tray(port=port)
+            if system_tray.start():
+                web_logger.info("Windows system tray icon initialized")
+            else:
+                web_logger.warning("Failed to start system tray icon")
+                system_tray = None
+        except Exception as e:
+            web_logger.warning(f"Could not initialize system tray: {e}")
+            # Don't crash the app if system tray fails
+            system_tray = None
 
     # Log the current authentication mode once at startup
     try:
