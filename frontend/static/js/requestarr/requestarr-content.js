@@ -21,6 +21,9 @@ export class RequestarrContent {
         // Instance tracking
         this.selectedMovieInstance = null;
         this.selectedTVInstance = null;
+        
+        // Hidden media tracking
+        this.hiddenMediaSet = new Set();
     }
 
     // ========================================
@@ -308,11 +311,42 @@ export class RequestarrContent {
             this.defaultTVInstance = '';
         }
         
+        // Load hidden media IDs for filtering
+        await this.loadHiddenMediaIds();
+        
         await Promise.all([
             this.loadTrending(),
             this.loadPopularMovies(),
             this.loadPopularTV()
         ]);
+    }
+
+    async loadHiddenMediaIds() {
+        try {
+            // Fetch all hidden media (no pagination, we need all IDs)
+            const response = await fetch('./api/requestarr/hidden-media?page=1&page_size=10000');
+            const data = await response.json();
+            const hiddenItems = Array.isArray(data.hidden_media)
+                ? data.hidden_media
+                : (Array.isArray(data.items) ? data.items : []);
+            
+            // Store hidden media as a Set of "tmdb_id:media_type:app_type:instance" for fast lookup
+            this.hiddenMediaSet = new Set();
+            hiddenItems.forEach(item => {
+                const key = `${item.tmdb_id}:${item.media_type}:${item.app_type}:${item.instance_name}`;
+                this.hiddenMediaSet.add(key);
+            });
+            console.log('[RequestarrContent] Loaded', this.hiddenMediaSet.size, 'hidden media items');
+        } catch (error) {
+            console.error('[RequestarrContent] Error loading hidden media IDs:', error);
+            this.hiddenMediaSet = new Set();
+        }
+    }
+
+    isMediaHidden(tmdbId, mediaType, appType, instanceName) {
+        if (!this.hiddenMediaSet) return false;
+        const key = `${tmdbId}:${mediaType}:${appType}:${instanceName}`;
+        return this.hiddenMediaSet.has(key);
     }
 
     async loadTrending() {
@@ -329,6 +363,15 @@ export class RequestarrContent {
                     const suggestedInstance = item.media_type === 'movie' 
                         ? (this.defaultMovieInstance || null)
                         : (this.defaultTVInstance || null);
+                    
+                    // Filter out hidden media
+                    const appType = item.media_type === 'movie' ? 'radarr' : 'sonarr';
+                    const instanceName = item.media_type === 'movie' ? this.defaultMovieInstance : this.defaultTVInstance;
+                    const tmdbId = item.tmdb_id || item.id;
+                    if (tmdbId && instanceName && this.isMediaHidden(tmdbId, item.media_type, appType, instanceName)) {
+                        return; // Skip hidden items
+                    }
+                    
                     carousel.appendChild(this.createMediaCard(item, suggestedInstance));
                 });
             } else {
@@ -358,6 +401,12 @@ export class RequestarrContent {
             if (data.results && data.results.length > 0) {
                 carousel.innerHTML = '';
                 data.results.forEach(item => {
+                    // Filter out hidden media
+                    const tmdbId = item.tmdb_id || item.id;
+                    if (tmdbId && instanceName && this.isMediaHidden(tmdbId, 'movie', 'radarr', instanceName)) {
+                        return; // Skip hidden items
+                    }
+                    
                     // Only pass as suggested if actually configured (not empty string)
                     carousel.appendChild(this.createMediaCard(item, this.defaultMovieInstance || null));
                 });
@@ -388,6 +437,12 @@ export class RequestarrContent {
             if (data.results && data.results.length > 0) {
                 carousel.innerHTML = '';
                 data.results.forEach(item => {
+                    // Filter out hidden media
+                    const tmdbId = item.tmdb_id || item.id;
+                    if (tmdbId && instanceName && this.isMediaHidden(tmdbId, 'tv', 'sonarr', instanceName)) {
+                        return; // Skip hidden items
+                    }
+                    
                     // Only pass as suggested if actually configured (not empty string)
                     carousel.appendChild(this.createMediaCard(item, this.defaultTVInstance || null));
                 });
@@ -482,6 +537,11 @@ export class RequestarrContent {
             
             if (data.results && data.results.length > 0) {
                 data.results.forEach((item) => {
+                    // Filter out hidden media
+                    const tmdbId = item.tmdb_id || item.id;
+                    if (tmdbId && this.selectedMovieInstance && this.isMediaHidden(tmdbId, 'movie', 'radarr', this.selectedMovieInstance)) {
+                        return; // Skip hidden items
+                    }
                     grid.appendChild(this.createMediaCard(item));
                 });
 
@@ -585,6 +645,11 @@ export class RequestarrContent {
             
             if (data.results && data.results.length > 0) {
                 data.results.forEach((item) => {
+                    // Filter out hidden media
+                    const tmdbId = item.tmdb_id || item.id;
+                    if (tmdbId && this.selectedTVInstance && this.isMediaHidden(tmdbId, 'tv', 'sonarr', this.selectedTVInstance)) {
+                        return; // Skip hidden items
+                    }
                     grid.appendChild(this.createMediaCard(item));
                 });
 
@@ -801,6 +866,10 @@ export class RequestarrContent {
             if (!response.ok) {
                 throw new Error('Failed to hide media');
             }
+
+            // Add to hidden media set for immediate filtering
+            const key = `${tmdbId}:${mediaType}:${appType}:${instanceName}`;
+            this.hiddenMediaSet.add(key);
 
             // Remove the card from view with animation
             cardElement.style.opacity = '0';
