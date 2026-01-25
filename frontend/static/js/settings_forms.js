@@ -5493,6 +5493,122 @@ const SettingsForms = {
   },
 
   // Generate General settings form
+  // Generate Logs settings form
+  generateLogsSettingsForm: function (container, settings = {}) {
+    // Ensure settings is a valid object
+    if (!settings || typeof settings !== "object") {
+      settings = {};
+    }
+
+    // Temporarily suppress change detection during form generation
+    const wasSuppressionActive = window._appsSuppressChangeDetection;
+    window._appsSuppressChangeDetection = true;
+
+    // Add data-app-type attribute to container (using 'general' as logs are part of general settings)
+    container.setAttribute("data-app-type", "general");
+
+    // Add save button at the top
+    let logsSaveButtonHtml = `
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="logs-save-button" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        `;
+
+    let logsHtml = `
+            <div class="settings-group">
+                <h3>Rotation Settings</h3>
+                <div class="setting-item">
+                    <label for="log_rotation_enabled">Enable Log Rotation:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="log_rotation_enabled" name="log_rotation_enabled" ${
+                          settings.log_rotation_enabled !== false ? "checked" : ""
+                        }>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help">Automatically rotate logs when they reach the maximum size</p>
+                </div>
+                <div class="setting-item">
+                    <label for="log_max_size_mb">Max Log File Size:</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="number" id="log_max_size_mb" name="log_max_size_mb" min="1" max="1000" value="${
+                          settings.log_max_size_mb || 50
+                        }" style="width: 100px;">
+                        <span style="color: #9ca3af;">MB</span>
+                    </div>
+                    <p class="setting-help">Maximum size before rotating to a new file</p>
+                </div>
+                <div class="setting-item">
+                    <label for="log_backup_count">Backup Files to Keep:</label>
+                    <input type="number" id="log_backup_count" name="log_backup_count" min="0" max="50" value="${
+                      settings.log_backup_count || 5
+                    }" style="width: 100px;">
+                    <p class="setting-help">Number of rotated log files to retain (0-50)</p>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>Retention & Cleanup</h3>
+                <div class="setting-item">
+                    <label for="log_retention_days">Retention Days:</label>
+                    <input type="number" id="log_retention_days" name="log_retention_days" min="0" max="365" value="${
+                      settings.log_retention_days || 30
+                    }" style="width: 100px;">
+                    <p class="setting-help">Delete logs older than this many days (0 = unlimited)</p>
+                </div>
+                <div class="setting-item">
+                    <label for="log_auto_cleanup">Auto-Cleanup on Startup:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="log_auto_cleanup" name="log_auto_cleanup" ${
+                          settings.log_auto_cleanup !== false ? "checked" : ""
+                        }>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help">Automatically clean up old logs when Huntarr starts</p>
+                </div>
+            </div>
+            
+            <div class="settings-group">
+                <h3>Advanced Settings</h3>
+                <div class="setting-item">
+                    <label for="log_refresh_interval_seconds">Log Refresh Interval:</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="number" id="log_refresh_interval_seconds" name="log_refresh_interval_seconds" min="5" max="300" value="${
+                          settings.log_refresh_interval_seconds || 30
+                        }" style="width: 100px;">
+                        <span style="color: #9ca3af;">seconds</span>
+                    </div>
+                    <p class="setting-help">How often the log viewer checks for new logs</p>
+                </div>
+            </div>
+        `;
+
+    container.innerHTML = logsSaveButtonHtml + logsHtml;
+
+    // Set up manual save functionality for Logs (using 'general' app type)
+    this.setupAppManualSave(container, "general", settings);
+
+    // Restore the original suppression state
+    setTimeout(() => {
+      window._appsSuppressChangeDetection = wasSuppressionActive;
+    }, 100);
+  },
+
   generateGeneralForm: function (container, settings = {}) {
     // Add data-app-type attribute to container
     container.setAttribute("data-app-type", "general");

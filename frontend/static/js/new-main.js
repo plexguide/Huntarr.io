@@ -209,6 +209,7 @@ let huntarrUI = {
         this.elements.logsSection = document.getElementById('logsSection');
         this.elements.huntManagerSection = document.getElementById('huntManagerSection');
         this.elements.settingsSection = document.getElementById('settingsSection');
+        this.elements.settingsLogsSection = document.getElementById('settingsLogsSection'); // Added logs settings section
         this.elements.schedulingSection = document.getElementById('schedulingSection');
         
         // History dropdown elements
@@ -859,6 +860,21 @@ let huntarrUI = {
             
             // Initialize settings if not already done
             this.initializeSettings();
+        } else if (section === 'settings-logs' && document.getElementById('settingsLogsSection')) {
+            document.getElementById('settingsLogsSection').classList.add('active');
+            document.getElementById('settingsLogsSection').style.display = 'block';
+            if (document.getElementById('settingsLogsNav')) document.getElementById('settingsLogsNav').classList.add('active');
+            newTitle = 'Log Settings';
+            this.currentSection = 'settings-logs';
+            
+            // Switch to Settings sidebar
+            this.showSettingsSidebar();
+            
+            // Set localStorage to maintain Settings sidebar preference
+            localStorage.setItem('huntarr-settings-sidebar', 'true');
+            
+            // Initialize logs settings if not already done
+            this.initializeLogsSettings();
         } else if (section === 'scheduling' && document.getElementById('schedulingSection')) {
             document.getElementById('schedulingSection').classList.add('active');
             document.getElementById('schedulingSection').style.display = 'block';
@@ -4981,6 +4997,38 @@ let huntarrUI = {
                 window.location.hash = '#user';
             });
         }
+    },
+
+    initializeLogsSettings: function() {
+        const container = document.getElementById('logsSettingsContainer');
+        if (!container) return;
+        
+        // Check if already initialized (check for content)
+        if (container.innerHTML.trim() !== '') {
+            console.log('[huntarrUI] Logs settings already initialized, skipping');
+            return;
+        }
+        
+        console.log('[huntarrUI] Initializing logs settings...');
+        
+        // Load general settings which contain log settings
+        HuntarrUtils.fetchWithTimeout('./api/settings')
+            .then(response => response.json())
+            .then(settings => {
+                // Ensure general settings exist
+                const generalSettings = settings.general || {};
+                
+                if (window.SettingsForms && typeof window.SettingsForms.generateLogsSettingsForm === 'function') {
+                    window.SettingsForms.generateLogsSettingsForm(container, generalSettings);
+                } else {
+                    console.error('[huntarrUI] SettingsForms.generateLogsSettingsForm not found');
+                    container.innerHTML = '<p class="error-message">Error loading form generator. Please refresh the page.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('[huntarrUI] Error loading settings for logs:', error);
+                container.innerHTML = `<p class="error-message">Error loading settings: ${error.message}</p>`;
+            });
     },
 
     initializeSettings: function() {

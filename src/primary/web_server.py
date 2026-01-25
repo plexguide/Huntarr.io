@@ -26,7 +26,7 @@ from flask import Flask, render_template, request, jsonify, Response, send_from_
 # from src.primary.config import API_URL # No longer needed directly
 # Use only settings_manager
 from src.primary import settings_manager
-from src.primary.utils.logger import setup_main_logger, get_logger, LOG_DIR, update_logging_levels # Import get_logger, LOG_DIR, and update_logging_levels
+from src.primary.utils.logger import setup_main_logger, get_logger, LOG_DIR, update_logging_levels, refresh_log_handlers # Import get_logger, LOG_DIR, update_logging_levels, refresh_log_handlers
 # Clean logging is now database-only
 from src.primary.auth import (
     authenticate_request, user_exists, create_user, verify_user, create_session,
@@ -673,6 +673,15 @@ def save_general_settings():
         
         # Update logging levels immediately when general settings are changed
         update_logging_levels()
+        
+        # Check if log rotation settings changed and refresh handlers
+        log_keys = ["log_rotation_enabled", "log_max_size_mb", "log_backup_count"]
+        if any(key in data for key in log_keys):
+            try:
+                refresh_log_handlers()
+                general_logger.info("Log handlers refreshed due to rotation settings change")
+            except Exception as e:
+                general_logger.error(f"Error refreshing log handlers: {e}")
         
         # Return all settings
         return jsonify(settings_manager.get_all_settings())

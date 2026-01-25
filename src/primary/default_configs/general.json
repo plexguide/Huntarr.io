@@ -19,5 +19,10 @@
   "minimum_download_queue_size": -1,
   "api_timeout": 120,
   "ssl_verify": true,
-  "base_url": ""
+  "base_url": "",
+  "log_rotation_enabled": true,
+  "log_max_size_mb": 50,
+  "log_backup_count": 5,
+  "log_retention_days": 30,
+  "log_auto_cleanup": true
 }

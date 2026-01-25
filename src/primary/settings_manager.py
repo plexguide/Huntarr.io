@@ -519,7 +519,12 @@ ADVANCED_SETTINGS = [
     "stateful_management_hours",
     "hourly_cap",
     "ssl_verify",  # Add SSL verification setting
-    "base_url"     # Add base URL setting
+    "base_url",    # Add base URL setting
+    "log_rotation_enabled",
+    "log_max_size_mb",
+    "log_backup_count",
+    "log_retention_days",
+    "log_auto_cleanup"
 ]
 
 def get_advanced_setting(setting_name, default_value=None):
