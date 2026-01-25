@@ -55,20 +55,38 @@ export class RequestarrContent {
                 this.selectedMovieInstance = data.instances[0].name;
                 
                 // Setup change handler
-                select.addEventListener('change', () => {
+                select.addEventListener('change', async () => {
                     this.selectedMovieInstance = select.value;
                     console.log(`[RequestarrContent] Switched to movie instance: ${this.selectedMovieInstance}`);
                     
-                    // Reset pagination state FIRST
+                    // Clear the grid immediately
+                    const grid = document.getElementById('movies-grid');
+                    if (grid) {
+                        grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
+                    }
+                    
+                    // Disconnect infinite scroll observer during instance switch to prevent auto-loading
+                    if (this.moviesObserver) {
+                        this.moviesObserver.disconnect();
+                        this.moviesObserver = null;
+                    }
+                    
+                    // Reset pagination state
                     this.moviesPage = 1;
                     this.moviesHasMore = true;
-                    this.isLoadingMovies = false; // Reset loading state to allow new request
+                    this.isLoadingMovies = false;
                     
                     // Increment request token to cancel any pending requests
                     this.moviesRequestToken++;
                     
-                    // Reload movies with new instance (loadMovies will handle the loading spinner)
-                    this.loadMovies();
+                    // Small delay to ensure state is fully reset
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    
+                    // Await the load to complete before reconnecting scroll
+                    await this.loadMovies();
+                    
+                    // Reconnect infinite scroll after load completes
+                    this.setupMoviesInfiniteScroll();
                 });
             } else {
                 select.innerHTML = '<option value="">No Radarr instances configured</option>';
@@ -102,20 +120,38 @@ export class RequestarrContent {
                 this.selectedTVInstance = data.instances[0].name;
                 
                 // Setup change handler
-                select.addEventListener('change', () => {
+                select.addEventListener('change', async () => {
                     this.selectedTVInstance = select.value;
                     console.log(`[RequestarrContent] Switched to TV instance: ${this.selectedTVInstance}`);
                     
-                    // Reset pagination state FIRST
+                    // Clear the grid immediately
+                    const grid = document.getElementById('tv-grid');
+                    if (grid) {
+                        grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading TV shows...</p></div>';
+                    }
+                    
+                    // Disconnect infinite scroll observer during instance switch to prevent auto-loading
+                    if (this.tvObserver) {
+                        this.tvObserver.disconnect();
+                        this.tvObserver = null;
+                    }
+                    
+                    // Reset pagination state
                     this.tvPage = 1;
                     this.tvHasMore = true;
-                    this.isLoadingTV = false; // Reset loading state to allow new request
+                    this.isLoadingTV = false;
                     
                     // Increment request token to cancel any pending requests
                     this.tvRequestToken++;
                     
-                    // Reload TV shows with new instance (loadTV will handle the loading spinner)
-                    this.loadTV();
+                    // Small delay to ensure state is fully reset
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    
+                    // Await the load to complete before reconnecting scroll
+                    await this.loadTV();
+                    
+                    // Reconnect infinite scroll after load completes
+                    this.setupTVInfiniteScroll();
                 });
             } else {
                 select.innerHTML = '<option value="">No Sonarr instances configured</option>';
@@ -245,9 +281,9 @@ export class RequestarrContent {
         }
         
         try {
-            let url = `./api/requestarr/discover/movies?page=${this.moviesPage}`;
+            let url = `./api/requestarr/discover/movies?page=${this.moviesPage}&_=${Date.now()}`;
             
-            // Add instance info for hidden media filtering
+            // Add instance info for library status checking
             if (this.selectedMovieInstance) {
                 url += `&app_type=radarr&instance_name=${encodeURIComponent(this.selectedMovieInstance)}`;
             }
@@ -348,9 +384,9 @@ export class RequestarrContent {
         }
         
         try {
-            let url = `./api/requestarr/discover/tv?page=${this.tvPage}`;
+            let url = `./api/requestarr/discover/tv?page=${this.tvPage}&_=${Date.now()}`;
             
-            // Add instance info for hidden media filtering
+            // Add instance info for library status checking
             if (this.selectedTVInstance) {
                 url += `&app_type=sonarr&instance_name=${encodeURIComponent(this.selectedTVInstance)}`;
             }

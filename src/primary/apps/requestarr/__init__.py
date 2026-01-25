@@ -258,6 +258,8 @@ class RequestarrAPI:
                 params['vote_count.lte'] = kwargs['vote_count.lte']
             
             logger.info(f"Fetching TV shows from TMDB - Page: {page}, Sort: {params['sort_by']}")
+            logger.debug(f"TMDB Request URL: {url}")
+            logger.debug(f"TMDB Request Params: {params}")
             
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()

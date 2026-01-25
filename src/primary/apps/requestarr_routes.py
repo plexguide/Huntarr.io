@@ -198,13 +198,13 @@ def get_popular_movies():
         
         results = requestarr_api.get_popular_movies(page, **filter_params)
         
-        # Get instance info from request for filtering hidden media
-        app_type = request.args.get('app_type', 'radarr')
-        instance_name = request.args.get('instance_name')
+        # NOTE: We don't filter hidden media in discover view - users should see all content
+        # Hidden media filtering is only for library-specific views
+        # The status badges will show if items are in library or not
         
-        # Filter out hidden media for this specific instance
-        if instance_name:
-            results = requestarr_api.filter_hidden_media(results, app_type, instance_name)
+        # Get instance info for library status checking (already done in get_popular_movies)
+        # app_type = request.args.get('app_type', 'radarr')
+        # instance_name = request.args.get('instance_name')
         
         # Filter out available movies if hide_available is true
         original_count = len(results)
@@ -262,13 +262,13 @@ def get_popular_tv():
         
         results = requestarr_api.get_popular_tv(page, **filter_params)
         
-        # Get instance info from request for filtering hidden media
-        app_type = request.args.get('app_type', 'sonarr')
-        instance_name = request.args.get('instance_name')
+        # NOTE: We don't filter hidden media in discover view - users should see all content
+        # Hidden media filtering is only for library-specific views
+        # The status badges will show if items are in library or not
         
-        # Filter out hidden media for this specific instance
-        if instance_name:
-            results = requestarr_api.filter_hidden_media(results, app_type, instance_name)
+        # Get instance info for library status checking (already done in get_popular_tv)
+        # app_type = request.args.get('app_type', 'sonarr')
+        # instance_name = request.args.get('instance_name')
         
         # Filter out available TV shows if hide_available is true
         original_count = len(results)

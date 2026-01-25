@@ -552,10 +552,13 @@ export class RequestarrFilters {
     getFilterParams() {
         const params = new URLSearchParams();
         
-        // Get sort
+        // Get sort - always include it, default to popularity.desc
         const sortSelect = document.getElementById('movies-sort');
-        if (sortSelect) {
+        if (sortSelect && sortSelect.value) {
             params.append('sort_by', sortSelect.value);
+        } else {
+            // Fallback to default sort if element not found
+            params.append('sort_by', 'popularity.desc');
         }
 
         // Add filter params
