@@ -3272,24 +3272,50 @@ input:disabled + .toggle-slider {
     margin-bottom: 25px;
 }
 
-/* Unhide button on hidden media cards */
+/* Unhide button on hidden media cards - matching discover card status badges */
 .media-card .media-card-unhide-btn {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(239, 68, 68, 0.9);
-    border: none;
-    color: #fff;
-    padding: 8px 12px;
-    border-radius: 6px;
+    top: 8px;
+    right: 8px;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    background: #22c55e;
+    border: 2px solid #16a34a;
+    padding: 0;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 12px;
-    z-index: 10;
+}
+
+.media-card .media-card-unhide-btn i {
+    color: #fff;
+    font-size: 14px;
 }
 
 .media-card .media-card-unhide-btn:hover {
-    background: #ef4444;
-    transform: scale(1.05);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.6);
+}
+
+/* Hidden media cards - match discover card dimensions exactly */
+#requestarr-hidden-view .media-card {
+    width: 150px;
+    height: 225px;
+}
+
+#requestarr-hidden-view .media-card-poster {
+    width: 150px;
+    height: 225px;
+}
+
+#requestarr-hidden-view .media-card-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 

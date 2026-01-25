@@ -183,16 +183,23 @@ export class RequestarrSettings {
 
             instanceOptions.sort((a, b) => a.label.localeCompare(b.label));
 
-            instanceSelect.innerHTML = '<option value="">All Instances</option>';
-            instanceOptions.forEach(optionData => {
+            instanceSelect.innerHTML = '';
+            if (instanceOptions.length === 0) {
                 const option = document.createElement('option');
-                option.value = optionData.value;
-                option.textContent = optionData.label;
+                option.value = '';
+                option.textContent = 'No instances configured';
                 instanceSelect.appendChild(option);
-            });
+            } else {
+                instanceOptions.forEach(optionData => {
+                    const option = document.createElement('option');
+                    option.value = optionData.value;
+                    option.textContent = optionData.label;
+                    instanceSelect.appendChild(option);
+                });
+            }
         } catch (error) {
             console.error('[RequestarrSettings] Error loading hidden media instances:', error);
-            instanceSelect.innerHTML = '<option value="">All Instances</option>';
+            instanceSelect.innerHTML = '<option value="">No instances available</option>';
         }
     }
 
@@ -324,7 +331,6 @@ export class RequestarrSettings {
         card.setAttribute('data-media-type', item.media_type);
         
         const posterUrl = item.poster_path || './static/images/blackout.jpg';
-        const hiddenDate = new Date(item.hidden_at * 1000).toLocaleDateString();
         
         card.innerHTML = `
             <div class="media-card-poster">
@@ -332,21 +338,6 @@ export class RequestarrSettings {
                     <i class="fas fa-eye"></i>
                 </button>
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
-                <div class="media-card-overlay">
-                    <div class="media-card-overlay-title">${item.title}</div>
-                    <div class="media-card-overlay-content">
-                        <div class="media-card-overlay-year">Hidden on ${hiddenDate}</div>
-                        <div class="media-card-overlay-description">
-                            This ${item.media_type === 'movie' ? 'movie' : 'TV show'} is hidden from all discovery pages.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="media-card-info">
-                <div class="media-card-title" title="${item.title}">${item.title}</div>
-                <div class="media-card-meta">
-                    <span class="media-card-year">${item.app_type}/${item.instance_name}</span>
-                </div>
             </div>
         `;
         
