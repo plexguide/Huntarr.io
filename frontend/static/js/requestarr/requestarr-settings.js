@@ -93,7 +93,13 @@ export class RequestarrSettings {
 
         // Show empty state if no instance selected
         if (!this.hiddenMediaState.instanceValue) {
-            container.innerHTML = '<div style="text-align: center; padding: 60px; color: #9ca3af;"><i class="fas fa-eye-slash" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i><p style="font-size: 18px; margin-bottom: 10px;">No Instance Selected</p><p style="font-size: 14px;">Please select an instance from the dropdown above to view hidden media.</p></div>';
+            container.innerHTML = `
+                <div style="text-align: center; padding: 100px 40px; color: #9ca3af; max-width: 600px; margin: 0 auto;">
+                    <i class="fas fa-eye-slash" style="font-size: 64px; margin-bottom: 30px; opacity: 0.4; display: block;"></i>
+                    <p style="font-size: 20px; margin-bottom: 15px; font-weight: 500; white-space: nowrap;">No Instance Selected</p>
+                    <p style="font-size: 15px; line-height: 1.6; opacity: 0.8;">Please select an instance from the dropdown above to view hidden media.</p>
+                </div>
+            `;
             return;
         }
 
