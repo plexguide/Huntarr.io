@@ -43,21 +43,37 @@ export class RequestarrContent {
             
             if (data.instances && data.instances.length > 0) {
                 select.innerHTML = '';
+                
+                // Check localStorage for saved instance
+                const savedInstance = localStorage.getItem('requestarr-selected-movie-instance');
+                let selectedIndex = 0;
+                
                 data.instances.forEach((instance, index) => {
                     const option = document.createElement('option');
                     option.value = instance.name;
                     option.textContent = `Radarr - ${instance.name}`;
-                    if (index === 0) option.selected = true;
+                    
+                    // Select saved instance if it exists, otherwise first one
+                    if (savedInstance && instance.name === savedInstance) {
+                        option.selected = true;
+                        selectedIndex = index;
+                    } else if (!savedInstance && index === 0) {
+                        option.selected = true;
+                    }
+                    
                     select.appendChild(option);
                 });
                 
                 // Set initial selected instance
-                this.selectedMovieInstance = data.instances[0].name;
+                this.selectedMovieInstance = data.instances[selectedIndex].name;
                 
                 // Setup change handler
                 select.addEventListener('change', async () => {
                     this.selectedMovieInstance = select.value;
                     console.log(`[RequestarrContent] Switched to movie instance: ${this.selectedMovieInstance}`);
+                    
+                    // Save to localStorage
+                    localStorage.setItem('requestarr-selected-movie-instance', this.selectedMovieInstance);
                     
                     // Clear the grid immediately
                     const grid = document.getElementById('movies-grid');
@@ -108,21 +124,37 @@ export class RequestarrContent {
             
             if (data.instances && data.instances.length > 0) {
                 select.innerHTML = '';
+                
+                // Check localStorage for saved instance
+                const savedInstance = localStorage.getItem('requestarr-selected-tv-instance');
+                let selectedIndex = 0;
+                
                 data.instances.forEach((instance, index) => {
                     const option = document.createElement('option');
                     option.value = instance.name;
                     option.textContent = `Sonarr - ${instance.name}`;
-                    if (index === 0) option.selected = true;
+                    
+                    // Select saved instance if it exists, otherwise first one
+                    if (savedInstance && instance.name === savedInstance) {
+                        option.selected = true;
+                        selectedIndex = index;
+                    } else if (!savedInstance && index === 0) {
+                        option.selected = true;
+                    }
+                    
                     select.appendChild(option);
                 });
                 
                 // Set initial selected instance
-                this.selectedTVInstance = data.instances[0].name;
+                this.selectedTVInstance = data.instances[selectedIndex].name;
                 
                 // Setup change handler
                 select.addEventListener('change', async () => {
                     this.selectedTVInstance = select.value;
                     console.log(`[RequestarrContent] Switched to TV instance: ${this.selectedTVInstance}`);
+                    
+                    // Save to localStorage
+                    localStorage.setItem('requestarr-selected-tv-instance', this.selectedTVInstance);
                     
                     // Clear the grid immediately
                     const grid = document.getElementById('tv-grid');

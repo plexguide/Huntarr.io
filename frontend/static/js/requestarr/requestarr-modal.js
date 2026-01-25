@@ -61,8 +61,9 @@ export class RequestarrModal {
         const isTVShow = data.media_type === 'tv';
         const instances = isTVShow ? this.core.instances.sonarr : this.core.instances.radarr;
         
-        const instanceKey = isTVShow ? 'sonarr' : 'radarr';
-        const rememberedInstance = localStorage.getItem(`huntarr-requestarr-instance-${instanceKey}`) || (instances[0]?.name || '');
+        // Use the currently selected instance from the discover view dropdown
+        const currentlySelectedInstance = isTVShow ? this.core.content.selectedTVInstance : this.core.content.selectedMovieInstance;
+        const defaultInstance = currentlySelectedInstance || instances[0]?.name || '';
         
         let modalHTML = `
             <div class="request-modal-header" style="background-image: url(${data.backdrop_path || ''});">
@@ -90,7 +91,7 @@ export class RequestarrModal {
             modalHTML += `<option value="">No Instance Configured</option>`;
         } else {
             instances.forEach((instance, index) => {
-                const selected = instance.name === rememberedInstance ? 'selected' : '';
+                const selected = instance.name === defaultInstance ? 'selected' : '';
                 const appLabel = isTVShow ? 'Sonarr' : 'Radarr';
                 modalHTML += `<option value="${instance.name}" ${selected}>${appLabel} - ${instance.name}</option>`;
             });
@@ -103,7 +104,7 @@ export class RequestarrModal {
         `;
         
         // Quality Profile section
-        const profileKey = `${isTVShow ? 'sonarr' : 'radarr'}-${rememberedInstance || (instances[0]?.name || '')}`;
+        const profileKey = `${isTVShow ? 'sonarr' : 'radarr'}-${defaultInstance}`;
         const profiles = this.core.qualityProfiles[profileKey] || [];
         
         modalHTML += `
