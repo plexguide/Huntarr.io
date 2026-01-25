@@ -180,6 +180,8 @@ a = Analysis(
         # System tray support (Windows)
         'pystray',
         'pystray._win32',
+        'pystray.backend',
+        'pystray.backend.win32',
         'PIL',
         'PIL._tkinter_finder',
     ],

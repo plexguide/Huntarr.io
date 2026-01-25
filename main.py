@@ -234,51 +234,6 @@ def run_web_server():
     
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
     
-    # Initialize Windows system tray on Windows platform
-    system_tray = None
-    if sys.platform == 'win32' and not debug_mode:
-        try:
-            # Only import and use system tray on Windows
-            # Try multiple import paths for different execution contexts
-            try:
-                # PyInstaller bundle path
-                import sys
-                if getattr(sys, 'frozen', False):
-                    # Running in PyInstaller bundle - add the resources directory to path
-                    # This is where system_tray.py will be located in the bundle
-                    resources_path = os.path.join(sys._MEIPASS, 'distribution', 'windows', 'resources')
-                    if resources_path not in sys.path:
-                        sys.path.insert(0, resources_path)
-                    
-                    # Also try importing directly if it's in the root of the bundle
-                    # (depending on how PyInstaller packaged it)
-                    if sys._MEIPASS not in sys.path:
-                        sys.path.insert(0, sys._MEIPASS)
-                
-                # Try importing the module
-                try:
-                    from distribution.windows.resources.system_tray import create_system_tray
-                except ImportError:
-                    # Fallback for flat bundle structure
-                    import system_tray
-                    create_system_tray = system_tray.create_system_tray
-                    
-            except ImportError:
-                # Try direct import for development environment
-                sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'distribution', 'windows', 'resources'))
-                from system_tray import create_system_tray
-            
-            system_tray = create_system_tray(port=port)
-            if system_tray.start():
-                web_logger.info("Windows system tray icon initialized")
-            else:
-                web_logger.warning("Failed to start system tray icon")
-                system_tray = None
-        except Exception as e:
-            web_logger.warning(f"Could not initialize system tray: {e}")
-            # Don't crash the app if system tray fails
-            system_tray = None
-
     # Log the current authentication mode once at startup
     try:
         import sys
@@ -504,6 +459,7 @@ def main():
     """Main entry point function for Huntarr application.
     This function is called by app_launcher.py in the packaged ARM application.
     """
+    # ... (signal handlers and cleanup registration) ...
     # Register signal handlers for graceful shutdown in the main process
     signal.signal(signal.SIGINT, main_shutdown_handler)
     signal.signal(signal.SIGTERM, main_shutdown_handler)
@@ -566,14 +522,53 @@ def main():
     background_thread = None
     try:
         # Start background tasks in a daemon thread
-        # Daemon threads exit automatically if the main thread exits unexpectedly,
-        # but we'll try to join() them for a graceful shutdown.
         background_thread = threading.Thread(target=run_background_tasks, name="HuntarrBackground", daemon=True)
         background_thread.start()
 
-        # Start the web server in the main thread (blocking)
-        # This will run until the server is stopped (e.g., by Ctrl+C)
-        run_web_server()
+        # Determine if we should run the system tray
+        debug_mode = os.environ.get('DEBUG', 'false').lower() == 'true'
+        use_tray = sys.platform == 'win32' and not debug_mode
+        
+        # If using tray, run web server in a thread and tray in main thread
+        if use_tray:
+            # Start web server in a daemon thread
+            web_thread = threading.Thread(target=run_web_server, name="HuntarrWebServer", daemon=True)
+            web_thread.start()
+            
+            # Run system tray in the main thread (blocking)
+            try:
+                # Import system tray here to catch import errors early
+                try:
+                    # PyInstaller bundle path logic
+                    import sys
+                    if getattr(sys, 'frozen', False):
+                        resources_path = os.path.join(sys._MEIPASS, 'distribution', 'windows', 'resources')
+                        if resources_path not in sys.path:
+                            sys.path.insert(0, resources_path)
+                    
+                    from distribution.windows.resources.system_tray import create_system_tray
+                    
+                    # Create and run the tray
+                    # Note: We need to get the port again here or pass it differently
+                    port = int(os.environ.get('HUNTARR_PORT', os.environ.get('PORT', 9705)))
+                    tray = create_system_tray(port=port)
+                    
+                    huntarr_logger.info("Starting system tray in main thread...")
+                    tray.run() # This blocks until tray exits
+                    
+                    # If tray.run() returns, it means the user exited the app via tray
+                    huntarr_logger.info("System tray exited. Shutting down...")
+                    
+                except Exception as e:
+                    huntarr_logger.error(f"Failed to run system tray: {e}")
+                    # Fallback: keep main thread alive if tray fails
+                    while not stop_event.is_set() and not shutdown_requested.is_set():
+                        time.sleep(1)
+            except KeyboardInterrupt:
+                pass
+        else:
+            # No tray: Run web server in main thread (blocking)
+            run_web_server()
 
     except KeyboardInterrupt:
         huntarr_logger.info("KeyboardInterrupt received in main thread. Shutting down...")
@@ -588,6 +583,7 @@ def main():
         if not shutdown_requested.is_set():
             shutdown_requested.set()
     finally:
+        # ... (cleanup logic) ...
         # --- Cleanup ---
         huntarr_logger.info("Web server has stopped. Initiating final shutdown sequence...")
 
@@ -607,11 +603,6 @@ def main():
              huntarr_logger.info("Background thread already stopped.")
         else:
              huntarr_logger.info("Background thread was not started.")
-
-        # Call the shutdown_threads function from primary.main (if it does more than just join)
-        # This might be redundant if start_huntarr handles its own cleanup via stop_event
-        # huntarr_logger.info("Calling shutdown_threads()...")
-        # shutdown_threads() # Uncomment if primary.main.shutdown_threads() does more cleanup
 
         huntarr_logger.info("--- Huntarr Main Process Exiting ---")
         
