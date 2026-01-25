@@ -21,7 +21,7 @@ class RequestarrAPI:
         """Get hardcoded TMDB API key"""
         return "9265b0bd0cd1962f7f3225989fcd7192"
     
-    def get_trending(self, time_window: str = 'week') -> List[Dict[str, Any]]:
+    def get_trending(self, time_window: str = 'week', movie_instance: str = '', tv_instance: str = '') -> List[Dict[str, Any]]:
         """Get trending movies and TV shows sorted by popularity"""
         api_key = self.get_tmdb_api_key()
         filters = self.get_discover_filters()
@@ -30,6 +30,8 @@ class RequestarrAPI:
         providers = filters.get('providers', [])
         
         all_results = []
+        movie_results = []
+        tv_results = []
         
         try:
             # Use discover endpoint for better filtering
@@ -77,7 +79,7 @@ class RequestarrAPI:
                     backdrop_path = item.get('backdrop_path')
                     backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
                     
-                    all_results.append({
+                    result_item = {
                         'tmdb_id': item.get('id'),
                         'media_type': media_type,
                         'title': title,
@@ -87,10 +89,32 @@ class RequestarrAPI:
                         'backdrop_path': backdrop_url,
                         'vote_average': item.get('vote_average', 0),
                         'popularity': item.get('popularity', 0)
-                    })
+                    }
+                    
+                    # Separate movies and TV shows for instance-specific checking
+                    if media_type == 'movie':
+                        movie_results.append(result_item)
+                    else:
+                        tv_results.append(result_item)
             
-            # Check library status for all items
-            all_results = self.check_library_status_batch(all_results)
+            # Check library status separately for movies and TV shows using their respective instances
+            if movie_results and movie_instance:
+                logger.info(f"[get_trending] Checking {len(movie_results)} movies against Radarr instance: {movie_instance}")
+                movie_results = self.check_library_status_batch(movie_results, app_type='radarr', instance_name=movie_instance)
+            elif movie_results:
+                logger.info(f"[get_trending] Checking {len(movie_results)} movies against all Radarr instances")
+                movie_results = self.check_library_status_batch(movie_results)
+            
+            if tv_results and tv_instance:
+                logger.info(f"[get_trending] Checking {len(tv_results)} TV shows against Sonarr instance: {tv_instance}")
+                tv_results = self.check_library_status_batch(tv_results, app_type='sonarr', instance_name=tv_instance)
+            elif tv_results:
+                logger.info(f"[get_trending] Checking {len(tv_results)} TV shows against all Sonarr instances")
+                tv_results = self.check_library_status_batch(tv_results)
+            
+            # Combine and sort by popularity
+            all_results = movie_results + tv_results
+            all_results.sort(key=lambda x: x.get('popularity', 0), reverse=True)
             
             return all_results
             

@@ -152,7 +152,19 @@ def get_trending():
     """Get trending movies and TV shows"""
     try:
         time_window = request.args.get('time_window', 'week')
-        results = requestarr_api.get_trending(time_window)
+        
+        # Get default instances for filtering
+        default_instances = requestarr_api.get_default_instances()
+        movie_instance = default_instances.get('movie_instance', '')
+        tv_instance = default_instances.get('tv_instance', '')
+        
+        logger.info(f"[get_trending] Using default instances - movie: {movie_instance}, tv: {tv_instance}")
+        
+        results = requestarr_api.get_trending(
+            time_window,
+            movie_instance=movie_instance,
+            tv_instance=tv_instance
+        )
         return jsonify({'results': results})
     except Exception as e:
         logger.error(f"Error getting trending: {e}")
