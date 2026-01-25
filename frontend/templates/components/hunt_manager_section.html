@@ -1,69 +1,68 @@
 <section id="huntManagerSection" class="content-section">
-    <div class="section-header">
-        <!-- App Filter - matching logs page style -->
-        <div class="log-app-filter">
-            <label for="huntManagerAppSelect">
-                <i class="fas fa-crosshairs"></i>
-                <span>App:</span>
-            </label>
-            <select id="huntManagerAppSelect" class="styled-select">
-                <option value="all">All Apps</option>
-                <option value="sonarr">Sonarr</option>
-                <option value="radarr">Radarr</option>
-                <option value="lidarr">Lidarr</option>
-                <option value="readarr">Readarr</option>
-                <option value="whisparr">Whisparr V2</option>
-                <option value="eros">Whisparr V3</option>
-            </select>
-        </div>
-        
-        <div class="log-controls">
-            <!-- Search functionality -->  
-            <div class="log-search">
-                <input type="text" id="huntManagerSearchInput" placeholder="Search hunt data...">
-                <button id="huntManagerSearchButton">
-                    <i class="fas fa-search"></i>
-                </button>
+    <div class="hunt-manager-header">
+        <div class="hunt-manager-controls">
+            <div class="control-group">
+                <div class="log-app-filter">
+                    <label for="huntManagerAppSelect">
+                        <i class="fas fa-filter"></i>
+                        <span>App:</span>
+                    </label>
+                    <select id="huntManagerAppSelect" class="styled-select">
+                        <option value="all">All Apps</option>
+                        <option value="sonarr">Sonarr</option>
+                        <option value="radarr">Radarr</option>
+                        <option value="lidarr">Lidarr</option>
+                        <option value="readarr">Readarr</option>
+                        <option value="whisparr">Whisparr V2</option>
+                        <option value="eros">Whisparr V3</option>
+                    </select>
+                </div>
             </div>
             
-            <div class="log-options">
-                <button id="clearHuntManagerButton" class="clear-button">
-                    <i class="fas fa-trash-alt"></i> Clear
+            <div class="control-group main-search">
+                <div class="log-search">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="huntManagerSearchInput" placeholder="Search processed media...">
+                    <button id="huntManagerSearchButton">Search</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <button id="clearHuntManagerButton" class="btn-danger-outline">
+                    <i class="fas fa-trash-alt"></i> Clear Data
                 </button>
+            </div>
+        </div>
+
+        <div class="hunt-manager-pagination">
+            <div class="pagination-info">
+                <span id="huntManagerPageInfo">Page <span id="huntManagerCurrentPage">1</span> of <span id="huntManagerTotalPages">1</span></span>
+            </div>
+            <div class="pagination-actions">
+                <button id="huntManagerPrevPage" class="pagination-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
+                <button id="huntManagerNextPage" class="pagination-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="page-size-selector">
+                <span>Show:</span>
+                <select id="huntManagerPageSize" class="mini-select">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
             </div>
         </div>
     </div>
 
-    <!-- Pagination controls -->
-    <div class="pagination-controls">
-        <button id="huntManagerPrevPage" class="pagination-button"><i class="fas fa-chevron-left"></i> Previous</button>
-        <span id="huntManagerPageInfo">Page <span id="huntManagerCurrentPage">1</span> of <span id="huntManagerTotalPages">1</span></span>
-        <button id="huntManagerNextPage" class="pagination-button">Next <i class="fas fa-chevron-right"></i></button>
-        
-        <div class="page-size-selector">
-            <label for="huntManagerPageSize">Show:</label>
-            <select id="huntManagerPageSize">
-                <option value="10">10</option>
-                <option value="20" selected>20</option>
-                <option value="30">30</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="250">250</option>
-                <option value="1000">1000</option>
-            </select>
-        </div>
-    </div>
-
-    <div class="history-container">
-        <!-- Table view -->
-        <table class="history-table">
+    <div class="hunt-table-wrapper">
+        <table class="hunt-data-table">
             <thead>
                 <tr>
-                    <th>PROCESSED INFORMATION</th>
-                    <th>OPERATION</th>
-                    <th>ID NUMBER</th>
-                    <th>APP INSTANCE</th>
-                    <th>HOW LONG AGO</th>
+                    <th class="col-info">PROCESSED INFORMATION</th>
+                    <th class="col-op">OPERATION</th>
+                    <th class="col-id">ID NUMBER</th>
+                    <th class="col-instance">APP INSTANCE</th>
+                    <th class="col-time">TIME</th>
                 </tr>
             </thead>
             <tbody id="huntManagerTableBody">
@@ -72,45 +71,351 @@
         </table>
     </div>
 
-    <div id="huntManagerEmptyState" class="empty-state-message">
-        <i class="fas fa-crosshairs fa-3x"></i>
-        <p>No hunt data found. Items will appear here when media is processed.</p>
+    <div id="huntManagerEmptyState" class="empty-state-card" style="display: none;">
+        <div class="empty-state-icon">
+            <i class="fas fa-crosshairs"></i>
+        </div>
+        <h3>No hunt data found</h3>
+        <p>Items will appear here once media has been processed by your apps.</p>
     </div>
 
-    <div id="huntManagerLoading" class="loading-indicator">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>Loading hunt manager...</p>
+    <div id="huntManagerLoading" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner-container">
+            <i class="fas fa-circle-notch fa-spin fa-3x"></i>
+            <p>Fetching hunt data...</p>
+        </div>
     </div>
 </section>
 
 <style>
-/* Hunt Manager clickable link styling */
-.hunt-item-link {
-    color: var(--accent-color, #4a9eff) !important;
+/* Modern Hunt Manager Styling */
+#huntManagerSection {
+    padding-bottom: 80px !important; /* Extra space for footer/scrolling */
+}
+
+.hunt-manager-header {
+    padding: 10px 0 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.hunt-manager-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+}
+
+.control-group.main-search {
+    flex: 1;
+    min-width: 300px;
+}
+
+.log-app-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.log-app-filter label {
+    color: #94a3b8;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.log-app-filter select {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 8px 12px;
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.log-app-filter select:focus {
+    border-color: #3b82f6;
+}
+
+.log-search {
+    position: relative;
+    width: 100%;
+    display: flex;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+}
+
+.log-search input {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-right: none;
+    color: #f1f5f9;
+    padding: 10px 12px 10px 38px;
+    border-radius: 8px 0 0 8px;
+    width: 100%;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.log-search input:focus {
+    border-color: #3b82f6;
+    background: #1e293b;
+}
+
+.log-search button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 0 8px 8px 0;
     cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.log-search button:hover {
+    background: #2563eb;
+}
+
+.btn-danger-outline {
+    background: transparent;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-danger-outline:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Pagination Styling */
+.hunt-manager-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 20px;
+    padding-top: 15px;
+}
+
+.pagination-info {
+    color: #94a3b8;
+    font-size: 0.9em;
+}
+
+.pagination-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.pagination-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.page-size-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 0.9em;
+}
+
+.mini-select {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+    outline: none;
+}
+
+/* Table Wrapper - Broken out of the frame */
+.hunt-table-wrapper {
+    margin-top: 10px;
+    border-radius: 12px;
+    overflow: visible; /* Allow breaking out of the frame */
+}
+
+.hunt-data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.hunt-data-table thead {
+    position: sticky;
+    top: -20px; /* Account for section padding */
+    z-index: 10;
+}
+
+.hunt-data-table th {
+    background: #1e293b;
+    color: #94a3b8;
+    text-align: left;
+    padding: 14px 20px;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    border-bottom: 2px solid #0f172a;
+}
+
+.hunt-data-table th:first-child { border-radius: 8px 0 0 8px; }
+.hunt-data-table th:last-child { border-radius: 0 8px 8px 0; }
+
+.hunt-data-table td {
+    padding: 16px 20px;
+    color: #e2e8f0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    font-size: 0.9em;
+}
+
+.hunt-data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.hunt-data-table tbody tr {
+    transition: background 0.2s;
+}
+
+.hunt-data-table tbody tr:hover {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.hunt-item-link {
+    color: #60a5fa !important;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.2s;
 }
 
 .hunt-item-link:hover {
-    color: #3a8eef !important;
-    border-bottom-color: #3a8eef;
-    text-decoration: none;
+    color: #93c5fd !important;
+    text-decoration: underline !important;
 }
 
-.hunt-item-link:active {
-    color: #2a7edf !important;
+/* Operation Badges */
+.operation-badge {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
 }
 
-/* Discovery badge styling */
+.operation-missing {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.operation-upgrade {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.operation-unknown {
+    background: rgba(148, 163, 184, 0.1);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.col-id { color: #94a3b8 !important; font-family: monospace; }
+.col-time { color: #64748b !important; white-space: nowrap; }
+.col-instance { color: #94a3b8 !important; }
+
+/* Empty State Styling */
+.empty-state-card {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(30, 41, 59, 0.3);
+    border-radius: 12px;
+    border: 1px dashed #334155;
+    margin-top: 20px;
+}
+
+.empty-state-icon {
+    color: #334155;
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.empty-state-card h3 {
+    color: #f1f5f9;
+    margin-bottom: 10px;
+}
+
+.empty-state-card p {
+    color: #64748b;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner-container {
+    color: #3b82f6;
+}
+
+.loading-spinner-container p {
+    margin-top: 15px;
+    color: #94a3b8;
+}
+
 .discovery-badge {
-    background: rgba(74, 158, 255, 0.2);
-    color: #4a9eff;
-    padding: 2px 6px;
+    background: rgba(34, 197, 94, 0.1);
+    color: #4ade80;
+    padding: 2px 8px;
     border-radius: 4px;
-    font-size: 0.8em;
+    font-size: 0.7em;
+    font-weight: 600;
     margin-left: 8px;
-    border: 1px solid rgba(74, 158, 255, 0.3);
+    border: 1px solid rgba(34, 197, 94, 0.2);
 }
 </style> 

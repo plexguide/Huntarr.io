@@ -220,23 +220,28 @@ const huntManagerModule = {
         
         // Processed info with link (if available)
         const processedInfoCell = document.createElement('td');
+        processedInfoCell.className = 'col-info';
         processedInfoCell.innerHTML = this.formatProcessedInfo(entry);
         
         // Operation type
         const operationCell = document.createElement('td');
+        operationCell.className = 'col-op';
         operationCell.innerHTML = this.formatOperation(entry.operation_type);
         
         // Media ID
         const idCell = document.createElement('td');
+        idCell.className = 'col-id';
         idCell.textContent = entry.media_id;
         
         // App instance (formatted as "App Name (Instance Name)")
         const instanceCell = document.createElement('td');
+        instanceCell.className = 'col-instance';
         const appName = entry.app_type.charAt(0).toUpperCase() + entry.app_type.slice(1);
         instanceCell.textContent = `${appName} (${entry.instance_name})`;
         
         // How long ago
         const timeCell = document.createElement('td');
+        timeCell.className = 'col-time';
         timeCell.textContent = entry.how_long_ago;
         
         row.appendChild(processedInfoCell);
@@ -259,22 +264,16 @@ const huntManagerModule = {
             `Click to open in ${entry.app_type} (${entry.instance_name})` : 
             `${entry.app_type} (${entry.instance_name || 'Default'})`;
         
-        console.log('Creating hunt item link with data:', {
-            app_type: entry.app_type,
-            instance_name: entry.instance_name,
-            media_id: entry.media_id,
-            processed_info: entry.processed_info,
-            dataAttributes: dataAttributes,
-            isClickable: isClickable
-        });
-        
         // Only add hunt-item-link class if it's clickable (Sonarr only)
         const linkClass = isClickable ? 'hunt-item-link' : '';
-        let html = `<strong class="${linkClass}" ${dataAttributes} title="${title}">${this.escapeHtml(entry.processed_info)}</strong>`;
+        let html = `<div class="hunt-info-wrapper">
+            <span class="${linkClass}" ${dataAttributes} title="${title}">${this.escapeHtml(entry.processed_info)}</span>`;
         
         if (entry.discovered) {
-            html += ' <span class="discovery-badge">🔍 Discovered</span>';
+            html += ' <span class="discovery-badge"><i class="fas fa-search"></i> Discovered</span>';
         }
+        
+        html += '</div>';
         
         return html;
     },
@@ -286,7 +285,7 @@ const huntManagerModule = {
             'upgrade': { text: 'Upgrade', class: 'operation-upgrade' }
         };
         
-        const operation = operationMap[operationType] || { text: operationType, class: 'operation-unknown' };
+        const operation = operationMap[operationType.toLowerCase()] || { text: operationType, class: 'operation-unknown' };
         return `<span class="operation-badge ${operation.class}">${operation.text}</span>`;
     },
     
