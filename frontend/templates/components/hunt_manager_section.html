@@ -46,9 +46,9 @@
                 <span>Show:</span>
                 <select id="huntManagerPageSize" class="mini-select">
                     <option value="10">10</option>
-                    <option value="20" selected>20</option>
+                    <option value="20">20</option>
                     <option value="50">50</option>
-                    <option value="100">100</option>
+                    <option value="100" selected>100</option>
                 </select>
             </div>
         </div>
@@ -151,9 +151,14 @@
     width: 100%;
     display: flex;
     gap: 12px;
-    background: transparent !important; /* Remove the background from the container */
-    border: none !important; /* Remove the border from the container */
-    box-shadow: none !important; /* Remove any shadow from the container */
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.log-search::before {
+    display: none !important;
+    content: none !important;
 }
 
 .search-icon {
