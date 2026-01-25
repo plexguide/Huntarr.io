@@ -21,6 +21,12 @@ const huntManagerModule = {
     // Initialize the hunt manager module
     init: function() {
         this.cacheElements();
+        
+        // Ensure UI matches state
+        if (this.elements.pageSize) {
+            this.elements.pageSize.value = this.pageSize;
+        }
+        
         this.setupEventListeners();
         
         // Initial load if hunt manager is active section
