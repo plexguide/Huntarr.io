@@ -2620,15 +2620,15 @@ class HuntarrDatabase:
                 hidden_list = []
                 for row in cursor.fetchall():
                     hidden_list.append({
-                        'id': row['id'],
-                        'tmdb_id': row['tmdb_id'],
-                        'media_type': row['media_type'],
-                        'title': row['title'],
-                        'poster_path': row['poster_path'],
-                        'app_type': row['app_type'],
-                        'instance_name': row['instance_name'],
-                        'hidden_at': row['hidden_at'],
-                        'hidden_at_readable': row['hidden_at_readable']
+                        'id': row[0],
+                        'tmdb_id': row[1],
+                        'media_type': row[2],
+                        'title': row[3],
+                        'poster_path': row[4],
+                        'app_type': row[5],
+                        'instance_name': row[6],
+                        'hidden_at': row[7],
+                        'hidden_at_readable': row[8]
                     })
                 
                 return {
