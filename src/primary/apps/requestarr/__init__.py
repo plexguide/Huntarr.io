@@ -1390,6 +1390,7 @@ class RequestarrAPI:
     def get_enabled_instances(self) -> Dict[str, List[Dict[str, str]]]:
         """Get enabled and properly configured Sonarr and Radarr instances"""
         instances = {'sonarr': [], 'radarr': []}
+        seen_names = {'sonarr': set(), 'radarr': set()}
         
         try:
             # Get Sonarr instances
@@ -1399,16 +1400,20 @@ class RequestarrAPI:
                     # Database stores URL as 'api_url', map it to 'url' for consistency
                     url = instance.get('api_url', '') or instance.get('url', '')
                     api_key = instance.get('api_key', '')
+                    name = instance.get('name', 'Default')
                     
                     # Only include instances that are enabled AND have proper configuration
+                    # AND not already added (deduplicate by name)
                     if (instance.get('enabled', False) and 
                         url.strip() and 
-                        api_key.strip()):
+                        api_key.strip() and
+                        name not in seen_names['sonarr']):
                         instances['sonarr'].append({
-                            'name': instance.get('name', 'Default'),
+                            'name': name,
                             'url': url,
                             'api_key': api_key
                         })
+                        seen_names['sonarr'].add(name)
             
             # Get Radarr instances
             radarr_config = self.db.get_app_config('radarr')
@@ -1417,16 +1422,20 @@ class RequestarrAPI:
                     # Database stores URL as 'api_url', map it to 'url' for consistency
                     url = instance.get('api_url', '') or instance.get('url', '')
                     api_key = instance.get('api_key', '')
+                    name = instance.get('name', 'Default')
                     
                     # Only include instances that are enabled AND have proper configuration
+                    # AND not already added (deduplicate by name)
                     if (instance.get('enabled', False) and 
                         url.strip() and 
-                        api_key.strip()):
+                        api_key.strip() and
+                        name not in seen_names['radarr']):
                         instances['radarr'].append({
-                            'name': instance.get('name', 'Default'),
+                            'name': name,
                             'url': url,
                             'api_key': api_key
                         })
+                        seen_names['radarr'].add(name)
             
             return instances
             

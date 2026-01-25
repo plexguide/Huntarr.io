@@ -64,12 +64,20 @@ export class RequestarrModal {
         const isTVShow = data.media_type === 'tv';
         const instances = isTVShow ? this.core.instances.sonarr : this.core.instances.radarr;
         
+        // Deduplicate instances by name (just in case)
+        const uniqueInstances = instances.reduce((acc, instance) => {
+            if (!acc.find(i => i.name === instance.name)) {
+                acc.push(instance);
+            }
+            return acc;
+        }, []);
+        
         // Determine default instance:
         // 1. Use suggested instance (from Discovery home)
         // 2. Use currently selected instance (from Movies/TV browsing views)
         // 3. Fall back to first available instance
         const currentlySelectedInstance = isTVShow ? this.core.content.selectedTVInstance : this.core.content.selectedMovieInstance;
-        const defaultInstance = this.suggestedInstance || currentlySelectedInstance || instances[0]?.name || '';
+        const defaultInstance = this.suggestedInstance || currentlySelectedInstance || uniqueInstances[0]?.name || '';
         
         console.log('[RequestarrModal] Default instance selection:', {
             suggestedInstance: this.suggestedInstance,
@@ -102,7 +110,7 @@ export class RequestarrModal {
         if (instances.length === 0) {
             modalHTML += `<option value="">No Instance Configured</option>`;
         } else {
-            instances.forEach((instance, index) => {
+            uniqueInstances.forEach((instance, index) => {
                 const selected = instance.name === defaultInstance ? 'selected' : '';
                 const appLabel = isTVShow ? 'Sonarr' : 'Radarr';
                 modalHTML += `<option value="${instance.name}" ${selected}>${appLabel} - ${instance.name}</option>`;
@@ -162,7 +170,7 @@ export class RequestarrModal {
         }
         
         // Disable request button if no instances configured
-        if (instances.length === 0) {
+        if (uniqueInstances.length === 0) {
             document.getElementById('modal-request-btn').disabled = true;
             document.getElementById('modal-request-btn').classList.add('disabled');
         }

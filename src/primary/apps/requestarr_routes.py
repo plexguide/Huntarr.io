@@ -571,14 +571,25 @@ def get_instances(app_type):
         # Get instances from settings
         instances_data = get_setting(app_type, 'instances', [])
         
-        # Format response
+        # Format response, keep only enabled + dedupe by name
         instances = []
+        seen_names = set()
         for instance in instances_data:
-            if isinstance(instance, dict) and 'name' in instance:
-                instances.append({
-                    'name': instance['name'],
-                    'url': instance.get('url', '')
-                })
+            if not isinstance(instance, dict) or 'name' not in instance:
+                continue
+            if not instance.get('enabled', False):
+                continue
+            name = str(instance['name']).strip()
+            if not name:
+                continue
+            normalized_name = name.lower()
+            if normalized_name in seen_names:
+                continue
+            seen_names.add(normalized_name)
+            instances.append({
+                'name': name,
+                'url': instance.get('api_url', '') or instance.get('url', '')
+            })
         
         return jsonify({'instances': instances, 'app_type': app_type})
         

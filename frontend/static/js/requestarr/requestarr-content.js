@@ -66,9 +66,33 @@ export class RequestarrContent {
                     }
                 }
                 
+                const uniqueInstances = [];
+                const seenNames = new Set();
+                data.instances.forEach((instance) => {
+                    if (!instance || !instance.name) {
+                        return;
+                    }
+                    const normalizedName = String(instance.name).trim();
+                    if (!normalizedName) {
+                        return;
+                    }
+                    const seenKey = normalizedName.toLowerCase();
+                    if (seenNames.has(seenKey)) {
+                        return;
+                    }
+                    uniqueInstances.push({ ...instance, name: normalizedName });
+                    seenNames.add(seenKey);
+                });
+                
+                if (uniqueInstances.length === 0) {
+                    select.innerHTML = '<option value="">No Radarr instances configured</option>';
+                    this.selectedMovieInstance = null;
+                    return;
+                }
+
                 let selectedIndex = 0;
                 
-                data.instances.forEach((instance, index) => {
+                uniqueInstances.forEach((instance, index) => {
                     const option = document.createElement('option');
                     option.value = instance.name;
                     option.textContent = `Radarr - ${instance.name}`;
@@ -85,7 +109,7 @@ export class RequestarrContent {
                 });
                 
                 // Set initial selected instance
-                this.selectedMovieInstance = data.instances[selectedIndex].name;
+                this.selectedMovieInstance = uniqueInstances[selectedIndex].name;
                 console.log(`[RequestarrContent] Using movie instance: ${this.selectedMovieInstance}`);
                 
                 // Setup change handler
@@ -168,9 +192,33 @@ export class RequestarrContent {
                     }
                 }
                 
+                const uniqueInstances = [];
+                const seenNames = new Set();
+                data.instances.forEach((instance) => {
+                    if (!instance || !instance.name) {
+                        return;
+                    }
+                    const normalizedName = String(instance.name).trim();
+                    if (!normalizedName) {
+                        return;
+                    }
+                    const seenKey = normalizedName.toLowerCase();
+                    if (seenNames.has(seenKey)) {
+                        return;
+                    }
+                    uniqueInstances.push({ ...instance, name: normalizedName });
+                    seenNames.add(seenKey);
+                });
+                
+                if (uniqueInstances.length === 0) {
+                    select.innerHTML = '<option value="">No Sonarr instances configured</option>';
+                    this.selectedTVInstance = null;
+                    return;
+                }
+
                 let selectedIndex = 0;
                 
-                data.instances.forEach((instance, index) => {
+                uniqueInstances.forEach((instance, index) => {
                     const option = document.createElement('option');
                     option.value = instance.name;
                     option.textContent = `Sonarr - ${instance.name}`;
@@ -187,7 +235,7 @@ export class RequestarrContent {
                 });
                 
                 // Set initial selected instance
-                this.selectedTVInstance = data.instances[selectedIndex].name;
+                this.selectedTVInstance = uniqueInstances[selectedIndex].name;
                 console.log(`[RequestarrContent] Using TV instance: ${this.selectedTVInstance}`);
                 
                 // Setup change handler
