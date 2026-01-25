@@ -165,6 +165,11 @@ def get_popular_movies():
         page = int(request.args.get('page', 1))
         hide_available = request.args.get('hide_available', 'false').lower() == 'true'
         
+        # Log instance parameters
+        app_type = request.args.get('app_type')
+        instance_name = request.args.get('instance_name')
+        logger.info(f"GET /discover/movies - page: {page}, app_type: {app_type}, instance_name: {instance_name}")
+        
         # Collect filter parameters
         filter_params = {}
         if request.args.get('sort_by'):
@@ -232,6 +237,11 @@ def get_popular_tv():
     try:
         page = int(request.args.get('page', 1))
         hide_available = request.args.get('hide_available', 'false').lower() == 'true'
+        
+        # Log instance parameters
+        app_type = request.args.get('app_type')
+        instance_name = request.args.get('instance_name')
+        logger.info(f"GET /discover/tv - page: {page}, app_type: {app_type}, instance_name: {instance_name}")
         
         # Collect filter parameters
         filter_params = {}
@@ -423,6 +433,7 @@ def get_default_instances():
     """Get default instance settings for discovery"""
     try:
         defaults = requestarr_api.get_default_instances()
+        logger.info(f"GET default instances - Returning: {defaults}")
         return jsonify({'success': True, 'defaults': defaults})
     except Exception as e:
         logger.error(f"Error getting default instances: {e}")
@@ -436,6 +447,7 @@ def set_default_instances():
         movie_instance = data.get('movie_instance', '')
         tv_instance = data.get('tv_instance', '')
         
+        logger.info(f"POST default instances - Saving movie: '{movie_instance}', tv: '{tv_instance}'")
         requestarr_api.set_default_instances(movie_instance, tv_instance)
         return jsonify({'success': True})
     except Exception as e:

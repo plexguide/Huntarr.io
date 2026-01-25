@@ -272,7 +272,34 @@ export class RequestarrContent {
     async loadPopularMovies() {
         const carousel = document.getElementById('popular-movies-carousel');
         try {
-            const response = await fetch('./api/requestarr/discover/movies?page=1');
+            // Get default movie instance from settings
+            let instanceName = '';
+            try {
+                const settingsResponse = await fetch('./api/requestarr/settings/default-instances');
+                const settingsData = await settingsResponse.json();
+                if (settingsData.success && settingsData.defaults && settingsData.defaults.movie_instance) {
+                    instanceName = settingsData.defaults.movie_instance;
+                }
+            } catch (error) {
+                console.error('[RequestarrContent] Error loading default movie instance:', error);
+            }
+            
+            // If no default, try to get first available instance
+            if (!instanceName) {
+                const instancesResponse = await fetch('./api/requestarr/instances/radarr');
+                const instancesData = await instancesResponse.json();
+                if (instancesData.instances && instancesData.instances.length > 0) {
+                    instanceName = instancesData.instances[0].name;
+                }
+            }
+            
+            // Build URL with instance info if available
+            let url = './api/requestarr/discover/movies?page=1';
+            if (instanceName) {
+                url += `&app_type=radarr&instance_name=${encodeURIComponent(instanceName)}`;
+            }
+            
+            const response = await fetch(url);
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
@@ -292,7 +319,34 @@ export class RequestarrContent {
     async loadPopularTV() {
         const carousel = document.getElementById('popular-tv-carousel');
         try {
-            const response = await fetch('./api/requestarr/discover/tv?page=1');
+            // Get default TV instance from settings
+            let instanceName = '';
+            try {
+                const settingsResponse = await fetch('./api/requestarr/settings/default-instances');
+                const settingsData = await settingsResponse.json();
+                if (settingsData.success && settingsData.defaults && settingsData.defaults.tv_instance) {
+                    instanceName = settingsData.defaults.tv_instance;
+                }
+            } catch (error) {
+                console.error('[RequestarrContent] Error loading default TV instance:', error);
+            }
+            
+            // If no default, try to get first available instance
+            if (!instanceName) {
+                const instancesResponse = await fetch('./api/requestarr/instances/sonarr');
+                const instancesData = await instancesResponse.json();
+                if (instancesData.instances && instancesData.instances.length > 0) {
+                    instanceName = instancesData.instances[0].name;
+                }
+            }
+            
+            // Build URL with instance info if available
+            let url = './api/requestarr/discover/tv?page=1';
+            if (instanceName) {
+                url += `&app_type=sonarr&instance_name=${encodeURIComponent(instanceName)}`;
+            }
+            
+            const response = await fetch(url);
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {

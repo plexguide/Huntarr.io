@@ -195,9 +195,11 @@ class RequestarrAPI:
             
             if instance_name:
                 logger.debug(f"Checking library status for Radarr instance: {instance_name}")
+                logger.info(f"[get_popular_movies] Calling check_library_status_batch WITH instance: {instance_name}")
                 all_results = self.check_library_status_batch(all_results, app_type, instance_name)
             else:
                 # No instance specified, check all instances (old behavior)
+                logger.info(f"[get_popular_movies] Calling check_library_status_batch WITHOUT instance")
                 all_results = self.check_library_status_batch(all_results)
             
             return all_results
@@ -301,9 +303,11 @@ class RequestarrAPI:
             
             if instance_name:
                 logger.debug(f"Checking library status for Sonarr instance: {instance_name}")
+                logger.info(f"[get_popular_tv] Calling check_library_status_batch WITH instance: {instance_name}")
                 all_results = self.check_library_status_batch(all_results, app_type, instance_name)
             else:
                 # No instance specified, check all instances (old behavior)
+                logger.info(f"[get_popular_tv] Calling check_library_status_batch WITHOUT instance")
                 all_results = self.check_library_status_batch(all_results)
             
             return all_results
@@ -638,14 +642,19 @@ class RequestarrAPI:
             sonarr_instances = instances['sonarr']
             
             if app_type and instance_name:
+                logger.info(f"Filtering instances - app_type: {app_type}, instance_name: {instance_name}")
                 if app_type == 'radarr':
+                    original_count = len(radarr_instances)
                     radarr_instances = [inst for inst in radarr_instances if inst['name'] == instance_name]
                     sonarr_instances = []  # Don't check Sonarr if Radarr is specified
-                    logger.debug(f"Checking library status for Radarr instance: {instance_name}")
+                    logger.info(f"Filtered Radarr instances from {original_count} to {len(radarr_instances)}: {[inst['name'] for inst in radarr_instances]}")
                 elif app_type == 'sonarr':
+                    original_count = len(sonarr_instances)
                     sonarr_instances = [inst for inst in sonarr_instances if inst['name'] == instance_name]
                     radarr_instances = []  # Don't check Radarr if Sonarr is specified
-                    logger.debug(f"Checking library status for Sonarr instance: {instance_name}")
+                    logger.info(f"Filtered Sonarr instances from {original_count} to {len(sonarr_instances)}: {[inst['name'] for inst in sonarr_instances]}")
+            else:
+                logger.info(f"No instance filtering - checking all instances (Radarr: {len(radarr_instances)}, Sonarr: {len(sonarr_instances)})")
             
             # Get all movies from filtered Radarr instances
             radarr_tmdb_ids = set()
@@ -662,7 +671,7 @@ class RequestarrAPI:
                         for movie in movies:
                             if movie.get('hasFile', False):  # Only count movies with files
                                 radarr_tmdb_ids.add(movie.get('tmdbId'))
-                        logger.debug(f"Found {len(radarr_tmdb_ids)} movies with files in Radarr instance {instance['name']}")
+                        logger.info(f"Found {len(radarr_tmdb_ids)} movies with files in Radarr instance {instance['name']}")
                 except Exception as e:
                     logger.error(f"Error checking Radarr instance {instance['name']}: {e}")
             
@@ -692,7 +701,7 @@ class RequestarrAPI:
                             # Mark as partial if some episodes are available
                             elif available_episodes > 0 and available_episodes < total_episodes:
                                 sonarr_partial_tmdb_ids.add(tmdb_id)
-                        logger.debug(f"Found {len(sonarr_tmdb_ids)} complete series and {len(sonarr_partial_tmdb_ids)} partial series in Sonarr instance {instance['name']}")
+                        logger.info(f"Found {len(sonarr_tmdb_ids)} complete series and {len(sonarr_partial_tmdb_ids)} partial series in Sonarr instance {instance['name']}")
                 except Exception as e:
                     logger.error(f"Error checking Sonarr instance {instance['name']}: {e}")
             

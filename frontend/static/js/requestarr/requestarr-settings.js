@@ -271,55 +271,84 @@ export class RequestarrSettings {
             const radarrResponse = await fetch('./api/requestarr/instances/radarr');
             const radarrData = await radarrResponse.json();
             
-            movieSelect.innerHTML = '<option value="">No instance selected (will use first available)</option>';
+            // Load Sonarr instances
+            const sonarrResponse = await fetch('./api/requestarr/instances/sonarr');
+            const sonarrData = await sonarrResponse.json();
+            
+            // Load saved defaults
+            const defaultsResponse = await fetch('./api/requestarr/settings/default-instances');
+            const defaultsData = await defaultsResponse.json();
+            
+            let movieInstanceToSave = null;
+            let tvInstanceToSave = null;
+            let needsAutoSave = false;
+            
+            // Populate movie instances
             if (radarrData.instances && radarrData.instances.length > 0) {
+                movieSelect.innerHTML = '';
                 radarrData.instances.forEach(instance => {
                     const option = document.createElement('option');
                     option.value = instance.name;
                     option.textContent = `Radarr - ${instance.name}`;
                     movieSelect.appendChild(option);
                 });
+                
+                // Set selection: saved default or first instance
+                if (defaultsData.success && defaultsData.defaults && defaultsData.defaults.movie_instance) {
+                    movieSelect.value = defaultsData.defaults.movie_instance;
+                } else {
+                    // No default saved, auto-select first instance
+                    movieSelect.value = radarrData.instances[0].name;
+                    movieInstanceToSave = radarrData.instances[0].name;
+                    needsAutoSave = true;
+                }
+            } else {
+                // No instances available
+                movieSelect.innerHTML = '<option value="">No Radarr instances configured</option>';
             }
             
-            // Load Sonarr instances
-            const sonarrResponse = await fetch('./api/requestarr/instances/sonarr');
-            const sonarrData = await sonarrResponse.json();
-            
-            tvSelect.innerHTML = '<option value="">No instance selected (will use first available)</option>';
+            // Populate TV instances
             if (sonarrData.instances && sonarrData.instances.length > 0) {
+                tvSelect.innerHTML = '';
                 sonarrData.instances.forEach(instance => {
                     const option = document.createElement('option');
                     option.value = instance.name;
                     option.textContent = `Sonarr - ${instance.name}`;
                     tvSelect.appendChild(option);
                 });
+                
+                // Set selection: saved default or first instance
+                if (defaultsData.success && defaultsData.defaults && defaultsData.defaults.tv_instance) {
+                    tvSelect.value = defaultsData.defaults.tv_instance;
+                } else {
+                    // No default saved, auto-select first instance
+                    tvSelect.value = sonarrData.instances[0].name;
+                    tvInstanceToSave = sonarrData.instances[0].name;
+                    needsAutoSave = true;
+                }
+            } else {
+                // No instances available
+                tvSelect.innerHTML = '<option value="">No Sonarr instances configured</option>';
             }
             
-            // Load saved defaults
-            const defaultsResponse = await fetch('./api/requestarr/settings/default-instances');
-            const defaultsData = await defaultsResponse.json();
-            
-            if (defaultsData.success && defaultsData.defaults) {
-                if (defaultsData.defaults.movie_instance) {
-                    movieSelect.value = defaultsData.defaults.movie_instance;
-                }
-                if (defaultsData.defaults.tv_instance) {
-                    tvSelect.value = defaultsData.defaults.tv_instance;
-                }
+            // Auto-save if we selected first instances
+            if (needsAutoSave) {
+                console.log('[RequestarrSettings] Auto-saving first available instances as defaults');
+                await this.saveDefaultInstances(true); // Pass silent flag
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading default instances:', error);
         }
     }
     
-    async saveDefaultInstances() {
+    async saveDefaultInstances(silent = false) {
         const movieSelect = document.getElementById('default-movie-instance');
         const tvSelect = document.getElementById('default-tv-instance');
         const saveBtn = document.getElementById('save-default-instances');
         
         if (!movieSelect || !tvSelect) return;
         
-        if (saveBtn) {
+        if (saveBtn && !silent) {
             saveBtn.disabled = true;
             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         }
@@ -337,15 +366,27 @@ export class RequestarrSettings {
             const data = await response.json();
             
             if (data.success) {
-                this.core.showNotification('Default instances saved successfully!', 'success');
+                if (!silent) {
+                    this.core.showNotification('Default instances saved! Reloading discovery content...', 'success');
+                    
+                    // Wait a bit longer to ensure database is fully updated
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    // Reload discovery carousels with new instances
+                    this.core.content.loadDiscoverContent();
+                }
             } else {
-                this.core.showNotification('Failed to save default instances', 'error');
+                if (!silent) {
+                    this.core.showNotification('Failed to save default instances', 'error');
+                }
             }
         } catch (error) {
             console.error('[RequestarrDiscover] Error saving default instances:', error);
-            this.core.showNotification('Failed to save default instances', 'error');
+            if (!silent) {
+                this.core.showNotification('Failed to save default instances', 'error');
+            }
         } finally {
-            if (saveBtn) {
+            if (saveBtn && !silent) {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Default Instances';
             }
