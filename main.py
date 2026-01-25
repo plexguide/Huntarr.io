@@ -232,24 +232,11 @@ def run_web_server():
     host = os.environ.get('FLASK_HOST', '0.0.0.0')
     port = int(os.environ.get('HUNTARR_PORT', os.environ.get('PORT', 9705))) # Check HUNTARR_PORT first, then PORT, then default
     
-    # Initialize Windows system tray on Windows platform
-    system_tray = None
-    if sys.platform == 'win32' and not debug_mode:
-        try:
-            # Only import and use system tray on Windows
-            from distribution.windows.resources.system_tray import create_system_tray
-            system_tray = create_system_tray(port=port)
-            if system_tray.start():
-                web_logger.info("Windows system tray icon initialized")
-            else:
-                web_logger.warning("Failed to start system tray icon")
-                system_tray = None
-        except ImportError:
-            web_logger.info("System tray not available (pystray not installed)")
-        except Exception as e:
-            web_logger.warning(f"Could not initialize system tray: {e}")
-
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
+    
+    # TODO: System tray implementation temporarily disabled
+    # Will be re-enabled in a future update after thorough testing
+    # For now, console=False in PyInstaller spec provides silent background operation
 
     # Log the current authentication mode once at startup
     try:
