@@ -325,7 +325,12 @@ def run_web_server():
                 stop_event.set()
 
 def sigchld_handler(signum, frame):
-    """Handle SIGCHLD to prevent zombie processes."""
+    """Handle SIGCHLD to prevent zombie processes. (Unix only)"""
+    # This handler is only registered on Unix-like systems
+    # Windows doesn't have SIGCHLD or os.waitpid with WNOHANG
+    if not hasattr(os, 'waitpid'):
+        return
+    
     # Reap all terminated child processes without blocking
     while True:
         try:
@@ -459,7 +464,9 @@ def main():
     signal.signal(signal.SIGTERM, main_shutdown_handler)
 
     # Register SIGCHLD handler to prevent zombie processes (Docker healthchecks)
-    signal.signal(signal.SIGCHLD, sigchld_handler)
+    # SIGCHLD is not available on Windows, only register on Unix-like systems
+    if hasattr(signal, 'SIGCHLD'):
+        signal.signal(signal.SIGCHLD, sigchld_handler)
 
     # Register cleanup handler
     atexit.register(cleanup_handler)
