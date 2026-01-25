@@ -85,6 +85,18 @@ export class RequestarrSettings {
             this.hiddenMediaState.page = page;
         }
 
+        // Sync state with dropdown value on initial load
+        const instanceSelect = document.getElementById('hidden-media-instance');
+        if (instanceSelect && !this.hiddenMediaState.instanceValue) {
+            this.hiddenMediaState.instanceValue = instanceSelect.value || '';
+        }
+
+        // Show empty state if no instance selected
+        if (!this.hiddenMediaState.instanceValue) {
+            container.innerHTML = '<div style="text-align: center; padding: 60px; color: #9ca3af;"><i class="fas fa-eye-slash" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i><p style="font-size: 18px; margin-bottom: 10px;">No Instance Selected</p><p style="font-size: 14px;">Please select an instance from the dropdown above to view hidden media.</p></div>';
+            return;
+        }
+
         container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading hidden media...</p></div>';
 
         try {
@@ -176,9 +188,15 @@ export class RequestarrSettings {
             if (instanceOptions.length === 0) {
                 const option = document.createElement('option');
                 option.value = '';
-                option.textContent = 'No instances configured';
+                option.textContent = 'No Instances Exist';
                 instanceSelect.appendChild(option);
             } else {
+                // Add default "Select an Instance" option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select an Instance';
+                instanceSelect.appendChild(defaultOption);
+                
                 instanceOptions.forEach(optionData => {
                     const option = document.createElement('option');
                     option.value = optionData.value;
