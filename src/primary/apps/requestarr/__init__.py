@@ -1403,17 +1403,18 @@ class RequestarrAPI:
                     name = instance.get('name', 'Default')
                     
                     # Only include instances that are enabled AND have proper configuration
-                    # AND not already added (deduplicate by name)
+                    # AND not already added (deduplicate by name case-insensitively)
+                    name_lower = name.strip().lower()
                     if (instance.get('enabled', False) and 
                         url.strip() and 
                         api_key.strip() and
-                        name not in seen_names['sonarr']):
+                        name_lower not in seen_names['sonarr']):
                         instances['sonarr'].append({
-                            'name': name,
-                            'url': url,
-                            'api_key': api_key
+                            'name': name.strip(),
+                            'url': url.strip(),
+                            'api_key': api_key.strip()
                         })
-                        seen_names['sonarr'].add(name)
+                        seen_names['sonarr'].add(name_lower)
             
             # Get Radarr instances
             radarr_config = self.db.get_app_config('radarr')
@@ -1425,17 +1426,18 @@ class RequestarrAPI:
                     name = instance.get('name', 'Default')
                     
                     # Only include instances that are enabled AND have proper configuration
-                    # AND not already added (deduplicate by name)
+                    # AND not already added (deduplicate by name case-insensitively)
+                    name_lower = name.strip().lower()
                     if (instance.get('enabled', False) and 
                         url.strip() and 
                         api_key.strip() and
-                        name not in seen_names['radarr']):
+                        name_lower not in seen_names['radarr']):
                         instances['radarr'].append({
-                            'name': name,
-                            'url': url,
-                            'api_key': api_key
+                            'name': name.strip(),
+                            'url': url.strip(),
+                            'api_key': api_key.strip()
                         })
-                        seen_names['radarr'].add(name)
+                        seen_names['radarr'].add(name_lower)
             
             return instances
             

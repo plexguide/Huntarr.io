@@ -40,11 +40,15 @@ export class RequestarrContent {
         const select = document.getElementById('movies-instance-select');
         if (!select) return;
 
+        // Clear existing options immediately to prevent duplicates if called multiple times
+        select.innerHTML = '<option value="">Loading instances...</option>';
+
         try {
             const response = await fetch('./api/requestarr/instances/radarr');
             const data = await response.json();
             
             if (data.instances && data.instances.length > 0) {
+                // Clear again before adding real instances
                 select.innerHTML = '';
                 
                 // Priority: 1) Saved settings default, 2) localStorage, 3) First instance
@@ -115,9 +119,12 @@ export class RequestarrContent {
                 this.selectedMovieInstance = uniqueInstances[selectedIndex].name;
                 console.log(`[RequestarrContent] Using movie instance: ${this.selectedMovieInstance}`);
                 
-                // Setup change handler
-                select.addEventListener('change', async () => {
-                    this.selectedMovieInstance = select.value;
+                // Setup change handler (remove old listener if any)
+                const newSelect = select.cloneNode(true);
+                select.parentNode.replaceChild(newSelect, select);
+                
+                newSelect.addEventListener('change', async () => {
+                    this.selectedMovieInstance = newSelect.value;
                     console.log(`[RequestarrContent] Switched to movie instance: ${this.selectedMovieInstance}`);
                     
                     // Save to localStorage (session preference)
@@ -166,11 +173,15 @@ export class RequestarrContent {
         const select = document.getElementById('tv-instance-select');
         if (!select) return;
 
+        // Clear existing options immediately to prevent duplicates if called multiple times
+        select.innerHTML = '<option value="">Loading instances...</option>';
+
         try {
             const response = await fetch('./api/requestarr/instances/sonarr');
             const data = await response.json();
             
             if (data.instances && data.instances.length > 0) {
+                // Clear again before adding real instances
                 select.innerHTML = '';
                 
                 // Priority: 1) Saved settings default, 2) localStorage, 3) First instance
@@ -241,9 +252,12 @@ export class RequestarrContent {
                 this.selectedTVInstance = uniqueInstances[selectedIndex].name;
                 console.log(`[RequestarrContent] Using TV instance: ${this.selectedTVInstance}`);
                 
-                // Setup change handler
-                select.addEventListener('change', async () => {
-                    this.selectedTVInstance = select.value;
+                // Setup change handler (remove old listener if any)
+                const newSelect = select.cloneNode(true);
+                select.parentNode.replaceChild(newSelect, select);
+                
+                newSelect.addEventListener('change', async () => {
+                    this.selectedTVInstance = newSelect.value;
                     console.log(`[RequestarrContent] Switched to TV instance: ${this.selectedTVInstance}`);
                     
                     // Save to localStorage (session preference)
