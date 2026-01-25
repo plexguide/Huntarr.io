@@ -11,6 +11,7 @@ import signal
 import logging # Use standard logging for initial setup
 import atexit
 import time
+import traceback
 
 # --- CRITICAL: Handle noconsole mode (PyInstaller) ---
 # In noconsole mode, sys.stdout and sys.stderr are None.
@@ -42,12 +43,35 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = SafeStream(None)
 
+# NUCLEAR DEBUGGING: Write any unhandled exceptions to desktop
+def nuclear_exception_handler(exctype, value, tb):
+    try:
+        desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+        crash_file = os.path.join(desktop, "huntarr_crash.txt")
+        with open(crash_file, "a") as f:
+            f.write(f"\n--- CRASH AT {time.ctime()} ---\n")
+            f.write("".join(traceback.format_exception(exctype, value, tb)))
+    except:
+        pass
+    # Call original handler if it exists
+    sys.__excepthook__(exctype, value, tb)
+
+sys.excepthook = nuclear_exception_handler
+
 # Import path configuration early to set up environment
 try:
     from src.primary.utils import config_paths
     # Removed print statement to prevent noconsole crash
 except Exception as e:
-    # Removed print statement to prevent noconsole crash
+    # Log early import errors to crash file too
+    try:
+        desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+        crash_file = os.path.join(desktop, "huntarr_crash.txt")
+        with open(crash_file, "a") as f:
+            f.write(f"\n--- CONFIG PATH ERROR AT {time.ctime()} ---\n")
+            f.write(str(e) + "\n")
+    except:
+        pass
     pass
 
 # Ensure the 'src' directory is in the Python path
@@ -490,16 +514,25 @@ def main():
     """
     # ... (signal handlers and cleanup registration) ...
     # Register signal handlers for graceful shutdown in the main process
-    signal.signal(signal.SIGINT, main_shutdown_handler)
-    signal.signal(signal.SIGTERM, main_shutdown_handler)
+    try:
+        signal.signal(signal.SIGINT, main_shutdown_handler)
+        signal.signal(signal.SIGTERM, main_shutdown_handler)
+    except Exception:
+        pass # Ignore if signal registration fails
 
     # Register SIGCHLD handler to prevent zombie processes (Docker healthchecks)
     # SIGCHLD is not available on Windows, only register on Unix-like systems
     if hasattr(signal, 'SIGCHLD'):
-        signal.signal(signal.SIGCHLD, sigchld_handler)
+        try:
+            signal.signal(signal.SIGCHLD, sigchld_handler)
+        except Exception:
+            pass # Ignore if signal registration fails
 
     # Register cleanup handler
-    atexit.register(cleanup_handler)
+    try:
+        atexit.register(cleanup_handler)
+    except Exception:
+        pass
     
     # Initialize databases with default configurations
     try:
