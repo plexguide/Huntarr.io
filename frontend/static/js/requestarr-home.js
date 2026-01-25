@@ -6,6 +6,8 @@ const HomeRequestarr = {
     core: null,
     searchTimeout: null,
     elements: {},
+    defaultMovieInstance: null,
+    defaultTVInstance: null,
 
     init() {
         this.cacheElements();
@@ -18,7 +20,9 @@ const HomeRequestarr = {
             .then((core) => {
                 this.core = core;
                 this.setupSearch();
-                this.loadTrending();
+                this.loadDefaultInstances().then(() => {
+                    this.loadTrending();
+                });
             })
             .catch(() => {
                 this.showTrendingError('Requestarr modules not ready');
@@ -54,6 +58,25 @@ const HomeRequestarr = {
                 }
             }, 50);
         });
+    },
+
+    async loadDefaultInstances() {
+        try {
+            const settingsResponse = await fetch('./api/requestarr/settings/default-instances');
+            const settingsData = await settingsResponse.json();
+            if (settingsData.success && settingsData.defaults) {
+                this.defaultMovieInstance = settingsData.defaults.movie_instance || null;
+                this.defaultTVInstance = settingsData.defaults.tv_instance || null;
+                console.log('[HomeRequestarr] Loaded default instances:', {
+                    movie: this.defaultMovieInstance,
+                    tv: this.defaultTVInstance
+                });
+            }
+        } catch (error) {
+            console.error('[HomeRequestarr] Error loading default instances:', error);
+            this.defaultMovieInstance = null;
+            this.defaultTVInstance = null;
+        }
     },
 
     setupSearch() {
@@ -127,7 +150,11 @@ const HomeRequestarr = {
             if (allResults.length > 0) {
                 this.elements.searchResultsGrid.innerHTML = '';
                 allResults.forEach((item) => {
-                    const card = this.createMediaCard(item);
+                    // Use appropriate default instance based on media type
+                    const suggestedInstance = item.media_type === 'movie' 
+                        ? this.defaultMovieInstance
+                        : this.defaultTVInstance;
+                    const card = this.createMediaCard(item, suggestedInstance);
                     if (card) {
                         this.elements.searchResultsGrid.appendChild(card);
                     }
@@ -153,7 +180,11 @@ const HomeRequestarr = {
             if (data.results && data.results.length > 0) {
                 this.elements.trendingCarousel.innerHTML = '';
                 data.results.forEach((item) => {
-                    const card = this.createMediaCard(item);
+                    // Use appropriate default instance based on media type
+                    const suggestedInstance = item.media_type === 'movie' 
+                        ? this.defaultMovieInstance
+                        : this.defaultTVInstance;
+                    const card = this.createMediaCard(item, suggestedInstance);
                     if (card) {
                         this.elements.trendingCarousel.appendChild(card);
                     }
@@ -173,12 +204,12 @@ const HomeRequestarr = {
         }
     },
 
-    createMediaCard(item) {
+    createMediaCard(item, suggestedInstance = null) {
         if (!this.core || !this.core.content || typeof this.core.content.createMediaCard !== 'function') {
             return null;
         }
 
-        return this.core.content.createMediaCard(item);
+        return this.core.content.createMediaCard(item, suggestedInstance);
     }
 };
 

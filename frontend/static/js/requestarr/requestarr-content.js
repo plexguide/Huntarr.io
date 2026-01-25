@@ -277,7 +277,10 @@ export class RequestarrContent {
                 carousel.innerHTML = '';
                 data.results.forEach(item => {
                     // Use the appropriate default instance based on media type
-                    const suggestedInstance = item.media_type === 'movie' ? this.defaultMovieInstance : this.defaultTVInstance;
+                    // Only pass as suggested if actually configured (not empty string)
+                    const suggestedInstance = item.media_type === 'movie' 
+                        ? (this.defaultMovieInstance || null)
+                        : (this.defaultTVInstance || null);
                     carousel.appendChild(this.createMediaCard(item, suggestedInstance));
                 });
             } else {
@@ -307,7 +310,8 @@ export class RequestarrContent {
             if (data.results && data.results.length > 0) {
                 carousel.innerHTML = '';
                 data.results.forEach(item => {
-                    carousel.appendChild(this.createMediaCard(item, this.defaultMovieInstance));
+                    // Only pass as suggested if actually configured (not empty string)
+                    carousel.appendChild(this.createMediaCard(item, this.defaultMovieInstance || null));
                 });
             } else {
                 carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies available</p>';
@@ -336,7 +340,8 @@ export class RequestarrContent {
             if (data.results && data.results.length > 0) {
                 carousel.innerHTML = '';
                 data.results.forEach(item => {
-                    carousel.appendChild(this.createMediaCard(item, this.defaultTVInstance));
+                    // Only pass as suggested if actually configured (not empty string)
+                    carousel.appendChild(this.createMediaCard(item, this.defaultTVInstance || null));
                 });
             } else {
                 carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows available</p>';
