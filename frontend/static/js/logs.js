@@ -464,10 +464,10 @@ window.LogsModule = {
         // Use API timestamp + message for duplicate detection
         const existingLogEntries = new Set();
         if (isPolling) {
-            const existingEntries = this.elements.logsContainer.querySelectorAll('.log-entry');
+            const existingEntries = this.elements.logsContainer.querySelectorAll('tr.log-table-row');
             existingEntries.forEach(entry => {
-                const messageElement = entry.querySelector('.log-message');
-                const timestampElement = entry.querySelector('.log-timestamp');
+                const messageElement = entry.querySelector('.col-message');
+                const timestampElement = entry.querySelector('.col-time');
                 if (messageElement && timestampElement) {
                     // Create a unique key using display timestamp + message
                     const timestampText = timestampElement.textContent.trim().replace(/\s+/g, ' ');
@@ -512,21 +512,13 @@ window.LogsModule = {
                 // No need for client-side app filtering since the API handles this correctly now
                 // The API returns the right logs based on the selected app type
                 
-                const logEntry = document.createElement('div');
-                logEntry.className = 'log-entry';
-
-                // Use the already converted timestamp
-                const date = userTime.date;
-                const time = userTime.time;
-                
-                // Clean the message - since we're now receiving clean logs from backend,
-                // minimal processing should be needed
+                // Clean the message
                 let cleanMessage = originalMessage;
-                
-                // The backend clean logging system should already provide clean messages,
-                // but we'll keep a simple cleanup as a fallback for any edge cases
                 cleanMessage = cleanMessage.replace(/^\s*-\s*/, ''); // Remove any leading dashes
                 cleanMessage = cleanMessage.trim(); // Remove extra whitespace
+                
+                const logEntry = document.createElement('tr');
+                logEntry.className = 'log-table-row';
                 
                 // Create level badge
                 const levelClass = level.toLowerCase();
@@ -541,7 +533,7 @@ window.LogsModule = {
                         levelBadge = `<span class="log-level-badge log-level-warning">Warning</span>`;
                         break;
                     case 'info':
-                        levelBadge = `<span class="log-level-badge log-level-info">Information</span>`;
+                        levelBadge = `<span class="log-level-badge log-level-info">Info</span>`;
                         break;
                     case 'debug':
                         levelBadge = `<span class="log-level-badge log-level-debug">Debug</span>`;
@@ -551,7 +543,7 @@ window.LogsModule = {
                         levelBadge = `<span class="log-level-badge log-level-fatal">Fatal</span>`;
                         break;
                     default:
-                        levelBadge = `<span class="log-level-badge log-level-info">Information</span>`;
+                        levelBadge = `<span class="log-level-badge log-level-info">${level}</span>`;
                 }
                 
                 // Determine app source for display
@@ -561,22 +553,21 @@ window.LogsModule = {
                 }
                 
                 logEntry.innerHTML = `
-                    <div class="log-entry-row">
-                        <div class="log-header-row">
-                            <span class="log-timestamp">
-                                <span class="date">${date}</span>
-                                <span class="time">${time}</span>
-                            </span>
-                            ${levelBadge}
-                            <span class="log-source">${appSource}</span>
-                        </div>
-                        <span class="log-message">${cleanMessage}</span>
-                    </div>
+                    <td class="col-time">${displayTimestamp}</td>
+                    <td class="col-level">${levelBadge}</td>
+                    <td class="col-app">${appSource}</td>
+                    <td class="col-message">${cleanMessage}</td>
                 `;
                 logEntry.classList.add(`log-${levelClass}`);
-            
+                
                 // Add to logs container
-                this.insertLogEntryInOrder(logEntry);
+                if (isPolling) {
+                    // When polling, add to the top
+                    this.elements.logsContainer.insertBefore(logEntry, this.elements.logsContainer.firstChild);
+                } else {
+                    // When loading a page, add to the end
+                    this.elements.logsContainer.appendChild(logEntry);
+                }
                 
                 // Special event dispatching for Swaparr logs
                 if (logAppType === 'swaparr' && this.currentLogApp === 'swaparr') {
@@ -644,10 +635,12 @@ window.LogsModule = {
     insertLogEntryInOrder: function(newLogEntry) {
         if (!this.elements.logsContainer || !newLogEntry) return;
         
-        const newTimestamp = this.parseLogTimestamp(newLogEntry);
+        const newTimestampText = newLogEntry.querySelector('.col-time')?.textContent.trim();
+        // Use a more compatible date parsing format (YYYY/MM/DD HH:MM:SS)
+        const newTimestamp = newTimestampText ? new Date(newTimestampText.replace(/-/g, '/')) : null;
         
         // If no timestamp, add at the top (newest entries go to top)
-        if (!newTimestamp) {
+        if (!newTimestamp || isNaN(newTimestamp.getTime())) {
             this.elements.logsContainer.insertBefore(newLogEntry, this.elements.logsContainer.firstChild);
             return;
         }
@@ -662,14 +655,12 @@ window.LogsModule = {
         let insertPosition = null;
         
         // Find the correct position - newest entries should be at the top
-        // For same-timestamp logs, insert at the top to maintain "newest first" order
         for (let i = 0; i < existingEntries.length; i++) {
-            const existingTimestamp = this.parseLogTimestamp(existingEntries[i]);
+            const existingTimestampText = existingEntries[i].querySelector('.col-time')?.textContent.trim();
+            const existingTimestamp = existingTimestampText ? new Date(existingTimestampText.replace(/-/g, '/')) : null;
             
-            if (!existingTimestamp) continue;
+            if (!existingTimestamp || isNaN(existingTimestamp.getTime())) continue;
             
-            // If new log is newer than existing log, OR if timestamps are equal (same second),
-            // insert before it to maintain newest-first order
             if (newTimestamp >= existingTimestamp) {
                 insertPosition = existingEntries[i];
                 break;
@@ -677,10 +668,8 @@ window.LogsModule = {
         }
         
         if (insertPosition) {
-            // Insert before the older or same-timestamp entry (maintains newest-first order)
             this.elements.logsContainer.insertBefore(newLogEntry, insertPosition);
         } else {
-            // If it's older than all existing entries, add at the end
             this.elements.logsContainer.appendChild(newLogEntry);
         }
     },
@@ -727,7 +716,7 @@ window.LogsModule = {
             this.elements.clearSearchButton.style.display = 'block';
         }
         
-        const logEntries = Array.from(this.elements.logsContainer.querySelectorAll('.log-entry'));
+        const logEntries = Array.from(this.elements.logsContainer.querySelectorAll('tr.log-table-row'));
         let matchCount = 0;
         
         const MAX_ENTRIES_TO_PROCESS = 300;
@@ -800,7 +789,7 @@ window.LogsModule = {
             this.elements.logSearchResults.style.display = 'none';
         }
         
-        const allLogEntries = this.elements.logsContainer.querySelectorAll('.log-entry');
+        const allLogEntries = this.elements.logsContainer.querySelectorAll('tr.log-table-row');
         
         Array.from(allLogEntries).forEach(entry => {
             entry.style.display = '';
@@ -826,7 +815,7 @@ window.LogsModule = {
     
     // Apply filter to single entry
     applyFilterToSingleEntry: function(logEntry, selectedLevel) {
-        const levelBadge = logEntry.querySelector('.log-level-badge, .log-level, .log-level-error, .log-level-warning, .log-level-info, .log-level-debug');
+        const levelBadge = logEntry.querySelector('.log-level-badge');
         
         logEntry.removeAttribute('data-hidden-by-filter');
         
@@ -835,8 +824,8 @@ window.LogsModule = {
             const badgeText = levelBadge.textContent.toLowerCase().trim();
             
             switch(badgeText) {
-                case 'information':
                 case 'info':
+                case 'information':
                     entryLevel = 'info';
                     break;
                 case 'warning':
@@ -854,19 +843,7 @@ window.LogsModule = {
                     entryLevel = 'critical';
                     break;
                 default:
-                    if (levelBadge.classList.contains('log-level-error')) {
-                        entryLevel = 'error';
-                    } else if (levelBadge.classList.contains('log-level-warning')) {
-                        entryLevel = 'warning';
-                    } else if (levelBadge.classList.contains('log-level-info')) {
-                        entryLevel = 'info';
-                    } else if (levelBadge.classList.contains('log-level-debug')) {
-                        entryLevel = 'debug';
-                    } else if (levelBadge.classList.contains('log-level-fatal')) {
-                        entryLevel = 'critical';
-                    } else {
-                        entryLevel = null;
-                    }
+                    entryLevel = 'info';
             }
             
             // Map levels to numeric values for inclusive filtering

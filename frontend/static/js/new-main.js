@@ -1221,7 +1221,7 @@ let huntarrUI = {
         }
         
         // Filter log entries based on search text - with performance optimization
-        const logEntries = Array.from(this.elements.logsContainer.querySelectorAll('.log-entry'));
+        const logEntries = Array.from(this.elements.logsContainer.querySelectorAll('.log-table-row'));
         let matchCount = 0;
         
         // Set a limit for highlighting to prevent browser lockup
@@ -1313,7 +1313,7 @@ let huntarrUI = {
         }
         
         // Show all log entries - use a more efficient approach
-        const allLogEntries = this.elements.logsContainer.querySelectorAll('.log-entry');
+        const allLogEntries = this.elements.logsContainer.querySelectorAll('.log-table-row');
         
         // Process in batches for better performance
         Array.from(allLogEntries).forEach(entry => {
@@ -4314,7 +4314,7 @@ let huntarrUI = {
     filterLogsByLevel: function(selectedLevel) {
         if (!this.elements.logsContainer) return;
         
-        const allLogEntries = this.elements.logsContainer.querySelectorAll('.log-entry');
+        const allLogEntries = this.elements.logsContainer.querySelectorAll('.log-table-row');
         let visibleCount = 0;
         let totalCount = allLogEntries.length;
         

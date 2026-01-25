@@ -1,951 +1,436 @@
 <section id="logsSection" class="content-section">
-    <div class="section-header">
-        <!-- Replace Log Tabs with Styled Dropdown -->
-        <div class="log-app-filter">
-            <label for="logAppSelect">
-                <i class="fas fa-layer-group"></i>
-                <span>App:</span>
-            </label>
-            <select id="logAppSelect" class="styled-select">
-                <option value="all" selected>All</option>
-                <option value="sonarr">Sonarr</option>
-                <option value="radarr">Radarr</option>
-                <option value="lidarr">Lidarr</option>
-                <option value="readarr">Readarr</option>
-                <option value="whisparr">Whisparr</option>
-                <option value="eros">Eros</option>
-                <option value="swaparr">Swaparr</option>
-                <option value="system">System</option>
-            </select>
-        </div>
-        <div class="log-controls">
-            <!-- Log Level Filter - Moved to the left -->
-            <div class="log-level-filter">
-                <label for="logLevelSelect">
-                    <i class="fas fa-filter"></i>
-                    <span>Level:</span>
-                </label>
-                <select id="logLevelSelect" class="styled-select">
-                    <option value="all">All Levels</option>
-                    <option value="debug">DEBUG</option>
-                    <option value="info" selected>INFO</option>
-                    <option value="warning">WARNING</option>
-                    <option value="error">ERROR</option>
-                </select>
+    <div class="logs-header">
+        <div class="logs-controls">
+            <div class="control-group">
+                <div class="log-app-filter">
+                    <label for="logAppSelect">
+                        <i class="fas fa-layer-group"></i>
+                        <span>App:</span>
+                    </label>
+                    <select id="logAppSelect" class="styled-select">
+                        <option value="all" selected>All</option>
+                        <option value="sonarr">Sonarr</option>
+                        <option value="radarr">Radarr</option>
+                        <option value="lidarr">Lidarr</option>
+                        <option value="readarr">Readarr</option>
+                        <option value="whisparr">Whisparr</option>
+                        <option value="eros">Eros</option>
+                        <option value="swaparr">Swaparr</option>
+                        <option value="system">System</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="log-level-filter">
+                    <label for="logLevelSelect">
+                        <i class="fas fa-filter"></i>
+                        <span>Level:</span>
+                    </label>
+                    <select id="logLevelSelect" class="styled-select">
+                        <option value="all">All Levels</option>
+                        <option value="debug">DEBUG</option>
+                        <option value="info" selected>INFO</option>
+                        <option value="warning">WARNING</option>
+                        <option value="error">ERROR</option>
+                    </select>
+                </div>
             </div>
             
-            <div class="connection-status">
-                Status: <span id="logConnectionStatus" class="status-disconnected">Disconnected</span>
+            <div class="control-group main-search">
+                <div class="log-search">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="logSearchInput" placeholder="Search logs...">
+                    <button id="logSearchButton">Search</button>
+                </div>
             </div>
             
-            <!-- Add search functionality -->  
-            <div class="log-search">
-                <div class="search-results-info" id="logSearchResults"></div>
-                <input type="text" id="logSearchInput" placeholder="Search logs...">
-                <button id="logSearchButton">
-                    <i class="fas fa-search"></i>
-                </button>
-                <button id="clearSearchButton" class="clear-search-button" style="display: none;">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="log-options">
-                            <!-- Auto-scroll removed to prevent interference with pagination -->
-                <button id="clearLogsButton" class="clear-button">
+            <div class="control-group">
+                <button id="clearLogsButton" class="btn-danger-outline">
                     <i class="fas fa-trash-alt"></i> Clear
                 </button>
             </div>
         </div>
-    </div>
-    
-    <!-- Pagination controls like history section -->
-    <div class="pagination-controls">
-        <button id="logsPrevPage" class="pagination-button"><i class="fas fa-chevron-left"></i> Previous</button>
-        <span id="logsPageInfo">Page <span id="logsCurrentPage">1</span> of <span id="logsTotalPages">1</span></span>
-        <button id="logsNextPage" class="pagination-button">Next <i class="fas fa-chevron-right"></i></button>
-        
-        <div class="page-size-selector">
-            <label for="logsPageSize">Show:</label>
-            <select id="logsPageSize">
-                <option value="20" selected>20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="200">200</option>
-            </select>
+
+        <div class="logs-pagination-bar">
+            <div class="connection-status-wrapper">
+                Status: <span id="logConnectionStatus" class="status-disconnected">Disconnected</span>
+            </div>
+            <div class="pagination-info">
+                <span id="logsPageInfo">Page <span id="logsCurrentPage">1</span> of <span id="logsTotalPages">1</span></span>
+            </div>
+            <div class="pagination-actions">
+                <button id="logsPrevPage" class="pagination-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
+                <button id="logsNextPage" class="pagination-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="page-size-selector">
+                <span>Show:</span>
+                <select id="logsPageSize" class="mini-select">
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                </select>
+            </div>
         </div>
     </div>
     
-    <div id="logsContainer" class="logs"></div>
+    <div class="logs-table-wrapper">
+        <table class="logs-data-table">
+            <thead>
+                <tr>
+                    <th class="col-time">TIME</th>
+                    <th class="col-level">LEVEL</th>
+                    <th class="col-app">APP</th>
+                    <th class="col-message">MESSAGE</th>
+                </tr>
+            </thead>
+            <tbody id="logsContainer">
+                <!-- Log entries will be loaded here -->
+            </tbody>
+        </table>
+    </div>
 </section>
 
 <style>
-    /* CRITICAL: Override sticky positioning from apps-double-scroll-fix.css for logs section */
-    #logsSection .section-header {
-        position: static !important;
-        top: auto !important;
-        z-index: auto !important;
-        background-color: transparent !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-    }
-    
-    /* CRITICAL: Make logs container flow naturally instead of fixed height with internal scrolling */
-    #logsSection .logs {
-        height: auto;
-        min-height: 400px;
-        overflow: visible !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 15px 0;
-        font-family: 'Fira Code', 'Courier New', monospace;
-        font-size: 12px;
-        line-height: 1.4;
-        padding-bottom: 80px; /* Extra padding at bottom */
-        position: relative;
-        z-index: 1;
-        margin-top: 10px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-    }
-    
-    /* Modern Logs Section Styling */
-    #logsSection {
-        padding: 20px;
-        padding-bottom: 60px; /* Extra padding to account for the footer */
-        overflow: hidden; /* Prevent outer scrolling */
-        display: none; /* Hide by default */
-        width: 100%;
-        position: relative; /* Establish positioning context */
-    }
-    
-    /* Only show when active */
-    #logsSection.active {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    #logsSection .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-        flex-wrap: nowrap; /* Prevent wrapping to keep on one line */
-        gap: 15px;
-        position: sticky;
-        top: 0;
-        z-index: 100; /* Ensure header stays above log content */
-        background-color: #101520; /* Match background to prevent transparency */
-        padding-bottom: 5px;
-    }
-    
-    /* Dropdown styling */
-    .log-dropdown {
-        position: relative;
-        display: inline-block;
-    }
-    
-    .log-dropdown-btn {
-        background: linear-gradient(135deg, rgba(28, 36, 54, 0.9), rgba(24, 32, 48, 0.8));
-        color: white;
-        padding: 8px 15px;
-        border: 1px solid rgba(90, 109, 137, 0.3);
-        border-radius: 8px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 500;
-        min-width: 120px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .log-dropdown-btn:hover {
-        background: linear-gradient(135deg, rgba(38, 46, 64, 0.9), rgba(34, 42, 58, 0.8));
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    
-    .log-dropdown-btn i {
-        margin-left: auto;
-        transition: transform 0.3s ease;
-    }
-    
-    .log-dropdown-content {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        min-width: 160px;
-        z-index: 100;
-        background: linear-gradient(135deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
-        border-radius: 8px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-        border: 1px solid rgba(90, 109, 137, 0.2);
-        margin-top: 5px;
-        transform: translateY(0);
-        max-height: 300px;
-        overflow-y: auto;
-    }
-    
-    /* Fix dropdown disappearing when moving to content */
-    .log-dropdown-wrapper {
-        position: relative;
-        padding-bottom: 5px; /* Create space to safely move to dropdown */
-    }
-    
-    .log-dropdown-wrapper:after {
-        content: '';
-        position: absolute;
-        height: 10px; /* Invisible bridge between button and content */
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 99;
-    }
-    
-    .log-dropdown-wrapper:hover .log-dropdown-content,
-    .log-dropdown-content:hover {
-        display: block;
-    }
-    
-    .log-dropdown-wrapper:hover .log-dropdown-btn i {
-        transform: rotate(180deg);
-    }
-    
-    .log-option {
-        color: white;
-        padding: 10px 15px;
-        text-decoration: none;
-        display: block;
-        transition: all 0.2s ease;
-        text-align: left;
-        border-bottom: 1px solid rgba(90, 109, 137, 0.1);
-    }
-    
-    .log-option:last-child {
-        border-bottom: none;
-    }
-    
-    .log-option:hover {
-        background: rgba(65, 105, 225, 0.2);
-    }
-    
-    .log-option.active {
-        background: rgba(65, 105, 225, 0.3);
-        font-weight: 500;
-    }
-    
-    /* Controls styling */
-    .log-controls {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        flex-wrap: wrap;
-    }
-    
-    /* Logs search styling */
-    .log-search {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        position: relative;
-        flex: 1; /* Allow search to take up available space */
-    }
+/* Modern Logs Styling - Matching Hunt Manager */
+#logsSection {
+    padding-bottom: 80px !important;
+}
 
-    .log-search::before {
-        display: none !important;
-    }
+.logs-header {
+    padding: 10px 0 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
 
-    .log-search input {
-        background: #1e293b;
-        border: 1px solid #334155;
-        color: rgba(255, 255, 255, 0.9);
-        padding: 10px 12px 10px 38px;
-        font-size: 14px;
-        width: 100%;
-        outline: none;
-        border-radius: 8px;
-        height: 42px;
-    }
+.logs-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
 
-    .log-search button#logSearchButton {
-        background: #3b82f6;
-        border: none;
-        color: white;
-        padding: 0 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        height: 42px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-    }
+.control-group {
+    display: flex;
+    align-items: center;
+}
 
-    .log-search button#logSearchButton:hover {
-        background: #2563eb;
-    }
+.control-group.main-search {
+    flex: 1;
+    min-width: 300px;
+}
 
-    .log-options {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+.log-app-filter, .log-level-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-    .clear-button {
-        padding: 0 16px;
-        background: transparent;
-        border: 1px solid #ef4444;
-        border-radius: 8px;
-        color: #ef4444;
-        font-weight: 500;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.3s ease;
-        height: 42px;
-        white-space: nowrap;
-    }
+.log-app-filter label, .log-level-filter label {
+    color: #94a3b8;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 
-    .clear-button:hover {
-        background: #ef4444;
-        color: white;
-        transform: translateY(-1px);
-    }
+.log-app-filter select, .log-level-filter select {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 8px 12px;
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.log-app-filter select:focus, .log-level-filter select:focus {
+    border-color: #3b82f6;
+}
+
+.log-search {
+    position: relative;
+    width: 100%;
+    display: flex;
+    gap: 12px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.log-search input {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 10px 12px 10px 38px;
+    border-radius: 8px;
+    width: 100%;
+    outline: none;
+    transition: all 0.2s;
+    height: 42px;
+}
+
+.log-search input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.log-search button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.log-search button:hover {
+    background: #2563eb;
+}
+
+.btn-danger-outline {
+    background: transparent;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-danger-outline:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Pagination Styling */
+.logs-pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 20px;
+    padding-top: 15px;
+}
+
+.connection-status-wrapper {
+    margin-right: auto;
+    color: #94a3b8;
+    font-size: 0.85em;
+}
+
+.status-connected { color: #10b981; }
+.status-disconnected { color: #ef4444; }
+
+.pagination-info {
+    color: #94a3b8;
+    font-size: 0.9em;
+}
+
+.pagination-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.pagination-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.page-size-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 0.9em;
+}
+
+.mini-select {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+    outline: none;
+}
+
+/* Table Styling */
+.logs-table-wrapper {
+    margin-top: 10px;
+    border-radius: 12px;
+    overflow: visible;
+}
+
+.logs-data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.logs-data-table thead {
+    position: sticky;
+    top: -20px;
+    z-index: 10;
+}
+
+.logs-data-table th {
+    background: #1e293b;
+    color: #94a3b8;
+    text-align: left;
+    padding: 14px 20px;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    border-bottom: 2px solid #0f172a;
+}
+
+.logs-data-table th:first-child { border-radius: 8px 0 0 8px; }
+.logs-data-table th:last-child { border-radius: 0 8px 8px 0; }
+
+.logs-data-table td {
+    padding: 16px 20px;
+    color: #e2e8f0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    font-size: 0.9em;
+}
+
+.logs-data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.logs-data-table tbody tr {
+    transition: background 0.2s;
+}
+
+.logs-data-table tbody tr:hover {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.col-time { 
+    width: 160px; 
+    color: #94a3b8 !important; 
+    font-family: monospace; 
+    white-space: nowrap;
+}
+.col-level { 
+    width: 100px; 
+    white-space: nowrap;
+}
+.col-app { 
+    width: 100px; 
+    color: #3b82f6 !important; 
+    font-weight: 600; 
+    white-space: nowrap;
+}
+.col-message { 
+    font-family: 'Fira Code', monospace; 
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Level Badges */
+.log-level-badge {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.log-level-error { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+.log-level-warning { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+.log-level-info { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+.log-level-debug { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+.log-level-fatal { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+/* Mobile View - Reuse Hunt Manager Pattern */
+@media (max-width: 768px) {
+    .logs-controls { flex-direction: column; align-items: stretch; }
+    .control-group.main-search { min-width: unset; }
+    .logs-pagination-bar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .connection-status-wrapper { order: 2; margin-right: 0; }
     
-    /* Logs container styling with modern gradient */
-    .logs {
-        height: auto;
-        min-height: 400px;
-        overflow: visible !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 15px 0;
-        font-family: 'Fira Code', 'Courier New', monospace;
-        line-height: 1.5;
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.9);
-        padding-bottom: 80px;
-        position: relative;
-        z-index: 1;
-        margin-top: 10px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
+    .logs-data-table, .logs-data-table thead, .logs-data-table tbody, .logs-data-table th, .logs-data-table td, .logs-data-table tr { 
+        display: block; 
     }
-    
-    .logs::-webkit-scrollbar {
-        width: 10px;
-    }
-    
-    /* Remove the colored accent line from the logs container */
-    .logs::before {
-        display: none !important;
-    }
-    
-    .logs::-webkit-scrollbar-track {
-        background: rgba(18, 22, 30, 0.5);
-        border-radius: 0 8px 8px 0;
-    }
-    
-    .logs::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, rgba(52, 152, 219, 0.4), rgba(155, 89, 182, 0.4));
-        border-radius: 5px;
+    .logs-data-table thead tr { position: absolute; top: -9999px; left: -9999px; }
+    .logs-data-table tr {
+        background: rgba(30, 41, 59, 0.4);
         border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        margin-bottom: 15px;
+        padding: 15px;
     }
-    
-    .logs::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(180deg, rgba(52, 152, 219, 0.6), rgba(155, 89, 182, 0.6));
-    }
-    
-    .log-entry {
-        padding: 8px 12px;
-        margin-bottom: 4px;
-        border-radius: 8px;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        gap: 12px;
-        line-height: 1.4;
-        transition: all 0.3s ease;
-        background: rgba(30, 41, 59, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.03);
-    }
-    
-    .log-entry:hover {
-        background: rgba(59, 130, 246, 0.05);
-        border-color: rgba(59, 130, 246, 0.1);
-        transform: translateX(2px);
-    }
-    
-    .log-timestamp {
-        color: rgba(149, 165, 166, 0.9);
-        font-weight: 600;
-        min-width: 65px;
-        font-family: 'Fira Code', monospace;
-        padding: 1px 5px;
-        border-radius: 3px;
-        background: rgba(0, 0, 0, 0.2);
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-    }
-    
-    .log-app {
-        color: #3498db;
-        font-weight: 700;
-        padding: 1px 5px;
-        border-radius: 3px;
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.15) 0%, rgba(52, 152, 219, 0.25) 100%);
-        border: 1px solid rgba(52, 152, 219, 0.3);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-    }
-    
-    .log-level {
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: 700;
-        font-size: 11px;
-        text-transform: uppercase;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-        min-width: 50px;
-        text-align: center;
-    }
-    
-    /* Log level styles with consistent class naming and gradient backgrounds */
-    .log-level-info, .log-level.info {
-        color: #3498db;
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(52, 152, 219, 0.2) 100%);
-        border: 1px solid rgba(52, 152, 219, 0.3);
-    }
-    
-    .log-level-warning, .log-level-warn, .log-level.warning {
-        color: #f39c12;
-        background: linear-gradient(135deg, rgba(243, 156, 18, 0.1) 0%, rgba(243, 156, 18, 0.2) 100%);
-        border: 1px solid rgba(243, 156, 18, 0.3);
-    }
-    
-    .log-level-error, .log-level.error {
-        color: #e74c3c;
-        background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(231, 76, 60, 0.2) 100%);
-        border: 1px solid rgba(231, 76, 60, 0.3);
-    }
-    
-    .log-level-debug, .log-level.debug {
-        color: #27ae60;
-        background: linear-gradient(135deg, rgba(39, 174, 96, 0.1) 0%, rgba(39, 174, 96, 0.2) 100%);
-        border: 1px solid rgba(39, 174, 96, 0.3);
-    }
-    
-    /* Search highlight styling */
-    .search-highlight {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.3) 0%, rgba(155, 89, 182, 0.3) 100%);
-        padding: 0 2px;
-        border-radius: 3px;
-        color: #fff;
-        font-weight: bold;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-        box-shadow: 0 0 8px rgba(52, 152, 219, 0.5);
-        animation: glow 1.5s infinite alternate;
-        display: inline-block;
-    }
-    
-    @keyframes glow {
-        0% {
-            box-shadow: 0 0 3px rgba(52, 152, 219, 0.5);
-        }
-        100% {
-            box-shadow: 0 0 8px rgba(155, 89, 182, 0.8), 0 0 12px rgba(52, 152, 219, 0.6);
-        }
-    }
-    
-    .log-logger {
-        color: #9b59b6;
-        font-style: italic;
-        font-size: 12px;
-    }
-    
-    .log-message {
-        flex: 1 0 100%;
-        white-space: pre-wrap;
-        word-break: break-word;
-        margin-top: 2px;
-        padding-left: 4px;
-        border-left: 3px solid rgba(90, 109, 137, 0.3);
-    }
-    
-    /* Log entry colors based on level */
-    .log-entry.log-debug .log-message {
-        color: rgba(255, 255, 255, 0.7);
-    }
-    
-    .log-entry.log-info .log-message {
-        color: rgba(255, 255, 255, 0.9);
-    }
-    
-    .log-entry.log-warning .log-message, .log-entry.log-warn .log-message {
-        color: #f39c12;
-    }
-    
-    .log-entry.log-error .log-message {
-        color: #e74c3c;
-    }
-    
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .section-header {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
-            position: static;
-        }
-        
-        .log-app-filter, .log-controls {
-            width: 100%;
-        }
-        
-        .log-controls {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
-        }
-        
-        .log-options {
-            width: 100%;
-            justify-content: flex-start;
-        }
-        
-        /* Hide connection status on mobile */
-        .connection-status {
-            display: none;
-        }
-        
-        /* Clear button styling for mobile */
-        .clear-button {
-            width: 100%;
-            justify-content: center;
-        }
-        
-        /* Hide search box on mobile to save space */
-        .log-search {
-            display: none !important;
-        }
-        
-        /* Mobile specific log container styling */
-        .logs {
-            overflow: visible !important;
-            padding-bottom: 80px;
-            margin-top: 15px;
-        }
-        
-        /* Mobile pagination controls */
-        .pagination-controls {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
-            margin: 15px 0;
-        }
-        
-        .page-size-selector {
-            margin-left: 0;
-            width: 100%;
-            justify-content: flex-start;
-            gap: 10px;
-            padding-left: 2px;
-        }
-
-        /* Transform log entries into cards for mobile */
-        .log-entry {
-            flex-direction: column;
-            align-items: stretch;
-            padding: 12px;
-            gap: 10px;
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            margin-bottom: 12px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .log-entry-row {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        .log-timestamp {
-            font-size: 11px;
-            align-self: flex-start;
-            margin-bottom: 4px;
-        }
-
-        .log-header-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        .log-message {
-            border-left: none;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-left: 0;
-            padding-top: 10px;
-            margin-top: 5px;
-            font-size: 12px;
-            width: 100%;
-            word-break: break-word;
-            white-space: pre-wrap;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.5;
-        }
-
-        .log-source {
-            font-size: 11px;
-            font-weight: 700;
-            color: #3b82f6;
-            background: rgba(59, 130, 246, 0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        .log-level-badge {
-            font-size: 10px;
-            padding: 2px 6px;
-        }
-    }
-    
-    /* For dropdowns with many items, position upward if near bottom of screen */
-    @media (max-height: 700px) {
-        .log-dropdown-content {
-            bottom: 100%;
-            top: auto;
-            margin-top: 0;
-            margin-bottom: 5px;
-        }
-    }
-    
-    /* Log Level Filter Styling - COMPLETELY INDEPENDENT, NO GLOWING RING */
-    .log-level-filter {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 5px 10px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, rgba(30, 39, 56, 0.6) 0%, rgba(14, 20, 32, 0.6) 100%);
-        border: 1px solid rgba(90, 109, 137, 0.3);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        position: static !important; /* Remove any positioning context */
-    }
-    
-    /* COMPLETELY remove any ::before pseudo-element from log level filter */
-    .log-level-filter::before {
-        display: none !important;
-        content: none !important;
-        position: static !important;
-        background: none !important;
-        animation: none !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-    }
-    
-    /* ENSURE no glowing ring in any mode */
-    body:not(.low-usage-mode) .log-level-filter::before,
-    body.low-usage-mode .log-level-filter::before,
-    .log-level-filter::before,
-    .log-level-filter:before {
-        display: none !important;
-        content: none !important;
-        position: static !important;
-        background: none !important;
-        animation: none !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        z-index: -9999 !important;
-    }
-    
-    .log-level-filter:hover {
-        background: linear-gradient(135deg, rgba(40, 49, 66, 0.7) 0%, rgba(24, 30, 42, 0.7) 100%);
-        border-color: rgba(90, 109, 137, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-    }
-    
-    .log-level-filter label {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        user-select: none;
-    }
-    
-    .log-level-filter label i {
-        color: rgba(52, 152, 219, 0.8);
-        font-size: 12px;
-    }
-    
-    .log-level-filter select {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.9) 100%);
-        border: 1px solid rgba(52, 152, 219, 0.6);
-        border-radius: 4px;
-        color: rgba(255, 255, 255, 0.95);
-        padding: 4px 8px;
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        outline: none;
-        transition: all 0.3s ease;
-        min-width: 90px;
-        /* Add dropdown arrow */
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 8px center;
-        background-size: 12px;
-        padding-right: 28px;
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-    }
-    
-    .log-level-filter select:hover {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.9) 0%, rgba(41, 128, 185, 1.0) 100%);
-        border-color: rgba(52, 152, 219, 0.8);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
-        /* Maintain dropdown arrow on hover */
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 8px center;
-        background-size: 12px;
-    }
-    
-    .log-level-filter select:focus {
-        border-color: rgba(52, 152, 219, 1.0);
-        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
-        /* Maintain dropdown arrow on focus */
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 8px center;
-        background-size: 12px;
-    }
-    
-    .log-level-filter select option {
-        background: #1a1e2a;
-        color: rgba(255, 255, 255, 0.9);
-        padding: 4px 8px;
-    }
-
-    /* Log App Filter Styling - NO GLOWING RING */
-    .log-app-filter {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 5px 10px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, rgba(30, 39, 56, 0.6) 0%, rgba(14, 20, 32, 0.6) 100%);
-        border: 1px solid rgba(90, 109, 137, 0.3);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
+    .logs-data-table td { 
+        border: none;
+        padding: 6px 0;
         position: relative;
+        padding-left: 35%; 
+        text-align: right;
     }
-    
-    .log-app-filter:hover {
-        background: linear-gradient(135deg, rgba(40, 49, 66, 0.7) 0%, rgba(24, 30, 42, 0.7) 100%);
-        border-color: rgba(90, 109, 137, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    .logs-data-table td:before { 
+        position: absolute;
+        top: 6px;
+        left: 0;
+        width: 30%; 
+        text-align: left;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        font-size: 0.7rem;
     }
-    
-    .log-app-filter label {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        user-select: none;
+    .logs-data-table td:nth-of-type(1):before { content: "Time"; }
+    .logs-data-table td:nth-of-type(2):before { content: "Level"; }
+    .logs-data-table td:nth-of-type(3):before { content: "App"; }
+    .logs-data-table td:nth-of-type(4) { 
+        padding-left: 0; 
+        text-align: left; 
+        border-top: 1px solid rgba(255, 255, 255, 0.05); 
+        margin-top: 8px; 
+        padding-top: 12px; 
     }
-    
-    .log-app-filter label i {
-        color: rgba(52, 152, 219, 0.8);
-        font-size: 12px;
-    }
-    
-    .log-app-filter select {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.9) 100%);
-        border: 1px solid rgba(52, 152, 219, 0.6);
-        border-radius: 4px;
-        color: rgba(255, 255, 255, 0.95);
-        padding: 4px 8px;
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        outline: none;
-        transition: all 0.3s ease;
-        min-width: 120px;
-        /* Add dropdown arrow */
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 8px center;
-        background-size: 12px;
-        padding-right: 28px;
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-    }
-    
-    .log-app-filter select:hover {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.9) 0%, rgba(41, 128, 185, 1.0) 100%);
-        border-color: rgba(52, 152, 219, 0.8);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
-        /* Maintain dropdown arrow on hover */
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 8px center;
-        background-size: 12px;
-    }
-    
-    .log-app-filter select:focus {
-        border-color: rgba(52, 152, 219, 1.0);
-        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
-        /* Maintain dropdown arrow on focus */
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 8px center;
-        background-size: 12px;
-    }
-    
-    .log-app-filter select option {
-        background: #1a1e2a;
-        color: rgba(255, 255, 255, 0.9);
-        padding: 4px 8px;
-    }
-    
-    /* DISABLE GLOWING RING ANIMATIONS - Logs Section */
-    #logAppSelect.styled-select,
-    #logLevelSelect.styled-select,
-    #logsSection .styled-select {
-        animation: none !important;
-        box-shadow: none !important;
-    }
-    
-    #logAppSelect.styled-select:focus,
-    #logAppSelect.styled-select:hover,
-    #logLevelSelect.styled-select:focus,
-    #logLevelSelect.styled-select:hover,
-    #logsSection .styled-select:focus,
-    #logsSection .styled-select:hover {
-        animation: none !important;
-        box-shadow: 0 0 5px rgba(255, 255, 255, 0.2) !important;
-        transform: none !important;
-    }
-    
-    /* Pagination controls styling to match history section */
-    .pagination-controls {
-        display: flex;
-        justify-content: flex-start !important;
-        align-items: center;
-        gap: 15px;
-        margin: 20px 0;
-        padding: 0;
-    }
-    
-    .pagination-button {
-        background: linear-gradient(135deg, rgba(30, 39, 56, 0.8) 0%, rgba(14, 20, 32, 0.8) 100%);
-        border: 1px solid rgba(90, 109, 137, 0.3);
-        border-radius: 6px;
-        color: rgba(255, 255, 255, 0.9);
-        padding: 8px 16px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        font-weight: 500;
-    }
-    
-    .pagination-button:hover:not(:disabled) {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.9) 100%);
-        border-color: rgba(52, 152, 219, 0.6);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
-    }
-    
-    .pagination-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-    }
-    
-    #logsPageInfo {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 14px;
-        font-weight: 500;
-        padding: 0 10px;
-    }
-    
-    .page-size-selector {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-left: 20px;
-    }
-    
-    .page-size-selector label {
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 14px;
-        font-weight: 500;
-    }
-    
-    .page-size-selector select {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.8) 0%, rgba(41, 128, 185, 0.9) 100%);
-        border: 1px solid rgba(52, 152, 219, 0.6);
-        border-radius: 4px;
-        color: rgba(255, 255, 255, 0.95);
-        padding: 6px 10px;
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        outline: none;
-        transition: all 0.3s ease;
-        min-width: 60px;
-    }
-    
-    .page-size-selector select:hover {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.9) 0%, rgba(41, 128, 185, 1.0) 100%);
-        border-color: rgba(52, 152, 219, 0.8);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
-    }
-    
-    .page-size-selector select option {
-        background: #1a1e2a;
-        color: rgba(255, 255, 255, 0.9);
-        padding: 4px 8px;
-    }
+    .logs-data-table td:nth-of-type(4):before { content: none; }
+}
 </style>
-
-<script>
-// Auto-scroll functionality removed to prevent pagination interference
-document.addEventListener('DOMContentLoaded', function() {
-    // Pagination is handled by LogsModule - no template interference
-});
-</script>
