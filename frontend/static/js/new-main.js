@@ -751,22 +751,11 @@ let huntarrUI = {
                 window.RequestarrDiscover.switchView('settings');
             });
         } else if (section === 'apps') {
-            console.log('[huntarrUI] Showing Apps dashboard');
-            if (document.getElementById('appsSection')) {
-                document.getElementById('appsSection').classList.add('active');
-                document.getElementById('appsSection').style.display = 'block';
-            }
-            if (document.getElementById('appsNav')) document.getElementById('appsNav').classList.add('active');
-            newTitle = 'Apps';
-            this.currentSection = 'apps';
-            
-            // Switch to Apps sidebar
-            this.showAppsSidebar();
-            
-            // Initialize apps dashboard if needed
-            if (typeof appsModule !== 'undefined' && typeof appsModule.initDashboard === 'function') {
-                appsModule.initDashboard();
-            }
+            console.log('[huntarrUI] Apps section requested - redirecting to Sonarr by default');
+            // Instead of showing apps dashboard, redirect to Sonarr
+            this.switchSection('sonarr');
+            window.location.hash = '#sonarr';
+            return;
         } else if (section === 'sonarr' && document.getElementById('sonarrSection')) {
             document.getElementById('sonarrSection').classList.add('active');
             document.getElementById('sonarrSection').style.display = 'block';
