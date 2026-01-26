@@ -292,7 +292,7 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .instance-card-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
     
     .huntarr-modal {
@@ -304,5 +304,17 @@
     
     .modal-form-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .setting-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .setting-item input[type="text"],
+    .setting-item input[type="number"],
+    .setting-item select {
+        width: 100%;
+        max-width: none;
     }
 }

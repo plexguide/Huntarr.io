@@ -126,13 +126,15 @@ const SettingsForms = {
     `;
 
     // Generate cards for each instance
-    settings.instances.forEach((instance, index) => {
-        instancesHtml += SettingsForms.renderInstanceCard('sonarr', instance, index);
-    });
+    if (settings.instances && settings.instances.length > 0) {
+        settings.instances.forEach((instance, index) => {
+            instancesHtml += SettingsForms.renderInstanceCard('sonarr', instance, index);
+        });
+    }
 
-    // Add "Add Instance" card
+    // Add "Add Instance" card (always present)
     instancesHtml += `
-        <div class="add-instance-card" onclick="SettingsForms.openInstanceModal('sonarr')">
+        <div class="add-instance-card" data-app-type="sonarr">
             <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
             <div class="add-text">Add Sonarr Instance</div>
         </div>
@@ -243,6 +245,29 @@ const SettingsForms = {
     // Set the content with save button at the top
     container.innerHTML =
       sonarrSaveButtonHtml + instancesHtml + searchSettingsHtml;
+
+    // Attach event listeners dynamically
+    const grid = container.querySelector('#sonarr-instances-grid');
+    if (grid) {
+        grid.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.btn-card.edit');
+            const deleteBtn = e.target.closest('.btn-card.delete');
+            const addCard = e.target.closest('.add-instance-card');
+
+            if (editBtn) {
+                const appType = editBtn.dataset.appType;
+                const index = parseInt(editBtn.dataset.instanceIndex);
+                SettingsForms.openInstanceModal(appType, index);
+            } else if (deleteBtn) {
+                const appType = deleteBtn.dataset.appType;
+                const index = parseInt(deleteBtn.dataset.instanceIndex);
+                SettingsForms.deleteInstance(appType, index);
+            } else if (addCard) {
+                const appType = addCard.dataset.appType;
+                SettingsForms.openInstanceModal(appType);
+            }
+        });
+    }
 
 
     // Add event listeners for custom tags visibility
@@ -2131,13 +2156,15 @@ const SettingsForms = {
     `;
 
     // Generate cards for each instance
-    settings.instances.forEach((instance, index) => {
-        instancesHtml += SettingsForms.renderInstanceCard('eros', instance, index);
-    });
+    if (settings.instances && settings.instances.length > 0) {
+        settings.instances.forEach((instance, index) => {
+            instancesHtml += SettingsForms.renderInstanceCard('eros', instance, index);
+        });
+    }
 
-    // Add "Add Instance" card
+    // Add "Add Instance" card (always present)
     instancesHtml += `
-        <div class="add-instance-card" onclick="SettingsForms.openInstanceModal('eros')">
+        <div class="add-instance-card" data-app-type="eros">
             <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
             <div class="add-text">Add Whisparr V3 Instance</div>
         </div>
@@ -2148,10 +2175,37 @@ const SettingsForms = {
             </div> <!-- settings-group -->
     `;
 
-    // Search Mode dropdown
-    let searchSettingsHtml = `
+    // Continue with the rest of the settings form
+    container.innerHTML = `
+            ${erosSaveButtonHtml}
+            ${instancesHtml}
+            
             <div class="settings-group">
                 <h3>Search Settings</h3>
+    `;
+
+    // Attach event listeners dynamically
+    const grid = container.querySelector('#eros-instances-grid');
+    if (grid) {
+        grid.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.btn-card.edit');
+            const deleteBtn = e.target.closest('.btn-card.delete');
+            const addCard = e.target.closest('.add-instance-card');
+
+            if (editBtn) {
+                const appType = editBtn.dataset.appType;
+                const index = parseInt(editBtn.dataset.instanceIndex);
+                SettingsForms.openInstanceModal(appType, index);
+            } else if (deleteBtn) {
+                const appType = deleteBtn.dataset.appType;
+                const index = parseInt(deleteBtn.dataset.instanceIndex);
+                SettingsForms.deleteInstance(appType, index);
+            } else if (addCard) {
+                const appType = addCard.dataset.appType;
+                SettingsForms.openInstanceModal(appType);
+            }
+        });
+    }
                 <div class="setting-item">
                     <label for="eros_search_mode"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#search-mode" class="info-icon" title="Learn more about search modes" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Search Mode:</label>
                     <select id="eros_search_mode" name="search_mode">
@@ -7517,6 +7571,7 @@ const SettingsForms = {
         `;
 
     // Create the Prowlarr configuration container
+    // Prowlarr is a single instance, but we reuse the card design
     let prowlarrHtml = `
             <div class="settings-group" style="
                 background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
@@ -7527,43 +7582,22 @@ const SettingsForms = {
                 box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
             ">
                 <h3>Prowlarr Configuration</h3>
-                <div class="prowlarr-container">
-                    <div class="instance-item" data-instance-id="0">
-                        <div class="instance-header">
-                            <h4>Prowlarr</h4>
-                            <div class="instance-actions">
-                                <span class="connection-status" id="prowlarr-status-0"></span>
-                            </div>
-                        </div>
-                        <div class="instance-content">
-                            <div class="setting-item">
-                                <label for="prowlarr-enabled-0">Enabled:</label>
-                                <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                                    <input type="checkbox" id="prowlarr-enabled-0" name="enabled" ${
-                                      settings.enabled !== false
-                                        ? "checked"
-                                        : ""
-                                    }>
-                                    <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                                </label>
-                                <p class="setting-help">Enable or disable Prowlarr integration</p>
-                            </div>
-                            <div class="setting-item">
-                                <label for="prowlarr-url-0">URL:</label>
-                                <input type="text" id="prowlarr-url-0" name="api_url" value="${
-                                  settings.api_url || ""
-                                }" placeholder="Base URL for Prowlarr (e.g., http://localhost:9696)" data-instance-index="0">
-                                <p class="setting-help">Base URL for Prowlarr (e.g., http://localhost:9696)</p>
-                            </div>
-                            <div class="setting-item">
-                                <label for="prowlarr-key-0">API Key:</label>
-                                <input type="text" id="prowlarr-key-0" name="api_key" value="${
-                                  settings.api_key || ""
-                                }" placeholder="API key for Prowlarr" data-instance-index="0">
-                                <p class="setting-help">API key for Prowlarr</p>
-                            </div>
-                        </div>
-                    </div>
+                <div class="instance-card-grid" id="prowlarr-instances-grid">
+    `;
+
+    // Normalize Prowlarr settings to look like an instance object for the card renderer
+    // Prowlarr settings are flat, not in an 'instances' array
+    const prowlarrInstance = {
+        name: 'Prowlarr',
+        api_url: settings.api_url || '',
+        api_key: settings.api_key || '',
+        enabled: settings.enabled !== false
+    };
+
+    // Render single card
+    prowlarrHtml += SettingsForms.renderInstanceCard('prowlarr', prowlarrInstance, 0);
+
+    prowlarrHtml += `
                 </div>
             </div>
         `;
@@ -7571,11 +7605,94 @@ const SettingsForms = {
     // Set the content with save button at the top
     container.innerHTML = prowlarrSaveButtonHtml + prowlarrHtml;
 
-    // Setup auto-detection (like Sonarr)
-    this.setupProwlarrAutoDetection(container);
+    // Attach event listeners dynamically
+    const grid = container.querySelector('#prowlarr-instances-grid');
+    if (grid) {
+        grid.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.btn-card.edit');
+            if (editBtn) {
+                // Open modal for single instance Prowlarr
+                SettingsForms.openProwlarrModal();
+            }
+        });
+    }
 
     // Set up manual save functionality for Prowlarr
     this.setupAppManualSave(container, "prowlarr", settings);
+  },
+
+  // Open modal specifically for Prowlarr (since it has a different data structure)
+  openProwlarrModal: function() {
+      const settings = window.huntarrUI.originalSettings.prowlarr;
+      if (!settings) return;
+
+      // Create modal container if it doesn't exist
+      let modalOverlay = document.getElementById('huntarr-instance-modal');
+      if (!modalOverlay) {
+          modalOverlay = document.createElement('div');
+          modalOverlay.id = 'huntarr-instance-modal';
+          modalOverlay.className = 'huntarr-modal-overlay';
+          document.body.appendChild(modalOverlay);
+      }
+
+      const formFields = `
+          <div class="modal-form-section">
+              <div class="modal-section-title">Connection Details</div>
+              <div class="setting-item">
+                  <label>Enabled</label>
+                  <label class="toggle-switch">
+                      <input type="checkbox" id="modal-enabled" ${settings.enabled !== false ? 'checked' : ''}>
+                      <span class="toggle-slider"></span>
+                  </label>
+              </div>
+              <div class="setting-item">
+                  <label>URL</label>
+                  <input type="text" id="modal-url" value="${settings.api_url || ''}" placeholder="http://localhost:9696">
+              </div>
+              <div class="setting-item">
+                  <label>API Key</label>
+                  <input type="text" id="modal-key" value="${settings.api_key || ''}" placeholder="API Key">
+              </div>
+          </div>
+      `;
+
+      modalOverlay.innerHTML = `
+          <div class="huntarr-modal">
+              <div class="huntarr-modal-header">
+                  <h3 class="huntarr-modal-title">Edit Prowlarr Configuration</h3>
+                  <button class="huntarr-modal-close" onclick="document.getElementById('huntarr-instance-modal').classList.remove('active')">
+                      <i class="fas fa-times"></i>
+                  </button>
+              </div>
+              <div class="huntarr-modal-body">
+                  <div class="modal-form-grid">
+                      ${formFields}
+                  </div>
+              </div>
+              <div class="huntarr-modal-footer">
+                  <button class="btn-modal btn-modal-secondary" onclick="document.getElementById('huntarr-instance-modal').classList.remove('active')">Cancel</button>
+                  <button class="btn-modal btn-modal-primary" onclick="SettingsForms.saveProwlarrFromModal()">Save Changes</button>
+              </div>
+          </div>
+      `;
+
+      setTimeout(() => modalOverlay.classList.add('active'), 10);
+  },
+
+  // Save Prowlarr settings from modal
+  saveProwlarrFromModal: function() {
+      const settings = window.huntarrUI.originalSettings.prowlarr;
+      
+      // Update settings object
+      settings.enabled = document.getElementById('modal-enabled').checked;
+      settings.api_url = document.getElementById('modal-url').value;
+      settings.api_key = document.getElementById('modal-key').value;
+
+      // Save to server
+      this.saveAppSettings('prowlarr', settings);
+      
+      // Close modal
+      document.getElementById('huntarr-instance-modal').classList.remove('active');
   },
 
   // Setup auto-detection for Prowlarr (similar to Sonarr)
@@ -7639,10 +7756,12 @@ const SettingsForms = {
 
   // Render a single instance card
   renderInstanceCard: function(appType, instance, index) {
-      const statusClass = instance.enabled ? 'status-connected' : 'status-unknown'; // We can improve this with real status later
+      const statusClass = instance.enabled ? 'status-connected' : 'status-unknown';
       const statusIcon = instance.enabled ? 'fa-check-circle' : 'fa-pause-circle';
       const isDefault = index === 0;
+      const indexAttr = index !== null ? index : '';
       
+      // Use window.SettingsForms explicitly in onclick to ensure scope resolution
       return `
           <div class="instance-card ${isDefault ? 'default-instance' : ''}" data-instance-index="${index}">
               <div class="instance-card-header">
@@ -7666,11 +7785,11 @@ const SettingsForms = {
                   </div>
               </div>
               <div class="instance-card-footer">
-                  <button type="button" class="btn-card edit" onclick="SettingsForms.openInstanceModal('${appType}', ${index})">
+                  <button type="button" class="btn-card edit" data-app-type="${appType}" data-instance-index="${index}">
                       <i class="fas fa-edit"></i> Edit
                   </button>
                   ${!isDefault ? `
-                  <button type="button" class="btn-card delete" onclick="SettingsForms.deleteInstance('${appType}', ${index})">
+                  <button type="button" class="btn-card delete" data-app-type="${appType}" data-instance-index="${index}">
                       <i class="fas fa-trash"></i> Delete
                   </button>
                   ` : ''}
