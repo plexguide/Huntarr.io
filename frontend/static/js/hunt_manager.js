@@ -345,11 +345,14 @@ const huntManagerModule = {
     },
     
     // Generate direct link to item in *arr application (7.7.5 logic)
-    generateDirectLink: function(appType, instanceUrl, itemId, title) {
+    generateDirectLink: function(appType, instanceUrl, externalUrl, itemId, title) {
         if (!instanceUrl) return null;
+
+        // Use external URL if available, otherwise fallback to instance
+        let baseUrl = externalUrl || instanceUrl;
         
         // Ensure URL doesn't end with slash and remove any localhost prefix
-        let baseUrl = instanceUrl.replace(/\/$/, '');
+        baseUrl = baseUrl.replace(/\/$/, '');
         
         // Remove localhost:9705 prefix if present (this happens when the instance URL gets prepended)
         baseUrl = baseUrl.replace(/^.*localhost:\d+\//, '');
@@ -451,7 +454,8 @@ const huntManagerModule = {
                 if (instance) {
                     console.log('Found instance:', instance);
                     return {
-                        api_url: instance.api_url || instance.url
+                        api_url: instance.api_url || instance.url,
+                        external_url: instance.external_url || null
                     };
                 }
             }
@@ -459,7 +463,8 @@ const huntManagerModule = {
             else if (settingsData && settingsData.api_url && instanceName === 'Default') {
                 console.log('Using legacy single-instance settings');
                 return {
-                    api_url: settingsData.api_url
+                    api_url: settingsData.api_url,
+                    external_url: null
                 };
             }
             
@@ -484,13 +489,14 @@ const huntManagerModule = {
  
                     // If we have item details, try to create a direct link for supported apps
                     if (itemId && ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(appType.toLowerCase())) {
-                        targetUrl = this.generateDirectLink(appType, instanceSettings.api_url, itemId, title);
+                        targetUrl = this.generateDirectLink(appType, instanceSettings.api_url, instanceSettings.external_url, itemId, title);
                         console.log('Generated direct link:', targetUrl);
                     }
                     
                     // Fallback to base URL if direct link creation fails
                     if (!targetUrl) {
-                        let baseUrl = instanceSettings.api_url.replace(/\/$/, '');
+                        let baseUrl = instanceSettings.external_url || instanceSettings.api_url;
+                        baseUrl = baseUrl.api_url.replace(/\/$/, '');
                         baseUrl = baseUrl.replace(/^.*localhost:\d+\//, '');
                         
                         if (!baseUrl.match(/^https?:\/\//)) {
