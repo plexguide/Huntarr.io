@@ -809,30 +809,27 @@ class HuntarrDatabase:
             cursor = conn.execute('SELECT app_type FROM app_configs ORDER BY app_type')
             return [row[0] for row in cursor.fetchall()]
     
-    def initialize_from_defaults(self, defaults_dir: Path):
+    def initialize_from_defaults(self):
         """Initialize database with default configurations if empty"""
-        app_types = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr', 'general']
+        from src.primary.default_settings import get_all_app_types, get_default_config
         
-        for app_type in app_types:
+        for app_type in get_all_app_types():
             # Check if config already exists
             existing_config = self.get_app_config(app_type) if app_type != 'general' else self.get_general_settings()
             
             if not existing_config:
-                # Load default config
-                default_file = defaults_dir / f"{app_type}.json"
-                if default_file.exists():
-                    try:
-                        with open(default_file, 'r') as f:
-                            default_config = json.load(f)
-                        
-                        if app_type == 'general':
-                            self.save_general_settings(default_config)
-                        else:
-                            self.save_app_config(app_type, default_config)
-                        
-                        logger.info(f"Initialized {app_type} with default configuration")
-                    except Exception as e:
-                        logger.error(f"Failed to initialize {app_type} from defaults: {e}")
+                try:
+                    # Get default config from Python module
+                    default_config = get_default_config(app_type)
+                    
+                    if app_type == 'general':
+                        self.save_general_settings(default_config)
+                    else:
+                        self.save_app_config(app_type, default_config)
+                    
+                    logger.info(f"Initialized {app_type} with default configuration")
+                except Exception as e:
+                    logger.error(f"Failed to initialize {app_type} from defaults: {e}")
     
 
 

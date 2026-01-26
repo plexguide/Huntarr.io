@@ -19,7 +19,7 @@ settings_logger = logging.getLogger("settings_manager")
 # Database integration
 from src.primary.utils.database import get_database
 
-# Default configs location
+# Default configs location (DEPRECATED - now using default_settings.py module)
 DEFAULT_CONFIGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'default_configs'))
 
 # Known app types
@@ -41,21 +41,16 @@ def clear_cache(app_name=None):
         settings_cache = {}
 
 def get_default_config_path(app_name: str) -> pathlib.Path:
-    """Get the path to the default config file for a specific app."""
+    """DEPRECATED: Get the path to the default config file for a specific app."""
     return pathlib.Path(DEFAULT_CONFIGS_DIR) / f"{app_name}.json"
 
 def load_default_app_settings(app_name: str) -> Dict[str, Any]:
-    """Load default settings for a specific app from its JSON file."""
-    default_file = get_default_config_path(app_name)
-    if default_file.exists():
-        try:
-            with open(default_file, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            settings_logger.error(f"Error loading default settings for {app_name} from {default_file}: {e}")
-            return {}
-    else:
-        settings_logger.warning(f"Default settings file not found for {app_name}: {default_file}")
+    """Load default settings for a specific app from default_settings module."""
+    try:
+        from src.primary.default_settings import get_default_config
+        return get_default_config(app_name)
+    except Exception as e:
+        settings_logger.error(f"Failed to load default settings for {app_name}: {e}")
         return {}
 
 def _ensure_config_exists(app_name: str) -> None:
@@ -583,8 +578,7 @@ def initialize_database():
     db.ensure_database_exists()
     
     # Initialize database with default configurations
-    defaults_dir = Path(__file__).parent / "default_configs"
-    db.initialize_from_defaults(defaults_dir)
+    db.initialize_from_defaults()
     
     # Start database maintenance scheduler for integrity monitoring
     try:
