@@ -73,19 +73,8 @@ const SettingsForms = {
     container.setAttribute("data-app-type", "sonarr");
 
     // Make sure the instances array exists
-    if (
-      !settings.instances ||
-      !Array.isArray(settings.instances) ||
-      settings.instances.length === 0
-    ) {
-      settings.instances = [
-        {
-          name: "Default",
-          api_url: settings.api_url || "", // Legacy support
-          api_key: settings.api_key || "", // Legacy support
-          enabled: false,
-        },
-      ];
+    if (!settings.instances || !Array.isArray(settings.instances)) {
+      settings.instances = [];
     }
 
     // Add save button at the top
@@ -636,19 +625,8 @@ const SettingsForms = {
     container.setAttribute("data-app-type", "radarr");
 
     // Make sure the instances array exists
-    if (
-      !settings.instances ||
-      !Array.isArray(settings.instances) ||
-      settings.instances.length === 0
-    ) {
-      settings.instances = [
-        {
-          name: "Default",
-          api_url: settings.api_url || "",
-          api_key: settings.api_key || "",
-          enabled: false,
-        },
-      ];
+    if (!settings.instances || !Array.isArray(settings.instances)) {
+      settings.instances = [];
     }
 
     // Add save button at the top
@@ -964,19 +942,8 @@ const SettingsForms = {
     container.setAttribute("data-app-type", "lidarr");
 
     // Make sure the instances array exists
-    if (
-      !settings.instances ||
-      !Array.isArray(settings.instances) ||
-      settings.instances.length === 0
-    ) {
-      settings.instances = [
-        {
-          name: "Default",
-          api_url: settings.api_url || "", // Legacy support
-          api_key: settings.api_key || "", // Legacy support
-          enabled: false,
-        },
-      ];
+    if (!settings.instances || !Array.isArray(settings.instances)) {
+      settings.instances = [];
     }
 
     // Add save button at the top
@@ -1321,19 +1288,8 @@ const SettingsForms = {
     container.setAttribute("data-app-type", "readarr");
 
     // Make sure the instances array exists
-    if (
-      !settings.instances ||
-      !Array.isArray(settings.instances) ||
-      settings.instances.length === 0
-    ) {
-      settings.instances = [
-        {
-          name: "Default",
-          api_url: settings.api_url || "", // Legacy support
-          api_key: settings.api_key || "", // Legacy support
-          enabled: false,
-        },
-      ];
+    if (!settings.instances || !Array.isArray(settings.instances)) {
+      settings.instances = [];
     }
 
     // Add save button at the top
@@ -1661,19 +1617,8 @@ const SettingsForms = {
     container.setAttribute("data-app-type", "whisparr");
 
     // Make sure the instances array exists
-    if (
-      !settings.instances ||
-      !Array.isArray(settings.instances) ||
-      settings.instances.length === 0
-    ) {
-      settings.instances = [
-        {
-          name: "Default",
-          api_url: "",
-          api_key: "",
-          enabled: false,
-        },
-      ];
+    if (!settings.instances || !Array.isArray(settings.instances)) {
+      settings.instances = [];
     }
 
     // Add save button at the top
@@ -2110,19 +2055,8 @@ const SettingsForms = {
     container.setAttribute("data-app-type", "eros");
 
     // Make sure the instances array exists
-    if (
-      !settings.instances ||
-      !Array.isArray(settings.instances) ||
-      settings.instances.length === 0
-    ) {
-      settings.instances = [
-        {
-          name: "Default",
-          api_url: "",
-          api_key: "",
-          enabled: false,
-        },
-      ];
+    if (!settings.instances || !Array.isArray(settings.instances)) {
+      settings.instances = [];
     }
 
     // Add save button at the top
