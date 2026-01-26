@@ -153,6 +153,17 @@ def load_settings(app_type, use_cache=True):
         if key not in current_settings:
             current_settings[key] = value
             updated = True
+
+    # Add missing keys from instance defaults
+    default_instance_settings = default_settings.get("instances", [{}])[0]
+    current_instance_keys = current_settings.get("instances", [{}])[0].keys()
+    missing_instance_keys = set(default_instance_settings.keys()) - set(current_instance_keys)
+
+    if len(missing_instance_keys) > 0:
+        settings_logger.info(f"Adding missing default keys to {app_type} instance settings: {missing_instance_keys}")
+        for i in range(len(current_settings["instances"])):
+            current_settings["instances"][i].update({key: default_instance_settings[key] for key in missing_instance_keys})
+        updated = True
     
     # Apply Lidarr migration (artist -> album) for Huntarr 7.5.0+
     if app_type == "lidarr":
@@ -160,7 +171,7 @@ def load_settings(app_type, use_cache=True):
             settings_logger.info("Migrating Lidarr hunt_missing_mode from 'artist' to 'album' (Huntarr 7.5.0+)")
             current_settings["hunt_missing_mode"] = "album"
             updated = True
-    
+
     # If keys were added, save the updated settings
     if updated:
         settings_logger.info(f"Added missing default keys to {app_type} settings")
