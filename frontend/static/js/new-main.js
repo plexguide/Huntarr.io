@@ -537,11 +537,19 @@ let huntarrUI = {
                 }
             }
             
-            console.log(`[huntarrUI] User switching from ${this.currentSection} to ${section}, refreshing page...`);
-            // Store the target section in localStorage so we can navigate to it after refresh
-            localStorage.setItem('huntarr-target-section', section);
-            location.reload();
-            return;
+            // Don't refresh page when navigating to/from instance editor or between app sections
+            const noRefreshSections = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr'];
+            const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
+            
+            if (!skipRefresh) {
+                console.log(`[huntarrUI] User switching from ${this.currentSection} to ${section}, refreshing page...`);
+                // Store the target section in localStorage so we can navigate to it after refresh
+                localStorage.setItem('huntarr-target-section', section);
+                location.reload();
+                return;
+            } else {
+                console.log(`[huntarrUI] Switching from ${this.currentSection} to ${section} without page refresh (app/editor navigation)`);
+            }
         }
         
         // Update active section
@@ -947,6 +955,14 @@ let huntarrUI = {
             
             // Initialize user module if not already done
             this.initializeUser();
+        } else if (section === 'instance-editor' && document.getElementById('instanceEditorSection')) {
+            document.getElementById('instanceEditorSection').classList.add('active');
+            document.getElementById('instanceEditorSection').style.display = 'block';
+            newTitle = 'Instance Editor';
+            this.currentSection = 'instance-editor';
+            
+            // Show apps sidebar for instance editor
+            this.showAppsSidebar();
         } else {
             // Default to home if section is unknown or element missing
             if (this.elements.homeSection) {
