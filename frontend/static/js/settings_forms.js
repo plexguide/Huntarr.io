@@ -159,79 +159,10 @@ const SettingsForms = {
                     <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
-            
-            <div class="settings-group" id="sonarr-custom-tags">
-                <h3>Custom Tags</h3>
-                <div class="setting-item">
-                    <label for="sonarr_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="sonarr_tag_processed_items" name="tag_processed_items" ${
-                          settings.tag_processed_items !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Enable custom tagging for processed items</p>
-                </div>
-                <div class="setting-item" id="sonarr-custom-tag-fields" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="sonarr_custom_tag_missing"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to missing items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Items Tag:</label>
-                    <input type="text" id="sonarr_custom_tag_missing" name="custom_tag_missing" maxlength="25" value="${
-                      settings.custom_tags?.missing || "huntarr-missing"
-                    }" placeholder="huntarr-missing">
-                    <p class="setting-help">Custom tag for missing items (max 25 characters)</p>
-                </div>
-                <div class="setting-item" id="sonarr-custom-tag-fields-2" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="sonarr_custom_tag_upgrade"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to upgraded items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Items Tag:</label>
-                    <input type="text" id="sonarr_custom_tag_upgrade" name="custom_tag_upgrade" maxlength="25" value="${
-                      settings.custom_tags?.upgrade || "huntarr-upgrade"
-                    }" placeholder="huntarr-upgrade">
-                    <p class="setting-help">Custom tag for upgraded items (max 25 characters)</p>
-                </div>
-                <div class="setting-item" id="sonarr-custom-tag-fields-3" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="sonarr_custom_tag_shows_missing"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to shows mode missing items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Shows Missing Tag:</label>
-                    <input type="text" id="sonarr_custom_tag_shows_missing" name="custom_tag_shows_missing" maxlength="25" value="${
-                      settings.custom_tags?.shows_missing ||
-                      "huntarr-shows-missing"
-                    }" placeholder="huntarr-shows-missing">
-                    <p class="setting-help">Custom tag for missing items in shows mode (max 25 characters)</p>
-                </div>
-            </div>
-            
-            <div class="settings-group">
-                <h3>Additional Options</h3>
-                <div class="setting-item">
-                    <label for="sonarr_monitored_only"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#monitored-only" class="info-icon" title="Learn more about monitored only option" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Monitored Only:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="sonarr_monitored_only" name="monitored_only" ${
-                          settings.monitored_only !== false ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Only search for monitored items</p>
-                </div>
-                <div class="setting-item">
-                    <label for="sonarr_skip_future_episodes"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#skip-future-episodes" class="info-icon" title="Learn more about skipping future episodes" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Skip Future Episodes:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="sonarr_skip_future_episodes" name="skip_future_episodes" ${
-                          settings.skip_future_episodes !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Skip searching for episodes with future air dates</p>
-                </div>
-            </div>
         `;
 
     // Set the content with save button at the top
+    console.log('[HUNTARR DEBUG] Custom Tags and Additional Options sections REMOVED - v2026-01-26');
     container.innerHTML =
       sonarrSaveButtonHtml + instancesHtml + searchSettingsHtml;
 
@@ -702,82 +633,6 @@ const SettingsForms = {
                     <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
-            
-            <div class="settings-group" id="radarr-custom-tags">
-                <h3>Custom Tags</h3>
-                <div class="setting-item">
-                    <label for="radarr_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="radarr_tag_processed_items" name="tag_processed_items" ${
-                          settings.tag_processed_items !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Enable custom tagging for processed items</p>
-                </div>
-                <div class="setting-item" id="radarr-custom-tag-fields" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="radarr_custom_tag_missing"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to missing movies" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Movies Tag:</label>
-                    <input type="text" id="radarr_custom_tag_missing" name="custom_tag_missing" maxlength="25" value="${
-                      settings.custom_tags?.missing || "huntarr-missing"
-                    }" placeholder="huntarr-missing">
-                    <p class="setting-help">Custom tag for missing movies (max 25 characters)</p>
-                </div>
-                <div class="setting-item" id="radarr-custom-tag-fields-2" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="radarr_custom_tag_upgrade"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to upgraded movies" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Movies Tag:</label>
-                    <input type="text" id="radarr_custom_tag_upgrade" name="custom_tag_upgrade" maxlength="25" value="${
-                      settings.custom_tags?.upgrade || "huntarr-upgrade"
-                    }" placeholder="huntarr-upgrade">
-                    <p class="setting-help">Custom tag for upgraded movies (max 25 characters)</p>
-                </div>
-            </div>
-            
-            <div class="settings-group">
-                <h3>Additional Options</h3>
-                <div class="setting-item">
-                    <label for="radarr_monitored_only"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#monitored-only" class="info-icon" title="Learn more about monitored only option" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Monitored Only:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="radarr_monitored_only" ${
-                          settings.monitored_only !== false ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Only search for monitored items</p>
-                </div>
-                <div class="setting-item">
-                    <label for="radarr_skip_future_releases"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#skip-future-movies" class="info-icon" title="Learn more about skipping future releases" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Skip Future Releases:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="radarr_skip_future_releases" ${
-                          settings.skip_future_releases !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Skip searching for movies with future release dates (uses Release Date field)</p>
-                </div>
-                <div class="setting-item" id="process_no_release_dates_container" style="${
-                  settings.skip_future_releases !== false
-                    ? ""
-                    : "display: none;"
-                }">
-                    <label for="radarr_process_no_release_dates"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#process-no-release-dates" class="info-icon" title="Learn more about processing movies with no release dates" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Process No Release Dates:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="radarr_process_no_release_dates" ${
-                          settings.process_no_release_dates === true
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                                            <p class="setting-help">Rare case. Process movies with missing release date information - may result in unknown/poor quality downloads</p>
-                </div>
-            </div>
         `;
 
     // Set the content with save button at the top
@@ -1184,66 +1039,6 @@ const SettingsForms = {
                     <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
-            
-            <div class="settings-group" id="lidarr-custom-tags">
-                <h3>Custom Tags</h3>
-                <div class="setting-item">
-                    <label for="lidarr_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="lidarr_tag_processed_items" name="tag_processed_items" ${
-                          settings.tag_processed_items !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Enable custom tagging for processed items</p>
-                </div>
-                <div class="setting-item" id="lidarr-custom-tag-fields" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="lidarr_custom_tag_missing"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to missing items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Albums Tag:</label>
-                    <input type="text" id="lidarr_custom_tag_missing" name="custom_tag_missing" maxlength="25" value="${
-                      settings.custom_tags?.missing || "huntarr-missing"
-                    }" placeholder="huntarr-missing">
-                    <p class="setting-help">Custom tag for missing albums (max 25 characters)</p>
-                </div>
-                <div class="setting-item" id="lidarr-custom-tag-fields-2" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="lidarr_custom_tag_upgrade"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to upgraded items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Albums Tag:</label>
-                    <input type="text" id="lidarr_custom_tag_upgrade" name="custom_tag_upgrade" maxlength="25" value="${
-                      settings.custom_tags?.upgrade || "huntarr-upgrade"
-                    }" placeholder="huntarr-upgrade">
-                    <p class="setting-help">Custom tag for upgraded albums (max 25 characters)</p>
-                </div>
-            </div>
-            
-            <div class="settings-group">
-                <h3>Additional Options</h3>
-                <div class="setting-item">
-                    <label for="lidarr_monitored_only"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#monitored-only" class="info-icon" title="Learn more about monitored only option" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Monitored Only:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="lidarr_monitored_only" ${
-                          settings.monitored_only !== false ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Only search for monitored items</p>
-                </div>
-                <div class="setting-item">
-                    <label for="lidarr_skip_future_releases"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#skip-future-releases" class="info-icon" title="Learn more about skipping future releases" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Skip Future Releases:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="lidarr_skip_future_releases" ${
-                          settings.skip_future_releases !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Skip searching for albums with future release dates</p>
-                </div>
-            </div>
         `;
 
 
@@ -1521,66 +1316,6 @@ const SettingsForms = {
                     <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
-            
-            <div class="settings-group" id="readarr-custom-tags">
-                <h3>Custom Tags</h3>
-                <div class="setting-item">
-                    <label for="readarr_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="readarr_tag_processed_items" name="tag_processed_items" ${
-                          settings.tag_processed_items !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Enable custom tagging for processed items</p>
-                </div>
-                <div class="setting-item" id="readarr-custom-tag-fields" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="readarr_custom_tag_missing"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to missing items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Books Tag:</label>
-                    <input type="text" id="readarr_custom_tag_missing" name="custom_tag_missing" maxlength="25" value="${
-                      settings.custom_tags?.missing || "huntarr-missing"
-                    }" placeholder="huntarr-missing">
-                    <p class="setting-help">Custom tag for missing books (max 25 characters)</p>
-                </div>
-                <div class="setting-item" id="readarr-custom-tag-fields-2" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="readarr_custom_tag_upgrade"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to upgraded items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Books Tag:</label>
-                    <input type="text" id="readarr_custom_tag_upgrade" name="custom_tag_upgrade" maxlength="25" value="${
-                      settings.custom_tags?.upgrade || "huntarr-upgrade"
-                    }" placeholder="huntarr-upgrade">
-                    <p class="setting-help">Custom tag for upgraded books (max 25 characters)</p>
-                </div>
-            </div>
-            
-            <div class="settings-group">
-                <h3>Additional Options</h3>
-                <div class="setting-item">
-                    <label for="readarr_monitored_only"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#monitored-only" class="info-icon" title="Learn more about monitored only option" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Monitored Only:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="readarr_monitored_only" name="monitored_only" ${
-                          settings.monitored_only !== false ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Only search for monitored items</p>
-                </div>
-                <div class="setting-item">
-                    <label for="readarr_skip_future_releases"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#skip-future-releases" class="info-icon" title="Learn more about skipping future releases" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Skip Future Releases:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="readarr_skip_future_releases" name="skip_future_releases" ${
-                          settings.skip_future_releases !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Skip searching for books with future release dates</p>
-                </div>
-            </div>
         `;
 
 
@@ -1849,66 +1584,6 @@ const SettingsForms = {
                     <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
                 </div>
             </div>
-            
-            <div class="settings-group" id="whisparr-custom-tags">
-                <h3>Custom Tags</h3>
-                <div class="setting-item">
-                    <label for="whisparr_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="whisparr_tag_processed_items" name="tag_processed_items" ${
-                          settings.tag_processed_items !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Enable custom tagging for processed items</p>
-                </div>
-                <div class="setting-item" id="whisparr-custom-tag-fields" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="whisparr_custom_tag_missing"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to missing items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Movies Tag:</label>
-                    <input type="text" id="whisparr_custom_tag_missing" name="custom_tag_missing" maxlength="25" value="${
-                      settings.custom_tags?.missing || "huntarr-missing"
-                    }" placeholder="huntarr-missing">
-                    <p class="setting-help">Custom tag for missing movies (max 25 characters)</p>
-                </div>
-                <div class="setting-item" id="whisparr-custom-tag-fields-2" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="whisparr_custom_tag_upgrade"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to upgraded items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Movies Tag:</label>
-                    <input type="text" id="whisparr_custom_tag_upgrade" name="custom_tag_upgrade" maxlength="25" value="${
-                      settings.custom_tags?.upgrade || "huntarr-upgrade"
-                    }" placeholder="huntarr-upgrade">
-                    <p class="setting-help">Custom tag for upgraded movies (max 25 characters)</p>
-                </div>
-            </div>
-            
-            <div class="settings-group">
-                <h3>Additional Options</h3>
-                <div class="setting-item">
-                    <label for="whisparr_monitored_only"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#additional-options" class="info-icon" title="Learn more about monitored only option" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Monitored Only:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="whisparr_monitored_only" name="monitored_only" ${
-                          settings.monitored_only !== false ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Only search for monitored items</p>
-                </div>
-                <div class="setting-item">
-                    <label for="whisparr_skip_future_releases"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#additional-options" class="info-icon" title="Learn more about skipping future releases" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Skip Future Releases:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="whisparr_skip_future_releases" name="skip_future_releases" ${
-                          settings.skip_future_releases !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Skip searching for scenes with future release dates</p>
-                </div>
-            </div>
         `;
 
     // Set the content with save button at the top
@@ -2173,66 +1848,6 @@ const SettingsForms = {
                         : 20
                     }">
                     <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
-                </div>
-            </div>
-            
-            <div class="settings-group" id="eros-custom-tags">
-                <h3>Custom Tags</h3>
-                <div class="setting-item">
-                    <label for="eros_tag_processed_items"><a href="https://github.com/plexguide/Huntarr.io/issues/382" class="info-icon" title="Learn more about tagging processed items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Tag Processed Items:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="eros_tag_processed_items" name="tag_processed_items" ${
-                          settings.tag_processed_items !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Enable custom tagging for processed items</p>
-                </div>
-                <div class="setting-item" id="eros-custom-tag-fields" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="eros_custom_tag_missing"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to missing items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Movies Tag:</label>
-                    <input type="text" id="eros_custom_tag_missing" name="custom_tag_missing" maxlength="25" value="${
-                      settings.custom_tags?.missing || "huntarr-missing"
-                    }" placeholder="huntarr-missing">
-                    <p class="setting-help">Custom tag for missing movies (max 25 characters)</p>
-                </div>
-                <div class="setting-item" id="eros-custom-tag-fields-2" style="display: ${
-                  settings.tag_processed_items !== false ? "block" : "none"
-                };">
-                    <label for="eros_custom_tag_upgrade"><a href="https://github.com/plexguide/Huntarr.io/issues/579" class="info-icon" title="Customize the tag applied to upgraded items" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Movies Tag:</label>
-                    <input type="text" id="eros_custom_tag_upgrade" name="custom_tag_upgrade" maxlength="25" value="${
-                      settings.custom_tags?.upgrade || "huntarr-upgrade"
-                    }" placeholder="huntarr-upgrade">
-                    <p class="setting-help">Custom tag for upgraded movies (max 25 characters)</p>
-                </div>
-            </div>
-            
-            <div class="settings-group">
-                <h3>Additional Options</h3>
-                <div class="setting-item">
-                    <label for="eros_monitored_only"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#monitored-only" class="info-icon" title="Learn more about monitored only option" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Monitored Only:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="eros_monitored_only" name="monitored_only" ${
-                          settings.monitored_only !== false ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Only search for monitored items</p>
-                </div>
-                <div class="setting-item">
-                    <label for="eros_skip_future_releases"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#skip-future-releases" class="info-icon" title="Learn more about skipping future releases" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Skip Future Releases:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="eros_skip_future_releases" name="skip_future_releases" ${
-                          settings.skip_future_releases !== false
-                            ? "checked"
-                            : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help">Skip searching for scenes with future release dates</p>
                 </div>
             </div>
         `;

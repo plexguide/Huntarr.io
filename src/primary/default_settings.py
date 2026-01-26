@@ -78,21 +78,21 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
 
 # Sonarr default configuration
 SONARR_DEFAULTS = {
-    "instances": [get_default_instance_config("sonarr")],
+    "instances": [],  # No default instances - user creates first instance
     "sleep_duration": 900,
     "hourly_cap": 20
 }
 
 # Radarr default configuration
 RADARR_DEFAULTS = {
-    "instances": [get_default_instance_config("radarr")],
+    "instances": [],  # No default instances - user creates first instance
     "sleep_duration": 900,
     "hourly_cap": 20
 }
 
 # Lidarr default configuration
 LIDARR_DEFAULTS = {
-    "instances": [get_default_instance_config("lidarr")],
+    "instances": [],  # No default instances - user creates first instance
     "hunt_missing_mode": "album",
     "sleep_duration": 900,
     "hourly_cap": 20,
@@ -101,7 +101,7 @@ LIDARR_DEFAULTS = {
 
 # Readarr default configuration
 READARR_DEFAULTS = {
-    "instances": [get_default_instance_config("readarr")],
+    "instances": [],  # No default instances - user creates first instance
     "sleep_duration": 900,
     "skip_future_releases": True,
     "hourly_cap": 20
@@ -109,7 +109,7 @@ READARR_DEFAULTS = {
 
 # Whisparr default configuration
 WHISPARR_DEFAULTS = {
-    "instances": [get_default_instance_config("whisparr")],
+    "instances": [],  # No default instances - user creates first instance
     "sleep_duration": 900,
     "skip_future_releases": True,
     "hourly_cap": 20
@@ -117,7 +117,7 @@ WHISPARR_DEFAULTS = {
 
 # Eros default configuration
 EROS_DEFAULTS = {
-    "instances": [get_default_instance_config("eros")],
+    "instances": [],  # No default instances - user creates first instance
     "search_mode": "movie",
     "sleep_duration": 900,
     "skip_future_releases": True,
