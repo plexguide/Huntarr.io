@@ -114,6 +114,14 @@ const appsModule = {
                 
                 // Generate the form using SettingsForms module
                 if (typeof SettingsForms !== 'undefined') {
+                    // Update global settings store for modal access
+                    if (window.huntarrUI) {
+                        if (!window.huntarrUI.originalSettings) {
+                            window.huntarrUI.originalSettings = {};
+                        }
+                        window.huntarrUI.originalSettings[app] = appSettings;
+                    }
+
                     const formFunction = SettingsForms[`generate${app.charAt(0).toUpperCase()}${app.slice(1)}Form`];
                     if (typeof formFunction === 'function') {
                         // Use .call() to set the 'this' context correctly

@@ -5103,6 +5103,14 @@ let huntarrUI = {
             .then(response => response.json())
             .then(settings => {
                 console.log('[huntarrUI] Loaded settings for logs:', settings);
+                
+                // Update global settings store
+                if (this.originalSettings) {
+                    this.originalSettings.general = settings.general;
+                } else {
+                    this.originalSettings = { general: settings.general };
+                }
+
                 // Ensure general settings exist
                 const generalSettings = settings.general || {};
                 
@@ -5143,6 +5151,14 @@ let huntarrUI = {
             .then(response => response.json())
             .then(settings => {
                 console.log('[huntarrUI] Loaded settings:', settings);
+                
+                // Update global settings store
+                if (this.originalSettings) {
+                    this.originalSettings.general = settings.general;
+                } else {
+                    this.originalSettings = { general: settings.general };
+                }
+
                 console.log('[huntarrUI] General settings:', settings.general);
                 
                 // Generate the general settings form - pass only the general settings
@@ -5186,6 +5202,19 @@ let huntarrUI = {
             .then(response => response.json())
             .then(settings => {
                 console.log('[huntarrUI] Loaded settings for notifications:', settings);
+                
+                // Update global settings store
+                if (this.originalSettings) {
+                    this.originalSettings.general = settings.general;
+                    // Also store as notifications if needed by some logic, though form uses general settings
+                    this.originalSettings.notifications = settings.general; 
+                } else {
+                    this.originalSettings = { 
+                        general: settings.general,
+                        notifications: settings.general
+                    };
+                }
+
                 console.log('[huntarrUI] General settings:', settings.general);
                 console.log('[huntarrUI] SettingsForms available:', typeof SettingsForms !== 'undefined');
                 console.log('[huntarrUI] generateNotificationsForm available:', typeof SettingsForms !== 'undefined' && SettingsForms.generateNotificationsForm);
@@ -5244,6 +5273,14 @@ let huntarrUI = {
             .then(response => response.json())
             .then(settings => {
                 console.log('[huntarrUI] Loaded settings for prowlarr:', settings);
+                
+                // Update global settings store for modal access
+                if (this.originalSettings) {
+                    this.originalSettings.prowlarr = settings.prowlarr;
+                } else {
+                    this.originalSettings = { prowlarr: settings.prowlarr };
+                }
+
                 console.log('[huntarrUI] Prowlarr settings:', settings.prowlarr);
                 console.log('[huntarrUI] SettingsForms available:', typeof SettingsForms !== 'undefined');
                 console.log('[huntarrUI] generateProwlarrForm available:', typeof SettingsForms !== 'undefined' && SettingsForms.generateProwlarrForm);
@@ -5308,6 +5345,14 @@ let huntarrUI = {
             .then(response => response.json())
             .then(settings => {
                 console.log('[huntarrUI] Loaded Swaparr settings:', settings);
+                
+                // Update global settings store
+                if (this.originalSettings) {
+                    this.originalSettings.swaparr = settings;
+                } else {
+                    this.originalSettings = { swaparr: settings };
+                }
+
                 console.log('[huntarrUI] SettingsForms available:', typeof SettingsForms !== 'undefined');
                 console.log('[huntarrUI] generateSwaparrForm available:', typeof SettingsForms !== 'undefined' && SettingsForms.generateSwaparrForm);
                 
