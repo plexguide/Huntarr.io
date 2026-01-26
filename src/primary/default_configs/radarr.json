@@ -14,20 +14,21 @@
   "instances": [
     {
       "name": "Default",
-      "address": "http://localhost:7878",
+      "api_url": "",
       "api_key": "",
-      "api_timeout": 120,
+      "enabled": false,
+      "hunt_missing_movies": 1,
+      "hunt_upgrade_movies": 0,
       "state_management_mode": "custom",
-      "state_management_hours": 168
+      "state_management_hours": 168,
+      "monitored_only": true,
+      "tag_processed_items": true,
+      "custom_tags": {
+        "missing": "huntarr-missing",
+        "upgrade": "huntarr-upgrade"
+      }
     }
   ],
-  "hunt_missing_movies": 1,
-  "hunt_upgrade_movies": 0,
   "sleep_duration": 900,
-  "tag_processed_items": true,
-  "custom_tags": {
-    "missing": "huntarr-missing",
-    "upgrade": "huntarr-upgrade"
-  },
   "hourly_cap": 20
 }

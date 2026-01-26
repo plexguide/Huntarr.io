@@ -363,6 +363,12 @@ def app_specific_loop(app_type: str) -> None:
                     
                     if app_type == "sonarr":
                         air_date_delay_days = instance_details.get("air_date_delay_days", 0)
+                        tag_processed_items = instance_details.get("tag_processed_items", True)
+                        custom_tags = instance_details.get("custom_tags", {
+                            "missing": "huntarr-missing",
+                            "upgrade": "huntarr-upgrade",
+                            "shows_missing": "huntarr-shows-missing"
+                        })
                         processed_missing = process_missing(
                             api_url=api_url,
                             api_key=api_key,
@@ -375,7 +381,9 @@ def app_specific_loop(app_type: str) -> None:
                             air_date_delay_days=air_date_delay_days,
                             command_wait_delay=command_wait_delay,
                             command_wait_attempts=command_wait_attempts,
-                            stop_check=stop_check_func
+                            stop_check=stop_check_func,
+                            tag_processed_items=tag_processed_items,
+                            custom_tags=custom_tags
                         )
                     else:
                         # For other apps that still use the old signature
@@ -399,6 +407,12 @@ def app_specific_loop(app_type: str) -> None:
                         upgrade_mode = instance_details.get("upgrade_mode", "seasons_packs")
                         command_wait_delay = combined_settings.get("command_wait_delay", 1)
                         command_wait_attempts = combined_settings.get("command_wait_attempts", 600)
+                        tag_processed_items = instance_details.get("tag_processed_items", True)
+                        custom_tags = instance_details.get("custom_tags", {
+                            "missing": "huntarr-missing",
+                            "upgrade": "huntarr-upgrade",
+                            "shows_missing": "huntarr-shows-missing"
+                        })
                         
                         processed_upgrades = process_upgrades(
                             api_url=api_url,
@@ -410,7 +424,9 @@ def app_specific_loop(app_type: str) -> None:
                             upgrade_mode=upgrade_mode,
                             command_wait_delay=command_wait_delay,
                             command_wait_attempts=command_wait_attempts,
-                            stop_check=stop_check_func
+                            stop_check=stop_check_func,
+                            tag_processed_items=tag_processed_items,
+                            custom_tags=custom_tags
                         )
                     else:
                         # For other apps that still use the old signature

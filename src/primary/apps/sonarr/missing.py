@@ -64,7 +64,9 @@ def process_missing_episodes(
     air_date_delay_days: int = 0,
     command_wait_delay: int = get_advanced_setting("command_wait_delay", 1),
     command_wait_attempts: int = get_advanced_setting("command_wait_attempts", 600),
-    stop_check: Callable[[], bool] = lambda: False
+    stop_check: Callable[[], bool] = lambda: False,
+    tag_processed_items: bool = True,
+    custom_tags: dict = None
 ) -> bool:
     """
     Process missing episodes for Sonarr.
@@ -77,6 +79,14 @@ def process_missing_episodes(
         
     sonarr_logger.info(f"Checking for {hunt_missing_items} missing episodes in {hunt_missing_mode} mode for instance '{instance_name}'...")
 
+    # Use custom tags if provided, otherwise use defaults
+    if custom_tags is None:
+        custom_tags = {
+            "missing": "huntarr-missing",
+            "upgrade": "huntarr-upgrade",
+            "shows_missing": "huntarr-shows-missing"
+        }
+
     # Handle different modes
     if hunt_missing_mode == "seasons_packs":
         # Handle season pack searches (using SeasonSearch command)
@@ -84,7 +94,8 @@ def process_missing_episodes(
         return process_missing_seasons_packs_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
-            command_wait_delay, command_wait_attempts, stop_check
+            command_wait_delay, command_wait_attempts, stop_check,
+            tag_processed_items, custom_tags
         )
     elif hunt_missing_mode == "shows":
         # Handle show-based missing items (all episodes from a show)
@@ -92,7 +103,8 @@ def process_missing_episodes(
         return process_missing_shows_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
-            command_wait_delay, command_wait_attempts, stop_check
+            command_wait_delay, command_wait_attempts, stop_check,
+            tag_processed_items, custom_tags
         )
     elif hunt_missing_mode == "episodes":
         # Handle individual episode processing (reinstated with warnings)
@@ -100,7 +112,8 @@ def process_missing_episodes(
         return process_missing_episodes_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
-            command_wait_delay, command_wait_attempts, stop_check
+            command_wait_delay, command_wait_attempts, stop_check,
+            tag_processed_items, custom_tags
         )
     else:
         sonarr_logger.error(f"Invalid hunt_missing_mode: {hunt_missing_mode}. Valid options are 'seasons_packs', 'shows', or 'episodes'.")
@@ -117,7 +130,9 @@ def process_missing_seasons_packs_mode(
     air_date_delay_days: int,
     command_wait_delay: int,
     command_wait_attempts: int,
-    stop_check: Callable[[], bool]
+    stop_check: Callable[[], bool],
+    tag_processed_items: bool = True,
+    custom_tags: dict = None
 ) -> bool:
     """
     Process missing seasons using the SeasonSearch command
@@ -126,9 +141,13 @@ def process_missing_seasons_packs_mode(
     """
     processed_any = False
     
-    # Load settings to check if tagging is enabled
-    sonarr_settings = load_settings("sonarr")
-    tag_processed_items = sonarr_settings.get("tag_processed_items", True)
+    # Use custom tags if provided, otherwise use defaults
+    if custom_tags is None:
+        custom_tags = {
+            "missing": "huntarr-missing",
+            "upgrade": "huntarr-upgrade",
+            "shows_missing": "huntarr-shows-missing"
+        }
     
     # Get all missing episodes using efficient random page selection instead of fetching all
     missing_episodes = sonarr_api.get_missing_episodes_random_page(
@@ -286,8 +305,7 @@ def process_missing_seasons_packs_mode(
             
                     # Tag the series if enabled
         if tag_processed_items:
-            from src.primary.settings_manager import get_custom_tag
-            custom_tag = get_custom_tag("sonarr", "missing", "huntarr-missing")
+            custom_tag = custom_tags.get("missing", "huntarr-missing")
             try:
                 sonarr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
                 sonarr_logger.debug(f"Tagged series {series_id} with '{custom_tag}'")
@@ -329,14 +347,20 @@ def process_missing_shows_mode(
     air_date_delay_days: int,
     command_wait_delay: int,
     command_wait_attempts: int,
-    stop_check: Callable[[], bool]
+    stop_check: Callable[[], bool],
+    tag_processed_items: bool = True,
+    custom_tags: dict = None
 ) -> bool:
     """Process missing episodes in show mode - gets all missing episodes for entire shows."""
     processed_any = False
     
-    # Load settings to check if tagging is enabled
-    sonarr_settings = load_settings("sonarr")
-    tag_processed_items = sonarr_settings.get("tag_processed_items", True)
+    # Use custom tags if provided, otherwise use defaults
+    if custom_tags is None:
+        custom_tags = {
+            "missing": "huntarr-missing",
+            "upgrade": "huntarr-upgrade",
+            "shows_missing": "huntarr-shows-missing"
+        }
     
     # Get series with missing episodes
     sonarr_logger.info("Retrieving series with missing episodes...")
@@ -466,8 +490,7 @@ def process_missing_shows_mode(
             
                     # Tag the series if enabled
         if tag_processed_items:
-            from src.primary.settings_manager import get_custom_tag
-            custom_tag = get_custom_tag("sonarr", "shows_missing", "huntarr-shows-missing")
+            custom_tag = custom_tags.get("shows_missing", "huntarr-shows-missing")
             try:
                 sonarr_api.tag_processed_series(api_url, api_key, api_timeout, show_id, custom_tag)
                 sonarr_logger.debug(f"Tagged series {show_id} with '{custom_tag}'")
@@ -527,7 +550,9 @@ def process_missing_episodes_mode(
     air_date_delay_days: int,
     command_wait_delay: int,
     command_wait_attempts: int,
-    stop_check: Callable[[], bool]
+    stop_check: Callable[[], bool],
+    tag_processed_items: bool = True,
+    custom_tags: dict = None
 ) -> bool:
     """
     Process missing episodes in individual episode mode.
@@ -539,6 +564,14 @@ def process_missing_episodes_mode(
     which can be useful for targeting specific episodes but is not recommended for most users.
     """
     processed_any = False
+    
+    # Use custom tags if provided, otherwise use defaults
+    if custom_tags is None:
+        custom_tags = {
+            "missing": "huntarr-missing",
+            "upgrade": "huntarr-upgrade",
+            "shows_missing": "huntarr-shows-missing"
+        }
     
     sonarr_logger.warning("Using Episodes mode - This will make more API calls and does not support tagging")
     

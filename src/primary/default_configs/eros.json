@@ -5,20 +5,20 @@
       "api_url": "",
       "api_key": "",
       "enabled": false,
+      "hunt_missing_items": 1,
+      "hunt_upgrade_items": 0,
       "state_management_mode": "custom",
-      "state_management_hours": 168
+      "state_management_hours": 168,
+      "monitored_only": true,
+      "tag_processed_items": true,
+      "custom_tags": {
+        "missing": "huntarr-missing",
+        "upgrade": "huntarr-upgrade"
+      }
     }
   ],
   "search_mode": "movie",
-  "hunt_missing_items": 1,
-  "hunt_upgrade_items": 0,
   "sleep_duration": 900,
-  "monitored_only": true,
   "skip_future_releases": true,
-  "hourly_cap": 20,
-  "tag_processed_items": true,
-  "custom_tags": {
-    "missing": "huntarr-missing",
-    "upgrade": "huntarr-upgrade"
-  }
+  "hourly_cap": 20
 }

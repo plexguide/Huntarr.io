@@ -27,7 +27,9 @@ def process_cutoff_upgrades(
     upgrade_mode: str = "seasons_packs",
     command_wait_delay: int = get_advanced_setting("command_wait_delay", 1),
     command_wait_attempts: int = get_advanced_setting("command_wait_attempts", 600),
-    stop_check: Callable[[], bool] = lambda: False
+    stop_check: Callable[[], bool] = lambda: False,
+    tag_processed_items: bool = True,
+    custom_tags: dict = None
 ) -> bool:
     """
     Process quality cutoff upgrades for Sonarr.
@@ -39,20 +41,30 @@ def process_cutoff_upgrades(
         
     sonarr_logger.info(f"Checking for {hunt_upgrade_items} quality upgrades for instance '{instance_name}'...")
     
+    # Use custom tags if provided, otherwise use defaults
+    if custom_tags is None:
+        custom_tags = {
+            "missing": "huntarr-missing",
+            "upgrade": "huntarr-upgrade",
+            "shows_missing": "huntarr-shows-missing"
+        }
+    
     sonarr_logger.info(f"Using {upgrade_mode.upper()} mode for quality upgrades")
 
     # Use seasons_packs mode or episodes mode
     if upgrade_mode == "seasons_packs":
         return process_upgrade_seasons_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
-            hunt_upgrade_items, command_wait_delay, command_wait_attempts, stop_check
+            hunt_upgrade_items, command_wait_delay, command_wait_attempts, stop_check,
+            tag_processed_items, custom_tags
         )
     elif upgrade_mode == "episodes":
         # Handle individual episode upgrades (reinstated with warnings)
         sonarr_logger.warning("Episodes mode selected for upgrades - WARNING: This mode makes excessive API calls and does not support tagging. Consider using Season Packs mode instead.")
         return process_upgrade_episodes_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
-            hunt_upgrade_items, command_wait_delay, command_wait_attempts, stop_check
+            hunt_upgrade_items, command_wait_delay, command_wait_attempts, stop_check,
+            tag_processed_items, custom_tags
         )
     else:
         sonarr_logger.error(f"Invalid upgrade_mode: {upgrade_mode}. Valid options are 'seasons_packs' or 'episodes'.")
@@ -94,14 +106,20 @@ def process_upgrade_seasons_mode(
     hunt_upgrade_items: int,
     command_wait_delay: int,
     command_wait_attempts: int,
-    stop_check: Callable[[], bool]
+    stop_check: Callable[[], bool],
+    tag_processed_items: bool = True,
+    custom_tags: dict = None
 ) -> bool:
     """Process upgrades in season mode - groups episodes by season."""
     processed_any = False
     
-    # Load settings to check if tagging is enabled
-    sonarr_settings = load_settings("sonarr")
-    tag_processed_items = sonarr_settings.get("tag_processed_items", True)
+    # Use custom tags if provided, otherwise use defaults
+    if custom_tags is None:
+        custom_tags = {
+            "missing": "huntarr-missing",
+            "upgrade": "huntarr-upgrade",
+            "shows_missing": "huntarr-shows-missing"
+        }
     
     # Flag to skip individual episode history logging since we log the whole season pack
     skip_episode_history = True
@@ -230,8 +248,7 @@ def process_upgrade_seasons_mode(
                 
                 # Tag the series if enabled
                 if tag_processed_items:
-                    from src.primary.settings_manager import get_custom_tag
-                    custom_tag = get_custom_tag("sonarr", "upgrade", "huntarr-upgraded")
+                    custom_tag = custom_tags.get("upgrade", "huntarr-upgrade")
                     try:
                         sonarr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
                         sonarr_logger.debug(f"Tagged series {series_id} with '{custom_tag}'")
@@ -423,8 +440,7 @@ def process_upgrade_shows_mode(
                 
                 # Tag the series if enabled
                 if tag_processed_items:
-                    from src.primary.settings_manager import get_custom_tag
-                    custom_tag = get_custom_tag("sonarr", "upgrade", "huntarr-upgraded")
+                    custom_tag = custom_tags.get("upgrade", "huntarr-upgrade")
                     try:
                         sonarr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
                         sonarr_logger.debug(f"Tagged series {series_id} with '{custom_tag}'")
@@ -484,7 +500,9 @@ def process_upgrade_episodes_mode(
     hunt_upgrade_items: int,
     command_wait_delay: int,
     command_wait_attempts: int,
-    stop_check: Callable[[], bool]
+    stop_check: Callable[[], bool],
+    tag_processed_items: bool = True,
+    custom_tags: dict = None
 ) -> bool:
     """
     Process upgrades in individual episode mode.
@@ -496,6 +514,14 @@ def process_upgrade_episodes_mode(
     which can be useful for targeting specific episodes but is not recommended for most users.
     """
     processed_any = False
+    
+    # Use custom tags if provided, otherwise use defaults
+    if custom_tags is None:
+        custom_tags = {
+            "missing": "huntarr-missing",
+            "upgrade": "huntarr-upgrade",
+            "shows_missing": "huntarr-shows-missing"
+        }
     
     sonarr_logger.warning("Using Episodes mode for upgrades - This will make more API calls and does not support tagging")
     
