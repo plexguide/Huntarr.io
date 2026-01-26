@@ -22,16 +22,18 @@
     #instanceEditorSection {
         display: none;
         width: 100%;
-        height: auto;
+        height: auto !important;
         min-height: 100vh;
-        overflow-y: auto;
+        overflow-y: visible !important;
         overflow-x: hidden;
         padding: 0;
         margin: 0;
+        position: relative !important;
+        z-index: 1;
     }
     
     #instanceEditorSection.active {
-        display: block;
+        display: block !important;
     }
     
     #instanceEditorContainer {
@@ -39,14 +41,15 @@
         max-width: 1400px;
         margin: 0 auto;
         padding: 30px 20px;
-        padding-bottom: 100px;
-        min-height: calc(100vh - 60px);
+        padding-bottom: 150px; /* More space at bottom */
+        min-height: 100%;
     }
 
     .editor-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
         gap: 25px;
+        align-items: start;
     }
 
     .editor-section {
@@ -55,7 +58,6 @@
         border-radius: 12px;
         padding: 25px;
         height: auto;
-        min-height: fit-content;
     }
 
     .editor-section-title {
@@ -67,6 +69,9 @@
         margin-bottom: 20px;
         padding-bottom: 10px;
         border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     
     .connection-status {
@@ -79,6 +84,10 @@
         text-transform: none;
         font-weight: 500;
         letter-spacing: normal;
+        white-space: nowrap;
+        max-width: 60%;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .connection-status.checking {
@@ -113,6 +122,10 @@
             flex-direction: column;
             align-items: flex-start !important;
             gap: 10px;
+        }
+
+        .connection-status {
+            max-width: 100%;
         }
     }
 </style>
