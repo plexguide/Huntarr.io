@@ -315,16 +315,21 @@ def app_specific_loop(app_type: str) -> None:
             # Debug logging for per-instance hunt values
             app_logger.info(f"Instance '{instance_name}' - Missing: {hunt_missing_value} (enabled: {hunt_missing_enabled}), Upgrade: {hunt_upgrade_value} (enabled: {hunt_upgrade_enabled})")
 
-            # --- Queue Size Check --- # Moved inside loop
-            # Get maximum_download_queue_size from general settings (still using minimum_download_queue_size key for backward compatibility)
-            general_settings = settings_manager.load_settings('general')
-            max_queue_size = general_settings.get("minimum_download_queue_size", -1)
+            # --- Queue Size Check --- # Now using per-instance setting
+            # Get max queue size from instance settings, fallback to general settings for backward compatibility
+            max_queue_size = instance_details.get("max_download_queue_size", -1)
+            if max_queue_size == -1:
+                # Fallback to general settings if instance doesn't have it set
+                general_settings = settings_manager.load_settings('general')
+                max_queue_size = general_settings.get("minimum_download_queue_size", -1)
     
             
             if max_queue_size >= 0:
                 try:
                     # Use instance details for queue check
-                    current_queue_size = get_queue_size(api_url, api_key, api_timeout)
+                    # Get api_timeout from instance settings
+                    instance_api_timeout = instance_details.get("api_timeout", 120)
+                    current_queue_size = get_queue_size(api_url, api_key, instance_api_timeout)
                     if current_queue_size >= max_queue_size:
                         app_logger.info(f"Download queue size ({current_queue_size}) meets or exceeds maximum ({max_queue_size}) for {instance_name}. Skipping cycle for this instance.")
                         continue # Skip processing for this instance
@@ -339,10 +344,10 @@ def app_specific_loop(app_type: str) -> None:
             combined_settings = app_settings.copy() # Start with general settings
             combined_settings.update(instance_details) # Add/overwrite with instance specifics (name, url, key)
             
-            # Ensure settings from database are consistently used for all apps
-            combined_settings["api_timeout"] = settings_manager.get_advanced_setting("api_timeout", 120)
-            combined_settings["command_wait_delay"] = settings_manager.get_advanced_setting("command_wait_delay", 1)
-            combined_settings["command_wait_attempts"] = settings_manager.get_advanced_setting("command_wait_attempts", 600)
+            # Use per-instance advanced settings, fallback to global for backward compatibility
+            combined_settings["api_timeout"] = instance_details.get("api_timeout", settings_manager.get_advanced_setting("api_timeout", 120))
+            combined_settings["command_wait_delay"] = instance_details.get("command_wait_delay", settings_manager.get_advanced_setting("command_wait_delay", 1))
+            combined_settings["command_wait_attempts"] = instance_details.get("command_wait_attempts", settings_manager.get_advanced_setting("command_wait_attempts", 600))
             
             # Define the stop check function
             stop_check_func = stop_event.is_set

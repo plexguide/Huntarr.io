@@ -30,7 +30,12 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
         "custom_tags": {
             "missing": "huntarr-missing",
             "upgrade": "huntarr-upgrade"
-        }
+        },
+        # Advanced settings (per-instance)
+        "api_timeout": 120,
+        "command_wait_delay": 1,
+        "command_wait_attempts": 600,
+        "max_download_queue_size": -1
     }
     
     # Add app-specific fields
