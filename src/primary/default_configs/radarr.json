@@ -15,6 +15,7 @@
     {
       "name": "Default",
       "address": "http://localhost:7878",
+      "external_url": "",
       "api_key": "",
       "api_timeout": 120,
       "state_management_mode": "custom",
