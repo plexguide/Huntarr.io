@@ -7,7 +7,6 @@ Supports default configurations for different Arr applications
 
 import os
 import json
-import pathlib
 import logging
 import time
 from typing import Dict, Any, Optional, List
@@ -18,9 +17,6 @@ settings_logger = logging.getLogger("settings_manager")
 
 # Database integration
 from src.primary.utils.database import get_database
-
-# Default configs location (DEPRECATED - now using default_settings.py module)
-DEFAULT_CONFIGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'default_configs'))
 
 # Known app types
 KNOWN_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr", "prowlarr", "general"]
@@ -39,10 +35,6 @@ def clear_cache(app_name=None):
     else:
         settings_logger.debug("Clearing entire settings cache")
         settings_cache = {}
-
-def get_default_config_path(app_name: str) -> pathlib.Path:
-    """DEPRECATED: Get the path to the default config file for a specific app."""
-    return pathlib.Path(DEFAULT_CONFIGS_DIR) / f"{app_name}.json"
 
 def load_default_app_settings(app_name: str) -> Dict[str, Any]:
     """Load default settings for a specific app from default_settings module."""
