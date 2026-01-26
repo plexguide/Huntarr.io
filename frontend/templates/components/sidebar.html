@@ -110,7 +110,7 @@
                 </div>
                 <span>Home</span>
             </a>
-            <a href="./#requestarr" class="nav-item" id="requestarrReturnNav">
+            <a href="./#apps" class="nav-item" id="requestarrReturnNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-arrow-left"></i>
                 </div>
@@ -903,7 +903,7 @@
         const appsReturnNav = document.getElementById('appsReturnNav');
         if (appsReturnNav) {
             // Show Back button only when on a specific app instance, hide on main Apps page
-            const appHashes = ['#sonarr', '#radarr', '#lidarr', '#readarr', '#whisparr', '#eros', '#prowlarr'];
+            const appHashes = ['#sonarr', '#radarr', '#lidarr', '#readarr', '#whisparr', '#eros', '#prowlarr', '#instance-editor'];
             if (appHashes.includes(currentHash)) {
                 appsReturnNav.style.display = 'flex';
             } else {
@@ -921,7 +921,7 @@
             selector = '#huntManagerNav';
         } else if (currentHash === '#logs') {
             selector = '#logsNav';
-        } else if (currentHash === '#apps' || currentHash === '#sonarr') {
+        } else if (currentHash === '#apps' || currentHash === '#sonarr' || currentHash === '#instance-editor') {
             selector = '#appsNav';
         } else if (currentHash === '#swaparr') {
             selector = '#swaparrNav';
