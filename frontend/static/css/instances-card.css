@@ -57,11 +57,13 @@
 
 .instance-status-icon {
     font-size: 1.2rem;
+    margin-left: 12px;
 }
 
 .status-connected { color: #10b981; }
-.status-disconnected { color: #ef4444; }
+.status-error { color: #ef4444; }
 .status-unknown { color: #64748b; }
+.status-disconnected { color: #ef4444; }
 
 /* Card Body */
 .instance-card-body {
