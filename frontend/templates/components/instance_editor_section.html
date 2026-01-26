@@ -6,7 +6,7 @@
                     <i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Back
                 </button>
                 <button type="button" id="instance-editor-save" class="btn-card save-btn-dynamic" disabled style="width: auto; padding: 8px 20px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fas fa-save"></i> Save Changes
+                    <i class="fas fa-save"></i> Save
                 </button>
             </div>
         </div>
@@ -19,23 +19,36 @@
 
 <style>
     .save-btn-dynamic {
-        background: #64748b !important; /* Grey when disabled */
-        color: rgba(255, 255, 255, 0.5) !important;
+        background: #475569 !important; /* Muted slate grey when disabled */
+        color: rgba(255, 255, 255, 0.4) !important;
         cursor: not-allowed !important;
-        border: none !important;
-        transition: all 0.3s ease !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        opacity: 0.7;
     }
 
     .save-btn-dynamic.enabled {
-        background: #ef4444 !important; /* Red when enabled */
+        background: #ef4444 !important; /* Vibrant red when enabled */
         color: white !important;
         cursor: pointer !important;
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+        opacity: 1 !important;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35) !important;
     }
 
     .save-btn-dynamic.enabled:hover {
         background: #dc2626 !important;
         transform: translateY(-1px) !important;
+        box-shadow: 0 6px 15px rgba(239, 68, 68, 0.45) !important;
+    }
+
+    #instance-editor-back {
+        transition: all 0.3s ease;
+    }
+
+    #instance-editor-back:hover {
+        background: rgba(148, 163, 184, 0.2) !important;
+        transform: translateX(-2px);
     }
 
     #instanceEditorSection {
@@ -105,6 +118,7 @@
         letter-spacing: normal;
         white-space: nowrap;
         flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     .connection-status.checking {

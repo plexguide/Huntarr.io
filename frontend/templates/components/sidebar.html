@@ -186,7 +186,7 @@
                 </div>
                 <span>Home</span>
             </a>
-            <a href="./#apps" class="nav-item" id="appsReturnNav">
+            <a href="./#apps" class="nav-item" id="appsReturnNav" style="display: none;">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-arrow-left"></i>
                 </div>
@@ -897,6 +897,18 @@
         let currentHash = window.location.hash;
         if (!currentHash) {
             currentHash = '#home';
+        }
+
+        // Handle Back button visibility in Apps sidebar
+        const appsReturnNav = document.getElementById('appsReturnNav');
+        if (appsReturnNav) {
+            // Show Back button only when on a specific app instance, hide on main Apps page
+            const appHashes = ['#sonarr', '#radarr', '#lidarr', '#readarr', '#whisparr', '#eros', '#prowlarr'];
+            if (appHashes.includes(currentHash)) {
+                appsReturnNav.style.display = 'flex';
+            } else {
+                appsReturnNav.style.display = 'none';
+            }
         }
 
         // Set the appropriate nav item as active based on current section
