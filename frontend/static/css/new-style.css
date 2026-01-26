@@ -716,6 +716,43 @@ select.form-control {
     color: var(--status-not-connected);
 }
 
+/* Connection Status Badge (for instance editor) */
+.connection-status-badge {
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin-left: 12px !important;
+}
+
+.connection-status-badge.status-success {
+    background-color: rgba(39, 174, 96, 0.2) !important;
+    color: #27ae60 !important;
+}
+
+.connection-status-badge.status-error {
+    background-color: rgba(231, 76, 60, 0.2) !important;
+    color: #e74c3c !important;
+}
+
+.connection-status-badge.status-unknown {
+    background-color: rgba(127, 140, 141, 0.2) !important;
+    color: #7f8c8d !important;
+}
+
+.connection-status-badge.status-testing {
+    background-color: rgba(52, 152, 219, 0.2) !important;
+    color: #3498db !important;
+}
+
+.connection-status-badge i {
+    font-size: 13px !important;
+}
+
+
 /* Stats Card */
 .stats-grid {
     display: grid;
