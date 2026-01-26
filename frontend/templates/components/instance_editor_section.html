@@ -35,14 +35,15 @@
     
     #instanceEditorContainer {
         width: 100%;
-        max-width: 1000px;
+        max-width: 1400px;
         margin: 0 auto;
         padding: 30px 20px;
+        padding-bottom: 100px; /* Extra space at bottom for scrolling */
     }
 
     .editor-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
         gap: 25px;
     }
 
@@ -51,6 +52,7 @@
         border: 1px solid rgba(148, 163, 184, 0.1);
         border-radius: 12px;
         padding: 25px;
+        height: fit-content;
     }
 
     .editor-section-title {
@@ -63,6 +65,34 @@
         padding-bottom: 10px;
         border-bottom: 1px solid rgba(148, 163, 184, 0.1);
     }
+    
+    .connection-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        margin-top: 10px;
+    }
+    
+    .connection-status.checking {
+        background: rgba(59, 130, 246, 0.1);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    
+    .connection-status.success {
+        background: rgba(34, 197, 94, 0.1);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+    
+    .connection-status.error {
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
 
     @media (max-width: 768px) {
         .editor-grid {
@@ -71,6 +101,7 @@
         
         #instanceEditorContainer {
             padding: 20px 15px;
+            padding-bottom: 100px;
         }
     }
 </style>
