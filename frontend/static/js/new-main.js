@@ -25,6 +25,7 @@ let huntarrUI = {
         eros: false, // Added eros
         swaparr: false // Added swaparr
     },
+    configuredAppsInitialized: false, // Track if we've loaded app states at least once
     originalSettings: {}, // Store the full original settings object
     settingsChanged: false, // Legacy flag (auto-save enabled)
     
@@ -577,7 +578,9 @@ let huntarrUI = {
             
             // Disconnect logs if switching away from logs
             this.disconnectAllEventSources(); 
+            
             // Check app connections when returning to home page to update status
+            // This will call updateEmptyStateVisibility() after all checks complete
             this.checkAppConnections();
             // Load Swaparr status
             this.loadSwaparrStatus();
@@ -2348,28 +2351,48 @@ let huntarrUI = {
     
     // App connections
     checkAppConnections: function() {
-        this.checkAppConnection('sonarr');
-        this.checkAppConnection('radarr');
-        this.checkAppConnection('lidarr');
-        this.checkAppConnection('readarr'); // Added readarr
-        this.checkAppConnection('whisparr'); // Added whisparr
-        this.checkAppConnection('eros'); // Enable actual Eros API check
+        // Create array of promises to wait for all checks to complete
+        const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        const checkPromises = apps.map(app => this.checkAppConnection(app));
+        
+        // After all checks complete, update visibility once
+        Promise.all(checkPromises)
+            .then(() => {
+                console.log('[huntarrUI] All app connections checked, updating visibility');
+                this.configuredAppsInitialized = true; // Mark as initialized
+                this.updateEmptyStateVisibility();
+            })
+            .catch(error => {
+                console.error('[huntarrUI] Error checking app connections:', error);
+                // Still update visibility even if some checks failed
+                this.configuredAppsInitialized = true; // Mark as initialized
+                this.updateEmptyStateVisibility();
+            });
     },
     
     checkAppConnection: function(app) {
-        HuntarrUtils.fetchWithTimeout(`./api/status/${app}`)
+        // Return promise so we can wait for all checks to complete
+        return HuntarrUtils.fetchWithTimeout(`./api/status/${app}`)
             .then(response => response.json())
             .then(data => {
                 // Pass the whole data object for all apps
                 this.updateConnectionStatus(app, data); 
 
+                // Calculate configured status properly for *arr apps which don't return 'configured' property
+                let isConfigured = data.configured === true;
+                if (['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].includes(app)) {
+                    isConfigured = (data.total_configured || 0) > 0;
+                }
+
                 // Still update the configuredApps flag for potential other uses, but after updating status
-                this.configuredApps[app] = data.configured === true; // Ensure it's a boolean
+                this.configuredApps[app] = isConfigured;
             })
             .catch(error => {
                 console.error(`Error checking ${app} connection:`, error);
                 // Pass a default 'not configured' status object on error
-                this.updateConnectionStatus(app, { configured: false, connected: false }); 
+                this.updateConnectionStatus(app, { configured: false, connected: false });
+                // Mark as not configured in case of error
+                this.configuredApps[app] = false;
             });
     },
     
@@ -2396,41 +2419,16 @@ let huntarrUI = {
             isConnected = isConfigured && connectedCount > 0; 
         }
 
-        // --- Visibility Logic --- 
+        // --- Update individual card visibility --- 
         if (isConfigured) {
             // Ensure the box is visible
             if (this.elements[`${app}HomeStatus`].closest('.app-stats-card')) {
                 this.elements[`${app}HomeStatus`].closest('.app-stats-card').style.display = ''; 
             }
-            // Hide the empty state if it exists
-            const emptyState = document.getElementById('live-hunts-empty-state');
-            if (emptyState) {
-                emptyState.style.display = 'none';
-            }
-            // Show the stats grid
-            const statsGrid = document.querySelector('.app-stats-grid');
-            if (statsGrid) {
-                statsGrid.style.display = 'grid';
-            }
         } else {
             // Not configured - HIDE the box
             if (this.elements[`${app}HomeStatus`].closest('.app-stats-card')) {
                 this.elements[`${app}HomeStatus`].closest('.app-stats-card').style.display = 'none';
-            }
-            
-            // Check if ANY apps are configured
-            const anyConfigured = Object.values(this.configuredApps).some(val => val === true);
-            if (!anyConfigured) {
-                // Show the empty state
-                const emptyState = document.getElementById('live-hunts-empty-state');
-                if (emptyState) {
-                    emptyState.style.display = 'flex';
-                }
-                // Hide the stats grid
-                const statsGrid = document.querySelector('.app-stats-grid');
-                if (statsGrid) {
-                    statsGrid.style.display = 'none';
-                }
             }
 
             // Update badge even if hidden (optional, but good practice)
@@ -2452,6 +2450,45 @@ let huntarrUI = {
             } else {
                 statusElement.className = 'status-badge not-connected';
                 statusElement.innerHTML = '<i class="fas fa-times-circle"></i> Not Connected';
+            }
+        }
+    },
+    
+    // Centralized function to update empty state visibility based on all configured apps
+    updateEmptyStateVisibility: function() {
+        // Don't update visibility until we've loaded app states at least once
+        // This prevents showing empty state on first load before async checks complete
+        if (!this.configuredAppsInitialized) {
+            console.log('[huntarrUI] Skipping empty state update - app states not yet initialized');
+            return;
+        }
+        
+        // Check if ANY apps are configured
+        const anyConfigured = Object.values(this.configuredApps).some(val => val === true);
+        
+        const emptyState = document.getElementById('live-hunts-empty-state');
+        const statsGrid = document.querySelector('.app-stats-grid');
+        
+        console.log(`[huntarrUI] Updating empty state visibility - any configured: ${anyConfigured}`);
+        console.log(`[huntarrUI] Configured apps state:`, this.configuredApps);
+        
+        if (anyConfigured) {
+            // Hide the empty state if any apps are configured
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+            // Show the stats grid
+            if (statsGrid) {
+                statsGrid.style.display = 'grid';
+            }
+        } else {
+            // Show the empty state if no apps are configured
+            if (emptyState) {
+                emptyState.style.display = 'flex';
+            }
+            // Hide the stats grid
+            if (statsGrid) {
+                statsGrid.style.display = 'none';
             }
         }
     },
