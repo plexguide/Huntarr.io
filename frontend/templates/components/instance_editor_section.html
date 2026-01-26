@@ -2,10 +2,12 @@
     <div id="instanceEditorContainer" class="app-content-panel">
         <div class="instance-editor-header" style="margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <button type="button" id="instance-editor-back" class="btn-card" style="width: auto; padding: 8px 15px; background: rgba(148, 163, 184, 0.1);">
-                    <i class="fas fa-arrow-left"></i> Back
+                <button type="button" id="instance-editor-back" class="btn-card" style="width: auto; padding: 8px 15px; background: rgba(148, 163, 184, 0.1); height: 38px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Back
                 </button>
-                <button type="button" id="instance-editor-save" class="btn-card edit" style="width: auto; padding: 8px 20px; background: #6366f1; color: white;">Save Changes</button>
+                <button type="button" id="instance-editor-save" class="btn-card save-btn-dynamic" disabled style="width: auto; padding: 8px 20px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
             </div>
         </div>
         
@@ -16,6 +18,26 @@
 </section>
 
 <style>
+    .save-btn-dynamic {
+        background: #64748b !important; /* Grey when disabled */
+        color: rgba(255, 255, 255, 0.5) !important;
+        cursor: not-allowed !important;
+        border: none !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .save-btn-dynamic.enabled {
+        background: #ef4444 !important; /* Red when enabled */
+        color: white !important;
+        cursor: pointer !important;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+    }
+
+    .save-btn-dynamic.enabled:hover {
+        background: #dc2626 !important;
+        transform: translateY(-1px) !important;
+    }
+
     #instanceEditorSection {
         display: none;
         width: 100%;
