@@ -1,0 +1,308 @@
+/* Instance Cards Grid */
+.instance-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* Instance Card */
+.instance-card {
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.instance-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.instance-card.default-instance {
+    border-left: 4px solid #6366f1;
+}
+
+/* Card Header */
+.instance-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.instance-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.default-badge {
+    font-size: 0.7rem;
+    background: #4f46e5;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.instance-status-icon {
+    font-size: 1.2rem;
+}
+
+.status-connected { color: #10b981; }
+.status-disconnected { color: #ef4444; }
+.status-unknown { color: #64748b; }
+
+/* Card Body */
+.instance-card-body {
+    margin-bottom: 20px;
+}
+
+.instance-detail {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.instance-detail i {
+    width: 16px;
+    text-align: center;
+}
+
+/* Card Footer */
+.instance-card-footer {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+}
+
+.btn-card {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(30, 41, 59, 0.5);
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-card:hover {
+    background: rgba(51, 65, 85, 0.8);
+    color: #fff;
+}
+
+.btn-card.edit:hover {
+    border-color: #6366f1;
+    color: #818cf8;
+}
+
+.btn-card.delete:hover {
+    border-color: #ef4444;
+    color: #f87171;
+}
+
+/* Add New Card */
+.add-instance-card {
+    background: rgba(30, 41, 59, 0.3);
+    border: 2px dashed rgba(148, 163, 184, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.add-instance-card:hover {
+    border-color: #6366f1;
+    background: rgba(30, 41, 59, 0.5);
+}
+
+.add-icon {
+    font-size: 2rem;
+    color: #6366f1;
+    margin-bottom: 10px;
+}
+
+.add-text {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* Modal Styles */
+.huntarr-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.huntarr-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.huntarr-modal {
+    background: #1e293b;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+}
+
+.huntarr-modal-overlay.active .huntarr-modal {
+    transform: scale(1);
+}
+
+.huntarr-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0f172a;
+}
+
+.huntarr-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin: 0;
+}
+
+.huntarr-modal-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1.5rem;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.huntarr-modal-close:hover {
+    color: #fff;
+}
+
+.huntarr-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.huntarr-modal-footer {
+    padding: 20px 24px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    background: #0f172a;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-modal {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-modal-secondary {
+    background: rgba(148, 163, 184, 0.1);
+    color: #cbd5e1;
+}
+
+.btn-modal-secondary:hover {
+    background: rgba(148, 163, 184, 0.2);
+    color: #fff;
+}
+
+.btn-modal-primary {
+    background: #6366f1;
+    color: white;
+}
+
+.btn-modal-primary:hover {
+    background: #4f46e5;
+}
+
+/* Modal Form Grid */
+.modal-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.modal-form-section {
+    background: rgba(15, 23, 42, 0.3);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.05);
+}
+
+.modal-section-title {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .instance-card-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .huntarr-modal {
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+    
+    .modal-form-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -122,233 +122,26 @@ const SettingsForms = {
                 box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
             ">
                 <h3>Sonarr Instances</h3>
-                <div class="instances-container">
-        `;
+                <div class="instance-card-grid" id="sonarr-instances-grid">
+    `;
 
-    // Generate form elements for each instance
+    // Generate cards for each instance
     settings.instances.forEach((instance, index) => {
-      // Set default values if not present
-      const huntMissingItems =
-        instance.hunt_missing_items !== undefined
-          ? instance.hunt_missing_items
-          : 1;
-      const huntUpgradeItems =
-        instance.hunt_upgrade_items !== undefined
-          ? instance.hunt_upgrade_items
-          : 0;
-      const huntMissingMode = instance.hunt_missing_mode || "seasons_packs";
-      const upgradeMode = instance.upgrade_mode || "seasons_packs";
-      const stateManagementMode = instance.state_management_mode || "custom";
-      const stateManagementHours = instance.state_management_hours || 168;
-
-      instancesHtml += `
-                <div class="instance-item" data-instance-id="${index}">
-                    <div class="instance-header">
-                        <h4>Instance ${index + 1}: ${
-        instance.name || "Unnamed"
-      }</h4>
-                        <div class="instance-actions">
-                            ${
-                              index > 0
-                                ? '<button type="button" class="remove-instance-btn">Remove</button>'
-                                : ""
-                            }
-                            <span class="connection-status" id="sonarr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
-                        </div>
-                    </div>
-                    <div class="instance-content">
-                        <div class="setting-item">
-                            <label for="sonarr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
-                            <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                                <input type="checkbox" id="sonarr-enabled-${index}" name="enabled" ${
-        instance.enabled === true ? "checked" : ""
-      }>
-                                <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                            </label>
-                            <p class="setting-help">Enable or disable this Sonarr instance for processing</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="sonarr-name-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about naming your Sonarr instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Name:</label>
-                            <input type="text" id="sonarr-name-${index}" name="name" value="${
-        instance.name || ""
-      }" placeholder="Friendly name for this Sonarr instance">
-                            <p class="setting-help">Friendly name for this Sonarr instance</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="sonarr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about Sonarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                            <input type="text" id="sonarr-url-${index}" name="api_url" value="${
-        instance.api_url || ""
-      }" placeholder="Base URL for Sonarr (e.g., http://localhost:8989)" data-instance-index="${index}">
-                            <p class="setting-help">Base URL for Sonarr (e.g., http://localhost:8989)</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="sonarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about finding your Sonarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                            <input type="text" id="sonarr-key-${index}" name="api_key" value="${
-        instance.api_key || ""
-      }" placeholder="API key for Sonarr" data-instance-index="${index}">
-                            <p class="setting-help">API key for Sonarr</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="sonarr-hunt-missing-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about missing items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <input type="number" id="sonarr-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${huntMissingItems}" style="width: 80px;">
-                            <p class="setting-help">Number of missing items to search per cycle (0 to disable).</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="sonarr-hunt-upgrade-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <input type="number" id="sonarr-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${huntUpgradeItems}" style="width: 80px;">
-                            <p class="setting-help">Number of episodes to upgrade per cycle (0 to disable).</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="sonarr-hunt-missing-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about missing search modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search Mode:</label>
-                            <select id="sonarr-hunt-missing-mode-${index}" name="hunt_missing_mode">
-                                <option value="seasons_packs" ${
-                                  huntMissingMode === "seasons_packs"
-                                    ? "selected"
-                                    : ""
-                                }>Season Packs</option>
-                                <option value="shows" ${
-                                  huntMissingMode === "shows" ? "selected" : ""
-                                }>Shows</option>
-                                <option value="episodes" ${
-                                  huntMissingMode === "episodes"
-                                    ? "selected"
-                                    : ""
-                                }>Episodes</option>
-                            </select>
-                            <p class="setting-help">How to search for missing content for this instance (Season Packs recommended)</p>
-                            <p class="setting-help" style="display: ${
-                              huntMissingMode === "episodes" ? "block" : "none"
-                            };" id="episodes-missing-warning-${index}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="sonarr-upgrade-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about upgrade modes for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Mode:</label>
-                            <select id="sonarr-upgrade-mode-${index}" name="upgrade_mode">
-                                <option value="seasons_packs" ${
-                                  upgradeMode === "seasons_packs"
-                                    ? "selected"
-                                    : ""
-                                }>Season Packs</option>
-                                <option value="shows" ${
-                                  upgradeMode === "shows" ? "selected" : ""
-                                }>Shows</option>
-                                <option value="episodes" ${
-                                  upgradeMode === "episodes" ? "selected" : ""
-                                }>Episodes</option>
-                            </select>
-                            <p class="setting-help">How to search for upgrades for this instance (Season Packs recommended)</p>
-                            <p class="setting-help" style="display: ${
-                              upgradeMode === "episodes" ? "block" : "none"
-                            };" id="episodes-upgrade-warning-${index}">⚠️ Episodes mode makes more API calls and does not support tagging. Season Packs recommended.</p>
-                        </div>
-                        
-                        <!-- Air Date Delay Setting (only visible when either upgrade or missing mode is in episodes mode) -->
-                        <div class="setting-item" id="sonarr-air-date-delay-container-${index}" style="display: ${
-        huntMissingMode === "episodes" ||
-        upgradeMode === "episodes"
-          ? "block"
-          : "none"
-      }; border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
-                            <label for="sonarr-air-date-delay-${index}"><a href="https://github.com/plexguide/Huntarr.io/issues/700" class="info-icon" title="Delay searching for episodes after their air date to allow better releases to appear" target="_blank" rel="noopener"><i class="fas fa-calendar-alt"></i></a>Air Date Search Delay:</label>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <input type="number" id="sonarr-air-date-delay-${index}" name="air_date_delay_days" min="0" max="30" value="${
-        instance.air_date_delay_days || 0
-      }" style="width: 80px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
-                                <span style="color: #9ca3af; font-size: 14px;">days</span>
-                            </div>
-                            <p class="setting-help">Wait this many days after an episode airs before searching for it. Allows better quality releases to appear. Only applies when either upgrade or missing mode is set to episodes. (0 = search immediately)</p>
-                        </div>
-                        
-                        <!-- Instance State Management -->
-                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
-                            <label for="sonarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <select id="sonarr-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
-                                    <option value="custom" ${
-                                      stateManagementMode === "custom"
-                                        ? "selected"
-                                        : ""
-                                    }>Enabled</option>
-                                    <option value="disabled" ${
-                                      stateManagementMode === "disabled"
-                                        ? "selected"
-                                        : ""
-                                    }>Disabled</option>
-                                </select>
-                                <button type="button" id="sonarr-state-reset-btn-${index}" class="btn btn-danger" style="display: ${
-        stateManagementMode !== "disabled" ? "inline-flex" : "none"
-      }; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
-                                    <i class="fas fa-redo"></i> Reset State
-                                </button>
-                            </div>
-                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
-                        </div>
-                        
-                        <!-- State Management Hours (visible when enabled) -->
-                        <div class="setting-item" id="sonarr-custom-state-hours-${index}" style="display: ${
-        stateManagementMode === "custom" ? "block" : "none"
-      }; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
-                            <label for="sonarr-state-management-hours-${index}" style="display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-clock" style="color: #6366f1;"></i>
-                                Reset Interval:
-                            </label>
-                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
-                                <input type="number" id="sonarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${stateManagementHours}" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
-                                <span style="color: #9ca3af; font-size: 14px;">
-                                    hours (<span id="sonarr-state-days-display-${index}">${(
-        stateManagementHours / 24
-      ).toFixed(1)}</span> days)
-                                </span>
-                            </div>
-                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
-                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
-                                State will automatically reset every <span id="sonarr-state-hours-text-${index}">${stateManagementHours}</span> hours
-                            </p>
-                        </div>
-                        
-                        <!-- State Status Display -->
-                        <div class="setting-item" id="sonarr-state-status-${index}" style="display: ${
-        stateManagementMode !== "disabled" ? "block" : "none"
-      }; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="color: #10b981; font-weight: 600;">
-                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
-                                        Active - Tracked Items: <span id="sonarr-state-items-count-${index}">0</span>
-                                    </span>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
-                                    <div id="sonarr-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="setting-item swaparr-field" style="${this.isSwaparrGloballyEnabled() ? '' : 'display: none;'}">
-                            <label for="sonarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
-                            <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                                <input type="checkbox" id="sonarr-swaparr-${index}" name="swaparr_enabled" ${
-                                instance.swaparr_enabled === true
-                                  ? "checked"
-                                  : ""
-                              }>
-                                <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                            </label>
-                            <p class="setting-help">Enable Swaparr to monitor and remove stalled downloads for this Sonarr instance</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+        instancesHtml += SettingsForms.renderInstanceCard('sonarr', instance, index);
     });
 
+    // Add "Add Instance" card
     instancesHtml += `
-                </div> <!-- instances-container -->
-                <div class="button-container" style="text-align: center; margin-top: 15px;">
-                    <button type="button" class="add-instance-btn add-sonarr-instance-btn">
-                        <i class="fas fa-plus"></i> Add Sonarr Instance (${settings.instances.length}/9)
-                    </button>
-                </div>
+        <div class="add-instance-card" onclick="SettingsForms.openInstanceModal('sonarr')">
+            <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+            <div class="add-text">Add Sonarr Instance</div>
+        </div>
+    `;
+
+    instancesHtml += `
+                </div> <!-- instance-card-grid -->
             </div> <!-- settings-group -->
-        `;
+    `;
 
     // Search Settings (Global)
     let searchSettingsHtml = `
@@ -451,21 +244,6 @@ const SettingsForms = {
     container.innerHTML =
       sonarrSaveButtonHtml + instancesHtml + searchSettingsHtml;
 
-    // Setup instance management (add/remove/test)
-    SettingsForms.setupInstanceManagement(
-      container,
-      "sonarr",
-      (settings.instances || []).length
-    );
-
-    // Load state information for each instance
-    settings.instances.forEach((instance, index) => {
-      if (typeof huntarrUI !== "undefined" && huntarrUI.loadInstanceStateInfo) {
-        setTimeout(() => {
-          huntarrUI.loadInstanceStateInfo("sonarr", index);
-        }, 500); // Small delay to ensure DOM is ready
-      }
-    });
 
     // Add event listeners for custom tags visibility
     const tagProcessedItemsToggle = container.querySelector(
@@ -683,7 +461,15 @@ const SettingsForms = {
       }
     }
 
-    // Method 3: Fallback to Default for first instance, descriptive name for others
+    // Method 3: Try to get from modal input (new UI)
+    if (!instanceName) {
+        const modalNameInput = document.getElementById('modal-name');
+        if (modalNameInput && modalNameInput.value && modalNameInput.value.trim()) {
+            instanceName = modalNameInput.value.trim();
+        }
+    }
+
+    // Method 4: Fallback to Default for first instance, descriptive name for others
     if (!instanceName) {
       instanceName =
         instanceIndex === 0 ? "Default" : `Instance ${instanceIndex + 1}`;
@@ -867,192 +653,26 @@ const SettingsForms = {
     let instancesHtml = `
             <div class="settings-group">
                 <h3>Radarr Instances</h3>
-                <div class="instances-container">
-        `;
+                <div class="instance-card-grid" id="radarr-instances-grid">
+    `;
 
-    // Generate form elements for each instance
+    // Generate cards for each instance
     settings.instances.forEach((instance, index) => {
-      instancesHtml += `
-                <div class="instance-item" data-instance-id="${index}">
-                    <div class="instance-header">
-                        <h4>Instance ${index + 1}: ${
-        instance.name || "Unnamed"
-      }</h4>
-                        <div class="instance-actions">
-                            ${
-                              index > 0
-                                ? '<button type="button" class="remove-instance-btn">Remove</button>'
-                                : ""
-                            }
-                            <span class="connection-status" id="radarr-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
-                        </div>
-                    </div>
-                    <div class="instance-content">
-                        <div class="setting-item">
-                            <label for="radarr-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
-                            <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                                <input type="checkbox" id="radarr-enabled-${index}" name="enabled" ${
-        instance.enabled === true ? "checked" : ""
-      }>
-                                <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                            </label>
-                            <p class="setting-help">Enable or disable this Radarr instance for processing</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="radarr-name-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about naming your Radarr instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Name:</label>
-                            <input type="text" id="radarr-name-${index}" name="name" value="${
-        instance.name || ""
-      }" placeholder="Friendly name for this Radarr instance">
-                            <p class="setting-help">Friendly name for this Radarr instance</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="radarr-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about Radarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                            <input type="text" id="radarr-url-${index}" name="api_url" value="${
-        instance.api_url || ""
-      }" placeholder="Base URL for Radarr (e.g., http://localhost:7878)" data-instance-index="${index}">
-                            <p class="setting-help">Base URL for Radarr (e.g., http://localhost:7878)</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="radarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about finding your Radarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                            <input type="text" id="radarr-key-${index}" name="api_key" value="${
-        instance.api_key || ""
-      }" placeholder="API key for Radarr" data-instance-index="${index}">
-                            <p class="setting-help">API key for Radarr</p>
-                        </div>
-
-                        <div class="setting-item">
-                            <label for="radarr-hunt-missing-movies-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#search-settings" class="info-icon" title="Learn more about missing movies search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <input type="number" id="radarr-hunt-missing-movies-${index}" name="hunt_missing_movies" min="0" value="${
-        instance.hunt_missing_movies !== undefined
-          ? instance.hunt_missing_movies
-          : 1
-      }" style="width: 80px;">
-                            <p class="setting-help">Number of missing movies to search per cycle (0 to disable).</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="radarr-hunt-upgrade-movies-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#search-settings" class="info-icon" title="Learn more about upgrading movies for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <input type="number" id="radarr-hunt-upgrade-movies-${index}" name="hunt_upgrade_movies" min="0" value="${
-        instance.hunt_upgrade_movies !== undefined
-          ? instance.hunt_upgrade_movies
-          : 0
-      }" style="width: 80px;">
-                            <p class="setting-help">Number of movies to search for quality upgrades per cycle (0 to disable).</p>
-                        </div>
-                        
-                        <!-- Release Date Delay Setting -->
-                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
-                            <label for="radarr-release-date-delay-${index}"><a href="https://github.com/plexguide/Huntarr.io/issues/693" class="info-icon" title="Delay searching for movies after their release date to allow better releases to appear" target="_blank" rel="noopener"><i class="fas fa-calendar-alt"></i></a>Release Date Search Delay:</label>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <input type="number" id="radarr-release-date-delay-${index}" name="release_date_delay_days" min="0" max="365" value="${instance.release_date_delay_days || 0}" style="width: 80px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
-                                <span style="color: #9ca3af; font-size: 14px;">days</span>
-                            </div>
-                            <p class="setting-help">Wait this many days after a movie's release date before searching for it. Allows better quality releases to appear. Movies without release dates are processed immediately. (0 = search immediately)</p>
-                        </div>
-                        
-                        <!-- Instance State Management -->
-                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
-                            <label for="radarr-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <select id="radarr-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
-                                    <option value="custom" ${
-                                      (instance.state_management_mode ||
-                                        "custom") === "custom"
-                                        ? "selected"
-                                        : ""
-                                    }>Enabled</option>
-                                    <option value="disabled" ${
-                                      (instance.state_management_mode ||
-                                        "custom") === "disabled"
-                                        ? "selected"
-                                        : ""
-                                    }>Disabled</option>
-                                </select>
-                                <button type="button" id="radarr-state-reset-btn-${index}" class="btn btn-danger" style="display: ${
-        (instance.state_management_mode || "custom") !== "disabled"
-          ? "inline-flex"
-          : "none"
-      }; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
-                                    <i class="fas fa-redo"></i> Reset State
-                                </button>
-                            </div>
-                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
-                        </div>
-                        
-                        <!-- State Management Hours (visible when enabled) -->
-                        <div class="setting-item" id="radarr-custom-state-hours-${index}" style="display: ${
-        (instance.state_management_mode || "custom") === "custom"
-          ? "block"
-          : "none"
-      }; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
-                            <label for="radarr-state-management-hours-${index}">
-                                <i class="fas fa-clock" style="color: #6366f1;"></i>
-                                Reset Interval:
-                            </label>
-                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
-                                <input type="number" id="radarr-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${
-        instance.state_management_hours || 168
-      }" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
-                                <span style="color: #9ca3af; font-size: 14px;">
-                                    hours (<span id="radarr-state-days-display-${index}">${(
-        (instance.state_management_hours || 168) / 24
-      ).toFixed(1)}</span> days)
-                                </span>
-                            </div>
-                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
-                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
-                                State will automatically reset every <span id="radarr-state-hours-text-${index}">${
-        instance.state_management_hours || 168
-      }</span> hours
-                            </p>
-                        </div>
-                        
-                        <!-- State Status Display -->
-                        <div class="setting-item" id="radarr-state-status-${index}" style="display: ${
-        (instance.state_management_mode || "custom") !== "disabled"
-          ? "block"
-          : "none"
-      }; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="color: #10b981; font-weight: 600;">
-                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
-                                        Active - Tracked Items: <span id="radarr-state-items-count-${index}">0</span>
-                                    </span>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
-                                    <div id="radarr-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="setting-item swaparr-field" style="${this.isSwaparrGloballyEnabled() ? '' : 'display: none;'}">
-                            <label for="radarr-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
-                            <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                                <input type="checkbox" id="radarr-swaparr-${index}" name="swaparr_enabled" ${
-                                instance.swaparr_enabled === true
-                                  ? "checked"
-                                  : ""
-                              }>
-                                <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                            </label>
-                            <p class="setting-help">Enable Swaparr to monitor and remove stalled downloads for this Radarr instance</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+        instancesHtml += SettingsForms.renderInstanceCard('radarr', instance, index);
     });
 
-    // Add a button to add new instances (limit to 9 total)
+    // Add "Add Instance" card
     instancesHtml += `
-                </div> <!-- instances-container -->
-                <div class="button-container" style="text-align: center; margin-top: 15px;">
-                    <button type="button" class="add-instance-btn add-radarr-instance-btn">
-                        <i class="fas fa-plus"></i> Add Radarr Instance (${settings.instances.length}/9)
-                    </button>
-                </div>
+        <div class="add-instance-card" onclick="SettingsForms.openInstanceModal('radarr')">
+            <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+            <div class="add-text">Add Radarr Instance</div>
+        </div>
+    `;
+
+    instancesHtml += `
+                </div> <!-- instance-card-grid -->
             </div> <!-- settings-group -->
-        `;
+    `;
 
     // Continue with the rest of the settings form
     let searchSettingsHtml = `
@@ -1634,21 +1254,6 @@ const SettingsForms = {
             </div>
         `;
 
-    // Add event listeners for the instance management
-    SettingsForms.setupInstanceManagement(
-      container,
-      "lidarr",
-      (settings.instances || []).length
-    );
-
-    // Load state information for each instance
-    settings.instances.forEach((instance, index) => {
-      if (typeof huntarrUI !== "undefined" && huntarrUI.loadInstanceStateInfo) {
-        setTimeout(() => {
-          huntarrUI.loadInstanceStateInfo("lidarr", index);
-        }, 500); // Small delay to ensure DOM is ready
-      }
-    });
 
     // Add event listeners for custom tags visibility
     const lidarrTagProcessedItemsToggle = container.querySelector(
@@ -1997,24 +1602,6 @@ const SettingsForms = {
             </div>
         `;
 
-    // Add event listeners for the instance management
-    SettingsForms.setupInstanceManagement(
-      container,
-      "readarr",
-      (settings.instances || []).length
-    );
-
-    // Set up manual save functionality for Readarr
-    this.setupAppManualSave(container, "readarr", settings);
-
-    // Load state information for each instance
-    settings.instances.forEach((instance, index) => {
-      if (typeof huntarrUI !== "undefined" && huntarrUI.loadInstanceStateInfo) {
-        setTimeout(() => {
-          huntarrUI.loadInstanceStateInfo("readarr", index);
-        }, 500); // Small delay to ensure DOM is ready
-      }
-    });
 
     // Add event listeners for custom tags visibility
     const readarrTagProcessedItemsToggle = container.querySelector(
@@ -2034,6 +1621,9 @@ const SettingsForms = {
         });
       });
     }
+
+    // Set up manual save functionality for Readarr
+    this.setupAppManualSave(container, "readarr", settings);
   },
 
   // Generate Whisparr settings form
@@ -2533,184 +2123,30 @@ const SettingsForms = {
             </div>
         `;
 
-    // Create a container for instances
+    // Create a container for instances with a scrollable area for many instances
     let instancesHtml = `
             <div class="settings-group">
                 <h3>Whisparr V3 Instances</h3>
-                <div class="instances-container">
-        `;
+                <div class="instance-card-grid" id="eros-instances-grid">
+    `;
 
-    // Generate form elements for each instance
+    // Generate cards for each instance
     settings.instances.forEach((instance, index) => {
-      instancesHtml += `
-                <div class="instance-item" data-instance-id="${index}">
-                    <div class="instance-header">
-                        <h4>Instance ${index + 1}: ${
-        instance.name || "Unnamed"
-      }</h4>
-                        <div class="instance-actions">
-                            ${
-                              index > 0
-                                ? '<button type="button" class="remove-instance-btn">Remove</button>'
-                                : ""
-                            }
-                            <span class="connection-status" id="eros-status-${index}" style="margin-left: 10px; font-weight: bold; font-size: 0.9em;"></span>
-                        </div>
-                    </div>
-                    <div class="instance-content">
-                        <div class="setting-item">
-                            <label for="eros-enabled-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-enabled" class="info-icon" title="Learn more about enabling/disabling instances" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enabled:</label>
-                            <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                                <input type="checkbox" id="eros-enabled-${index}" name="enabled" ${
-        instance.enabled === true ? "checked" : ""
-      }>
-                                <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                            </label>
-                            <p class="setting-help">Enable or disable this Whisparr V3 instance for processing</p>
-                        </div>
-                        <div class="setting-item">
-                                            <label for="eros-name-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-name" class="info-icon" title="Learn more about naming your Whisparr V3 instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Name:</label>
-                <input type="text" id="eros-name-${index}" name="name" value="${
-        instance.name || ""
-      }" placeholder="Friendly name for this Whisparr V3 (Eros) instance">
-                <p class="setting-help">Friendly name for this Whisparr V3 (Eros) instance</p>
-                        </div>
-                        <div class="setting-item">
-                                            <label for="eros-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-url" class="info-icon" title="Learn more about Whisparr V3 (Eros) URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>URL:</label>
-                <input type="text" id="eros-url-${index}" name="api_url" value="${
-        instance.api_url || ""
-      }" placeholder="Base URL for Whisparr V3 (Eros) (e.g., http://localhost:6969)" data-instance-index="${index}">
-                <p class="setting-help">Base URL for Whisparr V3 (Eros) (e.g., http://localhost:6969)</p>
-                        </div>
-                        <div class="setting-item">
-                                            <label for="eros-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-api-key" class="info-icon" title="Learn more about finding your Whisparr V3 (Eros) API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
-                <input type="text" id="eros-key-${index}" name="api_key" value="${
-        instance.api_key || ""
-      }" placeholder="API key for Whisparr V3 (Eros)" data-instance-index="${index}">
-                <p class="setting-help">API key for Whisparr V3 (Eros)</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="eros-hunt-missing-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#missing-search" class="info-icon" title="Learn more about missing items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search:</label>
-                            <input type="number" id="eros-hunt-missing-items-${index}" name="hunt_missing_items" min="0" value="${
-        instance.hunt_missing_items !== undefined
-          ? instance.hunt_missing_items
-          : 1
-      }" style="width: 80px;">
-                            <p class="setting-help">Number of missing items to search per cycle (0 to disable).</p>
-                        </div>
-                        <div class="setting-item">
-                            <label for="eros-hunt-upgrade-items-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#upgrade-search" class="info-icon" title="Learn more about upgrade items search for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Upgrade Search:</label>
-                            <input type="number" id="eros-hunt-upgrade-items-${index}" name="hunt_upgrade_items" min="0" value="${
-        instance.hunt_upgrade_items !== undefined
-          ? instance.hunt_upgrade_items
-          : 0
-      }" style="width: 80px;">
-                            <p class="setting-help">Number of items to upgrade per cycle (0 to disable).</p>
-                        </div>
-                        
-                        <!-- Instance State Management -->
-                        <div class="setting-item" style="border-top: 1px solid rgba(90, 109, 137, 0.2); padding-top: 15px; margin-top: 15px;">
-                            <label for="eros-state-management-mode-${index}"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#state-reset-hours" class="info-icon" title="Configure state management for this instance" target="_blank" rel="noopener"><i class="fas fa-database"></i></a>State Management:</label>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <select id="eros-state-management-mode-${index}" name="state_management_mode" style="width: 150px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
-                                    <option value="custom" ${
-                                      (instance.state_management_mode ||
-                                        "custom") === "custom"
-                                        ? "selected"
-                                        : ""
-                                    }>Enabled</option>
-                                    <option value="disabled" ${
-                                      (instance.state_management_mode ||
-                                        "custom") === "disabled"
-                                        ? "selected"
-                                        : ""
-                                    }>Disabled</option>
-                                </select>
-                                <button type="button" id="eros-state-reset-btn-${index}" class="btn btn-danger" style="display: ${
-        (instance.state_management_mode || "custom") !== "disabled"
-          ? "inline-flex"
-          : "none"
-      }; background: linear-gradient(145deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.15)); color: rgba(231, 76, 60, 0.9); border: 1px solid rgba(231, 76, 60, 0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s ease;">
-                                    <i class="fas fa-redo"></i> Reset State
-                                </button>
-                            </div>
-                            <p class="setting-help">Enable state management to track processed media and prevent reprocessing</p>
-                        </div>
-                        
-                        <!-- State Management Hours (visible when enabled) -->
-                        <div class="setting-item" id="eros-custom-state-hours-${index}" style="display: ${
-        (instance.state_management_mode || "custom") === "custom"
-          ? "block"
-          : "none"
-      }; margin-left: 20px; padding: 12px; background: linear-gradient(145deg, rgba(30, 39, 56, 0.3), rgba(22, 28, 40, 0.4)); border: 1px solid rgba(90, 109, 137, 0.15); border-radius: 8px;">
-                            <label for="eros-state-management-hours-${index}" style="display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-clock" style="color: #6366f1;"></i>
-                                Reset Interval:
-                            </label>
-                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
-                                <input type="number" id="eros-state-management-hours-${index}" name="state_management_hours" min="1" max="8760" value="${
-        instance.state_management_hours || 168
-      }" style="width: 80px; padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #374151; color: #d1d5db;">
-                                <span style="color: #9ca3af; font-size: 14px;">
-                                    hours (<span id="eros-state-days-display-${index}">${(
-        (instance.state_management_hours || 168) / 24
-      ).toFixed(1)}</span> days)
-                                </span>
-                            </div>
-                            <p class="setting-help" style="font-size: 13px; color: #9ca3af; margin-top: 8px;">
-                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
-                                State will automatically reset every <span id="eros-state-hours-text-${index}">${
-        instance.state_management_hours || 168
-      }</span> hours
-                            </p>
-                        </div>
-                        
-                        <!-- State Status Display -->
-                        <div class="setting-item" id="eros-state-status-${index}" style="display: ${
-        (instance.state_management_mode || "custom") !== "disabled"
-          ? "block"
-          : "none"
-      }; margin-left: 20px; padding: 10px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="color: #10b981; font-weight: 600;">
-                                        <i class="fas fa-check-circle" style="margin-right: 4px;"></i>
-                                        Active - Tracked Items: <span id="eros-state-items-count-${index}">0</span>
-                                    </span>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div style="color: #9ca3af; font-size: 12px;">Next Reset:</div>
-                                    <div id="eros-state-reset-time-${index}" style="color: #d1d5db; font-weight: 500;">Calculating...</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="setting-item swaparr-field" style="${this.isSwaparrGloballyEnabled() ? '' : 'display: none;'}">
-                            <label for="eros-swaparr-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html" class="info-icon" title="Enable Swaparr stalled download monitoring for this instance" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Swaparr:</label>
-                            <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                                <input type="checkbox" id="eros-swaparr-${index}" name="swaparr_enabled" ${
-                                instance.swaparr_enabled === true
-                                  ? "checked"
-                                  : ""
-                              }>
-                                <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                            </label>
-                            <p class="setting-help">Enable Swaparr to monitor and remove stalled downloads for this Whisparr V3 instance</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+        instancesHtml += SettingsForms.renderInstanceCard('eros', instance, index);
     });
 
+    // Add "Add Instance" card
     instancesHtml += `
-                </div> <!-- instances-container -->
-                <div class="button-container" style="text-align: center; margin-top: 15px;">
-                    <button type="button" class="add-instance-btn add-eros-instance-btn">
-                        <i class="fas fa-plus"></i> Add Whisparr V3 Instance (${settings.instances.length}/9)
-                    </button>
-                </div>
+        <div class="add-instance-card" onclick="SettingsForms.openInstanceModal('eros')">
+            <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+            <div class="add-text">Add Whisparr V3 Instance</div>
+        </div>
+    `;
+
+    instancesHtml += `
+                </div> <!-- instance-card-grid -->
             </div> <!-- settings-group -->
-        `;
+    `;
 
     // Search Mode dropdown
     let searchSettingsHtml = `
@@ -5019,13 +4455,25 @@ const SettingsForms = {
     else {
       // Handle instances differently
       const instances = [];
-      // Find instance containers with both old and new class names
-      const instanceContainers = container.querySelectorAll(
-        ".instance-item, .instance-panel"
-      );
+      
+      // Check if we are using the new card layout
+      const gridContainer = container.querySelector('.instance-card-grid');
+      
+      if (gridContainer) {
+          // New UI mode: Use existing instances from settings, they are managed via modal
+          if (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings[appType]) {
+              // Copy instances from original settings
+              const originalInstances = window.huntarrUI.originalSettings[appType].instances || [];
+              originalInstances.forEach(inst => instances.push({...inst}));
+          }
+      } else {
+          // Old UI mode: Collect instance data from DOM
+          const instanceContainers = container.querySelectorAll(
+            ".instance-item, .instance-panel"
+          );
 
-      // Collect instance data with improved error handling
-      instanceContainers.forEach((instance, index) => {
+          // Collect instance data with improved error handling
+          instanceContainers.forEach((instance, index) => {
         const nameInput = instance.querySelector('input[name="name"]');
         const urlInput = instance.querySelector('input[name="api_url"]');
         const keyInput = instance.querySelector('input[name="api_key"]');
@@ -5175,6 +4623,7 @@ const SettingsForms = {
 
         instances.push(instanceObj);
       });
+      }
 
       // Ensure we always have at least one instance
       if (instances.length === 0) {
@@ -8171,6 +7620,346 @@ const SettingsForms = {
       }, 500);
     }
   },
+
+  // --- New Card/Modal Logic ---
+
+  // Helper to get app icon
+  getAppIcon: function(appType) {
+      const icons = {
+          sonarr: 'fa-tv',
+          radarr: 'fa-film',
+          lidarr: 'fa-music',
+          readarr: 'fa-book',
+          whisparr: 'fa-venus',
+          eros: 'fa-venus-mars',
+          prowlarr: 'fa-search'
+      };
+      return icons[appType] || 'fa-server';
+  },
+
+  // Render a single instance card
+  renderInstanceCard: function(appType, instance, index) {
+      const statusClass = instance.enabled ? 'status-connected' : 'status-unknown'; // We can improve this with real status later
+      const statusIcon = instance.enabled ? 'fa-check-circle' : 'fa-pause-circle';
+      const isDefault = index === 0;
+      
+      return `
+          <div class="instance-card ${isDefault ? 'default-instance' : ''}" data-instance-index="${index}">
+              <div class="instance-card-header">
+                  <div class="instance-name">
+                      <i class="fas ${this.getAppIcon(appType)}"></i>
+                      ${instance.name || 'Unnamed Instance'}
+                      ${isDefault ? '<span class="default-badge">Default</span>' : ''}
+                  </div>
+                  <div class="instance-status-icon ${statusClass}">
+                      <i class="fas ${statusIcon}"></i>
+                  </div>
+              </div>
+              <div class="instance-card-body">
+                  <div class="instance-detail">
+                      <i class="fas fa-link"></i>
+                      <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${instance.api_url || 'No URL Configured'}</span>
+                  </div>
+                  <div class="instance-detail">
+                      <i class="fas fa-key"></i>
+                      <span>${instance.api_key ? '••••••••' + instance.api_key.slice(-4) : 'No API Key'}</span>
+                  </div>
+              </div>
+              <div class="instance-card-footer">
+                  <button type="button" class="btn-card edit" onclick="SettingsForms.openInstanceModal('${appType}', ${index})">
+                      <i class="fas fa-edit"></i> Edit
+                  </button>
+                  ${!isDefault ? `
+                  <button type="button" class="btn-card delete" onclick="SettingsForms.deleteInstance('${appType}', ${index})">
+                      <i class="fas fa-trash"></i> Delete
+                  </button>
+                  ` : ''}
+              </div>
+          </div>
+      `;
+  },
+
+  // Open the modal for adding/editing an instance
+  openInstanceModal: function(appType, index = null) {
+      // Get current settings from window.huntarrUI.originalSettings
+      const settings = window.huntarrUI.originalSettings[appType];
+      if (!settings) {
+          console.error(`Settings for ${appType} not found`);
+          return;
+      }
+
+      const isEdit = index !== null;
+      const instance = isEdit ? settings.instances[index] : {
+          name: '',
+          api_url: '',
+          api_key: '',
+          enabled: true,
+          // Defaults
+          hunt_missing_items: 1,
+          hunt_upgrade_items: 0,
+          hunt_missing_mode: 'seasons_packs',
+          upgrade_mode: 'seasons_packs',
+          state_management_mode: 'custom',
+          state_management_hours: 168,
+          swaparr_enabled: false
+      };
+
+      // Create modal container if it doesn't exist
+      let modalOverlay = document.getElementById('huntarr-instance-modal');
+      if (!modalOverlay) {
+          modalOverlay = document.createElement('div');
+          modalOverlay.id = 'huntarr-instance-modal';
+          modalOverlay.className = 'huntarr-modal-overlay';
+          document.body.appendChild(modalOverlay);
+      }
+
+      // Generate Modal Content based on App Type
+      let formFields = '';
+      
+      // Common Fields
+      formFields += `
+          <div class="modal-form-section">
+              <div class="modal-section-title">Connection Details</div>
+              <div class="setting-item">
+                  <label>Enabled</label>
+                  <label class="toggle-switch">
+                      <input type="checkbox" id="modal-enabled" ${instance.enabled ? 'checked' : ''}>
+                      <span class="toggle-slider"></span>
+                  </label>
+              </div>
+              <div class="setting-item">
+                  <label>Name</label>
+                  <input type="text" id="modal-name" value="${instance.name || ''}" placeholder="Instance Name">
+              </div>
+              <div class="setting-item">
+                  <label>URL</label>
+                  <input type="text" id="modal-url" value="${instance.api_url || ''}" placeholder="http://localhost:8989">
+              </div>
+              <div class="setting-item">
+                  <label>API Key</label>
+                  <input type="text" id="modal-key" value="${instance.api_key || ''}" placeholder="API Key">
+              </div>
+          </div>
+      `;
+
+      // App Specific Fields
+      if (appType === 'sonarr') {
+          formFields += `
+              <div class="modal-form-section">
+                  <div class="modal-section-title">Search Settings</div>
+                  <div class="setting-item">
+                      <label>Missing Search Count</label>
+                      <input type="number" id="modal-missing-count" value="${instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1}">
+                  </div>
+                  <div class="setting-item">
+                      <label>Upgrade Search Count</label>
+                      <input type="number" id="modal-upgrade-count" value="${instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0}">
+                  </div>
+                  <div class="setting-item">
+                      <label>Missing Search Mode</label>
+                      <select id="modal-missing-mode">
+                          <option value="seasons_packs" ${instance.hunt_missing_mode === 'seasons_packs' ? 'selected' : ''}>Season Packs</option>
+                          <option value="shows" ${instance.hunt_missing_mode === 'shows' ? 'selected' : ''}>Shows</option>
+                          <option value="episodes" ${instance.hunt_missing_mode === 'episodes' ? 'selected' : ''}>Episodes</option>
+                      </select>
+                  </div>
+                  <div class="setting-item">
+                      <label>Upgrade Mode</label>
+                      <select id="modal-upgrade-mode">
+                          <option value="seasons_packs" ${instance.upgrade_mode === 'seasons_packs' ? 'selected' : ''}>Season Packs</option>
+                          <option value="shows" ${instance.upgrade_mode === 'shows' ? 'selected' : ''}>Shows</option>
+                          <option value="episodes" ${instance.upgrade_mode === 'episodes' ? 'selected' : ''}>Episodes</option>
+                      </select>
+                  </div>
+                  <div class="setting-item">
+                      <label>Air Date Delay (Days)</label>
+                      <input type="number" id="modal-air-date-delay" value="${instance.air_date_delay_days || 0}">
+                  </div>
+              </div>
+          `;
+      } else if (['radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(appType)) {
+           // Generic fields for other apps (adapt field names)
+           const missingField = appType === 'radarr' ? 'hunt_missing_movies' : (appType === 'readarr' ? 'hunt_missing_books' : 'hunt_missing_items');
+           const upgradeField = appType === 'radarr' ? 'hunt_upgrade_movies' : (appType === 'readarr' ? 'hunt_upgrade_books' : 'hunt_upgrade_items');
+           
+           const missingVal = instance[missingField] !== undefined ? instance[missingField] : 1;
+           const upgradeVal = instance[upgradeField] !== undefined ? instance[upgradeField] : 0;
+
+           formFields += `
+              <div class="modal-form-section">
+                  <div class="modal-section-title">Search Settings</div>
+                  <div class="setting-item">
+                      <label>Missing Search Count</label>
+                      <input type="number" id="modal-missing-count" value="${missingVal}">
+                  </div>
+                  <div class="setting-item">
+                      <label>Upgrade Search Count</label>
+                      <input type="number" id="modal-upgrade-count" value="${upgradeVal}">
+                  </div>
+              </div>
+          `;
+          
+          if (appType === 'radarr') {
+               formFields += `
+                  <div class="setting-item">
+                      <label>Release Date Delay (Days)</label>
+                      <input type="number" id="modal-release-date-delay" value="${instance.release_date_delay_days || 0}">
+                  </div>
+               `;
+          }
+      }
+
+      // State Management & Swaparr
+      formFields += `
+          <div class="modal-form-section">
+              <div class="modal-section-title">Advanced</div>
+              <div class="setting-item">
+                  <label>State Management</label>
+                  <div style="display: flex; gap: 10px; align-items: center;">
+                      <select id="modal-state-mode" style="flex: 1;">
+                          <option value="custom" ${instance.state_management_mode === 'custom' ? 'selected' : ''}>Enabled</option>
+                          <option value="disabled" ${instance.state_management_mode === 'disabled' ? 'selected' : ''}>Disabled</option>
+                      </select>
+                      ${isEdit && instance.state_management_mode !== 'disabled' ? `
+                      <button type="button" class="btn-modal btn-modal-secondary" style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); padding: 8px 12px; font-size: 0.9em;" onclick="SettingsForms.resetInstanceState('${appType}', ${index})">
+                          <i class="fas fa-redo"></i> Reset State
+                      </button>
+                      ` : ''}
+                  </div>
+              </div>
+              <div class="setting-item">
+                  <label>Reset Interval (Hours)</label>
+                  <input type="number" id="modal-state-hours" value="${instance.state_management_hours || 168}">
+              </div>
+              ${this.isSwaparrGloballyEnabled() ? `
+              <div class="setting-item">
+                  <label>Swaparr Monitoring</label>
+                  <label class="toggle-switch">
+                      <input type="checkbox" id="modal-swaparr" ${instance.swaparr_enabled ? 'checked' : ''}>
+                      <span class="toggle-slider"></span>
+                  </label>
+              </div>
+              ` : ''}
+          </div>
+      `;
+
+      modalOverlay.innerHTML = `
+          <div class="huntarr-modal">
+              <div class="huntarr-modal-header">
+                  <h3 class="huntarr-modal-title">${isEdit ? 'Edit' : 'Add'} ${appType.charAt(0).toUpperCase() + appType.slice(1)} Instance</h3>
+                  <button class="huntarr-modal-close" onclick="document.getElementById('huntarr-instance-modal').classList.remove('active')">
+                      <i class="fas fa-times"></i>
+                  </button>
+              </div>
+              <div class="huntarr-modal-body">
+                  <div class="modal-form-grid">
+                      ${formFields}
+                  </div>
+              </div>
+              <div class="huntarr-modal-footer">
+                  <button class="btn-modal btn-modal-secondary" onclick="document.getElementById('huntarr-instance-modal').classList.remove('active')">Cancel</button>
+                  <button class="btn-modal btn-modal-primary" onclick="SettingsForms.saveInstanceFromModal('${appType}', ${index})">Save Changes</button>
+              </div>
+          </div>
+      `;
+
+      // Show modal
+      setTimeout(() => modalOverlay.classList.add('active'), 10);
+  },
+
+  // Save instance from modal
+  saveInstanceFromModal: function(appType, index) {
+      const settings = window.huntarrUI.originalSettings[appType];
+      if (!settings) return;
+
+      // Collect data
+      const newData = {
+          enabled: document.getElementById('modal-enabled').checked,
+          name: document.getElementById('modal-name').value,
+          api_url: document.getElementById('modal-url').value,
+          api_key: document.getElementById('modal-key').value,
+          state_management_mode: document.getElementById('modal-state-mode').value,
+          state_management_hours: parseInt(document.getElementById('modal-state-hours').value) || 168,
+      };
+
+      // Swaparr
+      const swaparrInput = document.getElementById('modal-swaparr');
+      if (swaparrInput) {
+          newData.swaparr_enabled = swaparrInput.checked;
+      }
+
+      // App specific fields
+      if (appType === 'sonarr') {
+          newData.hunt_missing_items = parseInt(document.getElementById('modal-missing-count').value) || 0;
+          newData.hunt_upgrade_items = parseInt(document.getElementById('modal-upgrade-count').value) || 0;
+          newData.hunt_missing_mode = document.getElementById('modal-missing-mode').value;
+          newData.upgrade_mode = document.getElementById('modal-upgrade-mode').value;
+          newData.air_date_delay_days = parseInt(document.getElementById('modal-air-date-delay').value) || 0;
+      } else {
+           const missingField = appType === 'radarr' ? 'hunt_missing_movies' : (appType === 'readarr' ? 'hunt_missing_books' : 'hunt_missing_items');
+           const upgradeField = appType === 'radarr' ? 'hunt_upgrade_movies' : (appType === 'readarr' ? 'hunt_upgrade_books' : 'hunt_upgrade_items');
+           
+           newData[missingField] = parseInt(document.getElementById('modal-missing-count').value) || 0;
+           newData[upgradeField] = parseInt(document.getElementById('modal-upgrade-count').value) || 0;
+
+           if (appType === 'radarr') {
+               newData.release_date_delay_days = parseInt(document.getElementById('modal-release-date-delay').value) || 0;
+           }
+      }
+
+      // Preserve existing data not in modal (like state status)
+      if (index !== null) {
+          // Edit existing
+          settings.instances[index] = { ...settings.instances[index], ...newData };
+      } else {
+          // Add new
+          settings.instances.push(newData);
+      }
+
+      // Save to server
+      this.saveAppSettings(appType, settings);
+      
+      // Close modal
+      document.getElementById('huntarr-instance-modal').classList.remove('active');
+  },
+
+  // Delete instance
+  deleteInstance: function(appType, index) {
+      if (!confirm('Are you sure you want to delete this instance?')) return;
+      
+      const settings = window.huntarrUI.originalSettings[appType];
+      if (!settings) return;
+
+      settings.instances.splice(index, 1);
+      this.saveAppSettings(appType, settings);
+  },
+
+  // Helper to save settings and refresh view
+  saveAppSettings: function(appType, settings) {
+      HuntarrUtils.fetchWithTimeout(`./api/settings/${appType}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings)
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (window.huntarrUI && window.huntarrUI.showNotification) {
+              window.huntarrUI.showNotification('Settings saved successfully', 'success');
+          }
+          // Refresh the form
+          const container = document.querySelector(`[data-app-type="${appType}"]`);
+          if (container) {
+              const method = `generate${appType.charAt(0).toUpperCase() + appType.slice(1)}Form`;
+              if (this[method]) {
+                  this[method](container, settings);
+              }
+          }
+      })
+      .catch(error => {
+          console.error('Error saving settings:', error);
+          alert('Failed to save settings');
+      });
+  }
 };
 
 // Add CSS for toggle circle
