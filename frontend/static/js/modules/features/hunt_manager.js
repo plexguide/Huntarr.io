@@ -133,24 +133,28 @@ const huntManagerModule = {
         HuntarrUtils.fetchWithTimeout(`./api/hunt-manager/${this.currentApp}`, {
             method: 'DELETE'
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(response => {
             if (response.ok) {
-                console.log(`Cleared hunt history for ${this.currentApp}`);
-                // Reload the hunt history
-                this.loadHuntHistory();
-                // Show success notification
-                if (huntarrUI && huntarrUI.showNotification) {
-                    huntarrUI.showNotification(`Hunt history cleared for ${appName}`, 'success');
-                }
+                return response.json();
             } else {
-                throw new Error(data.error || 'Failed to clear hunt history');
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Failed to clear hunt history');
+                });
+            }
+        })
+        .then(data => {
+            console.log(`Cleared hunt history for ${this.currentApp}`);
+            // Reload the hunt history
+            this.loadHuntHistory();
+            // Show success notification
+            if (window.HuntarrNotifications) {
+                window.HuntarrNotifications.showNotification(`Hunt history cleared for ${appName}`, 'success');
             }
         })
         .catch(error => {
             console.error(`Error clearing hunt history:`, error);
-            if (huntarrUI && huntarrUI.showNotification) {
-                huntarrUI.showNotification(`Error clearing hunt history: ${error.message}`, 'error');
+            if (window.HuntarrNotifications) {
+                window.HuntarrNotifications.showNotification(`Error clearing hunt history: ${error.message}`, 'error');
             }
         });
     },
