@@ -1011,10 +1011,13 @@ let huntarrUI = {
     
     // Called when any setting input changes in the active tab
     markSettingsAsChanged() {
+        console.log("[huntarrUI] markSettingsAsChanged called, current state:", this.settingsChanged);
         if (!this.settingsChanged) {
-            console.log("[huntarrUI] Settings marked as changed.");
+            console.log("[huntarrUI] Settings marked as changed. Enabling save button.");
             this.settingsChanged = true;
             this.updateSaveResetButtonState(true); // Enable buttons
+        } else {
+            console.log("[huntarrUI] Settings already marked as changed.");
         }
     },
 
@@ -1029,16 +1032,21 @@ let huntarrUI = {
         const saveBtn = document.getElementById('settings-save-button');
         const notifSaveBtn = document.getElementById('notifications-save-button');
         
+        console.log('[huntarrUI] updateSaveResetButtonState called with enable:', enable);
+        console.log('[huntarrUI] Found buttons - settings:', !!saveBtn, 'notifications:', !!notifSaveBtn);
+        
         [saveBtn, notifSaveBtn].forEach(btn => {
             if (!btn) return;
             
+            console.log('[huntarrUI] Updating button:', btn.id, 'enabled:', enable);
+            
             if (enable) {
                 btn.disabled = false;
-                btn.style.background = '#3b82f6';
+                btn.style.background = '#dc2626'; // Red color for enabled state
                 btn.style.color = '#ffffff';
-                btn.style.borderColor = '#2563eb';
+                btn.style.borderColor = '#b91c1c';
                 btn.style.cursor = 'pointer';
-                btn.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.3)';
+                btn.style.boxShadow = '0 0 10px rgba(220, 38, 38, 0.3)';
             } else {
                 btn.disabled = true;
                 btn.style.background = '#6b7280';

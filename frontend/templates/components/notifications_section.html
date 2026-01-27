@@ -1,7 +1,7 @@
 <section id="notificationsSection" class="content-section">
     <!-- Notifications Save Button -->
     <div class="notifications-save-container" style="margin-bottom: 20px;">
-        <button id="notifications-save-button" class="notifications-save-btn" onclick="window.huntarrUI.saveSettings()" disabled style="
+        <button id="notifications-save-button" class="notifications-save-btn" onclick="console.log('[Notifications] Save button clicked'); if (this.disabled) { console.log('[Notifications] Button is disabled, ignoring click'); return; } window.huntarrUI.saveSettings();" disabled style="
             background: #6b7280;
             color: #9ca3af;
             border: 1px solid #4b5563;
@@ -16,7 +16,7 @@
             transition: all 0.2s ease;
         ">
             <i class="fas fa-save"></i>
-            Save Changes
+            Save
         </button>
     </div>
     
