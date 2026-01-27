@@ -7189,22 +7189,34 @@ const SettingsForms = {
               .modal-form-section { display: flex; flex-direction: column; width: 100%; }
               .modal-field-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 26px; width: 100%; }
               .modal-field-group:last-child { margin-bottom: 0; }
-              .modal-setting-item { display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: flex-start; }
-              .modal-setting-item.flex-row { flex-direction: row; justify-content: space-between; align-items: center; padding-right: 21px; }
+              .modal-setting-item { display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: flex-start; padding-right: 21px; }
+              .modal-setting-item.flex-row { flex-direction: row; justify-content: space-between; align-items: center; padding-right: 29px; }
               .modal-setting-item label { color: #f8fafc; font-weight: 500; font-size: 0.95rem; margin-bottom: 0 !important; }
               .modal-setting-item input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(15, 23, 42, 0.6); color: white; font-size: 0.95rem; }
               .modal-help-text { color: #94a3b8; font-size: 0.85rem; margin: 0 !important; padding-left: 2px; line-height: 1.4; }
+              .modal-field-disabled input,
+              .modal-field-disabled select {
+                  opacity: 0.5;
+                  pointer-events: none;
+                  cursor: not-allowed;
+              }
+              .modal-field-disabled label {
+                  opacity: 0.5;
+              }
           </style>
           <div class="modal-form-section">
               <div class="modal-section-title">Connection Details</div>
               
               <div class="modal-field-group">
-                  <div class="modal-setting-item flex-row">
-                      <label>Enabled</label>
-                      <label class="toggle-switch">
-                          <input type="checkbox" id="modal-enabled" ${settings.enabled !== false ? 'checked' : ''}>
-                          <span class="toggle-slider"></span>
+                  <div class="modal-setting-item">
+                      <label style="display: flex; align-items: center;">
+                          <span>Enable Status </span>
+                          <i id="modal-enable-status-icon" class="fas ${settings.enabled !== false ? 'fa-check-circle' : 'fa-minus-circle'}" style="color: ${settings.enabled !== false ? '#10b981' : '#ef4444'}; font-size: 1.1rem;"></i>
                       </label>
+                      <select id="modal-enabled" onchange="SettingsForms.updateModalEnableStatusIcon(); SettingsForms.toggleModalFormFields();">
+                          <option value="true" ${settings.enabled !== false ? 'selected' : ''}>Enabled</option>
+                          <option value="false" ${settings.enabled === false ? 'selected' : ''}>Disabled</option>
+                      </select>
                   </div>
                   <p class="modal-help-text">Enable or disable Prowlarr integration</p>
               </div>
@@ -7247,7 +7259,11 @@ const SettingsForms = {
           </div>
       `;
 
-      setTimeout(() => modalOverlay.classList.add('active'), 10);
+      setTimeout(() => {
+          modalOverlay.classList.add('active');
+          // Initialize form field states based on enabled status
+          this.toggleModalFormFields();
+      }, 10);
   },
 
   // Save Prowlarr settings from modal
@@ -7255,7 +7271,7 @@ const SettingsForms = {
       const settings = window.huntarrUI.originalSettings.prowlarr;
       
       // Update settings object
-      settings.enabled = document.getElementById('modal-enabled').checked;
+      settings.enabled = document.getElementById('modal-enabled').value === 'true';
       settings.api_url = document.getElementById('modal-url').value;
       settings.api_key = document.getElementById('modal-key').value;
 
@@ -7264,6 +7280,58 @@ const SettingsForms = {
       
       // Close modal
       document.getElementById('huntarr-instance-modal').classList.remove('active');
+  },
+
+  // Update enable status icon in modal when dropdown changes
+  updateModalEnableStatusIcon: function() {
+      const dropdown = document.getElementById('modal-enabled');
+      const icon = document.getElementById('modal-enable-status-icon');
+      
+      if (!dropdown || !icon) return;
+      
+      const isEnabled = dropdown.value === 'true';
+      
+      // Update icon
+      if (isEnabled) {
+          icon.className = 'fas fa-check-circle';
+          icon.style.color = '#10b981'; // Green
+      } else {
+          icon.className = 'fas fa-minus-circle';
+          icon.style.color = '#ef4444'; // Red
+      }
+  },
+
+  // Toggle modal form fields based on enabled status
+  toggleModalFormFields: function() {
+      const dropdown = document.getElementById('modal-enabled');
+      if (!dropdown) return;
+      
+      const isEnabled = dropdown.value === 'true';
+      
+      // Get all field groups in the modal except the Enable Status field group
+      const modal = document.querySelector('.huntarr-modal');
+      if (!modal) return;
+      
+      const fieldGroups = modal.querySelectorAll('.modal-field-group');
+      
+      fieldGroups.forEach((group, index) => {
+          // Skip the first field group (Enable Status)
+          if (index === 0) return;
+          
+          if (isEnabled) {
+              group.classList.remove('modal-field-disabled');
+              // Re-enable all inputs
+              group.querySelectorAll('input, select').forEach(el => {
+                  el.disabled = false;
+              });
+          } else {
+              group.classList.add('modal-field-disabled');
+              // Disable all inputs
+              group.querySelectorAll('input, select').forEach(el => {
+                  el.disabled = true;
+              });
+          }
+      });
   },
 
   // Setup auto-detection for Prowlarr (similar to Sonarr)
