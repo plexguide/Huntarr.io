@@ -1487,7 +1487,7 @@ input:checked + .toggle-slider:before {
 
     .verification-container {
         flex-direction: column;
-        align-items: center;
+        align-items: flex-start;
     }
 
     .verification-input {
@@ -1502,9 +1502,15 @@ input:checked + .toggle-slider:before {
         padding: 15px;
     }
     
+    .setting-item {
+        align-items: flex-start;
+        text-align: left;
+    }
+    
     .setting-item label {
         width: 100%;
         margin-bottom: 8px;
+        text-align: left;
     }
     
     .setting-help {
