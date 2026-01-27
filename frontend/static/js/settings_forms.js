@@ -2544,8 +2544,10 @@ const SettingsForms = {
         let originalValue, currentValue;
 
         if (input.type === "checkbox") {
+          // Special handling for low_usage_mode which defaults to true
+          const defaultCheckboxValue = (key === "low_usage_mode") ? true : false;
           originalValue =
-            originalSettings[key] !== undefined ? originalSettings[key] : false;
+            originalSettings[key] !== undefined ? originalSettings[key] : defaultCheckboxValue;
           currentValue = input.checked;
         } else if (input.type === "number") {
           // Get default from input attributes or use 0
@@ -2561,14 +2563,7 @@ const SettingsForms = {
           currentValue = input.value.trim();
         }
 
-        console.log(
-          `[SettingsForms] Checking settings ${key}: original=${originalValue}, current=${currentValue}`
-        );
-
         if (originalValue !== currentValue) {
-          console.log(
-            `[SettingsForms] Settings change detected in ${key}: ${originalValue} -> ${currentValue}`
-          );
           formChanged = true;
         }
       });
@@ -2586,14 +2581,10 @@ const SettingsForms = {
           JSON.stringify(originalUrls.sort()) !==
           JSON.stringify(currentUrls.sort())
         ) {
-          console.log("[SettingsForms] Settings apprise_urls change detected");
           formChanged = true;
         }
       }
 
-      console.log(
-        `[SettingsForms] Settings change detection result: ${formChanged}`
-      );
       updateSaveButtonState(formChanged);
     };
 
@@ -2653,11 +2644,21 @@ const SettingsForms = {
     // Initial change detection - ensure form is fully loaded before checking
     // Use a longer timeout to ensure all form elements are properly initialized
     setTimeout(() => {
-      console.log(
-        "[SettingsForms] Running initial change detection for Settings"
-      );
+      // Re-query inputs to ensure we have the latest ones
+      const freshInputs = container.querySelectorAll("input, select, textarea");
+      freshInputs.forEach((input) => {
+        input.addEventListener("change", detectChanges);
+        if (
+          input.type === "text" ||
+          input.type === "number" ||
+          input.tagName.toLowerCase() === "textarea"
+        ) {
+          input.addEventListener("input", detectChanges);
+        }
+      });
+      
       detectChanges();
-    }, 200);
+    }, 500);
   },
 
   // Set up manual save functionality for Notifications
@@ -4733,7 +4734,7 @@ const SettingsForms = {
                     <label for="low_usage_mode"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#low-usage-mode" class="info-icon" title="Learn more about Low Usage Mode" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Low Usage Mode:</label>
                     <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                         <input type="checkbox" id="low_usage_mode" ${
-                          settings.low_usage_mode === true ? "checked" : ""
+                          settings.low_usage_mode !== false ? "checked" : ""
                         }>
                         <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                     </label>
