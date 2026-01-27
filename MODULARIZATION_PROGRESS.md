@@ -189,15 +189,17 @@ Added imports for all new modules before existing scripts:
 5. ✅ Create stateful.js module and extract functions
 6. ✅ Create settings.js module and extract functions
 7. ✅ Create initialization.js module and extract functions
-8. ✅ Create requestarr.js module and extract functions
+8. ✅ Create requestarr modular system and extract functions
 9. ✅ Create ui-handlers.js module and extract functions
 10. ✅ Create instances.js module and extract functions
 11. ✅ Create auth.js module and extract functions
 12. ✅ Create theme.js module and extract functions
 13. ✅ Create dom.js module and extract functions
-14. Test all functionality after modularization
-15. Remove old function implementations from app.js (Complete)
-16. Deploy and verify in production
+14. ✅ Consolidated all Requestarr scripts into `modules/features/requestarr/`
+15. ✅ Removed redundant legacy Requestarr scripts
+16. Test all functionality after modularization
+17. Remove old function implementations from app.js (Complete)
+18. Deploy and verify in production (Complete)
 
 ## Estimated Final Size
 

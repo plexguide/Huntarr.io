@@ -1,42 +1,72 @@
 <!-- Core utility scripts -->
 <script src="./static/js/modules/core/utils.js"></script>
-
-<!-- Modular components (load before main app) -->
 <script src="./static/js/modules/core/helpers.js"></script>
-<script src="./static/js/modules/core/notifications.js"></script>
-<script src="./static/js/modules/core/version.js"></script>
-<script src="./static/js/modules/ui/stats.js"></script>
-<script src="./static/js/modules/core/navigation.js"></script>
-<script src="./static/js/modules/features/swaparr-card.js"></script>
-<script src="./static/js/modules/features/prowlarr.js"></script>
-<script src="./static/js/modules/features/logs-core.js"></script>
-<script src="./static/js/modules/features/stateful.js"></script>
-<script src="./static/js/modules/features/settings.js"></script>
-<script src="./static/js/modules/core/initialization.js"></script>
-<script src="./static/js/modules/features/requestarr-core.js"></script>
-<script src="./static/js/modules/core/ui-handlers.js"></script>
-<script src="./static/js/modules/features/instances.js"></script>
-<script src="./static/js/modules/core/auth.js"></script>
-<script src="./static/js/modules/core/theme.js"></script>
 <script src="./static/js/modules/core/dom.js"></script>
 
-<!-- Feature modules -->
-<script src="./static/js/modules/features/apps.js"></script>
-<script src="./static/js/modules/features/logs-main.js"></script>
+<!-- UI Core -->
+<script src="./static/js/modules/core/notifications.js"></script>
+<script src="./static/js/modules/core/navigation.js"></script>
+<script src="./static/js/modules/core/theme.js"></script>
+<script src="./static/js/modules/core/version.js"></script>
+<script src="./static/js/modules/core/auth.js"></script>
+<script src="./static/js/modules/core/ui-handlers.js"></script>
+<script src="./static/js/modules/core/initialization.js"></script>
+
+<!-- Main Application Orchestrator (Defines huntarrUI) -->
+<script src="./static/js/app.js"></script>
+
+<!-- Settings Core (Defines SettingsForms) -->
+<script src="./static/js/modules/features/settings/core.js"></script>
+
+<!-- Settings Feature Modules -->
+<script src="./static/js/modules/features/settings/sonarr.js"></script>
+<script src="./static/js/modules/features/settings/radarr.js"></script>
+<script src="./static/js/modules/features/settings/lidarr.js"></script>
+<script src="./static/js/modules/features/settings/readarr.js"></script>
+<script src="./static/js/modules/features/settings/whisparr.js"></script>
+<script src="./static/js/modules/features/settings/prowlarr.js"></script>
+<script src="./static/js/modules/features/settings/swaparr.js"></script>
+<script src="./static/js/modules/features/settings/logs.js"></script>
+<script src="./static/js/modules/features/settings/notifications.js"></script>
+<script src="./static/js/modules/features/settings/general.js"></script>
+
+<!-- Feature Modules -->
+<script src="./static/js/modules/features/apps/apps-main.js"></script>
+<script src="./static/js/modules/features/logs/logs-main.js"></script>
+<script src="./static/js/modules/features/logs/logs-core.js"></script>
+<script src="./static/js/modules/features/instances.js"></script>
+<script src="./static/js/modules/features/stateful.js"></script>
 <script src="./static/js/modules/features/backup-restore.js"></script>
 <script src="./static/js/modules/features/hunt_manager.js"></script>
-<script src="./static/js/modules/features/requestarr-main.js"></script>
-<script src="./static/js/modules/features/requestarr-discover.js"></script>
-<script src="./static/js/modules/features/requestarr-home.js"></script>
 <script src="./static/js/modules/features/scheduling.js"></script>
 <script src="./static/js/modules/features/history.js"></script>
-<script src="./static/js/modules/features/new-user.js"></script>
 <script src="./static/js/modules/features/user.js"></script>
+<script src="./static/js/modules/features/new-user.js"></script>
 <script src="./static/js/modules/features/community-resources.js"></script>
 <script src="./static/js/modules/features/github-sponsors.js"></script>
-<script src="./static/js/modules/features/settings_forms.js"></script>
+<script src="./static/js/modules/features/swaparr-card.js"></script>
 
-<!-- UI enhancement scripts -->
+<!-- Requestarr System -->
+<script src="./static/js/modules/features/requestarr/requestarr-controller.js" type="module"></script>
+<script src="./static/js/modules/features/requestarr/requestarr-home.js" type="module"></script>
+<script src="./static/js/modules/features/requestarr/requestarr-content.js" type="module"></script>
+<script src="./static/js/modules/features/requestarr/requestarr-filters.js" type="module"></script>
+<script src="./static/js/modules/features/requestarr/requestarr-modal.js" type="module"></script>
+<script src="./static/js/modules/features/requestarr/requestarr-search.js" type="module"></script>
+<script src="./static/js/modules/features/requestarr/requestarr-settings.js" type="module"></script>
+<script src="./static/js/modules/features/requestarr/requestarr-tv-filters.js" type="module"></script>
+
+<!-- App-specific View Modules -->
+<script src="./static/js/modules/features/apps/sonarr.js"></script>
+<script src="./static/js/modules/features/apps/radarr.js"></script>
+<script src="./static/js/modules/features/apps/lidarr.js"></script>
+<script src="./static/js/modules/features/apps/readarr.js"></script>
+<script src="./static/js/modules/features/apps/whisparr.js"></script>
+<script src="./static/js/modules/features/apps/eros.js"></script>
+<script src="./static/js/modules/features/apps/swaparr-view.js"></script>
+
+<!-- UI Enhancement scripts -->
+<script src="./static/js/modules/ui/stats.js"></script>
 <script src="./static/js/modules/ui/api-progress.js"></script>
 <script src="./static/js/modules/ui/low-usage-mode.js"></script>
 <script src="./static/js/modules/ui/cycle-countdown.js"></script>

@@ -76,20 +76,32 @@ const historyModule = {
         });
         
         // Search
-        this.elements.historySearchButton.addEventListener('click', () => this.handleSearch());
-        this.elements.historySearchInput.addEventListener('keypress', e => {
-            if (e.key === 'Enter') this.handleSearch();
-        });
+        if (this.elements.historySearchButton) {
+            this.elements.historySearchButton.addEventListener('click', () => this.handleSearch());
+        }
+        if (this.elements.historySearchInput) {
+            this.elements.historySearchInput.addEventListener('keypress', e => {
+                if (e.key === 'Enter') this.handleSearch();
+            });
+        }
         
         // Page size
-        this.elements.historyPageSize.addEventListener('change', () => this.handlePageSizeChange());
+        if (this.elements.historyPageSize) {
+            this.elements.historyPageSize.addEventListener('change', () => this.handlePageSizeChange());
+        }
         
         // Clear history
-        this.elements.clearHistoryButton.addEventListener('click', () => this.handleClearHistory());
+        if (this.elements.clearHistoryButton) {
+            this.elements.clearHistoryButton.addEventListener('click', () => this.handleClearHistory());
+        }
         
         // Pagination
-        this.elements.historyPrevPage.addEventListener('click', () => this.handlePagination('prev'));
-        this.elements.historyNextPage.addEventListener('click', () => this.handlePagination('next'));
+        if (this.elements.historyPrevPage) {
+            this.elements.historyPrevPage.addEventListener('click', () => this.handlePagination('prev'));
+        }
+        if (this.elements.historyNextPage) {
+            this.elements.historyNextPage.addEventListener('click', () => this.handlePagination('next'));
+        }
     },
     
     // Load history data when section becomes active

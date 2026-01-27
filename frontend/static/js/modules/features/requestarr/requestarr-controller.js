@@ -1,18 +1,33 @@
 /**
- * Requestarr Module
- * Handles Requestarr-specific functionality and navigation
+ * Requestarr Controller - Main entry point and global interface
+ * Coordinates between the main application and the Requestarr ES6 modules.
  */
 
+import { RequestarrDiscover } from './requestarr-core.js';
+
+// Initialize the Requestarr Discover system
+document.addEventListener('DOMContentLoaded', () => {
+    window.RequestarrDiscover = new RequestarrDiscover();
+    console.log('[RequestarrController] Discover modules loaded successfully');
+});
+
+/**
+ * Global HuntarrRequestarr interface for the main app (app.js)
+ * This provides a bridge between the core orchestrator and the modular Requestarr system.
+ */
 window.HuntarrRequestarr = {
+    /**
+     * Wait for RequestarrDiscover to be initialized before executing a callback
+     */
     runWhenRequestarrReady: function(actionName, callback) {
-        if (typeof window.RequestarrDiscover !== 'undefined') {
+        if (window.RequestarrDiscover) {
             callback();
             return;
         }
 
         const startTime = Date.now();
         const checkInterval = setInterval(() => {
-            if (typeof window.RequestarrDiscover !== 'undefined') {
+            if (window.RequestarrDiscover) {
                 clearInterval(checkInterval);
                 callback();
                 return;
@@ -25,24 +40,35 @@ window.HuntarrRequestarr = {
         }, 50);
     },
 
+    /**
+     * Show the Requestarr sidebar and hide others
+     */
     showRequestarrSidebar: function() {
         const mainSidebar = document.getElementById('sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
         const settingsSidebar = document.getElementById('settings-sidebar');
+        const appsSidebar = document.getElementById('apps-sidebar');
         
         if (mainSidebar) mainSidebar.style.display = 'none';
         if (settingsSidebar) settingsSidebar.style.display = 'none';
+        if (appsSidebar) appsSidebar.style.display = 'none';
         if (requestarrSidebar) requestarrSidebar.style.display = 'block';
         
         this.updateRequestarrSidebarActive();
     },
 
+    /**
+     * Show a specific Requestarr view (home, discover, etc.)
+     */
     showRequestarrView: function(view) {
         const homeView = document.getElementById('requestarr-home-view');
         if (homeView) homeView.style.display = view === 'home' ? 'block' : 'none';
         this.updateRequestarrNavigation(view);
     },
 
+    /**
+     * Update the active state of items in the Requestarr sidebar
+     */
     updateRequestarrSidebarActive: function() {
         if (!window.huntarrUI) return;
         const currentSection = window.huntarrUI.currentSection;
@@ -57,12 +83,18 @@ window.HuntarrRequestarr = {
         });
     },
 
+    /**
+     * Delegate view switching to the RequestarrDiscover instance
+     */
     updateRequestarrNavigation: function(view) {
         if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
             window.RequestarrDiscover.switchView(view);
         }
     },
 
+    /**
+     * Set up click handlers for Requestarr sidebar items
+     */
     setupRequestarrNavigation: function() {
         const requestarrNavItems = document.querySelectorAll('#requestarr-sidebar .nav-item a');
         requestarrNavItems.forEach(item => {

@@ -35,6 +35,9 @@ let huntarrUI = {
     init: function() {
         console.log('[huntarrUI] Initializing UI...');
         
+        // EXPOSE huntarrUI to global scope early for modules that need it during loading
+        window.huntarrUI = this;
+        
         // Skip initialization on login page
         const isLoginPage = document.querySelector('.login-container, #loginForm, .login-form');
         if (isLoginPage) {

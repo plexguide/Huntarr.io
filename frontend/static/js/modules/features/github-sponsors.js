@@ -69,7 +69,7 @@ const GithubSponsors = {
         const errorEl = document.getElementById('sponsors-error');
         
         if (!loadingEl || !sponsorsListEl || !errorEl) {
-            console.error('Sponsors DOM elements not found');
+            // Silently fail if elements are not found - might be on a different page
             return;
         }
         
@@ -150,7 +150,7 @@ const GithubSponsors = {
         const loadingEl = document.getElementById('sponsors-loading');
         
         if (!sponsorsListEl) {
-            console.error('Sponsors list element not found');
+            // Silently fail if element is not found - might be on a different page
             return;
         }
         
