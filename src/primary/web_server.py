@@ -612,6 +612,8 @@ def save_general_settings():
         elif auth_mode == 'no_login':
             data['local_access_bypass'] = False
             data['proxy_auth_bypass'] = True
+            # When switching to No Login Mode, clear any existing session to ensure UI refreshes
+            session.pop(SESSION_COOKIE_NAME, None)
         elif auth_mode == 'login':
             data['local_access_bypass'] = False
             data['proxy_auth_bypass'] = False

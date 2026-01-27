@@ -191,15 +191,25 @@ window.HuntarrVersion = {
                 return response.json();
             })
             .then(data => {
-                const usernameElement = document.getElementById('navbar-username');
+                const usernameElement = document.getElementById('username');
                 if (usernameElement && data.username) {
                     usernameElement.textContent = data.username;
                     // Store username in localStorage for reference
                     localStorage.setItem('huntarr-username', data.username);
                 }
+                
+                // Check local access bypass status after loading username
+                if (window.HuntarrAuth) {
+                    window.HuntarrAuth.checkLocalAccessBypassStatus();
+                }
             })
             .catch(error => {
                 console.error('Error loading username:', error);
+                
+                // Still check local access bypass status even if username loading failed
+                if (window.HuntarrAuth) {
+                    window.HuntarrAuth.checkLocalAccessBypassStatus();
+                }
             });
     }
 };

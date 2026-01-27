@@ -31,8 +31,7 @@ window.HuntarrAuth = {
         if (isEnabled === true) {
             if (userInfoContainer) userInfoContainer.style.display = 'none';
             if (userNav) {
-                userNav.style.display = '';
-                userNav.style.removeProperty('display');
+                userNav.style.display = 'none';
             }
         } else {
             if (userInfoContainer) userInfoContainer.style.display = '';
