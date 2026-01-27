@@ -7185,22 +7185,44 @@ const SettingsForms = {
       }
 
       const formFields = `
+          <style>
+              .modal-form-section { display: flex; flex-direction: column; width: 100%; }
+              .modal-field-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; width: 100%; }
+              .modal-field-group:last-child { margin-bottom: 0; }
+              .modal-setting-item { display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: flex-start; }
+              .modal-setting-item.flex-row { flex-direction: row; justify-content: space-between; align-items: center; padding-right: 19px; }
+              .modal-setting-item label { color: #f8fafc; font-weight: 500; font-size: 0.95rem; margin-bottom: 0 !important; }
+              .modal-setting-item input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(15, 23, 42, 0.6); color: white; font-size: 0.95rem; }
+              .modal-help-text { color: #94a3b8; font-size: 0.85rem; margin: 0 !important; padding-left: 2px; line-height: 1.4; }
+          </style>
           <div class="modal-form-section">
               <div class="modal-section-title">Connection Details</div>
-              <div class="setting-item">
-                  <label>Enabled</label>
-                  <label class="toggle-switch">
-                      <input type="checkbox" id="modal-enabled" ${settings.enabled !== false ? 'checked' : ''}>
-                      <span class="toggle-slider"></span>
-                  </label>
+              
+              <div class="modal-field-group">
+                  <div class="modal-setting-item flex-row">
+                      <label>Enabled</label>
+                      <label class="toggle-switch">
+                          <input type="checkbox" id="modal-enabled" ${settings.enabled !== false ? 'checked' : ''}>
+                          <span class="toggle-slider"></span>
+                      </label>
+                  </div>
+                  <p class="modal-help-text">Enable or disable Prowlarr integration</p>
               </div>
-              <div class="setting-item">
-                  <label>URL</label>
-                  <input type="text" id="modal-url" value="${settings.api_url || ''}" placeholder="http://localhost:9696">
+              
+              <div class="modal-field-group">
+                  <div class="modal-setting-item">
+                      <label>URL</label>
+                      <input type="text" id="modal-url" value="${settings.api_url || ''}" placeholder="http://localhost:9696">
+                  </div>
+                  <p class="modal-help-text">The full URL including port (e.g. http://localhost:9696)</p>
               </div>
-              <div class="setting-item">
-                  <label>API Key</label>
-                  <input type="text" id="modal-key" value="${settings.api_key || ''}" placeholder="API Key">
+              
+              <div class="modal-field-group">
+                  <div class="modal-setting-item">
+                      <label>API Key</label>
+                      <input type="text" id="modal-key" value="${settings.api_key || ''}" placeholder="API Key">
+                  </div>
+                  <p class="modal-help-text">Found in Settings > General in Prowlarr</p>
               </div>
           </div>
       `;
