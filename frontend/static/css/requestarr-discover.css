@@ -235,7 +235,7 @@
     border-radius: 8px;
     background: #000;
     /* Blackout background for missing posters */
-    background-image: url('./static/images/blackout.jpg');
+    background-image: url('../images/blackout.jpg');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;

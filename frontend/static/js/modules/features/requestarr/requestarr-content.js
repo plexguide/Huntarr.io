@@ -121,7 +121,15 @@ export class RequestarrContent {
                 
                 // Setup change handler (remove old listener if any)
                 const newSelect = select.cloneNode(true);
-                select.parentNode.replaceChild(newSelect, select);
+                if (select.parentNode) {
+                    select.parentNode.replaceChild(newSelect, select);
+                } else {
+                    // If select is detached, find it again in the DOM
+                    const currentSelect = document.getElementById('movies-instance-select');
+                    if (currentSelect && currentSelect.parentNode) {
+                        currentSelect.parentNode.replaceChild(newSelect, currentSelect);
+                    }
+                }
                 
                 newSelect.addEventListener('change', async () => {
                     this.selectedMovieInstance = newSelect.value;
@@ -254,7 +262,15 @@ export class RequestarrContent {
                 
                 // Setup change handler (remove old listener if any)
                 const newSelect = select.cloneNode(true);
-                select.parentNode.replaceChild(newSelect, select);
+                if (select.parentNode) {
+                    select.parentNode.replaceChild(newSelect, select);
+                } else {
+                    // If select is detached, find it again in the DOM
+                    const currentSelect = document.getElementById('tv-instance-select');
+                    if (currentSelect && currentSelect.parentNode) {
+                        currentSelect.parentNode.replaceChild(newSelect, currentSelect);
+                    }
+                }
                 
                 newSelect.addEventListener('change', async () => {
                     this.selectedTVInstance = newSelect.value;
