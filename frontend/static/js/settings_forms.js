@@ -3944,7 +3944,7 @@ const SettingsForms = {
         "#display_huntarr_support",
         true
       );
-      settings.low_usage_mode = getInputValue("#low_usage_mode", false);
+      settings.low_usage_mode = getInputValue("#low_usage_mode", true);
 
       // Auth mode handling
       const authModeElement = container.querySelector("#auth_mode");

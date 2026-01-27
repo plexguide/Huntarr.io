@@ -872,7 +872,7 @@ def prowlarr_stats_loop():
 def swaparr_app_loop():
     """Dedicated Swaparr processing loop that follows same patterns as other apps"""
     swaparr_logger = get_logger("swaparr")
-    swaparr_logger.info("Swaparr thread started")
+    swaparr_logger.debug("Swaparr thread started")
     
     try:
         from src.primary.apps.swaparr.handler import run_swaparr
@@ -887,10 +887,9 @@ def swaparr_app_loop():
                 if not swaparr_settings or not swaparr_settings.get("enabled", False):
                     # Swaparr is disabled - no need to log this repeatedly
                     # Sleep for 30 seconds when disabled, then check again
-                    if not stop_event.wait(30):
-                        continue
-                    else:
+                    if stop_event.wait(30):
                         break
+                    continue
                 
                 # Get sleep duration from settings
                 sleep_duration = swaparr_settings.get("sleep_duration", 900)
@@ -906,15 +905,15 @@ def swaparr_app_loop():
                 start_cycle("swaparr")
                 
                 # Start cycle
-                swaparr_logger.info("=== SWAPARR cycle started. Processing stalled downloads across all instances. ===")
+                # swaparr_logger.info("=== SWAPARR cycle started. Processing stalled downloads across all instances. ===")
                 
                 try:
                     # Run Swaparr processing
                     run_swaparr()
-                    swaparr_logger.info("=== SWAPARR cycle finished. Processed stalled downloads across instances. ===")
+                    # swaparr_logger.info("=== SWAPARR cycle finished. Processed stalled downloads across instances. ===")
                 except Exception as e:
                     swaparr_logger.error(f"Error during Swaparr processing: {e}", exc_info=True)
-                    swaparr_logger.info("=== SWAPARR cycle finished with errors. ===")
+                    # swaparr_logger.info("=== SWAPARR cycle finished with errors. ===")
                 
                 # End cycle tracking
                 next_cycle_naive = next_cycle_time.replace(tzinfo=None) if next_cycle_time.tzinfo else next_cycle_time
@@ -922,13 +921,13 @@ def swaparr_app_loop():
                 update_next_cycle("swaparr", next_cycle_naive)
                 
                 # Sleep duration and next cycle info (like other apps)
-                swaparr_logger.debug(f"Current time ({user_tz}): {now_user_tz.strftime('%Y-%m-%d %H:%M:%S')}")
-                swaparr_logger.info(f"Next cycle will begin at {next_cycle_time.strftime('%Y-%m-%d %H:%M:%S')} ({user_tz})")
-                swaparr_logger.info(f"Sleep duration: {sleep_duration} seconds")
+                # swaparr_logger.debug(f"Current time ({user_tz}): {now_user_tz.strftime('%Y-%m-%d %H:%M:%S')}")
+                # swaparr_logger.debug(f"Next cycle will begin at {next_cycle_time.strftime('%Y-%m-%d %H:%M:%S')} ({user_tz})")
+                # swaparr_logger.debug(f"Sleep duration: {sleep_duration} seconds")
                 
                 # Sleep with responsiveness to stop events and reset requests (like other apps)
                 elapsed = 0
-                wait_interval = 5  # Check every 5 seconds for responsiveness
+                wait_interval = 60  # Check every 60 seconds for responsiveness (reduced from 5s to reduce log spam)
                 while elapsed < sleep_duration and not stop_event.is_set():
                     # Check for database reset request (same logic as other apps)
                     try:
@@ -955,8 +954,8 @@ def swaparr_app_loop():
                     elapsed += wait_interval
                     
                     # Log progress every 30 seconds (like other apps)
-                    if elapsed > 0 and elapsed % 30 == 0:
-                        swaparr_logger.debug(f"Still sleeping, {sleep_duration - elapsed} seconds remaining before next cycle...")
+                    # if elapsed > 0 and elapsed % 30 == 0:
+                    #     swaparr_logger.debug(f"Still sleeping, {sleep_duration - elapsed} seconds remaining before next cycle...")
                 
             except Exception as e:
                 swaparr_logger.error(f"Unexpected error in Swaparr loop: {e}", exc_info=True)

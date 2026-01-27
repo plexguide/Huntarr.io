@@ -1170,7 +1170,6 @@ def api_health_check():
     This endpoint is useful for monitoring tools and load balancers.
     """
     logger = get_logger("system")
-    logger.debug("API health check endpoint accessed")
     return jsonify({"status": "OK", "message": "Huntarr is running"})
 
 @app.route('/api/github_sponsors', methods=['GET'])

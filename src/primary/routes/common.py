@@ -448,7 +448,6 @@ def get_user_info_route():
 
     # Pass username to is_2fa_enabled
     two_fa_status = is_2fa_enabled(username) # This function should now be defined via import
-    logger.debug(f"Retrieved user info for '{username}'. 2FA enabled: {two_fa_status}")
     return jsonify({"username": username, "is_2fa_enabled": two_fa_status})
 
 @common_bp.route('/api/user/change-username', methods=['POST'])

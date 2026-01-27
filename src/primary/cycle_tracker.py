@@ -177,7 +177,10 @@ def start_cycle(app_type: str) -> None:
             last_cycle_end=current_data.get('last_cycle_end')
         )
         
-        logger.info(f"Started cycle for {app_type} (cyclelock = True)")
+        if app_type == "swaparr":
+            logger.debug(f"Started cycle for {app_type} (cyclelock = True)")
+        else:
+            logger.info(f"Started cycle for {app_type} (cyclelock = True)")
     except Exception as e:
         logger.error(f"Error starting cycle for {app_type}: {e}")
 
@@ -216,7 +219,10 @@ def end_cycle(app_type: str, next_cycle_time: datetime.datetime) -> None:
             last_cycle_end=now_user_tz.isoformat()
         )
         
-        logger.info(f"Ended cycle for {app_type} (cyclelock = False)")
+        if app_type == "swaparr":
+            logger.debug(f"Ended cycle for {app_type} (cyclelock = False)")
+        else:
+            logger.info(f"Ended cycle for {app_type} (cyclelock = False)")
     except Exception as e:
         logger.error(f"Error ending cycle for {app_type}: {e}")
 

@@ -167,6 +167,7 @@ GENERAL_DEFAULTS = {
     "ui_theme": "dark",
     "check_for_updates": True,
     "show_trending": True,
+    "low_usage_mode": True,
     "enable_notifications": False,
     "notification_level": "info",
     "apprise_urls": [],

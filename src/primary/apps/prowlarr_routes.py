@@ -143,7 +143,6 @@ def get_status():
         enabled = settings.get("enabled", True)
         
         if not api_url or not api_key:
-            prowlarr_logger.debug("Prowlarr not configured")
             return jsonify({"configured": False, "connected": False})
         
         # Test connection if enabled

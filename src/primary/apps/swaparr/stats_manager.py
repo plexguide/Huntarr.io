@@ -41,7 +41,7 @@ def load_swaparr_stats() -> Dict[str, int]:
             if key not in stats:
                 stats[key] = default_stats[key]
         
-        logger.debug(f"Loaded Swaparr stats from database: {stats}")
+        # logger.debug(f"Loaded Swaparr stats from database: {stats}")
         return stats
     except Exception as e:
         logger.error(f"Error loading Swaparr stats from database: {e}")

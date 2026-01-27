@@ -520,12 +520,12 @@ def delete_download(app_name, api_url, api_key, download_id, remove_from_client=
 
 def process_stalled_downloads(app_name, instance_name, instance_data, settings):
     """Process stalled downloads for a specific app instance."""
-    swaparr_logger.info(f"Checking download queue for {app_name} instance: {instance_name}")
+    swaparr_logger.debug(f"Checking download queue for {app_name} instance: {instance_name}")
     
     try:
         # Check if instance has Swaparr enabled
         if not instance_data.get("swaparr_enabled", False):
-            swaparr_logger.info(f"Swaparr not enabled for {app_name} instance: {instance_name}, skipping")
+            swaparr_logger.debug(f"Swaparr not enabled for {app_name} instance: {instance_name}, skipping")
             return 0  # Return 0 processed
         
         # Check for disabled setting during processing (every 10 items to avoid excessive I/O)
@@ -538,10 +538,10 @@ def process_stalled_downloads(app_name, instance_name, instance_data, settings):
         queue_response = get_queue_items(app_name, instance_data["api_url"], instance_data["api_key"])
         queue_items = queue_response
         
-        swaparr_logger.info(f"Found {len(queue_items)} downloads in queue for {app_name} instance: {instance_name}")
+        swaparr_logger.debug(f"Found {len(queue_items)} downloads in queue for {app_name} instance: {instance_name}")
         
         if len(queue_items) == 0:
-            swaparr_logger.info(f"No downloads to process for {app_name} instance: {instance_name}")
+            swaparr_logger.debug(f"No downloads to process for {app_name} instance: {instance_name}")
             return 0
         
         # Load strike data and removed items for this app
@@ -844,8 +844,8 @@ def process_stalled_downloads(app_name, instance_name, instance_data, settings):
         # Update last run time
         SWAPARR_STATS['last_run_time'] = datetime.utcnow().isoformat()
         
-        swaparr_logger.info(f"Finished processing {items_processed_this_run} downloads for {app_name} instance: {instance_name}")
-        swaparr_logger.info(f"Session stats - Strikes: {SWAPARR_STATS['strikes_added']}, Removed: {SWAPARR_STATS['downloads_removed']}, Ignored: {SWAPARR_STATS['items_ignored']}, API calls: {SWAPARR_STATS['api_calls_made']}")
+        swaparr_logger.debug(f"Finished processing {items_processed_this_run} downloads for {app_name} instance: {instance_name}")
+        swaparr_logger.debug(f"Session stats - Strikes: {SWAPARR_STATS['strikes_added']}, Removed: {SWAPARR_STATS['downloads_removed']}, Ignored: {SWAPARR_STATS['items_ignored']}, API calls: {SWAPARR_STATS['api_calls_made']}")
         
         return items_processed_this_run
     except Exception as e:
@@ -863,7 +863,7 @@ def run_swaparr():
         # Swaparr is disabled - no need to log this repeatedly
         return
     
-    swaparr_logger.info("Starting Swaparr stalled download detection cycle")
+    # swaparr_logger.info("Starting Swaparr stalled download detection cycle")
     
     instances = get_configured_instances(quiet=True)
     total_instances = sum(len(app_instances) for app_instances in instances.values())
@@ -898,7 +898,7 @@ def run_swaparr():
                 continue
             
             swaparr_enabled_instances += 1
-            swaparr_logger.info(f"Processing {app_name} instance '{instance_name}' - Swaparr enabled")
+            swaparr_logger.debug(f"Processing {app_name} instance '{instance_name}' - Swaparr enabled")
             
             # Check if Swaparr has been disabled during processing
             current_settings = load_settings("swaparr")
@@ -916,8 +916,9 @@ def run_swaparr():
                 processed_instances += 1
     
     stats = get_session_stats()
-    swaparr_logger.info(f"=== SWAPARR cycle completed. Processed {processed_instances} Swaparr-enabled app instances. ===")
+    # swaparr_logger.info(f"=== SWAPARR cycle completed. Processed {processed_instances} Swaparr-enabled app instances. ===")
     
     # Log summary stats if there was activity
     if stats['total_processed'] > 0:
+        swaparr_logger.info(f"=== SWAPARR cycle completed. Processed {processed_instances} Swaparr-enabled app instances. ===")
         swaparr_logger.info(f"Swaparr activity summary: {stats['strikes_added']} strikes added, {stats['downloads_removed']} downloads removed, {stats['items_ignored']} items ignored") 
