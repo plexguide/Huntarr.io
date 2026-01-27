@@ -260,10 +260,16 @@ export class RequestarrFilters {
                 this.updateSliderRange('runtime', runtimeMin, runtimeMax);
                 this.updateModalFilterCount();
             });
+            runtimeMin.addEventListener('change', () => {
+                this.autoApplyFilters();
+            });
             runtimeMax.addEventListener('input', () => {
                 this.updateRuntimeDisplay();
                 this.updateSliderRange('runtime', runtimeMin, runtimeMax);
                 this.updateModalFilterCount();
+            });
+            runtimeMax.addEventListener('change', () => {
+                this.autoApplyFilters();
             });
             // Initial range fill
             this.updateSliderRange('runtime', runtimeMin, runtimeMax);
@@ -278,10 +284,16 @@ export class RequestarrFilters {
                 this.updateSliderRange('rating', ratingMin, ratingMax);
                 this.updateModalFilterCount();
             });
+            ratingMin.addEventListener('change', () => {
+                this.autoApplyFilters();
+            });
             ratingMax.addEventListener('input', () => {
                 this.updateRatingDisplay();
                 this.updateSliderRange('rating', ratingMin, ratingMax);
                 this.updateModalFilterCount();
+            });
+            ratingMax.addEventListener('change', () => {
+                this.autoApplyFilters();
             });
             // Initial range fill
             this.updateSliderRange('rating', ratingMin, ratingMax);
@@ -296,10 +308,16 @@ export class RequestarrFilters {
                 this.updateSliderRange('votes', votesMin, votesMax);
                 this.updateModalFilterCount();
             });
+            votesMin.addEventListener('change', () => {
+                this.autoApplyFilters();
+            });
             votesMax.addEventListener('input', () => {
                 this.updateVotesDisplay();
                 this.updateSliderRange('votes', votesMin, votesMax);
                 this.updateModalFilterCount();
+            });
+            votesMax.addEventListener('change', () => {
+                this.autoApplyFilters();
             });
             // Initial range fill
             this.updateSliderRange('votes', votesMin, votesMax);

@@ -255,10 +255,16 @@ export class RequestarrTVFilters {
                 this.updateSliderRange('tv-rating', ratingMin, ratingMax);
                 this.updateModalFilterCount();
             });
+            ratingMin.addEventListener('change', () => {
+                this.autoApplyFilters();
+            });
             ratingMax.addEventListener('input', () => {
                 this.updateRatingDisplay();
                 this.updateSliderRange('tv-rating', ratingMin, ratingMax);
                 this.updateModalFilterCount();
+            });
+            ratingMax.addEventListener('change', () => {
+                this.autoApplyFilters();
             });
             // Initial range fill
             this.updateSliderRange('tv-rating', ratingMin, ratingMax);
@@ -273,10 +279,16 @@ export class RequestarrTVFilters {
                 this.updateSliderRange('tv-votes', votesMin, votesMax);
                 this.updateModalFilterCount();
             });
+            votesMin.addEventListener('change', () => {
+                this.autoApplyFilters();
+            });
             votesMax.addEventListener('input', () => {
                 this.updateVotesDisplay();
                 this.updateSliderRange('tv-votes', votesMin, votesMax);
                 this.updateModalFilterCount();
+            });
+            votesMax.addEventListener('change', () => {
+                this.autoApplyFilters();
             });
             // Initial range fill
             this.updateSliderRange('tv-votes', votesMin, votesMax);
