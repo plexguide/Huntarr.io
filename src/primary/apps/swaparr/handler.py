@@ -865,7 +865,7 @@ def run_swaparr():
     
     swaparr_logger.info("Starting Swaparr stalled download detection cycle")
     
-    instances = get_configured_instances()
+    instances = get_configured_instances(quiet=True)
     total_instances = sum(len(app_instances) for app_instances in instances.values())
     
     # Count only Swaparr-enabled instances

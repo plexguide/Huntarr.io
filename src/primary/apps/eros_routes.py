@@ -140,7 +140,7 @@ def test_connection(url, api_key):
 def get_status():
     """Get the status of all configured Eros instances"""
     try:
-        instances = get_configured_instances()
+        instances = get_configured_instances(quiet=True)
         eros_logger.debug(f"Eros configured instances: {instances}")
         if instances:
             connected_count = 0

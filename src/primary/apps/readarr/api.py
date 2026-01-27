@@ -136,7 +136,7 @@ def arr_request(endpoint: str, method: str = "GET", data: Dict = None, app_type:
             module_name = f'src.primary.apps.{app_type}'
             module = importlib.import_module(module_name)
             if hasattr(module, 'get_configured_instances'):
-                instances = module.get_configured_instances()
+                instances = module.get_configured_instances(quiet=True)
                 if instances:
                     # Use the first instance by default
                     instance_data = instances[0]

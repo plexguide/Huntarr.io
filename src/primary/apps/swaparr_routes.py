@@ -37,7 +37,7 @@ def get_status():
             db = get_database()
             
             # Get all configured instances to check for state data
-            instances = get_configured_instances()
+            instances = get_configured_instances(quiet=True)
             for app_name, app_instances in instances.items():
                 # Only process apps that have Swaparr enabled for at least one instance
                 swaparr_enabled_for_app = any(instance.get("swaparr_enabled", False) for instance in app_instances)
@@ -92,7 +92,7 @@ def get_status():
     # Get configured instances info
     instances_info = {}
     if configured:
-        instances = get_configured_instances()
+        instances = get_configured_instances(quiet=True)
         for app_name, app_instances in instances.items():
             instances_info[app_name] = [
                 {
@@ -187,7 +187,7 @@ def reset_strikes():
             if not configured:
                 return jsonify({"success": True, "message": "No configured apps to reset"})
             
-            instances = get_configured_instances()
+            instances = get_configured_instances(quiet=True)
             apps_reset = []
             
             for app_name in instances.keys():
@@ -272,7 +272,7 @@ def test_configuration():
         }), 400
     
     try:
-        instances = get_configured_instances()
+        instances = get_configured_instances(quiet=True)
         
         if not instances or not any(len(app_instances) > 0 for app_instances in instances.values()):
             return jsonify({

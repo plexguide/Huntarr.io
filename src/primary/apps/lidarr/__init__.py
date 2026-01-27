@@ -12,14 +12,15 @@ from src.primary.utils.logger import get_logger
 # Define logger for this module
 lidarr_logger = get_logger("lidarr")
 
-def get_configured_instances():
+def get_configured_instances(quiet=False):
     """Get all configured and enabled Lidarr instances"""
     settings = load_settings("lidarr")
     instances = []
 
 
     if not settings:
-        lidarr_logger.debug("No settings found for Lidarr")
+        if not quiet:
+            lidarr_logger.debug("No settings found for Lidarr")
         return instances
 
     # Check if instances are configured
@@ -33,9 +34,11 @@ def get_configured_instances():
 
             # Enhanced URL validation - ensure URL has proper scheme
             if api_url and not (api_url.startswith('http://') or api_url.startswith('https://')):
-                lidarr_logger.debug(f"Instance '{instance.get('name', 'Unnamed')}' has URL without http(s) scheme: {api_url}")
+                if not quiet:
+                    lidarr_logger.debug(f"Instance '{instance.get('name', 'Unnamed')}' has URL without http(s) scheme: {api_url}")
                 api_url = f"http://{api_url}"
-                lidarr_logger.debug(f"Auto-correcting URL to: {api_url}")
+                if not quiet:
+                    lidarr_logger.debug(f"Auto-correcting URL to: {api_url}")
 
             is_enabled = instance.get("enabled", True)
 
@@ -49,11 +52,14 @@ def get_configured_instances():
                     "swaparr_enabled": instance.get("swaparr_enabled", False),
                     "hunt_missing_items": instance.get("hunt_missing_items", 1),  # Per-instance missing hunt value
                     "hunt_upgrade_items": instance.get("hunt_upgrade_items", 0),  # Per-instance upgrade hunt value
+                    "hunt_missing_mode": instance.get("hunt_missing_mode", "seasons_packs"),  # Per-instance missing mode
+                    "upgrade_mode": instance.get("upgrade_mode", "seasons_packs"),  # Per-instance upgrade mode
                 }
                 instances.append(instance_data)
     
             elif not is_enabled:
-                lidarr_logger.debug(f"Skipping disabled instance: {instance.get('name', 'Unnamed')}")
+                if not quiet:
+                    lidarr_logger.debug(f"Skipping disabled instance: {instance.get('name', 'Unnamed')}")
             else:
                 # For brand new installations, don't spam logs with warnings about default instances
                 instance_name = instance.get('name', 'Unnamed')
@@ -62,7 +68,8 @@ def get_configured_instances():
                     pass
                 else:
                     # Still log warnings for non-default instances
-                    lidarr_logger.warning(f"Skipping instance '{instance_name}' due to missing API URL or key (URL: '{api_url}', Key Set: {bool(api_key)})")
+                    if not quiet:
+                        lidarr_logger.warning(f"Skipping instance '{instance_name}' due to missing API URL or key (URL: '{api_url}', Key Set: {bool(api_key)})")
     else:
 
         # Fallback to legacy single-instance config
@@ -71,9 +78,11 @@ def get_configured_instances():
 
         # Ensure URL has proper scheme
         if api_url and not (api_url.startswith('http://') or api_url.startswith('https://')):
-            lidarr_logger.warning(f"API URL missing http(s) scheme: {api_url}")
+            if not quiet:
+                lidarr_logger.warning(f"API URL missing http(s) scheme: {api_url}")
             api_url = f"http://{api_url}"
-            lidarr_logger.warning(f"Auto-correcting URL to: {api_url}")
+            if not quiet:
+                lidarr_logger.warning(f"Auto-correcting URL to: {api_url}")
 
         if api_url and api_key:
             # Create a clean instance_data dict for the legacy instance
@@ -88,7 +97,8 @@ def get_configured_instances():
             instances.append(instance_data)
 
         else:
-            lidarr_logger.warning("No API URL or key found in legacy configuration")
+            if not quiet:
+                lidarr_logger.warning("No API URL or key found in legacy configuration")
 
     # Use debug level to avoid spamming logs, especially with 0 instances
     return instances

@@ -13,13 +13,14 @@ from src.primary.utils.logger import get_logger
 
 radarr_logger = get_logger("radarr") # Get the logger instance
 
-def get_configured_instances():
+def get_configured_instances(quiet=False):
     """Get all configured and enabled Radarr instances"""
     settings = load_settings("radarr")
     instances = []
     
     if not settings:
-        radarr_logger.debug("No settings found for Radarr")
+        if not quiet:
+            radarr_logger.debug("No settings found for Radarr")
         return instances
         
     # Check if instances are configured
@@ -32,8 +33,9 @@ def get_configured_instances():
 
                 # Enhanced URL validation - ensure URL has proper scheme
                 if api_url and not (api_url.startswith('http://') or api_url.startswith('https://')):
-                    radarr_logger.debug(f"Instance '{instance.get('name', 'Unnamed')}' has URL without http(s) scheme: {api_url}")
-                    radarr_logger.debug(f"Auto-correcting URL to: {api_url}")
+                    if not quiet:
+                        radarr_logger.debug(f"Instance '{instance.get('name', 'Unnamed')}' has URL without http(s) scheme: {api_url}")
+                        radarr_logger.debug(f"Auto-correcting URL to: {api_url}")
                     api_url = f"http://{api_url}"
 
                 # Create a settings object for this instance by combining global settings with instance-specific ones
@@ -61,9 +63,11 @@ def get_configured_instances():
         
         # Ensure URL has proper scheme for legacy config too
         if api_url and not (api_url.startswith('http://') or api_url.startswith('https://')):
-            radarr_logger.warning(f"API URL missing http(s) scheme: {api_url}")
+            if not quiet:
+                radarr_logger.warning(f"API URL missing http(s) scheme: {api_url}")
             api_url = f"http://{api_url}"
-            radarr_logger.warning(f"Auto-correcting URL to: {api_url}")
+            if not quiet:
+                radarr_logger.warning(f"Auto-correcting URL to: {api_url}")
             
         if api_url and api_key:
             settings_copy = settings.copy()

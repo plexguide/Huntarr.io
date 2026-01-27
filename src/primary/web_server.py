@@ -884,7 +884,7 @@ def api_app_status(app_name):
                 
                 if hasattr(instances_module, 'get_configured_instances'):
                     get_instances_func = getattr(instances_module, 'get_configured_instances')
-                    instances = get_instances_func()
+                    instances = get_instances_func(quiet=True)
                     total_configured = len(instances)
                     api_timeout = settings_manager.get_setting(app_name, "api_timeout", 10) # Get global timeout
                     

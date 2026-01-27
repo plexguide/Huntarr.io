@@ -11,14 +11,15 @@ from src.primary.utils.logger import get_logger
 # Define logger for this module
 sonarr_logger = get_logger("sonarr")
 
-def get_configured_instances():
+def get_configured_instances(quiet=False):
     """Get all configured and enabled Sonarr instances"""
     settings = load_settings("sonarr")
     instances = []
 
 
     if not settings:
-        sonarr_logger.debug("No settings found for Sonarr")
+        if not quiet:
+            sonarr_logger.debug("No settings found for Sonarr")
         return instances
 
     # Check if instances are configured
@@ -32,9 +33,11 @@ def get_configured_instances():
 
             # Enhanced URL validation - ensure URL has proper scheme
             if api_url and not (api_url.startswith('http://') or api_url.startswith('https://')):
-                sonarr_logger.debug(f"Instance '{instance.get('name', 'Unnamed')}' has URL without http(s) scheme: {api_url}")
+                if not quiet:
+                    sonarr_logger.debug(f"Instance '{instance.get('name', 'Unnamed')}' has URL without http(s) scheme: {api_url}")
                 api_url = f"http://{api_url}"
-                sonarr_logger.debug(f"Auto-correcting URL to: {api_url}")
+                if not quiet:
+                    sonarr_logger.debug(f"Auto-correcting URL to: {api_url}")
 
             is_enabled = instance.get("enabled", True)
 
@@ -59,7 +62,8 @@ def get_configured_instances():
                 instances.append(instance_data)
     
             elif not is_enabled:
-                sonarr_logger.debug(f"Skipping disabled instance: {instance.get('name', 'Unnamed')}")
+                if not quiet:
+                    sonarr_logger.debug(f"Skipping disabled instance: {instance.get('name', 'Unnamed')}")
             else:
                 # For brand new installations, don't spam logs with warnings about default instances
                 instance_name = instance.get('name', 'Unnamed')
@@ -68,9 +72,11 @@ def get_configured_instances():
                     pass
                 else:
                     # Still log warnings for non-default instances
-                    sonarr_logger.warning(f"Skipping instance '{instance_name}' due to missing API URL or key (URL: '{api_url}', Key Set: {bool(api_key)})")
+                    if not quiet:
+                        sonarr_logger.warning(f"Skipping instance '{instance_name}' due to missing API URL or key (URL: '{api_url}', Key Set: {bool(api_key)})")
     else:
-        sonarr_logger.debug("No instances configured")
+        if not quiet:
+            sonarr_logger.debug("No instances configured")
 
     # Use debug level to avoid spamming logs, especially with 0 instances
     return instances
