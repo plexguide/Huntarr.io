@@ -136,7 +136,11 @@ const appsModule = {
                         const supportedApps = ['radarr', 'sonarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
                         if (supportedApps.includes(app) && typeof SettingsForms.setupInstanceManagement === 'function') {
                             // Find the instances container and set up connection status checking
-                            const instancesContainer = formElement.querySelector('.instances-container');
+                            // The container might have class 'instances-container' or ID like 'sonarr-instances-grid'
+                            const instancesContainer = formElement.querySelector('.instances-container') || 
+                                                     formElement.querySelector('.instance-card-grid') ||
+                                                     document.getElementById(`${app}-instances-grid`);
+                            
                             if (instancesContainer) {
                                 const instanceCount = appSettings.instances ? appSettings.instances.length : 0;
                                 console.log(`[Apps] Setting up connection status checking for ${app} with ${instanceCount} instances`);
