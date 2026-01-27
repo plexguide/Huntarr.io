@@ -227,6 +227,9 @@ export class RequestarrTVFilters {
         const yearMax = document.getElementById('tv-filter-year-max');
         if (yearMin && yearMax) {
             yearMin.addEventListener('input', () => {
+                if (parseInt(yearMin.value) > parseInt(yearMax.value)) {
+                    yearMin.value = yearMax.value;
+                }
                 this.updateYearDisplay();
                 this.updateSliderRange('tv-year', yearMin, yearMax);
                 this.updateModalFilterCount();
@@ -235,6 +238,9 @@ export class RequestarrTVFilters {
                 this.autoApplyFilters();
             });
             yearMax.addEventListener('input', () => {
+                if (parseInt(yearMax.value) < parseInt(yearMin.value)) {
+                    yearMax.value = yearMin.value;
+                }
                 this.updateYearDisplay();
                 this.updateSliderRange('tv-year', yearMin, yearMax);
                 this.updateModalFilterCount();
@@ -251,6 +257,9 @@ export class RequestarrTVFilters {
         const ratingMax = document.getElementById('tv-filter-rating-max');
         if (ratingMin && ratingMax) {
             ratingMin.addEventListener('input', () => {
+                if (parseFloat(ratingMin.value) > parseFloat(ratingMax.value)) {
+                    ratingMin.value = ratingMax.value;
+                }
                 this.updateRatingDisplay();
                 this.updateSliderRange('tv-rating', ratingMin, ratingMax);
                 this.updateModalFilterCount();
@@ -259,6 +268,9 @@ export class RequestarrTVFilters {
                 this.autoApplyFilters();
             });
             ratingMax.addEventListener('input', () => {
+                if (parseFloat(ratingMax.value) < parseFloat(ratingMin.value)) {
+                    ratingMax.value = ratingMin.value;
+                }
                 this.updateRatingDisplay();
                 this.updateSliderRange('tv-rating', ratingMin, ratingMax);
                 this.updateModalFilterCount();
@@ -275,6 +287,9 @@ export class RequestarrTVFilters {
         const votesMax = document.getElementById('tv-filter-votes-max');
         if (votesMin && votesMax) {
             votesMin.addEventListener('input', () => {
+                if (parseInt(votesMin.value) > parseInt(votesMax.value)) {
+                    votesMin.value = votesMax.value;
+                }
                 this.updateVotesDisplay();
                 this.updateSliderRange('tv-votes', votesMin, votesMax);
                 this.updateModalFilterCount();
@@ -283,6 +298,9 @@ export class RequestarrTVFilters {
                 this.autoApplyFilters();
             });
             votesMax.addEventListener('input', () => {
+                if (parseInt(votesMax.value) < parseInt(votesMin.value)) {
+                    votesMax.value = votesMin.value;
+                }
                 this.updateVotesDisplay();
                 this.updateSliderRange('tv-votes', votesMin, votesMax);
                 this.updateModalFilterCount();
@@ -312,8 +330,17 @@ export class RequestarrTVFilters {
     }
 
     updateYearDisplay() {
-        const min = parseInt(document.getElementById('tv-filter-year-min').value);
-        const max = parseInt(document.getElementById('tv-filter-year-max').value);
+        const minInput = document.getElementById('tv-filter-year-min');
+        const maxInput = document.getElementById('tv-filter-year-max');
+        let min = parseInt(minInput.value);
+        let max = parseInt(maxInput.value);
+
+        if (min > max) {
+            const temp = min;
+            min = max;
+            max = temp;
+        }
+
         const display = document.getElementById('tv-year-display');
         if (display) {
             display.textContent = `TV shows from ${min} to ${max}`;
@@ -321,17 +348,35 @@ export class RequestarrTVFilters {
     }
 
     updateRatingDisplay() {
-        const min = parseFloat(document.getElementById('tv-filter-rating-min').value);
-        const max = parseFloat(document.getElementById('tv-filter-rating-max').value);
+        const minInput = document.getElementById('tv-filter-rating-min');
+        const maxInput = document.getElementById('tv-filter-rating-max');
+        let min = parseFloat(minInput.value);
+        let max = parseFloat(maxInput.value);
+
+        if (min > max) {
+            const temp = min;
+            min = max;
+            max = temp;
+        }
+
         const display = document.getElementById('tv-rating-display');
         if (display) {
-            display.textContent = `Ratings between ${min} and ${max}`;
+            display.textContent = `Ratings between ${min.toFixed(1)} and ${max.toFixed(1)}`;
         }
     }
 
     updateVotesDisplay() {
-        const min = parseInt(document.getElementById('tv-filter-votes-min').value);
-        const max = parseInt(document.getElementById('tv-filter-votes-max').value);
+        const minInput = document.getElementById('tv-filter-votes-min');
+        const maxInput = document.getElementById('tv-filter-votes-max');
+        let min = parseInt(minInput.value);
+        let max = parseInt(maxInput.value);
+
+        if (min > max) {
+            const temp = min;
+            min = max;
+            max = temp;
+        }
+
         const display = document.getElementById('tv-votes-display');
         if (display) {
             display.textContent = `Number of votes between ${min} and ${max}`;
@@ -393,12 +438,24 @@ export class RequestarrTVFilters {
 
     autoApplyFilters() {
         // Auto-apply filters without closing the modal
-        this.activeFilters.yearMin = parseInt(document.getElementById('tv-filter-year-min')?.value || this.minYear);
-        this.activeFilters.yearMax = parseInt(document.getElementById('tv-filter-year-max')?.value || this.maxYear);
-        this.activeFilters.ratingMin = parseFloat(document.getElementById('tv-filter-rating-min')?.value || 0);
-        this.activeFilters.ratingMax = parseFloat(document.getElementById('tv-filter-rating-max')?.value || 10);
-        this.activeFilters.votesMin = parseInt(document.getElementById('tv-filter-votes-min')?.value || 0);
-        this.activeFilters.votesMax = parseInt(document.getElementById('tv-filter-votes-max')?.value || 10000);
+        let yearMin = parseInt(document.getElementById('tv-filter-year-min')?.value || this.minYear);
+        let yearMax = parseInt(document.getElementById('tv-filter-year-max')?.value || this.maxYear);
+        let ratingMin = parseFloat(document.getElementById('tv-filter-rating-min')?.value || 0);
+        let ratingMax = parseFloat(document.getElementById('tv-filter-rating-max')?.value || 10);
+        let votesMin = parseInt(document.getElementById('tv-filter-votes-min')?.value || 0);
+        let votesMax = parseInt(document.getElementById('tv-filter-votes-max')?.value || 10000);
+
+        // Ensure min is not greater than max
+        if (yearMin > yearMax) [yearMin, yearMax] = [yearMax, yearMin];
+        if (ratingMin > ratingMax) [ratingMin, ratingMax] = [ratingMax, ratingMin];
+        if (votesMin > votesMax) [votesMin, votesMax] = [votesMax, votesMin];
+
+        this.activeFilters.yearMin = yearMin;
+        this.activeFilters.yearMax = yearMax;
+        this.activeFilters.ratingMin = ratingMin;
+        this.activeFilters.ratingMax = ratingMax;
+        this.activeFilters.votesMin = votesMin;
+        this.activeFilters.votesMax = votesMax;
 
         // Update filter count display
         this.updateFilterDisplay();
@@ -410,12 +467,24 @@ export class RequestarrTVFilters {
     }
 
     applyFilters() {
-        this.activeFilters.yearMin = parseInt(document.getElementById('tv-filter-year-min').value);
-        this.activeFilters.yearMax = parseInt(document.getElementById('tv-filter-year-max').value);
-        this.activeFilters.ratingMin = parseFloat(document.getElementById('tv-filter-rating-min').value);
-        this.activeFilters.ratingMax = parseFloat(document.getElementById('tv-filter-rating-max').value);
-        this.activeFilters.votesMin = parseInt(document.getElementById('tv-filter-votes-min').value);
-        this.activeFilters.votesMax = parseInt(document.getElementById('tv-filter-votes-max').value);
+        let yearMin = parseInt(document.getElementById('tv-filter-year-min').value);
+        let yearMax = parseInt(document.getElementById('tv-filter-year-max').value);
+        let ratingMin = parseFloat(document.getElementById('tv-filter-rating-min').value);
+        let ratingMax = parseFloat(document.getElementById('tv-filter-rating-max').value);
+        let votesMin = parseInt(document.getElementById('tv-filter-votes-min').value);
+        let votesMax = parseInt(document.getElementById('tv-filter-votes-max').value);
+
+        // Ensure min is not greater than max
+        if (yearMin > yearMax) [yearMin, yearMax] = [yearMax, yearMin];
+        if (ratingMin > ratingMax) [ratingMin, ratingMax] = [ratingMax, ratingMin];
+        if (votesMin > votesMax) [votesMin, votesMax] = [votesMax, votesMin];
+
+        this.activeFilters.yearMin = yearMin;
+        this.activeFilters.yearMax = yearMax;
+        this.activeFilters.ratingMin = ratingMin;
+        this.activeFilters.ratingMax = ratingMax;
+        this.activeFilters.votesMin = votesMin;
+        this.activeFilters.votesMax = votesMax;
 
         // Update filter count display
         this.updateFilterDisplay();
