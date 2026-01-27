@@ -197,13 +197,26 @@ def app_specific_loop(app_type: str) -> None:
         if get_instances_func:
             # Multi-instance mode supported
             try:
-                instances_to_process = get_instances_func() # Call the dynamically loaded function
+                instances_to_process = get_instances_func(quiet=True) # Call the dynamically loaded function
                 if instances_to_process:
                     # Instance count logging removed to reduce log spam
                     pass
                 else:
                     # No instances found via get_configured_instances
                     app_logger.debug(f"No configured {app_type} instances found. Skipping cycle.")
+                    
+                    # Mark cycle as ended even if no instances (set cyclelock to False)
+                    try:
+                        from src.primary.cycle_tracker import end_cycle, update_next_cycle
+                        user_tz = _get_user_timezone()
+                        now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
+                        next_cycle_time = now_user_tz + datetime.timedelta(seconds=sleep_duration)
+                        next_cycle_naive = next_cycle_time.replace(tzinfo=None) if next_cycle_time.tzinfo else next_cycle_time
+                        end_cycle(app_type, next_cycle_naive)
+                        update_next_cycle(app_type, next_cycle_naive)
+                    except Exception as e:
+                        app_logger.warning(f"Failed to update cycle tracking for {app_type}: {e}")
+
                     stop_event.wait(sleep_duration)
                     continue
             except Exception as e:
