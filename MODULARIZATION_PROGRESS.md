@@ -1,7 +1,7 @@
-# Huntarr new-main.js Modularization Progress
+# Huntarr app.js Modularization Progress
 
 ## Current Status
-Starting refactoring of new-main.js (5491 lines) into smaller, maintainable modules.
+Starting refactoring of app.js (5491 lines) into smaller, maintainable modules.
 
 ## Modules Created
 
@@ -81,7 +81,7 @@ Added imports for all new modules before existing scripts:
 <script src="./static/js/modules/navigation.js"></script>
 ```
 
-### `/frontend/static/js/new-main.js` 🔄
+### `/frontend/static/js/app.js` 🔄
 **Status**: In Progress
 **Changes Made**:
 - showNotification() → delegates to HuntarrNotifications
@@ -182,7 +182,7 @@ Added imports for all new modules before existing scripts:
 
 ## Next Steps
 
-1. ✅ Create delegation wrappers in new-main.js for already-extracted functions
+1. ✅ Create delegation wrappers in app.js for already-extracted functions
 2. ✅ Create logs.js module and extract functions
 3. ✅ Create swaparr.js module and extract functions
 4. ✅ Create prowlarr.js module and extract functions
@@ -196,14 +196,14 @@ Added imports for all new modules before existing scripts:
 12. ✅ Create theme.js module and extract functions
 13. ✅ Create dom.js module and extract functions
 14. Test all functionality after modularization
-15. Remove old function implementations from new-main.js (Complete)
+15. Remove old function implementations from app.js (Complete)
 16. Deploy and verify in production
 
 ## Estimated Final Size
 
-- **Current**: new-main.js = 2286 lines
+- **Current**: app.js = 2286 lines
 - **After Modularization**: 
-  - new-main.js ≈ 2200 lines (core orchestration)
+  - app.js ≈ 2200 lines (core orchestration)
   - modules/*.js ≈ 4000 lines (17 modules)
   - **Total reduction in main file**: ~58% (from original 5491 lines)
 

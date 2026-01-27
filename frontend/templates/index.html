@@ -15,8 +15,6 @@
     <!-- Pass base URL configuration to JavaScript -->
     <script>window.HUNTARR_BASE_URL = '{{ base_url|default("", true) }}';</script>
     
-    <!-- No flash prevention needed - let main JavaScript handle sidebar switching like Requestarr does -->
-    
     <!-- Pass global scripts -->
     {% include 'components/scripts.html' %}
 </head>
@@ -34,8 +32,8 @@
             <!-- Logs Section -->
             {% include 'components/logs_section.html' %}
             
-                    <!-- Hunt Manager Section -->
-        {% include 'components/hunt_manager_section.html' %}
+            <!-- Hunt Manager Section -->
+            {% include 'components/hunt_manager_section.html' %}
             
             <!-- Requestarr Section -->
             {% include 'components/requestarr_section.html' %}
@@ -56,9 +54,6 @@
             
             <!-- Swaparr Section -->
             {% include 'components/swaparr_section.html' %}
-            
-            <!-- Cleanuperr Section -->
-    
             
             <!-- Settings Section -->
             {% include 'components/settings_section.html' %}
@@ -87,46 +82,38 @@
     {% include 'components/footer.html' %}
     
     <!-- Settings Modules -->
-    <script src="./static/js/settings/core.js"></script>
-    <script src="./static/js/settings/sonarr.js"></script>
-    <script src="./static/js/settings/radarr.js"></script>
-    <script src="./static/js/settings/lidarr.js"></script>
-    <script src="./static/js/settings/readarr.js"></script>
-    <script src="./static/js/settings/whisparr.js"></script>
-    <script src="./static/js/settings/prowlarr.js"></script>
-    <script src="./static/js/settings/swaparr.js"></script>
-    <script src="./static/js/settings/logs.js"></script>
-    <script src="./static/js/settings/notifications.js"></script>
-    <script src="./static/js/settings/general.js"></script>
-    <!-- Load apps module -->
-    <script src="./static/js/apps.js"></script>
-    <!-- Load logging module -->
-    <script src="./static/js/logs.js"></script>
-    <!-- Load backup/restore module -->
-    <script src="./static/js/backup-restore.js"></script>
-    <!-- Load main UI script -->
-    <script src="./static/js/new-main.js"></script>
-    <!-- Load API progress bar enhancement -->
-    <script src="./static/js/api-progress.js"></script>
-            <!-- Load hunt manager script -->
-        <script src="./static/js/hunt_manager.js"></script>
-    <!-- Load apps script -->
-    <script src="./static/js/apps.js"></script>
-    <!-- Load Swaparr script -->
-    <script src="./static/js/apps/swaparr.js"></script>
-    <!-- Load scheduling script -->
-    <script src="./static/js/scheduling.js"></script>
-    <!-- Load user script -->
-    <script src="./static/js/user.js"></script>
-    <!-- Emergency reset button implementation -->
-    <!-- Stats reset handler -->
-    <!-- JavaScript files removed - functionality moved to main scripts -->
-    <!-- Hourly API cap handler -->
-    <script src="./static/js/hourly-cap.js"></script>
-    <!-- Scheduling handler -->
-    <script src="./static/js/scheduling.js"></script>
-    <!-- Community Resources visibility handler -->
-    <script src="./static/js/community-resources.js"></script>
+    <script src="./static/js/modules/features/settings/core.js"></script>
+    <script src="./static/js/modules/features/settings/sonarr.js"></script>
+    <script src="./static/js/modules/features/settings/radarr.js"></script>
+    <script src="./static/js/modules/features/settings/lidarr.js"></script>
+    <script src="./static/js/modules/features/settings/readarr.js"></script>
+    <script src="./static/js/modules/features/settings/whisparr.js"></script>
+    <script src="./static/js/modules/features/settings/prowlarr.js"></script>
+    <script src="./static/js/modules/features/settings/swaparr.js"></script>
+    <script src="./static/js/modules/features/settings/logs.js"></script>
+    <script src="./static/js/modules/features/settings/notifications.js"></script>
+    <script src="./static/js/modules/features/settings/general.js"></script>
+    
+    <!-- App-specific View Modules -->
+    <script src="./static/js/modules/features/apps/sonarr.js"></script>
+    <script src="./static/js/modules/features/apps/radarr.js"></script>
+    <script src="./static/js/modules/features/apps/lidarr.js"></script>
+    <script src="./static/js/modules/features/apps/readarr.js"></script>
+    <script src="./static/js/modules/features/apps/whisparr.js"></script>
+    <script src="./static/js/modules/features/apps/eros.js"></script>
+    <script src="./static/js/modules/features/apps/swaparr-view.js"></script>
+
+    <!-- Requestarr View Modules -->
+    <script src="./static/js/modules/features/requestarr/requestarr-core.js"></script>
+    <script src="./static/js/modules/features/requestarr/requestarr-content.js"></script>
+    <script src="./static/js/modules/features/requestarr/requestarr-filters.js"></script>
+    <script src="./static/js/modules/features/requestarr/requestarr-modal.js"></script>
+    <script src="./static/js/modules/features/requestarr/requestarr-search.js"></script>
+    <script src="./static/js/modules/features/requestarr/requestarr-settings.js"></script>
+    <script src="./static/js/modules/features/requestarr/requestarr-tv-filters.js"></script>
+
+    <!-- Main Application Orchestrator -->
+    <script src="./static/js/app.js"></script>
     
     <!-- Plex authentication return handler -->
     <script>
@@ -139,18 +126,13 @@
             const plexUserMode = localStorage.getItem('huntarr-plex-user-mode');
             
             if (plexLogin === 'true') {
-                // Redirect to login page to continue authentication
                 window.location.href = './login';
             } else if (plexLinking === 'true' && plexSetupMode === 'true') {
-                // Only redirect to setup page for setup mode
                 window.location.href = './setup';
             } else if (plexLinking === 'true' && plexUserMode === 'true') {
-                // For user mode, stay on current page and let user.js handle it
-                // Do NOT redirect - let the UserModule.checkPlexReturn() handle the flow
                 console.log('Detected Plex user mode return - letting UserModule handle it');
             }
         });
     </script>
-    
 </body>
 </html>

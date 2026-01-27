@@ -3,7 +3,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Don't call setupErosForm here, new-main.js will call it when the tab is active
+    // Don't call setupErosForm here, app.js will call it when the tab is active
     // setupErosForm(); 
     // setupErosLogs(); // Assuming logs are handled by the main logs section
     // setupClearProcessedButtons('eros'); // Assuming this is handled elsewhere or not needed immediately
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /**
  * Setup Eros settings form and connection test
- * This function is now called by new-main.js when the Eros settings tab is shown.
+ * This function is now called by app.js when the Eros settings tab is shown.
  */
 function setupErosForm() {
     console.log("[eros.js] Setting up Eros form...");

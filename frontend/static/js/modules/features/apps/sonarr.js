@@ -14,7 +14,7 @@
             this.cacheElements();
             // Setup event listeners specific to Sonarr settings
             this.setupEventListeners();
-            // Initial population of the form is handled by new-main.js
+            // Initial population of the form is handled by app.js
         },
 
         cacheElements: function() {
@@ -41,7 +41,7 @@
         setupEventListeners: function() {
             // Add event listeners for Sonarr-specific controls if needed
             // Example: If there were unique interactions for Sonarr settings
-            // Most change detection is now handled centrally by new-main.js
+            // Most change detection is now handled centrally by app.js
 
             // Update sleep duration display on input change
             if (this.elements.sleepDurationInput) {
@@ -60,15 +60,15 @@
             }
         },
 
-        // REMOVED: loadSettings function (handled by new-main.js)
+        // REMOVED: loadSettings function (handled by app.js)
 
-        // REMOVED: checkForChanges function (handled by new-main.js)
+        // REMOVED: checkForChanges function (handled by app.js)
 
-        // REMOVED: updateSaveButtonState function (handled by new-main.js)
+        // REMOVED: updateSaveButtonState function (handled by app.js)
 
-        // REMOVED: getSettingsPayload function (handled by new-main.js)
+        // REMOVED: getSettingsPayload function (handled by app.js)
 
-        // REMOVED: saveSettings function (handled by new-main.js)
+        // REMOVED: saveSettings function (handled by app.js)
 
         // REMOVED: Overriding of app.saveSettings
     };

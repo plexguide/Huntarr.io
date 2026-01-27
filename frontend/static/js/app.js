@@ -1,11 +1,7 @@
 /**
- * Huntarr - New UI Implementation
- * Main JavaScript file for handling UI interactions and API communication
- */
-
-/**
- * Huntarr - New UI Implementation
- * Main JavaScript file for handling UI interactions and API communication
+ * Huntarr - Core Application Orchestrator
+ * Main entry point for the Huntarr UI.
+ * Coordinates between modular components and handles global application state.
  */
 
 let huntarrUI = {

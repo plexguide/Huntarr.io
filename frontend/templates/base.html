@@ -11,22 +11,8 @@
     <script>window.HUNTARR_BASE_URL = '{{ base_url|default("", true) }}';</script>
     <!-- Pass global scripts -->
     {% include 'components/scripts.html' %}
-    <!-- ...existing code... -->
-    <!-- Scripts -->
-    <!-- <script src="./static/js/settings_sync_utility.js"></script> Removed -->
-    <!-- <script src="./static/js/core.js"></script> Removed -->
-    <!-- <script src="./static/js/settings_loader.js"></script> Removed -->
-    <script src="./static/js/settings_forms.js?v=20250615"></script> <!-- Keep for now -->
-    <!-- <script src="./static/js/settings_initializer.js"></script> Removed -->
-    <!-- <script src="./static/js/settings_sync.js"></script> Removed -->
-    <script src="./static/js/logs.js"></script> <!-- Dedicated logging module -->
-    <!-- App-specific scripts -->
-    <script src="./static/js/apps/sonarr.js"></script>
-    <script src="./static/js/apps/radarr.js"></script>
-    <script src="./static/js/apps/lidarr.js"></script>
-    <script src="./static/js/apps/readarr.js"></script>
-    <script src="./static/js/apps/whisparr.js"></script>
-    <script src="./static/js/apps/eros.js"></script>
-    <!-- ...existing code... -->
+    
+    <!-- Main Application Orchestrator -->
+    <script src="./static/js/app.js"></script>
 </body>
 </html>
