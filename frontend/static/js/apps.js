@@ -140,7 +140,10 @@ const appsModule = {
                             if (instancesContainer) {
                                 const instanceCount = appSettings.instances ? appSettings.instances.length : 0;
                                 console.log(`[Apps] Setting up connection status checking for ${app} with ${instanceCount} instances`);
-                                SettingsForms.setupInstanceManagement(instancesContainer.parentElement, app, instanceCount);
+                                // Add a small delay to ensure all instance cards are rendered before testing connections
+                                setTimeout(() => {
+                                    SettingsForms.testAllInstanceConnections(app);
+                                }, 100);
                             } else {
                                 console.warn(`[Apps] No instances container found for ${app}, connection status checking may not work`);
                             }

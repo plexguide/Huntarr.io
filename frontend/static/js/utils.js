@@ -82,6 +82,52 @@ const HuntarrUtils = {
         }
         
         return timeout;
+    },
+
+    /**
+     * Format date nicely for display
+     * @param {Date|string} date - The date to format
+     * @returns {string} - Formatted date string
+     */
+    formatDate: function (date) {
+        if (!date) return "Never";
+        
+        const dateObj = typeof date === 'string' ? new Date(date) : date;
+        if (isNaN(dateObj.getTime())) return "Invalid Date";
+
+        const options = {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+        };
+
+        return dateObj.toLocaleString("en-US", options);
+    },
+
+    /**
+     * Convert seconds to readable format (e.g., "1 hour, 30 minutes")
+     * @param {number} seconds - Total seconds
+     * @returns {string} - Readable duration string
+     */
+    convertSecondsToReadable: function (seconds) {
+        if (!seconds || seconds <= 0) return "0 seconds";
+
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = seconds % 60;
+
+        const parts = [];
+        if (hours > 0) parts.push(`${hours} hour${hours > 1 ? "s" : ""}`);
+        if (minutes > 0) parts.push(`${minutes} minute${minutes > 1 ? "s" : ""}`);
+        if (remainingSeconds > 0 && hours === 0)
+            parts.push(
+                `${remainingSeconds} second${remainingSeconds > 1 ? "s" : ""}`
+            );
+
+        return parts.join(", ") || "0 seconds";
     }
 };
 
