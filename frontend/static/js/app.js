@@ -1024,9 +1024,30 @@ let huntarrUI = {
         }
     },
 
-    // Auto-save enabled - save button removed, no state to update
+    // Update save button state
     updateSaveResetButtonState(enable) {
-        // No-op since save button is removed for auto-save
+        const saveBtn = document.getElementById('settings-save-button');
+        const notifSaveBtn = document.getElementById('notifications-save-button');
+        
+        [saveBtn, notifSaveBtn].forEach(btn => {
+            if (!btn) return;
+            
+            if (enable) {
+                btn.disabled = false;
+                btn.style.background = '#3b82f6';
+                btn.style.color = '#ffffff';
+                btn.style.borderColor = '#2563eb';
+                btn.style.cursor = 'pointer';
+                btn.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.3)';
+            } else {
+                btn.disabled = true;
+                btn.style.background = '#6b7280';
+                btn.style.color = '#9ca3af';
+                btn.style.borderColor = '#4b5563';
+                btn.style.cursor = 'not-allowed';
+                btn.style.boxShadow = 'none';
+            }
+        });
     },
 
     // Setup auto-save for settings
