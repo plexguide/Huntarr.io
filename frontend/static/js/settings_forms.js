@@ -461,6 +461,21 @@ const SettingsForms = {
             resetTimeElement.textContent = "Reloading...";
           }
 
+          // Also update the new editor display if it's visible
+          const editorTrackedCount = document.getElementById('tracked-items-count');
+          const editorNextReset = document.getElementById('next-reset-time');
+          
+          if (editorTrackedCount && editorNextReset) {
+            // Set to 0 immediately
+            editorTrackedCount.textContent = '0';
+            editorNextReset.textContent = 'Loading...';
+            
+            // Reload the full state status to get the new reset time
+            if (window.SettingsForms && typeof window.SettingsForms.loadStateStatus === 'function') {
+              window.SettingsForms.loadStateStatus(appType, instanceIndex);
+            }
+          }
+
           console.log(
             `[SettingsForms] Successfully reset state for ${appType} instance ${instanceIndex}`
           );
