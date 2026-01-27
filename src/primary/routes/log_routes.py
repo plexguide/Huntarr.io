@@ -161,10 +161,13 @@ def clear_logs(app_type):
     try:
         logs_db = get_logs_database()
         
-        # Map 'system' to actual app type in database
-        db_app_type = 'system' if app_type == 'system' else app_type
-        
-        deleted_count = logs_db.clear_logs(app_type=db_app_type)
+        # Handle 'all' app type by clearing all logs
+        if app_type == 'all':
+            deleted_count = logs_db.clear_logs(app_type=None)
+        else:
+            # Map 'system' to actual app type in database
+            db_app_type = 'system' if app_type == 'system' else app_type
+            deleted_count = logs_db.clear_logs(app_type=db_app_type)
         
         return jsonify({
             'success': True,
