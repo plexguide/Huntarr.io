@@ -65,24 +65,15 @@ window.HuntarrInit = {
         const currentContent = notificationsContainer.innerHTML.trim();
         if (currentContent !== '' && !currentContent.includes('<!-- Notifications content will be loaded here -->')) return;
 
-        fetch('./api/settings')
-            .then(response => response.json())
-            .then(settings => {
-                if (window.huntarrUI) {
-                    window.huntarrUI.originalSettings.general = settings.general;
-                    window.huntarrUI.originalSettings.notifications = settings.general; 
-                }
-                
-                if (typeof SettingsForms !== 'undefined' && SettingsForms.generateNotificationsForm) {
-                    SettingsForms.generateNotificationsForm(notificationsContainer, settings.general || {});
-                } else {
-                    notificationsContainer.innerHTML = '<p>Error: Notifications forms not loaded</p>';
-                }
-            })
-            .catch(error => {
-                console.error('[HuntarrInit] Error loading notifications settings:', error);
-                notificationsContainer.innerHTML = '<p>Error loading notifications settings</p>';
-            });
+        // Notifications settings are now handled by the general settings module
+        notificationsContainer.innerHTML = `
+            <div class="settings-info" style="padding: 20px; text-align: center; color: #94a3b8;">
+                <i class="fas fa-bell" style="font-size: 48px; margin-bottom: 16px; color: #3b82f6;"></i>
+                <h3 style="color: #f8fafc; margin-bottom: 12px;">Notifications Settings</h3>
+                <p>Notification settings are managed through external Apprise services.</p>
+                <p style="margin-top: 12px;">Configure your notification URLs in the Main Settings section.</p>
+            </div>
+        `;
     },
 
     initializeBackupRestore: function() {
