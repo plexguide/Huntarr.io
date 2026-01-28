@@ -112,20 +112,22 @@ const appsModule = {
                 formElement.setAttribute('data-app-type', app);
                 appPanel.appendChild(formElement);
                 
-                // Generate the form using SettingsForms module
-                if (typeof window.SettingsForms !== 'undefined') {
-                    // Update global settings store for modal access
-                    if (window.huntarrUI) {
-                        if (!window.huntarrUI.originalSettings) {
-                            window.huntarrUI.originalSettings = {};
+                // Wait for SettingsForms to be available before proceeding
+                const initializeForm = () => {
+                    // Generate the form using SettingsForms module
+                    if (typeof window.SettingsForms !== 'undefined' && window.SettingsForms) {
+                        // Update global settings store for modal access
+                        if (window.huntarrUI) {
+                            if (!window.huntarrUI.originalSettings) {
+                                window.huntarrUI.originalSettings = {};
+                            }
+                            window.huntarrUI.originalSettings[app] = appSettings;
                         }
-                        window.huntarrUI.originalSettings[app] = appSettings;
-                    }
 
-                    const formFunction = window.SettingsForms[`generate${app.charAt(0).toUpperCase()}${app.slice(1)}Form`];
-                    if (typeof formFunction === 'function') {
-                        // Use .call() to set the 'this' context correctly
-                        formFunction.call(window.SettingsForms, formElement, appSettings);
+                        const formFunction = window.SettingsForms[`generate${app.charAt(0).toUpperCase()}${app.slice(1)}Form`];
+                        if (typeof formFunction === 'function') {
+                            // Use .call() to set the 'this' context correctly
+                            formFunction.call(window.SettingsForms, formElement, appSettings);
                         
                         // Update duration displays for this app
                         if (typeof window.SettingsForms.updateDurationDisplay === 'function') {
@@ -173,6 +175,27 @@ const appsModule = {
                     console.error('SettingsForms module not found');
                     appPanel.innerHTML = '<div class="error-panel">Unable to generate settings form. Please reload the page.</div>';
                 }
+            };
+            
+            // Check if SettingsForms is already loaded, otherwise wait for it
+            if (typeof window.SettingsForms !== 'undefined' && window.SettingsForms) {
+                initializeForm();
+            } else {
+                console.log(`[Apps] Waiting for SettingsForms module to load for ${app}...`);
+                let attempts = 0;
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (typeof window.SettingsForms !== 'undefined' && window.SettingsForms) {
+                        clearInterval(checkInterval);
+                        console.log(`[Apps] SettingsForms module loaded, initializing ${app} form`);
+                        initializeForm();
+                    } else if (attempts > 50) { // 5 seconds timeout (50 * 100ms)
+                        clearInterval(checkInterval);
+                        console.error('SettingsForms module failed to load after 5 seconds');
+                        appPanel.innerHTML = '<div class="error-panel">Unable to generate settings form. Please reload the page.</div>';
+                    }
+                }, 100);
+            }
             })
             .catch(error => {
                 console.error(`Error loading ${app} settings:`, error);
