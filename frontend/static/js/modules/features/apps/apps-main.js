@@ -113,7 +113,7 @@ const appsModule = {
                 appPanel.appendChild(formElement);
                 
                 // Generate the form using SettingsForms module
-                if (typeof SettingsForms !== 'undefined') {
+                if (typeof window.SettingsForms !== 'undefined') {
                     // Update global settings store for modal access
                     if (window.huntarrUI) {
                         if (!window.huntarrUI.originalSettings) {
@@ -122,19 +122,19 @@ const appsModule = {
                         window.huntarrUI.originalSettings[app] = appSettings;
                     }
 
-                    const formFunction = SettingsForms[`generate${app.charAt(0).toUpperCase()}${app.slice(1)}Form`];
+                    const formFunction = window.SettingsForms[`generate${app.charAt(0).toUpperCase()}${app.slice(1)}Form`];
                     if (typeof formFunction === 'function') {
                         // Use .call() to set the 'this' context correctly
-                        formFunction.call(SettingsForms, formElement, appSettings);
+                        formFunction.call(window.SettingsForms, formElement, appSettings);
                         
                         // Update duration displays for this app
-                        if (typeof SettingsForms.updateDurationDisplay === 'function') {
-                            SettingsForms.updateDurationDisplay();
+                        if (typeof window.SettingsForms.updateDurationDisplay === 'function') {
+                            window.SettingsForms.updateDurationDisplay();
                         }
                         
                         // Explicitly ensure connection status checking is set up for all supported apps
                         const supportedApps = ['radarr', 'sonarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
-                        if (supportedApps.includes(app) && typeof SettingsForms.setupInstanceManagement === 'function') {
+                        if (supportedApps.includes(app) && typeof window.SettingsForms.setupInstanceManagement === 'function') {
                             // Find the instances container and set up connection status checking
                             // The container might have class 'instances-container' or ID like 'sonarr-instances-grid'
                             const instancesContainer = formElement.querySelector('.instances-container') || 
@@ -146,13 +146,13 @@ const appsModule = {
                                 console.log(`[Apps] Setting up connection status checking for ${app} with ${instanceCount} instances`);
                                 // Add a small delay to ensure all instance cards are rendered before testing connections
                                 setTimeout(() => {
-                                    SettingsForms.testAllInstanceConnections(app);
+                                    window.SettingsForms.testAllInstanceConnections(app);
                                 }, 100);
                             } else {
                                 console.warn(`[Apps] No instances container found for ${app}, connection status checking may not work`);
                             }
                         } else {
-                            console.log(`[Apps] Skipping connection status setup for ${app} (supported: ${supportedApps.includes(app)}, function available: ${typeof SettingsForms.setupInstanceManagement})`);
+                            console.log(`[Apps] Skipping connection status setup for ${app} (supported: ${supportedApps.includes(app)}, function available: ${typeof window.SettingsForms.setupInstanceManagement})`);
                         }
                         
                         // Store original form values after form is generated
@@ -205,7 +205,7 @@ const appsModule = {
         let settings;
         try {
             // Get settings from the form
-            settings = SettingsForms.getFormSettings(appPanel, appType);
+            settings = window.SettingsForms.getFormSettings(appPanel, appType);
             console.log(`[Apps] Collected settings for auto-save (${appType}):`, settings);
         } catch (error) {
             console.error(`[Apps] Error collecting settings for auto-save (${appType}):`, error);
@@ -425,7 +425,7 @@ const appsModule = {
             appPanel.setAttribute('data-app-type', appType);
             
             // Get settings from the form
-            settings = SettingsForms.getFormSettings(appPanel, appType);
+            settings = window.SettingsForms.getFormSettings(appPanel, appType);
             console.log(`Collected settings for ${appType}:`, settings);
         } catch (error) {
             console.error(`Error collecting settings for ${appType}:`, error);
