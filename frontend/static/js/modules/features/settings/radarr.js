@@ -15,28 +15,6 @@
             settings.instances = [];
         }
 
-        let radarrSaveButtonHtml = `
-            <div style="margin-bottom: 20px;">
-                <button type="button" id="radarr-save-button" disabled style="
-                    background: #6b7280;
-                    color: #9ca3af;
-                    border: 1px solid #4b5563;
-                    padding: 8px 16px;
-                    border-radius: 6px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    cursor: not-allowed;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    transition: all 0.2s ease;
-                ">
-                    <i class="fas fa-save"></i>
-                    Save Changes
-                </button>
-            </div>
-        `;
-
         let instancesHtml = `
             <div class="settings-group" style="
                 background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
@@ -68,8 +46,8 @@
             </div>
         `;
 
-        // Sleep Duration and API Cap are now per-instance (configure in each instance's Edit)
-        container.innerHTML = radarrSaveButtonHtml + instancesHtml;
+        // Sleep Duration and API Cap are now per-instance (configure in each instance's Edit) - no save button needed
+        container.innerHTML = instancesHtml;
 
         const grid = container.querySelector('#radarr-instances-grid');
         if (grid) {
@@ -91,10 +69,6 @@
                     window.SettingsForms.openInstanceModal(appType);
                 }
             });
-        }
-
-        if (window.SettingsForms.setupAppManualSave) {
-            window.SettingsForms.setupAppManualSave(container, "radarr", settings);
         }
 
         // Test instance connections after rendering

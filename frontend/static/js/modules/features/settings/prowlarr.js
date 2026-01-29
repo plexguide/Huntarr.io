@@ -8,28 +8,6 @@
 
         container.setAttribute("data-app-type", "prowlarr");
 
-        let prowlarrSaveButtonHtml = `
-            <div style="margin-bottom: 20px;">
-                <button type="button" id="prowlarr-save-button" disabled style="
-                    background: #6b7280;
-                    color: #9ca3af;
-                    border: 1px solid #4b5563;
-                    padding: 8px 16px;
-                    border-radius: 6px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    cursor: not-allowed;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    transition: all 0.2s ease;
-                ">
-                    <i class="fas fa-save"></i>
-                    Save Changes
-                </button>
-            </div>
-        `;
-
         let prowlarrHtml = `
             <div class="settings-group" style="
                 background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
@@ -57,7 +35,7 @@
             </div>
         `;
 
-        container.innerHTML = prowlarrSaveButtonHtml + prowlarrHtml;
+        container.innerHTML = prowlarrHtml;
 
         const grid = container.querySelector('#prowlarr-instances-grid');
         if (grid) {
@@ -67,10 +45,6 @@
                     window.SettingsForms.openProwlarrModal();
                 }
             });
-        }
-
-        if (window.SettingsForms.setupAppManualSave) {
-            window.SettingsForms.setupAppManualSave(container, "prowlarr", settings);
         }
 
         // Test instance connections after rendering
