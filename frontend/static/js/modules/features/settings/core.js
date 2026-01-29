@@ -988,39 +988,49 @@ window.SettingsForms = {
     // Delete instance
     deleteInstance: function(appType, index) {
         const settings = window.huntarrUI.originalSettings[appType];
-        if (!settings || !settings.instances || settings.instances.length === 0) return;
+        if (!settings || !settings.instances || settings.instances[index] === undefined) {
+            console.error(`[huntarrUI] Cannot delete instance: index ${index} not found for ${appType}`);
+            return;
+        }
         
+        const instanceName = settings.instances[index].name || 'Unnamed Instance';
         const isDefault = index === 0;
         const hasOtherInstances = settings.instances.length > 1;
         
         // Custom confirmation message for default instance
-        let confirmMessage = 'Are you sure you want to delete this instance?';
+        let confirmMessage = `Are you sure you want to delete the instance "${instanceName}"?`;
         if (isDefault && hasOtherInstances) {
             const nextInstance = settings.instances[1];
-            confirmMessage = `Are you sure you want to delete the default instance?\n\nThe next instance "${nextInstance.name || 'Unnamed'}" will become the new default.`;
+            confirmMessage = `Are you sure you want to delete the default instance "${instanceName}"?\n\nThe next instance "${nextInstance.name || 'Unnamed'}" will become the new default.`;
         }
         
         if (!confirm(confirmMessage)) return;
         
-        // Remove the instance
+        console.log(`[huntarrUI] Deleting instance "${instanceName}" (index ${index}) from ${appType}...`);
+        
+        // Remove the instance from the local settings object
         settings.instances.splice(index, 1);
         
-        // If we deleted the default (index 0) and there are still instances left,
-        // the instance at position 0 is now automatically the new default
+        // Update the global state immediately to ensure re-render uses fresh data
+        if (window.huntarrUI && window.huntarrUI.originalSettings) {
+            window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
+        }
         
         // Use a flag to indicate we're doing a structural change that needs full refresh
         window._appsSuppressChangeDetection = true;
-        this.saveAppSettings(appType, settings);
+        
+        // Save to backend and trigger refresh
+        this.saveAppSettings(appType, settings, `Instance "${instanceName}" deleted successfully`);
         
         // Force a small delay then clear suppression
         setTimeout(() => {
             window._appsSuppressChangeDetection = false;
-        }, 500);
+        }, 800);
     },
 
     // Helper to save settings and refresh view
-    saveAppSettings: function(appType, settings) {
-        console.log(`[huntarrUI] Saving settings for ${appType}...`);
+    saveAppSettings: function(appType, settings, successMessage = 'Settings saved successfully') {
+        console.log(`[huntarrUI] saveAppSettings called for ${appType}`);
         
         // Ensure change detection is suppressed during the entire save and refresh process
         window._appsSuppressChangeDetection = true;
@@ -1032,20 +1042,22 @@ window.SettingsForms = {
         })
         .then(response => response.json())
         .then(data => {
-            console.log(`[huntarrUI] Settings for ${appType} saved successfully`);
+            console.log(`[huntarrUI] Backend save successful for ${appType}`);
             
             if (window.huntarrUI && window.huntarrUI.showNotification) {
-                window.huntarrUI.showNotification('Settings saved successfully', 'success');
+                window.huntarrUI.showNotification(successMessage, 'success');
             }
             
-            // Update the original settings in memory
+            // Re-sync memory again just to be safe
             if (window.huntarrUI && window.huntarrUI.originalSettings) {
                 window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
             }
             
             const container = document.querySelector(`[data-app-type="${appType}"]`);
             if (container) {
-                console.log(`[huntarrUI] Refreshing container for ${appType}`);
+                console.log(`[huntarrUI] Found container for ${appType}, triggering re-render`);
+                
+                // Determine the generation method name
                 let methodAppType = appType;
                 if (appType === 'general') methodAppType = 'General';
                 else if (appType === 'notifications') methodAppType = 'Notifications';
@@ -1053,25 +1065,37 @@ window.SettingsForms = {
                 else methodAppType = appType.charAt(0).toUpperCase() + appType.slice(1);
                 
                 const method = `generate${methodAppType}Form`;
-                if (this[method]) {
-                    // Re-render the form
-                    this[method](container, settings);
+                
+                if (window.SettingsForms && typeof window.SettingsForms[method] === 'function') {
+                    // Clear container first to force a clean DOM update
+                    container.innerHTML = '<div style="padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Refreshing...</div>';
                     
-                    // The generate*Form methods have their own 100ms timeout to clear suppression,
-                    // but we'll add one here just in case as a safety measure
+                    // Small delay to ensure DOM clear is processed
                     setTimeout(() => {
-                        window._appsSuppressChangeDetection = false;
-                        console.log(`[huntarrUI] Change detection re-enabled for ${appType}`);
-                    }, 500);
+                        console.log(`[huntarrUI] Executing ${method}`);
+                        window.SettingsForms[method](container, settings);
+                        
+                        // Ensure suppression is cleared after re-render completes
+                        setTimeout(() => {
+                            window._appsSuppressChangeDetection = false;
+                            console.log(`[huntarrUI] Change detection re-enabled for ${appType}`);
+                        }, 500);
+                    }, 50);
+                } else {
+                    console.error(`[huntarrUI] Re-render failed: Method ${method} not found`);
+                    window._appsSuppressChangeDetection = false;
                 }
             } else {
+                console.warn(`[huntarrUI] Container for ${appType} not found in DOM, skipping re-render`);
                 window._appsSuppressChangeDetection = false;
             }
         })
         .catch(error => {
-            console.error('Error saving settings:', error);
+            console.error(`[huntarrUI] Error saving settings for ${appType}:`, error);
             window._appsSuppressChangeDetection = false;
-            alert('Failed to save settings');
+            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                window.huntarrUI.showNotification('Failed to save settings', 'error');
+            }
         });
     },
 
@@ -1210,95 +1234,78 @@ window.SettingsForms = {
 
     // Manual save setup (Needed for global settings panels)
     setupAppManualSave: function (container, appType, originalSettings = {}) {
+        console.log(`[huntarrUI] setupAppManualSave for ${appType}`);
         const saveButton = document.querySelector(`#${appType}-save-button`);
-        if (!saveButton) return;
+        if (!saveButton) {
+            console.warn(`[huntarrUI] Save button #${appType}-save-button not found`);
+            return;
+        }
 
+        // Reset button to initial state
         saveButton.disabled = true;
-        saveButton.style.background = "#6b7280";
-        saveButton.style.cursor = "not-allowed";
+        saveButton.style.setProperty('background', '#6b7280', 'important');
+        saveButton.style.setProperty('color', '#9ca3af', 'important');
+        saveButton.style.setProperty('cursor', 'not-allowed', 'important');
+        saveButton.style.setProperty('border', '1px solid #4b5563', 'important');
+        saveButton.style.setProperty('opacity', '0.6', 'important');
 
         const updateSaveButtonState = (changed) => {
-            // Find the save button again to be sure we have the latest one
             const currentSaveButton = document.querySelector(`#${appType}-save-button`);
             if (!currentSaveButton) return;
             
             if (changed) {
+                console.log(`[huntarrUI] UI CHANGE DETECTED: Enabling save button for ${appType}`);
                 currentSaveButton.disabled = false;
-                currentSaveButton.style.background = "#dc2626";
-                currentSaveButton.style.color = "#ffffff";
-                currentSaveButton.style.cursor = "pointer";
-                currentSaveButton.style.border = "1px solid #b91c1c";
-                currentSaveButton.style.opacity = "1";
+                currentSaveButton.style.setProperty('background', '#dc2626', 'important');
+                currentSaveButton.style.setProperty('color', '#ffffff', 'important');
+                currentSaveButton.style.setProperty('cursor', 'pointer', 'important');
+                currentSaveButton.style.setProperty('border', '1px solid #b91c1c', 'important');
+                currentSaveButton.style.setProperty('opacity', '1', 'important');
                 this.addUnsavedChangesWarning();
             } else {
                 currentSaveButton.disabled = true;
-                currentSaveButton.style.background = "#6b7280";
-                currentSaveButton.style.color = "#9ca3af";
-                currentSaveButton.style.cursor = "not-allowed";
-                currentSaveButton.style.border = "1px solid #4b5563";
-                currentSaveButton.style.opacity = "0.6";
+                currentSaveButton.style.setProperty('background', '#6b7280', 'important');
+                currentSaveButton.style.setProperty('color', '#9ca3af', 'important');
+                currentSaveButton.style.setProperty('cursor', 'not-allowed', 'important');
+                currentSaveButton.style.setProperty('border', '1px solid #4b5563', 'important');
+                currentSaveButton.style.setProperty('opacity', '0.6', 'important');
                 this.removeUnsavedChangesWarning();
             }
         };
 
-        // Use a more robust change detection that doesn't rely on the suppression flag
-        // for the initial setup, but uses it to prevent loops
+        // Use a more robust change detection
         const handleChange = (e) => {
-            if (window._appsSuppressChangeDetection) return;
+            // Log every interaction for debugging
+            console.log(`[huntarrUI] Event ${e.type} on ${e.target.id || e.target.name || e.target.tagName}`);
             
-            // Only trigger if the element is actually inside our container
-            // and not inside a modal or other sub-component
+            if (window._appsSuppressChangeDetection) {
+                console.log(`[huntarrUI] Change ignored (suppression active)`);
+                return;
+            }
+            
+            // Ignore events from modals
             if (e.target.closest('.modal')) return;
             
-            console.log(`[huntarrUI] Change detected in ${appType} settings:`, e.target.id || e.target.name);
             updateSaveButtonState(true);
         };
 
-        // Remove any existing listeners if possible (though cloneNode handles this for the button)
-        container.removeEventListener('input', handleChange);
-        container.removeEventListener('change', handleChange);
-        
+        // Clear existing listeners by replacing the container's listeners (if possible)
+        // Since we can't easily remove anonymous listeners, we'll use a named function
+        if (container._huntarrListener) {
+            container.removeEventListener('input', container._huntarrListener);
+            container.removeEventListener('change', container._huntarrListener);
+        }
+        container._huntarrListener = handleChange;
         container.addEventListener('input', handleChange);
         container.addEventListener('change', handleChange);
         
+        // Setup button click
         const newSaveButton = saveButton.cloneNode(true);
         saveButton.parentNode.replaceChild(newSaveButton, saveButton);
         
         newSaveButton.addEventListener('click', () => {
-            // This is a generic handler. For specific apps like Sonarr, 
-            // the save logic is complicated (gathering all inputs).
-            // The `saveAppSettings` helper expects a `settings` object.
-            // In the original code, `setupAppManualSave` did A LOT of work scraping values.
-            // I should probably move that scraping logic into `saveAppSettings` or a helper.
-            
-            // However, for the NEW UI (cards), the instance data is edited in the modal.
-            // The "Save Changes" button on the main page is mainly for global settings (api cap, sleep duration).
-            // So we need to scrape THOSE.
-            
-            // Let's implement a basic scraper here.
-            const collectedSettings = { ...originalSettings };
-            const inputs = container.querySelectorAll("input, select, textarea");
-            inputs.forEach(input => {
-                if (input.name && !input.disabled && input.type !== 'submit' && input.type !== 'button') {
-                    // Skip instance inputs if any (they shouldn't be there in new UI except potentially hidden)
-                    if (input.closest('.modal')) return;
-                    
-                    let value;
-                    if (input.type === 'checkbox') value = input.checked;
-                    else if (input.type === 'number') value = parseInt(input.value);
-                    else value = input.value;
-                    
-                    if (input.name === 'sleep_duration') value = value * 60; // Convert minutes to seconds
-                    
-                    collectedSettings[input.name] = value;
-                }
-            });
-            
-            // Preserve instances
-            if (originalSettings.instances) {
-                collectedSettings.instances = originalSettings.instances;
-            }
-            
+            console.log(`[huntarrUI] Save button clicked for ${appType}`);
+            const collectedSettings = this.getFormSettings(container, appType);
             this.saveAppSettings(appType, collectedSettings);
             
             newSaveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
