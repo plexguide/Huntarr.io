@@ -1008,11 +1008,23 @@ window.SettingsForms = {
         // If we deleted the default (index 0) and there are still instances left,
         // the instance at position 0 is now automatically the new default
         
+        // Use a flag to indicate we're doing a structural change that needs full refresh
+        window._appsSuppressChangeDetection = true;
         this.saveAppSettings(appType, settings);
+        
+        // Force a small delay then clear suppression
+        setTimeout(() => {
+            window._appsSuppressChangeDetection = false;
+        }, 500);
     },
 
     // Helper to save settings and refresh view
     saveAppSettings: function(appType, settings) {
+        console.log(`[huntarrUI] Saving settings for ${appType}...`);
+        
+        // Ensure change detection is suppressed during the entire save and refresh process
+        window._appsSuppressChangeDetection = true;
+        
         HuntarrUtils.fetchWithTimeout(`./api/settings/${appType}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1020,11 +1032,20 @@ window.SettingsForms = {
         })
         .then(response => response.json())
         .then(data => {
+            console.log(`[huntarrUI] Settings for ${appType} saved successfully`);
+            
             if (window.huntarrUI && window.huntarrUI.showNotification) {
                 window.huntarrUI.showNotification('Settings saved successfully', 'success');
             }
+            
+            // Update the original settings in memory
+            if (window.huntarrUI && window.huntarrUI.originalSettings) {
+                window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
+            }
+            
             const container = document.querySelector(`[data-app-type="${appType}"]`);
             if (container) {
+                console.log(`[huntarrUI] Refreshing container for ${appType}`);
                 let methodAppType = appType;
                 if (appType === 'general') methodAppType = 'General';
                 else if (appType === 'notifications') methodAppType = 'Notifications';
@@ -1033,12 +1054,23 @@ window.SettingsForms = {
                 
                 const method = `generate${methodAppType}Form`;
                 if (this[method]) {
+                    // Re-render the form
                     this[method](container, settings);
+                    
+                    // The generate*Form methods have their own 100ms timeout to clear suppression,
+                    // but we'll add one here just in case as a safety measure
+                    setTimeout(() => {
+                        window._appsSuppressChangeDetection = false;
+                        console.log(`[huntarrUI] Change detection re-enabled for ${appType}`);
+                    }, 500);
                 }
+            } else {
+                window._appsSuppressChangeDetection = false;
             }
         })
         .catch(error => {
             console.error('Error saving settings:', error);
+            window._appsSuppressChangeDetection = false;
             alert('Failed to save settings');
         });
     },
@@ -1186,21 +1218,48 @@ window.SettingsForms = {
         saveButton.style.cursor = "not-allowed";
 
         const updateSaveButtonState = (changed) => {
+            // Find the save button again to be sure we have the latest one
+            const currentSaveButton = document.querySelector(`#${appType}-save-button`);
+            if (!currentSaveButton) return;
+            
             if (changed) {
-                saveButton.disabled = false;
-                saveButton.style.background = "#dc2626";
-                saveButton.style.cursor = "pointer";
+                currentSaveButton.disabled = false;
+                currentSaveButton.style.background = "#dc2626";
+                currentSaveButton.style.color = "#ffffff";
+                currentSaveButton.style.cursor = "pointer";
+                currentSaveButton.style.border = "1px solid #b91c1c";
+                currentSaveButton.style.opacity = "1";
                 this.addUnsavedChangesWarning();
             } else {
-                saveButton.disabled = true;
-                saveButton.style.background = "#6b7280";
-                saveButton.style.cursor = "not-allowed";
+                currentSaveButton.disabled = true;
+                currentSaveButton.style.background = "#6b7280";
+                currentSaveButton.style.color = "#9ca3af";
+                currentSaveButton.style.cursor = "not-allowed";
+                currentSaveButton.style.border = "1px solid #4b5563";
+                currentSaveButton.style.opacity = "0.6";
                 this.removeUnsavedChangesWarning();
             }
         };
 
-        container.addEventListener('input', () => updateSaveButtonState(true));
-        container.addEventListener('change', () => updateSaveButtonState(true));
+        // Use a more robust change detection that doesn't rely on the suppression flag
+        // for the initial setup, but uses it to prevent loops
+        const handleChange = (e) => {
+            if (window._appsSuppressChangeDetection) return;
+            
+            // Only trigger if the element is actually inside our container
+            // and not inside a modal or other sub-component
+            if (e.target.closest('.modal')) return;
+            
+            console.log(`[huntarrUI] Change detected in ${appType} settings:`, e.target.id || e.target.name);
+            updateSaveButtonState(true);
+        };
+
+        // Remove any existing listeners if possible (though cloneNode handles this for the button)
+        container.removeEventListener('input', handleChange);
+        container.removeEventListener('change', handleChange);
+        
+        container.addEventListener('input', handleChange);
+        container.addEventListener('change', handleChange);
         
         const newSaveButton = saveButton.cloneNode(true);
         saveButton.parentNode.replaceChild(newSaveButton, saveButton);

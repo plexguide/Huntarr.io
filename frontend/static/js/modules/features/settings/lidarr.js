@@ -132,7 +132,8 @@
         }, 100);
 
         setTimeout(() => {
-            window._appsSuppressChangeDetection = wasSuppressionActive;
+            // Always enable change detection after form is fully loaded
+            window._appsSuppressChangeDetection = false;
         }, 100);
     };
 })();
