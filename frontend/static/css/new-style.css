@@ -1500,21 +1500,77 @@ input:checked + .toggle-slider:before {
     /* Styles moved from 992px breakpoint */
     .settings-group {
         padding: 15px;
+        text-align: left !important; /* Force left alignment on mobile */
+    }
+    
+    .settings-group h3 {
+        text-align: left !important; /* Left align headers */
+        margin-left: 0;
+        margin-right: 0;
     }
     
     .setting-item {
-        align-items: flex-start;
-        text-align: left;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        text-align: left !important;
+        flex-direction: column !important; /* Stack label and input vertically */
+        width: 100%;
     }
     
     .setting-item label {
         width: 100%;
         margin-bottom: 8px;
-        text-align: left;
+        text-align: left !important;
+        display: block !important; /* Force block display */
+        justify-content: flex-start !important;
+    }
+    
+    /* Override inline styles for toggle switches on mobile */
+    .setting-item .toggle-switch {
+        display: block !important;
+        margin-left: 0 !important;
+        margin-top: 8px;
+    }
+    
+    .setting-item label:not(.toggle-switch) {
+        margin-right: 0 !important;
+    }
+    
+    .setting-item input[type="text"],
+    .setting-item input[type="number"],
+    .setting-item input[type="password"],
+    .setting-item select,
+    .setting-item textarea {
+        width: 100%;
+        max-width: 100%;
+        text-align: left !important;
+        margin-left: 0 !important;
     }
     
     .setting-help {
-        margin-left: 0;
+        margin-left: 0 !important;
+        text-align: left !important;
+        width: 100%;
+    }
+    
+    /* Toggle switches should also align left */
+    .toggle-container,
+    .toggle-switch {
+        justify-content: flex-start !important;
+        margin-left: 0 !important;
+    }
+    
+    /* User settings page specific */
+    #userSettingsContainer .settings-group,
+    #settingsContent .settings-group {
+        text-align: left !important;
+    }
+    
+    #userSettingsContainer .setting-item,
+    #settingsContent .setting-item {
+        text-align: left !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
     }
     
     .stats-grid {
