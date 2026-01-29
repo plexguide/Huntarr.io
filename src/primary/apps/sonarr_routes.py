@@ -6,6 +6,7 @@ import datetime, os, requests
 from src.primary.state import reset_state_file, check_state_reset
 from src.primary.utils.logger import get_logger
 from src.primary.settings_manager import get_ssl_verify_setting
+from src.primary.utils.log_deduplication import should_log_message, format_suppressed_message
 import traceback
 import socket
 from urllib.parse import urlparse
@@ -130,11 +131,23 @@ def test_connection():
         
         if result != 0:
             error_msg = f"Connection refused - Unable to connect to {hostname}:{port}. Please check if the server is running and the port is correct."
-            sonarr_logger.error(error_msg)
+            
+            # Check if we should log this message (prevent spam)
+            should_log, suppressed_count = should_log_message("sonarr", "ERROR", error_msg)
+            if should_log:
+                formatted_msg = format_suppressed_message(error_msg, suppressed_count)
+                sonarr_logger.error(formatted_msg)
+            
             return jsonify({"success": False, "message": error_msg}), 404
     except socket.gaierror:
         error_msg = f"DNS resolution failed - Cannot resolve hostname: {hostname}. Please check your URL."
-        sonarr_logger.error(error_msg)
+        
+        # Check if we should log this message (prevent spam)
+        should_log, suppressed_count = should_log_message("sonarr", "ERROR", error_msg)
+        if should_log:
+            formatted_msg = format_suppressed_message(error_msg, suppressed_count)
+            sonarr_logger.error(formatted_msg)
+        
         return jsonify({"success": False, "message": error_msg}), 404
     except Exception as e:
         # Log the socket testing error but continue with the full request
@@ -165,7 +178,13 @@ def test_connection():
             return jsonify({"success": False, "message": error_msg}), 403
         elif response.status_code == 404:
             error_msg = "API endpoint not found: This doesn't appear to be a valid Sonarr server. Check your URL."
-            sonarr_logger.error(error_msg)
+            
+            # Check if we should log this message (prevent spam)
+            should_log, suppressed_count = should_log_message("sonarr", "ERROR", error_msg)
+            if should_log:
+                formatted_msg = format_suppressed_message(error_msg, suppressed_count)
+                sonarr_logger.error(formatted_msg)
+            
             return jsonify({"success": False, "message": error_msg}), 404
         elif response.status_code >= 500:
             error_msg = f"Sonarr server error (HTTP {response.status_code}): The Sonarr server is experiencing issues"

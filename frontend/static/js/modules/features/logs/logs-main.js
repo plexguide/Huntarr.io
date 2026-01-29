@@ -626,9 +626,59 @@ window.LogsModule = {
     
     // Clear all logs
     clearLogs: function() {
-        if (this.elements.logsContainer) {
-            this.elements.logsContainer.innerHTML = '';
+        console.log('[LogsModule] Clear logs button clicked');
+        
+        // Get current app filter
+        const currentApp = this.elements.appFilter ? this.elements.appFilter.value : 'all';
+        
+        // Show confirmation dialog
+        const appText = currentApp === 'all' ? 'all logs' : `${currentApp.toUpperCase()} logs`;
+        if (!confirm(`Are you sure you want to clear ${appText}? This action cannot be undone.`)) {
+            console.log('[LogsModule] Clear logs cancelled by user');
+            return;
         }
+        
+        console.log(`[LogsModule] Clearing logs for app: ${currentApp}`);
+        
+        // Call backend API to delete logs from database
+        HuntarrUtils.fetchWithTimeout(`./api/logs/${currentApp}/clear`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('[LogsModule] Logs cleared successfully:', data);
+            
+            // Clear the frontend display
+            if (this.elements.logsContainer) {
+                this.elements.logsContainer.innerHTML = '';
+            }
+            
+            // Show success notification
+            if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
+                huntarrUI.showNotification(`Cleared ${data.deleted_count || 0} ${appText}`, 'success');
+            }
+            
+            // Reload logs to show any new entries that may have arrived
+            setTimeout(() => {
+                this.loadLogs();
+            }, 500);
+        })
+        .catch(error => {
+            console.error('[LogsModule] Error clearing logs:', error);
+            
+            // Show error notification
+            if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
+                huntarrUI.showNotification(`Error clearing logs: ${error.message}`, 'error');
+            }
+        });
     },
     
     // Insert log entry in reverse chronological order (newest first)

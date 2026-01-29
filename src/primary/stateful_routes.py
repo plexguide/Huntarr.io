@@ -68,7 +68,13 @@ def reset_stateful():
                             instance_hours = instance.get('state_management_hours', 168)
                             break
             except Exception as e:
-                stateful_logger.warning(f"Could not load instance settings for {app_type}/{instance_name}: {e}")
+                from src.primary.utils.log_deduplication import should_log_message, format_suppressed_message
+                
+                error_msg = f"Could not load instance settings for {app_type}/{instance_name}: {e}"
+                should_log, suppressed_count = should_log_message("stateful", "WARNING", error_msg)
+                if should_log:
+                    formatted_msg = format_suppressed_message(error_msg, suppressed_count)
+                    stateful_logger.warning(formatted_msg)
             
             # Reset per-instance state management
             db = get_database()
@@ -193,7 +199,14 @@ def get_summary():
                         
                         break
         except Exception as e:
-            stateful_logger.warning(f"Could not load instance settings for {app_type}/{instance_name}: {e}")
+            from src.primary.utils.log_deduplication import should_log_message, format_suppressed_message
+            
+            error_msg = f"Could not load instance settings for {app_type}/{instance_name}: {e}"
+            should_log, suppressed_count = should_log_message("stateful", "WARNING", error_msg)
+            if should_log:
+                formatted_msg = format_suppressed_message(error_msg, suppressed_count)
+                stateful_logger.warning(formatted_msg)
+            
             # Fall back to default hours if settings can't be loaded
             instance_hours = 168
         

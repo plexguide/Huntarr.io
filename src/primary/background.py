@@ -497,7 +497,14 @@ def app_specific_loop(app_type: str) -> None:
                                     instance_enabled = (instance_mode != "disabled")
                                     break
                     except Exception as e:
-                        app_logger.warning(f"Could not load instance settings for {instance_name}: {e}")
+                        from src.primary.utils.log_deduplication import should_log_message, format_suppressed_message
+                        
+                        error_msg = f"Could not load instance settings for {instance_name}: {e}"
+                        should_log, suppressed_count = should_log_message("background", "WARNING", error_msg)
+                        if should_log:
+                            formatted_msg = format_suppressed_message(error_msg, suppressed_count)
+                            app_logger.warning(formatted_msg)
+                        
                         instance_hours = 168  # Default fallback
                     
                     # Get summary for this instance
