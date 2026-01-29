@@ -24,6 +24,14 @@ last_hour_checked = None
 # Schedule the next hourly reset check
 next_reset_check = None
 
+
+def _normalize_instance_name(name: Optional[str]) -> str:
+    """Normalize instance name for consistent DB keys and API responses (avoids lost counts on refresh)."""
+    if name is None or not isinstance(name, str):
+        return "Default"
+    s = (name or "").strip()
+    return s if s else "Default"
+
 def load_stats() -> Dict[str, Dict[str, int]]:
     """
     Load statistics from the database
@@ -152,6 +160,8 @@ def increment_hourly_cap(app_type: str, count: int = 1, instance_name: Optional[
             instance_name = get_instance_name_for_cap()
         except Exception:
             pass
+    if instance_name is not None:
+        instance_name = _normalize_instance_name(instance_name)
     check_hourly_reset()
     with hourly_lock:
         try:
@@ -432,7 +442,8 @@ def get_stats() -> Dict[str, Any]:
                 if app_settings and isinstance(app_settings.get("instances"), list):
                     for inst in app_settings["instances"]:
                         if inst.get("enabled", True) and inst.get("api_url") and inst.get("api_key"):
-                            instance_names.append(inst.get("name") or "Default")
+                            # Same key as load_hourly_caps_for_api so cards match API cap keys (normalized)
+                            instance_names.append(_normalize_instance_name(inst.get("name") or inst.get("instance_name")))
                 # Get per-instance stats from DB (may include instances no longer in config)
                 per_instance = db.get_media_stats_per_instance(app_type) if hasattr(db, "get_media_stats_per_instance") else []
                 # If we have configured instances, merge: list instance names from config, fill stats from DB
@@ -477,12 +488,17 @@ def load_hourly_caps_for_api() -> tuple:
             try:
                 app_settings = load_settings(app)
                 instances = (app_settings or {}).get("instances", [])
-                # Same key as get_stats so card data-instance-name matches API keys
-                instance_names = [(inst.get("name") or inst.get("instance_name") or "Default") for inst in instances if inst.get("enabled", True)]
+                # Same filter as get_stats: only instances with api_url/api_key so cards and keys match
+                instance_names = [_normalize_instance_name(inst.get("name") or inst.get("instance_name")) for inst in instances if inst.get("enabled", True) and inst.get("api_url") and inst.get("api_key")]
                 if instance_names:
                     inst_caps = per_instance_caps.get(app, {})
-                    caps_out[app] = {"instances": {name: {"api_hits": inst_caps.get(name, {}).get("api_hits", 0)} for name in instance_names}}
-                    limits_out[app] = {"instances": {name: _get_instance_hourly_cap_limit(app, name) for name in instance_names}}
+                    # Build from settings list first, then merge any DB keys so we never drop data (e.g. after rename)
+                    instances_dict = {name: {"api_hits": inst_caps.get(name, {}).get("api_hits", 0)} for name in instance_names}
+                    for db_key, cap_data in inst_caps.items():
+                        if db_key not in instances_dict:
+                            instances_dict[db_key] = {"api_hits": cap_data.get("api_hits", 0)}
+                    caps_out[app] = {"instances": instances_dict}
+                    limits_out[app] = {"instances": {name: _get_instance_hourly_cap_limit(app, name) for name in instances_dict}}
                 else:
                     caps_out[app] = app_caps.get(app, default_caps.get(app, {"api_hits": 0}))
                     limits_out[app] = _get_app_hourly_cap_limit(app)

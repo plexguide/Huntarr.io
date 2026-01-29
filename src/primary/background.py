@@ -332,12 +332,12 @@ def app_specific_loop(app_type: str) -> None:
                 
             # --- API Cap Check --- #
             try:
-                # Check if hourly API cap is exceeded
-                if check_hourly_cap_exceeded(app_type):
+                # Check if this instance's hourly API cap is exceeded (per-instance when multiple instances)
+                if check_hourly_cap_exceeded(app_type, instance_name=instance_name):
                     # Get the current cap status for logging
                     from src.primary.stats_manager import get_hourly_cap_status
-                    cap_status = get_hourly_cap_status(app_type)
-                    app_logger.info(f"{app_type.upper()} hourly cap reached {cap_status['current_usage']} of {cap_status['limit']} (app-specific limit). Skipping cycle!")
+                    cap_status = get_hourly_cap_status(app_type, instance_name=instance_name)
+                    app_logger.info(f"{app_type.upper()} instance '{instance_name}' hourly cap reached {cap_status.get('current_usage', 0)} of {cap_status.get('limit', 0)}. Skipping cycle!")
                     if end_cycle:
                         end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
                     if clear_instance_log_context:

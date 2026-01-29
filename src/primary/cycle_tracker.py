@@ -101,22 +101,25 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
             if app_type:
                 # Return data for a specific app
                 if app_type in per_instance_all and per_instance_all[app_type]:
-                    instances = {
-                        inst_name: {
+                    instances = {}
+                    for inst_name, data in per_instance_all[app_type].items():
+                        pending = db.get_pending_reset_request(app_type, inst_name) is not None
+                        instances[inst_name] = {
                             "next_cycle": data.get("next_cycle_time"),
                             "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
-                            "cyclelock": data.get("cycle_lock", True)
+                            "cyclelock": data.get("cycle_lock", True),
+                            "pending_reset": pending
                         }
-                        for inst_name, data in per_instance_all[app_type].items()
-                    }
                     return {"app": app_type, "instances": instances}
                 data = db.get_sleep_data(app_type)
                 if data:
+                    pending = db.get_pending_reset_request(app_type, None) is not None
                     return {
                         "app": app_type,
                         "next_cycle": data.get("next_cycle_time"),
                         "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
-                        "cyclelock": data.get("cycle_lock", True)
+                        "cyclelock": data.get("cycle_lock", True),
+                        "pending_reset": pending
                     }
                 return {"app": app_type, "error": f"No cycle data available for {app_type}"}
             else:
@@ -133,16 +136,20 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
                 # Override with per-instance for *arr apps that have instances
                 for app, instances in per_instance_all.items():
                     if instances:
-                        result[app] = {
-                            "instances": {
-                                inst_name: {
-                                    "next_cycle": data.get("next_cycle_time"),
-                                    "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
-                                    "cyclelock": data.get("cycle_lock", True)
-                                }
-                                for inst_name, data in instances.items()
+                        inst_dict = {}
+                        for inst_name, data in instances.items():
+                            pending = db.get_pending_reset_request(app, inst_name) is not None
+                            inst_dict[inst_name] = {
+                                "next_cycle": data.get("next_cycle_time"),
+                                "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
+                                "cyclelock": data.get("cycle_lock", True),
+                                "pending_reset": pending
                             }
-                        }
+                        result[app] = {"instances": inst_dict}
+                # Add pending_reset for single-app (e.g. swaparr)
+                for app, data in result.items():
+                    if "instances" not in data and data:
+                        data["pending_reset"] = db.get_pending_reset_request(app, None) is not None
                 return result
         except Exception as e:
             logger.error(f"Error getting cycle status: {e}")

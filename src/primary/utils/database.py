@@ -1271,31 +1271,49 @@ class HuntarrDatabase:
             ''', (current_hour,))
             conn.commit()
     
+    def _normalize_instance_key(self, name: Any) -> str:
+        """Normalize instance name for consistent keys (matches stats_manager and API)."""
+        if name is None or not isinstance(name, str):
+            return "Default"
+        s = (name or "").strip()
+        return s if s else "Default"
+
     def get_hourly_caps_per_instance(self, app_type: str = None) -> Dict[str, Dict[str, Dict[str, int]]]:
-        """Get per-instance API usage. Returns { app_type: { instance_name: { api_hits, last_reset_hour } } } or for one app."""
+        """Get per-instance API usage. Returns { app_type: { instance_name: { api_hits, last_reset_hour } } } or for one app. Keys normalized so read matches write."""
         with self.get_connection() as conn:
             if app_type:
                 cursor = conn.execute('''
                     SELECT instance_name, api_hits, last_reset_hour FROM hourly_caps_per_instance WHERE app_type = ?
                 ''', (app_type,))
-                return {row[0]: {"api_hits": row[1], "last_reset_hour": row[2]} for row in cursor.fetchall()}
+                out = {}
+                for row in cursor.fetchall():
+                    key = self._normalize_instance_key(row[0])
+                    existing = out.get(key, {"api_hits": 0, "last_reset_hour": row[2]})
+                    out[key] = {"api_hits": existing["api_hits"] + row[1], "last_reset_hour": row[2]}
+                return out
             cursor = conn.execute('SELECT app_type, instance_name, api_hits, last_reset_hour FROM hourly_caps_per_instance')
             result = {}
             for row in cursor.fetchall():
-                at, iname = row[0], row[1]
+                at, iname = row[0], self._normalize_instance_key(row[1])
                 if at not in result:
                     result[at] = {}
-                result[at][iname] = {"api_hits": row[2], "last_reset_hour": row[3]}
+                if iname not in result[at]:
+                    result[at][iname] = {"api_hits": 0, "last_reset_hour": row[3]}
+                result[at][iname]["api_hits"] += row[2]
             return result
     
     def increment_hourly_cap_per_instance(self, app_type: str, instance_name: str, increment: int = 1):
-        """Increment hourly API usage for an instance (resets if new hour)."""
+        """Increment hourly API usage for an instance (resets if new hour). Instance name normalized for consistent keys."""
         import datetime
+        # Normalize so write key matches read key (from settings) and counts persist across refresh
+        key = (instance_name or "Default").strip() if isinstance(instance_name, str) else "Default"
+        key = key if key else "Default"
         current_hour = datetime.datetime.now().hour
+        # Use same connection pattern as increment_media_stat_per_instance (working per-instance write)
         with self.get_connection() as conn:
             cursor = conn.execute('''
                 SELECT api_hits, last_reset_hour FROM hourly_caps_per_instance WHERE app_type = ? AND instance_name = ?
-            ''', (app_type, instance_name))
+            ''', (app_type, key))
             row = cursor.fetchone()
             if row:
                 prev_hits, last_hour = row[0], row[1]
@@ -1305,14 +1323,14 @@ class HuntarrDatabase:
                 conn.execute('''
                     UPDATE hourly_caps_per_instance SET api_hits = ?, last_reset_hour = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE app_type = ? AND instance_name = ?
-                ''', (new_hits, current_hour, app_type, instance_name))
+                ''', (new_hits, current_hour, app_type, key))
             else:
                 conn.execute('''
                     INSERT INTO hourly_caps_per_instance (app_type, instance_name, api_hits, last_reset_hour, updated_at)
                     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ''', (app_type, instance_name, increment, current_hour))
+                ''', (app_type, key, increment, current_hour))
             conn.commit()
-    
+
     def get_sleep_data(self, app_type: str = None) -> Dict[str, Any]:
         """Get sleep/cycle data for an app or all apps"""
         with self.get_connection() as conn:

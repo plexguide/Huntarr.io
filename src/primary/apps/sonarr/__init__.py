@@ -43,10 +43,10 @@ def get_configured_instances(quiet=False):
 
             # Only include properly configured instances
             if is_enabled and api_url and api_key:
-                # Get the exact instance name as configured in the UI
-                instance_name = instance.get("name", "Default") 
-    
-                
+                # Normalize instance name so DB keys match (hourly caps persist across refresh)
+                raw = instance.get("name", "Default") or "Default"
+                instance_name = (raw.strip() if isinstance(raw, str) else "Default") or "Default"
+
                 # Return only essential instance details including per-instance hunt values
                 instance_data = {
                     "instance_name": instance_name,

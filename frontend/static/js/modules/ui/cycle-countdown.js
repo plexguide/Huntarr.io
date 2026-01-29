@@ -10,6 +10,8 @@ window.CycleCountdown = (function() {
     const timerIntervals = {};
     // Track apps that are currently running cycles
     const runningCycles = {};
+    // Track instances that have a pending reset (show "Pending reset" until cycle ends and sleep starts)
+    const pendingResets = {};
     // List of apps to track
     const trackedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'whisparr-v3', 'eros', 'swaparr'];
     
@@ -38,10 +40,11 @@ window.CycleCountdown = (function() {
     function initialize() {
         console.log('[CycleCountdown] Initializing countdown timers');
         
-        // Clear any existing running cycle states
+        // Clear any existing running cycle and pending reset states
         Object.keys(runningCycles).forEach(app => {
             runningCycles[app] = false;
         });
+        Object.keys(pendingResets).forEach(k => { delete pendingResets[k]; });
         
         // Get references to all HTML elements
         setupTimerElements();
@@ -112,7 +115,11 @@ window.CycleCountdown = (function() {
             button.addEventListener('click', function() {
                 const app = this.getAttribute('data-app');
                 if (app) {
-                    console.log(`[CycleCountdown] Reset button clicked for ${app}, will keep refreshing until new timer data is available`);
+                    console.log(`[CycleCountdown] Reset button clicked for ${app}, will refresh cycle status to show Pending reset`);
+                    // Refetch cycle status after a short delay so API has recorded the reset; UI will show "Pending reset" until cycle ends
+                    setTimeout(function() {
+                        fetchAllCycleData().catch(function() {});
+                    }, 800);
                     const cardTimer = this.closest('.app-stats-card') && this.closest('.app-stats-card').querySelector('.cycle-timer');
                     const timerElements = cardTimer ? [cardTimer] : Array.from(getTimerElements(app));
                     timerElements.forEach(timerElement => {
@@ -311,8 +318,9 @@ window.CycleCountdown = (function() {
                     }
                     const appData = data[app];
                     if (!appData) continue;
-                    // Per-instance format: { instances: { InstanceName: { next_cycle, cyclelock } } }
+                    // Per-instance format: { instances: { InstanceName: { next_cycle, cyclelock, pending_reset } } }
                     if (appData.instances && typeof appData.instances === 'object') {
+                        Object.keys(pendingResets).filter(function(k) { return k === app || k.startsWith(app + '-'); }).forEach(function(k) { delete pendingResets[k]; });
                         for (const instanceName in appData.instances) {
                             const inst = appData.instances[instanceName];
                             if (!inst || !inst.next_cycle) continue;
@@ -321,6 +329,7 @@ window.CycleCountdown = (function() {
                             const key = stateKey(app, instanceName);
                             nextCycleTimes[key] = nextCycleTime;
                             runningCycles[key] = inst.cyclelock !== undefined ? inst.cyclelock : true;
+                            pendingResets[key] = inst.pending_reset === true;
                             dataProcessed = true;
                         }
                         getTimerElements(app).forEach(timerElement => {
@@ -335,7 +344,7 @@ window.CycleCountdown = (function() {
                         setupCountdown(app);
                         continue;
                     }
-                    // Single-app format: { next_cycle, cyclelock }
+                    // Single-app format: { next_cycle, cyclelock, pending_reset }
                     if (appData.next_cycle) {
                         const nextCycleTime = new Date(appData.next_cycle);
                         if (isNaN(nextCycleTime.getTime())) {
@@ -343,6 +352,7 @@ window.CycleCountdown = (function() {
                             continue;
                         }
                         nextCycleTimes[app] = nextCycleTime;
+                        pendingResets[app] = appData.pending_reset === true;
                         getTimerElements(app).forEach(timerElement => {
                             const timerValue = timerElement.querySelector('.timer-value');
                             if (timerValue) {
@@ -352,7 +362,7 @@ window.CycleCountdown = (function() {
                         });
                         const cyclelock = appData.cyclelock !== undefined ? appData.cyclelock : true;
                         runningCycles[app] = cyclelock;
-                        if (cyclelock) {
+                        if (cyclelock && !pendingResets[app]) {
                             getTimerElements(app).forEach(timerElement => {
                                 const timerValue = timerElement.querySelector('.timer-value');
                                 if (timerValue) {
@@ -360,6 +370,16 @@ window.CycleCountdown = (function() {
                                     timerValue.classList.remove('refreshing-state');
                                     timerValue.classList.add('running-state');
                                     timerValue.style.color = '#00ff88';
+                                }
+                            });
+                        } else if (pendingResets[app]) {
+                            getTimerElements(app).forEach(timerElement => {
+                                const timerValue = timerElement.querySelector('.timer-value');
+                                if (timerValue) {
+                                    timerValue.textContent = 'Pending reset';
+                                    timerValue.classList.remove('refreshing-state', 'running-state');
+                                    timerValue.classList.add('pending-reset-state');
+                                    timerValue.style.color = '#ffaa00';
                                 }
                             });
                         } else {
@@ -477,11 +497,12 @@ window.CycleCountdown = (function() {
             const key = stateKey(app, instanceName);
             const nextCycleTime = nextCycleTimes[key];
             const isRunning = runningCycles[key];
+            const isPendingReset = pendingResets[key] === true;
             const timeRemaining = nextCycleTime ? (nextCycleTime - now) : 0;
             const isExpired = nextCycleTime && timeRemaining <= 0;
             
             let formattedTime = '--:--:--';
-            if (nextCycleTime && !isExpired && !isRunning) {
+            if (nextCycleTime && !isExpired && !isRunning && !isPendingReset) {
                 const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
                 const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
@@ -489,6 +510,13 @@ window.CycleCountdown = (function() {
             }
             if (isExpired) delete nextCycleTimes[key];
             
+            if (isPendingReset) {
+                timerValue.textContent = 'Pending reset';
+                timerValue.classList.remove('refreshing-state', 'running-state');
+                timerValue.classList.add('pending-reset-state');
+                timerValue.style.color = '#ffaa00';
+                return;
+            }
             if (isRunning) {
                 timerValue.textContent = 'Running Cycle';
                 timerValue.classList.remove('refreshing-state');

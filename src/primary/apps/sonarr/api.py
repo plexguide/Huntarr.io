@@ -78,11 +78,13 @@ def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, met
             # Check for successful response
             response.raise_for_status()
             
-            # Increment API counter only if count_api is True and request was successful
+            # Increment API counter only if count_api is True and request was successful (per-instance when in instance context)
             if count_api:
                 try:
                     from src.primary.stats_manager import increment_hourly_cap
-                    increment_hourly_cap("sonarr")
+                    from src.primary.utils.clean_logger import get_instance_name_for_cap
+                    instance_name = get_instance_name_for_cap()
+                    increment_hourly_cap("sonarr", 1, instance_name=instance_name)
                 except Exception as e:
                     sonarr_logger.warning(f"Failed to increment API counter for sonarr: {e}")
             
@@ -788,10 +790,12 @@ def search_episode(api_url: str, api_key: str, api_timeout: int, episode_ids: Li
         command_id = response.json().get('id')
         sonarr_logger.info(f"Triggered Sonarr search for episode IDs: {episode_ids}. Command ID: {command_id}")
         
-        # Increment API counter after successful request (per-instance when instance_name provided)
+        # Increment API counter after successful request (per-instance; fallback to thread-local if not passed)
         try:
             from src.primary.stats_manager import increment_hourly_cap
-            increment_hourly_cap("sonarr", 1, instance_name=instance_name)
+            from src.primary.utils.clean_logger import get_instance_name_for_cap
+            cap_instance = instance_name if instance_name is not None else get_instance_name_for_cap()
+            increment_hourly_cap("sonarr", 1, instance_name=cap_instance)
             sonarr_logger.debug(f"Incremented Sonarr hourly API cap for episode search ({len(episode_ids)} episodes)")
         except Exception as cap_error:
             sonarr_logger.error(f"Failed to increment hourly API cap for episode search: {cap_error}")
@@ -918,10 +922,12 @@ def search_season(api_url: str, api_key: str, api_timeout: int, series_id: int, 
         command_id = response.json().get('id')
         sonarr_logger.info(f"Triggered Sonarr season search for series ID: {series_id}, season: {season_number}. Command ID: {command_id}")
         
-        # Track the API call in hourly cap counter (per-instance when instance_name provided)
+        # Track the API call in hourly cap counter (per-instance; fallback to thread-local if not passed)
         try:
             from src.primary.stats_manager import increment_hourly_cap
-            increment_hourly_cap("sonarr", 1, instance_name=instance_name)
+            from src.primary.utils.clean_logger import get_instance_name_for_cap
+            cap_instance = instance_name if instance_name is not None else get_instance_name_for_cap()
+            increment_hourly_cap("sonarr", 1, instance_name=cap_instance)
             sonarr_logger.debug(f"Incremented Sonarr hourly API cap for season search (series: {series_id}, season: {season_number})")
         except Exception as cap_error:
             sonarr_logger.error(f"Failed to increment hourly API cap for season search: {cap_error}")

@@ -51,6 +51,11 @@
     font-weight: 600;
 }
 
+/* Pending reset state - reset requested, cycle stopping before sleep starts */
+.timer-value.pending-reset-state {
+    color: #ffaa00;
+}
+
 /* Error state styling */
 .timer-value.error {
     color: #ff5252;
