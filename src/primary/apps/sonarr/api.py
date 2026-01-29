@@ -760,8 +760,9 @@ def get_missing_episodes_random_page(api_url: str, api_key: str, api_timeout: in
     sonarr_logger.error("All attempts to get missing episodes failed")
     return []
 
-def search_episode(api_url: str, api_key: str, api_timeout: int, episode_ids: List[int]) -> Optional[Union[int, str]]:
-    """Trigger a search for specific episodes in Sonarr."""
+def search_episode(api_url: str, api_key: str, api_timeout: int, episode_ids: List[int],
+                   instance_name: Optional[str] = None) -> Optional[Union[int, str]]:
+    """Trigger a search for specific episodes in Sonarr. instance_name used for per-instance API cap."""
     if not episode_ids:
         sonarr_logger.warning("No episode IDs provided for search.")
         return None
@@ -787,10 +788,10 @@ def search_episode(api_url: str, api_key: str, api_timeout: int, episode_ids: Li
         command_id = response.json().get('id')
         sonarr_logger.info(f"Triggered Sonarr search for episode IDs: {episode_ids}. Command ID: {command_id}")
         
-        # Increment API counter after successful request
+        # Increment API counter after successful request (per-instance when instance_name provided)
         try:
             from src.primary.stats_manager import increment_hourly_cap
-            increment_hourly_cap("sonarr", 1)
+            increment_hourly_cap("sonarr", 1, instance_name=instance_name)
             sonarr_logger.debug(f"Incremented Sonarr hourly API cap for episode search ({len(episode_ids)} episodes)")
         except Exception as cap_error:
             sonarr_logger.error(f"Failed to increment hourly API cap for episode search: {cap_error}")
@@ -891,8 +892,9 @@ def get_series_by_id(api_url: str, api_key: str, api_timeout: int, series_id: in
         sonarr_logger.error(f"An unexpected error occurred while getting Sonarr series details: {e}")
         return None
 
-def search_season(api_url: str, api_key: str, api_timeout: int, series_id: int, season_number: int) -> Optional[Union[int, str]]:
-    """Trigger a search for a specific season in Sonarr."""
+def search_season(api_url: str, api_key: str, api_timeout: int, series_id: int, season_number: int,
+                  instance_name: Optional[str] = None) -> Optional[Union[int, str]]:
+    """Trigger a search for a specific season in Sonarr. instance_name used for per-instance API cap."""
     
     # Check API limit before making request
     try:
@@ -916,11 +918,10 @@ def search_season(api_url: str, api_key: str, api_timeout: int, series_id: int, 
         command_id = response.json().get('id')
         sonarr_logger.info(f"Triggered Sonarr season search for series ID: {series_id}, season: {season_number}. Command ID: {command_id}")
         
-        # CRITICAL FIX: Track the API call in hourly cap counter
-        # This was missing and causing API counter to be inaccurate for season packs
+        # Track the API call in hourly cap counter (per-instance when instance_name provided)
         try:
             from src.primary.stats_manager import increment_hourly_cap
-            increment_hourly_cap("sonarr", 1)
+            increment_hourly_cap("sonarr", 1, instance_name=instance_name)
             sonarr_logger.debug(f"Incremented Sonarr hourly API cap for season search (series: {series_id}, season: {season_number})")
         except Exception as cap_error:
             sonarr_logger.error(f"Failed to increment hourly API cap for season search: {cap_error}")

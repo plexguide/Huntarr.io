@@ -234,7 +234,7 @@ def process_upgrade_seasons_mode(
             
         # Trigger search for the entire season instead of individual episodes
         sonarr_logger.debug(f"Attempting to search for entire Season {season_number} of {series_title} for upgrades")
-        search_command_id = sonarr_api.search_season(api_url, api_key, api_timeout, series_id, season_number)
+        search_command_id = sonarr_api.search_season(api_url, api_key, api_timeout, series_id, season_number, instance_name=instance_name)
         
         if search_command_id:
             # Wait for search command to complete
@@ -426,7 +426,7 @@ def process_upgrade_shows_mode(
             
         # Trigger search for all cutoff unmet episodes in this series
         sonarr_logger.debug(f"Attempting to search for {len(episode_ids)} episodes in {series_title} for upgrades")
-        search_command_id = sonarr_api.search_episode(api_url, api_key, api_timeout, episode_ids)
+        search_command_id = sonarr_api.search_episode(api_url, api_key, api_timeout, episode_ids, instance_name=instance_name)
         
         if search_command_id:
             # Wait for search command to complete
@@ -604,7 +604,7 @@ def process_upgrade_episodes_mode(
         sonarr_logger.info(f"Processing upgrade for episode: {series_title} - {season_episode} - {episode_title}")
         
         # Search for this specific episode upgrade
-        search_successful = sonarr_api.search_episode(api_url, api_key, api_timeout, [episode_id])
+        search_successful = sonarr_api.search_episode(api_url, api_key, api_timeout, [episode_id], instance_name=instance_name)
         
         if search_successful:
             # Wait for command to complete if configured

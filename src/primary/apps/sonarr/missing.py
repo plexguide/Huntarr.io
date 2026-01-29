@@ -291,8 +291,8 @@ def process_missing_seasons_packs_mode(
         
         sonarr_logger.info(f"Searching for season pack: {series_title} - Season {season_number} (contains {episode_count} missing episodes)")
         
-        # Trigger an API call to search for the entire season
-        command_id = sonarr_api.search_season(api_url, api_key, api_timeout, series_id, season_number)
+        # Trigger an API call to search for the entire season (pass instance_name for per-instance API cap)
+        command_id = sonarr_api.search_season(api_url, api_key, api_timeout, series_id, season_number, instance_name=instance_name)
         
         if command_id:
             processed_any = True
@@ -482,7 +482,7 @@ def process_missing_shows_mode(
         
         # Search for all episodes in the show
         sonarr_logger.info(f"Searching for {len(episode_ids)} missing episodes for {show_title}...")
-        search_successful = sonarr_api.search_episode(api_url, api_key, api_timeout, episode_ids)
+        search_successful = sonarr_api.search_episode(api_url, api_key, api_timeout, episode_ids, instance_name=instance_name)
         
         if search_successful:
             processed_any = True
@@ -686,7 +686,7 @@ def process_missing_episodes_mode(
         sonarr_logger.info(f"Processing episode: {series_title} - {season_episode} - {episode_title}")
         
         # Search for this specific episode
-        search_successful = sonarr_api.search_episode(api_url, api_key, api_timeout, [episode_id])
+        search_successful = sonarr_api.search_episode(api_url, api_key, api_timeout, [episode_id], instance_name=instance_name)
         
         if search_successful:
             processed_any = True
