@@ -986,27 +986,15 @@ def apply_timezone_setting():
 
 @app.route('/api/hourly-caps', methods=['GET'])
 def api_get_hourly_caps():
-    """Get hourly API usage caps for each app"""
+    """Get hourly API usage caps for each app (per-instance when app has multiple instances)."""
     try:
-        # Import necessary functions
-        from src.primary.stats_manager import load_hourly_caps, _get_app_hourly_cap_limit
-        
-        # Get the logger
+        from src.primary.stats_manager import load_hourly_caps_for_api
         web_logger = get_logger("web_server")
-        
-        # Load the current hourly caps
-        caps = load_hourly_caps()
-        
-        # Get app-specific hourly cap limits (sum of per-instance caps for enabled instances)
-        app_limits = {}
-        apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros']
-        for app in apps:
-            app_limits[app] = _get_app_hourly_cap_limit(app)
-        
+        caps, limits = load_hourly_caps_for_api()
         return jsonify({
             "success": True,
             "caps": caps,
-            "limits": app_limits
+            "limits": limits
         })
     except Exception as e:
         web_logger = get_logger("web_server")

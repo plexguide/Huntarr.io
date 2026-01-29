@@ -252,10 +252,10 @@ def app_specific_loop(app_type: str) -> None:
         
         try:
             from src.primary.cycle_tracker import start_cycle, end_cycle
-            from src.primary.utils.clean_logger import set_instance_log_context, clear_instance_log_context
+            from src.primary.utils.clean_logger import set_instance_log_context, clear_instance_log_context, set_instance_name_for_cap
         except Exception:
             start_cycle = end_cycle = None
-            set_instance_log_context = clear_instance_log_context = None
+            set_instance_log_context = clear_instance_log_context = set_instance_name_for_cap = None
 
         for instance_details in instances_to_process:
             if stop_event.is_set():
@@ -268,6 +268,8 @@ def app_specific_loop(app_type: str) -> None:
                     start_cycle(app_type, instance_name=instance_name)
                 if set_instance_log_context:
                     set_instance_log_context(f"{app_type.capitalize()}-{instance_name}")
+                if set_instance_name_for_cap:
+                    set_instance_name_for_cap(instance_name)
             except Exception as e:
                 app_logger.warning(f"Failed to set instance context for {instance_name}: {e}")
             app_logger.info(f"Processing {app_type} instance: {instance_name}")

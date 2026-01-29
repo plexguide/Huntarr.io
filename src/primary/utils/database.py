@@ -404,7 +404,7 @@ class HuntarrDatabase:
                 )
             ''')
             
-            # Create hourly_caps table for API usage tracking
+            # Create hourly_caps table for API usage tracking (app-level fallback)
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS hourly_caps (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -412,6 +412,18 @@ class HuntarrDatabase:
                     api_hits INTEGER DEFAULT 0,
                     last_reset_hour INTEGER DEFAULT 0,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            # Per-instance API usage for *arr apps
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS hourly_caps_per_instance (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
+                    api_hits INTEGER DEFAULT 0,
+                    last_reset_hour INTEGER DEFAULT 0,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(app_type, instance_name)
                 )
             ''')
             
@@ -666,6 +678,7 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_stateful_instance_locks_app_instance ON stateful_instance_locks(app_type, instance_name)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_media_stats_app_type ON media_stats(app_type, stat_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hourly_caps_app_type ON hourly_caps(app_type)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_hourly_caps_per_instance_app ON hourly_caps_per_instance(app_type, instance_name)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_sleep_data_app_type ON sleep_data(app_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_sleep_data_per_instance_app ON sleep_data_per_instance(app_type, instance_name)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_swaparr_stats_key ON swaparr_stats(stat_key)')
@@ -1246,14 +1259,58 @@ class HuntarrDatabase:
             conn.commit()
     
     def reset_hourly_caps(self):
-        """Reset all hourly API caps"""
+        """Reset all hourly API caps (app-level and per-instance)"""
         import datetime
         current_hour = datetime.datetime.now().hour
-        
         with self.get_connection() as conn:
             conn.execute('''
                 UPDATE hourly_caps SET api_hits = 0, last_reset_hour = ?, updated_at = CURRENT_TIMESTAMP
             ''', (current_hour,))
+            conn.execute('''
+                UPDATE hourly_caps_per_instance SET api_hits = 0, last_reset_hour = ?, updated_at = CURRENT_TIMESTAMP
+            ''', (current_hour,))
+            conn.commit()
+    
+    def get_hourly_caps_per_instance(self, app_type: str = None) -> Dict[str, Dict[str, Dict[str, int]]]:
+        """Get per-instance API usage. Returns { app_type: { instance_name: { api_hits, last_reset_hour } } } or for one app."""
+        with self.get_connection() as conn:
+            if app_type:
+                cursor = conn.execute('''
+                    SELECT instance_name, api_hits, last_reset_hour FROM hourly_caps_per_instance WHERE app_type = ?
+                ''', (app_type,))
+                return {row[0]: {"api_hits": row[1], "last_reset_hour": row[2]} for row in cursor.fetchall()}
+            cursor = conn.execute('SELECT app_type, instance_name, api_hits, last_reset_hour FROM hourly_caps_per_instance')
+            result = {}
+            for row in cursor.fetchall():
+                at, iname = row[0], row[1]
+                if at not in result:
+                    result[at] = {}
+                result[at][iname] = {"api_hits": row[2], "last_reset_hour": row[3]}
+            return result
+    
+    def increment_hourly_cap_per_instance(self, app_type: str, instance_name: str, increment: int = 1):
+        """Increment hourly API usage for an instance (resets if new hour)."""
+        import datetime
+        current_hour = datetime.datetime.now().hour
+        with self.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT api_hits, last_reset_hour FROM hourly_caps_per_instance WHERE app_type = ? AND instance_name = ?
+            ''', (app_type, instance_name))
+            row = cursor.fetchone()
+            if row:
+                prev_hits, last_hour = row[0], row[1]
+                if last_hour != current_hour:
+                    prev_hits = 0
+                new_hits = prev_hits + increment
+                conn.execute('''
+                    UPDATE hourly_caps_per_instance SET api_hits = ?, last_reset_hour = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE app_type = ? AND instance_name = ?
+                ''', (new_hits, current_hour, app_type, instance_name))
+            else:
+                conn.execute('''
+                    INSERT INTO hourly_caps_per_instance (app_type, instance_name, api_hits, last_reset_hour, updated_at)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (app_type, instance_name, increment, current_hour))
             conn.commit()
     
     def get_sleep_data(self, app_type: str = None) -> Dict[str, Any]:

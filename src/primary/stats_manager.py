@@ -138,78 +138,87 @@ def check_hourly_reset():
         reset_hourly_caps()
         last_hour_checked = current_hour
 
-def increment_hourly_cap(app_type: str, count: int = 1) -> bool:
+def increment_hourly_cap(app_type: str, count: int = 1, instance_name: Optional[str] = None) -> bool:
     """
-    Increment hourly API usage cap for a specific app
-    
-    Args:
-        app_type: The application type (sonarr, radarr, etc.)
-        count: The amount to increment by (default: 1)
-        
-    Returns:
-        True if successful, False otherwise
+    Increment hourly API usage for an app or (app, instance).
+    When instance_name is set (or from thread-local in per-instance context), uses per-instance counter.
     """
     if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
         logger.error(f"Invalid app_type for hourly cap: {app_type}")
         return False
-    
-    # Check if we need to reset hourly caps
+    if instance_name is None:
+        try:
+            from src.primary.utils.clean_logger import get_instance_name_for_cap
+            instance_name = get_instance_name_for_cap()
+        except Exception:
+            pass
     check_hourly_reset()
-    
     with hourly_lock:
         try:
             db = get_database()
-            
-            # Get current usage before incrementing
+            if instance_name is not None:
+                db.increment_hourly_cap_per_instance(app_type, instance_name, count)
+                per_instance = db.get_hourly_caps_per_instance(app_type)
+                new_value = per_instance.get(instance_name, {}).get("api_hits", count)
+                hourly_limit = _get_instance_hourly_cap_limit(app_type, instance_name)
+                logger.debug(f"*** HOURLY API INCREMENT *** {app_type} instance {instance_name} by {count} (usage: {new_value}, limit: {hourly_limit})")
+                return True
             caps = db.get_hourly_caps()
             prev_value = caps.get(app_type, {}).get("api_hits", 0)
-            
-            # Increment in database
             db.increment_hourly_cap(app_type, count)
             new_value = prev_value + count
-            
-            # Get the hourly cap limit (sum of per-instance caps for enabled instances)
             hourly_limit = _get_app_hourly_cap_limit(app_type)
-            
-            # Log current usage vs limit
             logger.debug(f"*** HOURLY API INCREMENT *** {app_type} by {count}: {prev_value} -> {new_value} (hourly limit: {hourly_limit})")
-            
-            # Warn if approaching limit
             if new_value >= int(hourly_limit * 0.8) and prev_value < int(hourly_limit * 0.8):
                 logger.warning(f"{app_type} is approaching hourly API cap: {new_value}/{hourly_limit}")
-            
-            # Alert if exceeding limit
             if new_value >= hourly_limit and prev_value < hourly_limit:
                 logger.error(f"{app_type} has exceeded hourly API cap: {new_value}/{hourly_limit}")
-            
             return True
         except Exception as e:
             logger.error(f"Error incrementing hourly cap for {app_type}: {e}")
             return False
 
-def get_hourly_cap_status(app_type: str) -> Dict[str, Any]:
+def _get_instance_hourly_cap_limit(app_type: str, instance_name: str) -> int:
+    """Get the hourly API cap limit for a single instance from settings."""
+    try:
+        from src.primary.settings_manager import load_settings
+        app_settings = load_settings(app_type)
+        if not app_settings:
+            return 20
+        for inst in app_settings.get("instances", []):
+            if inst.get("name") == instance_name or inst.get("instance_name") == instance_name:
+                return int(inst.get("hourly_cap", app_settings.get("hourly_cap", 20)))
+        return int(app_settings.get("hourly_cap", 20))
+    except Exception as e:
+        logger.error(f"Error getting instance hourly cap limit for {app_type}/{instance_name}: {e}")
+        return 20
+
+def get_hourly_cap_status(app_type: str, instance_name: Optional[str] = None) -> Dict[str, Any]:
     """
-    Get current API usage status for an app
-    
-    Args:
-        app_type: The application type (sonarr, radarr, etc.)
-        
-    Returns:
-        Dictionary with usage information
+    Get current API usage status for an app or (app, instance).
+    When instance_name is set, returns that instance's usage and limit.
     """
     if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
         return {"error": f"Invalid app_type: {app_type}"}
-    
     with hourly_lock:
         try:
             db = get_database()
+            if instance_name is not None:
+                per_instance = db.get_hourly_caps_per_instance(app_type)
+                current_usage = per_instance.get(instance_name, {}).get("api_hits", 0)
+                hourly_limit = _get_instance_hourly_cap_limit(app_type, instance_name)
+                return {
+                    "app": app_type,
+                    "instance_name": instance_name,
+                    "current_usage": current_usage,
+                    "limit": hourly_limit,
+                    "remaining": max(0, hourly_limit - current_usage),
+                    "percent_used": int((current_usage / hourly_limit) * 100) if hourly_limit > 0 else 0,
+                    "exceeded": current_usage >= hourly_limit
+                }
             caps = db.get_hourly_caps()
-            
-            # Get the hourly cap limit (sum of per-instance caps for enabled instances)
             hourly_limit = _get_app_hourly_cap_limit(app_type)
-            
             current_usage = caps.get(app_type, {}).get("api_hits", 0)
-            
             return {
                 "app": app_type,
                 "current_usage": current_usage,
@@ -310,17 +319,18 @@ def _calculate_per_instance_hourly_limit(app_type: str) -> int:
         app_settings = load_settings(app_type)
         return app_settings.get("hourly_cap", 20) if app_settings else 20
 
-def check_hourly_cap_exceeded(app_type: str) -> bool:
+def check_hourly_cap_exceeded(app_type: str, instance_name: Optional[str] = None) -> bool:
     """
-    Check if an app has exceeded its hourly API cap
-    
-    Args:
-        app_type: The application type (sonarr, radarr, etc.)
-        
-    Returns:
-        True if exceeded, False otherwise
+    Check if an app or (app, instance) has exceeded its hourly API cap.
+    When instance_name is set (or from thread-local), checks that instance.
     """
-    status = get_hourly_cap_status(app_type)
+    if instance_name is None:
+        try:
+            from src.primary.utils.clean_logger import get_instance_name_for_cap
+            instance_name = get_instance_name_for_cap()
+        except Exception:
+            pass
+    status = get_hourly_cap_status(app_type, instance_name=instance_name)
     return status.get("exceeded", False)
 
 def save_stats(stats: Dict[str, Dict[str, int]]) -> bool:
@@ -363,8 +373,8 @@ def increment_stat(app_type: str, stat_type: str, count: int = 1, instance_name:
         logger.error(f"Invalid stat_type: {stat_type}")
         return False
     
-    # Also increment the hourly API cap for this app
-    increment_hourly_cap(app_type, count)
+    # Also increment the hourly API cap (per-instance when instance_name is set)
+    increment_hourly_cap(app_type, count, instance_name=instance_name)
     
     with stats_lock:
         try:
@@ -447,6 +457,43 @@ def get_hourly_caps() -> Dict[str, Dict[str, int]]:
     """
     with hourly_lock:
         return load_hourly_caps()
+
+def load_hourly_caps_for_api() -> tuple:
+    """
+    Load hourly caps and limits in shape suitable for API/frontend.
+    When an app has multiple instances, returns per-instance usage and limit per instance.
+    Uses same instance name key as get_stats (name or Default) so frontend cards match.
+    Returns (caps, limits) where caps/limits may have app[instances][instanceName] for *arr apps.
+    """
+    try:
+        from src.primary.settings_manager import load_settings
+        db = get_database()
+        per_instance_caps = db.get_hourly_caps_per_instance()
+        app_caps = db.get_hourly_caps()
+        default_caps = get_default_hourly_caps()
+        caps_out = {}
+        limits_out = {}
+        for app in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
+            try:
+                app_settings = load_settings(app)
+                instances = (app_settings or {}).get("instances", [])
+                # Same key as get_stats so card data-instance-name matches API keys
+                instance_names = [(inst.get("name") or inst.get("instance_name") or "Default") for inst in instances if inst.get("enabled", True)]
+                if instance_names:
+                    inst_caps = per_instance_caps.get(app, {})
+                    caps_out[app] = {"instances": {name: {"api_hits": inst_caps.get(name, {}).get("api_hits", 0)} for name in instance_names}}
+                    limits_out[app] = {"instances": {name: _get_instance_hourly_cap_limit(app, name) for name in instance_names}}
+                else:
+                    caps_out[app] = app_caps.get(app, default_caps.get(app, {"api_hits": 0}))
+                    limits_out[app] = _get_app_hourly_cap_limit(app)
+            except Exception as app_err:
+                logger.warning(f"Error loading hourly caps for {app}: {app_err}, using app-level fallback for this app")
+                caps_out[app] = app_caps.get(app, default_caps.get(app, {"api_hits": 0}))
+                limits_out[app] = _get_app_hourly_cap_limit(app)
+        return caps_out, limits_out
+    except Exception as e:
+        logger.error(f"Error loading hourly caps for API: {e}")
+        return load_hourly_caps(), {app: _get_app_hourly_cap_limit(app) for app in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]}
 
 def reset_stats(app_type: Optional[str] = None) -> bool:
     """

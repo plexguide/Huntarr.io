@@ -17,6 +17,8 @@ import pytz
 
 # Thread-local instance log name for DB app_type (e.g. "Sonarr-TestInstance")
 _thread_instance_log: Dict[int, str] = {}
+# Thread-local instance name for per-instance API cap (e.g. "TestInstance")
+_thread_instance_cap: Dict[int, str] = {}
 
 def set_instance_log_context(display_name: str) -> None:
     """Set the current thread's log app_type for DB (e.g. 'Sonarr-TestInstance')."""
@@ -25,6 +27,15 @@ def set_instance_log_context(display_name: str) -> None:
 def clear_instance_log_context() -> None:
     """Clear the current thread's instance log context."""
     _thread_instance_log.pop(threading.get_ident(), None)
+    _thread_instance_cap.pop(threading.get_ident(), None)
+
+def set_instance_name_for_cap(instance_name: str) -> None:
+    """Set the current thread's instance name for per-instance API cap (e.g. 'TestInstance')."""
+    _thread_instance_cap[threading.get_ident()] = instance_name
+
+def get_instance_name_for_cap() -> Optional[str]:
+    """Get the current thread's instance name for API cap, or None."""
+    return _thread_instance_cap.get(threading.get_ident())
 
 
 class InstanceLogFilter(logging.Filter):
