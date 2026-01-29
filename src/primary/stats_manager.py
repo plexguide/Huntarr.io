@@ -171,7 +171,7 @@ def increment_hourly_cap(app_type: str, count: int = 1, instance_name: Optional[
                 per_instance = db.get_hourly_caps_per_instance(app_type)
                 new_value = per_instance.get(instance_name, {}).get("api_hits", count)
                 hourly_limit = _get_instance_hourly_cap_limit(app_type, instance_name)
-                logger.debug(f"*** HOURLY API INCREMENT *** {app_type} instance {instance_name} by {count} (usage: {new_value}, limit: {hourly_limit})")
+                logger.info(f"*** HOURLY API INCREMENT *** {app_type} instance '{instance_name}' by {count} → usage: {new_value}/{hourly_limit} (wrote key: '{instance_name}')")
                 return True
             caps = db.get_hourly_caps()
             prev_value = caps.get(app_type, {}).get("api_hits", 0)
@@ -402,7 +402,7 @@ def increment_stat(app_type: str, stat_type: str, count: int = 1, instance_name:
 
 def increment_stat_only(app_type: str, stat_type: str, count: int = 1, instance_name: Optional[str] = None) -> bool:
     """
-    Increment a specific statistic WITHOUT incrementing API cap counter.
+    Increment a specific statistic and the hourly API cap (so the API bar matches searches/upgrades).
     Optionally increments per-instance stat for Home dashboard.
     """
     if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
@@ -412,6 +412,9 @@ def increment_stat_only(app_type: str, stat_type: str, count: int = 1, instance_
     if stat_type not in ["hunted", "upgraded"]:
         logger.error(f"Invalid stat_type: {stat_type}")
         return False
+
+    # Count towards API limit bar so it matches SEARCHES TRIGGERED / UPGRADES TRIGGERED (per-instance when set)
+    increment_hourly_cap(app_type, count, instance_name=instance_name)
     
     if instance_name is not None:
         instance_name = _normalize_instance_name(instance_name)
@@ -503,6 +506,7 @@ def load_hourly_caps_for_api() -> tuple:
                             instances_dict[db_key] = {"api_hits": cap_data.get("api_hits", 0)}
                     caps_out[app] = {"instances": instances_dict}
                     limits_out[app] = {"instances": {name: _get_instance_hourly_cap_limit(app, name) for name in instances_dict}}
+                    logger.info(f"*** HOURLY API READ *** {app} instances: " + ', '.join([f"{k}={v['api_hits']}" for k, v in instances_dict.items()]))
                 else:
                     caps_out[app] = app_caps.get(app, default_caps.get(app, {"api_hits": 0}))
                     limits_out[app] = _get_app_hourly_cap_limit(app)

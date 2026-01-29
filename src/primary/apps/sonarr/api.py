@@ -789,17 +789,7 @@ def search_episode(api_url: str, api_key: str, api_timeout: int, episode_ids: Li
         response.raise_for_status()
         command_id = response.json().get('id')
         sonarr_logger.info(f"Triggered Sonarr search for episode IDs: {episode_ids}. Command ID: {command_id}")
-        
-        # Increment API counter after successful request (per-instance; fallback to thread-local if not passed)
-        try:
-            from src.primary.stats_manager import increment_hourly_cap
-            from src.primary.utils.clean_logger import get_instance_name_for_cap
-            cap_instance = instance_name if instance_name is not None else get_instance_name_for_cap()
-            increment_hourly_cap("sonarr", 1, instance_name=cap_instance)
-            sonarr_logger.debug(f"Incremented Sonarr hourly API cap for episode search ({len(episode_ids)} episodes)")
-        except Exception as cap_error:
-            sonarr_logger.error(f"Failed to increment hourly API cap for episode search: {cap_error}")
-        
+        # API bar is incremented by increment_stat / increment_stat_only when hunt/upgrade is recorded (one count per trigger)
         return command_id
     except requests.exceptions.RequestException as e:
         sonarr_logger.error(f"Error triggering Sonarr search for episode IDs {episode_ids}: {e}")
@@ -921,17 +911,7 @@ def search_season(api_url: str, api_key: str, api_timeout: int, series_id: int, 
         response.raise_for_status()
         command_id = response.json().get('id')
         sonarr_logger.info(f"Triggered Sonarr season search for series ID: {series_id}, season: {season_number}. Command ID: {command_id}")
-        
-        # Track the API call in hourly cap counter (per-instance; fallback to thread-local if not passed)
-        try:
-            from src.primary.stats_manager import increment_hourly_cap
-            from src.primary.utils.clean_logger import get_instance_name_for_cap
-            cap_instance = instance_name if instance_name is not None else get_instance_name_for_cap()
-            increment_hourly_cap("sonarr", 1, instance_name=cap_instance)
-            sonarr_logger.debug(f"Incremented Sonarr hourly API cap for season search (series: {series_id}, season: {season_number})")
-        except Exception as cap_error:
-            sonarr_logger.error(f"Failed to increment hourly API cap for season search: {cap_error}")
-        
+        # API bar is incremented by increment_stat / increment_stat_only when hunt/upgrade is recorded (one count per trigger)
         return command_id
     except requests.exceptions.RequestException as e:
         sonarr_logger.error(f"Error triggering Sonarr season search for series ID {series_id}, season {season_number}: {e}")

@@ -117,8 +117,11 @@ window.HuntarrStats = {
                         targetCard.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
                         wrapper.appendChild(targetCard);
                     }
-                    targetCard.style.display = '';
-                    const h4 = targetCard.querySelector('.app-content h4');
+                        targetCard.style.display = '';
+                        // Set instance name on the card itself for easier identification
+                        targetCard.setAttribute('data-instance-name', name);
+                        
+                        const h4 = targetCard.querySelector('.app-content h4');
                     if (h4) h4.textContent = `${appLabel} – ${name}`;
                     const numbers = targetCard.querySelectorAll('.stat-number');
                     if (numbers[0]) {
@@ -135,11 +138,12 @@ window.HuntarrStats = {
                 if (typeof window.CycleCountdown !== 'undefined' && window.CycleCountdown.refreshTimerElements) {
                     window.CycleCountdown.refreshTimerElements();
                 }
-                if (typeof loadHourlyCapData === 'function') {
-                    loadHourlyCapData();
-                } else if (typeof window.loadHourlyCapData === 'function') {
-                    window.loadHourlyCapData();
-                }
+                // Call hourly cap update after a short delay to ensure DOM elements are fully rendered
+                setTimeout(() => {
+                    if (typeof window.loadHourlyCapData === 'function') {
+                        window.loadHourlyCapData();
+                    }
+                }, 200);
             } else {
                 // Single card: app-level stats and app name
                 const h4 = card.querySelector('.app-content h4');

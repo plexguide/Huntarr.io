@@ -4,10 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initial load of hourly cap data
-    loadHourlyCapData();
-    
-    // Set up polling to refresh the hourly cap data every 2 minutes (reduced from 30 seconds)
+    // Set up polling to refresh the hourly cap data every 2 minutes
     setInterval(loadHourlyCapData, 120000);
 });
 
@@ -35,11 +32,16 @@ window.loadHourlyCapData = function loadHourlyCapData() {
 };
 
 /**
- * Get instance name for a card (from reset button data-instance-name).
+ * Get instance name for a card (from card attribute or reset button).
  * @param {Element} card - .app-stats-card element
  * @returns {string|null} Instance name or null for single-app
  */
 function getInstanceNameForCard(card) {
+    // Check card attribute first (most reliable)
+    if (card.hasAttribute('data-instance-name')) {
+        return card.getAttribute('data-instance-name');
+    }
+    // Fallback to reset button
     const resetBtn = card.querySelector('.cycle-reset-button[data-instance-name]');
     return resetBtn ? resetBtn.getAttribute('data-instance-name') : null;
 }
