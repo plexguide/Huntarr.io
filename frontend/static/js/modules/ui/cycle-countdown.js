@@ -199,6 +199,19 @@ window.CycleCountdown = (function() {
         return document.querySelectorAll('.app-stats-card.' + app + ' .cycle-timer');
     }
     
+    // Get instance name for a timer (from reset button in same card); returns null for single-app (e.g. swaparr)
+    function getInstanceNameForTimer(timerElement) {
+        const card = timerElement.closest('.app-stats-card');
+        if (!card) return null;
+        const resetBtn = card.querySelector('.cycle-reset-button[data-instance-name]');
+        return resetBtn ? resetBtn.getAttribute('data-instance-name') : null;
+    }
+    
+    // Key for per-instance state: "app" for single-app, "app-instanceName" for *arr instances
+    function stateKey(app, instanceName) {
+        return instanceName ? app + '-' + instanceName : app;
+    }
+    
     // Create timer display element in each app stats card (supports multiple instance cards)
     function createTimerElement(app) {
         console.log(`[CycleCountdown] Creating timer elements for ${app}`);
@@ -290,71 +303,70 @@ window.CycleCountdown = (function() {
                 
                 let dataProcessed = false;
                 
-                // Process the data for each app
+                // Process the data for each app (per-instance for *arr, single for swaparr)
                 for (const app in data) {
-                    if (trackedApps.includes(app)) {
-                        // Check if data format is valid
-                        if (data[app] && data[app].next_cycle) {
-                            console.log(`[CycleCountdown] Processing API data for ${app}:`, data[app]);
-                            
-                            // Convert ISO date string to Date object
-                            const nextCycleTime = new Date(data[app].next_cycle);
-                            
-                            // Validate the date format first
-                            if (isNaN(nextCycleTime.getTime())) {
-                                console.error(`[CycleCountdown] Invalid date format for ${app}:`, data[app].next_cycle);
-                                continue;
+                    if (!trackedApps.includes(app)) {
+                        console.log(`[CycleCountdown] Skipping ${app} - not in tracked apps list`);
+                        continue;
+                    }
+                    const appData = data[app];
+                    if (!appData) continue;
+                    // Per-instance format: { instances: { InstanceName: { next_cycle, cyclelock } } }
+                    if (appData.instances && typeof appData.instances === 'object') {
+                        for (const instanceName in appData.instances) {
+                            const inst = appData.instances[instanceName];
+                            if (!inst || !inst.next_cycle) continue;
+                            const nextCycleTime = new Date(inst.next_cycle);
+                            if (isNaN(nextCycleTime.getTime())) continue;
+                            const key = stateKey(app, instanceName);
+                            nextCycleTimes[key] = nextCycleTime;
+                            runningCycles[key] = inst.cyclelock !== undefined ? inst.cyclelock : true;
+                            dataProcessed = true;
+                        }
+                        getTimerElements(app).forEach(timerElement => {
+                            const timerValue = timerElement.querySelector('.timer-value');
+                            if (timerValue) {
+                                timerValue.classList.remove('refreshing-state');
+                                timerValue.style.removeProperty('color');
                             }
-                            
-                            // Skip timezone validation entirely - just use the timestamp as-is
-                            // The backend sends timezone-aware timestamps that are already correct
-                            console.log(`[CycleCountdown] ${app} timestamp: ${data[app].next_cycle}, parsed: ${nextCycleTime.toISOString()}`);
-                            
-                            // Store the next cycle time without timezone validation
-                            nextCycleTimes[app] = nextCycleTime;
-                            
+                        });
+                        runningCycles[app] = false;
+                        updateTimerDisplay(app);
+                        setupCountdown(app);
+                        continue;
+                    }
+                    // Single-app format: { next_cycle, cyclelock }
+                    if (appData.next_cycle) {
+                        const nextCycleTime = new Date(appData.next_cycle);
+                        if (isNaN(nextCycleTime.getTime())) {
+                            console.warn(`[CycleCountdown] Invalid date for ${app}:`, appData.next_cycle);
+                            continue;
+                        }
+                        nextCycleTimes[app] = nextCycleTime;
+                        getTimerElements(app).forEach(timerElement => {
+                            const timerValue = timerElement.querySelector('.timer-value');
+                            if (timerValue) {
+                                timerValue.classList.remove('refreshing-state');
+                                timerValue.style.removeProperty('color');
+                            }
+                        });
+                        const cyclelock = appData.cyclelock !== undefined ? appData.cyclelock : true;
+                        runningCycles[app] = cyclelock;
+                        if (cyclelock) {
                             getTimerElements(app).forEach(timerElement => {
                                 const timerValue = timerElement.querySelector('.timer-value');
                                 if (timerValue) {
+                                    timerValue.textContent = 'Running Cycle';
                                     timerValue.classList.remove('refreshing-state');
-                                    timerValue.style.removeProperty('color');
+                                    timerValue.classList.add('running-state');
+                                    timerValue.style.color = '#00ff88';
                                 }
                             });
-                            
-                            const cyclelock = data[app].cyclelock !== undefined ? data[app].cyclelock : true;
-                            
-                            if (cyclelock) {
-                                runningCycles[app] = true;
-                                getTimerElements(app).forEach(timerElement => {
-                                    const timerValue = timerElement.querySelector('.timer-value');
-                                    if (timerValue) {
-                                        timerValue.textContent = 'Running Cycle';
-                                        timerValue.classList.remove('refreshing-state');
-                                        timerValue.classList.add('running-state');
-                                        timerValue.style.color = '#00ff88';
-                                    }
-                                });
-                                console.log(`[CycleCountdown] ${app} cyclelock is true, showing Running Cycle`);
-                            } else {
-                                // App is waiting for next cycle - clear running state and show countdown
-                                if (runningCycles[app]) {
-                                    console.log(`[CycleCountdown] ${app} cyclelock is false, switching to countdown`);
-                                }
-                                runningCycles[app] = false;
-                                // Update the timer display immediately for normal countdown
-                                updateTimerDisplay(app);
-                            }
-                            
-                            // Set up 1-second countdown interval if not already set
-                            setupCountdown(app);
-                            
-                            dataProcessed = true;
-                            console.log(`[CycleCountdown] Updated ${app} with next cycle: ${nextCycleTime.toISOString()}`);
                         } else {
-                            console.warn(`[CycleCountdown] Invalid API data format for ${app}:`, data[app]);
+                            updateTimerDisplay(app);
                         }
-                    } else {
-                        console.log(`[CycleCountdown] Skipping ${app} - not in tracked apps list`);
+                        setupCountdown(app);
+                        dataProcessed = true;
                     }
                 }
                 
@@ -449,35 +461,33 @@ window.CycleCountdown = (function() {
         console.log(`[CycleCountdown] Set up 1-second countdown timer for ${app}`);
     }
     
-    // Update the timer display for an app (all instance cards)
+    // Update the timer display for an app (per-instance when cards have data-instance-name)
     function updateTimerDisplay(app) {
         const timerElements = getTimerElements(app);
-        if (!timerElements.length) {
-            return;
-        }
+        if (!timerElements.length) return;
         
-        const nextCycleTime = nextCycleTimes[app];
         const now = new Date();
-        const timeRemaining = nextCycleTime ? (nextCycleTime - now) : 0;
-        const isExpired = nextCycleTime && timeRemaining <= 0;
-        const isRunning = runningCycles[app];
-        
-        let formattedTime = '--:--:--';
-        if (nextCycleTime && !isExpired && !isRunning) {
-            const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-            const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-            formattedTime = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-        }
-        
-        if (isExpired) {
-            delete nextCycleTimes[app];
-        }
         
         timerElements.forEach(timerElement => {
             const timerValue = timerElement.querySelector('.timer-value');
             if (!timerValue) return;
             if (timerElement.getAttribute('data-waiting-for-reset') === 'true') return;
+            
+            const instanceName = getInstanceNameForTimer(timerElement);
+            const key = stateKey(app, instanceName);
+            const nextCycleTime = nextCycleTimes[key];
+            const isRunning = runningCycles[key];
+            const timeRemaining = nextCycleTime ? (nextCycleTime - now) : 0;
+            const isExpired = nextCycleTime && timeRemaining <= 0;
+            
+            let formattedTime = '--:--:--';
+            if (nextCycleTime && !isExpired && !isRunning) {
+                const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                formattedTime = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+            }
+            if (isExpired) delete nextCycleTimes[key];
             
             if (isRunning) {
                 timerValue.textContent = 'Running Cycle';

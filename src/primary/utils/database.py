@@ -415,7 +415,7 @@ class HuntarrDatabase:
                 )
             ''')
             
-            # Create sleep_data table for cycle tracking
+            # Create sleep_data table for cycle tracking (single-app e.g. swaparr)
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS sleep_data (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -425,6 +425,20 @@ class HuntarrDatabase:
                     last_cycle_start TEXT,
                     last_cycle_end TEXT,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            # Per-instance sleep/cycle data for *arr apps (one next_cycle per instance)
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS sleep_data_per_instance (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
+                    next_cycle_time TEXT,
+                    cycle_lock BOOLEAN DEFAULT FALSE,
+                    last_cycle_start TEXT,
+                    last_cycle_end TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(app_type, instance_name)
                 )
             ''')
             
@@ -622,11 +636,22 @@ class HuntarrDatabase:
                 # Column already exists
                 pass
             
-            # Create reset_requests table for reset request management
+            # Create reset_requests table for reset request management (app-level e.g. swaparr)
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS reset_requests (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     app_type TEXT NOT NULL,
+                    timestamp INTEGER NOT NULL,
+                    processed INTEGER NOT NULL,
+                    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            # Per-instance reset requests for *arr apps (multiple rows per instance over time)
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS reset_requests_per_instance (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
                     timestamp INTEGER NOT NULL,
                     processed INTEGER NOT NULL,
                     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -642,6 +667,7 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_media_stats_app_type ON media_stats(app_type, stat_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hourly_caps_app_type ON hourly_caps(app_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_sleep_data_app_type ON sleep_data(app_type)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_sleep_data_per_instance_app ON sleep_data_per_instance(app_type, instance_name)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_swaparr_stats_key ON swaparr_stats(stat_key)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_schedules_app_type ON schedules(app_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_schedules_enabled ON schedules(enabled)')
@@ -1292,7 +1318,85 @@ class HuntarrDatabase:
                     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ''', (app_type, next_cycle_time, cycle_lock, last_cycle_start, last_cycle_end))
             
+                conn.commit()
+    
+    def get_sleep_data_per_instance(self, app_type: str, instance_name: str = None) -> Dict[str, Any]:
+        """Get sleep/cycle data for an instance or all instances of an app"""
+        with self.get_connection() as conn:
+            if instance_name is not None:
+                cursor = conn.execute('''
+                    SELECT next_cycle_time, cycle_lock, last_cycle_start, last_cycle_end 
+                    FROM sleep_data_per_instance WHERE app_type = ? AND instance_name = ?
+                ''', (app_type, instance_name))
+                row = cursor.fetchone()
+                if row:
+                    return {
+                        "next_cycle_time": row[0],
+                        "cycle_lock": bool(row[1]),
+                        "last_cycle_start": row[2],
+                        "last_cycle_end": row[3]
+                    }
+                return {}
+            else:
+                cursor = conn.execute('''
+                    SELECT instance_name, next_cycle_time, cycle_lock, last_cycle_start, last_cycle_end 
+                    FROM sleep_data_per_instance WHERE app_type = ?
+                ''', (app_type,))
+                return {
+                    row[0]: {
+                        "next_cycle_time": row[1],
+                        "cycle_lock": bool(row[2]),
+                        "last_cycle_start": row[3],
+                        "last_cycle_end": row[4]
+                    }
+                    for row in cursor.fetchall()
+                }
+    
+    def set_sleep_data_per_instance(self, app_type: str, instance_name: str, next_cycle_time: str = None,
+                                    cycle_lock: bool = None, last_cycle_start: str = None, last_cycle_end: str = None):
+        """Set sleep/cycle data for an instance"""
+        with self.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT next_cycle_time, cycle_lock, last_cycle_start, last_cycle_end 
+                FROM sleep_data_per_instance WHERE app_type = ? AND instance_name = ?
+            ''', (app_type, instance_name))
+            row = cursor.fetchone()
+            if row:
+                current_next = row[0] if next_cycle_time is None else next_cycle_time
+                current_lock = row[1] if cycle_lock is None else cycle_lock
+                current_start = row[2] if last_cycle_start is None else last_cycle_start
+                current_end = row[3] if last_cycle_end is None else last_cycle_end
+                conn.execute('''
+                    UPDATE sleep_data_per_instance 
+                    SET next_cycle_time = ?, cycle_lock = ?, last_cycle_start = ?, last_cycle_end = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE app_type = ? AND instance_name = ?
+                ''', (current_next, current_lock, current_start, current_end, app_type, instance_name))
+            else:
+                conn.execute('''
+                    INSERT INTO sleep_data_per_instance (app_type, instance_name, next_cycle_time, cycle_lock, last_cycle_start, last_cycle_end, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (app_type, instance_name, next_cycle_time, cycle_lock, last_cycle_start, last_cycle_end))
             conn.commit()
+    
+    def get_all_sleep_data_per_instance(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
+        """Get sleep/cycle data for all instances (all apps). Returns { app_type: { instance_name: data } }."""
+        with self.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT app_type, instance_name, next_cycle_time, cycle_lock, last_cycle_start, last_cycle_end
+                FROM sleep_data_per_instance
+            ''')
+            result = {}
+            for row in cursor.fetchall():
+                app_type, instance_name = row[0], row[1]
+                if app_type not in result:
+                    result[app_type] = {}
+                result[app_type][instance_name] = {
+                    "next_cycle_time": row[2],
+                    "cycle_lock": bool(row[3]),
+                    "last_cycle_start": row[4],
+                    "last_cycle_end": row[5]
+                }
+            return result
     
     def get_swaparr_stats(self) -> Dict[str, int]:
         """Get Swaparr statistics"""
@@ -1588,43 +1692,64 @@ class HuntarrDatabase:
 
     # Reset Request Management Methods (replaces file-based reset system)
     
-    def create_reset_request(self, app_type: str) -> bool:
-        """Create a reset request for an app (replaces creating .reset files)"""
+    def create_reset_request(self, app_type: str, instance_name: Optional[str] = None) -> bool:
+        """Create a reset request for an app or (app, instance). instance_name=None for swaparr/single-app."""
         try:
             with self.get_connection() as conn:
-                conn.execute('''
-                    INSERT OR REPLACE INTO reset_requests (app_type, timestamp, processed)
-                    VALUES (?, ?, 0)
-                ''', (app_type, int(time.time())))
+                ts = int(time.time())
+                if instance_name is not None:
+                    conn.execute('''
+                        INSERT INTO reset_requests_per_instance (app_type, instance_name, timestamp, processed)
+                        VALUES (?, ?, ?, 0)
+                    ''', (app_type, instance_name, ts))
+                else:
+                    conn.execute('''
+                        INSERT OR REPLACE INTO reset_requests (app_type, timestamp, processed)
+                        VALUES (?, ?, 0)
+                    ''', (app_type, ts))
                 conn.commit()
-                logger.info(f"Created reset request for {app_type}")
+                logger.info(f"Created reset request for {app_type}" + (f" instance {instance_name}" if instance_name else ""))
                 return True
         except Exception as e:
             logger.error(f"Error creating reset request for {app_type}: {e}")
             return False
     
-    def get_pending_reset_request(self, app_type: str) -> Optional[int]:
-        """Check if there's a pending reset request for an app (replaces checking .reset files)"""
+    def get_pending_reset_request(self, app_type: str, instance_name: Optional[str] = None) -> Optional[int]:
+        """Check if there's a pending reset request for an app or (app, instance). instance_name=None for swaparr."""
         with self.get_connection() as conn:
-            cursor = conn.execute('''
-                SELECT timestamp FROM reset_requests 
-                WHERE app_type = ? AND processed = 0
-                ORDER BY timestamp DESC LIMIT 1
-            ''', (app_type,))
+            if instance_name is not None:
+                cursor = conn.execute('''
+                    SELECT timestamp FROM reset_requests_per_instance 
+                    WHERE app_type = ? AND instance_name = ? AND processed = 0
+                    ORDER BY timestamp DESC LIMIT 1
+                ''', (app_type, instance_name))
+            else:
+                cursor = conn.execute('''
+                    SELECT timestamp FROM reset_requests 
+                    WHERE app_type = ? AND processed = 0
+                    ORDER BY timestamp DESC LIMIT 1
+                ''', (app_type,))
             row = cursor.fetchone()
             return row[0] if row else None
     
-    def mark_reset_request_processed(self, app_type: str) -> bool:
-        """Mark a reset request as processed (replaces deleting .reset files)"""
+    def mark_reset_request_processed(self, app_type: str, instance_name: Optional[str] = None) -> bool:
+        """Mark a reset request as processed. instance_name=None for swaparr."""
         try:
             with self.get_connection() as conn:
-                conn.execute('''
-                    UPDATE reset_requests 
-                    SET processed = 1, processed_at = CURRENT_TIMESTAMP
-                    WHERE app_type = ? AND processed = 0
-                ''', (app_type,))
+                if instance_name is not None:
+                    conn.execute('''
+                        UPDATE reset_requests_per_instance 
+                        SET processed = 1, processed_at = CURRENT_TIMESTAMP
+                        WHERE app_type = ? AND instance_name = ? AND processed = 0
+                    ''', (app_type, instance_name))
+                else:
+                    conn.execute('''
+                        UPDATE reset_requests 
+                        SET processed = 1, processed_at = CURRENT_TIMESTAMP
+                        WHERE app_type = ? AND processed = 0
+                    ''', (app_type,))
                 conn.commit()
-                logger.info(f"Marked reset request as processed for {app_type}")
+                logger.info(f"Marked reset request as processed for {app_type}" + (f" instance {instance_name}" if instance_name else ""))
                 return True
         except Exception as e:
             logger.error(f"Error marking reset request as processed for {app_type}: {e}")

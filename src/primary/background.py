@@ -182,14 +182,6 @@ def app_specific_loop(app_type: str) -> None:
 
         app_logger.info(f"=== Starting {app_type.upper()} cycle ===")
 
-        # Mark cycle as started (set cyclelock to True)
-        try:
-            from src.primary.cycle_tracker import start_cycle
-            start_cycle(app_type)
-        except Exception as e:
-            app_logger.warning(f"Failed to mark cycle start for {app_type}: {e}")
-            # Non-critical, continue execution
-
         # Check if we need to use multi-instance mode
         instances_to_process = []
         
@@ -258,11 +250,26 @@ def app_specific_loop(app_type: str) -> None:
         processed_any_items = False
         enabled_instances = []
         
+        try:
+            from src.primary.cycle_tracker import start_cycle, end_cycle
+            from src.primary.utils.clean_logger import set_instance_log_context, clear_instance_log_context
+        except Exception:
+            start_cycle = end_cycle = None
+            set_instance_log_context = clear_instance_log_context = None
+
         for instance_details in instances_to_process:
             if stop_event.is_set():
                 break
                 
             instance_name = instance_details.get("instance_name", "Default") # Use the dict from get_configured_instances
+            # Per-instance cycle and logs: start cycle for this instance, set log context so DB shows e.g. Sonarr-TestInstance
+            try:
+                if start_cycle:
+                    start_cycle(app_type, instance_name=instance_name)
+                if set_instance_log_context:
+                    set_instance_log_context(f"{app_type.capitalize()}-{instance_name}")
+            except Exception as e:
+                app_logger.warning(f"Failed to set instance context for {instance_name}: {e}")
             app_logger.info(f"Processing {app_type} instance: {instance_name}")
             
             # Get instance-specific settings from the instance_details dict
@@ -462,6 +469,20 @@ def app_specific_loop(app_type: str) -> None:
 
 
 
+            # Per-instance cycle end: set this instance's next_cycle from its sleep_duration
+            try:
+                if end_cycle:
+                    user_tz = _get_user_timezone()
+                    now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
+                    instance_sleep = instance_details.get("sleep_duration", app_settings.get("sleep_duration", 900))
+                    next_cycle_time = now_user_tz + datetime.timedelta(seconds=instance_sleep)
+                    next_cycle_naive = next_cycle_time.replace(tzinfo=None) if next_cycle_time.tzinfo else next_cycle_time
+                    end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
+            except Exception as e:
+                app_logger.warning(f"Failed to set cycle end for {instance_name}: {e}")
+            if clear_instance_log_context:
+                clear_instance_log_context()
+
             # Small delay between instances if needed (optional)
             if not stop_event.is_set():
                  time.sleep(1) # Short pause
@@ -493,14 +514,13 @@ def app_specific_loop(app_type: str) -> None:
                     instance_mode = "custom"
                     
                     try:
-                        # Look up the instance in the configured instances
-                        if configured_instances and app_type in configured_instances:
-                            for instance_details in configured_instances[app_type]:
-                                if instance_details.get("instance_name") == instance_name:
-                                    instance_hours = instance_details.get("state_management_hours", 168)
-                                    instance_mode = instance_details.get("state_management_mode", "custom")
-                                    instance_enabled = (instance_mode != "disabled")
-                                    break
+                        # Look up the instance in instances we just processed
+                        for instance_details in instances_to_process:
+                            if instance_details.get("instance_name") == instance_name:
+                                instance_hours = instance_details.get("state_management_hours", 168)
+                                instance_mode = instance_details.get("state_management_mode", "custom")
+                                instance_enabled = (instance_mode != "disabled")
+                                break
                     except Exception as e:
                         from src.primary.utils.log_deduplication import should_log_message, format_suppressed_message
                         
@@ -564,41 +584,15 @@ def app_specific_loop(app_type: str) -> None:
             # Swaparr uses its own state management for strikes and removed downloads
             app_logger.debug(f"Swaparr uses its own strike/removal tracking, not the hunting state manager")
             
-        # Calculate sleep duration (use configured or default value)
-        sleep_seconds = app_settings.get("sleep_duration", 900)  # Default to 15 minutes
-                
-        # Sleep with periodic checks for reset file
-        # Calculate and format the time when the next cycle will begin
-        # Use user's selected timezone for all time operations
-        
-        # Get user's selected timezone
+        # Sleep: use minimum of instance sleep_durations (next cycle per instance already set in loop)
+        sleep_seconds = min(
+            (d.get("sleep_duration", app_settings.get("sleep_duration", 900)) for d in instances_to_process),
+            default=app_settings.get("sleep_duration", 900)
+        )
         user_tz = _get_user_timezone()
-        
-        # Get current time in user's timezone - remove microseconds for clean timestamps
         now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
-        
-        # Calculate next cycle time in user's timezone without microseconds
-        next_cycle_time = now_user_tz + datetime.timedelta(seconds=sleep_seconds)
-        
         app_logger.debug(f"Current time ({user_tz}): {now_user_tz.strftime('%Y-%m-%d %H:%M:%S')}")
-        app_logger.info(f"Next cycle will begin at {next_cycle_time.strftime('%Y-%m-%d %H:%M:%S')} ({user_tz})")
-        app_logger.info(f"Sleep duration: {sleep_seconds} seconds")
-        
-        # Update cycle tracking with user timezone time
-        next_cycle_naive = next_cycle_time.replace(tzinfo=None) if next_cycle_time.tzinfo else next_cycle_time
-        update_next_cycle(app_type, next_cycle_naive)
-        
-        # Mark cycle as ended (set cyclelock to False) and update next cycle time
-        # Use user's timezone for internal storage consistency
-        try:
-            from src.primary.cycle_tracker import end_cycle
-            # Convert timezone-aware datetime to naive for clean timestamp generation
-            next_cycle_naive = next_cycle_time.replace(tzinfo=None) if next_cycle_time.tzinfo else next_cycle_time
-            end_cycle(app_type, next_cycle_naive)
-        except Exception as e:
-            app_logger.warning(f"Failed to mark cycle end for {app_type}: {e}")
-            # Non-critical, continue execution
-        
+        app_logger.info(f"Sleep duration: {sleep_seconds} seconds before next cycle")
         app_logger.debug(f"Sleeping for {sleep_seconds} seconds before next cycle...")
                 
         # Use shorter sleep intervals and check for reset file
@@ -610,17 +604,21 @@ def app_specific_loop(app_type: str) -> None:
                 app_logger.info("Stop event detected during sleep. Breaking out of sleep cycle.")
                 break
                         
-            # Check for database reset request
+            # Check for database reset request (per-instance for *arr, app-level for swaparr)
             try:
                 from src.primary.utils.database import get_database
                 db = get_database()
-                reset_timestamp = db.get_pending_reset_request(app_type)
-                if reset_timestamp:
-                    app_logger.info(f"!!! RESET REQUEST DETECTED !!! Manual cycle reset triggered for {app_type} (timestamp: {reset_timestamp}). Starting new cycle immediately.")
-                    
-                    # Mark the reset request as processed
-                    db.mark_reset_request_processed(app_type)
-                    app_logger.info(f"Reset request processed for {app_type}. Starting new cycle now.")
+                reset_found = False
+                for inst in instances_to_process:
+                    iname = inst.get("instance_name", "Default")
+                    reset_timestamp = db.get_pending_reset_request(app_type, iname)
+                    if reset_timestamp:
+                        app_logger.info(f"!!! RESET REQUEST DETECTED !!! Manual cycle reset triggered for {app_type} instance {iname}. Starting new cycle immediately.")
+                        db.mark_reset_request_processed(app_type, iname)
+                        app_logger.info(f"Reset request processed for {app_type} instance {iname}. Starting new cycle now.")
+                        reset_found = True
+                        break
+                if reset_found:
                     break
             except Exception as e:
                 app_logger.error(f"Error checking reset request for {app_type}: {e}", exc_info=True)

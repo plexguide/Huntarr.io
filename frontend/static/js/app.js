@@ -1898,8 +1898,12 @@ let huntarrUI = {
         button.disabled = true;
         button.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Resetting...';
         
-        // API endpoint
-        const endpoint = `./api/cycle/reset/${app}`;
+        // Per-instance reset for *arr apps (card has data-instance-name)
+        const instanceName = button.getAttribute('data-instance-name');
+        let endpoint = `./api/cycle/reset/${app}`;
+        if (instanceName && app !== 'swaparr') {
+            endpoint += '?instance_name=' + encodeURIComponent(instanceName);
+        }
         
         HuntarrUtils.fetchWithTimeout(endpoint, {
             method: 'POST'

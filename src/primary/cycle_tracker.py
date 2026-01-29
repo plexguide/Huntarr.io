@@ -30,101 +30,86 @@ def _get_user_timezone():
         import pytz
         return pytz.UTC
 
-def update_sleep_json(app_type: str, next_cycle_time: datetime.datetime, cyclelock: bool = None) -> None:
+def update_sleep_json(app_type: str, next_cycle_time: datetime.datetime, cyclelock: bool = None,
+                      instance_name: Optional[str] = None) -> None:
     """
-    Update the sleep/cycle data in the database
-    
-    Args:
-        app_type: The type of app (sonarr, radarr, etc.)
-        next_cycle_time: When the next cycle will begin
-        cyclelock: If provided, sets the cycle lock state (True = running, False = waiting)
+    Update the sleep/cycle data in the database.
+    instance_name=None for single-app (e.g. swaparr); set for *arr per-instance.
     """
     try:
-        logger.debug(f"Updating sleep data for {app_type}, cyclelock: {cyclelock}")
+        label = f"{app_type}" + (f" instance {instance_name}" if instance_name else "")
+        logger.debug(f"Updating sleep data for {label}, cyclelock: {cyclelock}")
         
-        # Ensure next_cycle_time is timezone-aware and in user's selected timezone
         user_tz = _get_user_timezone()
-        
         if next_cycle_time.tzinfo is None:
-            # If naive datetime, assume it's in user's timezone
             next_cycle_time = user_tz.localize(next_cycle_time)
         elif next_cycle_time.tzinfo != user_tz:
-            # Convert to user's timezone if it's in a different timezone
             next_cycle_time = next_cycle_time.astimezone(user_tz)
-        
-        # Remove microseconds for clean timestamps
         next_cycle_time = next_cycle_time.replace(microsecond=0)
         
-        # Calculate current time in user's timezone for consistency
-        now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
-        
-        # Store in database
         db = get_database()
-        
-        # Get current data to preserve existing values
-        current_data = db.get_sleep_data(app_type)
-        
-        # Determine cyclelock value
-        if cyclelock is None:
-            # If not explicitly set, preserve existing value or default to True (cycle starting)
-            cyclelock = current_data.get('cycle_lock', True)
-        
-        # Update the database
-        db.set_sleep_data(
-            app_type=app_type,
-            next_cycle_time=next_cycle_time.isoformat(),
-            cycle_lock=cyclelock,
-            last_cycle_start=current_data.get('last_cycle_start'),
-            last_cycle_end=current_data.get('last_cycle_end')
-        )
-        
-        logger.info(f"Updated sleep data for {app_type}: next_cycle={next_cycle_time.isoformat()}, cyclelock={cyclelock}")
-        
+        if instance_name is not None:
+            current_data = db.get_sleep_data_per_instance(app_type, instance_name)
+            if cyclelock is None:
+                cyclelock = current_data.get('cycle_lock', True)
+            db.set_sleep_data_per_instance(
+                app_type=app_type,
+                instance_name=instance_name,
+                next_cycle_time=next_cycle_time.isoformat(),
+                cycle_lock=cyclelock,
+                last_cycle_start=current_data.get('last_cycle_start'),
+                last_cycle_end=current_data.get('last_cycle_end')
+            )
+        else:
+            current_data = db.get_sleep_data(app_type)
+            if cyclelock is None:
+                cyclelock = current_data.get('cycle_lock', True)
+            db.set_sleep_data(
+                app_type=app_type,
+                next_cycle_time=next_cycle_time.isoformat(),
+                cycle_lock=cyclelock,
+                last_cycle_start=current_data.get('last_cycle_start'),
+                last_cycle_end=current_data.get('last_cycle_end')
+            )
+        logger.info(f"Updated sleep data for {label}: next_cycle={next_cycle_time.isoformat()}, cyclelock={cyclelock}")
     except Exception as e:
         logger.error(f"Error updating sleep data for {app_type}: {e}")
 
-def update_next_cycle(app_type: str, next_cycle_time: datetime.datetime) -> None:
-    """
-    Update the next cycle time for an app
-    
-    Args:
-        app_type: The type of app (sonarr, radarr, etc.)
-        next_cycle_time: When the next cycle will begin
-    """
+def update_next_cycle(app_type: str, next_cycle_time: datetime.datetime,
+                     instance_name: Optional[str] = None) -> None:
+    """Update the next cycle time for an app or (app, instance)."""
     with _lock:
-        # Get user's timezone for consistent timestamp formatting
         user_tz = _get_user_timezone()
-        
-        # Ensure next_cycle_time is timezone-aware and in user's timezone
         if next_cycle_time.tzinfo is None:
-            # If naive datetime, assume it's in user's timezone
             next_cycle_time = user_tz.localize(next_cycle_time)
         elif next_cycle_time.tzinfo != user_tz:
-            # Convert to user's timezone if it's in a different timezone
             next_cycle_time = next_cycle_time.astimezone(user_tz)
-        
-        # Remove microseconds for clean timestamps
         next_cycle_time = next_cycle_time.replace(microsecond=0)
-        
-        # Update database
-        update_sleep_json(app_type, next_cycle_time)
+        update_sleep_json(app_type, next_cycle_time, instance_name=instance_name)
 
 def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
     """
-    Get the cycle status for all apps or a specific app
-    
-    Args:
-        app_type: Optional app type to filter for
-    
-    Returns:
-        Dict with cycle status information including cyclelock status
+    Get the cycle status for all apps or a specific app.
+    For *arr apps with multiple instances, returns per-instance data under "instances".
     """
     with _lock:
         try:
             db = get_database()
+            # Per-instance data for *arr apps (sonarr, radarr, etc.)
+            per_instance_all = db.get_all_sleep_data_per_instance()
             
             if app_type:
                 # Return data for a specific app
+                if app_type in per_instance_all and per_instance_all[app_type]:
+                    instances = {
+                        inst_name: {
+                            "next_cycle": data.get("next_cycle_time"),
+                            "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
+                            "cyclelock": data.get("cycle_lock", True)
+                        }
+                        for inst_name, data in per_instance_all[app_type].items()
+                    }
+                    return {"app": app_type, "instances": instances}
                 data = db.get_sleep_data(app_type)
                 if data:
                     return {
@@ -133,128 +118,137 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
                         "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
                         "cyclelock": data.get("cycle_lock", True)
                     }
-                else:
-                    return {
-                        "app": app_type,
-                        "error": f"No cycle data available for {app_type}"
-                    }
+                return {"app": app_type, "error": f"No cycle data available for {app_type}"}
             else:
                 # Return data for all apps
-                all_data = db.get_sleep_data()
                 result = {}
+                # Single-app data (e.g. swaparr)
+                all_data = db.get_sleep_data()
                 for app, data in all_data.items():
                     result[app] = {
                         "next_cycle": data.get("next_cycle_time"),
                         "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
                         "cyclelock": data.get("cycle_lock", True)
                     }
+                # Override with per-instance for *arr apps that have instances
+                for app, instances in per_instance_all.items():
+                    if instances:
+                        result[app] = {
+                            "instances": {
+                                inst_name: {
+                                    "next_cycle": data.get("next_cycle_time"),
+                                    "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
+                                    "cyclelock": data.get("cycle_lock", True)
+                                }
+                                for inst_name, data in instances.items()
+                            }
+                        }
                 return result
         except Exception as e:
             logger.error(f"Error getting cycle status: {e}")
             return {"error": str(e)}
 
-def start_cycle(app_type: str) -> None:
-    """
-    Mark that a cycle has started for an app (set cyclelock to True)
-    
-    Args:
-        app_type: The app that is starting a cycle
-    """
+def start_cycle(app_type: str, instance_name: Optional[str] = None) -> None:
+    """Mark that a cycle has started for an app or (app, instance). instance_name=None for swaparr."""
     try:
         db = get_database()
-        current_data = db.get_sleep_data(app_type)
-        
-        # Get current time for last_cycle_start
         user_tz = _get_user_timezone()
         now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
-        
-        # Update with cycle started
-        db.set_sleep_data(
-            app_type=app_type,
-            next_cycle_time=current_data.get('next_cycle_time'),
-            cycle_lock=True,
-            last_cycle_start=now_user_tz.isoformat(),
-            last_cycle_end=current_data.get('last_cycle_end')
-        )
-        
-        if app_type == "swaparr":
-            logger.debug(f"Started cycle for {app_type} (cyclelock = True)")
+        label = f"{app_type}" + (f" instance {instance_name}" if instance_name else "")
+        if instance_name is not None:
+            current_data = db.get_sleep_data_per_instance(app_type, instance_name)
+            db.set_sleep_data_per_instance(
+                app_type=app_type,
+                instance_name=instance_name,
+                next_cycle_time=current_data.get('next_cycle_time'),
+                cycle_lock=True,
+                last_cycle_start=now_user_tz.isoformat(),
+                last_cycle_end=current_data.get('last_cycle_end')
+            )
         else:
-            logger.info(f"Started cycle for {app_type} (cyclelock = True)")
+            current_data = db.get_sleep_data(app_type)
+            db.set_sleep_data(
+                app_type=app_type,
+                next_cycle_time=current_data.get('next_cycle_time'),
+                cycle_lock=True,
+                last_cycle_start=now_user_tz.isoformat(),
+                last_cycle_end=current_data.get('last_cycle_end')
+            )
+        if app_type == "swaparr":
+            logger.debug(f"Started cycle for {label} (cyclelock = True)")
+        else:
+            logger.info(f"Started cycle for {label} (cyclelock = True)")
     except Exception as e:
         logger.error(f"Error starting cycle for {app_type}: {e}")
 
-def end_cycle(app_type: str, next_cycle_time: datetime.datetime) -> None:
-    """
-    Mark that a cycle has ended for an app (set cyclelock to False) and update next cycle time
-    
-    Args:
-        app_type: The app that finished its cycle
-        next_cycle_time: When the next cycle will begin
-    """
+def end_cycle(app_type: str, next_cycle_time: datetime.datetime,
+              instance_name: Optional[str] = None) -> None:
+    """Mark that a cycle has ended for an app or (app, instance). instance_name=None for swaparr."""
     try:
-        logger.info(f"Ending cycle for {app_type}, next cycle at {next_cycle_time.isoformat()}")
-        
+        label = f"{app_type}" + (f" instance {instance_name}" if instance_name else "")
+        logger.info(f"Ending cycle for {label}, next cycle at {next_cycle_time.isoformat()}")
         db = get_database()
-        current_data = db.get_sleep_data(app_type)
-        
-        # Get current time for last_cycle_end
         user_tz = _get_user_timezone()
         now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
-        
-        # Ensure next_cycle_time is timezone-aware
         if next_cycle_time.tzinfo is None:
             next_cycle_time = user_tz.localize(next_cycle_time)
         elif next_cycle_time.tzinfo != user_tz:
             next_cycle_time = next_cycle_time.astimezone(user_tz)
-        
         next_cycle_time = next_cycle_time.replace(microsecond=0)
-        
-        # Update with cycle ended
-        db.set_sleep_data(
-            app_type=app_type,
-            next_cycle_time=next_cycle_time.isoformat(),
-            cycle_lock=False,
-            last_cycle_start=current_data.get('last_cycle_start'),
-            last_cycle_end=now_user_tz.isoformat()
-        )
-        
-        if app_type == "swaparr":
-            logger.debug(f"Ended cycle for {app_type} (cyclelock = False)")
+        if instance_name is not None:
+            current_data = db.get_sleep_data_per_instance(app_type, instance_name)
+            db.set_sleep_data_per_instance(
+                app_type=app_type,
+                instance_name=instance_name,
+                next_cycle_time=next_cycle_time.isoformat(),
+                cycle_lock=False,
+                last_cycle_start=current_data.get('last_cycle_start'),
+                last_cycle_end=now_user_tz.isoformat()
+            )
         else:
-            logger.info(f"Ended cycle for {app_type} (cyclelock = False)")
+            current_data = db.get_sleep_data(app_type)
+            db.set_sleep_data(
+                app_type=app_type,
+                next_cycle_time=next_cycle_time.isoformat(),
+                cycle_lock=False,
+                last_cycle_start=current_data.get('last_cycle_start'),
+                last_cycle_end=now_user_tz.isoformat()
+            )
+        if app_type == "swaparr":
+            logger.debug(f"Ended cycle for {label} (cyclelock = False)")
+        else:
+            logger.info(f"Ended cycle for {label} (cyclelock = False)")
     except Exception as e:
         logger.error(f"Error ending cycle for {app_type}: {e}")
 
-def reset_cycle(app_type: str) -> bool:
-    """
-    Reset the cycle for a specific app (delete its cycle data and set cyclelock to True)
-    
-    Args:
-        app_type: The app to reset
-    
-    Returns:
-        True if successful, False otherwise
-    """
+def reset_cycle(app_type: str, instance_name: Optional[str] = None,
+                sleep_minutes: int = 15) -> bool:
+    """Reset the cycle for an app or (app, instance). instance_name=None for swaparr."""
     with _lock:
         try:
             db = get_database()
-            
-            # Get current time
             user_tz = _get_user_timezone()
             now = datetime.datetime.now(user_tz).replace(microsecond=0)
-            future_time = now + datetime.timedelta(minutes=15)  # Default 15 minutes
-            
-            # Reset the app's data - set cyclelock to True (cycle should start)
-            db.set_sleep_data(
-                app_type=app_type,
-                next_cycle_time=future_time.isoformat(),
-                cycle_lock=True,
-                last_cycle_start=None,
-                last_cycle_end=None
-            )
-            
-            logger.info(f"Reset cycle for {app_type} - set cyclelock to True")
+            future_time = now + datetime.timedelta(minutes=sleep_minutes)
+            label = f"{app_type}" + (f" instance {instance_name}" if instance_name else "")
+            if instance_name is not None:
+                db.set_sleep_data_per_instance(
+                    app_type=app_type,
+                    instance_name=instance_name,
+                    next_cycle_time=future_time.isoformat(),
+                    cycle_lock=True,
+                    last_cycle_start=None,
+                    last_cycle_end=None
+                )
+            else:
+                db.set_sleep_data(
+                    app_type=app_type,
+                    next_cycle_time=future_time.isoformat(),
+                    cycle_lock=True,
+                    last_cycle_start=None,
+                    last_cycle_end=None
+                )
+            logger.info(f"Reset cycle for {label} - set cyclelock to True")
             return True
         except Exception as e:
             logger.error(f"Error resetting cycle for {app_type}: {e}")

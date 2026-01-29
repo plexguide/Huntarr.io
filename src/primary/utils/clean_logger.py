@@ -2,9 +2,11 @@
 """
 Clean Logger for Huntarr
 Provides database-only logging with clean, formatted messages for the web interface.
+Supports per-instance log app_type (e.g. Sonarr-TestInstance) via thread-local context.
 """
 
 import logging
+import threading
 import time
 import re
 import os
@@ -12,6 +14,24 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 import pytz
+
+# Thread-local instance log name for DB app_type (e.g. "Sonarr-TestInstance")
+_thread_instance_log: Dict[int, str] = {}
+
+def set_instance_log_context(display_name: str) -> None:
+    """Set the current thread's log app_type for DB (e.g. 'Sonarr-TestInstance')."""
+    _thread_instance_log[threading.get_ident()] = display_name
+
+def clear_instance_log_context() -> None:
+    """Clear the current thread's instance log context."""
+    _thread_instance_log.pop(threading.get_ident(), None)
+
+
+class InstanceLogFilter(logging.Filter):
+    """Sets record.app_type_override from thread-local so DB logs show per-instance (e.g. Sonarr-TestInstance)."""
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.app_type_override = _thread_instance_log.get(threading.get_ident())  # type: ignore
+        return True
 
 
 class CleanLogFormatter(logging.Formatter):
@@ -120,8 +140,8 @@ class DatabaseLogHandler(logging.Handler):
                 # Fallback: use raw message if formatter doesn't have _clean_message
                 clean_message = record.getMessage()
             
-            # Use the app_type from constructor, or detect from logger name
-            app_type = self.app_type
+            # Use per-instance override (e.g. Sonarr-TestInstance), then handler app_type, then detect from logger name
+            app_type = getattr(record, 'app_type_override', None) or self.app_type
             if not app_type:
                 # Fallback: detect from logger name
                 if hasattr(record, 'name'):
@@ -179,11 +199,14 @@ def setup_clean_logging():
             _database_handlers[app_type] = database_handler
         
         # Get the logger for this app type and add database handler
-        logger = get_logger(app_type)
+        log = get_logger(app_type)
         
         # Add database handler if not already added
-        if _database_handlers[app_type] not in logger.handlers:
-            logger.addHandler(_database_handlers[app_type])
+        if _database_handlers[app_type] not in log.handlers:
+            log.addHandler(_database_handlers[app_type])
+        # Add per-instance filter so DB can show e.g. Sonarr-TestInstance when set_instance_log_context is used
+        if not any(isinstance(f, InstanceLogFilter) for f in log.filters):
+            log.addFilter(InstanceLogFilter())
     
     _setup_complete = True
 
