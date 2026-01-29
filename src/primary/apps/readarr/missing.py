@@ -48,7 +48,7 @@ def process_missing_books(
     # Extract necessary settings
     api_url = app_settings.get("api_url", "").strip()
     api_key = app_settings.get("api_key", "").strip()
-    api_timeout = get_advanced_setting("api_timeout", 120)  # Use database value
+    api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
     instance_name = app_settings.get("instance_name", "Readarr Default")
     
     readarr_logger.info(f"Using API timeout of {api_timeout} seconds for Readarr")

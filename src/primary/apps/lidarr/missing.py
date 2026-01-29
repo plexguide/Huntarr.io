@@ -41,7 +41,7 @@ def process_missing_albums(
     instance_name = app_settings.get("instance_name", "Default")
     api_url = app_settings.get("api_url", "").strip()
     api_key = app_settings.get("api_key", "").strip()
-    api_timeout = get_advanced_setting("api_timeout", 120)  # Use database value
+    api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
     monitored_only = app_settings.get("monitored_only", True)
     skip_future_releases = app_settings.get("skip_future_releases", False)
     hunt_missing_items = app_settings.get("hunt_missing_items", 0)

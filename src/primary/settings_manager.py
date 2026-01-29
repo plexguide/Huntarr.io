@@ -504,7 +504,6 @@ def initialize_base_url_from_env():
 
 # Add a list of known advanced settings for clarity and documentation
 ADVANCED_SETTINGS = [
-    "api_timeout", 
     "command_wait_delay", 
     "command_wait_attempts", 
     "minimum_download_queue_size",

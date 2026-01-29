@@ -20,7 +20,7 @@ def process_cutoff_upgrades(
     api_url: str,
     api_key: str,
     instance_name: str,
-    api_timeout: int = get_advanced_setting("api_timeout", 120),
+    api_timeout: int = 120,
     monitored_only: bool = True,
     # series_type: str = "standard",  # TODO: Add series type filtering (standard, daily, anime)
     hunt_upgrade_items: int = 5,

@@ -184,7 +184,6 @@ GENERAL_DEFAULTS = {
     "command_wait_delay": 1,
     "command_wait_attempts": 600,
     "minimum_download_queue_size": -1,
-    "api_timeout": 120,
     "ssl_verify": True,
     "base_url": "",
     "log_rotation_enabled": True,

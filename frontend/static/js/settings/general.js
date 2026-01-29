@@ -132,11 +132,6 @@
             ">
                 <h3>Advanced Settings</h3>
                 <div class="setting-item">
-                    <label for="api_timeout">API Timeout:</label>
-                    <input type="number" id="api_timeout" min="10" value="${settings.api_timeout || 120}">
-                    <p class="setting-help" style="margin-left: -3ch !important;">API request timeout in seconds</p>
-                </div>
-                <div class="setting-item">
                     <label for="base_url">Base URL:</label>
                     <input type="text" id="base_url" value="${settings.base_url || ""}" placeholder="/huntarr">
                     <p class="setting-help" style="margin-left: -3ch !important;">Base URL path for reverse proxy. Requires restart.</p>
@@ -271,9 +266,6 @@
             if (ssl) settings.ssl_verify = ssl.checked;
             
             // Advanced
-            const timeout = document.getElementById("api_timeout");
-            if (timeout) settings.api_timeout = parseInt(timeout.value);
-            
             const baseUrl = document.getElementById("base_url");
             if (baseUrl) settings.base_url = baseUrl.value;
             

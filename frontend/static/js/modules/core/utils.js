@@ -5,21 +5,14 @@
 
 const HuntarrUtils = {
     /**
-     * Fetch with timeout using the global settings
+     * Fetch with timeout (120s). Per-instance API timeouts are in app instances.
      * @param {string} url - The URL to fetch
      * @param {Object} options - Fetch options
      * @returns {Promise} - Fetch promise with timeout handling
      */
     fetchWithTimeout: function(url, options = {}) {
-        // Get the API timeout from global settings, default to 120 seconds if not set
-        let apiTimeout = 120000; // Default 120 seconds in milliseconds
-        
-        // Try to get timeout from huntarrUI if available
-        if (window.huntarrUI && window.huntarrUI.originalSettings && 
-            window.huntarrUI.originalSettings.general && 
-            window.huntarrUI.originalSettings.general.api_timeout) {
-            apiTimeout = window.huntarrUI.originalSettings.general.api_timeout * 1000;
-        }
+        // API timeout for fetch. Per-instance timeouts are in app instances.
+        const apiTimeout = 120000; // 120 seconds in milliseconds
         
         // Create abort controller for timeout
         const controller = new AbortController();
@@ -67,21 +60,11 @@ const HuntarrUtils = {
     },
     
     /**
-     * Get the global API timeout value in seconds
+     * API timeout in seconds for internal fetches. Per-instance timeouts are in app instances.
      * @returns {number} - API timeout in seconds
      */
     getApiTimeout: function() {
-        // Default value
-        let timeout = 120;
-        
-        // Try to get from global settings
-        if (window.huntarrUI && window.huntarrUI.originalSettings && 
-            window.huntarrUI.originalSettings.general && 
-            window.huntarrUI.originalSettings.general.api_timeout) {
-            timeout = window.huntarrUI.originalSettings.general.api_timeout;
-        }
-        
-        return timeout;
+        return 120;
     },
 
     /**

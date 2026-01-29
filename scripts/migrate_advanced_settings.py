@@ -23,7 +23,7 @@ def migrate_instances_to_per_instance_settings():
     db = get_database()
     
     # Get global defaults for advanced settings
-    global_api_timeout = get_advanced_setting("api_timeout", 120)
+    global_api_timeout = 120  # Per-instance only; default for migration
     global_cmd_delay = get_advanced_setting("command_wait_delay", 1)
     global_cmd_attempts = get_advanced_setting("command_wait_attempts", 600)
     

@@ -1868,7 +1868,6 @@ window.SettingsForms = {
             const authMode = container.querySelector("#auth_mode")?.value || "login";
             settings.auth_mode = authMode;
             settings.ssl_verify = getInputValue("#ssl_verify", true);
-            settings.api_timeout = getInputValue("#api_timeout", 120);
             settings.base_url = getInputValue("#base_url", "");
 
             const notificationsContainer = document.querySelector("#notificationsContainer");

@@ -440,7 +440,6 @@
             if (appType === 'general') {
                 console.log('Stateful management settings being saved:', {
                     statefulExpirationHours: settings.statefulExpirationHours,
-                    api_timeout: settings.api_timeout,
                     command_wait_delay: settings.command_wait_delay,
                     command_wait_attempts: settings.command_wait_attempts
                 });

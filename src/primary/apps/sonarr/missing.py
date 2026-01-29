@@ -55,7 +55,7 @@ def process_missing_episodes(
     api_url: str,
     api_key: str,
     instance_name: str,
-    api_timeout: int = get_advanced_setting("api_timeout", 120),
+    api_timeout: int = 120,
     monitored_only: bool = True,
     skip_future_episodes: bool = True,
 
