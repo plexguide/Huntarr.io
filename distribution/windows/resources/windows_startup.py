@@ -13,6 +13,7 @@ import traceback
 import pathlib
 import time
 import threading
+import shutil
 from functools import wraps
 
 def windows_startup_check():
@@ -77,6 +78,38 @@ def windows_startup_check():
                 os.makedirs(temp_dir, exist_ok=True)
                 os.environ["HUNTARR_CONFIG_DIR"] = temp_dir
                 logger.info(f"Using temporary directory as last resort: {temp_dir}")
+        
+        # Windows-specific log copying logic
+        try:
+            # Get installation directory
+            if getattr(sys, 'frozen', False):
+                # PyInstaller bundle
+                install_dir = os.path.dirname(sys.executable)
+            else:
+                # Regular Python execution
+                install_dir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+            
+            install_log_dir = os.path.join(install_dir, "logs")
+            appdata_log_dir = config_paths.LOG_DIR
+            
+            if os.path.exists(appdata_log_dir):
+                logger.info(f"Copying logs from AppData ({appdata_log_dir}) to installation folder ({install_log_dir})")
+                os.makedirs(install_log_dir, exist_ok=True)
+                
+                # Copy all log files
+                for log_file in os.listdir(appdata_log_dir):
+                    if log_file.endswith(".log") or ".log." in log_file:
+                        src_path = os.path.join(appdata_log_dir, log_file)
+                        dst_path = os.path.join(install_log_dir, log_file)
+                        try:
+                            # Use copy2 to preserve metadata, ignore errors if file is locked
+                            shutil.copy2(src_path, dst_path)
+                        except Exception as copy_err:
+                            # This is common if the log file is currently being written to
+                            logger.debug(f"Could not copy log file {log_file} (likely in use): {copy_err}")
+        except Exception as log_copy_err:
+            logger.warning(f"Failed to copy logs to installation folder: {log_copy_err}")
+            
     except Exception as e:
         logger.error(f"Error during Windows startup check: {e}")
         logger.error(traceback.format_exc())
