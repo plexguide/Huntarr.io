@@ -10,7 +10,7 @@ window.CycleCountdown = (function() {
     const timerIntervals = {};
     // Track apps that are currently running cycles
     const runningCycles = {};
-    // Track instances that have a pending reset (show "Pending reset" until cycle ends and sleep starts)
+    // Track instances that have a pending reset (show "Pending Reset" until cycle ends and sleep starts)
     const pendingResets = {};
     // List of apps to track
     const trackedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'whisparr-v3', 'eros', 'swaparr'];
@@ -115,8 +115,8 @@ window.CycleCountdown = (function() {
             button.addEventListener('click', function() {
                 const app = this.getAttribute('data-app');
                 if (app) {
-                    console.log(`[CycleCountdown] Reset button clicked for ${app}, will refresh cycle status to show Pending reset`);
-                    // Refetch cycle status after a short delay so API has recorded the reset; UI will show "Pending reset" until cycle ends
+                    console.log(`[CycleCountdown] Reset button clicked for ${app}, will refresh cycle status to show Pending Reset`);
+                    // Refetch cycle status after a short delay so API has recorded the reset; UI will show "Pending Reset" until cycle ends
                     setTimeout(function() {
                         fetchAllCycleData().catch(function() {});
                     }, 800);
@@ -376,7 +376,7 @@ window.CycleCountdown = (function() {
                             getTimerElements(app).forEach(timerElement => {
                                 const timerValue = timerElement.querySelector('.timer-value');
                                 if (timerValue) {
-                                    timerValue.textContent = 'Pending reset';
+                                    timerValue.textContent = 'Pending Reset';
                                     timerValue.classList.remove('refreshing-state', 'running-state');
                                     timerValue.classList.add('pending-reset-state');
                                     timerValue.style.color = '#ffaa00';
@@ -511,7 +511,7 @@ window.CycleCountdown = (function() {
             if (isExpired) delete nextCycleTimes[key];
             
             if (isPendingReset) {
-                timerValue.textContent = 'Pending reset';
+                timerValue.textContent = 'Pending Reset';
                 timerValue.classList.remove('refreshing-state', 'running-state');
                 timerValue.classList.add('pending-reset-state');
                 timerValue.style.color = '#ffaa00';

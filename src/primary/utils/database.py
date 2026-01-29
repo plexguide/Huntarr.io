@@ -1179,7 +1179,7 @@ class HuntarrDatabase:
             conn.commit()
 
     def get_media_stats_per_instance(self, app_type: str = None):
-        """Get per-instance stats: for one app returns list of {instance_name, hunted, upgraded}; for all returns dict app_type -> list."""
+        """Get per-instance stats: for one app returns list of {instance_name, hunted, upgraded}; keys normalized to match settings."""
         with self.get_connection() as conn:
             if app_type:
                 cursor = conn.execute(
@@ -1187,40 +1187,47 @@ class HuntarrDatabase:
                     (app_type,)
                 )
                 by_instance = {}
-                for instance_name, stat_type, value in cursor.fetchall():
-                    if instance_name not in by_instance:
-                        by_instance[instance_name] = {"hunted": 0, "upgraded": 0}
-                    by_instance[instance_name][stat_type] = value
+                for row_name, stat_type, value in cursor.fetchall():
+                    key = self._normalize_instance_key(row_name)
+                    if key not in by_instance:
+                        by_instance[key] = {"hunted": 0, "upgraded": 0}
+                    by_instance[key][stat_type] = by_instance[key].get(stat_type, 0) + value
                 return [{"instance_name": k, "hunted": v["hunted"], "upgraded": v["upgraded"]} for k, v in by_instance.items()]
             cursor = conn.execute('SELECT app_type, instance_name, stat_type, stat_value FROM media_stats_per_instance')
             stats = {}
-            for app, instance_name, stat_type, value in cursor.fetchall():
+            for app, row_name, stat_type, value in cursor.fetchall():
+                key = self._normalize_instance_key(row_name)
                 if app not in stats:
                     stats[app] = {}
-                if instance_name not in stats[app]:
-                    stats[app][instance_name] = {"hunted": 0, "upgraded": 0}
-                stats[app][instance_name][stat_type] = value
+                if key not in stats[app]:
+                    stats[app][key] = {"hunted": 0, "upgraded": 0}
+                stats[app][key][stat_type] = stats[app][key].get(stat_type, 0) + value
             result = {}
             for app, by_inst in stats.items():
                 result[app] = [{"instance_name": k, "hunted": v["hunted"], "upgraded": v["upgraded"]} for k, v in by_inst.items()]
             return result
 
     def increment_media_stat_per_instance(self, app_type: str, instance_name: str, stat_type: str, increment: int = 1):
-        """Increment a per-instance media statistic."""
+        """Increment a per-instance media statistic. Instance name normalized so keys match get_stats/API."""
         if not instance_name:
             return
+        key = self._normalize_instance_key(instance_name)
         with self.get_connection() as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO media_stats_per_instance (app_type, instance_name, stat_type, stat_value, updated_at)
                 VALUES (?, ?, ?, COALESCE((SELECT stat_value FROM media_stats_per_instance WHERE app_type = ? AND instance_name = ? AND stat_type = ?), 0) + ?, CURRENT_TIMESTAMP)
-            ''', (app_type, instance_name, stat_type, app_type, instance_name, stat_type, increment))
+            ''', (app_type, key, stat_type, app_type, key, stat_type, increment))
             conn.commit()
 
     def reset_media_stats_per_instance(self, app_type: str, instance_name: str = None):
-        """Reset per-instance stats for an app (or one instance if instance_name given)."""
+        """Reset per-instance stats for an app (or one instance if instance_name given). Instance name normalized."""
         with self.get_connection() as conn:
             if instance_name:
-                conn.execute('DELETE FROM media_stats_per_instance WHERE app_type = ? AND instance_name = ?', (app_type, instance_name))
+                key = self._normalize_instance_key(instance_name)
+                cursor = conn.execute('SELECT DISTINCT instance_name FROM media_stats_per_instance WHERE app_type = ?', (app_type,))
+                for (row_name,) in cursor.fetchall():
+                    if self._normalize_instance_key(row_name) == key:
+                        conn.execute('DELETE FROM media_stats_per_instance WHERE app_type = ? AND instance_name = ?', (app_type, row_name))
             else:
                 conn.execute('DELETE FROM media_stats_per_instance WHERE app_type = ?', (app_type,))
             conn.commit()

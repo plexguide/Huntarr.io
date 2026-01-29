@@ -386,6 +386,8 @@ def increment_stat(app_type: str, stat_type: str, count: int = 1, instance_name:
     # Also increment the hourly API cap (per-instance when instance_name is set)
     increment_hourly_cap(app_type, count, instance_name=instance_name)
     
+    if instance_name is not None:
+        instance_name = _normalize_instance_name(instance_name)
     with stats_lock:
         try:
             db = get_database()
@@ -411,6 +413,8 @@ def increment_stat_only(app_type: str, stat_type: str, count: int = 1, instance_
         logger.error(f"Invalid stat_type: {stat_type}")
         return False
     
+    if instance_name is not None:
+        instance_name = _normalize_instance_name(instance_name)
     with stats_lock:
         try:
             db = get_database()
