@@ -236,7 +236,7 @@ data/
 *.sqlite3
 huntarr.db
 /config/
-logs/
-settings/
-stateful/
-tally/
+/logs/
+/settings/
+/stateful/
+/tally/
