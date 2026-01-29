@@ -1053,9 +1053,18 @@ window.SettingsForms = {
                 window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
             }
             
-            const container = document.querySelector(`[data-app-type="${appType}"]`);
+            // Target the form inside the app panel (e.g. #sonarrApps > form) so we never update wrong element
+            const appPanel = document.getElementById(appType + 'Apps');
+            let container = appPanel ? appPanel.querySelector('form.settings-form') : null;
+            if (!container) {
+                container = document.querySelector(`form[data-app-type="${appType}"]`);
+            }
             if (container) {
-                console.log(`[huntarrUI] Found container for ${appType}, triggering re-render`);
+                // Use latest settings from global state so re-render always has current data (e.g. after delete)
+                const latestSettings = (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings[appType])
+                    ? JSON.parse(JSON.stringify(window.huntarrUI.originalSettings[appType]))
+                    : settings;
+                console.log(`[huntarrUI] Found container for ${appType}, re-rendering with ${latestSettings.instances ? latestSettings.instances.length : 0} instances`);
                 
                 // Determine the generation method name
                 let methodAppType = appType;
@@ -1070,10 +1079,10 @@ window.SettingsForms = {
                     // Clear container first to force a clean DOM update
                     container.innerHTML = '<div style="padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Refreshing...</div>';
                     
-                    // Small delay to ensure DOM clear is processed
+                    // Small delay to ensure DOM clear is processed, then re-render with latest data
                     setTimeout(() => {
-                        console.log(`[huntarrUI] Executing ${method}`);
-                        window.SettingsForms[method](container, settings);
+                        console.log(`[huntarrUI] Executing ${method} with ${latestSettings.instances ? latestSettings.instances.length : 0} instances`);
+                        window.SettingsForms[method](container, latestSettings);
                         
                         // Ensure suppression is cleared after re-render completes
                         setTimeout(() => {
