@@ -503,11 +503,14 @@ const historyModule = {
     },
     
     // Generate direct link to item in *arr application
-    generateDirectLink: function(appType, instanceUrl, itemId, title) {
+    generateDirectLink: function(appType, instanceUrl, externalUrl, itemId, title) {
         if (!instanceUrl) return null;
+
+        // Use external URL if available, otherwise fallback to instance
+        let baseUrl = externalUrl || instanceUrl;
         
         // Ensure URL doesn't end with slash and remove any localhost prefix
-        let baseUrl = instanceUrl.replace(/\/$/, '');
+        baseUrl = baseUrl.replace(/\/$/, '');
         
         // Remove localhost:9705 prefix if present (this happens when the instance URL gets prepended)
         baseUrl = baseUrl.replace(/^.*localhost:\d+\//, '');
@@ -605,7 +608,7 @@ const historyModule = {
                 const instanceSettings = await this.getInstanceSettings(entry.app_type, entry.instance_name);
                 
                 if (instanceSettings && instanceSettings.api_url) {
-                    const directLink = this.generateDirectLink(entry.app_type, instanceSettings.api_url, entry.id, entry.processed_info);
+                    const directLink = this.generateDirectLink(entry.app_type, instanceSettings.api_url, instanceSettings.external_url, entry.id, entry.processed_info);
                     
                     if (directLink) {
                         // Create clickable link

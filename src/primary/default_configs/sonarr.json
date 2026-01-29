@@ -3,6 +3,7 @@
     {
       "name": "Default",
       "api_url": "",
+      "external_url": "",
       "api_key": "",
       "enabled": false,
       "hunt_missing_items": 1,

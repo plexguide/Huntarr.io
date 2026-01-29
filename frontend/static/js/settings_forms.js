@@ -83,6 +83,7 @@ const SettingsForms = {
           name: "Default",
           api_url: settings.api_url || "", // Legacy support
           api_key: settings.api_key || "", // Legacy support
+          external_url: settings.external_url || "",
           enabled: false,
         },
       ];
@@ -180,6 +181,13 @@ const SettingsForms = {
         instance.api_url || ""
       }" placeholder="Base URL for Sonarr (e.g., http://localhost:8989)" data-instance-index="${index}">
                             <p class="setting-help">Base URL for Sonarr (e.g., http://localhost:8989)</p>
+                        </div>
+                        <div class="setting-item">
+                            <label for="sonarr-external-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about Sonarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>External URL:</label>
+                            <input type="text" id="sonarr-external-url-${index}" name="external_url" value="${
+        instance.external_url || ""
+      }" placeholder="Externally accessible URL if behind reverse proxy (e.g., https://sonarr.example.org)" data-instance-index="${index}">
+                            <p class="setting-help">Externally accessible URL if behind reverse proxy (e.g., https://sonarr.example.org)</p>
                         </div>
                         <div class="setting-item">
                             <label for="sonarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#connection-settings" class="info-icon" title="Learn more about finding your Sonarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
@@ -913,6 +921,13 @@ const SettingsForms = {
                             <p class="setting-help">Base URL for Radarr (e.g., http://localhost:7878)</p>
                         </div>
                         <div class="setting-item">
+                            <label for="radarr-external-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about Radarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>External URL:</label>
+                            <input type="text" id="radarr-external-url-${index}" name="external_url" value="${
+        instance.external_url || ""
+      }" placeholder="Externally accessible URL if behind reverse proxy (e.g., https://radarr.example.org)" data-instance-index="${index}">
+                            <p class="setting-help">Externally accessible URL if behind reverse proxy (e.g., https://radarr.example.org)</p>
+                        </div>
+                        <div class="setting-item">
                             <label for="radarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon" title="Learn more about finding your Radarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
                             <input type="text" id="radarr-key-${index}" name="api_key" value="${
         instance.api_key || ""
@@ -1407,6 +1422,13 @@ const SettingsForms = {
                             <p class="setting-help">Base URL for Lidarr (e.g., http://localhost:8686)</p>
                         </div>
                         <div class="setting-item">
+                            <label for="lidarr-external-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#connection-settings" class="info-icon" title="Learn more about Lidarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>External URL:</label>
+                            <input type="text" id="lidarr-external-url-${index}" name="external_url" value="${
+        instance.external_url || ""
+      }" placeholder="Externally accessible URL if behind reverse proxy (e.g., https://lidarr.example.org)" data-instance-index="${index}">
+                            <p class="setting-help">Externally accessible URL if behind reverse proxy (e.g., https://lidarr.example.org)</p>
+                        </div>
+                        <div class="setting-item">
                             <label for="lidarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#connection-settings" class="info-icon" title="Learn more about finding your Lidarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
                             <input type="text" id="lidarr-key-${index}" name="api_key" value="${
         instance.api_key || ""
@@ -1779,6 +1801,13 @@ const SettingsForms = {
                 <p class="setting-help">Base URL for Readarr (e.g., http://localhost:8787)</p>
                 </div>
                 <div class="setting-item">
+                    <label for="readarr-external-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about Readarr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>External URL:</label>
+                    <input type="text" id="readarr-external-url-${index}" name="external_url" value="${
+instance.external_url || ""
+}" placeholder="Externally accessible URL if behind reverse proxy (e.g., https://readarr.example.org)" data-instance-index="${index}">
+                    <p class="setting-help">Externally accessible URL if behind reverse proxy (e.g., https://readarr.example.org)</p>
+                </div>
+                <div class="setting-item">
                 <label for="readarr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#connection-settings" class="info-icon" title="Learn more about finding your Readarr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
                                             <input type="text" id="readarr-key-${index}" name="api_key" value="${
         instance.api_key || ""
@@ -2132,6 +2161,13 @@ const SettingsForms = {
         instance.api_url || ""
       }" placeholder="Base URL for Whisparr V2 (e.g., http://localhost:6969)" data-instance-index="${index}">
                 <p class="setting-help">Base URL for Whisparr V2 (e.g., http://localhost:6969)</p>
+                </div>
+                <div class="setting-item">
+                    <label for="whisparr-external-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about Whisparr URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>External URL:</label>
+                    <input type="text" id="whisparr-external-url-${index}" name="external_url" value="${
+instance.external_url || ""
+}" placeholder="Externally accessible URL if behind reverse proxy (e.g., https://whisparr.example.org)" data-instance-index="${index}">
+                    <p class="setting-help">Externally accessible URL if behind reverse proxy (e.g., https://whisparr.example.org)</p>
                 </div>
                 <div class="setting-item">
                 <label for="whisparr-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/whisparr.html#connection-settings" class="info-icon" title="Learn more about finding your Whisparr API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
@@ -2582,6 +2618,13 @@ const SettingsForms = {
       }" placeholder="Base URL for Whisparr V3 (Eros) (e.g., http://localhost:6969)" data-instance-index="${index}">
                 <p class="setting-help">Base URL for Whisparr V3 (Eros) (e.g., http://localhost:6969)</p>
                         </div>
+                <div class="setting-item">
+                    <label for="eros-external-url-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-url" class="info-icon" title="Learn more about Whisparr V3 (Eros) URL configuration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>External URL:</label>
+                    <input type="text" id="eros-external-url-${index}" name="external_url" value="${
+instance.external_url || ""
+}" placeholder="Externally accessible URL if behind reverse proxy (e.g., https://whisparr.example.org)" data-instance-index="${index}">
+                    <p class="setting-help">Externally accessible URL if behind reverse proxy (e.g., https://whisparr.example.org)</p>
+                </div>
                         <div class="setting-item">
                                             <label for="eros-key-${index}"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#instance-api-key" class="info-icon" title="Learn more about finding your Whisparr V3 (Eros) API key" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Key:</label>
                 <input type="text" id="eros-key-${index}" name="api_key" value="${
@@ -5028,6 +5071,7 @@ const SettingsForms = {
       instanceContainers.forEach((instance, index) => {
         const nameInput = instance.querySelector('input[name="name"]');
         const urlInput = instance.querySelector('input[name="api_url"]');
+        const externalUrlInput = instance.querySelector('input[name="external_url"]');
         const keyInput = instance.querySelector('input[name="api_key"]');
         const enabledInput = instance.querySelector('input[name="enabled"]');
         const swaparrEnabledInput = instance.querySelector(
@@ -5070,6 +5114,7 @@ const SettingsForms = {
 
         const name = nameInput ? nameInput.value : null;
         const url = urlInput ? urlInput.value : null;
+        const externalUrl = externalUrlInput ? externalUrlInput.value : null;
         const key = keyInput ? keyInput.value : null;
         const enabled = enabledInput ? enabledInput.checked : true; // Default to enabled if checkbox not found
         const swaparrEnabled = swaparrEnabledInput
@@ -5094,6 +5139,7 @@ const SettingsForms = {
           name: name || `Instance ${index + 1}`,
           api_url: url || "",
           api_key: key || "",
+          external_url: externalUrl || "",
           enabled: enabled,
           swaparr_enabled: swaparrEnabled,
         };
