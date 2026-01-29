@@ -58,6 +58,8 @@ def get_configured_instances(quiet=False):
                     "hunt_missing_mode": instance.get("hunt_missing_mode", "seasons_packs"),  # Per-instance missing mode
                     "upgrade_mode": instance.get("upgrade_mode", "seasons_packs"),  # Per-instance upgrade mode
                     "air_date_delay_days": instance.get("air_date_delay_days", 0),  # Per-instance air date delay
+                    "sleep_duration": instance.get("sleep_duration", settings.get("sleep_duration", 900)),  # Per-instance cycle interval
+                    "hourly_cap": instance.get("hourly_cap", settings.get("hourly_cap", 20)),  # Per-instance API cap
                 }
                 instances.append(instance_data)
     

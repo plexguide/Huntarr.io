@@ -54,6 +54,8 @@ def get_configured_instances(quiet=False):
                 instance_settings["hunt_missing_movies"] = instance.get("hunt_missing_movies", 1)
                 instance_settings["hunt_upgrade_movies"] = instance.get("hunt_upgrade_movies", 0)
                 instance_settings["release_date_delay_days"] = instance.get("release_date_delay_days", 0)
+                instance_settings["sleep_duration"] = instance.get("sleep_duration", settings.get("sleep_duration", 900))
+                instance_settings["hourly_cap"] = instance.get("hourly_cap", settings.get("hourly_cap", 20))
                 
                 instances.append(instance_settings)
     else:
@@ -78,6 +80,8 @@ def get_configured_instances(quiet=False):
             settings_copy["hunt_missing_movies"] = settings.get("hunt_missing_movies", 1)
             settings_copy["hunt_upgrade_movies"] = settings.get("hunt_upgrade_movies", 0)
             settings_copy["release_date_delay_days"] = settings.get("release_date_delay_days", 0)
+            settings_copy["sleep_duration"] = settings.get("sleep_duration", 900)
+            settings_copy["hourly_cap"] = settings.get("hourly_cap", 20)
             instances.append(settings_copy)
     
     # Use debug level to avoid spamming logs, especially with 0 instances

@@ -235,7 +235,7 @@ def process_missing_albums(
                 
                 # Increment stats for UI tracking
                 if command_result:
-                    increment_stat("lidarr", "hunted")
+                    increment_stat("lidarr", "hunted", 1, instance_name)
                     processed_count += 1  # Count successful searches
                     processed_artists_or_albums.add(artist_id)
                 
@@ -321,7 +321,7 @@ def process_missing_albums(
             if command_id:
                 # Log after successful search
                 lidarr_logger.debug(f"Album search command triggered with ID: {command_id} for albums: [{', '.join(album_details_log)}]")
-                increment_stat("lidarr", "hunted") # Changed from "missing" to "hunted"
+                increment_stat("lidarr", "hunted", len(album_ids_to_search), instance_name) # Changed from "missing" to "hunted"
                 processed_count += len(album_ids_to_search) # Count albums searched
                 processed_artists_or_albums.update(album_ids_to_search)
                 

@@ -54,6 +54,8 @@ def get_configured_instances(quiet=False):
                     "hunt_upgrade_items": instance.get("hunt_upgrade_items", 0),  # Per-instance upgrade hunt value
                     "hunt_missing_mode": instance.get("hunt_missing_mode", "seasons_packs"),  # Per-instance missing mode
                     "upgrade_mode": instance.get("upgrade_mode", "seasons_packs"),  # Per-instance upgrade mode
+                    "sleep_duration": instance.get("sleep_duration", settings.get("sleep_duration", 900)),
+                    "hourly_cap": instance.get("hourly_cap", settings.get("hourly_cap", 20)),
                 }
                 instances.append(instance_data)
     
@@ -93,6 +95,8 @@ def get_configured_instances(quiet=False):
                 "swaparr_enabled": settings.get("swaparr_enabled", False),
                 "hunt_missing_items": settings.get("hunt_missing_items", 1),  # Legacy missing hunt value
                 "hunt_upgrade_items": settings.get("hunt_upgrade_items", 0),  # Legacy upgrade hunt value
+                "sleep_duration": settings.get("sleep_duration", 900),
+                "hourly_cap": settings.get("hourly_cap", 20),
             }
             instances.append(instance_data)
 

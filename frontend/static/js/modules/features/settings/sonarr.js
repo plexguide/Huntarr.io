@@ -68,27 +68,8 @@
             </div>
         `;
 
-        let searchSettingsHtml = `
-            <div class="settings-group">
-                <h3>Global Settings</h3>
-                <div class="setting-item">
-                    <label for="sonarr_sleep_duration"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Learn more about sleep duration" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Sleep Duration (Minutes):</label>
-                    <input type="number" id="sonarr_sleep_duration" name="sleep_duration" min="10" value="${
-                        settings.sleep_duration !== undefined ? Math.round(settings.sleep_duration / 60) : 15
-                    }">
-                    <p class="setting-help">Time in minutes between processing cycles (minimum 10 minutes)</p>
-                </div>
-                <div class="setting-item">
-                    <label for="sonarr_hourly_cap"><a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#search-settings" class="info-icon" title="Maximum API requests per hour for this app (20 is safe)" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>API Cap - Hourly:</label>
-                    <input type="number" id="sonarr_hourly_cap" name="hourly_cap" min="1" max="400" value="${
-                        settings.hourly_cap !== undefined ? settings.hourly_cap : 20
-                    }">
-                    <p class="setting-help">Maximum API requests per hour to prevent being banned by your indexers. Keep lower for safety (20-50 recommended). Max allowed: 400.</p>
-                </div>
-            </div>
-        `;
-
-        container.innerHTML = sonarrSaveButtonHtml + instancesHtml + searchSettingsHtml;
+        // Sleep Duration and API Cap are now per-instance (configure in each instance's Edit)
+        container.innerHTML = sonarrSaveButtonHtml + instancesHtml;
 
         const grid = container.querySelector('#sonarr-instances-grid');
         if (grid) {

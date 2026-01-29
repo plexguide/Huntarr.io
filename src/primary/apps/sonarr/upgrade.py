@@ -275,7 +275,7 @@ def process_upgrade_seasons_mode(
                     # CRITICAL FIX: Use increment_stat_only to avoid double-counting API calls
                     # The API call is already tracked in search_season(), so we only increment stats here
                     from src.primary.stats_manager import increment_stat_only
-                    increment_stat_only("sonarr", "upgraded")
+                    increment_stat_only("sonarr", "upgraded", 1, instance_name)
                     sonarr_logger.debug(f"Incremented sonarr upgraded statistic for episode {episode_id} (API call already tracked separately)")
                     
                     # Find the episode information for history logging
@@ -457,7 +457,7 @@ def process_upgrade_shows_mode(
                     sonarr_logger.debug(f"Marked episode ID {episode_id} as processed for upgrades")
                     
                     # Increment stats for this episode (consistent with Radarr's approach)
-                    increment_stat("sonarr", "upgraded")
+                    increment_stat("sonarr", "upgraded", 1, instance_name)
                     sonarr_logger.debug(f"Incremented sonarr upgraded statistic for episode {episode_id}")
                     
                     # Find the episode information for history logging
@@ -626,7 +626,7 @@ def process_upgrade_episodes_mode(
                     sonarr_logger.debug(f"Logged upgrade to history for episode: {media_name}")
                     
                     # Increment statistics
-                    increment_stat("sonarr", "upgraded")
+                    increment_stat("sonarr", "upgraded", 1, instance_name)
                     sonarr_logger.debug(f"Incremented sonarr upgraded statistics for episode {episode_id}")
                     
                     # Note: No tagging is performed in episodes mode as it would be inefficient
@@ -648,7 +648,7 @@ def process_upgrade_episodes_mode(
                 sonarr_logger.debug(f"Logged upgrade to history for episode: {media_name}")
                 
                 # Increment statistics
-                increment_stat("sonarr", "upgraded")
+                increment_stat("sonarr", "upgraded", 1, instance_name)
                 sonarr_logger.debug(f"Incremented sonarr upgraded statistics for episode {episode_id}")
         else:
             sonarr_logger.error(f"Failed to trigger upgrade search for episode: {series_title} - {season_episode}")

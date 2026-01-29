@@ -35,7 +35,10 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
         "api_timeout": 120,
         "command_wait_delay": 1,
         "command_wait_attempts": 600,
-        "max_download_queue_size": -1
+        "max_download_queue_size": -1,
+        # Cycle settings (per-instance; were global in 9.0.x)
+        "sleep_duration": 900,
+        "hourly_cap": 20
     }
     
     # Add app-specific fields

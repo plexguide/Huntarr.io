@@ -85,6 +85,8 @@ def get_configured_instances(quiet=False):
                     "swaparr_enabled": instance.get("swaparr_enabled", False),
                     "hunt_missing_items": instance.get("hunt_missing_items", 1),  # Per-instance missing hunt value
                     "hunt_upgrade_items": instance.get("hunt_upgrade_items", 0),  # Per-instance upgrade hunt value
+                    "sleep_duration": instance.get("sleep_duration", settings.get("sleep_duration", 900)),
+                    "hourly_cap": instance.get("hourly_cap", settings.get("hourly_cap", 20)),
                 }
                 instances.append(instance_data)
             else:

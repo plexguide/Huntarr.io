@@ -209,6 +209,12 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
                     if isinstance(original_value, (int, float)) and original_value < 600:
                         instance['sleep_duration'] = 600
                         settings_logger.warning(f"Sleep duration for {app_name} instance {i+1} was {original_value} seconds, automatically set to minimum allowed value of 600 seconds (10 minutes)")
+                # Enforce hourly_cap max 400 per instance
+                if 'hourly_cap' in instance:
+                    original_cap = instance['hourly_cap']
+                    if isinstance(original_cap, (int, float)) and original_cap > 400:
+                        instance['hourly_cap'] = 400
+                        settings_logger.warning(f"Hourly cap for {app_name} instance {i+1} was {original_cap}, automatically reduced to maximum 400")
                 
                 for field in numeric_fields:
                     if field in instance:

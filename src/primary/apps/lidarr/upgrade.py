@@ -167,7 +167,7 @@ def process_cutoff_upgrades(
         )
         if command_id:
             lidarr_logger.debug(f"Upgrade album search command triggered with ID: {command_id} for albums: {album_ids_to_search}")
-            increment_stat("lidarr", "upgraded") # Use appropriate stat key
+            increment_stat("lidarr", "upgraded", 1, instance_name) # Use appropriate stat key
             
             # Tag artists if enabled (from albums)
             if tag_processed_items:

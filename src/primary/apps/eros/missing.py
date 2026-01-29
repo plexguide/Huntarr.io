@@ -222,7 +222,7 @@ def process_missing_items(
             processing_done = True
             
             # Increment the hunted statistics for Eros
-            increment_stat("eros", "hunted", 1)
+            increment_stat("eros", "hunted", 1, instance_name)
             eros_logger.debug(f"Incremented eros hunted statistics by 1")
 
             # Log progress

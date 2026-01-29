@@ -989,8 +989,7 @@ def api_get_hourly_caps():
     """Get hourly API usage caps for each app"""
     try:
         # Import necessary functions
-        from src.primary.stats_manager import load_hourly_caps
-        from src.primary.settings_manager import load_settings
+        from src.primary.stats_manager import load_hourly_caps, _get_app_hourly_cap_limit
         
         # Get the logger
         web_logger = get_logger("web_server")
@@ -998,12 +997,11 @@ def api_get_hourly_caps():
         # Load the current hourly caps
         caps = load_hourly_caps()
         
-        # Get app-specific hourly cap limits
+        # Get app-specific hourly cap limits (sum of per-instance caps for enabled instances)
         app_limits = {}
         apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros']
         for app in apps:
-            app_settings = load_settings(app)
-            app_limits[app] = app_settings.get('hourly_cap', 20)  # Default to 20 if not set
+            app_limits[app] = _get_app_hourly_cap_limit(app)
         
         return jsonify({
             "success": True,

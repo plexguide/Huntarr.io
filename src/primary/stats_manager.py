@@ -168,10 +168,8 @@ def increment_hourly_cap(app_type: str, count: int = 1) -> bool:
             db.increment_hourly_cap(app_type, count)
             new_value = prev_value + count
             
-            # Get the hourly cap from the app's specific configuration
-            from src.primary.settings_manager import load_settings
-            app_settings = load_settings(app_type)
-            hourly_limit = app_settings.get("hourly_cap", 20)  # Default to 20 if not set
+            # Get the hourly cap limit (sum of per-instance caps for enabled instances)
+            hourly_limit = _get_app_hourly_cap_limit(app_type)
             
             # Log current usage vs limit
             logger.debug(f"*** HOURLY API INCREMENT *** {app_type} by {count}: {prev_value} -> {new_value} (hourly limit: {hourly_limit})")
@@ -207,10 +205,8 @@ def get_hourly_cap_status(app_type: str) -> Dict[str, Any]:
             db = get_database()
             caps = db.get_hourly_caps()
             
-            # Get the hourly cap from the app's specific configuration
-            from src.primary.settings_manager import load_settings
-            app_settings = load_settings(app_type)
-            hourly_limit = app_settings.get("hourly_cap", 20)  # Default to 20 if not set
+            # Get the hourly cap limit (sum of per-instance caps for enabled instances)
+            hourly_limit = _get_app_hourly_cap_limit(app_type)
             
             current_usage = caps.get(app_type, {}).get("api_hits", 0)
             
@@ -225,6 +221,28 @@ def get_hourly_cap_status(app_type: str) -> Dict[str, Any]:
         except Exception as e:
             logger.error(f"Error getting hourly cap status for {app_type}: {e}")
             return {"error": f"Database error: {e}"}
+
+def _get_app_hourly_cap_limit(app_type: str) -> int:
+    """
+    Get the hourly API cap limit: sum of per-instance hourly_cap for enabled instances,
+    or app-level fallback for legacy config.
+    """
+    try:
+        from src.primary.settings_manager import load_settings
+        app_settings = load_settings(app_type)
+        if not app_settings:
+            return 20
+        instances = app_settings.get("instances", [])
+        if not instances:
+            return int(app_settings.get("hourly_cap", 20))
+        total = 0
+        for inst in instances:
+            if inst.get("enabled", True):
+                total += int(inst.get("hourly_cap", app_settings.get("hourly_cap", 20)))
+        return max(total, 1) if total else int(app_settings.get("hourly_cap", 20))
+    except Exception as e:
+        logger.error(f"Error getting hourly cap limit for {app_type}: {e}")
+        return 20
 
 def _calculate_per_instance_hourly_limit(app_type: str) -> int:
     """
@@ -327,17 +345,15 @@ def save_stats(stats: Dict[str, Dict[str, int]]) -> bool:
         logger.error(f"Error saving stats to database: {e}")
         return False
 
-def increment_stat(app_type: str, stat_type: str, count: int = 1) -> bool:
+def increment_stat(app_type: str, stat_type: str, count: int = 1, instance_name: Optional[str] = None) -> bool:
     """
-    Increment a specific statistic
+    Increment a specific statistic (app-level and optionally per-instance).
     
     Args:
         app_type: The application type (sonarr, radarr, etc.)
         stat_type: The type of statistic (hunted or upgraded)
         count: The amount to increment by (default: 1)
-        
-    Returns:
-        True if successful, False otherwise
+        instance_name: If set, also increment per-instance stat for Home dashboard
     """
     if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
         logger.error(f"Invalid app_type: {app_type}")
@@ -354,26 +370,18 @@ def increment_stat(app_type: str, stat_type: str, count: int = 1) -> bool:
         try:
             db = get_database()
             db.increment_media_stat(app_type, stat_type, count)
-            logger.debug(f"*** STATS INCREMENT *** {app_type} {stat_type} by {count}")
+            if instance_name:
+                db.increment_media_stat_per_instance(app_type, instance_name, stat_type, count)
+            logger.debug(f"*** STATS INCREMENT *** {app_type} {stat_type} by {count}" + (f" (instance: {instance_name})" if instance_name else ""))
             return True
         except Exception as e:
             logger.error(f"Error incrementing stat {app_type}.{stat_type}: {e}")
             return False
 
-def increment_stat_only(app_type: str, stat_type: str, count: int = 1) -> bool:
+def increment_stat_only(app_type: str, stat_type: str, count: int = 1, instance_name: Optional[str] = None) -> bool:
     """
-    Increment a specific statistic WITHOUT incrementing API cap counter
-    
-    This function is specifically for season packs where the API call is already tracked
-    separately and we only want to increment the stats for each episode.
-    
-    Args:
-        app_type: The application type (sonarr, radarr, etc.)
-        stat_type: The type of statistic (hunted or upgraded)
-        count: The amount to increment by (default: 1)
-        
-    Returns:
-        True if successful, False otherwise
+    Increment a specific statistic WITHOUT incrementing API cap counter.
+    Optionally increments per-instance stat for Home dashboard.
     """
     if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
         logger.error(f"Invalid app_type: {app_type}")
@@ -383,29 +391,51 @@ def increment_stat_only(app_type: str, stat_type: str, count: int = 1) -> bool:
         logger.error(f"Invalid stat_type: {stat_type}")
         return False
     
-    # CRITICAL: Do NOT increment hourly API cap - this is for season packs where
-    # the API call is already tracked separately in search_season()
-    
     with stats_lock:
         try:
             db = get_database()
             db.increment_media_stat(app_type, stat_type, count)
-            logger.debug(f"*** STATS ONLY INCREMENT *** {app_type} {stat_type} by {count} (API cap NOT incremented)")
+            if instance_name:
+                db.increment_media_stat_per_instance(app_type, instance_name, stat_type, count)
+            logger.debug(f"*** STATS ONLY INCREMENT *** {app_type} {stat_type} by {count}" + (f" (instance: {instance_name})" if instance_name else ""))
             return True
         except Exception as e:
             logger.error(f"Error incrementing stat {app_type}.{stat_type}: {e}")
             return False
 
-def get_stats() -> Dict[str, Dict[str, int]]:
+def get_stats() -> Dict[str, Any]:
     """
-    Get the current statistics
-    
-    Returns:
-        Dictionary containing statistics for each app
+    Get the current statistics (app-level + per-instance for Home dashboard).
+    Returns dict: app_type -> { hunted, upgraded, instances: [{ instance_name, hunted, upgraded }] }.
     """
     with stats_lock:
         stats = load_stats()
-        # Stats retrieved - debug spam removed
+        try:
+            from src.primary.settings_manager import load_settings
+            db = get_database()
+            for app_type in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
+                if app_type not in stats:
+                    stats[app_type] = {"hunted": 0, "upgraded": 0}
+                # Get configured instance names so we show cards for each
+                app_settings = load_settings(app_type)
+                instance_names = []
+                if app_settings and isinstance(app_settings.get("instances"), list):
+                    for inst in app_settings["instances"]:
+                        if inst.get("enabled", True) and inst.get("api_url") and inst.get("api_key"):
+                            instance_names.append(inst.get("name") or "Default")
+                # Get per-instance stats from DB (may include instances no longer in config)
+                per_instance = db.get_media_stats_per_instance(app_type) if hasattr(db, "get_media_stats_per_instance") else []
+                # If we have configured instances, merge: list instance names from config, fill stats from DB
+                if instance_names:
+                    by_name = {p["instance_name"]: p for p in per_instance}
+                    stats[app_type]["instances"] = [
+                        {"instance_name": name, "hunted": by_name.get(name, {}).get("hunted", 0), "upgraded": by_name.get(name, {}).get("upgraded", 0)}
+                        for name in instance_names
+                    ]
+                else:
+                    stats[app_type]["instances"] = per_instance if per_instance else []
+        except Exception as e:
+            logger.error(f"Error attaching per-instance stats: {e}")
         return stats
 
 def get_hourly_caps() -> Dict[str, Dict[str, int]]:
@@ -433,17 +463,21 @@ def reset_stats(app_type: Optional[str] = None) -> bool:
             db = get_database()
             
             if app_type is None:
-                # Reset all stats
+                # Reset all stats (app-level + per-instance)
                 logger.info("Resetting all app statistics")
                 default_stats = get_default_stats()
                 for app in default_stats:
                     for stat_type in default_stats[app]:
                         db.set_media_stat(app, stat_type, 0)
+                    if hasattr(db, "reset_media_stats_per_instance"):
+                        db.reset_media_stats_per_instance(app)
             else:
-                # Reset specific app stats
+                # Reset specific app stats (app-level + per-instance)
                 logger.info(f"Resetting statistics for {app_type}")
                 db.set_media_stat(app_type, "hunted", 0)
                 db.set_media_stat(app_type, "upgraded", 0)
+                if hasattr(db, "reset_media_stats_per_instance"):
+                    db.reset_media_stats_per_instance(app_type)
             
             return True
         except Exception as e:

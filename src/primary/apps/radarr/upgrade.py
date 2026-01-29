@@ -281,7 +281,7 @@ def process_cutoff_upgrades(
         if search_result:
             radarr_logger.info(f"  - Successfully triggered search for quality upgrade.")
             add_processed_id("radarr", instance_name, str(movie_id))
-            increment_stat_only("radarr", "upgraded")
+            increment_stat_only("radarr", "upgraded", 1, instance_name)
             
             # Tag the movie if enabled
             if tag_processed_items:

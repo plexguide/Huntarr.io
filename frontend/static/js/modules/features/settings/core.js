@@ -418,7 +418,10 @@ window.SettingsForms = {
             api_timeout: instance.api_timeout || 120,
             command_wait_delay: instance.command_wait_delay || 1,
             command_wait_attempts: instance.command_wait_attempts || 600,
-            max_download_queue_size: instance.max_download_queue_size !== undefined ? instance.max_download_queue_size : -1
+            max_download_queue_size: instance.max_download_queue_size !== undefined ? instance.max_download_queue_size : -1,
+            // Cycle settings (per-instance; were global in 9.0.x)
+            sleep_duration: instance.sleep_duration !== undefined ? instance.sleep_duration : 900,
+            hourly_cap: instance.hourly_cap !== undefined ? instance.hourly_cap : 20
         };
 
         // Handle specific fields for different apps
@@ -730,6 +733,22 @@ window.SettingsForms = {
                     <div class="editor-section-title">Advanced Settings</div>
                     
                     <div class="editor-field-group">
+                        <div class="editor-setting-item">
+                            <label>Sleep Duration (Minutes)</label>
+                            <input type="number" id="editor-sleep-duration" value="${Math.round((safeInstance.sleep_duration || 900) / 60)}" min="10" max="1440">
+                        </div>
+                        <p class="editor-help-text">Time in minutes between processing cycles for this instance (minimum 10 minutes)</p>
+                    </div>
+                    
+                    <div class="editor-field-group">
+                        <div class="editor-setting-item">
+                            <label>API Cap - Hourly</label>
+                            <input type="number" id="editor-hourly-cap" value="${safeInstance.hourly_cap !== undefined ? safeInstance.hourly_cap : 20}" min="1" max="400">
+                        </div>
+                        <p class="editor-help-text">Maximum API requests per hour for this instance (20-50 recommended, max 400)</p>
+                    </div>
+                    
+                    <div class="editor-field-group">
                         <div class="editor-setting-item flex-row">
                             <label>Monitored Only</label>
                             <label class="toggle-switch">
@@ -875,7 +894,10 @@ window.SettingsForms = {
             api_timeout: parseInt(document.getElementById('editor-api-timeout').value) || 120,
             command_wait_delay: parseInt(document.getElementById('editor-cmd-wait-delay').value) || 1,
             command_wait_attempts: parseInt(document.getElementById('editor-cmd-wait-attempts').value) || 600,
-            max_download_queue_size: parseInt(document.getElementById('editor-max-queue-size').value) || -1
+            max_download_queue_size: parseInt(document.getElementById('editor-max-queue-size').value) || -1,
+            // Per-instance cycle settings
+            sleep_duration: (parseInt(document.getElementById('editor-sleep-duration').value, 10) || 15) * 60,
+            hourly_cap: parseInt(document.getElementById('editor-hourly-cap').value, 10) || 20
         };
         
         // Add skip_future_episodes for Sonarr
@@ -1879,25 +1901,15 @@ window.SettingsForms = {
                 settings.instances = [];
             }
 
-            // Global settings for the app
-            if (appType === 'sonarr') {
-                settings.sleep_duration = getInputValue("#sonarr_sleep_duration", 15) * 60;
-                settings.hourly_cap = getInputValue("#sonarr_hourly_cap", 20);
-            } else if (appType === 'radarr') {
-                settings.sleep_duration = getInputValue("#radarr_sleep_duration", 15) * 60;
-                settings.hourly_cap = getInputValue("#radarr_hourly_cap", 20);
-            } else if (appType === 'lidarr') {
-                settings.sleep_duration = getInputValue("#lidarr_sleep_duration", 15) * 60;
-                settings.hourly_cap = getInputValue("#lidarr_hourly_cap", 20);
-            } else if (appType === 'readarr') {
-                settings.sleep_duration = getInputValue("#readarr_sleep_duration", 15) * 60;
-                settings.hourly_cap = getInputValue("#readarr_hourly_cap", 20);
-            } else if (appType === 'whisparr') {
-                settings.sleep_duration = getInputValue("#whisparr_sleep_duration", 15) * 60;
-                settings.hourly_cap = getInputValue("#whisparr_hourly_cap", 20);
-            } else if (appType === 'eros') {
-                settings.sleep_duration = getInputValue("#eros_sleep_duration", 15) * 60;
-                settings.hourly_cap = getInputValue("#eros_hourly_cap", 20);
+            // Sleep duration and hourly_cap are now per-instance (stored on each instance)
+            // Keep app-level fallback from first instance for backward compat
+            if (settings.instances && settings.instances.length > 0) {
+                const first = settings.instances[0];
+                settings.sleep_duration = first.sleep_duration !== undefined ? first.sleep_duration : 900;
+                settings.hourly_cap = first.hourly_cap !== undefined ? first.hourly_cap : 20;
+            } else {
+                settings.sleep_duration = 900;
+                settings.hourly_cap = 20;
             }
         }
         return settings;

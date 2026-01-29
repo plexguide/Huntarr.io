@@ -202,7 +202,7 @@ def process_cutoff_upgrades(
             processing_done = True
             
             # Increment the upgraded statistics for Eros
-            increment_stat("eros", "upgraded", 1)
+            increment_stat("eros", "upgraded", 1, instance_name)
             eros_logger.debug(f"Incremented eros upgraded statistics by 1")
             
             # Log progress

@@ -380,7 +380,7 @@ class HuntarrDatabase:
                 )
             ''')
             
-            # Create media_stats table for tracking hunted/upgraded media statistics
+            # Create media_stats table for tracking hunted/upgraded media statistics (app-level aggregate)
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS media_stats (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -389,6 +389,18 @@ class HuntarrDatabase:
                     stat_value INTEGER DEFAULT 0,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(app_type, stat_type)
+                )
+            ''')
+            # Per-instance stats for Home dashboard (instance name + hunted/upgraded)
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS media_stats_per_instance (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
+                    stat_type TEXT NOT NULL,
+                    stat_value INTEGER DEFAULT 0,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(app_type, instance_name, stat_type)
                 )
             ''')
             
@@ -1125,6 +1137,53 @@ class HuntarrDatabase:
                 INSERT OR REPLACE INTO media_stats (app_type, stat_type, stat_value, updated_at)
                 VALUES (?, ?, COALESCE((SELECT stat_value FROM media_stats WHERE app_type = ? AND stat_type = ?), 0) + ?, CURRENT_TIMESTAMP)
             ''', (app_type, stat_type, app_type, stat_type, increment))
+            conn.commit()
+
+    def get_media_stats_per_instance(self, app_type: str = None):
+        """Get per-instance stats: for one app returns list of {instance_name, hunted, upgraded}; for all returns dict app_type -> list."""
+        with self.get_connection() as conn:
+            if app_type:
+                cursor = conn.execute(
+                    'SELECT instance_name, stat_type, stat_value FROM media_stats_per_instance WHERE app_type = ?',
+                    (app_type,)
+                )
+                by_instance = {}
+                for instance_name, stat_type, value in cursor.fetchall():
+                    if instance_name not in by_instance:
+                        by_instance[instance_name] = {"hunted": 0, "upgraded": 0}
+                    by_instance[instance_name][stat_type] = value
+                return [{"instance_name": k, "hunted": v["hunted"], "upgraded": v["upgraded"]} for k, v in by_instance.items()]
+            cursor = conn.execute('SELECT app_type, instance_name, stat_type, stat_value FROM media_stats_per_instance')
+            stats = {}
+            for app, instance_name, stat_type, value in cursor.fetchall():
+                if app not in stats:
+                    stats[app] = {}
+                if instance_name not in stats[app]:
+                    stats[app][instance_name] = {"hunted": 0, "upgraded": 0}
+                stats[app][instance_name][stat_type] = value
+            result = {}
+            for app, by_inst in stats.items():
+                result[app] = [{"instance_name": k, "hunted": v["hunted"], "upgraded": v["upgraded"]} for k, v in by_inst.items()]
+            return result
+
+    def increment_media_stat_per_instance(self, app_type: str, instance_name: str, stat_type: str, increment: int = 1):
+        """Increment a per-instance media statistic."""
+        if not instance_name:
+            return
+        with self.get_connection() as conn:
+            conn.execute('''
+                INSERT OR REPLACE INTO media_stats_per_instance (app_type, instance_name, stat_type, stat_value, updated_at)
+                VALUES (?, ?, ?, COALESCE((SELECT stat_value FROM media_stats_per_instance WHERE app_type = ? AND instance_name = ? AND stat_type = ?), 0) + ?, CURRENT_TIMESTAMP)
+            ''', (app_type, instance_name, stat_type, app_type, instance_name, stat_type, increment))
+            conn.commit()
+
+    def reset_media_stats_per_instance(self, app_type: str, instance_name: str = None):
+        """Reset per-instance stats for an app (or one instance if instance_name given)."""
+        with self.get_connection() as conn:
+            if instance_name:
+                conn.execute('DELETE FROM media_stats_per_instance WHERE app_type = ? AND instance_name = ?', (app_type, instance_name))
+            else:
+                conn.execute('DELETE FROM media_stats_per_instance WHERE app_type = ?', (app_type,))
             conn.commit()
     
     def get_hourly_caps(self) -> Dict[str, Dict[str, int]]:

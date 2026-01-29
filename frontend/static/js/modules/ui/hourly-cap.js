@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 /**
  * Load hourly API cap data from the server
  */
-function loadHourlyCapData() {
+window.loadHourlyCapData = function loadHourlyCapData() {
     HuntarrUtils.fetchWithTimeout('./api/hourly-caps')
         .then(response => {
             if (!response.ok) {
@@ -32,7 +32,7 @@ function loadHourlyCapData() {
         .catch(error => {
             console.error('Error fetching hourly API cap data:', error);
         });
-}
+};
 
 /**
  * Update the hourly API cap indicators for each app
@@ -41,45 +41,29 @@ function loadHourlyCapData() {
  * @param {Object} limits - Object containing app-specific hourly API limits
  */
 function updateHourlyCapDisplay(caps, limits) {
-    // Update each app's API cap indicator
     const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
     
     apps.forEach(app => {
-        // If we have data for this app
-        if (caps[app]) {
-            // Get the app-specific limit
-            const appLimit = limits[app] || 20; // Default to 20 if not set
+        if (!caps[app]) return;
+        const appLimit = limits[app] || 20;
+        const usage = caps[app].api_hits || 0;
+        const percentage = (appLimit > 0) ? (usage / appLimit) * 100 : 0;
+        
+        // Update every card for this app (single card or per-instance cards)
+        const cards = document.querySelectorAll('.app-stats-card.' + app);
+        cards.forEach(card => {
+            const countEl = card.querySelector('.hourly-cap-text span');
+            const limitEl = card.querySelectorAll('.hourly-cap-text span')[1];
+            if (countEl) countEl.textContent = usage;
+            if (limitEl) limitEl.textContent = appLimit;
             
-            // Update the API count
-            const countElement = document.getElementById(`${app}-api-count`);
-            if (countElement) {
-                countElement.textContent = caps[app].api_hits || 0;
+            const statusEl = card.querySelector('.hourly-cap-status');
+            if (statusEl) {
+                statusEl.classList.remove('good', 'warning', 'danger');
+                if (percentage >= 100) statusEl.classList.add('danger');
+                else if (percentage >= 75) statusEl.classList.add('warning');
+                else statusEl.classList.add('good');
             }
-            
-            // Update the API limit
-            const limitElement = document.getElementById(`${app}-api-limit`);
-            if (limitElement) {
-                limitElement.textContent = appLimit;
-            }
-            
-            // Update the status indicator
-            const statusElement = document.getElementById(`${app}-hourly-cap`);
-            if (statusElement) {
-                const usage = caps[app].api_hits || 0;
-                const percentage = (usage / appLimit) * 100;
-                
-                // Remove existing status classes
-                statusElement.classList.remove('good', 'warning', 'danger');
-                
-                // Add appropriate status class based on usage percentage
-                if (percentage >= 100) {
-                    statusElement.classList.add('danger');
-                } else if (percentage >= 75) {
-                    statusElement.classList.add('warning');
-                } else {
-                    statusElement.classList.add('good');
-                }
-            }
-        }
+        });
     });
 }

@@ -113,25 +113,19 @@ window.CycleCountdown = (function() {
                 const app = this.getAttribute('data-app');
                 if (app) {
                     console.log(`[CycleCountdown] Reset button clicked for ${app}, will keep refreshing until new timer data is available`);
-                    
-                    // Add a loading state to the timer and mark it as waiting for reset
-                    const timerElement = document.getElementById(`${app}CycleTimer`);
-                    if (timerElement) {
+                    const cardTimer = this.closest('.app-stats-card') && this.closest('.app-stats-card').querySelector('.cycle-timer');
+                    const timerElements = cardTimer ? [cardTimer] : Array.from(getTimerElements(app));
+                    timerElements.forEach(timerElement => {
                         const timerValue = timerElement.querySelector('.timer-value');
                         if (timerValue) {
-                            // Store the original next cycle time before reset
                             const originalNextCycle = nextCycleTimes[app] ? nextCycleTimes[app].getTime() : null;
                             timerElement.setAttribute('data-original-cycle-time', originalNextCycle);
-                            
                             timerValue.textContent = 'Refreshing';
                             timerValue.classList.add('refreshing-state');
                             timerValue.style.color = '#00c2ce';
-                            // Mark this timer as waiting for reset data
                             timerElement.setAttribute('data-waiting-for-reset', 'true');
                         }
-                    }
-                    
-                    // Start polling for new data more frequently after reset
+                    });
                     startResetPolling(app);
                 }
             });
@@ -149,37 +143,27 @@ window.CycleCountdown = (function() {
             
             fetchAllCycleData()
                 .then(() => {
-                    // Check if we got new data for this specific app
-                    const timerElement = document.getElementById(`${app}CycleTimer`);
-                    if (timerElement && timerElement.getAttribute('data-waiting-for-reset') === 'true') {
-                        // Check if we have valid next cycle time for this app
-                        if (nextCycleTimes[app]) {
-                            const currentCycleTime = nextCycleTimes[app].getTime();
-                            const originalCycleTime = parseInt(timerElement.getAttribute('data-original-cycle-time'));
-                            
-                            // Only consider reset complete if we have a DIFFERENT cycle time
-                            // or if the original was null (no previous timer)
-                            if (originalCycleTime === null || currentCycleTime !== originalCycleTime) {
-                                console.log(`[CycleCountdown] New reset data received for ${app} (original: ${originalCycleTime}, new: ${currentCycleTime}), stopping polling`);
-                                timerElement.removeAttribute('data-waiting-for-reset');
-                                timerElement.removeAttribute('data-original-cycle-time');
-                                clearInterval(pollInterval);
-                                updateTimerDisplay(app);
-                            } else {
-                                console.log(`[CycleCountdown] Same cycle time for ${app} (${currentCycleTime}), continuing to poll for new data`);
-                            }
+                    const timerElements = getTimerElements(app);
+                    const waiting = Array.from(timerElements).find(el => el.getAttribute('data-waiting-for-reset') === 'true');
+                    if (waiting && nextCycleTimes[app]) {
+                        const currentCycleTime = nextCycleTimes[app].getTime();
+                        const originalCycleTime = parseInt(waiting.getAttribute('data-original-cycle-time'), 10);
+                        if (isNaN(originalCycleTime) || currentCycleTime !== originalCycleTime) {
+                            console.log(`[CycleCountdown] New reset data received for ${app}, stopping polling`);
+                            timerElements.forEach(el => {
+                                el.removeAttribute('data-waiting-for-reset');
+                                el.removeAttribute('data-original-cycle-time');
+                            });
+                            clearInterval(pollInterval);
+                            updateTimerDisplay(app);
                         }
                     }
                 })
-                .catch(() => {
-                    // Continue polling on error
-                });
+                .catch(() => {});
             
-            // Stop polling after max attempts
             if (pollAttempts >= maxPollAttempts) {
                 console.log(`[CycleCountdown] Max polling attempts reached for ${app}, stopping`);
-                const timerElement = document.getElementById(`${app}CycleTimer`);
-                if (timerElement) {
+                getTimerElements(app).forEach(timerElement => {
                     timerElement.removeAttribute('data-waiting-for-reset');
                     timerElement.removeAttribute('data-original-cycle-time');
                     const timerValue = timerElement.querySelector('.timer-value');
@@ -188,101 +172,68 @@ window.CycleCountdown = (function() {
                         timerValue.classList.remove('refreshing-state');
                         timerValue.style.removeProperty('color');
                     }
-                }
+                });
                 clearInterval(pollInterval);
             }
-        }, 5000); // Poll every 5 seconds
+        }, 5000);
     }
     
     // Display initial loading message in the UI when sleep data isn't available yet
     function displayWaitingForCycle() {
-        // For each app, display waiting message in timer elements only if they don't have valid data
         trackedApps.forEach(app => {
-            // Only show waiting message if we don't already have valid cycle data for this app
             if (!nextCycleTimes[app]) {
-                const timerElement = document.getElementById(`${app}CycleTimer`);
-                if (timerElement) {
+                getTimerElements(app).forEach(timerElement => {
                     const timerValue = timerElement.querySelector('.timer-value');
                     if (timerValue && timerValue.textContent === '--:--:--') {
-                        // Show "Waiting for Cycle" for apps without cycle data
                         timerValue.textContent = 'Waiting for Cycle';
                         timerValue.classList.add('refreshing-state');
-                        timerValue.style.color = '#00c2ce'; // Light blue for waiting
+                        timerValue.style.color = '#00c2ce';
                     }
-                }
+                });
             }
         });
     }
     
-    // Create timer display element in the app stats card
+    // Return all timer elements for an app (one per card when multiple instance cards exist)
+    function getTimerElements(app) {
+        return document.querySelectorAll('.app-stats-card.' + app + ' .cycle-timer');
+    }
+    
+    // Create timer display element in each app stats card (supports multiple instance cards)
     function createTimerElement(app) {
-        console.log(`[CycleCountdown] Creating timer element for ${app}`);
-        
-        // Handle special case for whisparr-v3 - convert hyphen to be CSS compatible
+        console.log(`[CycleCountdown] Creating timer elements for ${app}`);
         const dataApp = app;
-        
-        // Get the CSS class name version of the app (replacing hyphens with nothing)
         const cssClass = app.replace(/-/g, '');
         
-        // Directly look for the reset cycle button by data-app attribute
-        const resetButton = document.querySelector(`button.cycle-reset-button[data-app="${dataApp}"]`);
+        const resetButtons = document.querySelectorAll(`button.cycle-reset-button[data-app="${dataApp}"]`);
+        if (!resetButtons.length) return;
         
-        if (!resetButton) {
-            // Silently skip if reset button doesn't exist on this page
-            return;
-        }
-        
-        // Check if timer element already exists
-        let timerElement = document.getElementById(`${app}CycleTimer`);
-        if (timerElement) return;
-        
-        // Create a container to hold both elements side by side
-        const container = document.createElement('div');
-        container.className = 'reset-and-timer-container';
-        container.style.display = 'flex';
-        container.style.justifyContent = 'space-between';
-        container.style.alignItems = 'center';
-        container.style.width = '100%';
-        container.style.marginTop = '8px';
-        
-        // Replace the button with our container
-        resetButton.parentNode.insertBefore(container, resetButton);
-        container.appendChild(resetButton);
-        
-        // Find the app card to get its parent for the app class
-        const appCard = resetButton.closest('.app-card');
-        
-        // Create timer element
-        timerElement = document.createElement('div');
-        timerElement.id = `${app}CycleTimer`;
-        timerElement.className = 'cycle-timer inline-timer';
-        timerElement.innerHTML = '<i class="fas fa-clock"></i> <span class="timer-value">--:--:--</span>';
-        
-        // Apply direct styling to ensure colors show correctly
-        if (app === 'eros') {
-            // Apply direct styling for Whisparr V3 (eros) with !important to ensure it shows
-            timerElement.style.cssText = 'border-left: 2px solid #ff45b7 !important;';
-            console.log('[CycleCountdown] Applied Whisparr V3 (eros) styling');
-        }
-        
-        // Always apply app-specific styling class
-        timerElement.classList.add(cssClass);
-        
-        // Also add a custom data attribute for easier styling/debugging
-        timerElement.setAttribute('data-app-type', app);
-        
-        // Add a timer icon with app-specific color
-        const timerIcon = timerElement.querySelector('i');
-        if (timerIcon) {
-            timerIcon.classList.add(`${cssClass}-icon`);
-        }
-        
-        console.log(`[CycleCountdown] Applied app-specific styling class: ${cssClass}`);
-        
-        // Add the timer to our container
-        container.appendChild(timerElement);
-        
-        console.log(`[CycleCountdown] Timer created for ${app} next to reset button`);
+        resetButtons.forEach(resetButton => {
+            const container = resetButton.closest('.reset-and-timer-container');
+            if (container && container.querySelector('.cycle-timer')) return;
+            
+            const parent = resetButton.parentNode;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'reset-and-timer-container';
+            wrapper.style.display = 'flex';
+            wrapper.style.justifyContent = 'space-between';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.width = '100%';
+            wrapper.style.marginTop = '8px';
+            parent.insertBefore(wrapper, resetButton);
+            wrapper.appendChild(resetButton);
+            
+            const timerElement = document.createElement('div');
+            timerElement.className = 'cycle-timer inline-timer';
+            timerElement.innerHTML = '<i class="fas fa-clock"></i> <span class="timer-value">--:--:--</span>';
+            if (app === 'eros') timerElement.style.cssText = 'border-left: 2px solid #ff45b7 !important;';
+            timerElement.classList.add(cssClass);
+            timerElement.setAttribute('data-app-type', app);
+            const timerIcon = timerElement.querySelector('i');
+            if (timerIcon) timerIcon.classList.add(cssClass + '-icon');
+            wrapper.appendChild(timerElement);
+        });
+        console.log(`[CycleCountdown] Timer(s) created for ${app} (${resetButtons.length} card(s))`);
     }
     
     // Fetch cycle times for all tracked apps
@@ -362,37 +313,28 @@ window.CycleCountdown = (function() {
                             // Store the next cycle time without timezone validation
                             nextCycleTimes[app] = nextCycleTime;
                             
-                            // Clear any waiting state before updating
-                            const timerElement = document.getElementById(`${app}CycleTimer`);
-                            if (timerElement) {
+                            getTimerElements(app).forEach(timerElement => {
                                 const timerValue = timerElement.querySelector('.timer-value');
                                 if (timerValue) {
-                                    // Clear waiting/refreshing state
                                     timerValue.classList.remove('refreshing-state');
                                     timerValue.style.removeProperty('color');
                                 }
-                            }
+                            });
                             
-                            // Check the cyclelock field to determine if app is running
-                            // Default to true if missing (Docker startup behavior)
                             const cyclelock = data[app].cyclelock !== undefined ? data[app].cyclelock : true;
                             
                             if (cyclelock) {
-                                // App is running a cycle - show "Running Cycle"
                                 runningCycles[app] = true;
-                                const timerElement = document.getElementById(`${app}CycleTimer`);
-                                if (timerElement) {
+                                getTimerElements(app).forEach(timerElement => {
                                     const timerValue = timerElement.querySelector('.timer-value');
                                     if (timerValue) {
                                         timerValue.textContent = 'Running Cycle';
                                         timerValue.classList.remove('refreshing-state');
                                         timerValue.classList.add('running-state');
-                                        timerValue.style.color = '#00ff88'; // Green for active
-                                        console.log(`[CycleCountdown] ${app} cyclelock is true, showing Running Cycle`);
+                                        timerValue.style.color = '#00ff88';
                                     }
-                                } else {
-                                    console.warn(`[CycleCountdown] Timer element not found for ${app} when trying to show Running Cycle`);
-                                }
+                                });
+                                console.log(`[CycleCountdown] ${app} cyclelock is true, showing Running Cycle`);
                             } else {
                                 // App is waiting for next cycle - clear running state and show countdown
                                 if (runningCycles[app]) {
@@ -507,81 +449,53 @@ window.CycleCountdown = (function() {
         console.log(`[CycleCountdown] Set up 1-second countdown timer for ${app}`);
     }
     
-    // Update the timer display for an app
+    // Update the timer display for an app (all instance cards)
     function updateTimerDisplay(app) {
-        const timerElement = document.getElementById(`${app}CycleTimer`);
-        if (!timerElement) {
-            console.warn(`[CycleCountdown] Timer element not found for ${app} - skipping display update`);
+        const timerElements = getTimerElements(app);
+        if (!timerElements.length) {
             return;
-        }
-        
-        const timerValue = timerElement.querySelector('.timer-value');
-        if (!timerValue) {
-            console.warn(`[CycleCountdown] Timer value element not found for ${app} - skipping display update`);
-            return;
-        }
-        
-        // If this timer is waiting for reset data, don't update it
-        if (timerElement.getAttribute('data-waiting-for-reset') === 'true') {
-            return; // Keep showing "Refreshing" until reset data is available
-        }
-        
-        // If app is marked as running a cycle, keep showing "Running Cycle"
-        if (runningCycles[app]) {
-            timerValue.textContent = 'Running Cycle';
-            timerValue.classList.remove('refreshing-state');
-            timerValue.classList.add('running-state');
-            timerValue.style.color = '#00ff88'; // Green for active
-            return; // Don't override with countdown
         }
         
         const nextCycleTime = nextCycleTimes[app];
-        if (!nextCycleTime) {
-            timerValue.textContent = '--:--:--';
-            console.log(`[CycleCountdown] No next cycle time for ${app}, showing default`);
-            return;
-        }
-        
-        // Calculate time remaining
         const now = new Date();
-        const timeRemaining = nextCycleTime - now;
+        const timeRemaining = nextCycleTime ? (nextCycleTime - now) : 0;
+        const isExpired = nextCycleTime && timeRemaining <= 0;
+        const isRunning = runningCycles[app];
         
-        console.log(`[CycleCountdown] ${app} - Next: ${nextCycleTime.toISOString()}, Now: ${now.toISOString()}, Remaining: ${Math.floor(timeRemaining/1000)}s`);
+        let formattedTime = '--:--:--';
+        if (nextCycleTime && !isExpired && !isRunning) {
+            const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+            const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+            formattedTime = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+        }
         
-        if (timeRemaining <= 0) {
-            // Time has passed, clear old data and wait for API sync to correct it
-            console.log(`[CycleCountdown] ${app} timer expired, clearing and waiting for API sync`);
+        if (isExpired) {
             delete nextCycleTimes[app];
-            timerValue.textContent = '--:--:--';
+        }
+        
+        timerElements.forEach(timerElement => {
+            const timerValue = timerElement.querySelector('.timer-value');
+            if (!timerValue) return;
+            if (timerElement.getAttribute('data-waiting-for-reset') === 'true') return;
+            
+            if (isRunning) {
+                timerValue.textContent = 'Running Cycle';
+                timerValue.classList.remove('refreshing-state');
+                timerValue.classList.add('running-state');
+                timerValue.style.color = '#00ff88';
+                return;
+            }
+            if (!nextCycleTime || isExpired) {
+                timerValue.textContent = '--:--:--';
+                timerValue.classList.remove('refreshing-state', 'running-state');
+                timerValue.style.removeProperty('color');
+                return;
+            }
+            timerValue.textContent = formattedTime;
             timerValue.classList.remove('refreshing-state', 'running-state');
-            timerValue.style.removeProperty('color');
-            return;
-        }
-        
-        // Format countdown time
-        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-        
-        // Format with leading zeros
-        const formattedHours = String(hours).padStart(2, '0');
-        const formattedMinutes = String(minutes).padStart(2, '0');
-        const formattedSeconds = String(seconds).padStart(2, '0');
-        
-        // Display formatted countdown
-        const formattedTime = `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-        timerValue.textContent = formattedTime;
-        
-        // Remove refreshing and running state classes and clear any inline styles to restore proper color
-        timerValue.classList.remove('refreshing-state', 'running-state');
-        
-        // Add visual indicator for remaining time
-        updateTimerStyle(timerElement, timeRemaining);
-        
-        // Only log occasionally to avoid spam
-        if (seconds % 10 === 0) { // Log every 10 seconds
-            console.log(`[CycleCountdown] ${app} countdown: ${formattedTime}`);
-        }
+            updateTimerStyle(timerElement, timeRemaining);
+        });
     }
     
     // Update timer styling based on remaining time
@@ -612,15 +526,14 @@ window.CycleCountdown = (function() {
     
     // Show error state in timer for actual errors (not startup waiting)
     function updateTimerError(app) {
-        const timerElement = document.getElementById(`${app}CycleTimer`);
-        if (!timerElement) return;
-        
-        const timerValue = timerElement.querySelector('.timer-value');
-        if (!timerValue) return;
-        
-        timerValue.textContent = 'Unavailable';
-        timerValue.style.color = '#ff6b6b'; // Light red for actual errors
-        timerElement.classList.add('timer-error');
+        getTimerElements(app).forEach(timerElement => {
+            const timerValue = timerElement.querySelector('.timer-value');
+            if (timerValue) {
+                timerValue.textContent = 'Unavailable';
+                timerValue.style.color = '#ff6b6b';
+                timerElement.classList.add('timer-error');
+            }
+        });
     }
     
     // Clean up timers when page changes
@@ -716,6 +629,7 @@ window.CycleCountdown = (function() {
         initialize: initialize,
         fetchAllCycleTimes: fetchAllCycleTimes,
         cleanup: cleanup,
-        refreshAllData: refreshAllData
+        refreshAllData: refreshAllData,
+        refreshTimerElements: setupTimerElements
     };
 })();

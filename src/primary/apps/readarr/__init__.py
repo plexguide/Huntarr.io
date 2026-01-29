@@ -51,6 +51,8 @@ def get_configured_instances(quiet=False):
                     "swaparr_enabled": instance.get("swaparr_enabled", False),
                     "hunt_missing_books": instance.get("hunt_missing_books", 1),  # Per-instance missing hunt value
                     "hunt_upgrade_books": instance.get("hunt_upgrade_books", 0),  # Per-instance upgrade hunt value
+                    "sleep_duration": instance.get("sleep_duration", settings.get("sleep_duration", 900)),
+                    "hourly_cap": instance.get("hourly_cap", settings.get("hourly_cap", 20)),
                 }
                 instances.append(instance_data)
     
@@ -90,6 +92,8 @@ def get_configured_instances(quiet=False):
                 "swaparr_enabled": settings.get("swaparr_enabled", False),
                 "hunt_missing_books": settings.get("hunt_missing_books", 1),  # Legacy missing hunt value
                 "hunt_upgrade_books": settings.get("hunt_upgrade_books", 0),  # Legacy upgrade hunt value
+                "sleep_duration": settings.get("sleep_duration", 900),
+                "hourly_cap": settings.get("hourly_cap", 20),
             }
             instances.append(instance_data)
 

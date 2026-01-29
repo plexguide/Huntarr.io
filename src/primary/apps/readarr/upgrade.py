@@ -164,7 +164,7 @@ def process_cutoff_upgrades(
     if search_command_result:
         command_id = search_command_result
         readarr_logger.info(f"Triggered upgrade search command {command_id} for {len(book_ids_to_search)} books.")
-        increment_stat("readarr", "upgraded")
+        increment_stat("readarr", "upgraded", 1, instance_name)
         
         # Tag authors if enabled (from books)
         if tag_processed_items:

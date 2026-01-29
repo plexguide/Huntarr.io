@@ -207,7 +207,7 @@ def process_missing_items(
             processing_done = True
             
             # Increment the hunted statistics for Whisparr
-            increment_stat("whisparr", "hunted", 1)
+            increment_stat("whisparr", "hunted", 1, instance_name)
             whisparr_logger.debug(f"Incremented whisparr hunted statistics by 1")
 
             # Log progress

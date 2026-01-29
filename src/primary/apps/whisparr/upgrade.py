@@ -185,7 +185,7 @@ def process_cutoff_upgrades(
             processing_done = True
             
             # Increment the upgraded statistics for Whisparr
-            increment_stat("whisparr", "upgraded", 1)
+            increment_stat("whisparr", "upgraded", 1, instance_name)
             whisparr_logger.debug(f"Incremented whisparr upgraded statistics by 1")
             
             # Log progress

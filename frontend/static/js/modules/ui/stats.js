@@ -80,40 +80,83 @@ window.HuntarrStats = {
     },
     
     updateStatsDisplay: function(stats, isFromCache = false) {
-        // Update each app's statistics
         const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
         const statTypes = ['hunted', 'upgraded'];
-        
-        // Check if low usage mode is enabled
         const isLowUsageMode = window.huntarrUI ? window.huntarrUI.isLowUsageModeEnabled() : false;
         
-        console.log(`[HuntarrStats] updateStatsDisplay - Low usage mode: ${isLowUsageMode}, from cache: ${isFromCache}`);
-        
         apps.forEach(app => {
-            if (stats[app]) {
+            if (!stats[app]) return;
+            const instances = stats[app].instances;
+            const card = document.querySelector(`.app-stats-card.${app}`);
+            if (!card) return;
+            
+            const appLabel = app.charAt(0).toUpperCase() + app.slice(1);
+            
+            if (instances && instances.length > 0) {
+                // Per-instance: show one card per instance with instance name
+                let wrapper = card.closest('.app-stats-card-wrapper');
+                if (!wrapper) {
+                    wrapper = document.createElement('div');
+                    wrapper.className = 'app-stats-card-wrapper';
+                    card.parentNode.insertBefore(wrapper, card);
+                    wrapper.appendChild(card);
+                }
+                wrapper.style.gridColumn = instances.length > 1 ? '1 / -1' : '';
+                // Remove extra instance cards (keep first as template)
+                while (wrapper.children.length > instances.length) {
+                    wrapper.lastChild.remove();
+                }
+                instances.forEach((inst, idx) => {
+                    const hunted = Math.max(0, parseInt(inst.hunted) || 0);
+                    const upgraded = Math.max(0, parseInt(inst.upgraded) || 0);
+                    const name = inst.instance_name || 'Default';
+                    let targetCard = wrapper.children[idx];
+                    if (!targetCard) {
+                        targetCard = card.cloneNode(true);
+                        targetCard.removeAttribute('id');
+                        targetCard.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+                        wrapper.appendChild(targetCard);
+                    }
+                    targetCard.style.display = '';
+                    const h4 = targetCard.querySelector('.app-content h4');
+                    if (h4) h4.textContent = `${appLabel} – ${name}`;
+                    const numbers = targetCard.querySelectorAll('.stat-number');
+                    if (numbers[0]) {
+                        if (isLowUsageMode || isFromCache) numbers[0].textContent = this.formatLargeNumber(hunted);
+                        else this.animateNumber(numbers[0], this.parseFormattedNumber(numbers[0].textContent || '0'), hunted);
+                    }
+                    if (numbers[1]) {
+                        if (isLowUsageMode || isFromCache) numbers[1].textContent = this.formatLargeNumber(upgraded);
+                        else this.animateNumber(numbers[1], this.parseFormattedNumber(numbers[1].textContent || '0'), upgraded);
+                    }
+                    const resetBtn = targetCard.querySelector('.cycle-reset-button[data-app]');
+                    if (resetBtn) resetBtn.setAttribute('data-instance-name', name);
+                });
+                if (typeof window.CycleCountdown !== 'undefined' && window.CycleCountdown.refreshTimerElements) {
+                    window.CycleCountdown.refreshTimerElements();
+                }
+                if (typeof loadHourlyCapData === 'function') {
+                    loadHourlyCapData();
+                } else if (typeof window.loadHourlyCapData === 'function') {
+                    window.loadHourlyCapData();
+                }
+            } else {
+                // Single card: app-level stats and app name
+                const h4 = card.querySelector('.app-content h4');
+                if (h4) h4.textContent = appLabel;
                 statTypes.forEach(type => {
                     const element = document.getElementById(`${app}-${type}`);
                     if (element) {
-                        // Get current and target values, ensuring they're valid numbers
                         const currentText = element.textContent || '0';
                         const currentValue = this.parseFormattedNumber(currentText);
-                        const targetValue = Math.max(0, parseInt(stats[app][type]) || 0); // Ensure non-negative
-                        
-                        // If low usage mode is enabled or loading from cache, skip animations and set values directly
+                        const targetValue = Math.max(0, parseInt(stats[app][type]) || 0);
                         if (isLowUsageMode || isFromCache) {
                             element.textContent = this.formatLargeNumber(targetValue);
                         } else {
-                            // Only animate if values are different and both are valid
                             if (currentValue !== targetValue && !isNaN(currentValue) && !isNaN(targetValue)) {
-                                // Cancel any existing animation for this element
-                                if (element.animationFrame) {
-                                    cancelAnimationFrame(element.animationFrame);
-                                }
-                                
-                                // Animate the number change
+                                if (element.animationFrame) cancelAnimationFrame(element.animationFrame);
                                 this.animateNumber(element, currentValue, targetValue);
                             } else if (isNaN(currentValue) || currentValue < 0) {
-                                // If current value is invalid, set directly without animation
                                 element.textContent = this.formatLargeNumber(targetValue);
                             }
                         }
@@ -319,17 +362,18 @@ window.HuntarrStats = {
             isConnected = isConfigured && connectedCount > 0; 
         }
 
-        // Update individual card visibility
+        // Update individual card (and wrapper) visibility
+        const card = statusElement.closest('.app-stats-card');
+        const wrapper = card ? card.closest('.app-stats-card-wrapper') : null;
+        const container = wrapper || card;
         if (isConfigured) {
-            const card = statusElement.closest('.app-stats-card');
-            if (card) {
-                card.style.display = ''; 
+            if (container) container.style.display = '';
+            if (wrapper) {
+                wrapper.querySelectorAll('.app-stats-card').forEach(c => { c.style.display = ''; });
             }
         } else {
-            const card = statusElement.closest('.app-stats-card');
-            if (card) {
-                card.style.display = 'none';
-            }
+            if (container) container.style.display = 'none';
+            if (card) card.style.display = 'none';
             statusElement.className = 'status-badge not-configured';
             statusElement.innerHTML = '<i class="fas fa-times-circle"></i> Not Configured';
             return;

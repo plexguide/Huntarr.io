@@ -170,7 +170,7 @@ def process_missing_books(
             # Extract command ID if the result is a dictionary, otherwise use the result directly
             command_id = search_command_result.get('id') if isinstance(search_command_result, dict) else search_command_result
             readarr_logger.info(f"Triggered book search command {command_id} for '{book_title}' by {author_name}.")
-            increment_stat("readarr", "hunted")
+            increment_stat("readarr", "hunted", 1, instance_name)
             
             # Tag the book's author if enabled (keep author tagging as it's still useful)
             if tag_processed_items and author_id:

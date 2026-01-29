@@ -248,6 +248,11 @@ def app_specific_loop(app_type: str) -> None:
             app_logger.warning(f"No valid {app_type} instances to process this cycle (unexpected state). Skipping.")
             stop_event.wait(sleep_duration)
             continue
+
+        # Use minimum sleep_duration across instances (wake for soonest instance)
+        sleep_duration = min(
+            (d.get("sleep_duration", app_settings.get("sleep_duration", 900)) for d in instances_to_process)
+        )
             
         # Process each instance dictionary returned by get_configured_instances
         processed_any_items = False

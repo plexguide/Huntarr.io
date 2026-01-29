@@ -320,7 +320,7 @@ def process_missing_seasons_packs_mode(
             # CRITICAL FIX: Use increment_stat_only to avoid double-counting API calls
             # The API call is already tracked in search_season(), so we only increment stats here
             for i in range(episode_count):
-                increment_stat_only("sonarr", "hunted")
+                increment_stat_only("sonarr", "hunted", 1, instance_name)
             sonarr_logger.debug(f"Incremented sonarr hunted statistics for {episode_count} episodes in season pack (API call already tracked separately)")
             
             # Wait for command to complete if configured
@@ -531,7 +531,7 @@ def process_missing_shows_mode(
             sonarr_logger.debug(f"Logged history entry for complete series: {media_name}")
             
             # Increment the hunted statistics
-            increment_stat("sonarr", "hunted", len(episode_ids))
+            increment_stat("sonarr", "hunted", len(episode_ids), instance_name)
             sonarr_logger.debug(f"Incremented sonarr hunted statistics by {len(episode_ids)}")
         else:
             sonarr_logger.error(f"Failed to trigger search for {show_title}.")
@@ -702,7 +702,7 @@ def process_missing_episodes_mode(
             sonarr_logger.debug(f"Logged history entry for episode: {media_name}")
             
             # Increment statistics
-            increment_stat("sonarr", "hunted")
+            increment_stat("sonarr", "hunted", 1, instance_name)
             sonarr_logger.debug(f"Incremented sonarr hunted statistics for episode {episode_id}")
             
             # Note: No tagging is performed in episodes mode as it would be inefficient
