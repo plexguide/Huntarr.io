@@ -129,22 +129,7 @@
             </div>
         `;
 
-        let searchSettingsHtml = `
-            <div class="settings-group">
-                <h3>Search Settings</h3>
-                <div class="setting-item">
-                    <label for="eros_search_mode"><a href="https://plexguide.github.io/Huntarr.io/apps/eros.html#search-mode" class="info-icon" title="Learn more about search modes" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Search Mode:</label>
-                    <select id="eros_search_mode" name="search_mode">
-                        <option value="movie" ${settings.search_mode === "movie" || !settings.search_mode ? "selected" : ""}>Movie</option>
-                        <option value="scene" ${settings.search_mode === "scene" ? "selected" : ""}>Scene</option>
-                    </select>
-                    <p class="setting-help">How to search for missing and upgradable Whisparr V3 content (Movie-based or Scene-based)</p>
-                </div>
-
-            </div>
-        `;
-
-        container.innerHTML = instancesHtml + searchSettingsHtml;
+        container.innerHTML = instancesHtml;
 
         const grid = container.querySelector('#eros-instances-grid');
         if (grid) {

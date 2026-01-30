@@ -46,21 +46,7 @@
             </div>
         `;
 
-        let searchSettingsHtml = `
-            <div class="settings-group">
-                <h3>Search Settings</h3>
-                <div class="setting-item">
-                    <label for="lidarr_hunt_missing_mode"><a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#search-settings" class="info-icon" title="Learn more about missing search modes" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Missing Search Mode:</label>
-                    <select id="lidarr_hunt_missing_mode" name="hunt_missing_mode">
-                        <option value="album" selected>Album</option>
-                    </select>
-                    <p class="setting-help">Search for individual albums (Artist mode deprecated in Huntarr 7.5.0+)</p>
-                </div>
-
-            </div>
-        `;
-
-        container.innerHTML = instancesHtml + searchSettingsHtml;
+        container.innerHTML = instancesHtml;
 
         const grid = container.querySelector('#lidarr-instances-grid');
         if (grid) {

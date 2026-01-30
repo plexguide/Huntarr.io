@@ -52,7 +52,7 @@ def get_configured_instances(quiet=False):
                     "swaparr_enabled": instance.get("swaparr_enabled", False),
                     "hunt_missing_items": instance.get("hunt_missing_items", 1),  # Per-instance missing hunt value
                     "hunt_upgrade_items": instance.get("hunt_upgrade_items", 0),  # Per-instance upgrade hunt value
-                    "hunt_missing_mode": instance.get("hunt_missing_mode", "seasons_packs"),  # Per-instance missing mode
+                    "hunt_missing_mode": instance.get("hunt_missing_mode", "album"),  # Per-instance missing mode
                     "upgrade_mode": instance.get("upgrade_mode", "seasons_packs"),  # Per-instance upgrade mode
                     "sleep_duration": instance.get("sleep_duration", settings.get("sleep_duration", 900)),
                     "hourly_cap": instance.get("hourly_cap", settings.get("hourly_cap", 20)),

@@ -451,6 +451,7 @@ window.SettingsForms = {
         } else if (appType === 'lidarr') {
             safeInstance.hunt_missing_items = instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1;
             safeInstance.hunt_upgrade_items = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
+            safeInstance.hunt_missing_mode = instance.hunt_missing_mode || 'album';
             safeInstance.upgrade_selection_method = instance.upgrade_selection_method !== undefined ? instance.upgrade_selection_method : 'cutoff';
             safeInstance.upgrade_tag = instance.upgrade_tag !== undefined ? instance.upgrade_tag : '';
         } else if (appType === 'readarr') {
@@ -458,6 +459,10 @@ window.SettingsForms = {
             safeInstance.hunt_upgrade_items = instance.hunt_upgrade_books !== undefined ? instance.hunt_upgrade_books : 0;
             safeInstance.upgrade_selection_method = instance.upgrade_selection_method !== undefined ? instance.upgrade_selection_method : 'cutoff';
             safeInstance.upgrade_tag = instance.upgrade_tag !== undefined ? instance.upgrade_tag : '';
+        } else if (appType === 'eros') {
+            safeInstance.hunt_missing_items = instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1;
+            safeInstance.hunt_upgrade_items = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
+            safeInstance.search_mode = instance.search_mode !== undefined ? instance.search_mode : 'movie';
         }
 
         const devMode = !!(window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general && window.huntarrUI.originalSettings.general.dev_mode);
@@ -685,8 +690,8 @@ window.SettingsForms = {
                             </select>
                         </div>
                         <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
-                            <a href="https://plexguide.github.io/Huntarr.io/apps/sonarr.html#custom-format-scores" target="_blank" rel="noopener" style="color: #3498db; text-decoration: underline;">📖 Docs</a> | 
-                            <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a>
+                            <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
+                            <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
                     </div>
                     <div class="editor-field-group editor-upgrade-tag-group" style="display: ${(safeInstance.upgrade_selection_method || 'cutoff') === 'tags' ? 'flex' : 'none'};">
@@ -730,7 +735,33 @@ window.SettingsForms = {
                         <p class="editor-help-text">Number of items to upgrade in each cycle</p>
                     </div>
             `;
-            
+            if (appType === 'lidarr') {
+                html += `
+                    <div class="editor-field-group">
+                        <div class="editor-setting-item">
+                            <label>Missing Search Mode</label>
+                            <select id="editor-lidarr-missing-mode">
+                                <option value="album" ${(safeInstance.hunt_missing_mode || 'album') === 'album' ? 'selected' : ''}>Album</option>
+                            </select>
+                        </div>
+                        <p class="editor-help-text">Search for individual albums (Artist mode deprecated in Huntarr 7.5.0+)</p>
+                    </div>
+                `;
+            }
+            if (appType === 'eros') {
+                html += `
+                    <div class="editor-field-group">
+                        <div class="editor-setting-item">
+                            <label>Search Mode</label>
+                            <select id="editor-eros-search-mode">
+                                <option value="movie" ${(safeInstance.search_mode || 'movie') === 'movie' ? 'selected' : ''}>Movie</option>
+                                <option value="scene" ${(safeInstance.search_mode || 'movie') === 'scene' ? 'selected' : ''}>Scene</option>
+                            </select>
+                        </div>
+                        <p class="editor-help-text">How to search for missing and upgradable Whisparr V3 content (Movie-based or Scene-based)</p>
+                    </div>
+                `;
+            }
             if (appType === 'radarr') {
                  html += `
                     <div class="editor-field-group">
@@ -742,8 +773,8 @@ window.SettingsForms = {
                             </select>
                         </div>
                         <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
-                            <a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#upgrade-selection-method" target="_blank" rel="noopener" style="color: #3498db; text-decoration: underline;">📖 Docs</a> | 
-                            <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a>
+                            <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
+                            <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
                     </div>
                     <div class="editor-field-group editor-upgrade-tag-group" style="display: ${(safeInstance.upgrade_selection_method || 'cutoff') === 'tags' ? 'flex' : 'none'};">
@@ -767,8 +798,8 @@ window.SettingsForms = {
             }
             if (appType === 'lidarr' || appType === 'readarr') {
                  const tagHelp = appType === 'lidarr'
-                     ? 'Tag name on artists in Lidarr; Huntarr will search albums by artists WITHOUT this tag and ADD it after processing (Upgradinatorr-style tracking). <a href="https://plexguide.github.io/Huntarr.io/apps/lidarr.html#upgrade-mode" target="_blank" rel="noopener" style="color: #3498db; text-decoration: underline;">📖 Docs</a> | <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>'
-                     : 'Tag name on authors in Readarr; Huntarr will search books by authors WITHOUT this tag and ADD it after processing (Upgradinatorr-style tracking). <a href="https://plexguide.github.io/Huntarr.io/apps/readarr.html#upgrade-mode" target="_blank" rel="noopener" style="color: #3498db; text-decoration: underline;">📖 Docs</a> | <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>';
+                     ? 'Tag name on artists in Lidarr; Huntarr will search albums by artists WITHOUT this tag and ADD it after processing (Upgradinatorr-style tracking). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>'
+                     : 'Tag name on authors in Readarr; Huntarr will search books by authors WITHOUT this tag and ADD it after processing (Upgradinatorr-style tracking). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>';
                  html += `
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
@@ -779,8 +810,8 @@ window.SettingsForms = {
                             </select>
                         </div>
                         <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
-                            <a href="https://plexguide.github.io/Huntarr.io/apps/${appType}.html#upgrade-mode" target="_blank" rel="noopener" style="color: #3498db; text-decoration: underline;">📖 Docs</a> | 
-                            <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a>
+                            <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
+                            <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
                     </div>
                     <div class="editor-field-group editor-upgrade-tag-group" style="display: ${(safeInstance.upgrade_selection_method || 'cutoff') === 'tags' ? 'flex' : 'none'};">
@@ -1074,6 +1105,14 @@ window.SettingsForms = {
                      upgradeTagValue = 'upgradinatorr';
                  }
                  newData.upgrade_tag = upgradeTagValue;
+             }
+             if (appType === 'lidarr') {
+                 const lidarrModeEl = document.getElementById('editor-lidarr-missing-mode');
+                 if (lidarrModeEl) newData.hunt_missing_mode = lidarrModeEl.value || 'album';
+             }
+             if (appType === 'eros') {
+                 const erosModeEl = document.getElementById('editor-eros-search-mode');
+                 if (erosModeEl) newData.search_mode = erosModeEl.value || 'movie';
              }
         }
   
