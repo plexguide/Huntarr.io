@@ -546,12 +546,19 @@ window.LogsModule = {
                         levelBadge = `<span class="log-level-badge log-level-info">${level}</span>`;
                 }
                 
-                // Determine app source for display
+                // Determine app source for display: "APP - INSTANCE NAME" when app_type has instance (e.g. sonarr-test -> SONARR - test)
                 let appSource = 'SYSTEM';
                 if (logAppType && logAppType !== 'system') {
-                    appSource = logAppType.toUpperCase();
+                    if (logAppType.indexOf('-') !== -1) {
+                        const parts = logAppType.split('-');
+                        const appPart = (parts[0] || '').toUpperCase();
+                        const instancePart = (parts.slice(1).join('-') || '').trim();
+                        appSource = instancePart ? `${appPart} - ${instancePart}` : appPart;
+                    } else {
+                        appSource = logAppType.toUpperCase();
+                    }
                 }
-                
+
                 logEntry.innerHTML = `
                     <td class="col-time">${displayTimestamp}</td>
                     <td class="col-level">${levelBadge}</td>

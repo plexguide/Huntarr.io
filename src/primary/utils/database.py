@@ -3085,10 +3085,21 @@ class LogsDatabase:
         return level_map.get(level.upper(), 20)
 
     def insert_log(self, timestamp: datetime, level: str, app_type: str, message: str, logger_name: str = None):
-        """Insert a log entry into the logs database"""
+        """Insert a log entry into the logs database. Skips insert if an identical entry (same second, app_type, level, message) already exists."""
         try:
             level_num = self._get_level_num(level)
             with self.get_logs_connection() as conn:
+                # Normalize timestamp to second for duplicate check
+                ts_str = timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp)
+                ts_sec = (ts_str[:19].replace('T', ' ') if len(ts_str) >= 19 else ts_str)
+                cur = conn.execute('''
+                    SELECT 1 FROM logs
+                    WHERE strftime('%Y-%m-%d %H:%M:%S', timestamp) = ?
+                    AND app_type = ? AND level = ? AND message = ?
+                    LIMIT 1
+                ''', (ts_sec, app_type, level, message))
+                if cur.fetchone() is not None:
+                    return  # duplicate within same second, skip insert
                 conn.execute('''
                     INSERT INTO logs (timestamp, level, level_num, app_type, message, logger_name)
                     VALUES (?, ?, ?, ?, ?, ?)
@@ -3108,8 +3119,16 @@ class LogsDatabase:
                 params = []
                 
                 if app_type and app_type != "all":
-                    where_conditions.append("app_type = ?")
-                    params.append(app_type)
+                    # For cyclical apps, include per-instance logs (e.g. Sonarr-test, Sonarr-beta9)
+                    base_apps = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr"]
+                    app_lower = (app_type or "").lower()
+                    if app_lower in base_apps:
+                        app_prefix = app_type.strip()[0:1].upper() + (app_type.strip()[1:].lower() if len(app_type) > 1 else "")
+                        where_conditions.append("(app_type = ? OR app_type LIKE ?)")
+                        params.extend([app_type, app_prefix + "-%"])
+                    else:
+                        where_conditions.append("app_type = ?")
+                        params.append(app_type)
                 
                 if level and level != "all":
                     # Use inclusive filtering: show selected level and above
@@ -3144,8 +3163,16 @@ class LogsDatabase:
                 params = []
                 
                 if app_type and app_type != "all":
-                    where_conditions.append("app_type = ?")
-                    params.append(app_type)
+                    # For cyclical apps, include per-instance logs (e.g. Sonarr-test, Sonarr-beta9)
+                    base_apps = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr"]
+                    app_lower = (app_type or "").lower()
+                    if app_lower in base_apps:
+                        app_prefix = app_type.strip()[0:1].upper() + (app_type.strip()[1:].lower() if len(app_type) > 1 else "")
+                        where_conditions.append("(app_type = ? OR app_type LIKE ?)")
+                        params.extend([app_type, app_prefix + "-%"])
+                    else:
+                        where_conditions.append("app_type = ?")
+                        params.append(app_type)
                 
                 if level and level != "all":
                     # Use inclusive filtering: show selected level and above
@@ -3208,7 +3235,7 @@ class LogsDatabase:
             return 0
     
     def get_app_types_from_logs(self) -> List[str]:
-        """Get list of all app types that have logs"""
+        """Get list of all raw app types that have logs (e.g. Sonarr-test, sonarr, system)."""
         try:
             with self.get_logs_connection() as conn:
                 cursor = conn.execute("SELECT DISTINCT app_type FROM logs ORDER BY app_type")
@@ -3216,7 +3243,28 @@ class LogsDatabase:
         except Exception as e:
             logger.error(f"Error getting app types from logs: {e}")
             return []
-    
+
+    def get_app_types(self) -> List[str]:
+        """Get base app types for log filter dropdown (all, system, sonarr, radarr, ...). Normalizes Sonarr-test -> sonarr."""
+        try:
+            raw = self.get_app_types_from_logs()
+            base = set()
+            for at in raw:
+                part = (at or "").split("-")[0].strip().lower()
+                if part:
+                    base.add(part)
+            order = ["all", "system", "sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr"]
+            result = [a for a in order if a in base or (a == "all" and base)]
+            if "all" not in result and base:
+                result.insert(0, "all")
+            for a in sorted(base):
+                if a not in result:
+                    result.append(a)
+            return result if result else ["all"]
+        except Exception as e:
+            logger.error(f"Error getting app types: {e}")
+            return ["all", "system"]
+
     def get_log_levels(self) -> List[str]:
         """Get list of all log levels that exist"""
         try:
@@ -3228,11 +3276,17 @@ class LogsDatabase:
             return []
     
     def clear_logs(self, app_type: str = None):
-        """Clear logs for a specific app type or all logs"""
+        """Clear logs for a specific app type or all logs. For cyclical apps, clears base and per-instance (e.g. sonarr, Sonarr-test)."""
         try:
             with self.get_logs_connection() as conn:
                 if app_type:
-                    cursor = conn.execute("DELETE FROM logs WHERE app_type = ?", (app_type,))
+                    base_apps = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr"]
+                    app_lower = (app_type or "").lower()
+                    if app_lower in base_apps:
+                        app_prefix = app_type.strip()[0:1].upper() + (app_type.strip()[1:].lower() if len(app_type) > 1 else "")
+                        cursor = conn.execute("DELETE FROM logs WHERE app_type = ? OR app_type LIKE ?", (app_type, app_prefix + "-%"))
+                    else:
+                        cursor = conn.execute("DELETE FROM logs WHERE app_type = ?", (app_type,))
                 else:
                     cursor = conn.execute("DELETE FROM logs")
                 

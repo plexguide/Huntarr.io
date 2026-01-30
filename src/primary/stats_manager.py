@@ -517,7 +517,7 @@ def load_hourly_caps_for_api() -> tuple:
                             instances_dict[db_key] = {"api_hits": cap_data.get("api_hits", 0)}
                     caps_out[app] = {"instances": instances_dict}
                     limits_out[app] = {"instances": {name: _get_instance_hourly_cap_limit(app, name) for name in instances_dict}}
-                    logger.info(f"*** HOURLY API READ *** {app} instances: " + ', '.join([f"{k}={v['api_hits']}" for k, v in instances_dict.items()]))
+                    logger.debug(f"*** HOURLY API READ *** {app} instances: " + ', '.join([f"{k}={v['api_hits']}" for k, v in instances_dict.items()]))
                 else:
                     caps_out[app] = app_caps.get(app, default_caps.get(app, {"api_hits": 0}))
                     limits_out[app] = _get_app_hourly_cap_limit(app)
