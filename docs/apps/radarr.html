@@ -151,6 +151,15 @@
                 <li><strong>Collections:</strong> Upgrades entire movie collections at once when better quality is found</li>
             </ul>
             
+            <h3 id="custom-format-scores"><i class="fas fa-star" style="margin-right: 10px; color: #f1c40f;"></i>Custom Format Scores (TRaSH / Upgrade Until Score)</h3>
+            <p><strong>Huntarr does not decide what to upgrade—Radarr does.</strong> Huntarr gets the list of movies that don't meet your cutoff from Radarr's <strong>Wanted → Cutoff Unmet</strong> API, then triggers the same <strong>MoviesSearch</strong> command as a manual search. Radarr runs the search, scores results with your quality profile (including custom formats), and grabs upgrades. So your quality profile and custom format scores are fully respected.</p>
+            <p>For <a href="https://trash-guides.info/Radarr/radarr-setup-quality-profiles/" target="_blank" rel="noopener">TRaSH Guides</a> and custom-format–based upgrades:</p>
+            <ul>
+                <li>In Radarr go to <strong>Settings → Profiles → Quality Profile</strong></li>
+                <li>Set <strong>Upgrade Until Custom Format Score</strong> to at least <strong>10000</strong> (or your target). Radarr will then treat "cutoff unmet" as "below this custom format score" and include those movies in Wanted → Cutoff Unmet.</li>
+            </ul>
+            <p>Same requirement as tools like <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr</a>: the *arr app must have this set so it knows to upgrade by custom format score. Huntarr only triggers the search; Radarr applies your scores and picks the release.</p>
+            
             <h3 id="search-limits"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Search Limits</h3>
             <p>Control how many items Huntarr processes per cycle to avoid overwhelming your indexers:</p>
             

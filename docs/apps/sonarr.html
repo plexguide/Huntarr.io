@@ -160,6 +160,9 @@
                 <strong>Huntarr 7.5.0+ Migration:</strong> The "Episodes" upgrade mode has been deprecated and automatically migrated to "Season Packs" mode. This change improves search efficiency and provides better integration with modern torrent trackers.
             </div>
             
+            <h3 id="custom-format-scores"><i class="fas fa-star" style="margin-right: 10px; color: #f1c40f;"></i>Custom Format Scores (TRaSH / Upgrade Until Score)</h3>
+            <p><strong>Huntarr does not decide what to upgrade—Sonarr does.</strong> Huntarr uses Sonarr's cutoff-unmet list, triggers season/search commands, and Sonarr scores results with your quality profile (including custom formats) and grabs upgrades. For <a href="https://trash-guides.info/Sonarr/sonarr-setup-quality-profiles/" target="_blank" rel="noopener">TRaSH Guides</a> and custom-format upgrades on <strong>Sonarr V4</strong>, set <strong>Upgrade Until Custom Format Score</strong> (e.g. 10000) in Settings → Profiles → Quality Profile so Sonarr includes "below custom format score" in cutoff unmet and applies your scores when processing search results.</p>
+            
             <h3 id="search-limits"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Search Limits</h3>
             <p>Control how many items Huntarr processes per cycle to avoid overwhelming your indexers:</p>
             
