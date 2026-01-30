@@ -32,8 +32,9 @@ function initCommunityResourcesVisibilityImmediate() {
             if (communityHubCard) {
                 communityHubCard.style.display = settings.display_community_resources !== false ? '' : 'none';
             }
+            // Always hide Huntarr Support section
             if (huntarrSupportSection) {
-                huntarrSupportSection.style.display = settings.display_huntarr_support !== false ? '' : 'none';
+                huntarrSupportSection.style.display = 'none';
             }
             
             console.log('[Community] Applied cached visibility settings');
@@ -46,12 +47,13 @@ function initCommunityResourcesVisibilityImmediate() {
         }
     }
     
-    // If no cache, show both by default (most common case) to prevent hiding content
+    // If no cache, show community hub by default but always hide support section
     if (communityHubCard) {
         communityHubCard.style.display = '';
     }
+    // Always hide Huntarr Support section
     if (huntarrSupportSection) {
-        huntarrSupportSection.style.display = '';
+        huntarrSupportSection.style.display = 'none';
     }
     
     // Fetch fresh settings
@@ -101,25 +103,19 @@ function initCommunityResourcesVisibility() {
                 communityHubCard.style.display = '';
             }
             
-            // Handle Huntarr Support visibility (defaults to true)
+            // Always hide Huntarr Support section
             if (huntarrSupportSection) {
-                if (data.display_huntarr_support === false) {
-                    // Hide the Huntarr support section
-                    console.log('[Community] Hiding Huntarr support section');
-                    huntarrSupportSection.style.display = 'none';
-                } else {
-                    // Show the Huntarr support section (default)
-                    console.log('[Community] Showing Huntarr support section');
-                    huntarrSupportSection.style.display = '';
-                }
+                console.log('[Community] Hiding Huntarr support section (always hidden)');
+                huntarrSupportSection.style.display = 'none';
             }
         })
         .catch(error => {
             console.error('[Community] Error loading general settings:', error);
-            // Default to showing if there's an error
+            // Default to showing community hub if there's an error
             communityHubCard.style.display = '';
+            // Always hide Huntarr Support section
             if (huntarrSupportSection) {
-                huntarrSupportSection.style.display = '';
+                huntarrSupportSection.style.display = 'none';
             }
         });
 } 
