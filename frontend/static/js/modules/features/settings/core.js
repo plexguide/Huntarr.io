@@ -754,6 +754,11 @@ window.SettingsForms = {
                 <div class="editor-section">
                     <div class="editor-section-title">Additional Settings</div>
                     
+                    <div class="editor-field-group" style="margin-bottom: 12px;">
+                        <div style="padding: 10px 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 6px; color: #fcd34d; font-size: 0.85rem; line-height: 1.4;">
+                            <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> Do not overwhelm your indexers. Contact them for advice!
+                        </div>
+                    </div>
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label>Sleep Duration (Minutes)</label>
