@@ -104,10 +104,22 @@ def get_history(app_type, search_query=None, page=1, page_size=20):
             page=page,
             page_size=page_size
         )
-        
+        # Convert date_time to user timezone for display (respects settings; TZ env overrides)
+        try:
+            from src.primary.utils.timezone_utils import get_user_timezone
+            import pytz
+            user_tz = get_user_timezone()
+            for entry in result.get("entries", []):
+                ts = entry.get("date_time")
+                if ts is not None:
+                    utc_dt = datetime.fromtimestamp(ts, tz=pytz.UTC)
+                    local_dt = utc_dt.astimezone(user_tz)
+                    entry["date_time_readable"] = local_dt.strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as tz_err:
+            logger.debug(f"Could not convert history timestamps to user timezone: {tz_err}")
         logger.debug(f"Retrieved {len(result['entries'])} history entries for {app_type} (page {page})")
         return result
-        
+
     except Exception as e:
         logger.error(f"Database error getting history for {app_type}: {e}")
         return {"entries": [], "total_entries": 0, "total_pages": 0, "current_page": 1}

@@ -783,7 +783,7 @@ function loadServerTimezone() {
     HuntarrUtils.fetchWithTimeout('./api/settings')
         .then(response => response.json())
         .then(data => {
-            const serverTimezone = data.general?.timezone || 'UTC';
+            const serverTimezone = data.general?.effective_timezone || data.general?.timezone || 'UTC';
             console.debug('Server timezone loaded:', serverTimezone);
             
             // Clear any existing timer

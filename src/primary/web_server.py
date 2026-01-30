@@ -582,7 +582,15 @@ def user():
 def api_settings():
     if request.method == 'GET':
         # Return all settings using the new manager function
-        all_settings = settings_manager.get_all_settings() # Corrected function name
+        all_settings = settings_manager.get_all_settings()
+        # Effective timezone (env TZ overrides settings) for logs, scheduling, Hunt Manager display
+        try:
+            from src.primary.utils.timezone_utils import get_timezone_name
+            if 'general' not in all_settings:
+                all_settings['general'] = {}
+            all_settings['general']['effective_timezone'] = get_timezone_name()
+        except Exception:
+            pass
         return jsonify(all_settings)
 
 @app.route('/api/settings/general', methods=['POST'])

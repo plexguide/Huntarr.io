@@ -65,62 +65,59 @@ def safe_get_timezone(timezone_name: str) -> pytz.BaseTzInfo:
 
 def get_user_timezone() -> pytz.BaseTzInfo:
     """
-    Get the user's selected timezone with proper fallback handling.
-    
+    Get the effective timezone for display and calculations.
+    Environment variable TZ overrides the timezone set in settings.
+
     This function is robust and will NEVER crash, even with invalid timezones.
     It gracefully handles any timezone string and falls back safely.
-    
+
     Fallback order:
-    1. User's timezone setting from general settings
-    2. TZ environment variable
+    1. TZ environment variable (if set) — overrides settings
+    2. User's timezone from general settings
     3. UTC as final fallback
-    
+
     Returns:
         pytz.BaseTzInfo: The timezone object to use (always valid)
     """
     global _timezone_cache, _cache_timestamp
-    
+
     # Check cache first
     import time
     current_time = time.time()
     if _timezone_cache and (current_time - _cache_timestamp) < _cache_ttl:
         return _timezone_cache
-    
+
     try:
-        # First try to get timezone from user settings
+        # 1. TZ environment variable overrides settings when set
+        tz_env = os.environ.get('TZ')
+        if tz_env and tz_env.strip():
+            tz = safe_get_timezone(tz_env.strip())
+            if tz:
+                _timezone_cache = tz
+                _cache_timestamp = current_time
+                return tz
+
+        # 2. User's timezone from general settings
         try:
             from src.primary import settings_manager
-            general_settings = settings_manager.load_settings("general", use_cache=False)  # Force fresh read
+            general_settings = settings_manager.load_settings("general", use_cache=False)
             timezone_name = general_settings.get("timezone")
-            
-            if timezone_name and timezone_name != "UTC":
+            if timezone_name:
                 tz = safe_get_timezone(timezone_name)
                 if tz:
-                    # Cache the result
                     _timezone_cache = tz
                     _cache_timestamp = current_time
                     return tz
         except Exception:
-            pass  # Fall through to TZ environment variable
-        
-        # Second try TZ environment variable
-        tz_env = os.environ.get('TZ')
-        if tz_env:
-            tz = safe_get_timezone(tz_env)
-            if tz:
-                # Cache the result
-                _timezone_cache = tz
-                _cache_timestamp = current_time
-                return tz
-        
-        # Final fallback to UTC
+            pass
+
+        # 3. Final fallback to UTC
         tz = pytz.UTC
         _timezone_cache = tz
         _cache_timestamp = current_time
         return tz
-        
+
     except Exception:
-        # Ultimate fallback if everything fails
         tz = pytz.UTC
         _timezone_cache = tz
         _cache_timestamp = current_time

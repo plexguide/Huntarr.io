@@ -75,7 +75,7 @@ window.LogsModule = {
         HuntarrUtils.fetchWithTimeout('./api/settings')
             .then(response => response.json())
             .then(settings => {
-                this.userTimezone = settings.general?.timezone || 'UTC';
+                this.userTimezone = settings.general?.effective_timezone || settings.general?.timezone || 'UTC';
                 console.log('[LogsModule] User timezone loaded:', this.userTimezone);
             })
             .catch(error => {
