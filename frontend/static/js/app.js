@@ -47,6 +47,22 @@ let huntarrUI = {
         
         // Cache frequently used DOM elements
         this.cacheElements();
+
+        // Default: Requestarr enabled until we load settings
+        this._enableRequestarr = true;
+        fetch('./api/settings')
+            .then(r => r.json())
+            .then(all => {
+                const en = !!(all.general && all.general.enable_requestarr !== false);
+                this._enableRequestarr = en;
+                const nav = document.getElementById('requestarrNav');
+                if (nav) nav.style.display = en ? '' : 'none';
+                if (!en && /^#?requestarr/.test(window.location.hash)) {
+                    window.location.hash = '#';
+                    this.switchSection('home');
+                }
+            })
+            .catch(() => {});
         
         // Register event handlers
         this.setupEventListeners();
@@ -90,8 +106,13 @@ let huntarrUI = {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings') {
-            console.log('[huntarrUI] Initialization - showing requestarr sidebar');
-            this.showRequestarrSidebar();
+            if (this._enableRequestarr === false) {
+                console.log('[huntarrUI] Requestarr disabled - redirecting to home');
+                this.switchSection('home');
+            } else {
+                console.log('[huntarrUI] Initialization - showing requestarr sidebar');
+                this.showRequestarrSidebar();
+            }
         } else if (this.currentSection === 'apps' || this.currentSection === 'sonarr' || this.currentSection === 'radarr' || this.currentSection === 'lidarr' || this.currentSection === 'readarr' || this.currentSection === 'whisparr' || this.currentSection === 'eros' || this.currentSection === 'prowlarr') {
             console.log('[huntarrUI] Initialization - showing apps sidebar');
             this.showAppsSidebar();
@@ -549,6 +570,9 @@ let huntarrUI = {
             if (typeof huntManagerModule !== 'undefined') {
                 huntManagerModule.refresh();
             }
+        } else if ((section === 'requestarr' || section.startsWith('requestarr-')) && this._enableRequestarr === false) {
+            this.switchSection('home');
+            return;
         } else if (section === 'requestarr' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';

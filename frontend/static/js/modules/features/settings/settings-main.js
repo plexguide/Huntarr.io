@@ -165,6 +165,8 @@ window.HuntarrSettings = {
                     window.huntarrUI.applyUpdateCheckingChange(event.target.checked);
                 } else if (event.target.id === 'show_trending' && window.huntarrUI.applyShowTrendingChange) {
                     window.huntarrUI.applyShowTrendingChange(event.target.checked);
+                } else if (event.target.id === 'enable_requestarr' && window.huntarrUI.applyEnableRequestarrChange) {
+                    window.huntarrUI.applyEnableRequestarrChange(event.target.checked);
                 }
                 this.triggerSettingsAutoSave();
             }
@@ -441,6 +443,30 @@ window.HuntarrSettings = {
             if (typeof window.HomeRequestarr.applyTrendingVisibility === 'function') {
                 window.HomeRequestarr.applyTrendingVisibility();
             }
+        }
+    },
+
+    applyEnableRequestarrChange: function(enabled) {
+        console.log(`[HuntarrSettings] Enable Requestarr ${enabled ? 'enabled' : 'disabled'}`);
+        if (window.huntarrUI) {
+            window.huntarrUI._enableRequestarr = enabled;
+        }
+        const nav = document.getElementById('requestarrNav');
+        if (nav) nav.style.display = enabled ? '' : 'none';
+        if (window.HomeRequestarr) {
+            window.HomeRequestarr.enableRequestarr = enabled;
+            if (typeof window.HomeRequestarr.applyRequestarrEnabledVisibility === 'function') {
+                window.HomeRequestarr.applyRequestarrEnabledVisibility();
+            }
+            if (!enabled && typeof window.HomeRequestarr.applyTrendingVisibility === 'function') {
+                window.HomeRequestarr.showTrending = false;
+                window.HomeRequestarr.applyTrendingVisibility();
+            }
+        }
+        const showTrendingEl = document.getElementById('show_trending');
+        if (showTrendingEl) {
+            showTrendingEl.disabled = !enabled;
+            if (!enabled) showTrendingEl.checked = false;
         }
     }
 };

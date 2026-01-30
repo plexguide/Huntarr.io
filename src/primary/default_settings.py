@@ -178,6 +178,7 @@ GENERAL_DEFAULTS = {
     "log_refresh_interval_seconds": 30,
     "ui_theme": "dark",
     "check_for_updates": True,
+    "enable_requestarr": True,
     "show_trending": True,
     "low_usage_mode": True,
     "enable_notifications": False,

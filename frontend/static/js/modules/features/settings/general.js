@@ -52,17 +52,6 @@
                 </div>
 
                 <div class="setting-item">
-                    <label for="show_trending"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#show-trending" class="info-icon" title="Learn more about showing trending content on home page" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Show Trending:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="show_trending" ${
-                          settings.show_trending === true ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Display "Trending This Week" section on the home page</p>
-                </div>
-
-                <div class="setting-item">
                     <label for="timezone"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#timezone" class="info-icon" title="Set your timezone for accurate time display" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Timezone:</label>
                     <select id="timezone" name="timezone" style="width: 300px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
                         ${(() => {
@@ -258,6 +247,26 @@
             ">
                 <h3>Display Settings</h3>
                 <div class="setting-item">
+                    <label for="enable_requestarr">Enable Requestarr:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="enable_requestarr" ${
+                          settings.enable_requestarr !== false ? "checked" : ""
+                        }>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Show Requestarr in the menu and enable discover/trending on the home page. When disabled, Requestarr is hidden and no TMDB/trending APIs are called.</p>
+                </div>
+                <div class="setting-item" id="show_trending_setting_item">
+                    <label for="show_trending"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#show-trending" class="info-icon" title="Learn more about showing trending content on home page" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Show Trending:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="show_trending" ${
+                          settings.show_trending === true ? "checked" : ""
+                        } ${settings.enable_requestarr === false ? "disabled" : ""}>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Display "Trending This Week" section on the home page. Requires Requestarr to be enabled.</p>
+                </div>
+                <div class="setting-item">
                     <label for="low_usage_mode"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#low-usage-mode" class="info-icon" title="Learn more about Low Usage Mode" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Low Usage Mode:</label>
                     <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                         <input type="checkbox" id="low_usage_mode" ${
@@ -272,6 +281,18 @@
 
         if (window.SettingsForms.setupSettingsManualSave) {
             window.SettingsForms.setupSettingsManualSave(container, settings);
+        }
+
+        // When Enable Requestarr is toggled, disable Show Trending when Requestarr is off
+        const enableRequestarrEl = container.querySelector('#enable_requestarr');
+        const showTrendingEl = container.querySelector('#show_trending');
+        if (enableRequestarrEl && showTrendingEl) {
+            const updateShowTrendingDisabled = () => {
+                showTrendingEl.disabled = !enableRequestarrEl.checked;
+                if (!enableRequestarrEl.checked) showTrendingEl.checked = false;
+            };
+            enableRequestarrEl.addEventListener('change', updateShowTrendingDisabled);
+            updateShowTrendingDisabled();
         }
     };
 

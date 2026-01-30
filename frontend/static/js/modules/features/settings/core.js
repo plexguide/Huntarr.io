@@ -2170,12 +2170,13 @@ window.SettingsForms = {
                 check_for_updates: getVal('check_for_updates', true),
                 display_community_resources: getVal('display_community_resources', true),
                 display_huntarr_support: getVal('display_huntarr_support', true),
+                enable_requestarr: getVal('enable_requestarr', true),
                 low_usage_mode: getVal('low_usage_mode', true),
+                show_trending: getVal('show_trending', true),
                 auth_mode: (container.querySelector('#auth_mode') && container.querySelector('#auth_mode').value) || 'login',
                 ssl_verify: getVal('ssl_verify', true),
                 base_url: getVal('base_url', ''),
                 dev_key: getVal('dev_key', ''),
-                show_trending: getVal('show_trending', true)
             };
         }
         if (section === 'notifications') {
@@ -2227,10 +2228,11 @@ window.SettingsForms = {
             settings.instances = [];
             settings.timezone = getInputValue("#timezone", "UTC");
             settings.check_for_updates = getInputValue("#check_for_updates", true);
-            settings.show_trending = getInputValue("#show_trending", true);
             settings.display_community_resources = getInputValue("#display_community_resources", true);
             settings.display_huntarr_support = getInputValue("#display_huntarr_support", true);
+            settings.enable_requestarr = getInputValue("#enable_requestarr", true);
             settings.low_usage_mode = getInputValue("#low_usage_mode", true);
+            settings.show_trending = getInputValue("#show_trending", true);
 
             const authMode = container.querySelector("#auth_mode")?.value || "login";
             settings.auth_mode = authMode;

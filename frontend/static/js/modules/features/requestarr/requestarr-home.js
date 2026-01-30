@@ -9,6 +9,7 @@ const HomeRequestarr = {
     defaultMovieInstance: null,
     defaultTVInstance: null,
     showTrending: true,
+    enableRequestarr: true,
 
     init() {
         this.cacheElements();
@@ -25,13 +26,18 @@ const HomeRequestarr = {
             this.elements.discoverView.style.setProperty('display', 'none', 'important');
         }
 
-        // Load settings first to determine if trending should be shown
+        // Load settings first to determine if Requestarr/trending should be shown
         this.loadSettings()
             .then(() => {
-                // Apply trending visibility based on settings
+                this.applyRequestarrEnabledVisibility();
+
+                if (!this.enableRequestarr) {
+                    this.setupSearch(); // no-op for API when disabled; just prevent errors
+                    return;
+                }
+
                 this.applyTrendingVisibility();
 
-                // Only proceed with trending if it's enabled
                 if (!this.showTrending || !this.elements.trendingCarousel) {
                     this.setupSearch();
                     return;
@@ -56,12 +62,22 @@ const HomeRequestarr = {
             const response = await fetch('./api/settings');
             const data = await response.json();
             if (data && data.general) {
+                this.enableRequestarr = data.general.enable_requestarr !== false;
                 this.showTrending = data.general.show_trending !== false;
-                console.log('[HomeRequestarr] Show trending setting:', this.showTrending);
+                console.log('[HomeRequestarr] Enable Requestarr:', this.enableRequestarr, 'Show trending:', this.showTrending);
             }
         } catch (error) {
             console.error('[HomeRequestarr] Error loading settings:', error);
-            this.showTrending = true; // Default to showing if error
+            this.enableRequestarr = true;
+            this.showTrending = true;
+        }
+    },
+
+    /** Hide/show the whole Requestarr home card (search + trending) based on enable_requestarr */
+    applyRequestarrEnabledVisibility() {
+        const card = document.querySelector('.requestarr-home-card');
+        if (card) {
+            card.style.display = this.enableRequestarr ? '' : 'none';
         }
     },
 
@@ -141,6 +157,8 @@ const HomeRequestarr = {
     },
 
     handleSearch(query) {
+        if (!this.enableRequestarr) return;
+
         if (this.searchTimeout) {
             clearTimeout(this.searchTimeout);
         }
@@ -178,6 +196,7 @@ const HomeRequestarr = {
     },
 
     async performSearch(query) {
+        if (!this.enableRequestarr) return;
         this.showResults();
 
         if (!this.elements.searchResultsGrid) {
@@ -228,7 +247,7 @@ const HomeRequestarr = {
     },
 
     async loadTrending() {
-        if (!this.elements.trendingCarousel) {
+        if (!this.enableRequestarr || !this.elements.trendingCarousel) {
             return;
         }
 
