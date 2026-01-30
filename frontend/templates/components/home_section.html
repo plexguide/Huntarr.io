@@ -283,12 +283,69 @@
             transform: scale(1.05);
         }
         
+        /* Home Sponsor Banner - Above search bar, right aligned, single line, no extra space */
+        .home-sponsor-banner {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 6px 14px;
+            margin: 0 0 8px 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 6px;
+            color: #93c5fd;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            white-space: nowrap;
+        }
+        
+        .home-sponsor-banner .sponsor-text {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #bfdbfe;
+        }
+        
+        .home-sponsor-banner .sponsor-name {
+            font-weight: 700;
+            color: #60a5fa;
+            text-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+        }
+        
+        .home-sponsor-banner:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(96, 165, 250, 0.2) 100%);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .home-sponsor-banner:hover .sponsor-name {
+            color: #93c5fd;
+            text-shadow: 0 0 12px rgba(96, 165, 250, 0.6);
+        }
+        
+        /* Hide on mobile */
+        @media (max-width: 768px) {
+            .home-sponsor-banner {
+                display: none;
+            }
+        }
 
     </style>
     <!-- Add initially hidden class to prevent flickering before JS initializes -->  
     <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.15s ease;">
         <div class="card requestarr-home-card">
             <div class="requestarr-home-content">
+                <!-- College Sponsor Banner - Above search, right aligned -->
+                <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="home-sponsor-banner">
+                    <span class="sponsor-text">Daughter's College Sponsor: <span class="sponsor-name" id="home-sponsor-name">Loading...</span></span>
+                </a>
+                
                 <div class="global-search-bar">
                     <i class="fas fa-search"></i>
                     <input type="text" id="home-requestarr-search-input" placeholder="Search Movies & TV" autocomplete="off">
@@ -2778,6 +2835,90 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize sponsors on page load
     fetchSponsors();
+    
+    // Home Sponsor Banner - Fetch and cache random sponsor
+    (function() {
+        const CACHE_KEY = 'home_sponsor_cache';
+        const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
+        
+        function updateSponsorBanner(sponsor) {
+            const sponsorName = document.getElementById('home-sponsor-name');
+            if (sponsorName) sponsorName.textContent = sponsor.name;
+        }
+        
+        function getRandomSponsor(sponsors) {
+            if (!sponsors || sponsors.length === 0) return null;
+            const randomIndex = Math.floor(Math.random() * sponsors.length);
+            return sponsors[randomIndex];
+        }
+        
+        function getCachedSponsor() {
+            try {
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (!cached) return null;
+                
+                const { sponsor, timestamp } = JSON.parse(cached);
+                const now = Date.now();
+                
+                // Check if cache is still valid (within 2 minutes)
+                if (now - timestamp < CACHE_DURATION) {
+                    return sponsor;
+                }
+                
+                // Cache expired, remove it
+                localStorage.removeItem(CACHE_KEY);
+                return null;
+            } catch (e) {
+                console.error('Error reading home sponsor cache:', e);
+                return null;
+            }
+        }
+        
+        function cacheSponsor(sponsor) {
+            try {
+                const cacheData = {
+                    sponsor: sponsor,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            } catch (e) {
+                console.error('Error caching home sponsor:', e);
+            }
+        }
+        
+        async function loadSponsor() {
+            // Check cache first
+            const cachedSponsor = getCachedSponsor();
+            if (cachedSponsor) {
+                updateSponsorBanner(cachedSponsor);
+                return;
+            }
+            
+            // Fetch from API
+            try {
+                const response = await fetch('./api/github_sponsors');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const sponsors = await response.json();
+                
+                if (sponsors && sponsors.length > 0) {
+                    const randomSponsor = getRandomSponsor(sponsors);
+                    updateSponsorBanner(randomSponsor);
+                    cacheSponsor(randomSponsor);
+                } else {
+                    updateSponsorBanner({ name: 'Be the first!' });
+                }
+            } catch (error) {
+                console.error('Error fetching home sponsors:', error);
+                updateSponsorBanner({ name: 'Support us!' });
+            }
+        }
+        
+        // Load sponsor when section is visible
+        loadSponsor();
+    })();
 });
 </script>
 </section>
