@@ -337,17 +337,18 @@
         }
 
     </style>
+    
+    <!-- College Sponsor Banner - Above all content, right aligned -->
+    <div style="display: flex; justify-content: flex-end; margin: 0 0 12px 0; padding: 0 20px;">
+        <a href="#" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="home-sponsor-banner" data-sponsor-url="">
+            <span class="sponsor-text">Daughter's College Sponsor: <span class="sponsor-name" id="home-sponsor-name">Loading...</span></span>
+        </a>
+    </div>
+    
     <!-- Add initially hidden class to prevent flickering before JS initializes -->  
     <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.15s ease;">
         <div class="card requestarr-home-card">
             <div class="requestarr-home-content">
-                <!-- College Sponsor Banner Container - Right aligned -->
-                <div style="display: flex; justify-content: flex-end; margin: 0 0 8px 0;">
-                    <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="home-sponsor-banner">
-                        <span class="sponsor-text">Daughter's College Sponsor: <span class="sponsor-name" id="home-sponsor-name">Loading...</span></span>
-                    </a>
-                </div>
-                
                 <div class="global-search-bar">
                     <i class="fas fa-search"></i>
                     <input type="text" id="home-requestarr-search-input" placeholder="Search Movies & TV" autocomplete="off">
@@ -2845,7 +2846,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         function updateSponsorBanner(sponsor) {
             const sponsorName = document.getElementById('home-sponsor-name');
+            const sponsorBanner = document.getElementById('home-sponsor-banner');
+            
             if (sponsorName) sponsorName.textContent = sponsor.name;
+            
+            // Update href to sponsor's GitHub URL
+            if (sponsorBanner && sponsor.url) {
+                sponsorBanner.href = sponsor.url;
+            }
         }
         
         function getRandomSponsor(sponsors) {
