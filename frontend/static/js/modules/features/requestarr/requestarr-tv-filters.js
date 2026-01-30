@@ -50,10 +50,15 @@ export class RequestarrTVFilters {
 
     async loadGenres() {
         try {
-            const response = await fetch('./api/requestarr/genres/tv');
-            const data = await response.json();
+            const [genresRes, blacklistedRes] = await Promise.all([
+                fetch('./api/requestarr/genres/tv'),
+                fetch('./api/requestarr/settings/blacklisted-genres')
+            ]);
+            const data = await genresRes.json();
+            const blacklistedData = await blacklistedRes.json();
+            const blacklistedIds = (blacklistedData.blacklisted_tv_genres || []).map(id => parseInt(id, 10));
             if (data.genres) {
-                this.genres = data.genres;
+                this.genres = data.genres.filter(g => !blacklistedIds.includes(parseInt(g.id, 10)));
                 this.populateGenresSelect();
             }
         } catch (error) {

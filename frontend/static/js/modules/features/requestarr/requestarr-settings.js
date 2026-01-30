@@ -7,6 +7,10 @@ export class RequestarrSettings {
         this.core = core;
         this.hiddenMediaControlsInitialized = false;
         this.hiddenMediaItems = [];
+        this.blacklistedTvGenres = [];
+        this.blacklistedMovieGenres = [];
+        this.tvGenresForBlacklist = [];
+        this.movieGenresForBlacklist = [];
         this.hiddenMediaState = {
             mediaType: null,
             instanceValue: '',
@@ -446,6 +450,9 @@ export class RequestarrSettings {
         // Load discover filters
         await this.loadDiscoverFilters();
         
+        // Load blacklisted genres and wire UI
+        await this.loadBlacklistedGenres();
+        
         const saveBtn = document.getElementById('save-requestarr-settings');
         if (saveBtn) {
             saveBtn.onclick = () => this.saveSettings();
@@ -464,6 +471,151 @@ export class RequestarrSettings {
         const resetBtn = document.getElementById('reset-cooldowns-btn');
         if (resetBtn) {
             resetBtn.onclick = () => this.showResetCooldownsConfirmation();
+        }
+        
+        const saveBlacklistedBtn = document.getElementById('save-blacklisted-genres-btn');
+        if (saveBlacklistedBtn) {
+            saveBlacklistedBtn.onclick = () => this.saveBlacklistedGenres();
+        }
+    }
+    
+    async loadBlacklistedGenres() {
+        const tvSelect = document.getElementById('blacklist-tv-genre-select');
+        const movieSelect = document.getElementById('blacklist-movie-genre-select');
+        if (!tvSelect || !movieSelect) return;
+        try {
+            const [tvRes, movieRes, blacklistedRes] = await Promise.all([
+                fetch('./api/requestarr/genres/tv'),
+                fetch('./api/requestarr/genres/movie'),
+                fetch('./api/requestarr/settings/blacklisted-genres')
+            ]);
+            const tvData = await tvRes.json();
+            const movieData = await movieRes.json();
+            const blacklistedData = await blacklistedRes.json();
+            this.tvGenresForBlacklist = tvData.genres || [];
+            this.movieGenresForBlacklist = movieData.genres || [];
+            const tvIds = (blacklistedData.blacklisted_tv_genres || []).map(id => parseInt(id, 10));
+            const movieIds = (blacklistedData.blacklisted_movie_genres || []).map(id => parseInt(id, 10));
+            this.blacklistedTvGenres = tvIds.map(id => {
+                const g = this.tvGenresForBlacklist.find(x => x.id === id);
+                return { id, name: (g && g.name) ? g.name : `Genre ${id}` };
+            });
+            this.blacklistedMovieGenres = movieIds.map(id => {
+                const g = this.movieGenresForBlacklist.find(x => x.id === id);
+                return { id, name: (g && g.name) ? g.name : `Genre ${id}` };
+            });
+            this.populateBlacklistedDropdowns();
+            this.renderBlacklistedPills();
+            tvSelect.onchange = () => {
+                const val = tvSelect.value;
+                if (!val) return;
+                const id = parseInt(val, 10);
+                const g = this.tvGenresForBlacklist.find(x => x.id === id);
+                if (g && !this.blacklistedTvGenres.some(x => x.id === id)) {
+                    this.blacklistedTvGenres.push({ id: g.id, name: g.name });
+                    this.renderBlacklistedPills();
+                    this.populateBlacklistedDropdowns();
+                }
+                tvSelect.value = '';
+            };
+            movieSelect.onchange = () => {
+                const val = movieSelect.value;
+                if (!val) return;
+                const id = parseInt(val, 10);
+                const g = this.movieGenresForBlacklist.find(x => x.id === id);
+                if (g && !this.blacklistedMovieGenres.some(x => x.id === id)) {
+                    this.blacklistedMovieGenres.push({ id: g.id, name: g.name });
+                    this.renderBlacklistedPills();
+                    this.populateBlacklistedDropdowns();
+                }
+                movieSelect.value = '';
+            };
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error loading blacklisted genres:', error);
+        }
+    }
+    
+    populateBlacklistedDropdowns() {
+        const tvSelect = document.getElementById('blacklist-tv-genre-select');
+        const movieSelect = document.getElementById('blacklist-movie-genre-select');
+        if (!tvSelect || !movieSelect) return;
+        const tvIds = this.blacklistedTvGenres.map(g => g.id);
+        const movieIds = this.blacklistedMovieGenres.map(g => g.id);
+        tvSelect.innerHTML = '<option value="">Select a genre to blacklist...</option>';
+        this.tvGenresForBlacklist.filter(g => !tvIds.includes(g.id)).forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.name;
+            tvSelect.appendChild(opt);
+        });
+        movieSelect.innerHTML = '<option value="">Select a genre to blacklist...</option>';
+        this.movieGenresForBlacklist.filter(g => !movieIds.includes(g.id)).forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.name;
+            movieSelect.appendChild(opt);
+        });
+    }
+    
+    renderBlacklistedPills() {
+        const tvList = document.getElementById('blacklisted-tv-genres-list');
+        const movieList = document.getElementById('blacklisted-movie-genres-list');
+        if (!tvList || !movieList) return;
+        tvList.innerHTML = '';
+        this.blacklistedTvGenres.forEach(g => {
+            const pill = document.createElement('span');
+            pill.className = 'blacklisted-genre-pill';
+            pill.innerHTML = `<span class="remove-pill" data-type="tv" data-id="${g.id}" aria-label="Remove">×</span><span>${g.name}</span>`;
+            pill.querySelector('.remove-pill').onclick = () => {
+                this.blacklistedTvGenres = this.blacklistedTvGenres.filter(x => x.id !== g.id);
+                this.renderBlacklistedPills();
+                this.populateBlacklistedDropdowns();
+            };
+            tvList.appendChild(pill);
+        });
+        movieList.innerHTML = '';
+        this.blacklistedMovieGenres.forEach(g => {
+            const pill = document.createElement('span');
+            pill.className = 'blacklisted-genre-pill';
+            pill.innerHTML = `<span class="remove-pill" data-type="movie" data-id="${g.id}" aria-label="Remove">×</span><span>${g.name}</span>`;
+            pill.querySelector('.remove-pill').onclick = () => {
+                this.blacklistedMovieGenres = this.blacklistedMovieGenres.filter(x => x.id !== g.id);
+                this.renderBlacklistedPills();
+                this.populateBlacklistedDropdowns();
+            };
+            movieList.appendChild(pill);
+        });
+    }
+    
+    async saveBlacklistedGenres() {
+        const btn = document.getElementById('save-blacklisted-genres-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        }
+        try {
+            const response = await fetch('./api/requestarr/settings/blacklisted-genres', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    blacklisted_tv_genres: this.blacklistedTvGenres.map(g => g.id),
+                    blacklisted_movie_genres: this.blacklistedMovieGenres.map(g => g.id)
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                this.core.showNotification('Blacklisted genres saved.', 'success');
+            } else {
+                this.core.showNotification('Failed to save blacklisted genres', 'error');
+            }
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error saving blacklisted genres:', error);
+            this.core.showNotification('Failed to save blacklisted genres', 'error');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Save Blacklisted Genres';
+            }
         }
     }
     

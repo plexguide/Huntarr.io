@@ -28,6 +28,9 @@ class RequestarrAPI:
         region = filters.get('region', '')
         languages = filters.get('languages', [])
         providers = filters.get('providers', [])
+        blacklisted = self.get_blacklisted_genres()
+        blacklisted_movie = [int(x) for x in blacklisted.get('blacklisted_movie_genres', [])]
+        blacklisted_tv = [int(x) for x in blacklisted.get('blacklisted_tv_genres', [])]
         
         all_results = []
         movie_results = []
@@ -43,6 +46,10 @@ class RequestarrAPI:
                     'page': 1,
                     'sort_by': 'popularity.desc'
                 }
+                if media_type == 'movie' and blacklisted_movie:
+                    params['without_genres'] = '|'.join(str(g) for g in blacklisted_movie)
+                elif media_type == 'tv' and blacklisted_tv:
+                    params['without_genres'] = '|'.join(str(g) for g in blacklisted_tv)
                 
                 # Add region filter if set (not empty string)
                 if region:
@@ -62,8 +69,16 @@ class RequestarrAPI:
                 response.raise_for_status()
                 
                 data = response.json()
-                
-                for item in data.get('results', [])[:10]:  # Top 10 per type = 20 total
+                bl_set = set(blacklisted_movie) if media_type == 'movie' else set(blacklisted_tv)
+                count = 0
+                for item in data.get('results', []):
+                    if count >= 10:
+                        break
+                    # Skip blacklisted genres (fallback filter)
+                    item_genre_ids = set(item.get('genre_ids') or [])
+                    if bl_set and item_genre_ids.intersection(bl_set):
+                        continue
+                    count += 1
                     title = item.get('title') or item.get('name', '')
                     release_date = item.get('release_date') or item.get('first_air_date', '')
                     year = None
@@ -129,6 +144,8 @@ class RequestarrAPI:
         region = filters.get('region', '')
         languages = filters.get('languages', [])
         providers = filters.get('providers', [])
+        blacklisted = self.get_blacklisted_genres()
+        blacklisted_movie = [int(x) for x in blacklisted.get('blacklisted_movie_genres', [])]
         
         all_results = []
         
@@ -140,6 +157,10 @@ class RequestarrAPI:
                 'page': page,
                 'sort_by': kwargs.get('sort_by', 'popularity.desc')
             }
+            
+            # Exclude blacklisted genres (TMDB uses pipe-separated for without_genres)
+            if blacklisted_movie:
+                params['without_genres'] = '|'.join(str(g) for g in blacklisted_movie)
             
             # Add region filter if set
             if region:
@@ -185,6 +206,10 @@ class RequestarrAPI:
             data = response.json()
             
             for item in data.get('results', []):
+                # Skip if item has any blacklisted genre (fallback if TMDB ignores without_genres)
+                item_genre_ids = set(item.get('genre_ids') or [])
+                if blacklisted_movie and item_genre_ids.intersection(blacklisted_movie):
+                    continue
                 release_date = item.get('release_date', '')
                 year = None
                 if release_date:
@@ -239,6 +264,8 @@ class RequestarrAPI:
         region = filters.get('region', '')
         languages = filters.get('languages', [])
         providers = filters.get('providers', [])
+        blacklisted = self.get_blacklisted_genres()
+        blacklisted_tv = [int(x) for x in blacklisted.get('blacklisted_tv_genres', [])]
         
         all_results = []
         
@@ -250,6 +277,10 @@ class RequestarrAPI:
                 'page': page,
                 'sort_by': kwargs.get('sort_by', 'popularity.desc')
             }
+            
+            # Exclude blacklisted genres (TMDB uses pipe-separated for without_genres)
+            if blacklisted_tv:
+                params['without_genres'] = '|'.join(str(g) for g in blacklisted_tv)
             
             # Add region filter if set
             if region:
@@ -293,6 +324,10 @@ class RequestarrAPI:
             data = response.json()
             
             for item in data.get('results', []):
+                # Skip if item has any blacklisted genre (fallback if TMDB ignores without_genres)
+                item_genre_ids = set(item.get('genre_ids') or [])
+                if blacklisted_tv and item_genre_ids.intersection(blacklisted_tv):
+                    continue
                 first_air_date = item.get('first_air_date', '')
                 year = None
                 if first_air_date:
@@ -985,7 +1020,33 @@ class RequestarrAPI:
         except Exception as e:
             logger.error(f"Error setting discover filters: {e}")
             raise
-    
+
+    def get_blacklisted_genres(self) -> dict:
+        """Get blacklisted TV and movie genre IDs (excluded from filter dropdowns everywhere)."""
+        try:
+            requestarr_config = self.db.get_app_config('requestarr')
+            if requestarr_config:
+                return {
+                    'blacklisted_tv_genres': list(requestarr_config.get('blacklisted_tv_genres') or []),
+                    'blacklisted_movie_genres': list(requestarr_config.get('blacklisted_movie_genres') or [])
+                }
+            return {'blacklisted_tv_genres': [], 'blacklisted_movie_genres': []}
+        except Exception as e:
+            logger.error(f"Error getting blacklisted genres: {e}")
+            return {'blacklisted_tv_genres': [], 'blacklisted_movie_genres': []}
+
+    def set_blacklisted_genres(self, blacklisted_tv_genres: list, blacklisted_movie_genres: list):
+        """Set blacklisted TV and movie genre IDs."""
+        try:
+            requestarr_config = self.db.get_app_config('requestarr') or {}
+            requestarr_config['blacklisted_tv_genres'] = [int(x) for x in blacklisted_tv_genres if x is not None]
+            requestarr_config['blacklisted_movie_genres'] = [int(x) for x in blacklisted_movie_genres if x is not None]
+            self.db.save_app_config('requestarr', requestarr_config)
+            logger.info(f"Set blacklisted genres - TV: {requestarr_config['blacklisted_tv_genres']}, Movie: {requestarr_config['blacklisted_movie_genres']}")
+        except Exception as e:
+            logger.error(f"Error setting blacklisted genres: {e}")
+            raise
+
     def get_default_instances(self) -> dict:
         """Get default instance settings for discovery"""
         try:

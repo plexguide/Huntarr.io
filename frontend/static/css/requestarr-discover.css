@@ -1191,6 +1191,48 @@ input:disabled + .toggle-slider {
     margin-top: 6px;
 }
 
+.settings-card-description {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: -5px 0 20px 0;
+}
+
+.blacklisted-genres-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    min-height: 24px;
+}
+
+.blacklisted-genre-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 6px;
+    color: #fca5a5;
+    font-size: 0.8125rem;
+}
+
+.blacklisted-genre-pill .remove-pill {
+    cursor: pointer;
+    color: #fca5a5;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    transition: color 0.2s;
+}
+
+.blacklisted-genre-pill .remove-pill:hover {
+    color: #fff;
+}
+
 /* Custom Region Select Dropdown */
 .custom-select-wrapper {
     position: relative;

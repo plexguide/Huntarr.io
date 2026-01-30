@@ -52,10 +52,15 @@ export class RequestarrFilters {
 
     async loadGenres() {
         try {
-            const response = await fetch('./api/requestarr/genres/movie');
-            const data = await response.json();
+            const [genresRes, blacklistedRes] = await Promise.all([
+                fetch('./api/requestarr/genres/movie'),
+                fetch('./api/requestarr/settings/blacklisted-genres')
+            ]);
+            const data = await genresRes.json();
+            const blacklistedData = await blacklistedRes.json();
+            const blacklistedIds = (blacklistedData.blacklisted_movie_genres || []).map(id => parseInt(id, 10));
             if (data.genres) {
-                this.genres = data.genres;
+                this.genres = data.genres.filter(g => !blacklistedIds.includes(g.id));
                 this.populateGenresSelect();
             }
         } catch (error) {

@@ -305,6 +305,34 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Blacklisted Genres Card -->
+                <div class="settings-card">
+                    <h3>Blacklisted Genres</h3>
+                    <p class="settings-card-description">Genres added here are hidden from the Movies and TV filter dropdowns. Users cannot select these genres when filtering discovery; use this to prevent certain genres from being requested.</p>
+                    
+                    <div class="settings-field">
+                        <label for="blacklist-tv-genre-select">Blacklisted TV Genres</label>
+                        <select id="blacklist-tv-genre-select" class="settings-select">
+                            <option value="">Select a genre to blacklist...</option>
+                        </select>
+                        <div id="blacklisted-tv-genres-list" class="blacklisted-genres-pills"></div>
+                    </div>
+                    
+                    <div class="settings-field">
+                        <label for="blacklist-movie-genre-select">Blacklisted Movie Genres</label>
+                        <select id="blacklist-movie-genre-select" class="settings-select">
+                            <option value="">Select a genre to blacklist...</option>
+                        </select>
+                        <div id="blacklisted-movie-genres-list" class="blacklisted-genres-pills"></div>
+                    </div>
+                    
+                    <div class="settings-actions">
+                        <button id="save-blacklisted-genres-btn" class="btn-primary">
+                            <i class="fas fa-save"></i> Save Blacklisted Genres
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

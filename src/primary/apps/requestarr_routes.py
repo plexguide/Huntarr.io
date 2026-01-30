@@ -480,6 +480,29 @@ def get_watch_providers(media_type):
         logger.error(f"Error getting watch providers: {e}")
         return jsonify({'error': 'Failed to get watch providers'}), 500
 
+@requestarr_bp.route('/settings/blacklisted-genres', methods=['GET'])
+def get_blacklisted_genres():
+    """Get blacklisted TV and movie genre IDs"""
+    try:
+        data = requestarr_api.get_blacklisted_genres()
+        return jsonify({'success': True, **data})
+    except Exception as e:
+        logger.error(f"Error getting blacklisted genres: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get blacklisted genres'}), 500
+
+@requestarr_bp.route('/settings/blacklisted-genres', methods=['POST'])
+def set_blacklisted_genres():
+    """Set blacklisted TV and movie genre IDs"""
+    try:
+        data = request.get_json()
+        blacklisted_tv = data.get('blacklisted_tv_genres', [])
+        blacklisted_movie = data.get('blacklisted_movie_genres', [])
+        requestarr_api.set_blacklisted_genres(blacklisted_tv, blacklisted_movie)
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error setting blacklisted genres: {e}")
+        return jsonify({'success': False, 'error': 'Failed to set blacklisted genres'}), 500
+
 @requestarr_bp.route('/reset-cooldowns', methods=['POST'])
 def reset_cooldowns():
     """Reset all cooldowns with 25+ hours remaining"""
