@@ -185,16 +185,6 @@
                     </label>
                     <p class="setting-help" style="margin-left: -3ch !important;">Disables animations to reduce CPU/GPU usage on older devices</p>
                 </div>
-                <div class="setting-item">
-                    <label for="display_huntarr_support">Display Huntarr Support:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="display_huntarr_support" ${
-                          settings.display_huntarr_support !== false ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Display support section</p>
-                </div>
             </div>
         `;
 
