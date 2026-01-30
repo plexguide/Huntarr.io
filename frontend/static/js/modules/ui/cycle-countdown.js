@@ -175,7 +175,7 @@ window.CycleCountdown = (function() {
                     timerElement.removeAttribute('data-original-cycle-time');
                     const timerValue = timerElement.querySelector('.timer-value');
                     if (timerValue) {
-                        timerValue.textContent = '--:--:--';
+                        timerValue.textContent = 'Starting Cycle';
                         timerValue.classList.remove('refreshing-state');
                         timerValue.style.removeProperty('color');
                     }
@@ -191,7 +191,7 @@ window.CycleCountdown = (function() {
             if (!nextCycleTimes[app]) {
                 getTimerElements(app).forEach(timerElement => {
                     const timerValue = timerElement.querySelector('.timer-value');
-                    if (timerValue && timerValue.textContent === '--:--:--') {
+                    if (timerValue && (timerValue.textContent === '--:--:--' || timerValue.textContent === 'Starting Cycle')) {
                         timerValue.textContent = 'Waiting for Cycle';
                         timerValue.classList.add('refreshing-state');
                         timerValue.style.color = '#00c2ce';
@@ -245,7 +245,7 @@ window.CycleCountdown = (function() {
             
             const timerElement = document.createElement('div');
             timerElement.className = 'cycle-timer inline-timer';
-            timerElement.innerHTML = '<i class="fas fa-clock"></i> <span class="timer-value">--:--:--</span>';
+            timerElement.innerHTML = '<i class="fas fa-clock"></i> <span class="timer-value">Starting Cycle</span>';
             if (app === 'eros') timerElement.style.cssText = 'border-left: 2px solid #ff45b7 !important;';
             timerElement.classList.add(cssClass);
             timerElement.setAttribute('data-app-type', app);
@@ -501,7 +501,7 @@ window.CycleCountdown = (function() {
             const timeRemaining = nextCycleTime ? (nextCycleTime - now) : 0;
             const isExpired = nextCycleTime && timeRemaining <= 0;
             
-            let formattedTime = '--:--:--';
+            let formattedTime = 'Starting Cycle';
             if (nextCycleTime && !isExpired && !isRunning && !isPendingReset) {
                 const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
                 const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
@@ -525,7 +525,7 @@ window.CycleCountdown = (function() {
                 return;
             }
             if (!nextCycleTime || isExpired) {
-                timerValue.textContent = '--:--:--';
+                timerValue.textContent = 'Starting Cycle';
                 timerValue.classList.remove('refreshing-state', 'running-state');
                 timerValue.style.removeProperty('color');
                 return;

@@ -24,7 +24,7 @@
 /* Special styling for inline timers next to reset buttons */
 .inline-timer {
     margin: 0;
-    min-width: 95px;
+    min-width: 110px;
     background-color: rgba(0, 0, 0, 0.1);
     font-size: 0.85rem;
     border-radius: 4px;
