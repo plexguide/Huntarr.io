@@ -84,16 +84,21 @@
                             </span>
                         </div>
                         
-                        <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
-                            <label style="color: #f8fafc; font-weight: 500; margin: 0;">Enabled</label>
-                            <label class="toggle-switch" style="margin: 0;">
-                                <input type="checkbox" id="editor-enabled" ${prowlarrInstance.enabled ? 'checked' : ''}>
-                                <span class="toggle-slider"></span>
-                            </label>
+                        <div class="editor-field-group">
+                            <div class="editor-setting-item">
+                                <label style="display: flex; align-items: center; color: #f8fafc; font-weight: 500;">
+                                    <span>Enable Status </span>
+                                    <i id="enable-status-icon" class="fas ${prowlarrInstance.enabled ? 'fa-check-circle' : 'fa-minus-circle'}" style="color: ${prowlarrInstance.enabled ? '#10b981' : '#ef4444'}; font-size: 1.1rem; margin-left: 6px;"></i>
+                                </label>
+                                <select id="editor-enabled" onchange="window.SettingsForms.updateEnableStatusIcon && window.SettingsForms.updateEnableStatusIcon();" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(15, 23, 42, 0.5); color: white;">
+                                    <option value="true" ${prowlarrInstance.enabled ? 'selected' : ''}>Enabled</option>
+                                    <option value="false" ${!prowlarrInstance.enabled ? 'selected' : ''}>Disabled</option>
+                                </select>
+                            </div>
+                            <p class="setting-help" style="margin: 0 0 20px 0; color: #94a3b8; font-size: 0.85rem;">Enable or disable Prowlarr integration</p>
                         </div>
-                        <p class="setting-help" style="margin: 0 0 20px 0; color: #94a3b8; font-size: 0.85rem;">Enable or disable Prowlarr integration</p>
                         
-                        <div class="setting-item" style="margin-bottom: 20px;">
+                        <div class="setting-item" style="margin-bottom: 20px; display: none;">
                             <label style="display: block; color: #f8fafc; font-weight: 500; margin-bottom: 8px;">Name</label>
                             <input type="text" id="editor-name" value="Prowlarr" readonly style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(15, 23, 42, 0.3); color: #94a3b8; cursor: not-allowed;">
                             <p class="setting-help" style="margin-top: 5px; color: #94a3b8; font-size: 0.85rem;">A friendly name to identify this instance</p>
@@ -187,17 +192,25 @@
 
         // Switch to the editor section
         window.huntarrUI.switchSection('instance-editor');
+
+        // Enable Save button when user makes changes (same as settings main / instance editor)
+        setTimeout(() => {
+            if (window.SettingsForms.setupEditorChangeDetection) {
+                window.SettingsForms.setupEditorChangeDetection();
+            }
+        }, 100);
     };
 
     window.SettingsForms.saveProwlarrFromEditor = function() {
         const settings = window.huntarrUI.originalSettings.prowlarr;
-        
-        settings.enabled = document.getElementById('editor-enabled').checked;
+        const enabledEl = document.getElementById('editor-enabled');
+
+        settings.enabled = enabledEl ? (enabledEl.tagName === 'SELECT' ? enabledEl.value === 'true' : enabledEl.checked) : settings.enabled;
         settings.api_url = document.getElementById('editor-url').value;
         settings.api_key = document.getElementById('editor-key').value;
 
         window.SettingsForms.saveAppSettings('prowlarr', settings);
-        window.huntarrUI.switchSection('prowlarr');
+        // Stay on the editor page; do not switch back to prowlarr section
     };
 
 })();
