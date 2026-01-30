@@ -538,19 +538,20 @@ export class RequestarrModal {
             return;
         }
         
-        // Update all matching cards (since item might appear in multiple sections)
+        // Update all matching cards to match Sonarr: cooldown = not requestable (badge + no Request button)
         cards.forEach((card, index) => {
             const badge = card.querySelector('.media-card-status-badge');
-            
             if (badge) {
-                // Update badge to cooldown status (red with stop hand)
                 badge.className = 'media-card-status-badge cooldown';
                 badge.innerHTML = '<i class="fas fa-hand"></i>';
-                
-                console.log(`[RequestarrDiscover] Updated card ${index + 1}/${cards.length} status badge to cooldown for TMDB ID: ${tmdbId}`);
-            } else {
-                console.warn(`[RequestarrDiscover] No status badge found for card ${index + 1} with TMDB ID: ${tmdbId}`);
             }
+            // Mark card as in-cooldown (badge only; no "In cooldown" text)
+            card.classList.add('in-cooldown');
+            const requestBtn = card.querySelector('.media-card-request-btn');
+            if (requestBtn) {
+                requestBtn.remove();
+            }
+            console.log(`[RequestarrDiscover] Updated card ${index + 1}/${cards.length} to cooldown (no request) for TMDB ID: ${tmdbId}`);
         });
     }
 

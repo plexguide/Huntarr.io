@@ -800,6 +800,15 @@ export class RequestarrContent {
         if (inLibrary) {
             card.classList.add('in-library');
         }
+        if (inCooldown) {
+            card.classList.add('in-cooldown');
+        }
+        
+        // Only show Request button when not in library AND not in cooldown (badge alone indicates cooldown)
+        const showRequestBtn = !inLibrary && !inCooldown;
+        const overlayActionHTML = showRequestBtn
+            ? '<button class="media-card-request-btn"><i class="fas fa-download"></i> Request</button>'
+            : '';
         
         card.innerHTML = `
             <div class="media-card-poster">
@@ -810,7 +819,7 @@ export class RequestarrContent {
                     <div class="media-card-overlay-content">
                         <div class="media-card-overlay-year">${year}</div>
                         <div class="media-card-overlay-description">${overview}</div>
-                        ${!inLibrary ? '<button class="media-card-request-btn"><i class="fas fa-download"></i> Request</button>' : ''}
+                        ${overlayActionHTML}
                     </div>
                 </div>
             </div>

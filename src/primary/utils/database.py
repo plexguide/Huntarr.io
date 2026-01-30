@@ -2639,10 +2639,14 @@ class HuntarrDatabase:
                         'last_requested_at': None
                     }
                 
-                from datetime import datetime, timedelta
-                
-                last_requested = datetime.fromisoformat(result[0].replace('Z', '+00:00'))
-                now = datetime.now(last_requested.tzinfo)
+                from datetime import datetime, timedelta, timezone
+                ts_str = result[0]
+                # SQLite CURRENT_TIMESTAMP is UTC (no 'Z'); parse as UTC so cooldown is correct on any server TZ
+                if ts_str.endswith('Z') or '+' in ts_str or (len(ts_str) > 10 and ts_str[-3] == '-'):
+                    last_requested = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+                else:
+                    last_requested = datetime.fromisoformat(ts_str).replace(tzinfo=timezone.utc)
+                now = datetime.now(timezone.utc)
                 cooldown_period = timedelta(hours=cooldown_hours)
                 time_since_request = now - last_requested
                 
