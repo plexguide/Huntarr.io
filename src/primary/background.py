@@ -12,6 +12,7 @@ import signal
 import importlib
 import logging
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional, Callable, Union, Tuple
 import datetime
 import traceback
@@ -265,10 +266,9 @@ def app_specific_loop(app_type: str) -> None:
             except Exception:
                 return False
 
-        for instance_details in instances_to_process:
-            if stop_event.is_set():
-                break
-                
+        def _process_one_instance(instance_details):
+            """Process a single instance in parallel; returns (processed_any, instance_name, had_reset, should_append)."""
+            processed_any_this = False
             instance_name = instance_details.get("instance_name", "Default") # Use the dict from get_configured_instances
             instance_sleep = instance_details.get("sleep_duration", app_settings.get("sleep_duration", 900))
             user_tz = _get_user_timezone()
@@ -290,7 +290,7 @@ def app_specific_loop(app_type: str) -> None:
                         end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
-                    break
+                    return (processed_any_this, instance_name, True, False)
             except Exception as e:
                 app_logger.warning(f"Failed to set instance context for {instance_name}: {e}")
             app_logger.info(f"Processing {app_type} instance: {instance_name}")
@@ -309,7 +309,7 @@ def app_specific_loop(app_type: str) -> None:
                     end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
                 if clear_instance_log_context:
                     clear_instance_log_context()
-                continue
+                return (False, instance_name, False, False)
             try:
                 # Use instance details for connection check
                 app_logger.debug(f"Checking connection to {app_type} instance '{instance_name}' at {api_url} with timeout {api_timeout}s")
@@ -320,7 +320,7 @@ def app_specific_loop(app_type: str) -> None:
                         end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
-                    continue
+                    return (False, instance_name, False, False)
                 app_logger.debug(f"Successfully connected to {app_type} instance: {instance_name}")
             except Exception as e:
                 app_logger.error(f"Error connecting to {app_type} instance '{instance_name}': {e}", exc_info=True)
@@ -328,7 +328,7 @@ def app_specific_loop(app_type: str) -> None:
                     end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
                 if clear_instance_log_context:
                     clear_instance_log_context()
-                continue # Skip this instance if connection fails
+                return (False, instance_name, False, False) # Skip this instance if connection fails
                 
             # --- API Cap Check --- #
             try:
@@ -342,7 +342,7 @@ def app_specific_loop(app_type: str) -> None:
                         end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
-                    continue # Skip this instance if API cap is exceeded
+                    return (False, instance_name, False, False) # Skip this instance if API cap is exceeded
             except Exception as e:
                 app_logger.error(f"Error checking hourly API cap for {app_type}: {e}", exc_info=True)
                 # Continue with the cycle even if cap check fails - safer than skipping
@@ -400,7 +400,7 @@ def app_specific_loop(app_type: str) -> None:
                             end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
                         if clear_instance_log_context:
                             clear_instance_log_context()
-                        continue # Skip processing for this instance
+                        return (False, instance_name, False, False) # Skip processing for this instance
                     else:
                         app_logger.info(f"Queue size ({current_queue_size}) is below maximum ({max_queue_size}). Proceeding.")
                 except Exception as e:
@@ -469,7 +469,7 @@ def app_specific_loop(app_type: str) -> None:
                         processed_missing = process_missing(app_settings=combined_settings, stop_check=stop_check_func)
                         
                     if processed_missing:
-                        processed_any_items = True
+                        processed_any_this = True
                 except Exception as e:
                     app_logger.error(f"Error during missing processing for {instance_name}: {e}", exc_info=True)
                 if _has_pending_reset(app_type, instance_name):
@@ -478,7 +478,7 @@ def app_specific_loop(app_type: str) -> None:
                         end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
-                    break
+                    return (processed_any_this, instance_name, True, False)
 
             # --- Process Upgrades --- #
             if hunt_upgrade_enabled and process_upgrades:
@@ -519,7 +519,7 @@ def app_specific_loop(app_type: str) -> None:
                         processed_upgrades = process_upgrades(app_settings=combined_settings, stop_check=stop_check_func)
                         
                     if processed_upgrades:
-                        processed_any_items = True
+                        processed_any_this = True
                 except Exception as e:
                     app_logger.error(f"Error during upgrade processing for {instance_name}: {e}", exc_info=True)
                 if _has_pending_reset(app_type, instance_name):
@@ -528,7 +528,7 @@ def app_specific_loop(app_type: str) -> None:
                         end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
-                    break
+                    return (processed_any_this, instance_name, True, False)
 
             # Per-instance cycle end: set this instance's next_cycle from its sleep_duration
             try:
@@ -544,10 +544,28 @@ def app_specific_loop(app_type: str) -> None:
             if clear_instance_log_context:
                 clear_instance_log_context()
 
-            # Small delay between instances if needed (optional)
-            if not stop_event.is_set():
-                 time.sleep(1) # Short pause
-            enabled_instances.append(instance_name)
+            return (processed_any_this, instance_name, False, True)
+
+        # Run all instances in parallel (each has its own settings; they do not run in order)
+        reset_requested_any = False
+        with ThreadPoolExecutor(max_workers=max(len(instances_to_process), 1)) as executor:
+            futures = {executor.submit(_process_one_instance, inst): inst for inst in instances_to_process}
+            for future in as_completed(futures):
+                if stop_event.is_set():
+                    break
+                try:
+                    result = future.result()
+                    if result is None:
+                        continue
+                    processed_any_inst, iname, had_reset, should_append = result
+                    if processed_any_inst:
+                        processed_any_items = True
+                    if had_reset:
+                        reset_requested_any = True
+                    if should_append:
+                        enabled_instances.append(iname)
+                except Exception as e:
+                    app_logger.error(f"Instance worker failed: {e}", exc_info=True)
 
         # --- Cycle End & Sleep --- #
         calculate_reset_time(app_type) # Pass app_type here if needed by the function

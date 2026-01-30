@@ -69,26 +69,108 @@
                           const predefinedTimezones = [
                             "UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "Pacific/Honolulu",
                             "America/Toronto", "America/Vancouver", "America/Sao_Paulo", "America/Argentina/Buenos_Aires", "America/Mexico_City",
+                            "America/Phoenix", "America/Anchorage", "America/Halifax", "America/St_Johns", "America/Lima", "America/Bogota",
+                            "America/Caracas", "America/Santiago", "America/La_Paz",
                             "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Amsterdam", "Europe/Rome", "Europe/Madrid",
-                            "Asia/Tokyo", "Asia/Seoul", "Asia/Shanghai", "Asia/Singapore", "Australia/Sydney", "Pacific/Auckland"
+                            "Europe/Stockholm", "Europe/Zurich", "Europe/Vienna", "Europe/Prague", "Europe/Warsaw", "Europe/Budapest",
+                            "Europe/Bucharest", "Europe/Sofia", "Europe/Athens", "Europe/Helsinki", "Europe/Oslo", "Europe/Copenhagen",
+                            "Europe/Brussels", "Europe/Lisbon", "Europe/Dublin", "Europe/Moscow", "Europe/Kiev", "Europe/Minsk",
+                            "Europe/Riga", "Europe/Tallinn", "Europe/Vilnius",
+                            "Africa/Cairo", "Africa/Lagos", "Africa/Nairobi", "Africa/Casablanca", "Africa/Johannesburg",
+                            "Asia/Dubai", "Asia/Qatar", "Asia/Kuwait", "Asia/Riyadh", "Asia/Tehran", "Asia/Tashkent", "Asia/Almaty",
+                            "Asia/Tokyo", "Asia/Seoul", "Asia/Shanghai", "Asia/Hong_Kong", "Asia/Singapore", "Asia/Bangkok", "Asia/Kolkata",
+                            "Asia/Karachi", "Asia/Jakarta", "Asia/Manila", "Asia/Kuala_Lumpur", "Asia/Taipei", "Asia/Yekaterinburg",
+                            "Australia/Sydney", "Australia/Melbourne", "Australia/Brisbane", "Australia/Adelaide", "Australia/Perth",
+                            "Pacific/Auckland", "Pacific/Fiji", "Pacific/Guam"
                           ];
                           const currentTimezone = settings.timezone;
                           if (currentTimezone && !predefinedTimezones.includes(currentTimezone)) {
-                            return `<option value="${currentTimezone}" selected>${currentTimezone} (Custom)</option>`;
+                            return `<option value="${currentTimezone}" selected>${currentTimezone} (Custom from Environment)</option>`;
                           }
                           return "";
                         })()}
-                        <option value="UTC" ${settings.timezone === "UTC" || !settings.timezone ? "selected" : ""}>UTC</option>
-                        <option value="America/New_York" ${settings.timezone === "America/New_York" ? "selected" : ""}>Eastern Time</option>
-                        <option value="America/Chicago" ${settings.timezone === "America/Chicago" ? "selected" : ""}>Central Time</option>
-                        <option value="America/Denver" ${settings.timezone === "America/Denver" ? "selected" : ""}>Mountain Time</option>
-                        <option value="America/Los_Angeles" ${settings.timezone === "America/Los_Angeles" ? "selected" : ""}>Pacific Time</option>
-                        <option value="Europe/London" ${settings.timezone === "Europe/London" ? "selected" : ""}>UK Time</option>
-                        <option value="Europe/Paris" ${settings.timezone === "Europe/Paris" ? "selected" : ""}>Central Europe</option>
-                        <option value="Asia/Tokyo" ${settings.timezone === "Asia/Tokyo" ? "selected" : ""}>Japan</option>
-                        <option value="Australia/Sydney" ${settings.timezone === "Australia/Sydney" ? "selected" : ""}>Australia East</option>
+                        <option value="UTC" ${settings.timezone === "UTC" || !settings.timezone ? "selected" : ""}>UTC (Coordinated Universal Time)</option>
+                        <option value="America/New_York" ${settings.timezone === "America/New_York" ? "selected" : ""}>Eastern Time (America/New_York)</option>
+                        <option value="America/Chicago" ${settings.timezone === "America/Chicago" ? "selected" : ""}>Central Time (America/Chicago)</option>
+                        <option value="America/Denver" ${settings.timezone === "America/Denver" ? "selected" : ""}>Mountain Time (America/Denver)</option>
+                        <option value="America/Los_Angeles" ${settings.timezone === "America/Los_Angeles" ? "selected" : ""}>Pacific Time (America/Los_Angeles)</option>
+                        <option value="Pacific/Honolulu" ${settings.timezone === "Pacific/Honolulu" ? "selected" : ""}>Hawaii Time (Pacific/Honolulu)</option>
+                        <option value="America/Toronto" ${settings.timezone === "America/Toronto" ? "selected" : ""}>Eastern Canada (America/Toronto)</option>
+                        <option value="America/Vancouver" ${settings.timezone === "America/Vancouver" ? "selected" : ""}>Pacific Canada (America/Vancouver)</option>
+                        <option value="America/Sao_Paulo" ${settings.timezone === "America/Sao_Paulo" ? "selected" : ""}>Brazil (America/Sao_Paulo)</option>
+                        <option value="America/Argentina/Buenos_Aires" ${settings.timezone === "America/Argentina/Buenos_Aires" ? "selected" : ""}>Argentina (America/Argentina/Buenos_Aires)</option>
+                        <option value="America/Mexico_City" ${settings.timezone === "America/Mexico_City" ? "selected" : ""}>Mexico (America/Mexico_City)</option>
+                        <option value="America/Phoenix" ${settings.timezone === "America/Phoenix" ? "selected" : ""}>Arizona (America/Phoenix)</option>
+                        <option value="America/Anchorage" ${settings.timezone === "America/Anchorage" ? "selected" : ""}>Alaska (America/Anchorage)</option>
+                        <option value="America/Halifax" ${settings.timezone === "America/Halifax" ? "selected" : ""}>Atlantic Canada (America/Halifax)</option>
+                        <option value="America/St_Johns" ${settings.timezone === "America/St_Johns" ? "selected" : ""}>Newfoundland (America/St_Johns)</option>
+                        <option value="America/Lima" ${settings.timezone === "America/Lima" ? "selected" : ""}>Peru (America/Lima)</option>
+                        <option value="America/Bogota" ${settings.timezone === "America/Bogota" ? "selected" : ""}>Colombia (America/Bogota)</option>
+                        <option value="America/Caracas" ${settings.timezone === "America/Caracas" ? "selected" : ""}>Venezuela (America/Caracas)</option>
+                        <option value="America/Santiago" ${settings.timezone === "America/Santiago" ? "selected" : ""}>Chile (America/Santiago)</option>
+                        <option value="America/La_Paz" ${settings.timezone === "America/La_Paz" ? "selected" : ""}>Bolivia (America/La_Paz)</option>
+                        <option value="Europe/London" ${settings.timezone === "Europe/London" ? "selected" : ""}>UK Time (Europe/London)</option>
+                        <option value="Europe/Paris" ${settings.timezone === "Europe/Paris" ? "selected" : ""}>Central Europe (Europe/Paris)</option>
+                        <option value="Europe/Berlin" ${settings.timezone === "Europe/Berlin" ? "selected" : ""}>Germany (Europe/Berlin)</option>
+                        <option value="Europe/Amsterdam" ${settings.timezone === "Europe/Amsterdam" ? "selected" : ""}>Netherlands (Europe/Amsterdam)</option>
+                        <option value="Europe/Rome" ${settings.timezone === "Europe/Rome" ? "selected" : ""}>Italy (Europe/Rome)</option>
+                        <option value="Europe/Madrid" ${settings.timezone === "Europe/Madrid" ? "selected" : ""}>Spain (Europe/Madrid)</option>
+                        <option value="Europe/Stockholm" ${settings.timezone === "Europe/Stockholm" ? "selected" : ""}>Sweden (Europe/Stockholm)</option>
+                        <option value="Europe/Zurich" ${settings.timezone === "Europe/Zurich" ? "selected" : ""}>Switzerland (Europe/Zurich)</option>
+                        <option value="Europe/Vienna" ${settings.timezone === "Europe/Vienna" ? "selected" : ""}>Austria (Europe/Vienna)</option>
+                        <option value="Europe/Prague" ${settings.timezone === "Europe/Prague" ? "selected" : ""}>Czech Republic (Europe/Prague)</option>
+                        <option value="Europe/Warsaw" ${settings.timezone === "Europe/Warsaw" ? "selected" : ""}>Poland (Europe/Warsaw)</option>
+                        <option value="Europe/Budapest" ${settings.timezone === "Europe/Budapest" ? "selected" : ""}>Hungary (Europe/Budapest)</option>
+                        <option value="Europe/Bucharest" ${settings.timezone === "Europe/Bucharest" ? "selected" : ""}>Romania (Europe/Bucharest)</option>
+                        <option value="Europe/Sofia" ${settings.timezone === "Europe/Sofia" ? "selected" : ""}>Bulgaria (Europe/Sofia)</option>
+                        <option value="Europe/Athens" ${settings.timezone === "Europe/Athens" ? "selected" : ""}>Greece (Europe/Athens)</option>
+                        <option value="Europe/Helsinki" ${settings.timezone === "Europe/Helsinki" ? "selected" : ""}>Finland (Europe/Helsinki)</option>
+                        <option value="Europe/Oslo" ${settings.timezone === "Europe/Oslo" ? "selected" : ""}>Norway (Europe/Oslo)</option>
+                        <option value="Europe/Copenhagen" ${settings.timezone === "Europe/Copenhagen" ? "selected" : ""}>Denmark (Europe/Copenhagen)</option>
+                        <option value="Europe/Brussels" ${settings.timezone === "Europe/Brussels" ? "selected" : ""}>Belgium (Europe/Brussels)</option>
+                        <option value="Europe/Lisbon" ${settings.timezone === "Europe/Lisbon" ? "selected" : ""}>Portugal (Europe/Lisbon)</option>
+                        <option value="Europe/Dublin" ${settings.timezone === "Europe/Dublin" ? "selected" : ""}>Ireland (Europe/Dublin)</option>
+                        <option value="Europe/Moscow" ${settings.timezone === "Europe/Moscow" ? "selected" : ""}>Russia Moscow (Europe/Moscow)</option>
+                        <option value="Europe/Kiev" ${settings.timezone === "Europe/Kiev" ? "selected" : ""}>Ukraine (Europe/Kiev)</option>
+                        <option value="Europe/Minsk" ${settings.timezone === "Europe/Minsk" ? "selected" : ""}>Belarus (Europe/Minsk)</option>
+                        <option value="Europe/Riga" ${settings.timezone === "Europe/Riga" ? "selected" : ""}>Latvia (Europe/Riga)</option>
+                        <option value="Europe/Tallinn" ${settings.timezone === "Europe/Tallinn" ? "selected" : ""}>Estonia (Europe/Tallinn)</option>
+                        <option value="Europe/Vilnius" ${settings.timezone === "Europe/Vilnius" ? "selected" : ""}>Lithuania (Europe/Vilnius)</option>
+                        <option value="Africa/Cairo" ${settings.timezone === "Africa/Cairo" ? "selected" : ""}>Egypt (Africa/Cairo)</option>
+                        <option value="Africa/Lagos" ${settings.timezone === "Africa/Lagos" ? "selected" : ""}>Nigeria (Africa/Lagos)</option>
+                        <option value="Africa/Nairobi" ${settings.timezone === "Africa/Nairobi" ? "selected" : ""}>Kenya (Africa/Nairobi)</option>
+                        <option value="Africa/Casablanca" ${settings.timezone === "Africa/Casablanca" ? "selected" : ""}>Morocco (Africa/Casablanca)</option>
+                        <option value="Africa/Johannesburg" ${settings.timezone === "Africa/Johannesburg" ? "selected" : ""}>South Africa (Africa/Johannesburg)</option>
+                        <option value="Asia/Dubai" ${settings.timezone === "Asia/Dubai" ? "selected" : ""}>UAE (Asia/Dubai)</option>
+                        <option value="Asia/Qatar" ${settings.timezone === "Asia/Qatar" ? "selected" : ""}>Qatar (Asia/Qatar)</option>
+                        <option value="Asia/Kuwait" ${settings.timezone === "Asia/Kuwait" ? "selected" : ""}>Kuwait (Asia/Kuwait)</option>
+                        <option value="Asia/Riyadh" ${settings.timezone === "Asia/Riyadh" ? "selected" : ""}>Saudi Arabia (Asia/Riyadh)</option>
+                        <option value="Asia/Tehran" ${settings.timezone === "Asia/Tehran" ? "selected" : ""}>Iran (Asia/Tehran)</option>
+                        <option value="Asia/Tashkent" ${settings.timezone === "Asia/Tashkent" ? "selected" : ""}>Uzbekistan (Asia/Tashkent)</option>
+                        <option value="Asia/Almaty" ${settings.timezone === "Asia/Almaty" ? "selected" : ""}>Kazakhstan (Asia/Almaty)</option>
+                        <option value="Asia/Tokyo" ${settings.timezone === "Asia/Tokyo" ? "selected" : ""}>Japan (Asia/Tokyo)</option>
+                        <option value="Asia/Seoul" ${settings.timezone === "Asia/Seoul" ? "selected" : ""}>South Korea (Asia/Seoul)</option>
+                        <option value="Asia/Shanghai" ${settings.timezone === "Asia/Shanghai" ? "selected" : ""}>China (Asia/Shanghai)</option>
+                        <option value="Asia/Hong_Kong" ${settings.timezone === "Asia/Hong_Kong" ? "selected" : ""}>Hong Kong (Asia/Hong_Kong)</option>
+                        <option value="Asia/Singapore" ${settings.timezone === "Asia/Singapore" ? "selected" : ""}>Singapore (Asia/Singapore)</option>
+                        <option value="Asia/Bangkok" ${settings.timezone === "Asia/Bangkok" ? "selected" : ""}>Thailand (Asia/Bangkok)</option>
+                        <option value="Asia/Kolkata" ${settings.timezone === "Asia/Kolkata" ? "selected" : ""}>India (Asia/Kolkata)</option>
+                        <option value="Asia/Karachi" ${settings.timezone === "Asia/Karachi" ? "selected" : ""}>Pakistan (Asia/Karachi)</option>
+                        <option value="Asia/Jakarta" ${settings.timezone === "Asia/Jakarta" ? "selected" : ""}>Indonesia (Asia/Jakarta)</option>
+                        <option value="Asia/Manila" ${settings.timezone === "Asia/Manila" ? "selected" : ""}>Philippines (Asia/Manila)</option>
+                        <option value="Asia/Kuala_Lumpur" ${settings.timezone === "Asia/Kuala_Lumpur" ? "selected" : ""}>Malaysia (Asia/Kuala_Lumpur)</option>
+                        <option value="Asia/Taipei" ${settings.timezone === "Asia/Taipei" ? "selected" : ""}>Taiwan (Asia/Taipei)</option>
+                        <option value="Asia/Yekaterinburg" ${settings.timezone === "Asia/Yekaterinburg" ? "selected" : ""}>Russia Yekaterinburg (Asia/Yekaterinburg)</option>
+                        <option value="Australia/Sydney" ${settings.timezone === "Australia/Sydney" ? "selected" : ""}>Australia East (Australia/Sydney)</option>
+                        <option value="Australia/Melbourne" ${settings.timezone === "Australia/Melbourne" ? "selected" : ""}>Australia Melbourne (Australia/Melbourne)</option>
+                        <option value="Australia/Brisbane" ${settings.timezone === "Australia/Brisbane" ? "selected" : ""}>Australia Brisbane (Australia/Brisbane)</option>
+                        <option value="Australia/Adelaide" ${settings.timezone === "Australia/Adelaide" ? "selected" : ""}>Australia Adelaide (Australia/Adelaide)</option>
+                        <option value="Australia/Perth" ${settings.timezone === "Australia/Perth" ? "selected" : ""}>Australia West (Australia/Perth)</option>
+                        <option value="Pacific/Auckland" ${settings.timezone === "Pacific/Auckland" ? "selected" : ""}>New Zealand (Pacific/Auckland)</option>
+                        <option value="Pacific/Fiji" ${settings.timezone === "Pacific/Fiji" ? "selected" : ""}>Fiji (Pacific/Fiji)</option>
+                        <option value="Pacific/Guam" ${settings.timezone === "Pacific/Guam" ? "selected" : ""}>Guam (Pacific/Guam)</option>
                     </select>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Set your timezone for accurate time display in logs and scheduling.</p>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Set your timezone for accurate time display in logs and scheduling. Changes are applied immediately.</p>
                 </div>
             </div>
 
