@@ -749,16 +749,16 @@ def wait_for_command(
             sonarr_logger.debug(f"Not waiting for command to complete (wait_delay={wait_delay}, max_attempts={max_attempts})")
             return True  # Return as if successful since we're not checking
         
-        sonarr_logger.debug(f"Waiting for {command_name} to complete (command ID: {command_id}). Checking every {wait_delay}s for up to {max_attempts} attempts")
+        sonarr_logger.debug(f"Waiting for {command_name} to complete (command ID: {command_id}). Adaptive backoff, max {max_attempts} attempts")
         
-        # Wait for command completion
+        # Wait for command completion with adaptive backoff: poll less often over time to reduce API load when Sonarr is slow/queued
         attempts = 0
         while attempts < max_attempts:
             if stop_check():
                 sonarr_logger.info(f"Stopping wait for {command_name} due to stop request")
                 return False
-                
-            if instance_name:
+            # Update UI every 5 attempts to avoid flicker
+            if instance_name and attempts % 5 == 0:
                 try:
                     from src.primary.cycle_tracker import set_cycle_activity
                     set_cycle_activity("sonarr", instance_name, f"Search {attempts+1}/{max_attempts}")
@@ -770,7 +770,6 @@ def wait_for_command(
                 attempts += 1
                 time.sleep(wait_delay)
                 continue
-                
             status = command_status.get('status')
             if status == 'completed':
                 sonarr_logger.debug(f"Sonarr {command_name} (ID: {command_id}) completed successfully")
@@ -778,11 +777,13 @@ def wait_for_command(
             elif status in ['failed', 'aborted']:
                 sonarr_logger.warning(f"Sonarr {command_name} (ID: {command_id}) {status}")
                 return False
-            
-            sonarr_logger.debug(f"Sonarr {command_name} (ID: {command_id}) status: {status}, attempt {attempts+1}/{max_attempts}")
-            
+            # Log status only every 15th attempt to reduce log spam when command stays queued
+            if attempts % 15 == 0:
+                sonarr_logger.debug(f"Sonarr {command_name} (ID: {command_id}) status: {status}, attempt {attempts+1}/{max_attempts}")
+            # Adaptive backoff: 1s for first 10 checks, then 2s, 3s, ... up to 15s max (reduces API calls when Sonarr is slow)
+            effective_delay = min(wait_delay + (attempts // 10), 15)
             attempts += 1
-            time.sleep(wait_delay)
+            time.sleep(effective_delay)
         
         sonarr_logger.error(f"Sonarr command '{command_name}' (ID: {command_id}) timed out after {max_attempts} attempts.")
         return False

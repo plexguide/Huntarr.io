@@ -804,9 +804,9 @@ window.SettingsForms = {
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label>Command Wait Attempts</label>
-                            <input type="number" id="editor-cmd-wait-attempts" value="${safeInstance.command_wait_attempts || 600}" min="60" max="1800">
+                            <input type="number" id="editor-cmd-wait-attempts" value="${safeInstance.command_wait_attempts !== undefined && safeInstance.command_wait_attempts !== '' ? safeInstance.command_wait_attempts : 600}" min="0" max="1800">
                         </div>
-                        <p class="editor-help-text">Maximum attempts to wait for command completion (default: 600 attempts)</p>
+                        <p class="editor-help-text">Maximum attempts to wait for command completion (default: 600). Set to 0 for fire-and-forget: trigger search and don't wait — reduces API usage when Sonarr's command queue is slow.</p>
                     </div>
                     
                     <div class="editor-field-group">
@@ -906,7 +906,7 @@ window.SettingsForms = {
             // Advanced Settings
             api_timeout: parseInt(document.getElementById('editor-api-timeout').value) || 120,
             command_wait_delay: parseInt(document.getElementById('editor-cmd-wait-delay').value) || 1,
-            command_wait_attempts: parseInt(document.getElementById('editor-cmd-wait-attempts').value) || 600,
+            command_wait_attempts: (function(){ const el = document.getElementById('editor-cmd-wait-attempts'); if (!el) return 600; const v = parseInt(el.value, 10); return (!isNaN(v) && v >= 0) ? v : 600; })(),
             max_download_queue_size: parseInt(document.getElementById('editor-max-queue-size').value) || -1,
             // Per-instance cycle settings
             sleep_duration: (parseInt(document.getElementById('editor-sleep-duration').value, 10) || 15) * 60,
