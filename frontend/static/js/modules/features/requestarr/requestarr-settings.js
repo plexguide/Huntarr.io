@@ -431,12 +431,12 @@ export class RequestarrSettings {
                 if (data.success && data.cooldown_hours) {
                     cooldownSelect.value = data.cooldown_hours.toString();
                 } else {
-                    // Default to 7 days (168 hours)
-                    cooldownSelect.value = '168';
+                    // Default to 1 day (24 hours)
+                    cooldownSelect.value = '24';
                 }
             } catch (error) {
                 console.error('[RequestarrDiscover] Error loading cooldown settings:', error);
-                cooldownSelect.value = '168'; // Default to 7 days
+                cooldownSelect.value = '24'; // Default to 1 day
             }
         }
         

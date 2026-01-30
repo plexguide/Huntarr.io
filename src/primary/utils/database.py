@@ -2681,8 +2681,8 @@ class HuntarrDatabase:
         try:
             from datetime import datetime, timedelta, timezone
             
-            # Get cooldown period from requestarr config (default 168 hours)
-            cooldown_hours = 168
+            # Get cooldown period from requestarr config (default 24 hours)
+            cooldown_hours = 24
             try:
                 requestarr_config = self.get_app_config('requestarr')
                 if requestarr_config and 'cooldown_hours' in requestarr_config:
@@ -2692,7 +2692,7 @@ class HuntarrDatabase:
             
             with self.get_connection() as conn:
                 # Calculate the cutoff timestamp
-                # If cooldown is 168 hours (7 days) and threshold is 25:
+                # E.g. if cooldown is 168 hours and threshold is 25:
                 # - Current time minus (168 - 25) = time 143 hours ago
                 # - Any request made AFTER 143 hours ago has MORE than 25 hours remaining
                 # - Any request made BEFORE 143 hours ago has LESS than 25 hours remaining

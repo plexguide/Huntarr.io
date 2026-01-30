@@ -407,7 +407,7 @@ def set_cooldown_settings():
     """Set cooldown period setting"""
     try:
         data = request.get_json()
-        cooldown_hours = data.get('cooldown_hours', 168)
+        cooldown_hours = data.get('cooldown_hours', 24)
         
         requestarr_api.set_cooldown_hours(cooldown_hours)
         return jsonify({'success': True})
