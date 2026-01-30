@@ -733,7 +733,7 @@ window.SettingsForms = {
                 </div>
                 
                 <div class="editor-section">
-                    <div class="editor-section-title">Advanced Settings</div>
+                    <div class="editor-section-title">Additional Settings</div>
                     
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
@@ -774,6 +774,10 @@ window.SettingsForms = {
                         <p class="editor-help-text">Skip searching for episodes with future air dates</p>
                     </div>
                     ` : ''}
+                </div>
+                
+                <div class="editor-section">
+                    <div class="editor-section-title">Advanced Settings</div>
                     
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
