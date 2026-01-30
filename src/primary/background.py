@@ -348,6 +348,14 @@ def app_specific_loop(app_type: str) -> None:
                 app_logger.error(f"Error checking hourly API cap for {app_type}: {e}", exc_info=True)
                 # Continue with the cycle even if cap check fails - safer than skipping
 
+            # Capture API usage at start so we can log one summary at end (instead of per-increment spam)
+            api_usage_at_start = 0
+            try:
+                from src.primary.stats_manager import get_hourly_cap_status
+                api_usage_at_start = get_hourly_cap_status(app_type, instance_name=instance_name).get("current_usage", 0)
+            except Exception:
+                pass
+
             # --- Check if Hunt Modes are Enabled --- #
             # For per-instance settings, get values from instance details
             # For apps without per-instance settings, fall back to global app settings
@@ -542,6 +550,17 @@ def app_specific_loop(app_type: str) -> None:
                     end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
             except Exception as e:
                 app_logger.warning(f"Failed to set cycle end for {instance_name}: {e}")
+            # One HOURLY API summary for this instance (replaces per-increment log spam)
+            try:
+                from src.primary.stats_manager import get_hourly_cap_status
+                status = get_hourly_cap_status(app_type, instance_name=instance_name)
+                end_usage = status.get("current_usage", 0)
+                limit = status.get("limit", 0)
+                delta = end_usage - api_usage_at_start
+                if delta > 0:
+                    app_logger.info(f"*** HOURLY API *** {app_type} instance '{instance_name}' increased by {delta} this cycle → usage: {end_usage}/{limit}")
+            except Exception:
+                pass
             if clear_instance_log_context:
                 clear_instance_log_context()
 

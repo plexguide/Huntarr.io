@@ -168,10 +168,8 @@ def increment_hourly_cap(app_type: str, count: int = 1, instance_name: Optional[
             db = get_database()
             if instance_name is not None:
                 db.increment_hourly_cap_per_instance(app_type, instance_name, count)
-                per_instance = db.get_hourly_caps_per_instance(app_type)
-                new_value = per_instance.get(instance_name, {}).get("api_hits", count)
-                hourly_limit = _get_instance_hourly_cap_limit(app_type, instance_name)
-                logger.info(f"*** HOURLY API INCREMENT *** {app_type} instance '{instance_name}' by {count} → usage: {new_value}/{hourly_limit} (wrote key: '{instance_name}')")
+                # Per-increment INFO log removed; one summary is logged at end of instance cycle in background.py
+                logger.debug(f"*** HOURLY API INCREMENT *** {app_type} instance '{instance_name}' by {count}")
                 return True
             caps = db.get_hourly_caps()
             prev_value = caps.get(app_type, {}).get("api_hits", 0)

@@ -219,6 +219,11 @@ def setup_clean_logging():
         if not any(isinstance(f, InstanceLogFilter) for f in log.filters):
             log.addFilter(InstanceLogFilter())
     
+    # Ensure main/huntarr logger also has InstanceLogFilter so logs from get_logger("stats") etc. get APP - INSTANCE
+    main_logger = logging.getLogger("huntarr")
+    if not any(isinstance(f, InstanceLogFilter) for f in main_logger.filters):
+        main_logger.addFilter(InstanceLogFilter())
+    
     _setup_complete = True
 
 
