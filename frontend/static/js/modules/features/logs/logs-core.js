@@ -14,7 +14,7 @@ window.HuntarrLogs = {
     
     clearLogs: function() {
         if (window.LogsModule && typeof window.LogsModule.clearLogs === 'function') {
-            window.LogsModule.clearLogs();
+            window.LogsModule.clearLogs(true); // true = from user action (e.g. button/menu)
         }
     },
     

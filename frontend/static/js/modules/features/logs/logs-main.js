@@ -174,9 +174,9 @@ window.LogsModule = {
     setupEventListeners: function() {
         // Auto-scroll functionality removed
         
-        // Clear logs button
+        // Clear logs button - only this click may show the clear-logs confirmation
         if (this.elements.clearLogsButton) {
-            this.elements.clearLogsButton.addEventListener('click', () => this.clearLogs());
+            this.elements.clearLogsButton.addEventListener('click', () => this.clearLogs(true));
         }
         
         // Log search functionality
@@ -284,8 +284,7 @@ window.LogsModule = {
         // Switch to the selected app logs
         this.currentLogApp = app;
         this.currentPage = 1; // Reset to first page when switching apps
-        this.clearLogs();
-        this.connectToLogs();
+        this.resetLogsView();
     },
     
     // Handle app changes from external sources (like huntarrUI tab switching)
@@ -311,7 +310,14 @@ window.LogsModule = {
         // Switch to the selected app logs
         this.currentLogApp = app;
         this.currentPage = 1; // Reset to first page when switching apps
-        this.clearLogs();
+        this.resetLogsView();
+    },
+    
+    // Reset log view when switching apps (clear display and reconnect; no confirmation, no API delete)
+    resetLogsView: function() {
+        if (this.elements.logsContainer) {
+            this.elements.logsContainer.innerHTML = '';
+        }
         this.connectToLogs();
     },
     
@@ -631,12 +637,16 @@ window.LogsModule = {
         }
     },
     
-    // Clear all logs
-    clearLogs: function() {
+    // Clear all logs (only when fromButton is true - i.e. user clicked Clear button; app changes use resetLogsView instead)
+    clearLogs: function(fromButton) {
+        if (fromButton !== true) {
+            return; // Only show confirmation and delete when explicitly invoked from the Clear button
+        }
         console.log('[LogsModule] Clear logs button clicked');
         
-        // Get current app filter
-        const currentApp = this.elements.appFilter ? this.elements.appFilter.value : 'all';
+        // Get current app filter - use logAppSelect when available, fallback to currentLogApp
+        const logAppSelect = document.getElementById('logAppSelect');
+        const currentApp = logAppSelect ? logAppSelect.value : (this.currentLogApp || 'all');
         
         // Show confirmation dialog
         const appText = currentApp === 'all' ? 'all logs' : `${currentApp.toUpperCase()} logs`;
@@ -675,7 +685,7 @@ window.LogsModule = {
             
             // Reload logs to show any new entries that may have arrived
             setTimeout(() => {
-                this.loadLogs();
+                this.connectToLogs();
             }, 500);
         })
         .catch(error => {

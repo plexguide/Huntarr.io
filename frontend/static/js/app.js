@@ -995,8 +995,8 @@ let huntarrUI = {
     },
     
     clearLogs: function() {
-        if (window.HuntarrLogs) {
-            window.HuntarrLogs.clearLogs();
+        if (window.LogsModule && typeof window.LogsModule.clearLogs === 'function') {
+            window.LogsModule.clearLogs(true); // true = from user action (e.g. button/menu)
         }
     },
     
