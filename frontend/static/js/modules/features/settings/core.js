@@ -768,8 +768,8 @@ window.SettingsForms = {
                             <input type="number" id="editor-hourly-cap" value="${safeInstance.hourly_cap !== undefined ? safeInstance.hourly_cap : 20}" min="1" max="400">
                         </div>
                         <p class="editor-help-text">Maximum API requests per hour for this instance (10-20 recommended, max 400)</p>
-                        <div id="editor-hourly-cap-warning" class="editor-hourly-cap-warning" style="display: none; margin-top: 8px; padding: 10px 12px; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 6px; color: #fbbf24; font-size: 0.85rem;">
-                            <i class="fas fa-exclamation-triangle"></i> Values above 25 may trigger rate limits or bans from indexers. Keep at 10–20 to be safe.
+                        <div id="editor-hourly-cap-warning" class="editor-hourly-cap-warning" style="display: none; margin-top: 8px; padding: 12px 14px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 6px; color: #fca5a5; font-size: 0.85rem; line-height: 1.4;">
+                            <i class="fas fa-stop-circle" style="margin-right: 6px;"></i> <strong>Do not overwhelm your indexers.</strong> High request rates can trigger rate limits or bans. Keep at 10–20 unless your provider allows more. When in doubt, contact your indexer providers.
                         </div>
                     </div>
                     
