@@ -298,6 +298,19 @@ window.SettingsForms = {
         // Listen for any input or change event within the content area
         contentEl.addEventListener('input', handleInputChange);
         contentEl.addEventListener('change', handleInputChange);
+
+        // Show warning when API cap hourly is above 25 (indexer ban risk)
+        const capInput = document.getElementById('editor-hourly-cap');
+        const capWarning = document.getElementById('editor-hourly-cap-warning');
+        if (capInput && capWarning) {
+            const updateHourlyCapWarning = () => {
+                const val = parseInt(capInput.value, 10);
+                capWarning.style.display = (val > 25) ? 'block' : 'none';
+            };
+            updateHourlyCapWarning();
+            capInput.addEventListener('input', updateHourlyCapWarning);
+            capInput.addEventListener('change', updateHourlyCapWarning);
+        }
     },
     
     // Check connection status for editor
@@ -755,6 +768,9 @@ window.SettingsForms = {
                             <input type="number" id="editor-hourly-cap" value="${safeInstance.hourly_cap !== undefined ? safeInstance.hourly_cap : 20}" min="1" max="400">
                         </div>
                         <p class="editor-help-text">Maximum API requests per hour for this instance (10-20 recommended, max 400)</p>
+                        <div id="editor-hourly-cap-warning" class="editor-hourly-cap-warning" style="display: none; margin-top: 8px; padding: 10px 12px; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 6px; color: #fbbf24; font-size: 0.85rem;">
+                            <i class="fas fa-exclamation-triangle"></i> Values above 25 may trigger rate limits or bans from indexers. Keep at 10–20 to be safe.
+                        </div>
                     </div>
                     
                     <div class="editor-field-group">
