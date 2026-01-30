@@ -133,13 +133,11 @@ const huntManagerModule = {
         HuntarrUtils.fetchWithTimeout(`./api/hunt-manager/${this.currentApp}`, {
             method: 'DELETE'
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(response => response.json().then(data => ({ response, data })))
+        .then(({ response, data }) => {
             if (response.ok) {
                 console.log(`Cleared hunt history for ${this.currentApp}`);
-                // Reload the hunt history
                 this.loadHuntHistory();
-                // Show success notification
                 if (huntarrUI && huntarrUI.showNotification) {
                     huntarrUI.showNotification(`Hunt history cleared for ${appName}`, 'success');
                 }

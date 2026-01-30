@@ -11,7 +11,6 @@ import signal
 import logging # Use standard logging for initial setup
 import atexit
 import time
-import time
 
 # Import path configuration early to set up environment
 try:
