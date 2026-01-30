@@ -1945,7 +1945,8 @@ window.SettingsForms = {
                 log_backup_count: getVal('log_backup_count', 5),
                 log_retention_days: getVal('log_retention_days', 30),
                 log_auto_cleanup: getVal('log_auto_cleanup', true),
-                log_refresh_interval_seconds: getVal('log_refresh_interval_seconds', 30)
+                log_refresh_interval_seconds: getVal('log_refresh_interval_seconds', 30),
+                enable_debug_logs: getVal('enable_debug_logs', true)
             };
         }
         return null;

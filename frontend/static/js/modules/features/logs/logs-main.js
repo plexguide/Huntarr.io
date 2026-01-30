@@ -33,6 +33,7 @@ window.LogsModule = {
         this.cacheElements();
         this.loadUserTimezone();
         this.setupEventListeners();
+        this.updateDebugLevelVisibility();
         
         // Load initial logs for the default app without resetting pagination
         console.log('[LogsModule] Loading initial logs...');
@@ -41,6 +42,29 @@ window.LogsModule = {
         
         this.initialized = true;
         console.log('[LogsModule] Initialization complete');
+    },
+
+    // Show or hide DEBUG option in level dropdown based on enable_debug_logs setting (GitHub #756)
+    updateDebugLevelVisibility: function() {
+        const option = document.getElementById('logLevelOptionDebug');
+        const levelSelect = document.getElementById('logLevelSelect');
+        if (!option || !levelSelect) return;
+        HuntarrUtils.fetchWithTimeout('./api/settings')
+            .then(response => response.json())
+            .then(data => {
+                const settings = data.general || {};
+                const enableDebug = settings.enable_debug_logs !== false;
+                option.style.display = enableDebug ? '' : 'none';
+                option.disabled = !enableDebug;
+                if (!enableDebug && levelSelect.value === 'debug') {
+                    levelSelect.value = 'info';
+                    this.filterLogsByLevel('info');
+                }
+            })
+            .catch(() => {
+                option.style.display = '';
+                option.disabled = false;
+            });
     },
     
     // Load user's timezone setting from the backend

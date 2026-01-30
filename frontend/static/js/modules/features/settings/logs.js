@@ -86,6 +86,16 @@
             <div class="settings-group">
                 <h3>Advanced Settings</h3>
                 <div class="setting-item">
+                    <label for="enable_debug_logs">Enable Debug Logs:</label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="enable_debug_logs" name="enable_debug_logs" ${
+                          settings.enable_debug_logs !== false ? "checked" : ""
+                        }>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help">Store and display DEBUG level logs. When disabled, DEBUG logs are not saved to the database and the Debug level filter is hidden in the log viewer.</p>
+                </div>
+                <div class="setting-item">
                     <label for="log_refresh_interval_seconds">Log Refresh Interval:</label>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <input type="number" id="log_refresh_interval_seconds" name="log_refresh_interval_seconds" min="5" max="300" value="${

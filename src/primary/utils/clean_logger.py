@@ -143,6 +143,14 @@ class DatabaseLogHandler(logging.Handler):
     def emit(self, record):
         """Write the log record to the database"""
         try:
+            # Skip DEBUG logs when enable_debug_logs setting is False (GitHub #756)
+            if record.levelname == "DEBUG":
+                try:
+                    from src.primary.settings_manager import get_advanced_setting
+                    if not get_advanced_setting("enable_debug_logs", True):
+                        return
+                except Exception:
+                    pass
             # Get only the clean message part, not the full formatted string
             # Check if formatter has _clean_message method (safety check)
             if hasattr(self.formatter, '_clean_message'):

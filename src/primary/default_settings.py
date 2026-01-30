@@ -191,7 +191,8 @@ GENERAL_DEFAULTS = {
     "log_max_size_mb": 50,
     "log_backup_count": 5,
     "log_retention_days": 30,
-    "log_auto_cleanup": True
+    "log_auto_cleanup": True,
+    "enable_debug_logs": True
 }
 
 

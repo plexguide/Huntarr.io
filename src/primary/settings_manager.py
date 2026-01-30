@@ -190,7 +190,11 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
     ]
     
     # Sleep duration: min 600s (10 min) normally; min 60s (1 min) when dev mode (allows 1-min, does not force it)
-    _dev = is_dev_mode()
+    # When saving general, use incoming data to avoid load_settings -> save_settings -> is_dev_mode -> load_settings recursion
+    if app_name == 'general':
+        _dev = _is_dev_mode_from_general(settings_data)
+    else:
+        _dev = is_dev_mode()
     _sleep_min = 60 if _dev else 600
     if 'sleep_duration' in settings_data:
         original_value = settings_data['sleep_duration']
@@ -276,13 +280,18 @@ def get_api_key(app_name: str) -> Optional[str]:
     return get_setting(app_name, "api_key", "")
 
 
-def is_dev_mode() -> bool:
-    """Return True if Huntarr dev mode is enabled (valid dev key saved in general settings)."""
-    general = load_settings("general", use_cache=True)
-    key = (general.get("dev_key") or "").strip()
+def _is_dev_mode_from_general(general_dict: Dict[str, Any]) -> bool:
+    """Compute dev mode from a general settings dict. Used to avoid load_settings recursion when saving general."""
+    key = (general_dict.get("dev_key") or "").strip()
     if not key:
         return False
     return hashlib.sha256(key.encode()).hexdigest() == _DEV_KEY_HASH
+
+
+def is_dev_mode() -> bool:
+    """Return True if Huntarr dev mode is enabled (valid dev key saved in general settings)."""
+    general = load_settings("general", use_cache=True)
+    return _is_dev_mode_from_general(general)
 
 
 def get_all_settings() -> Dict[str, Dict[str, Any]]:
@@ -536,7 +545,8 @@ ADVANCED_SETTINGS = [
     "log_max_size_mb",
     "log_backup_count",
     "log_retention_days",
-    "log_auto_cleanup"
+    "log_auto_cleanup",
+    "enable_debug_logs"
 ]
 
 def get_advanced_setting(setting_name, default_value=None):

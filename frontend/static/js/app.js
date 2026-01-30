@@ -500,6 +500,9 @@ let huntarrUI = {
             if (this.elements.logsNav) this.elements.logsNav.classList.add('active');
             newTitle = 'Logs';
             this.currentSection = 'logs';
+            if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
+                window.LogsModule.updateDebugLevelVisibility();
+            }
             
             // Show main sidebar for main sections and clear settings sidebar preference
             localStorage.removeItem('huntarr-settings-sidebar');
