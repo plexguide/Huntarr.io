@@ -315,7 +315,29 @@ let huntarrUI = {
         }
         
         // Handle window hash change
-        window.addEventListener('hashchange', () => this.handleHashNavigation(window.location.hash)); // Ensure hash is passed
+        window.addEventListener('hashchange', (e) => {
+            // Check for unsaved changes before navigation
+            if (window._hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Are you sure you want to leave this page?')) {
+                    // Prevent navigation by going back to previous hash
+                    e.preventDefault();
+                    history.pushState(null, null, e.oldURL);
+                    return;
+                }
+                // User confirmed, clear the flag
+                window._hasUnsavedChanges = false;
+            }
+            this.handleHashNavigation(window.location.hash);
+        });
+
+        // Handle page unload/refresh
+        window.addEventListener('beforeunload', (e) => {
+            if (window._hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
 
         // Settings form delegation - now triggers auto-save
         const settingsFormContainer = document.querySelector('#settingsSection');
