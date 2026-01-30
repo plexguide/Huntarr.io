@@ -500,11 +500,12 @@ export class RequestarrSettings {
                     movieSelect.appendChild(option);
                 });
                 
-                // Set selection: saved default or first instance
-                if (defaultsData.success && defaultsData.defaults && defaultsData.defaults.movie_instance) {
+                // Set selection: saved default or first instance (never leave blank)
+                const savedMovie = defaultsData.success && defaultsData.defaults && defaultsData.defaults.movie_instance;
+                const movieExists = savedMovie && radarrData.instances.some(i => i.name === defaultsData.defaults.movie_instance);
+                if (savedMovie && movieExists) {
                     movieSelect.value = defaultsData.defaults.movie_instance;
                 } else {
-                    // No default saved, auto-select first instance
                     movieSelect.value = radarrData.instances[0].name;
                     movieInstanceToSave = radarrData.instances[0].name;
                     needsAutoSave = true;
@@ -524,11 +525,12 @@ export class RequestarrSettings {
                     tvSelect.appendChild(option);
                 });
                 
-                // Set selection: saved default or first instance
-                if (defaultsData.success && defaultsData.defaults && defaultsData.defaults.tv_instance) {
+                // Set selection: saved default or first instance (never leave blank)
+                const savedTV = defaultsData.success && defaultsData.defaults && defaultsData.defaults.tv_instance;
+                const tvExists = savedTV && sonarrData.instances.some(i => i.name === defaultsData.defaults.tv_instance);
+                if (savedTV && tvExists) {
                     tvSelect.value = defaultsData.defaults.tv_instance;
                 } else {
-                    // No default saved, auto-select first instance
                     tvSelect.value = sonarrData.instances[0].name;
                     tvInstanceToSave = sonarrData.instances[0].name;
                     needsAutoSave = true;
@@ -536,6 +538,18 @@ export class RequestarrSettings {
             } else {
                 // No instances available
                 tvSelect.innerHTML = '<option value="">No Sonarr instances configured</option>';
+            }
+            
+            // Ensure neither dropdown is ever blank when instances exist
+            if (radarrData.instances && radarrData.instances.length > 0 && !movieSelect.value) {
+                movieSelect.value = radarrData.instances[0].name;
+                movieInstanceToSave = radarrData.instances[0].name;
+                needsAutoSave = true;
+            }
+            if (sonarrData.instances && sonarrData.instances.length > 0 && !tvSelect.value) {
+                tvSelect.value = sonarrData.instances[0].name;
+                tvInstanceToSave = sonarrData.instances[0].name;
+                needsAutoSave = true;
             }
             
             // Auto-save if we selected first instances
