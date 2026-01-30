@@ -107,7 +107,53 @@ window.CycleCountdown = (function() {
     
     // Simple lock to prevent concurrent fetches
     let isFetchingData = false;
-    
+    // Poll when "Starting Cycle" is shown so countdown appears soon after sleep starts
+    let startingCyclePollTimeout = null;
+    let startingCyclePollAttempts = 0;
+    const STARTING_CYCLE_POLL_INTERVAL_MS = 2000;
+    const STARTING_CYCLE_POLL_MAX_ATTEMPTS = 15; // 2s * 15 = 30s max
+
+    function startStartingCyclePolling() {
+        if (startingCyclePollTimeout) return; // already polling
+        startingCyclePollAttempts = 0;
+        function poll() {
+            startingCyclePollAttempts++;
+            if (startingCyclePollAttempts > STARTING_CYCLE_POLL_MAX_ATTEMPTS) {
+                startingCyclePollTimeout = null;
+                return;
+            }
+            if (isFetchingData) {
+                startingCyclePollTimeout = safeSetTimeout(poll, STARTING_CYCLE_POLL_INTERVAL_MS);
+                return;
+            }
+            console.log('[CycleCountdown] Polling for countdown (sleep just started), attempt ' + startingCyclePollAttempts);
+            fetchAllCycleData()
+                .then((data) => {
+                    const stillStarting = data && Object.keys(data).some(app => {
+                        const appData = data[app];
+                        if (!appData) return false;
+                        if (appData.instances) {
+                            return Object.keys(appData.instances).some(instName => {
+                                const inst = appData.instances[instName];
+                                return inst && !inst.next_cycle && !inst.cyclelock;
+                            });
+                        }
+                        return (appData.next_cycle == null && !appData.cyclelock);
+                    });
+                    if (stillStarting && startingCyclePollAttempts < STARTING_CYCLE_POLL_MAX_ATTEMPTS) {
+                        startingCyclePollTimeout = safeSetTimeout(poll, STARTING_CYCLE_POLL_INTERVAL_MS);
+                    } else {
+                        startingCyclePollTimeout = null;
+                        if (!stillStarting) console.log('[CycleCountdown] Countdown received, stopped polling');
+                    }
+                })
+                .catch(() => {
+                    startingCyclePollTimeout = safeSetTimeout(poll, STARTING_CYCLE_POLL_INTERVAL_MS);
+                });
+        }
+        startingCyclePollTimeout = safeSetTimeout(poll, STARTING_CYCLE_POLL_INTERVAL_MS);
+    }
+
     // Set up reset button click listeners
     function setupResetButtonListeners() {
         // Find all reset buttons
@@ -400,23 +446,23 @@ window.CycleCountdown = (function() {
                 }
                 
                 if (dataProcessed) {
-                    // When any instance still has no next_cycle (shows "Starting Cycle"), refetch soon so we pick up
-                    // the countdown right after the backend sets next_cycle (when sleep starts)
+                    // When any instance still has no next_cycle (shows "Starting Cycle"), poll every 2s until we get
+                    // a countdown (sleep just started; backend sets next_cycle shortly)
                     const hasStartingCycleWithInstances = Object.keys(data).some(app => {
                         const appData = data[app];
                         if (!appData || !appData.instances) return false;
                         return Object.keys(appData.instances).some(instanceName => {
                             const inst = appData.instances[instanceName];
-                            return inst && !inst.next_cycle;
+                            return inst && !inst.next_cycle && !inst.cyclelock;
                         });
                     });
-                    if (hasStartingCycleWithInstances) {
-                        safeSetTimeout(() => {
-                            if (!isFetchingData) {
-                                console.log('[CycleCountdown] Quick refetch to pick up countdown after cycle ended');
-                                fetchAllCycleData().catch(() => {});
-                            }
-                        }, 4000);
+                    const hasStartingCycleSingle = Object.keys(data).some(app => {
+                        const appData = data[app];
+                        if (!appData || appData.instances) return false;
+                        return (appData.next_cycle == null && !appData.cyclelock);
+                    });
+                    if (hasStartingCycleWithInstances || hasStartingCycleSingle) {
+                        startStartingCyclePolling();
                     }
                     resolve(data);
                 } else {

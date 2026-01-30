@@ -298,25 +298,26 @@ def end_cycle(app_type: str, next_cycle_time: datetime.datetime,
         elif next_cycle_time.tzinfo != user_tz:
             next_cycle_time = next_cycle_time.astimezone(user_tz)
         next_cycle_time = next_cycle_time.replace(microsecond=0)
-        if instance_name is not None:
-            current_data = db.get_sleep_data_per_instance(app_type, instance_name)
-            db.set_sleep_data_per_instance(
-                app_type=app_type,
-                instance_name=instance_name,
-                next_cycle_time=next_cycle_time.isoformat(),
-                cycle_lock=False,
-                last_cycle_start=current_data.get('last_cycle_start'),
-                last_cycle_end=now_user_tz.isoformat()
-            )
-        else:
-            current_data = db.get_sleep_data(app_type)
-            db.set_sleep_data(
-                app_type=app_type,
-                next_cycle_time=next_cycle_time.isoformat(),
-                cycle_lock=False,
-                last_cycle_start=current_data.get('last_cycle_start'),
-                last_cycle_end=now_user_tz.isoformat()
-            )
+        with _lock:
+            if instance_name is not None:
+                current_data = db.get_sleep_data_per_instance(app_type, instance_name)
+                db.set_sleep_data_per_instance(
+                    app_type=app_type,
+                    instance_name=instance_name,
+                    next_cycle_time=next_cycle_time.isoformat(),
+                    cycle_lock=False,
+                    last_cycle_start=current_data.get('last_cycle_start'),
+                    last_cycle_end=now_user_tz.isoformat()
+                )
+            else:
+                current_data = db.get_sleep_data(app_type)
+                db.set_sleep_data(
+                    app_type=app_type,
+                    next_cycle_time=next_cycle_time.isoformat(),
+                    cycle_lock=False,
+                    last_cycle_start=current_data.get('last_cycle_start'),
+                    last_cycle_end=now_user_tz.isoformat()
+                )
         if app_type == "swaparr":
             logger.debug(f"Ended cycle for {label} (cyclelock = False)")
         else:
