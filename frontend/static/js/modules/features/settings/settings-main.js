@@ -118,7 +118,13 @@ window.HuntarrSettings = {
                 currentAppSettings.instances = settings.instances;
             }
             
-            this.populateSettingsForm(app, currentAppSettings);
+            if (app === 'general' && typeof SettingsForms !== 'undefined' && SettingsForms.reRenderGeneralSection) {
+                const sectionMap = { 'settings': 'main', 'notifications': 'notifications', 'settings-logs': 'logs' };
+                const section = sectionMap[window.huntarrUI.currentSection] || 'main';
+                SettingsForms.reRenderGeneralSection(section, window.huntarrUI.originalSettings.general);
+            } else {
+                this.populateSettingsForm(app, currentAppSettings);
+            }
             if (window.huntarrUI.checkAppConnection) window.huntarrUI.checkAppConnection(app);
             if (window.huntarrUI.updateHomeConnectionStatus) window.huntarrUI.updateHomeConnectionStatus();
             
@@ -239,23 +245,23 @@ window.HuntarrSettings = {
         }
 
         if (app === 'general') {
-            const inputs = form.querySelectorAll('input, select, textarea');
-            const notificationsContainer = document.querySelector('#notificationsContainer');
-            const notificationInputs = notificationsContainer ? notificationsContainer.querySelectorAll('input, select, textarea') : [];
-            const allInputs = [...inputs, ...notificationInputs];
-            
-            allInputs.forEach(input => {
-                let key = input.id;
-                let value = input.type === 'checkbox' ? input.checked : (input.type === 'number' ? (input.value === '' ? null : parseInt(input.value, 10)) : input.value.trim());
-                
-                if (key === 'apprise_urls') {
-                    settings.apprise_urls = value.split('\n').map(url => url.trim()).filter(url => url.length > 0);
-                } else if (key && !key.includes('_instance_')) {
-                    settings[key] = value;
-                }
-            });
-            
-            return settings;
+            const currentSection = window.huntarrUI.currentSection;
+            const sectionMap = { 'settings': 'main', 'notifications': 'notifications', 'settings-logs': 'logs' };
+            const section = sectionMap[currentSection] || 'main';
+            let container = null;
+            if (section === 'main') container = document.getElementById('generalSettings');
+            else if (section === 'notifications') container = document.querySelector('[data-app-type="notifications"]');
+            else if (section === 'logs') container = document.querySelector('[data-app-type="logs"]');
+            if (!container) return null;
+            const sectionData = typeof SettingsForms !== 'undefined' && SettingsForms.getFormSettingsGeneralSection
+                ? SettingsForms.getFormSettingsGeneralSection(container, section)
+                : null;
+            if (!sectionData) return null;
+            const base = (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general)
+                ? JSON.parse(JSON.stringify(window.huntarrUI.originalSettings.general))
+                : {};
+            Object.assign(base, sectionData);
+            return base;
         }
         
         const instanceItems = form.querySelectorAll('.instance-item');
@@ -344,9 +350,13 @@ window.HuntarrSettings = {
 
     autoSaveGeneralSettings: function(silent = false) {
         if (this.settingsCurrentlySaving) return Promise.resolve();
-        this.settingsCurrentlySaving = true;
-        
         const settings = this.getFormSettings('general');
+        if (!settings) {
+            return Promise.resolve();
+        }
+        this.settingsCurrentlySaving = true;
+        const sectionMap = { 'settings': 'main', 'notifications': 'notifications', 'settings-logs': 'logs' };
+        const section = sectionMap[window.huntarrUI.currentSection] || 'main';
         return HuntarrUtils.fetchWithTimeout('./api/settings/general', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -355,6 +365,12 @@ window.HuntarrSettings = {
         .then(r => r.json())
         .then(data => {
             if (data.success && !silent && window.HuntarrNotifications) window.HuntarrNotifications.showNotification('General settings auto-saved', 'success');
+            if (data.general && window.huntarrUI && window.huntarrUI.originalSettings) {
+                window.huntarrUI.originalSettings.general = JSON.parse(JSON.stringify(data.general));
+            }
+            if (typeof SettingsForms !== 'undefined' && SettingsForms.reRenderGeneralSection && data.general) {
+                SettingsForms.reRenderGeneralSection(section, data.general);
+            }
             this.settingsCurrentlySaving = false;
             return data;
         })

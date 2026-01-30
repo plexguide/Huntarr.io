@@ -446,21 +446,27 @@
           saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
           saveButton.disabled = true;
 
-          // Get settings and save
+          // Get settings and save (section-scoped: only notification fields are sent)
           if (window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
             window.huntarrUI
               .autoSaveGeneralSettings(true)
-              .then(() => {
+              .then((data) => {
                 console.log("[SettingsForms] Notifications manual save successful");
 
                 // Reset button state and clear unsaved changes warning
                 saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
                 updateSaveButtonState(false);
 
-                // Update original settings for future change detection
-                const updatedSettings = window.huntarrUI.getFormSettings("general");
-                if (updatedSettings) {
-                  Object.assign(normalizedSettings, updatedSettings);
+                // Update baseline from server response so change detection matches saved state
+                if (data && data.general) {
+                  const g = data.general;
+                  if (g.enable_notifications !== undefined) normalizedSettings.enable_notifications = g.enable_notifications;
+                  if (g.notification_level !== undefined) normalizedSettings.notification_level = g.notification_level;
+                  if (g.apprise_urls !== undefined) normalizedSettings.apprise_urls = Array.isArray(g.apprise_urls) ? g.apprise_urls : [];
+                  if (g.notify_on_missing !== undefined) normalizedSettings.notify_on_missing = g.notify_on_missing;
+                  if (g.notify_on_upgrade !== undefined) normalizedSettings.notify_on_upgrade = g.notify_on_upgrade;
+                  if (g.notification_include_instance !== undefined) normalizedSettings.notification_include_instance = g.notification_include_instance;
+                  if (g.notification_include_app !== undefined) normalizedSettings.notification_include_app = g.notification_include_app;
                 }
               })
               .catch((error) => {

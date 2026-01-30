@@ -1053,9 +1053,16 @@ window.SettingsForms = {
         }, 800);
     },
 
-    // Helper to save settings and refresh view
-    saveAppSettings: function(appType, settings, successMessage = 'Settings saved successfully') {
-        console.log(`[huntarrUI] saveAppSettings called for ${appType}`);
+    // Helper to save settings and refresh view. options: { section: 'main'|'notifications'|'logs' } for general only.
+    saveAppSettings: function(appType, settings, successMessage, options) {
+        if (typeof successMessage !== 'string') {
+            options = successMessage;
+            successMessage = 'Settings saved successfully';
+        } else if (!options || typeof options !== 'object') {
+            options = {};
+        }
+        const section = options.section;
+        console.log(`[huntarrUI] saveAppSettings called for ${appType}` + (section ? ` section=${section}` : ''));
         
         // Ensure change detection is suppressed during the entire save and refresh process
         window._appsSuppressChangeDetection = true;
@@ -1070,7 +1077,7 @@ window.SettingsForms = {
             console.log(`[huntarrUI] Backend save successful for ${appType}`);
             
             if (window.huntarrUI && window.huntarrUI.showNotification) {
-                window.huntarrUI.showNotification(successMessage, 'success');
+                window.huntarrUI.showNotification(successMessage || 'Settings saved successfully', 'success');
             }
             
             // Re-sync memory. For general, use API response so dev_mode is current (indicator updates).
@@ -1083,8 +1090,13 @@ window.SettingsForms = {
             }
             
             let container = null;
-            if (appType === 'general') {
-                container = document.getElementById('generalSettings');
+            if (appType === 'general' && section) {
+                if (section === 'main') container = document.getElementById('generalSettings');
+                else if (section === 'notifications') container = document.querySelector('[data-app-type="notifications"]');
+                else if (section === 'logs') container = document.querySelector('[data-app-type="logs"]');
+            }
+            if (!container) {
+                if (appType === 'general') container = document.getElementById('generalSettings');
             }
             if (!container) {
                 const appPanel = document.getElementById(appType + 'Apps');
@@ -1094,16 +1106,15 @@ window.SettingsForms = {
                 container = document.querySelector(`form[data-app-type="${appType}"]`) || document.querySelector(`[data-app-type="${appType}"]`);
             }
             if (container) {
-                // Use latest settings from global state so re-render always has current data (e.g. after delete)
                 const latestSettings = (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings[appType])
                     ? JSON.parse(JSON.stringify(window.huntarrUI.originalSettings[appType]))
                     : settings;
-                console.log(`[huntarrUI] Found container for ${appType}, re-rendering with ${latestSettings.instances ? latestSettings.instances.length : 0} instances`);
+                console.log(`[huntarrUI] Found container for ${appType}, re-rendering`);
                 
-                // Determine the generation method name
                 let methodAppType = appType;
-                if (appType === 'general') methodAppType = 'General';
-                else if (appType === 'notifications') methodAppType = 'Notifications';
+                if (appType === 'general') {
+                    methodAppType = section === 'notifications' ? 'Notifications' : section === 'logs' ? 'LogsSettings' : 'General';
+                } else if (appType === 'notifications') methodAppType = 'Notifications';
                 else if (appType === 'logs') methodAppType = 'LogsSettings';
                 else methodAppType = appType.charAt(0).toUpperCase() + appType.slice(1);
                 
@@ -1849,6 +1860,79 @@ window.SettingsForms = {
                 window.Apps.loadAppSettings(appSelect.value);
             }
         }
+    },
+
+    // Re-render only one general sub-section (main, notifications, logs) with current data
+    reRenderGeneralSection: function (section, data) {
+        if (!section || !data) return;
+        let container = null;
+        let methodName = 'generateGeneralForm';
+        if (section === 'main') {
+            container = document.getElementById('generalSettings');
+            methodName = 'generateGeneralForm';
+        } else if (section === 'notifications') {
+            container = document.querySelector('[data-app-type="notifications"]');
+            methodName = 'generateNotificationsForm';
+        } else if (section === 'logs') {
+            container = document.querySelector('[data-app-type="logs"]');
+            methodName = 'generateLogsSettingsForm';
+        }
+        if (container && this[methodName]) {
+            this[methodName](container, data);
+        }
+    },
+
+    // Get settings from a single general sub-section (main, notifications, logs) for merge-and-save
+    getFormSettingsGeneralSection: function (container, section) {
+        if (!container || !section) return null;
+        const getVal = (id, def) => {
+            const el = container.querySelector(id ? '#' + id : null);
+            if (!el) return def;
+            if (el.type === 'checkbox') return el.checked;
+            if (el.type === 'number') {
+                const v = parseInt(el.value, 10);
+                return isNaN(v) ? def : v;
+            }
+            return (el.value || '').trim() || def;
+        };
+        if (section === 'main') {
+            return {
+                timezone: getVal('timezone', 'UTC'),
+                check_for_updates: getVal('check_for_updates', true),
+                display_community_resources: getVal('display_community_resources', true),
+                display_huntarr_support: getVal('display_huntarr_support', true),
+                low_usage_mode: getVal('low_usage_mode', true),
+                auth_mode: (container.querySelector('#auth_mode') && container.querySelector('#auth_mode').value) || 'login',
+                ssl_verify: getVal('ssl_verify', true),
+                base_url: getVal('base_url', ''),
+                dev_key: getVal('dev_key', ''),
+                show_trending: getVal('show_trending', true)
+            };
+        }
+        if (section === 'notifications') {
+            const appriseEl = container.querySelector('#apprise_urls');
+            const appriseUrls = appriseEl ? (appriseEl.value || '').split('\n').map(u => u.trim()).filter(Boolean) : [];
+            return {
+                enable_notifications: getVal('enable_notifications', false),
+                notification_level: getVal('notification_level', 'info'),
+                apprise_urls: appriseUrls,
+                notify_on_missing: getVal('notify_on_missing', true),
+                notify_on_upgrade: getVal('notify_on_upgrade', true),
+                notification_include_instance: getVal('notification_include_instance', true),
+                notification_include_app: getVal('notification_include_app', true)
+            };
+        }
+        if (section === 'logs') {
+            return {
+                log_rotation_enabled: getVal('log_rotation_enabled', true),
+                log_max_size_mb: getVal('log_max_size_mb', 10),
+                log_backup_count: getVal('log_backup_count', 5),
+                log_retention_days: getVal('log_retention_days', 30),
+                log_auto_cleanup: getVal('log_auto_cleanup', true),
+                log_refresh_interval_seconds: getVal('log_refresh_interval_seconds', 30)
+            };
+        }
+        return null;
     },
 
     // Get settings from form
