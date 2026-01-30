@@ -1027,6 +1027,14 @@ input:disabled + .toggle-slider {
     background: rgba(255, 255, 255, 0.12);
 }
 
+/* Request modal dropdown options: ensure visible text on dark background */
+.advanced-select option,
+.modal-select option {
+    background: #1e293b;
+    color: #fff;
+    padding: 8px;
+}
+
 /* Modal Actions */
 .request-modal-actions {
     display: flex;
