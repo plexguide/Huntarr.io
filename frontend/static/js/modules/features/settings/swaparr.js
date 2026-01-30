@@ -30,7 +30,7 @@
                     </button>
                     
                     <div style="margin-left: auto; display: flex; gap: 10px;">
-                        <a href="https://github.com/plexguide/swaparr" target="_blank" rel="noopener" style="
+                        <a href="https://github.com/ThijmenGThN/swaparr" target="_blank" rel="noopener" style="
                             background: linear-gradient(135deg, #24292e 0%, #161b22 100%);
                             color: #f0f6fc;
                             border: 1px solid #30363d;
@@ -49,7 +49,7 @@
                             View on GitHub
                         </a>
                         
-                        <a href="https://github.com/plexguide/swaparr/stargazers" target="_blank" rel="noopener" style="
+                        <a href="https://github.com/ThijmenGThN/swaparr/stargazers" target="_blank" rel="noopener" style="
                             background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
                             color: #fff;
                             border: 1px solid #d35400;

@@ -1852,7 +1852,7 @@ window.SettingsForms = {
             }
         }
 
-        fetch("https://api.github.com/repos/PlexGuide/Swaparr")
+        fetch("https://api.github.com/repos/ThijmenGThN/swaparr")
             .then((response) => response.json())
             .then((data) => {
                 if (data.stargazers_count !== undefined) {
