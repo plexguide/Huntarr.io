@@ -95,7 +95,27 @@ def process_cutoff_upgrades(
         return False
         
     eros_logger.info(f"Found {len(upgrade_eligible_data)} items eligible for quality upgrade.")
-    
+
+    # Filter out items with exempt tags (issue #676)
+    exempt_tags = app_settings.get("exempt_tags") or []
+    if exempt_tags:
+        exempt_id_to_label = eros_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_id_to_label:
+            filtered = []
+            for item in upgrade_eligible_data:
+                skip = False
+                for tid in item.get("tags", []):
+                    if tid in exempt_id_to_label:
+                        eros_logger.info(
+                            f"Skipping item \"{item.get('title', 'Unknown')}\" (ID: {item.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
+                        )
+                        skip = True
+                        break
+                if not skip:
+                    filtered.append(item)
+            upgrade_eligible_data = filtered
+            eros_logger.info(f"Exempt tags filter: {len(upgrade_eligible_data)} items remaining for upgrades after excluding items with exempt tags.")
+
     # Filter out already processed items using stateful management
     unprocessed_items = []
     for item in upgrade_eligible_data:

@@ -598,6 +598,21 @@ def get_tag_id_by_label(api_url: str, api_key: str, api_timeout: int, tag_label:
         return None
 
 
+def get_exempt_tag_ids(api_url: str, api_key: str, api_timeout: int, exempt_tag_labels: list) -> dict:
+    """Resolve exempt tag labels to tag IDs. Returns dict tag_id -> label. Exact match. Issue #676."""
+    if not exempt_tag_labels:
+        return {}
+    result = {}
+    for label in exempt_tag_labels:
+        label = (label or "").strip()
+        if not label:
+            continue
+        tid = get_tag_id_by_label(api_url, api_key, api_timeout, label)
+        if tid is not None:
+            result[tid] = label
+    return result
+
+
 def get_books_without_author_tag(
     api_url: str, api_key: str, api_timeout: int, tag_label: str, monitored_only: bool
 ) -> Optional[List[Dict]]:

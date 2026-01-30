@@ -56,6 +56,7 @@ def get_configured_instances(quiet=False):
                 instance_settings["release_date_delay_days"] = instance.get("release_date_delay_days", 0)
                 instance_settings["sleep_duration"] = instance.get("sleep_duration", settings.get("sleep_duration", 900))
                 instance_settings["hourly_cap"] = instance.get("hourly_cap", settings.get("hourly_cap", 20))
+                instance_settings["exempt_tags"] = instance.get("exempt_tags") or []
                 
                 instances.append(instance_settings)
     else:

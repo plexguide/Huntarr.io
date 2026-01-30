@@ -53,6 +53,7 @@ def get_configured_instances(quiet=False):
                     "hunt_upgrade_books": instance.get("hunt_upgrade_books", 0),  # Per-instance upgrade hunt value
                     "sleep_duration": instance.get("sleep_duration", settings.get("sleep_duration", 900)),
                     "hourly_cap": instance.get("hourly_cap", settings.get("hourly_cap", 20)),
+                    "exempt_tags": instance.get("exempt_tags") or [],
                 }
                 instances.append(instance_data)
     

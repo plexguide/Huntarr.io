@@ -102,7 +102,27 @@ def process_missing_items(
         return False
     
     eros_logger.info(f"Found {len(missing_items)} items with missing files.")
-    
+
+    # Filter out items with exempt tags (issue #676)
+    exempt_tags = app_settings.get("exempt_tags") or []
+    if exempt_tags:
+        exempt_id_to_label = eros_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_id_to_label:
+            filtered = []
+            for item in missing_items:
+                skip = False
+                for tid in item.get("tags", []):
+                    if tid in exempt_id_to_label:
+                        eros_logger.info(
+                            f"Skipping item \"{item.get('title', 'Unknown')}\" (ID: {item.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
+                        )
+                        skip = True
+                        break
+                if not skip:
+                    filtered.append(item)
+            missing_items = filtered
+            eros_logger.info(f"Exempt tags filter: {len(missing_items)} items remaining after excluding items with exempt tags.")
+
     # Filter out future releases if configured
     if skip_future_releases:
         now = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)

@@ -95,6 +95,28 @@ def process_missing_albums(
                 return False
             
             lidarr_logger.info(f"Retrieved {len(missing_albums_data)} missing albums from random page selection.")
+
+            # Filter out albums whose artist has an exempt tag (issue #676)
+            exempt_tags = app_settings.get("exempt_tags") or []
+            if exempt_tags:
+                exempt_id_to_label = lidarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+                if exempt_id_to_label:
+                    filtered = []
+                    for album in missing_albums_data:
+                        artist = album.get("artist") or {}
+                        artist_tags = artist.get("tags", [])
+                        skip = False
+                        for tid in artist_tags:
+                            if tid in exempt_id_to_label:
+                                lidarr_logger.info(
+                                    f"Skipping album \"{album.get('title', 'Unknown')}\" (artist: \"{artist.get('name', 'Unknown')}\") - artist has exempt tag \"{exempt_id_to_label[tid]}\""
+                                )
+                                skip = True
+                                break
+                        if not skip:
+                            filtered.append(album)
+                    missing_albums_data = filtered
+                    lidarr_logger.info(f"Exempt tags filter: {len(missing_albums_data)} albums remaining after excluding artists with exempt tags.")
             
             # Convert to the expected format for album processing - keep IDs as integers
             unprocessed_entities = []
@@ -119,6 +141,28 @@ def process_missing_albums(
                 return False
             
             lidarr_logger.info(f"Retrieved {len(missing_albums_data)} missing albums.")
+
+            # Filter out albums whose artist has an exempt tag (issue #676)
+            exempt_tags = app_settings.get("exempt_tags") or []
+            if exempt_tags:
+                exempt_id_to_label = lidarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+                if exempt_id_to_label:
+                    filtered = []
+                    for album in missing_albums_data:
+                        artist = album.get("artist") or {}
+                        artist_tags = artist.get("tags", [])
+                        skip = False
+                        for tid in artist_tags:
+                            if tid in exempt_id_to_label:
+                                lidarr_logger.info(
+                                    f"Skipping album \"{album.get('title', 'Unknown')}\" (artist: \"{artist.get('name', 'Unknown')}\") - artist has exempt tag \"{exempt_id_to_label[tid]}\""
+                                )
+                                skip = True
+                                break
+                        if not skip:
+                            filtered.append(album)
+                    missing_albums_data = filtered
+                    lidarr_logger.info(f"Exempt tags filter: {len(missing_albums_data)} albums remaining after excluding artists with exempt tags.")
 
             # Group by artist ID
             items_by_artist = {}

@@ -227,7 +227,27 @@ def process_missing_movies(
     if not missing_movies:
         radarr_logger.info("No missing movies left to process after filtering future releases.")
         return False
-        
+
+    # Filter out movies with exempt tags (issue #676)
+    exempt_tags = app_settings.get("exempt_tags") or []
+    if exempt_tags:
+        exempt_id_to_label = radarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_id_to_label:
+            filtered = []
+            for movie in missing_movies:
+                skip = False
+                for tid in movie.get("tags", []):
+                    if tid in exempt_id_to_label:
+                        radarr_logger.info(
+                            f"Skipping movie \"{movie.get('title', 'Unknown')}\" (ID: {movie.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
+                        )
+                        skip = True
+                        break
+                if not skip:
+                    filtered.append(movie)
+            missing_movies = filtered
+            radarr_logger.info(f"Exempt tags filter: {len(missing_movies)} movies remaining after excluding items with exempt tags.")
+
     movies_processed = 0
     processing_done = False
     

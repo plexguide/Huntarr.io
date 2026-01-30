@@ -217,6 +217,7 @@ window.SettingsForms = {
                 const html = this.generateEditorHtml(appType, instance, index);
                 contentEl.innerHTML = html;
                 console.log('[SettingsForms] Editor HTML injected, length:', html.length);
+                this.setupExemptTagsListeners(contentEl);
             } catch (e) {
                 console.error('[SettingsForms] Error generating editor HTML:', e);
                 contentEl.innerHTML = `<div class="error-message" style="color: #ef4444; padding: 20px;">Error generating editor: ${e.message}</div>`;
@@ -278,6 +279,54 @@ window.SettingsForms = {
         } else {
             console.error('[SettingsForms] window.huntarrUI.switchSection not available');
         }
+    },
+
+    // Setup exempt tags add/remove in the instance editor
+    setupExemptTagsListeners: function(container) {
+        if (!container) return;
+        const addBtn = container.querySelector('#editor-exempt-tag-add');
+        const input = container.querySelector('#editor-exempt-tag-input');
+        const list = container.querySelector('#editor-exempt-tags-list');
+        if (!addBtn || !input || !list) return;
+        const self = this;
+        addBtn.addEventListener('click', function() { self.addExemptTag(input, list); });
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); self.addExemptTag(input, list); }
+        });
+        list.addEventListener('click', function(e) {
+            const removeEl = e.target.classList.contains('exempt-tag-remove') ? e.target : e.target.closest('.exempt-tag-remove');
+            if (removeEl) {
+                const chip = removeEl.closest('.exempt-tag-chip');
+                if (chip) chip.remove();
+                const saveBtn = document.getElementById('instance-editor-save');
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('enabled'); }
+            }
+        });
+    },
+    addExemptTag: function(inputEl, listEl) {
+        const tag = (inputEl.value || '').trim();
+        if (!tag) return;
+        if (tag.toLowerCase() === 'upgradinatorr') {
+            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                window.huntarrUI.showNotification('The tag "upgradinatorr" cannot be added as an exempt tag.', 'warning');
+            } else {
+                alert('The tag "upgradinatorr" cannot be added as an exempt tag.');
+            }
+            return;
+        }
+        const existing = listEl.querySelectorAll('.exempt-tag-chip');
+        for (let i = 0; i < existing.length; i++) {
+            if ((existing[i].getAttribute('data-tag') || '') === tag) return;
+        }
+        const chip = document.createElement('span');
+        chip.className = 'exempt-tag-chip';
+        chip.setAttribute('data-tag', tag);
+        chip.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: #dc2626; color: #fff; border-radius: 6px; font-size: 0.875rem;';
+        chip.innerHTML = '<span class="exempt-tag-remove" style="cursor: pointer; opacity: 0.9;" title="Remove" aria-label="Remove">×</span><span>' + String(tag).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+        listEl.appendChild(chip);
+        inputEl.value = '';
+        const saveBtn = document.getElementById('instance-editor-save');
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('enabled'); }
     },
 
     // Setup change detection for the editor
@@ -427,6 +476,8 @@ window.SettingsForms = {
             tag_processed_items: instance.tag_processed_items !== false,
             // Custom Tags (per-instance)
             custom_tags: instance.custom_tags || {},
+            // Exempt Tags (per-instance) - items with these tags are skipped for missing/upgrade
+            exempt_tags: Array.isArray(instance.exempt_tags) ? instance.exempt_tags : [],
             // Advanced Settings (per-instance)
             api_timeout: instance.api_timeout || 120,
             command_wait_delay: instance.command_wait_delay || 1,
@@ -1015,6 +1066,29 @@ window.SettingsForms = {
                     </div>
                     ` : ''}
                 </div>
+                
+                <div class="editor-section" style="border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 10px; padding: 14px; background: rgba(231, 76, 60, 0.06);">
+                    <div class="editor-section-title">Exempt Tags</div>
+                    <p class="editor-help-text" style="margin-bottom: 12px;">Items with any of these tags are skipped for missing and upgrade searches. If the tag is removed in the app, Huntarr will process the item again. <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener" style="color: #94a3b8;">#676</a></p>
+                    <div class="editor-field-group">
+                        <div class="editor-setting-item">
+                            <label>Add exempt tag</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="text" id="editor-exempt-tag-input" placeholder="Type a tag to exempt..." style="flex: 1;" maxlength="50">
+                                <button type="button" class="btn-card" id="editor-exempt-tag-add" style="padding: 8px 14px; white-space: nowrap;">Add</button>
+                            </div>
+                        </div>
+                        <p class="editor-help-text" style="color: #94a3b8; font-size: 0.85rem;">Tag &quot;upgradinatorr&quot; cannot be added.</p>
+                        <div id="editor-exempt-tags-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; min-height: 24px;">
+                            ${(safeInstance.exempt_tags || []).map(tag => `
+                                <span class="exempt-tag-chip" data-tag="${(tag || '').replace(/"/g, '&quot;')}" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: #dc2626; color: #fff; border-radius: 6px; font-size: 0.875rem;">
+                                    <span class="exempt-tag-remove" style="cursor: pointer; opacity: 0.9;" title="Remove" aria-label="Remove">×</span>
+                                    <span>${(tag || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -1085,7 +1159,10 @@ window.SettingsForms = {
                 upgradeTagValue = 'upgradinatorr';
             }
             newData.upgrade_tag = upgradeTagValue;
-        } else {
+        }
+        const exemptTagsListEl = document.getElementById('editor-exempt-tags-list');
+        newData.exempt_tags = exemptTagsListEl ? Array.from(exemptTagsListEl.querySelectorAll('.exempt-tag-chip')).map(el => el.getAttribute('data-tag') || '').filter(Boolean) : [];
+        if (appType !== 'sonarr') {
              const missingField = appType === 'radarr' ? 'hunt_missing_movies' : (appType === 'readarr' ? 'hunt_missing_books' : 'hunt_missing_items');
              const upgradeField = appType === 'radarr' ? 'hunt_upgrade_movies' : (appType === 'readarr' ? 'hunt_upgrade_books' : 'hunt_upgrade_items');
              

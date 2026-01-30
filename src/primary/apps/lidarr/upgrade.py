@@ -114,6 +114,28 @@ def process_cutoff_upgrades(
                 return False
             lidarr_logger.info(f"Retrieved {len(cutoff_unmet_data)} cutoff unmet albums from random page selection.")
 
+        # Filter out albums whose artist has an exempt tag (issue #676)
+        exempt_tags = app_settings.get("exempt_tags") or []
+        if exempt_tags:
+            exempt_id_to_label = lidarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+            if exempt_id_to_label:
+                filtered = []
+                for album in cutoff_unmet_data:
+                    artist = album.get("artist") or {}
+                    artist_tags = artist.get("tags", [])
+                    skip = False
+                    for tid in artist_tags:
+                        if tid in exempt_id_to_label:
+                            lidarr_logger.info(
+                                f"Skipping album \"{album.get('title', 'Unknown')}\" (artist: \"{artist.get('name', 'Unknown')}\") - artist has exempt tag \"{exempt_id_to_label[tid]}\""
+                            )
+                            skip = True
+                            break
+                    if not skip:
+                        filtered.append(album)
+                cutoff_unmet_data = filtered
+                lidarr_logger.info(f"Exempt tags filter: {len(cutoff_unmet_data)} albums remaining for upgrades after excluding artists with exempt tags.")
+
         # Filter out already processed items
         unprocessed_albums = []
         for album in cutoff_unmet_data:

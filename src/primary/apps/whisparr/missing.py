@@ -116,6 +116,27 @@ def process_missing_items(
     if not missing_items:
         whisparr_logger.info("No missing items left to process after filtering future releases.")
         return False
+
+    # Filter out items whose series has an exempt tag (issue #676)
+    exempt_tags = app_settings.get("exempt_tags") or []
+    if exempt_tags:
+        exempt_id_to_label = whisparr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_id_to_label:
+            all_series = whisparr_api.get_series(api_url, api_key, api_timeout)
+            exempt_series_ids = set()
+            if all_series:
+                if not isinstance(all_series, list):
+                    all_series = [all_series]
+                for s in all_series:
+                    for tid in (s.get("tags") or []):
+                        if tid in exempt_id_to_label:
+                            exempt_series_ids.add(s.get("id"))
+                            whisparr_logger.info(
+                                f"Skipping series \"{s.get('title', 'Unknown')}\" (ID: {s.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
+                            )
+                            break
+            missing_items = [item for item in missing_items if item.get("seriesId") not in exempt_series_ids]
+            whisparr_logger.info(f"Exempt tags filter: {len(missing_items)} items remaining after excluding series with exempt tags.")
         
     # Filter out already processed items using stateful management
     unprocessed_items = []

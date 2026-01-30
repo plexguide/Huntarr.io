@@ -31,6 +31,7 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
             "missing": "huntarr-missing",
             "upgrade": "huntarr-upgrade"
         },
+        "exempt_tags": [],  # Tags to skip for missing/upgrade (issue #676)
         # Advanced settings (per-instance)
         "api_timeout": 120,
         "command_wait_delay": 1,

@@ -440,16 +440,57 @@ def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
         whisparr_logger.error(f"Error checking connection to Whisparr V2 API: {str(e)}")
         return False
 
+def get_tag_id_by_label(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
+    """Get tag ID by label (lookup only). Returns None if tag does not exist. Issue #676."""
+    try:
+        response = arr_request(api_url, api_key, api_timeout, "tag", count_api=False)
+        if response:
+            for tag in response:
+                if tag.get('label') == tag_label:
+                    return tag.get('id')
+        return None
+    except Exception as e:
+        whisparr_logger.error(f"Error getting tag '{tag_label}': {e}")
+        return None
+
+
+def get_exempt_tag_ids(api_url: str, api_key: str, api_timeout: int, exempt_tag_labels: list) -> dict:
+    """Resolve exempt tag labels to tag IDs. Returns dict tag_id -> label. Exact match. Issue #676."""
+    if not exempt_tag_labels:
+        return {}
+    result = {}
+    for label in exempt_tag_labels:
+        label = (label or "").strip()
+        if not label:
+            continue
+        tid = get_tag_id_by_label(api_url, api_key, api_timeout, label)
+        if tid is not None:
+            result[tid] = label
+    return result
+
+
+def get_series(api_url: str, api_key: str, api_timeout: int, series_id: Optional[int] = None) -> Union[List, Dict, None]:
+    """
+    Get series information from Whisparr.
+    Returns list of all series, a single series, or None if request failed.
+    """
+    if series_id is not None:
+        endpoint = f"series/{series_id}"
+    else:
+        endpoint = "series"
+    return arr_request(api_url, api_key, api_timeout, endpoint, count_api=False)
+
+
 def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
     """
     Get existing tag ID or create a new tag in Whisparr.
-    
+
     Args:
         api_url: The base URL of the Whisparr API
         api_key: The API key for authentication
         api_timeout: Timeout for the API request
         tag_label: The label/name of the tag to create or find
-        
+
     Returns:
         The tag ID if successful, None otherwise
     """
@@ -462,7 +503,7 @@ def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: s
                     tag_id = tag.get('id')
                     whisparr_logger.debug(f"Found existing tag '{tag_label}' with ID: {tag_id}")
                     return tag_id
-        
+
         # Tag doesn't exist, create it
         tag_data = {"label": tag_label}
         response = arr_request(api_url, api_key, api_timeout, "tag", method="POST", data=tag_data, count_api=False)
@@ -473,7 +514,7 @@ def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: s
         else:
             whisparr_logger.error(f"Failed to create tag '{tag_label}'. Response: {response}")
             return None
-            
+
     except Exception as e:
         whisparr_logger.error(f"Error managing tag '{tag_label}': {e}")
         return None

@@ -171,6 +171,26 @@ def process_cutoff_upgrades(
  
     radarr_logger.info(f"Found {len(upgrade_eligible_data)} movies with upgrade allowed quality profiles.")
 
+    # Filter out movies with exempt tags (issue #676)
+    exempt_tags = app_settings.get("exempt_tags") or []
+    if exempt_tags:
+        exempt_id_to_label = radarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_id_to_label:
+            filtered = []
+            for movie in upgrade_eligible_data:
+                skip = False
+                for tid in movie.get("tags", []):
+                    if tid in exempt_id_to_label:
+                        radarr_logger.info(
+                            f"Skipping movie \"{movie.get('title', 'Unknown')}\" (ID: {movie.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
+                        )
+                        skip = True
+                        break
+                if not skip:
+                    filtered.append(movie)
+            upgrade_eligible_data = filtered
+            radarr_logger.info(f"Exempt tags filter: {len(upgrade_eligible_data)} movies remaining for upgrades after excluding items with exempt tags.")
+
     # Skip future releases if enabled (matching missing movies logic)
     if skip_future_releases:
         radarr_logger.info("Filtering out future releases from upgrades...")

@@ -31,7 +31,8 @@ def process_cutoff_upgrades(
     tag_processed_items: bool = True,
     custom_tags: dict = None,
     upgrade_selection_method: str = "cutoff",
-    upgrade_tag: str = ""
+    upgrade_tag: str = "",
+    exempt_tags: list = None,
 ) -> bool:
     """
     Process quality cutoff upgrades for Sonarr.
@@ -70,6 +71,24 @@ def process_cutoff_upgrades(
             sonarr_logger.info(f"No series found without the tag \"{tag_label}\" (all have been processed).")
             return False
         sonarr_logger.info(f"Found {len(series_list)} series without tag \"{tag_label}\".")
+        # Filter out series with exempt tags (issue #676)
+        if exempt_tags:
+            exempt_id_to_label = sonarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+            if exempt_id_to_label:
+                filtered = []
+                for s in series_list:
+                    skip = False
+                    for tid in s.get("tags", []):
+                        if tid in exempt_id_to_label:
+                            sonarr_logger.info(
+                                f"Skipping series \"{s.get('title', 'Unknown')}\" (ID: {s.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
+                            )
+                            skip = True
+                            break
+                    if not skip:
+                        filtered.append(s)
+                series_list = filtered
+                sonarr_logger.info(f"Exempt tags filter: {len(series_list)} series remaining for upgrades after excluding series with exempt tags.")
         unprocessed = [
             s for s in series_list
             if not is_processed("sonarr", instance_name, f"series_{s.get('id')}")
@@ -117,11 +136,12 @@ def process_cutoff_upgrades(
     sonarr_logger.info(f"Using {upgrade_mode.upper()} mode for quality upgrades")
 
     # Use seasons_packs mode or episodes mode
+    exempt_tags = exempt_tags or []
     if upgrade_mode == "seasons_packs":
         return process_upgrade_seasons_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             hunt_upgrade_items, command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, custom_tags
+            tag_processed_items, custom_tags, exempt_tags=exempt_tags
         )
     elif upgrade_mode == "episodes":
         # Handle individual episode upgrades (reinstated with warnings)
@@ -129,7 +149,7 @@ def process_cutoff_upgrades(
         return process_upgrade_episodes_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             hunt_upgrade_items, command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, custom_tags
+            tag_processed_items, custom_tags, exempt_tags=exempt_tags
         )
     else:
         sonarr_logger.error(f"Invalid upgrade_mode: {upgrade_mode}. Valid options are 'seasons_packs' or 'episodes'.")
@@ -173,11 +193,13 @@ def process_upgrade_seasons_mode(
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
     tag_processed_items: bool = True,
-    custom_tags: dict = None
+    custom_tags: dict = None,
+    exempt_tags: list = None,
 ) -> bool:
     """Process upgrades in season mode - groups episodes by season."""
     processed_any = False
-    
+    exempt_tags = exempt_tags or []
+
     # Use custom tags if provided, otherwise use defaults
     if custom_tags is None:
         custom_tags = {
@@ -195,6 +217,26 @@ def process_upgrade_seasons_mode(
     sample_size = hunt_upgrade_items * 10
     cutoff_unmet_episodes = sonarr_api.get_cutoff_unmet_episodes_random_page(
         api_url, api_key, api_timeout, monitored_only, sample_size)
+
+    # Filter out episodes whose series has an exempt tag (issue #676)
+    if exempt_tags and cutoff_unmet_episodes:
+        exempt_id_to_label = sonarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_id_to_label:
+            all_series = sonarr_api.get_series(api_url, api_key, api_timeout)
+            exempt_series_ids = set()
+            if all_series:
+                if not isinstance(all_series, list):
+                    all_series = [all_series]
+                for s in all_series:
+                    for tid in s.get("tags", []):
+                        if tid in exempt_id_to_label:
+                            exempt_series_ids.add(s.get("id"))
+                            sonarr_logger.info(
+                                f"Skipping series \"{s.get('title', 'Unknown')}\" (ID: {s.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
+                            )
+                            break
+            cutoff_unmet_episodes = [ep for ep in cutoff_unmet_episodes if ep.get("seriesId") not in exempt_series_ids]
+            sonarr_logger.info(f"Exempt tags filter: {len(cutoff_unmet_episodes)} episodes remaining for upgrades after excluding series with exempt tags.")
     
     sonarr_logger.info(f"Received {len(cutoff_unmet_episodes)} cutoff unmet episodes from random page (before filtering).")
     
@@ -570,7 +612,8 @@ def process_upgrade_episodes_mode(
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
     tag_processed_items: bool = True,
-    custom_tags: dict = None
+    custom_tags: dict = None,
+    exempt_tags: list = None,
 ) -> bool:
     """
     Process upgrades in individual episode mode.
@@ -582,7 +625,8 @@ def process_upgrade_episodes_mode(
     which can be useful for targeting specific episodes but is not recommended for most users.
     """
     processed_any = False
-    
+    exempt_tags = exempt_tags or []
+
     # Use custom tags if provided, otherwise use defaults
     if custom_tags is None:
         custom_tags = {
@@ -597,6 +641,26 @@ def process_upgrade_episodes_mode(
     sonarr_logger.debug(f"Using random page selection for cutoff unmet episodes in episodes mode")
     cutoff_unmet_episodes = sonarr_api.get_cutoff_unmet_episodes_random_page(
         api_url, api_key, api_timeout, monitored_only, hunt_upgrade_items * 2)
+
+    # Filter out episodes whose series has an exempt tag (issue #676)
+    if exempt_tags and cutoff_unmet_episodes:
+        exempt_id_to_label = sonarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_id_to_label:
+            all_series = sonarr_api.get_series(api_url, api_key, api_timeout)
+            exempt_series_ids = set()
+            if all_series:
+                if not isinstance(all_series, list):
+                    all_series = [all_series]
+                for s in all_series:
+                    for tid in s.get("tags", []):
+                        if tid in exempt_id_to_label:
+                            exempt_series_ids.add(s.get("id"))
+                            sonarr_logger.info(
+                                f"Skipping series \"{s.get('title', 'Unknown')}\" (ID: {s.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
+                            )
+                            break
+            cutoff_unmet_episodes = [ep for ep in cutoff_unmet_episodes if ep.get("seriesId") not in exempt_series_ids]
+            sonarr_logger.info(f"Exempt tags filter: {len(cutoff_unmet_episodes)} episodes remaining for upgrades (episodes mode) after excluding series with exempt tags.")
     
     sonarr_logger.info(f"Received {len(cutoff_unmet_episodes)} cutoff unmet episodes from random page (before filtering).")
     

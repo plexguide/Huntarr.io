@@ -459,6 +459,7 @@ def app_specific_loop(app_type: str) -> None:
                             "upgrade": "huntarr-upgrade",
                             "shows_missing": "huntarr-shows-missing"
                         })
+                        exempt_tags = instance_details.get("exempt_tags") or []
                         processed_missing = process_missing(
                             api_url=api_url,
                             api_key=api_key,
@@ -473,7 +474,8 @@ def app_specific_loop(app_type: str) -> None:
                             command_wait_attempts=command_wait_attempts,
                             stop_check=stop_check_func,
                             tag_processed_items=tag_processed_items,
-                            custom_tags=custom_tags
+                            custom_tags=custom_tags,
+                            exempt_tags=exempt_tags
                         )
                     else:
                         # For other apps that still use the old signature
@@ -519,7 +521,7 @@ def app_specific_loop(app_type: str) -> None:
                             "upgrade": "huntarr-upgrade",
                             "shows_missing": "huntarr-shows-missing"
                         })
-                        
+                        exempt_tags = instance_details.get("exempt_tags") or []
                         processed_upgrades = process_upgrades(
                             api_url=api_url,
                             api_key=api_key,
@@ -534,7 +536,8 @@ def app_specific_loop(app_type: str) -> None:
                             tag_processed_items=tag_processed_items,
                             custom_tags=custom_tags,
                             upgrade_selection_method=upgrade_selection_method,
-                            upgrade_tag=upgrade_tag
+                            upgrade_tag=upgrade_tag,
+                            exempt_tags=exempt_tags
                         )
                     else:
                         # For other apps that still use the old signature

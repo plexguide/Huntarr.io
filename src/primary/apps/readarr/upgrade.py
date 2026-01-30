@@ -95,6 +95,28 @@ def process_cutoff_upgrades(
             return False
         readarr_logger.info(f"Found {len(upgrade_eligible_data)} books eligible for quality upgrade.")
 
+    # Filter out books whose author has an exempt tag (issue #676)
+    exempt_tags = app_settings.get("exempt_tags") or []
+    if exempt_tags:
+        exempt_id_to_label = readarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_id_to_label:
+            filtered = []
+            for book in upgrade_eligible_data:
+                author = book.get("author") or {}
+                author_tags = author.get("tags", [])
+                skip = False
+                for tid in author_tags:
+                    if tid in exempt_id_to_label:
+                        readarr_logger.info(
+                            f"Skipping book \"{book.get('title', 'Unknown')}\" (author: \"{author.get('name', 'Unknown')}\") - author has exempt tag \"{exempt_id_to_label[tid]}\""
+                        )
+                        skip = True
+                        break
+                if not skip:
+                    filtered.append(book)
+            upgrade_eligible_data = filtered
+            readarr_logger.info(f"Exempt tags filter: {len(upgrade_eligible_data)} books remaining for upgrades after excluding authors with exempt tags.")
+
     # Filter out future releases if configured
     skip_future_releases = app_settings.get("skip_future_releases", True)
     if skip_future_releases:

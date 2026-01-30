@@ -93,6 +93,28 @@ def process_missing_books(
     
     readarr_logger.info(f"Retrieved {len(missing_books_data)} missing books from random page selection.")
 
+    # Filter out books whose author has an exempt tag (issue #676)
+    exempt_tags = app_settings.get("exempt_tags") or []
+    if exempt_tags:
+        exempt_id_to_label = readarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_id_to_label:
+            filtered = []
+            for book in missing_books_data:
+                author = book.get("author") or {}
+                author_tags = author.get("tags", [])
+                skip = False
+                for tid in author_tags:
+                    if tid in exempt_id_to_label:
+                        readarr_logger.info(
+                            f"Skipping book \"{book.get('title', 'Unknown')}\" (author: \"{author.get('name', 'Unknown')}\") - author has exempt tag \"{exempt_id_to_label[tid]}\""
+                        )
+                        skip = True
+                        break
+                if not skip:
+                    filtered.append(book)
+            missing_books_data = filtered
+            readarr_logger.info(f"Exempt tags filter: {len(missing_books_data)} books remaining after excluding authors with exempt tags.")
+
     # Check for stop signal after retrieving books
     if stop_check():
         readarr_logger.info("Stop requested after retrieving missing books. Aborting...")
