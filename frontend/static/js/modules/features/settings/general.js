@@ -186,16 +186,6 @@
             ">
                 <h3>Display Settings</h3>
                 <div class="setting-item">
-                    <label for="display_community_resources">Display Resources:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="display_community_resources" ${
-                          settings.display_community_resources !== false ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Show or hide the Resources section on the home page</p>
-                </div>
-                <div class="setting-item">
                     <label for="display_huntarr_support">Display Huntarr Support:</label>
                     <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                         <input type="checkbox" id="display_huntarr_support" ${

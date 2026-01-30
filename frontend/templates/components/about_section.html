@@ -1,0 +1,292 @@
+<section id="aboutSection" class="content-section" style="display: none;">
+    <style>
+        .about-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* Action buttons at top */
+        .about-links-top {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .about-link {
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .about-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        .about-link i {
+            font-size: 18px;
+        }
+
+        /* Smaller hero section */
+        .about-hero {
+            text-align: center;
+            padding: 24px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border-radius: 12px;
+            margin-bottom: 32px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .about-hero img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
+        }
+
+        .about-hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .about-hero p {
+            font-size: 16px;
+            color: #94a3b8;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .about-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 12px;
+            padding: 32px;
+            transition: all 0.3s ease;
+        }
+
+        .about-card:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .about-card-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+            color: white;
+        }
+
+        .about-card h3 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #e2e8f0;
+        }
+
+        .about-card p {
+            color: #94a3b8;
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .about-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .about-card ul li {
+            color: #cbd5e1;
+            padding: 8px 0;
+            padding-left: 28px;
+            position: relative;
+        }
+
+        .about-card ul li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .about-container {
+                padding: 16px;
+            }
+
+            .about-hero {
+                padding: 16px;
+            }
+
+            .about-hero h1 {
+                font-size: 28px;
+            }
+
+            .about-hero p {
+                font-size: 14px;
+            }
+
+            .about-hero img {
+                width: 60px;
+                height: 60px;
+            }
+
+            .about-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .about-card {
+                padding: 24px;
+            }
+
+            .about-links-top {
+                flex-direction: column;
+            }
+
+            .about-link {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+
+    <div class="about-container">
+        <!-- Action Buttons at Top -->
+        <div class="about-links-top">
+            <a href="https://github.com/plexguide/Huntarr.io" target="_blank" rel="noopener" class="about-link">
+                <i class="fab fa-github"></i>
+                View on GitHub
+            </a>
+            <a href="https://plexguide.github.io/Huntarr.io/" target="_blank" rel="noopener" class="about-link">
+                <i class="fas fa-book"></i>
+                Documentation
+            </a>
+            <a href="https://discord.gg/bravotango" target="_blank" rel="noopener" class="about-link">
+                <i class="fab fa-discord"></i>
+                Join Discord
+            </a>
+            <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener" class="about-link">
+                <i class="fas fa-heart"></i>
+                Become a Sponsor
+            </a>
+        </div>
+
+        <!-- Smaller Hero Section -->
+        <div class="about-hero">
+            <img src="./static/logo/256.png" alt="Huntarr Logo">
+            <h1>Huntarr</h1>
+            <p>A specialized utility that automates discovering missing and upgrading your media collection</p>
+        </div>
+
+        <!-- Features Grid (No Stats Section) -->
+        <div class="about-grid">
+            <div class="about-card">
+                <div class="about-card-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>Automated Discovery</h3>
+                <p>Huntarr automatically discovers missing media in your collection and upgrades existing content to higher quality versions.</p>
+                <ul>
+                    <li>Smart missing media detection</li>
+                    <li>Quality upgrade automation</li>
+                    <li>Scheduled hunts</li>
+                </ul>
+            </div>
+
+            <div class="about-card">
+                <div class="about-card-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <h3>Multi-App Support</h3>
+                <p>Seamlessly integrates with your favorite *arr applications to provide a unified management experience.</p>
+                <ul>
+                    <li>Sonarr, Radarr, Lidarr</li>
+                    <li>Readarr, Whisparr, Eros</li>
+                    <li>Prowlarr integration</li>
+                </ul>
+            </div>
+
+            <div class="about-card">
+                <div class="about-card-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3>Flexible Scheduling</h3>
+                <p>Configure hunt schedules that fit your needs with advanced timing controls and resource management.</p>
+                <ul>
+                    <li>Custom schedules per app</li>
+                    <li>Hourly cap management</li>
+                    <li>Low usage mode</li>
+                </ul>
+            </div>
+
+            <div class="about-card">
+                <div class="about-card-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <h3>Smart Notifications</h3>
+                <p>Stay informed with customizable notifications through Discord, Slack, email, and more via Apprise.</p>
+                <ul>
+                    <li>Multi-platform support</li>
+                    <li>Customizable alerts</li>
+                    <li>Real-time updates</li>
+                </ul>
+            </div>
+
+            <div class="about-card">
+                <div class="about-card-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Detailed Analytics</h3>
+                <p>Track your media collection growth and hunt performance with comprehensive statistics and history.</p>
+                <ul>
+                    <li>Collection statistics</li>
+                    <li>Hunt history tracking</li>
+                    <li>Performance metrics</li>
+                </ul>
+            </div>
+
+            <div class="about-card">
+                <div class="about-card-icon">
+                    <i class="fas fa-docker"></i>
+                </div>
+                <h3>Easy Deployment</h3>
+                <p>Deploy Huntarr in minutes with Docker support and simple configuration options.</p>
+                <ul>
+                    <li>Docker & Docker Compose</li>
+                    <li>Web-based setup wizard</li>
+                    <li>Automatic updates</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>

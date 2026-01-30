@@ -753,6 +753,16 @@ let huntarrUI = {
             
             // Initialize Swaparr section
             this.initializeSwaparr();
+        } else if (section === 'about' && document.getElementById('aboutSection')) {
+            document.getElementById('aboutSection').classList.add('active');
+            document.getElementById('aboutSection').style.display = 'block';
+            if (document.getElementById('aboutNav')) document.getElementById('aboutNav').classList.add('active');
+            newTitle = 'About';
+            this.currentSection = 'about';
+            
+            // Show main sidebar and clear settings sidebar preference
+            localStorage.removeItem('huntarr-settings-sidebar');
+            this.showMainSidebar();
         } else if (section === 'settings' && document.getElementById('settingsSection')) {
             console.log('[huntarrUI] Switching to settings section');
             document.getElementById('settingsSection').classList.add('active');
