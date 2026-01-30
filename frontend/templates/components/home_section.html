@@ -1386,15 +1386,14 @@
     
     .app-stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fill, 220px);
         gap: 20px;
+        justify-content: flex-start;
+        align-items: start;
     }
     
     .app-stats-card-wrapper {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        min-width: 0;
+        display: contents;
     }
     
     .app-stats-card {

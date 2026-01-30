@@ -101,7 +101,8 @@ window.HuntarrStats = {
                     card.parentNode.insertBefore(wrapper, card);
                     wrapper.appendChild(card);
                 }
-                wrapper.style.gridColumn = instances.length > 1 ? '1 / -1' : '';
+                // No special grid-column; wrapper uses display: contents from CSS
+                wrapper.style.gridColumn = '';
                 // Remove extra instance cards (keep first as template)
                 while (wrapper.children.length > instances.length) {
                     wrapper.lastChild.remove();
