@@ -201,40 +201,66 @@ function useDefaultInstances(instances, appTypes) {
 }
 
 /**
- * Load standard apps for the scheduler
+ * Fetch settings from API for scheduler instance list (detected instances)
+ * @returns {Promise<Object>} Full settings object with app instances
  */
-function loadAppInstances() {
-    console.debug('Loading standard apps for scheduler dropdown'); // DEBUG level per user preference
-    
+async function fetchSettingsForScheduler() {
+    try {
+        const response = await HuntarrUtils.fetchWithTimeout('./api/settings');
+        if (!response.ok) throw new Error('Failed to load settings');
+        return await response.json();
+    } catch (err) {
+        console.warn('Scheduler: could not fetch settings for instance list', err);
+        return {};
+    }
+}
+
+/**
+ * Load instance dropdown from API (detected instances: "Sonarr - Instance Name", etc.)
+ */
+async function loadAppInstances() {
     const scheduleApp = document.getElementById('scheduleApp');
     if (!scheduleApp) {
-        console.error('Schedule app dropdown not found in DOM');
+        console.error('Schedule instance dropdown not found in DOM');
         return;
     }
-    
-    // Clear existing options
+
+    const settings = await fetchSettingsForScheduler();
+    // Keep UI in sync so schedule list can show instance names
+    if (window.huntarrUI && window.huntarrUI.originalSettings) {
+        const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        appTypes.forEach(appType => {
+            if (settings[appType]) {
+                window.huntarrUI.originalSettings[appType] = window.huntarrUI.originalSettings[appType] || {};
+                window.huntarrUI.originalSettings[appType].instances = settings[appType].instances || [];
+            }
+        });
+    }
+
+    const options = [{ value: 'global', text: 'All Instances (Global)' }];
+    const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+
+    appTypes.forEach(appType => {
+        const appSettings = settings[appType] || {};
+        const instances = Array.isArray(appSettings.instances) ? appSettings.instances : [];
+        const label = capitalizeFirst(appType);
+
+        options.push({ value: `${appType}-all`, text: `All ${label} Instances` });
+        instances.forEach((inst, index) => {
+            const name = (inst && inst.name) ? String(inst.name).trim() : `Instance ${index + 1}`;
+            options.push({ value: `${appType}-${index}`, text: `${label} - ${name}` });
+        });
+    });
+
     scheduleApp.innerHTML = '';
-    
-    // Define the standard apps list
-    const standardApps = [
-        { value: 'global', text: 'All Apps (Global)' },
-        { value: 'sonarr-all', text: 'Sonarr' },
-        { value: 'radarr-all', text: 'Radarr' },
-        { value: 'lidarr-all', text: 'Lidarr' },
-        { value: 'readarr-all', text: 'Readarr' },
-        { value: 'whisparr-v2', text: 'Whisparr V2' },
-        { value: 'whisparr-v3', text: 'Whisparr V3' }
-    ];
-    
-    // Add each app to the dropdown
-    standardApps.forEach(app => {
+    options.forEach(opt => {
         const option = document.createElement('option');
-        option.value = app.value;
-        option.textContent = app.text;
+        option.value = opt.value;
+        option.textContent = opt.text;
         scheduleApp.appendChild(option);
     });
-    
-    console.debug('Standard apps loaded for scheduler');
+
+    console.debug('Scheduler instance dropdown loaded from API (detected instances)');
 }
 
 /**
@@ -655,19 +681,23 @@ function renderSchedules() {
             actionText = `API Limits ${limit}`;
         }
         
-        // Format app name
-        let appText = 'All Apps';
+        // Format instance name for display
+        let appText = 'All Instances (Global)';
         if (schedule.app && schedule.app !== 'global') {
-            // Format app name nicely using the actual instance name
             const [app, instanceId] = schedule.app.split('-');
+            const settings = (window.huntarrUI && window.huntarrUI.originalSettings) ? window.huntarrUI.originalSettings : {};
+            const instances = (settings[app] && settings[app].instances) ? settings[app].instances : [];
             if (instanceId === 'all') {
                 appText = `All ${capitalizeFirst(app)} Instances`;
             } else if (app === 'whisparr' && instanceId === 'v2') {
                 appText = 'Whisparr V2';
             } else if (app === 'whisparr' && instanceId === 'v3') {
                 appText = 'Whisparr V3';
+            } else if (/^\d+$/.test(instanceId) && instances[parseInt(instanceId, 10)]) {
+                const inst = instances[parseInt(instanceId, 10)];
+                appText = `${capitalizeFirst(app)} - ${inst.name || 'Instance ' + (parseInt(instanceId, 10) + 1)}`;
             } else {
-                appText = `${capitalizeFirst(app)} Instance ${instanceId}`;
+                appText = `${capitalizeFirst(app)} - Instance ${instanceId}`;
             }
         }
         
@@ -1023,6 +1053,9 @@ function resetDayCheckboxes() {
 
 // Expose scheduling timezone refresh function globally
 window.refreshSchedulingTimezone = refreshSchedulingTimezone;
+
+// Expose instance dropdown refresh (populates from API: detected instances)
+window.refreshSchedulingInstances = loadAppInstances;
 
 // Close the IIFE that wraps the script
 })();

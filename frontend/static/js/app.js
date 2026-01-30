@@ -811,6 +811,11 @@ let huntarrUI = {
             
             // Set localStorage to maintain Settings sidebar preference
             localStorage.setItem('huntarr-settings-sidebar', 'true');
+            
+            // Refresh instance dropdown from API (detected instances: Sonarr - Instance Name, etc.)
+            if (typeof window.refreshSchedulingInstances === 'function') {
+                window.refreshSchedulingInstances();
+            }
         } else if (section === 'notifications' && document.getElementById('notificationsSection')) {
             document.getElementById('notificationsSection').classList.add('active');
             document.getElementById('notificationsSection').style.display = 'block';

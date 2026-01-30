@@ -196,32 +196,11 @@
                             
                             <hr class="color-shift-divider">
                             
-                            <!-- App Selection -->
+                            <!-- Instance Selection (populated from API with detected instances) -->
                             <div class="form-group">
-                                <label for="scheduleApp">Apply to</label>
+                                <label for="scheduleApp">Instance</label>
                                 <select id="scheduleApp" class="form-control">
-                                    <option value="global">All Applications</option>
-                                    <optgroup label="Sonarr">
-                                        <option value="sonarr-all">All Sonarr Instances</option>
-                                        <option value="sonarr-1">Sonarr Instance 1</option>
-                                        <option value="sonarr-2">Sonarr Instance 2</option>
-                                    </optgroup>
-                                    <optgroup label="Radarr">
-                                        <option value="radarr-all">All Radarr Instances</option>
-                                        <option value="radarr-1">Radarr Instance 1</option>
-                                    </optgroup>
-                                    <optgroup label="Lidarr">
-                                        <option value="lidarr-all">All Lidarr Instances</option>
-                                        <option value="lidarr-1">Lidarr Instance 1</option>
-                                    </optgroup>
-                                    <optgroup label="Readarr">
-                                        <option value="readarr-all">All Readarr Instances</option>
-                                        <option value="readarr-1">Readarr Instance 1</option>
-                                    </optgroup>
-                                    <optgroup label="Whisparr">
-                                        <option value="whisparr-all">All Whisparr Instances</option>
-                                        <option value="whisparr-1">Whisparr Instance 1</option>
-                                    </optgroup>
+                                    <option value="global">All Instances (Global)</option>
                                 </select>
                             </div>
                             
@@ -250,7 +229,7 @@
                                     <div class="schedule-item-time">10:00</div>
                                     <div class="schedule-item-days">Mon, Wed, Fri</div>
                                     <div class="schedule-item-action">Enable</div>
-                                    <div class="schedule-item-app">All Apps</div>
+                                    <div class="schedule-item-app">All Instances (Global)</div>
                                     <div class="schedule-item-actions">
                                         <button class="icon-button edit-schedule" data-id="1"><i class="fas fa-edit"></i></button>
                                         <button class="icon-button delete-schedule" data-id="1"><i class="fas fa-trash"></i></button>

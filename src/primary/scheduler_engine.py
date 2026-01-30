@@ -102,22 +102,33 @@ def execute_action(action_entry):
         add_to_history(action_entry, "skipped", message)
         return False  # Already executed
     
-    # Helper function to extract base app name from app identifiers like "radarr-all"
-    def get_base_app_name(app_identifier):
-        """Extract base app name from identifiers like 'radarr-all', 'sonarr-instance1', etc."""
+    # Helper function to extract base app name and optional instance index from app identifiers
+    def parse_app_identifier(app_identifier):
+        """Return (base_app_name, instance_index or None). e.g. 'sonarr-0' -> ('sonarr', 0), 'sonarr-all' -> ('sonarr', None)."""
         if not app_identifier or app_identifier == "global":
-            return app_identifier
-        
-        # Split on hyphen and take the first part as the base app name
-        base_name = app_identifier.split('-')[0]
-        
-        # Validate it's a known app
+            return app_identifier, None
+        parts = app_identifier.split('-', 1)
+        base_name = parts[0]
+        suffix = parts[1] if len(parts) > 1 else None
         valid_apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros']
-        if base_name in valid_apps:
-            return base_name
-        
-        # If not a known app with suffix, return the original identifier
-        return app_identifier
+        if base_name not in valid_apps:
+            return app_identifier, None
+        if suffix is None:
+            return base_name, None
+        if suffix == 'all' or suffix in ('v2', 'v3'):
+            return base_name, None
+        try:
+            idx = int(suffix)
+            if 0 <= idx < 1000:
+                return base_name, idx
+        except ValueError:
+            pass
+        return base_name, None
+
+    def get_base_app_name(app_identifier):
+        """Extract base app name from identifiers like 'radarr-all', 'sonarr-0', etc."""
+        base_name, _ = parse_app_identifier(app_identifier)
+        return base_name
     
     try:
         # Handle both old "pause" and new "disable" terminology
@@ -155,22 +166,24 @@ def execute_action(action_entry):
                 message = f"Executing disable action for {app_type}"
                 scheduler_logger.info(message)
                 try:
-                    # Extract base app name for config access
-                    base_app_name = get_base_app_name(app_type)
-                    
-                    # Load settings from database
+                    base_app_name, instance_index = parse_app_identifier(app_type)
                     config_data = load_settings(base_app_name)
                     if config_data:
-                        # Update root level enabled field
-                        config_data['enabled'] = False
-                        # Also update enabled field in instances array if it exists
-                        if 'instances' in config_data and isinstance(config_data['instances'], list):
-                            for instance in config_data['instances']:
-                                if isinstance(instance, dict):
-                                    instance['enabled'] = False
-                        # Save settings to database
+                        if instance_index is not None and 'instances' in config_data and isinstance(config_data['instances'], list):
+                            if 0 <= instance_index < len(config_data['instances']) and isinstance(config_data['instances'][instance_index], dict):
+                                config_data['instances'][instance_index]['enabled'] = False
+                            else:
+                                error_message = f"Instance index {instance_index} out of range for {base_app_name}"
+                                scheduler_logger.error(error_message)
+                                add_to_history(action_entry, "error", error_message)
+                                return False
+                        else:
+                            config_data['enabled'] = False
+                            if 'instances' in config_data and isinstance(config_data['instances'], list):
+                                for instance in config_data['instances']:
+                                    if isinstance(instance, dict):
+                                        instance['enabled'] = False
                         save_settings(base_app_name, config_data)
-                        # Clear cache for this app to ensure the UI refreshes
                         clear_cache(base_app_name)
                         result_message = f"{app_type} disabled successfully"
                         scheduler_logger.info(result_message)
@@ -221,22 +234,24 @@ def execute_action(action_entry):
                 message = f"Executing enable action for {app_type}"
                 scheduler_logger.info(message)
                 try:
-                    # Extract base app name for config access
-                    base_app_name = get_base_app_name(app_type)
-                    
-                    # Load settings from database
+                    base_app_name, instance_index = parse_app_identifier(app_type)
                     config_data = load_settings(base_app_name)
                     if config_data:
-                        # Update root level enabled field
-                        config_data['enabled'] = True
-                        # Also update enabled field in instances array if it exists
-                        if 'instances' in config_data and isinstance(config_data['instances'], list):
-                            for instance in config_data['instances']:
-                                if isinstance(instance, dict):
-                                    instance['enabled'] = True
-                        # Save settings to database
+                        if instance_index is not None and 'instances' in config_data and isinstance(config_data['instances'], list):
+                            if 0 <= instance_index < len(config_data['instances']) and isinstance(config_data['instances'][instance_index], dict):
+                                config_data['instances'][instance_index]['enabled'] = True
+                            else:
+                                error_message = f"Instance index {instance_index} out of range for {base_app_name}"
+                                scheduler_logger.error(error_message)
+                                add_to_history(action_entry, "error", error_message)
+                                return False
+                        else:
+                            config_data['enabled'] = True
+                            if 'instances' in config_data and isinstance(config_data['instances'], list):
+                                for instance in config_data['instances']:
+                                    if isinstance(instance, dict):
+                                        instance['enabled'] = True
                         save_settings(base_app_name, config_data)
-                        # Clear cache for this app to ensure the UI refreshes
                         clear_cache(base_app_name)
                         result_message = f"{app_type} enabled successfully"
                         scheduler_logger.info(result_message)
@@ -286,15 +301,25 @@ def execute_action(action_entry):
                     message = f"Setting API cap for {app_type} to {api_limit}"
                     scheduler_logger.info(message)
                     try:
-                        # Extract base app name for config access
-                        base_app_name = get_base_app_name(app_type)
-                        
-                        # Load settings from database
+                        base_app_name, instance_index = parse_app_identifier(app_type)
                         config_data = load_settings(base_app_name)
                         if config_data:
-                            config_data['hourly_cap'] = api_limit
-                            # Save settings to database
+                            if instance_index is not None and 'instances' in config_data and isinstance(config_data['instances'], list):
+                                if 0 <= instance_index < len(config_data['instances']) and isinstance(config_data['instances'][instance_index], dict):
+                                    config_data['instances'][instance_index]['hourly_cap'] = api_limit
+                                else:
+                                    error_message = f"Instance index {instance_index} out of range for {base_app_name}"
+                                    scheduler_logger.error(error_message)
+                                    add_to_history(action_entry, "error", error_message)
+                                    return False
+                            else:
+                                config_data['hourly_cap'] = api_limit
+                                if 'instances' in config_data and isinstance(config_data['instances'], list):
+                                    for instance in config_data['instances']:
+                                        if isinstance(instance, dict):
+                                            instance['hourly_cap'] = api_limit
                             save_settings(base_app_name, config_data)
+                            clear_cache(base_app_name)
                             result_message = f"API cap set to {api_limit} for {app_type}"
                             scheduler_logger.info(result_message)
                             add_to_history(action_entry, "success", result_message)
