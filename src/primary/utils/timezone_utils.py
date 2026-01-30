@@ -63,32 +63,57 @@ def safe_get_timezone(timezone_name: str) -> pytz.BaseTzInfo:
         return None
 
 
-def get_user_timezone() -> pytz.BaseTzInfo:
+def get_user_timezone(use_cache: bool = True, prefer_database_for_display: bool = False) -> pytz.BaseTzInfo:
     """
     Get the effective timezone for display and calculations.
-    Environment variable TZ overrides the timezone set in settings.
 
     This function is robust and will NEVER crash, even with invalid timezones.
     It gracefully handles any timezone string and falls back safely.
 
-    Fallback order:
+    Fallback order (default):
     1. TZ environment variable (if set) — overrides settings
     2. User's timezone from general settings
     3. UTC as final fallback
+
+    When prefer_database_for_display=True (e.g. logs, history, scheduling UI):
+    1. User's timezone from general settings (so in-app choice wins in Docker where TZ=UTC)
+    2. TZ environment variable
+    3. UTC as final fallback
+
+    Args:
+        use_cache: If False, always read timezone from settings (e.g. for log display).
+        prefer_database_for_display: If True, use database timezone first so UI choice wins over TZ env.
 
     Returns:
         pytz.BaseTzInfo: The timezone object to use (always valid)
     """
     global _timezone_cache, _cache_timestamp
 
-    # Check cache first
     import time
     current_time = time.time()
-    if _timezone_cache and (current_time - _cache_timestamp) < _cache_ttl:
+
+    # Check cache first (unless bypass requested)
+    if use_cache and _timezone_cache and (current_time - _cache_timestamp) < _cache_ttl:
         return _timezone_cache
 
     try:
-        # 1. TZ environment variable overrides settings when set
+        # Option A: Prefer database for display (logs, history, scheduling) so in-app timezone wins in Docker
+        if prefer_database_for_display:
+            try:
+                from src.primary import settings_manager
+                general_settings = settings_manager.load_settings("general", use_cache=False)
+                timezone_name = general_settings.get("timezone")
+                if timezone_name:
+                    tz = safe_get_timezone(timezone_name)
+                    if tz:
+                        _timezone_cache = tz
+                        _cache_timestamp = current_time
+                        return tz
+            except Exception:
+                pass
+            # Fall through to TZ env then UTC
+
+        # 1. TZ environment variable (overrides settings when not prefer_database_for_display)
         tz_env = os.environ.get('TZ')
         if tz_env and tz_env.strip():
             tz = safe_get_timezone(tz_env.strip())
@@ -97,19 +122,20 @@ def get_user_timezone() -> pytz.BaseTzInfo:
                 _cache_timestamp = current_time
                 return tz
 
-        # 2. User's timezone from general settings
-        try:
-            from src.primary import settings_manager
-            general_settings = settings_manager.load_settings("general", use_cache=False)
-            timezone_name = general_settings.get("timezone")
-            if timezone_name:
-                tz = safe_get_timezone(timezone_name)
-                if tz:
-                    _timezone_cache = tz
-                    _cache_timestamp = current_time
-                    return tz
-        except Exception:
-            pass
+        # 2. User's timezone from general settings (when not already used above)
+        if not prefer_database_for_display:
+            try:
+                from src.primary import settings_manager
+                general_settings = settings_manager.load_settings("general", use_cache=False)
+                timezone_name = general_settings.get("timezone")
+                if timezone_name:
+                    tz = safe_get_timezone(timezone_name)
+                    if tz:
+                        _timezone_cache = tz
+                        _cache_timestamp = current_time
+                        return tz
+            except Exception:
+                pass
 
         # 3. Final fallback to UTC
         tz = pytz.UTC
@@ -126,13 +152,13 @@ def get_user_timezone() -> pytz.BaseTzInfo:
 
 def get_timezone_name() -> str:
     """
-    Get the timezone name as a string.
+    Get the timezone name as a string (for display; prefers database so UI choice wins in Docker).
     
     Returns:
         str: The timezone name (e.g., 'Pacific/Honolulu', 'UTC')
     """
     try:
-        timezone = get_user_timezone()
+        timezone = get_user_timezone(prefer_database_for_display=True)
         return str(timezone)
     except Exception:
         return "UTC" 

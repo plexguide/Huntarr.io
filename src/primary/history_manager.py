@@ -104,11 +104,11 @@ def get_history(app_type, search_query=None, page=1, page_size=20):
             page=page,
             page_size=page_size
         )
-        # Convert date_time to user timezone for display (respects settings; TZ env overrides)
+        # Convert date_time to user timezone for display (prefer database so in-app choice wins in Docker)
         try:
             from src.primary.utils.timezone_utils import get_user_timezone
             import pytz
-            user_tz = get_user_timezone()
+            user_tz = get_user_timezone(prefer_database_for_display=True)
             for entry in result.get("entries", []):
                 ts = entry.get("date_time")
                 if ts is not None:

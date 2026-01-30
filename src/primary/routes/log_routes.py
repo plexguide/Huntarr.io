@@ -14,41 +14,47 @@ import pytz
 logger = get_logger(__name__)
 log_routes_bp = Blueprint('log_routes', __name__)
 
-def _convert_timestamp_to_user_timezone(timestamp_str: str) -> str:
-    """Convert UTC timestamp to user's current timezone setting"""
+def _convert_timestamp_to_user_timezone(timestamp_val) -> str:
+    """Convert UTC timestamp to user's current timezone setting.
+    Uses fresh timezone from settings (no cache) so log display always matches User Settings.
+    """
     try:
-        # Get current user timezone setting
-        user_timezone = get_user_timezone()
-        
-        # Parse the UTC timestamp (remove microseconds if present)
+        # Coerce to string (SQLite may return str or datetime)
+        timestamp_str = str(timestamp_val) if timestamp_val is not None else ""
+        if not timestamp_str or not timestamp_str.strip():
+            return timestamp_str
+
+        # Prefer database timezone so in-app "Eastern" wins over container TZ=UTC (Docker)
+        user_timezone = get_user_timezone(use_cache=False, prefer_database_for_display=True)
+
+        # Remove microseconds: "2025-06-26 08:48:40.586072" -> "2025-06-26 08:48:40"
         if '.' in timestamp_str:
-            # Remove microseconds: "2025-06-26 08:48:40.586072" -> "2025-06-26 08:48:40"
             timestamp_str = timestamp_str.split('.')[0]
-        
-        # Remove any timezone suffix if present
-        timestamp_str = timestamp_str.replace('Z', '').replace('+00:00', '')
-        
+
+        # Normalize: remove timezone suffix and ensure space between date and time for strptime
+        timestamp_str = timestamp_str.replace('Z', '').replace('+00:00', '').strip()
+        if 'T' in timestamp_str:
+            timestamp_str = timestamp_str.replace('T', ' ', 1)
+
         # Parse as UTC datetime
         try:
             utc_dt = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
             utc_dt = pytz.UTC.localize(utc_dt)
         except ValueError:
-            # Try alternative format
-            utc_dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+            try:
+                utc_dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+            except ValueError:
+                return timestamp_str
             if utc_dt.tzinfo is None:
                 utc_dt = pytz.UTC.localize(utc_dt)
-        
+
         # Convert to user timezone
         local_dt = utc_dt.astimezone(user_timezone)
-        
-        # Return formatted timestamp
-        result = local_dt.strftime('%Y-%m-%d %H:%M:%S')
-        return result
-        
+        return local_dt.strftime('%Y-%m-%d %H:%M:%S')
+
     except Exception as e:
-        logger.error(f"[LOG_CONVERT] Error converting timestamp {timestamp_str}: {e}")
-        # Fallback to original timestamp
-        return timestamp_str
+        logger.error(f"[LOG_CONVERT] Error converting timestamp {timestamp_val!r}: {e}")
+        return str(timestamp_val) if timestamp_val is not None else ""
 
 @log_routes_bp.route('/api/logs/<app_type>')
 def get_logs(app_type):
