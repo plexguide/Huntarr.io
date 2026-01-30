@@ -283,13 +283,12 @@
             transform: scale(1.05);
         }
         
-        /* Home Sponsor Banner - Above search bar, right aligned, single line, no extra space */
+        /* Home Sponsor Banner - Compact, dynamic width, fits content exactly */
         .home-sponsor-banner {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: flex-end;
-            padding: 6px 14px;
-            margin: 0 0 8px 0;
+            padding: 5px 10px;
+            margin: 0;
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%);
             border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: 6px;
@@ -302,6 +301,7 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             white-space: nowrap;
+            width: auto;
         }
         
         .home-sponsor-banner .sponsor-text {
@@ -341,10 +341,12 @@
     <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.15s ease;">
         <div class="card requestarr-home-card">
             <div class="requestarr-home-content">
-                <!-- College Sponsor Banner - Above search, right aligned -->
-                <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="home-sponsor-banner">
-                    <span class="sponsor-text">Daughter's College Sponsor: <span class="sponsor-name" id="home-sponsor-name">Loading...</span></span>
-                </a>
+                <!-- College Sponsor Banner Container - Right aligned -->
+                <div style="display: flex; justify-content: flex-end; margin: 0 0 8px 0;">
+                    <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="home-sponsor-banner">
+                        <span class="sponsor-text">Daughter's College Sponsor: <span class="sponsor-name" id="home-sponsor-name">Loading...</span></span>
+                    </a>
+                </div>
                 
                 <div class="global-search-bar">
                     <i class="fas fa-search"></i>
