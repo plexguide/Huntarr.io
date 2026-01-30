@@ -48,27 +48,35 @@ function getInstanceNameForCard(card) {
 
 /**
  * Update the hourly API cap indicators for each app (per-instance when app has instances).
+ * Data is keyed by instance name; fallback to index so 2nd+ instance cards always update.
  * @param {Object} caps - Hourly API usage: per-app or per-instance (caps[app].instances[instanceName])
  * @param {Object} limits - Limits: per-app number or per-instance (limits[app].instances[instanceName])
  */
 function updateHourlyCapDisplay(caps, limits) {
     const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
-    
+
     apps.forEach(app => {
         if (!caps[app]) return;
         const cards = document.querySelectorAll('.app-stats-card.' + app);
         const hasInstances = caps[app].instances && typeof caps[app].instances === 'object';
         const appLimit = typeof limits[app] === 'number' ? limits[app] : 20;
         const usage = !hasInstances && caps[app].api_hits != null ? caps[app].api_hits : 0;
-        const percentage = (appLimit > 0) ? (usage / appLimit) * 100 : 0;
-        
-        cards.forEach(card => {
+
+        let instanceNames = [];
+        if (hasInstances && limits[app] && limits[app].instances) {
+            instanceNames = Object.keys(caps[app].instances);
+        }
+
+        cards.forEach((card, cardIndex) => {
             let usageVal = usage;
             let limitVal = appLimit;
-            if (hasInstances) {
+            if (hasInstances && instanceNames.length > 0) {
                 const instanceName = getInstanceNameForCard(card);
-                const instCaps = instanceName != null ? caps[app].instances[instanceName] : null;
-                const instLimits = limits[app] && limits[app].instances && instanceName != null ? limits[app].instances[instanceName] : appLimit;
+                const nameToUse = instanceName != null && caps[app].instances[instanceName] != null
+                    ? instanceName
+                    : instanceNames[cardIndex] || null;
+                const instCaps = nameToUse != null ? caps[app].instances[nameToUse] : null;
+                const instLimits = limits[app].instances && nameToUse != null ? limits[app].instances[nameToUse] : appLimit;
                 usageVal = instCaps && instCaps.api_hits != null ? instCaps.api_hits : 0;
                 limitVal = instLimits != null ? instLimits : 20;
             }
@@ -83,6 +91,13 @@ function updateHourlyCapDisplay(caps, limits) {
                 if (pct >= 100) statusEl.classList.add('danger');
                 else if (pct >= 75) statusEl.classList.add('warning');
                 else statusEl.classList.add('good');
+            }
+            const progressFill = card.querySelector('.api-progress-fill');
+            if (progressFill) progressFill.style.width = Math.min(100, pct) + '%';
+            const progressSpans = card.querySelectorAll('.api-progress-text span');
+            if (progressSpans.length >= 2) {
+                progressSpans[0].textContent = usageVal;
+                progressSpans[1].textContent = limitVal;
             }
         });
     });

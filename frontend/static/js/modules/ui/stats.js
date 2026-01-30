@@ -110,6 +110,9 @@ window.HuntarrStats = {
                     const hunted = Math.max(0, parseInt(inst.hunted) || 0);
                     const upgraded = Math.max(0, parseInt(inst.upgraded) || 0);
                     const name = inst.instance_name || 'Default';
+                    // API usage from stats (pulled from DB per-instance so all instances display correctly)
+                    const apiHits = Math.max(0, parseInt(inst.api_hits) || 0);
+                    const apiLimit = Math.max(1, parseInt(inst.api_limit) || 20);
                     let targetCard = wrapper.children[idx];
                     if (!targetCard) {
                         targetCard = card.cloneNode(true);
@@ -117,11 +120,11 @@ window.HuntarrStats = {
                         targetCard.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
                         wrapper.appendChild(targetCard);
                     }
-                        targetCard.style.display = '';
-                        // Set instance name on the card itself for easier identification
-                        targetCard.setAttribute('data-instance-name', name);
-                        
-                        const h4 = targetCard.querySelector('.app-content h4');
+                    targetCard.style.display = '';
+                    // Set instance name on the card itself for easier identification
+                    targetCard.setAttribute('data-instance-name', name);
+
+                    const h4 = targetCard.querySelector('.app-content h4');
                     if (h4) h4.textContent = `${appLabel} – ${name}`;
                     const numbers = targetCard.querySelectorAll('.stat-number');
                     if (numbers[0]) {
@@ -134,6 +137,29 @@ window.HuntarrStats = {
                     }
                     const resetBtn = targetCard.querySelector('.cycle-reset-button[data-app]');
                     if (resetBtn) resetBtn.setAttribute('data-instance-name', name);
+
+                    // Set API count/limit from DB (single source of truth for all instance cards)
+                    const capSpans = targetCard.querySelectorAll('.hourly-cap-text span');
+                    if (capSpans.length >= 2) {
+                        capSpans[0].textContent = apiHits;
+                        capSpans[1].textContent = apiLimit;
+                    }
+                    const pct = apiLimit > 0 ? (apiHits / apiLimit) * 100 : 0;
+                    const statusEl = targetCard.querySelector('.hourly-cap-status');
+                    if (statusEl) {
+                        statusEl.classList.remove('good', 'warning', 'danger');
+                        if (pct >= 100) statusEl.classList.add('danger');
+                        else if (pct >= 75) statusEl.classList.add('warning');
+                        else statusEl.classList.add('good');
+                    }
+                    // Sync progress bar if present
+                    const progressFill = targetCard.querySelector('.api-progress-fill');
+                    if (progressFill) progressFill.style.width = Math.min(100, pct) + '%';
+                    const progressSpans = targetCard.querySelectorAll('.api-progress-text span');
+                    if (progressSpans.length >= 2) {
+                        progressSpans[0].textContent = apiHits;
+                        progressSpans[1].textContent = apiLimit;
+                    }
                 });
                 if (typeof window.CycleCountdown !== 'undefined' && window.CycleCountdown.refreshTimerElements) {
                     window.CycleCountdown.refreshTimerElements();

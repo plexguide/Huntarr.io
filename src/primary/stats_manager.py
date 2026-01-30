@@ -433,7 +433,8 @@ def increment_stat_only(app_type: str, stat_type: str, count: int = 1, instance_
 def get_stats() -> Dict[str, Any]:
     """
     Get the current statistics (app-level + per-instance for Home dashboard).
-    Returns dict: app_type -> { hunted, upgraded, instances: [{ instance_name, hunted, upgraded }] }.
+    Returns dict: app_type -> { hunted, upgraded, instances: [{ instance_name, hunted, upgraded, api_hits, api_limit }] }.
+    Per-instance api_hits/api_limit are read directly from the database so all instance cards display correctly.
     """
     with stats_lock:
         stats = load_stats()
@@ -453,13 +454,23 @@ def get_stats() -> Dict[str, Any]:
                             instance_names.append(_normalize_instance_name(inst.get("name") or inst.get("instance_name")))
                 # Get per-instance stats from DB (may include instances no longer in config)
                 per_instance = db.get_media_stats_per_instance(app_type) if hasattr(db, "get_media_stats_per_instance") else []
-                # If we have configured instances, merge: list instance names from config, fill stats from DB
+                # Get per-instance hourly API usage from DB (single source of truth for card API display)
+                per_instance_caps = db.get_hourly_caps_per_instance(app_type) if hasattr(db, "get_hourly_caps_per_instance") else {}
                 if instance_names:
                     by_name = {p["instance_name"]: p for p in per_instance}
-                    stats[app_type]["instances"] = [
-                        {"instance_name": name, "hunted": by_name.get(name, {}).get("hunted", 0), "upgraded": by_name.get(name, {}).get("upgraded", 0)}
-                        for name in instance_names
-                    ]
+                    stats[app_type]["instances"] = []
+                    for name in instance_names:
+                        inst_stats = by_name.get(name, {})
+                        cap_data = per_instance_caps.get(name, {})
+                        api_hits = cap_data.get("api_hits", 0)
+                        api_limit = _get_instance_hourly_cap_limit(app_type, name)
+                        stats[app_type]["instances"].append({
+                            "instance_name": name,
+                            "hunted": inst_stats.get("hunted", 0),
+                            "upgraded": inst_stats.get("upgraded", 0),
+                            "api_hits": api_hits,
+                            "api_limit": api_limit,
+                        })
                 else:
                     stats[app_type]["instances"] = per_instance if per_instance else []
         except Exception as e:
