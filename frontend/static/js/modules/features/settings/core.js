@@ -435,7 +435,13 @@ window.SettingsForms = {
 
         const devMode = !!(window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general && window.huntarrUI.originalSettings.general.dev_mode);
         const sleepMin = devMode ? 1 : 10;
-        
+
+        // Default port and example URL per app (for placeholder and help text)
+        const defaultPortByApp = { sonarr: 8989, radarr: 7878, lidarr: 8686, readarr: 8787, whisparr: 6969, eros: 6969 };
+        const defaultPort = defaultPortByApp[appType] || 8989;
+        const exampleUrl = `http://localhost:${defaultPort}`;
+        const placeholderUrl = `http://192.168.1.100:${defaultPort}`;
+
         let html = `
             <style>
                 #instance-editor-content * {
@@ -583,9 +589,9 @@ window.SettingsForms = {
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label>URL</label>
-                            <input type="text" id="editor-url" value="${safeInstance.api_url}" placeholder="http://192.168.1.100:8989">
+                            <input type="text" id="editor-url" value="${safeInstance.api_url}" placeholder="${placeholderUrl}">
                         </div>
-                        <p class="editor-help-text">The full URL including port (e.g. http://localhost:8989)</p>
+                        <p class="editor-help-text">The full URL including port (e.g. ${exampleUrl})</p>
                     </div>
                     
                     <div class="editor-field-group">
