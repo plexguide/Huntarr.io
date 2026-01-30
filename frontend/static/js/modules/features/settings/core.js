@@ -1963,6 +1963,7 @@ window.SettingsForms = {
             settings.instances = [];
             settings.timezone = getInputValue("#timezone", "UTC");
             settings.check_for_updates = getInputValue("#check_for_updates", true);
+            settings.show_trending = getInputValue("#show_trending", true);
             settings.display_community_resources = getInputValue("#display_community_resources", true);
             settings.display_huntarr_support = getInputValue("#display_huntarr_support", true);
             settings.low_usage_mode = getInputValue("#low_usage_mode", true);

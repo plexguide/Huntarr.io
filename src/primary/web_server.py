@@ -637,8 +637,10 @@ def save_general_settings():
             timezone_changed = True
             general_logger.info(f"Timezone changed from {current_timezone} to {new_timezone}")
     
-    # Save general settings
-    success = settings_manager.save_settings('general', data)
+    # Merge incoming data with current general settings so we never drop keys (e.g. show_trending)
+    current = settings_manager.load_settings('general')
+    merged = {**current, **data}
+    success = settings_manager.save_settings('general', merged)
     
     if success:
         # Apply timezone change if needed

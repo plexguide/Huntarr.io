@@ -55,7 +55,7 @@
                     <label for="show_trending"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#show-trending" class="info-icon" title="Learn more about showing trending content on home page" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Show Trending:</label>
                     <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                         <input type="checkbox" id="show_trending" ${
-                          settings.show_trending !== false ? "checked" : ""
+                          settings.show_trending === true ? "checked" : ""
                         }>
                         <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                     </label>
