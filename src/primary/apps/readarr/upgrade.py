@@ -59,24 +59,41 @@ def process_cutoff_upgrades(
     # Extract necessary settings
     instance_name = app_settings.get("instance_name", "Readarr Default")
     monitored_only = app_settings.get("monitored_only", True)
+    upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()
+    if upgrade_selection_method not in ("cutoff", "tags"):
+        upgrade_selection_method = "cutoff"
+    upgrade_tag = (app_settings.get("upgrade_tag") or "").strip()
     # skip_author_refresh setting removed as it was a performance bottleneck
     hunt_upgrade_books = app_settings.get("hunt_upgrade_books", 0)
     command_wait_delay = app_settings.get("command_wait_delay", 5)
     command_wait_attempts = app_settings.get("command_wait_attempts", 12)
     
     # Get books eligible for upgrade
-    readarr_logger.info("Retrieving books eligible for quality upgrade...")
-    # Pass API credentials explicitly
-    upgrade_eligible_data = readarr_api.get_cutoff_unmet_books(api_url=api_url, api_key=api_key, api_timeout=api_timeout)
-    
-    if upgrade_eligible_data is None: # Check if the API call failed (assuming it returns None on error)
-        readarr_logger.error("Error retrieving books eligible for upgrade from Readarr API.")
-        return False
-    elif not upgrade_eligible_data: # Check if the list is empty
-        readarr_logger.info("No books found eligible for upgrade.")
-        return False
-        
-    readarr_logger.info(f"Found {len(upgrade_eligible_data)} books eligible for quality upgrade.")
+    if upgrade_selection_method == "tags":
+        if not upgrade_tag:
+            readarr_logger.warning("Upgrade selection method is 'Tags' but no upgrade tag is configured. Skipping.")
+            return False
+        readarr_logger.info(f"Retrieving books whose authors DON'T have tag \"{upgrade_tag}\" (Upgradinatorr-style: tag tracks processed)...")
+        upgrade_eligible_data = readarr_api.get_books_without_author_tag(
+            api_url, api_key, api_timeout, upgrade_tag, monitored_only
+        )
+        if upgrade_eligible_data is None:
+            return False
+        if not upgrade_eligible_data:
+            readarr_logger.info(f"No books found whose authors lack the tag \"{upgrade_tag}\" (all have been processed).")
+            return False
+        readarr_logger.info(f"Found {len(upgrade_eligible_data)} books whose authors DON'T have tag \"{upgrade_tag}\".")
+    else:
+        readarr_logger.info("Retrieving books eligible for quality upgrade...")
+        # Pass API credentials explicitly
+        upgrade_eligible_data = readarr_api.get_cutoff_unmet_books(api_url=api_url, api_key=api_key, api_timeout=api_timeout)
+        if upgrade_eligible_data is None:  # Check if the API call failed (assuming it returns None on error)
+            readarr_logger.error("Error retrieving books eligible for upgrade from Readarr API.")
+            return False
+        elif not upgrade_eligible_data:  # Check if the list is empty
+            readarr_logger.info("No books found eligible for upgrade.")
+            return False
+        readarr_logger.info(f"Found {len(upgrade_eligible_data)} books eligible for quality upgrade.")
 
     # Filter out future releases if configured
     skip_future_releases = app_settings.get("skip_future_releases", True)
@@ -166,7 +183,22 @@ def process_cutoff_upgrades(
         readarr_logger.info(f"Triggered upgrade search command {command_id} for {len(book_ids_to_search)} books.")
         increment_stat("readarr", "upgraded", 1, instance_name)
         
-        # Tag authors if enabled (from books)
+        # For tag-based method: add the upgrade tag to authors to mark as processed (Upgradinatorr-style)
+        if upgrade_selection_method == "tags" and upgrade_tag:
+            tagged_authors = set()
+            for book in books_to_process:
+                author_id = book.get('authorId')
+                if author_id and author_id not in tagged_authors:
+                    try:
+                        tag_id = readarr_api.get_or_create_tag(api_url, api_key, api_timeout, upgrade_tag)
+                        if tag_id:
+                            readarr_api.add_tag_to_author(api_url, api_key, api_timeout, author_id, tag_id)
+                            readarr_logger.debug(f"Added upgrade tag '{upgrade_tag}' to author {author_id} to mark as processed")
+                            tagged_authors.add(author_id)
+                    except Exception as e:
+                        readarr_logger.warning(f"Failed to add upgrade tag '{upgrade_tag}' to author {author_id}: {e}")
+        
+        # Also tag authors with huntarr-upgraded if enabled (separate tracking feature)
         if tag_processed_items:
             from src.primary.settings_manager import get_custom_tag
             custom_tag = get_custom_tag("readarr", "upgrade", "huntarr-upgraded")

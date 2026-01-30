@@ -507,6 +507,10 @@ def app_specific_loop(app_type: str) -> None:
                         monitored_only = combined_settings.get("monitored_only", True)
                         hunt_upgrade_items = hunt_upgrade_value  # Use per-instance value
                         upgrade_mode = instance_details.get("upgrade_mode", "seasons_packs")
+                        upgrade_selection_method = (instance_details.get("upgrade_selection_method") or "cutoff").strip().lower()
+                        if upgrade_selection_method not in ("cutoff", "tags"):
+                            upgrade_selection_method = "cutoff"
+                        upgrade_tag = (instance_details.get("upgrade_tag") or "").strip()
                         command_wait_delay = combined_settings.get("command_wait_delay", 1)
                         command_wait_attempts = combined_settings.get("command_wait_attempts", 600)
                         tag_processed_items = instance_details.get("tag_processed_items", True)
@@ -528,7 +532,9 @@ def app_specific_loop(app_type: str) -> None:
                             command_wait_attempts=command_wait_attempts,
                             stop_check=stop_check_func,
                             tag_processed_items=tag_processed_items,
-                            custom_tags=custom_tags
+                            custom_tags=custom_tags,
+                            upgrade_selection_method=upgrade_selection_method,
+                            upgrade_tag=upgrade_tag
                         )
                     else:
                         # For other apps that still use the old signature

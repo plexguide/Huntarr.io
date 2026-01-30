@@ -584,6 +584,46 @@ def search_books(api_url: str, api_key: str, book_ids: List[int], api_timeout: i
         logger.error(f"An unexpected error occurred triggering BookSearch for book IDs {book_ids}: {e}")
         return None
 
+def get_tag_id_by_label(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
+    """Get tag ID by label (does not create). Used for tag-based upgrade selection."""
+    try:
+        response = arr_request("tag", api_url=api_url, api_key=api_key, api_timeout=api_timeout, count_api=False)
+        if response:
+            for tag in response:
+                if tag.get('label') == tag_label:
+                    return tag.get('id')
+        return None
+    except Exception as e:
+        logger.error(f"Error getting tag '{tag_label}': {e}")
+        return None
+
+
+def get_books_without_author_tag(
+    api_url: str, api_key: str, api_timeout: int, tag_label: str, monitored_only: bool
+) -> Optional[List[Dict]]:
+    """
+    Get books whose author DON'T have the given tag (Upgradinatorr-style: tag tracks processed).
+    After searching, the tag will be added to the author to mark them as processed.
+    """
+    tag_id = get_or_create_tag(api_url, api_key, api_timeout, tag_label)
+    if tag_id is None:
+        logger.error(f"Failed to get or create tag '{tag_label}' in Readarr.")
+        return None
+    books = arr_request("book", api_url=api_url, api_key=api_key, api_timeout=api_timeout, count_api=False)
+    if not books:
+        logger.error("Failed to retrieve books from Readarr API.")
+        return None
+    if not isinstance(books, list):
+        books = [books]
+    out = [
+        b for b in books
+        if tag_id not in (b.get('author') or {}).get('tags', [])
+        and (not monitored_only or b.get('monitored', False))
+    ]
+    logger.debug(f"Found {len(out)} books whose authors DON'T have tag '{tag_label}' (monitored_only={monitored_only}).")
+    return out
+
+
 def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
     """
     Get existing tag ID or create a new tag in Readarr.

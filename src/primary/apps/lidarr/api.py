@@ -501,6 +501,46 @@ def get_artist_by_id(api_url: str, api_key: str, api_timeout: int, artist_id: in
     """Get artist details by ID from Lidarr."""
     return arr_request(api_url, api_key, api_timeout, f"artist/{artist_id}")
 
+def get_tag_id_by_label(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
+    """Get tag ID by label (does not create). Used for tag-based upgrade selection."""
+    try:
+        response = arr_request(api_url, api_key, api_timeout, "tag", count_api=False)
+        if response:
+            for tag in response:
+                if tag.get('label') == tag_label:
+                    return tag.get('id')
+        return None
+    except Exception as e:
+        lidarr_logger.error(f"Error getting tag '{tag_label}': {e}")
+        return None
+
+
+def get_albums_without_artist_tag(
+    api_url: str, api_key: str, api_timeout: int, tag_label: str, monitored_only: bool
+) -> Optional[List[Dict[str, Any]]]:
+    """
+    Get albums whose artist DON'T have the given tag (Upgradinatorr-style: tag tracks processed).
+    After searching, the tag will be added to the artist to mark them as processed.
+    """
+    tag_id = get_or_create_tag(api_url, api_key, api_timeout, tag_label)
+    if tag_id is None:
+        lidarr_logger.error(f"Failed to get or create tag '{tag_label}' in Lidarr.")
+        return None
+    albums = get_albums(api_url, api_key, api_timeout)
+    if albums is None:
+        lidarr_logger.error("Failed to retrieve albums from Lidarr API.")
+        return None
+    if not isinstance(albums, list):
+        albums = [albums]
+    out = [
+        a for a in albums
+        if tag_id not in (a.get('artist') or {}).get('tags', [])
+        and (not monitored_only or (a.get('monitored', False) and (a.get('artist') or {}).get('monitored', False)))
+    ]
+    lidarr_logger.debug(f"Found {len(out)} albums whose artists DON'T have tag '{tag_label}' (monitored_only={monitored_only}).")
+    return out
+
+
 def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
     """
     Get existing tag ID or create a new tag in Lidarr.

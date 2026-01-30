@@ -38,6 +38,10 @@ def process_cutoff_upgrades(
     # --- Extract Settings --- #
     # Instance details are now part of app_settings passed from background loop
     instance_name = app_settings.get("instance_name", "Lidarr Default")
+    upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()
+    if upgrade_selection_method not in ("cutoff", "tags"):
+        upgrade_selection_method = "cutoff"
+    upgrade_tag = (app_settings.get("upgrade_tag") or "").strip()
     
     # Extract necessary settings
     api_url = app_settings.get("api_url", "").strip()
@@ -82,21 +86,33 @@ def process_cutoff_upgrades(
     tag_processed_items = lidarr_settings.get("tag_processed_items", True)
 
     try:
-        lidarr_logger.info(f"Retrieving cutoff unmet albums...")
-        # Use efficient random page selection instead of fetching all albums
-        cutoff_unmet_data = lidarr_api.get_cutoff_unmet_albums_random_page(
-            api_url, api_key, api_timeout, monitored_only, hunt_upgrade_items * 2
-        )
-        
-        if cutoff_unmet_data is None: # API call failed
-            lidarr_logger.error("Failed to retrieve cutoff unmet albums from Lidarr API.")
-            return False
-        
-        if not cutoff_unmet_data:
-            lidarr_logger.info("No cutoff unmet albums found.")
-            return False
-        
-        lidarr_logger.info(f"Retrieved {len(cutoff_unmet_data)} cutoff unmet albums from random page selection.")
+        if upgrade_selection_method == "tags":
+            if not upgrade_tag:
+                lidarr_logger.warning("Upgrade selection method is 'Tags' but no upgrade tag is configured. Skipping.")
+                return False
+            lidarr_logger.info(f"Retrieving albums whose artists DON'T have tag \"{upgrade_tag}\" (Upgradinatorr-style: tag tracks processed)...")
+            cutoff_unmet_data = lidarr_api.get_albums_without_artist_tag(
+                api_url, api_key, api_timeout, upgrade_tag, monitored_only
+            )
+            if cutoff_unmet_data is None:
+                return False
+            if not cutoff_unmet_data:
+                lidarr_logger.info(f"No albums found whose artists lack the tag \"{upgrade_tag}\" (all have been processed).")
+                return False
+            lidarr_logger.info(f"Found {len(cutoff_unmet_data)} albums whose artists DON'T have tag \"{upgrade_tag}\".")
+        else:
+            lidarr_logger.info(f"Retrieving cutoff unmet albums...")
+            # Use efficient random page selection instead of fetching all albums
+            cutoff_unmet_data = lidarr_api.get_cutoff_unmet_albums_random_page(
+                api_url, api_key, api_timeout, monitored_only, hunt_upgrade_items * 2
+            )
+            if cutoff_unmet_data is None:  # API call failed
+                lidarr_logger.error("Failed to retrieve cutoff unmet albums from Lidarr API.")
+                return False
+            if not cutoff_unmet_data:
+                lidarr_logger.info("No cutoff unmet albums found.")
+                return False
+            lidarr_logger.info(f"Retrieved {len(cutoff_unmet_data)} cutoff unmet albums from random page selection.")
 
         # Filter out already processed items
         unprocessed_albums = []
@@ -169,7 +185,22 @@ def process_cutoff_upgrades(
             lidarr_logger.debug(f"Upgrade album search command triggered with ID: {command_id} for albums: {album_ids_to_search}")
             increment_stat("lidarr", "upgraded", 1, instance_name) # Use appropriate stat key
             
-            # Tag artists if enabled (from albums)
+            # For tag-based method: add the upgrade tag to artists to mark as processed (Upgradinatorr-style)
+            if upgrade_selection_method == "tags" and upgrade_tag:
+                tagged_artists = set()
+                for album in albums_to_search:
+                    artist_id = album.get('artistId')
+                    if artist_id and artist_id not in tagged_artists:
+                        try:
+                            tag_id = lidarr_api.get_or_create_tag(api_url, api_key, api_timeout, upgrade_tag)
+                            if tag_id:
+                                lidarr_api.add_tag_to_artist(api_url, api_key, api_timeout, artist_id, tag_id)
+                                lidarr_logger.debug(f"Added upgrade tag '{upgrade_tag}' to artist {artist_id} to mark as processed")
+                                tagged_artists.add(artist_id)
+                        except Exception as e:
+                            lidarr_logger.warning(f"Failed to add upgrade tag '{upgrade_tag}' to artist {artist_id}: {e}")
+            
+            # Also tag artists with huntarr-upgraded if enabled (separate tracking feature)
             if tag_processed_items:
                 from src.primary.settings_manager import get_custom_tag
                 custom_tag = get_custom_tag("lidarr", "upgrade", "huntarr-upgraded")

@@ -1165,6 +1165,64 @@ def get_series_with_missing_episodes(api_url: str, api_key: str, api_timeout: in
     sonarr_logger.info(f"Examined {examined_count} series ({selection_mode} mode) and found {len(series_with_missing)} with missing episodes")
     return series_with_missing
 
+def get_tag_id_by_label(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
+    """Get tag ID by label (does not create). Used for tag-based upgrade selection."""
+    try:
+        response = arr_request(api_url, api_key, api_timeout, "tag", count_api=False)
+        if response:
+            for tag in response:
+                if tag.get('label') == tag_label:
+                    return tag.get('id')
+        return None
+    except Exception as e:
+        sonarr_logger.error(f"Error getting tag '{tag_label}': {e}")
+        return None
+
+
+def get_series_without_tag(
+    api_url: str, api_key: str, api_timeout: int, tag_label: str, monitored_only: bool
+) -> Optional[List[Dict[str, Any]]]:
+    """
+    Get series that DON'T have the given tag (Upgradinatorr-style: tag tracks processed).
+    After searching, the tag will be added to mark them as processed.
+    """
+    tag_id = get_or_create_tag(api_url, api_key, api_timeout, tag_label)
+    if tag_id is None:
+        sonarr_logger.error(f"Failed to get or create tag '{tag_label}' in Sonarr.")
+        return None
+    all_series = get_series(api_url, api_key, api_timeout)
+    if all_series is None:
+        sonarr_logger.error("Failed to retrieve series from Sonarr API.")
+        return None
+    if not isinstance(all_series, list):
+        all_series = [all_series]
+    out = [
+        s for s in all_series
+        if tag_id not in s.get('tags', [])
+        and (not monitored_only or s.get('monitored', False))
+    ]
+    sonarr_logger.debug(f"Found {len(out)} series WITHOUT tag '{tag_label}' (monitored_only={monitored_only}).")
+    return out
+
+
+def series_search(api_url: str, api_key: str, api_timeout: int, series_id: int) -> Optional[int]:
+    """Trigger SeriesSearch for a series (all episodes)."""
+    try:
+        endpoint = f"{api_url.rstrip('/')}/api/v3/command"
+        payload = {"name": "SeriesSearch", "seriesId": series_id}
+        response = requests.post(endpoint, headers={"X-Api-Key": api_key}, json=payload, timeout=api_timeout)
+        response.raise_for_status()
+        command_id = response.json().get('id')
+        sonarr_logger.info(f"Triggered Sonarr SeriesSearch for series ID: {series_id}. Command ID: {command_id}")
+        return command_id
+    except requests.exceptions.RequestException as e:
+        sonarr_logger.error(f"Error triggering Sonarr SeriesSearch for series ID {series_id}: {e}")
+        return None
+    except Exception as e:
+        sonarr_logger.error(f"Unexpected error triggering Sonarr SeriesSearch: {e}")
+        return None
+
+
 def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
     """
     Get existing tag ID or create a new tag in Sonarr.

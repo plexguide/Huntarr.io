@@ -458,6 +458,47 @@ def wait_for_command(api_url: str, api_key: str, api_timeout: int, command_id: i
     radarr_logger.warning(f"Timed out waiting for command {command_id} to complete")
     return False
 
+def get_tag_id_by_label(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
+    """
+    Get tag ID by label (does not create the tag).
+    Used for tag-based upgrade selection (e.g. Upgradinatorr-style).
+    """
+    try:
+        response = arr_request(api_url, api_key, api_timeout, "tag", count_api=False)
+        if response:
+            for tag in response:
+                if tag.get('label') == tag_label:
+                    return tag.get('id')
+        return None
+    except Exception as e:
+        radarr_logger.error(f"Error getting tag '{tag_label}': {e}")
+        return None
+
+
+def get_movies_without_tag(
+    api_url: str, api_key: str, api_timeout: int, tag_label: str, monitored_only: bool
+) -> Optional[List[Dict]]:
+    """
+    Get movies that DON'T have the given tag (Upgradinatorr-style: tag tracks processed items).
+    After searching, the tag will be added to mark them as processed.
+    """
+    tag_id = get_or_create_tag(api_url, api_key, api_timeout, tag_label)
+    if tag_id is None:
+        radarr_logger.error(f"Failed to get or create tag '{tag_label}' in Radarr.")
+        return None
+    movies = arr_request(api_url, api_key, api_timeout, "movie", count_api=False)
+    if movies is None:
+        radarr_logger.error("Failed to retrieve movies from Radarr API.")
+        return None
+    out = [
+        m for m in movies
+        if tag_id not in m.get('tags', [])
+        and (not monitored_only or m.get('monitored', False))
+    ]
+    radarr_logger.debug(f"Found {len(out)} movies WITHOUT tag '{tag_label}' (monitored_only={monitored_only}).")
+    return out
+
+
 def get_or_create_tag(api_url: str, api_key: str, api_timeout: int, tag_label: str) -> Optional[int]:
     """
     Get existing tag ID or create a new tag in Radarr.

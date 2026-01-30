@@ -29,15 +29,23 @@ def process_cutoff_upgrades(
     command_wait_attempts: int = get_advanced_setting("command_wait_attempts", 600),
     stop_check: Callable[[], bool] = lambda: False,
     tag_processed_items: bool = True,
-    custom_tags: dict = None
+    custom_tags: dict = None,
+    upgrade_selection_method: str = "cutoff",
+    upgrade_tag: str = ""
 ) -> bool:
     """
     Process quality cutoff upgrades for Sonarr.
     Supports seasons_packs and episodes modes. Episodes mode has been reinstated in 7.5.1+ as a non-default option with limitations.
+    upgrade_selection_method: "cutoff" (default) or "tags" for tag-based selection.
     """
     if hunt_upgrade_items <= 0:
         sonarr_logger.info("'hunt_upgrade_items' setting is 0 or less. Skipping upgrade processing.")
         return False
+
+    method = (upgrade_selection_method or "cutoff").strip().lower()
+    if method not in ("cutoff", "tags"):
+        method = "cutoff"
+    tag_label = (upgrade_tag or "").strip()
         
     sonarr_logger.info(f"Checking for {hunt_upgrade_items} quality upgrades for instance '{instance_name}'...")
     
@@ -48,6 +56,63 @@ def process_cutoff_upgrades(
             "upgrade": "huntarr-upgrade",
             "shows_missing": "huntarr-shows-missing"
         }
+    
+    # Tag-based upgrade path (Upgradinatorr-style): series WITHOUT tag -> SeriesSearch -> add tag
+    if method == "tags":
+        if not tag_label:
+            sonarr_logger.warning("Upgrade selection method is 'Tags' but no upgrade tag is configured. Skipping.")
+            return False
+        sonarr_logger.info(f"Retrieving series WITHOUT tag \"{tag_label}\" (Upgradinatorr-style: tag tracks processed)...")
+        series_list = sonarr_api.get_series_without_tag(api_url, api_key, api_timeout, tag_label, monitored_only)
+        if series_list is None:
+            return False
+        if not series_list:
+            sonarr_logger.info(f"No series found without the tag \"{tag_label}\" (all have been processed).")
+            return False
+        sonarr_logger.info(f"Found {len(series_list)} series without tag \"{tag_label}\".")
+        unprocessed = [
+            s for s in series_list
+            if not is_processed("sonarr", instance_name, f"series_{s.get('id')}")
+        ]
+        if not unprocessed:
+            sonarr_logger.info("All series with the upgrade tag have been processed recently. Skipping.")
+            return False
+        to_process = random.sample(unprocessed, min(hunt_upgrade_items, len(unprocessed)))
+        processed_count = 0
+        for s in to_process:
+            if stop_check():
+                break
+            series_id = s.get("id")
+            title = s.get("title", f"Series {series_id}")
+            sonarr_logger.info(f"Processing tag-based upgrade for series: \"{title}\" (ID: {series_id})")
+            if sonarr_api.series_search(api_url, api_key, api_timeout, series_id):
+                add_processed_id("sonarr", instance_name, f"series_{series_id}")
+                from src.primary.stats_manager import increment_stat_only
+                increment_stat_only("sonarr", "upgraded", 1, instance_name)
+                log_processed_media("sonarr", title, str(series_id), instance_name, "upgrade")
+                
+                # Add the upgrade tag to mark as processed (Upgradinatorr-style)
+                tag_id = sonarr_api.get_or_create_tag(api_url, api_key, api_timeout, tag_label)
+                if tag_id:
+                    try:
+                        sonarr_api.add_tag_to_series(api_url, api_key, api_timeout, series_id, tag_id)
+                        sonarr_logger.debug(f"Added upgrade tag '{tag_label}' to series {series_id} to mark as processed")
+                    except Exception as e:
+                        sonarr_logger.warning(f"Failed to add upgrade tag '{tag_label}' to series {series_id}: {e}")
+                
+                # Also tag with huntarr-upgraded if enabled (separate tracking feature)
+                if tag_processed_items and custom_tags:
+                    from src.primary.settings_manager import get_custom_tag
+                    custom_tag = get_custom_tag("sonarr", "upgrade", "huntarr-upgraded")
+                    tag_id = sonarr_api.get_or_create_tag(api_url, api_key, api_timeout, custom_tag)
+                    if tag_id:
+                        try:
+                            sonarr_api.add_tag_to_series(api_url, api_key, api_timeout, series_id, tag_id)
+                        except Exception:
+                            pass
+                processed_count += 1
+        sonarr_logger.info(f"Finished tag-based upgrade cycle: processed {processed_count} series.")
+        return processed_count > 0
     
     sonarr_logger.info(f"Using {upgrade_mode.upper()} mode for quality upgrades")
 
@@ -442,7 +507,8 @@ def process_upgrade_shows_mode(
                 
                 # Tag the series if enabled
                 if tag_processed_items:
-                    custom_tag = custom_tags.get("upgrade", "huntarr-upgrade")
+                    from src.primary.settings_manager import get_custom_tag
+                    custom_tag = get_custom_tag("sonarr", "upgrade", "huntarr-upgrade")
                     try:
                         sonarr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
                         sonarr_logger.debug(f"Tagged series {series_id} with '{custom_tag}'")

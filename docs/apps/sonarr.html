@@ -160,8 +160,107 @@
                 <strong>Huntarr 7.5.0+ Migration:</strong> The "Episodes" upgrade mode has been deprecated and automatically migrated to "Season Packs" mode. This change improves search efficiency and provides better integration with modern torrent trackers.
             </div>
             
+            <h3 id="upgrade-selection-method"><i class="fas fa-list-check" style="margin-right: 10px; color: #2ecc71;"></i>Upgrade Selection Method</h3>
+            <p>You can choose how Huntarr selects which series to consider for upgrades:</p>
+            <ul>
+                <li><strong>Cutoff unmet (default):</strong> Uses Sonarr's <strong>Wanted → Cutoff Unmet</strong> list. Only series/episodes that don't meet your quality/custom-format cutoff are eligible. Same behavior as before.</li>
+                <li><strong>Tags (Upgradinatorr-style):</strong> Huntarr finds series that <strong>DON'T</strong> have your specified tag (e.g. <code>upgradinatorr</code>), searches for upgrades, then <strong>ADDS</strong> the tag after processing to mark them as complete. This matches <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr's</a> behavior: the tag tracks which series have already been processed, not which ones to search. The tag is automatically created in Sonarr if it doesn't exist.</li>
+            </ul>
+            <p>In both cases, Huntarr triggers <strong>SeriesSearch</strong> or <strong>SeasonSearch</strong> for the selected series; Sonarr still decides what to grab based on your quality profile and custom format scores (V4).</p>
+            
+            <div class="alert alert-success">
+                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides and best practices for quality upgrades.
+            </div>
+            
+            <h4 id="upgrade-mode-comparison"><i class="fas fa-balance-scale" style="margin-right: 10px; color: #9b59b6;"></i>Cutoff Unmet vs Tags: Which Should I Use?</h4>
+            <p>Understanding the difference between these two modes will help you choose the right approach for your library:</p>
+            
+            <table>
+                <tr>
+                    <th>Feature</th>
+                    <th>Cutoff Unmet (Huntarr Standard)</th>
+                    <th>Tags (Upgradinatorr-style)</th>
+                </tr>
+                <tr>
+                    <td><strong>How It Works</strong></td>
+                    <td>Queries Sonarr's <code>Wanted → Cutoff Unmet</code> list every cycle</td>
+                    <td>Searches series WITHOUT the tag, then ADDS tag after processing</td>
+                </tr>
+                <tr>
+                    <td><strong>Re-processing</strong></td>
+                    <td>Same series appear in every cycle until they meet cutoff</td>
+                    <td>Once tagged, series are NEVER searched again (unless you manually remove tag)</td>
+                </tr>
+                <tr>
+                    <td><strong>Best For</strong></td>
+                    <td>Dynamic quality targets - continuously searching until perfect quality is found</td>
+                    <td>One-time library upgrade - systematically process entire library once</td>
+                </tr>
+                <tr>
+                    <td><strong>Indexer Impact</strong></td>
+                    <td>Higher - searches same series repeatedly if upgrades not found</td>
+                    <td>Lower - each series searched once, then marked complete</td>
+                </tr>
+                <tr>
+                    <td><strong>Progress Tracking</strong></td>
+                    <td>Based on cutoff status - series drop off list when upgraded</td>
+                    <td>Visual tags in Sonarr UI - see which series have been processed</td>
+                </tr>
+                <tr>
+                    <td><strong>Use Case Example</strong></td>
+                    <td>"Keep searching until every episode reaches my quality target"</td>
+                    <td>"I just set up TRaSH guides - process my entire 500 show library once"</td>
+                </tr>
+                <tr>
+                    <td><strong>Stops When</strong></td>
+                    <td>Series meets quality cutoff or custom format score threshold</td>
+                    <td>Tag is applied (regardless of whether upgrade was found)</td>
+                </tr>
+            </table>
+            
+            <div class="alert alert-info">
+                <strong>📊 Example Scenario:</strong><br>
+                <strong>Cutoff Unmet:</strong> You have 50 series below cutoff. Huntarr searches 3 per cycle, finds upgrades for 2. Next cycle, those 2 are gone (met cutoff), but the other 1 appears again along with 2 new ones from the remaining 47. This continues until all 50 meet cutoff or no more upgrades exist.<br><br>
+                <strong>Tags:</strong> You have 500 series with no <code>upgradinatorr</code> tag. Huntarr searches 3 per cycle, tags all 3 (whether upgrades found or not). Next cycle searches 3 different series. After ~167 cycles, all 500 series have been searched once and tagged - done forever.
+            </div>
+            
+            <div class="alert alert-warning">
+                <strong>⚠️ Important:</strong> With <strong>Tags mode</strong>, series are marked as "processed" even if no upgrade was found. If you want to re-process series later (e.g., after adding new indexers), you must manually remove the tag in Sonarr.
+            </div>
+            
             <h3 id="custom-format-scores"><i class="fas fa-star" style="margin-right: 10px; color: #f1c40f;"></i>Custom Format Scores (TRaSH / Upgrade Until Score)</h3>
-            <p><strong>Huntarr does not decide what to upgrade—Sonarr does.</strong> Huntarr uses Sonarr's cutoff-unmet list, triggers season/search commands, and Sonarr scores results with your quality profile (including custom formats) and grabs upgrades. For <a href="https://trash-guides.info/Sonarr/sonarr-setup-quality-profiles/" target="_blank" rel="noopener">TRaSH Guides</a> and custom-format upgrades on <strong>Sonarr V4</strong>, set <strong>Upgrade Until Custom Format Score</strong> (e.g. 10000) in Settings → Profiles → Quality Profile so Sonarr includes "below custom format score" in cutoff unmet and applies your scores when processing search results.</p>
+            
+            <div class="alert alert-info">
+                <strong>📋 Sonarr Configuration Required:</strong>
+                <ul style="margin-bottom: 0;">
+                    <li><strong>Sonarr V3:</strong> No additional configuration required</li>
+                    <li><strong>Sonarr V4:</strong> Sonarr → Settings → Profiles → Quality Profile → Upgrade Until Custom Format Score</li>
+                    <li>Set <strong>Upgrade Until Custom Format Score</strong> to at least <code>10000</code></li>
+                </ul>
+            </div>
+            
+            <h4>Why Custom Format Scores Matter</h4>
+            <p><strong>Huntarr does not decide what to upgrade—Sonarr does.</strong> When Huntarr triggers a search for upgrades, Sonarr evaluates the search results using your configured quality profile and custom format scores to determine whether a release is an upgrade worth grabbing.</p>
+            
+            <p><strong>Key Points:</strong></p>
+            <ul>
+                <li><strong>Quality Cutoff:</strong> The minimum quality level you're willing to accept (e.g., 1080p WEBDL, 2160p Bluray)</li>
+                <li><strong>Custom Formats (Sonarr V4 only):</strong> Additional scoring criteria beyond basic quality (e.g., HDR formats, audio codecs, preferred release groups, streaming service tiers)</li>
+                <li><strong>Upgrade Until Custom Format Score:</strong> The score threshold at which Sonarr stops considering upgrades. Setting this to 10000 (or higher) ensures Sonarr will continue upgrading as long as better-scoring releases are found</li>
+            </ul>
+            
+            <p><strong>How It Works:</strong></p>
+            <ol>
+                <li>Huntarr retrieves episodes/seasons from Sonarr's cutoff-unmet list</li>
+                <li>Huntarr triggers a <strong>SeasonSearch</strong> or <strong>SeriesSearch</strong> command in Sonarr</li>
+                <li>Sonarr searches indexers and scores each result using your quality profile + custom formats (V4 only)</li>
+                <li>Sonarr automatically grabs releases that score higher than your current file (up to your "Upgrade Until" threshold)</li>
+                <li>Without proper custom format scoring configured (V4), Sonarr may not grab upgrades even when better releases are available</li>
+            </ol>
+            
+            <div class="alert alert-success">
+                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/Sonarr/sonarr-setup-quality-profiles/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides (Sonarr V4), recommended scores for HDR formats, DV, audio codecs, and best practices for quality upgrades in Sonarr.
+            </div>
             
             <h3 id="search-limits"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Search Limits</h3>
             <p>Control how many items Huntarr processes per cycle to avoid overwhelming your indexers:</p>

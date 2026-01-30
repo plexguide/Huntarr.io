@@ -153,6 +153,107 @@
                 <li><strong>Series:</strong> Upgrades entire book series at once when better quality is found</li>
             </ul>
             
+            <h3 id="upgrade-selection-method"><i class="fas fa-list-check" style="margin-right: 10px; color: #2ecc71;"></i>Upgrade Selection Method</h3>
+            <p>You can choose how Huntarr selects which authors to consider for upgrades:</p>
+            <ul>
+                <li><strong>Cutoff unmet (default):</strong> Uses Readarr's <strong>Wanted → Cutoff Unmet</strong> list. Only books that don't meet your quality/custom-format cutoff are eligible. Same behavior as before.</li>
+                <li><strong>Tags (Upgradinatorr-style):</strong> Huntarr finds authors that <strong>DON'T</strong> have your specified tag (e.g. <code>upgradinatorr</code>), searches their books for upgrades, then <strong>ADDS</strong> the tag to the author after processing to mark them as complete. This matches <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr's</a> behavior: the tag tracks which authors have already been processed, not which ones to search. The tag is automatically created in Readarr if it doesn't exist.</li>
+            </ul>
+            <p>In both cases, Huntarr triggers <strong>BookSearch</strong> for the selected books; Readarr still decides what to grab based on your quality profile and custom format scores.</p>
+            
+            <div class="alert alert-success">
+                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides and best practices for quality upgrades.
+            </div>
+            
+            <h4 id="upgrade-mode-comparison"><i class="fas fa-balance-scale" style="margin-right: 10px; color: #9b59b6;"></i>Cutoff Unmet vs Tags: Which Should I Use?</h4>
+            <p>Understanding the difference between these two modes will help you choose the right approach for your library:</p>
+            
+            <table>
+                <tr>
+                    <th>Feature</th>
+                    <th>Cutoff Unmet (Huntarr Standard)</th>
+                    <th>Tags (Upgradinatorr-style)</th>
+                </tr>
+                <tr>
+                    <td><strong>How It Works</strong></td>
+                    <td>Queries Readarr's <code>Wanted → Cutoff Unmet</code> list every cycle</td>
+                    <td>Searches books by authors WITHOUT the tag, then ADDS tag to author after processing</td>
+                </tr>
+                <tr>
+                    <td><strong>Re-processing</strong></td>
+                    <td>Same books appear in every cycle until they meet cutoff</td>
+                    <td>Once tagged, author's books are NEVER searched again (unless you manually remove tag)</td>
+                </tr>
+                <tr>
+                    <td><strong>Best For</strong></td>
+                    <td>Dynamic quality targets - continuously searching until perfect quality is found</td>
+                    <td>One-time library upgrade - systematically process entire library once</td>
+                </tr>
+                <tr>
+                    <td><strong>Indexer Impact</strong></td>
+                    <td>Higher - searches same books repeatedly if upgrades not found</td>
+                    <td>Lower - each author's books searched once, then marked complete</td>
+                </tr>
+                <tr>
+                    <td><strong>Progress Tracking</strong></td>
+                    <td>Based on cutoff status - books drop off list when upgraded</td>
+                    <td>Visual tags in Readarr UI - see which authors have been processed</td>
+                </tr>
+                <tr>
+                    <td><strong>Use Case Example</strong></td>
+                    <td>"Keep searching until every book reaches my quality target"</td>
+                    <td>"I just set up TRaSH guides - process my entire 500 author library once"</td>
+                </tr>
+                <tr>
+                    <td><strong>Stops When</strong></td>
+                    <td>Books meet quality cutoff or custom format score threshold</td>
+                    <td>Tag is applied to author (regardless of whether upgrades were found)</td>
+                </tr>
+            </table>
+            
+            <div class="alert alert-info">
+                <strong>📊 Example Scenario:</strong><br>
+                <strong>Cutoff Unmet:</strong> You have 300 books below cutoff from 100 authors. Huntarr searches 5 books per cycle, finds upgrades for 3. Next cycle, those 3 are gone (met cutoff), but the other 2 appear again along with 3 new ones from the remaining 295. This continues until all 300 meet cutoff or no more upgrades exist.<br><br>
+                <strong>Tags:</strong> You have 500 authors with no <code>upgradinatorr</code> tag. Huntarr searches 5 books per cycle (from different authors), tags those authors after processing (whether upgrades found or not). Next cycle searches books from 5 different authors. Eventually all 500 authors have been processed once and tagged - done forever.
+            </div>
+            
+            <div class="alert alert-warning">
+                <strong>⚠️ Important:</strong> With <strong>Tags mode</strong>, authors are marked as "processed" even if no upgrades were found for their books. If you want to re-process authors later (e.g., after adding new indexers), you must manually remove the tag in Readarr.
+            </div>
+            
+            <h3 id="custom-format-scores"><i class="fas fa-star" style="margin-right: 10px; color: #f1c40f;"></i>Custom Format Scores & Quality Upgrades</h3>
+            
+            <div class="alert alert-info">
+                <strong>📋 Readarr Configuration Required:</strong>
+                <ul style="margin-bottom: 0;">
+                    <li><strong>Readarr → Settings → Profiles → Quality Profile → Upgrade Until Custom Format Score</strong></li>
+                    <li>Set <strong>Upgrade Until Custom Format Score</strong> to at least <code>10000</code></li>
+                </ul>
+            </div>
+            
+            <h4>Why Custom Format Scores Matter</h4>
+            <p><strong>Huntarr does not decide what to upgrade—Readarr does.</strong> When Huntarr triggers a search for upgrades, Readarr evaluates the search results using your configured quality profile and custom format scores to determine whether a release is an upgrade worth grabbing.</p>
+            
+            <p><strong>Key Points:</strong></p>
+            <ul>
+                <li><strong>Quality Cutoff:</strong> The minimum quality level you're willing to accept (e.g., EPUB, AZW3, PDF)</li>
+                <li><strong>Custom Formats:</strong> Additional scoring criteria beyond basic quality (e.g., preferred release groups, edition preferences, retail vs. scan)</li>
+                <li><strong>Upgrade Until Custom Format Score:</strong> The score threshold at which Readarr stops considering upgrades. Setting this to 10000 (or higher) ensures Readarr will continue upgrading as long as better-scoring releases are found</li>
+            </ul>
+            
+            <p><strong>How It Works:</strong></p>
+            <ol>
+                <li>Huntarr identifies books eligible for upgrade (based on your chosen upgrade selection method)</li>
+                <li>Huntarr triggers a <strong>BookSearch</strong> command in Readarr</li>
+                <li>Readarr searches indexers and scores each result using your quality profile + custom formats</li>
+                <li>Readarr automatically grabs releases that score higher than your current file (up to your "Upgrade Until" threshold)</li>
+                <li>Without proper custom format scoring configured, Readarr may not grab upgrades even when better releases are available</li>
+            </ol>
+            
+            <div class="alert alert-success">
+                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides, recommended release group scores, and best practices for quality upgrades in Readarr.
+            </div>
+            
             <h3 id="search-limits"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Search Limits</h3>
             <p>Control how many items Huntarr processes per cycle to avoid overwhelming your indexers:</p>
             

@@ -48,6 +48,8 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
             "hunt_upgrade_items": 0,
             "hunt_missing_mode": "seasons_packs",
             "upgrade_mode": "seasons_packs",
+            "upgrade_selection_method": "cutoff",
+            "upgrade_tag": "upgradinatorr",
             "skip_future_episodes": True,
             "custom_tags": {
                 "missing": "huntarr-missing",
@@ -59,16 +61,22 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
         base_instance.update({
             "hunt_missing_movies": 1,
             "hunt_upgrade_movies": 0,
+            "upgrade_selection_method": "cutoff",
+            "upgrade_tag": "upgradinatorr",
         })
     elif app_type == "lidarr":
         base_instance.update({
             "hunt_missing_items": 1,
             "hunt_upgrade_items": 0,
+            "upgrade_selection_method": "cutoff",
+            "upgrade_tag": "upgradinatorr",
         })
     elif app_type == "readarr":
         base_instance.update({
             "hunt_missing_books": 1,
             "hunt_upgrade_books": 0,
+            "upgrade_selection_method": "cutoff",
+            "upgrade_tag": "upgradinatorr",
         })
     elif app_type in ["whisparr", "eros"]:
         base_instance.update({

@@ -152,13 +152,107 @@
             </ul>
             
             <h3 id="custom-format-scores"><i class="fas fa-star" style="margin-right: 10px; color: #f1c40f;"></i>Custom Format Scores (TRaSH / Upgrade Until Score)</h3>
-            <p><strong>Huntarr does not decide what to upgrade—Radarr does.</strong> Huntarr gets the list of movies that don't meet your cutoff from Radarr's <strong>Wanted → Cutoff Unmet</strong> API, then triggers the same <strong>MoviesSearch</strong> command as a manual search. Radarr runs the search, scores results with your quality profile (including custom formats), and grabs upgrades. So your quality profile and custom format scores are fully respected.</p>
-            <p>For <a href="https://trash-guides.info/Radarr/radarr-setup-quality-profiles/" target="_blank" rel="noopener">TRaSH Guides</a> and custom-format–based upgrades:</p>
+            
+            <div class="alert alert-info">
+                <strong>📋 Radarr Configuration Required:</strong>
+                <ul style="margin-bottom: 0;">
+                    <li><strong>Radarr → Settings → Profiles → Quality Profile → Upgrade Until Custom Format Score</strong></li>
+                    <li>Set <strong>Upgrade Until Custom Format Score</strong> to at least <code>10000</code></li>
+                </ul>
+            </div>
+            
+            <h4>Why Custom Format Scores Matter</h4>
+            <p><strong>Huntarr does not decide what to upgrade—Radarr does.</strong> When Huntarr triggers a search for upgrades, Radarr evaluates the search results using your configured quality profile and custom format scores to determine whether a release is an upgrade worth grabbing.</p>
+            
+            <p><strong>Key Points:</strong></p>
             <ul>
-                <li>In Radarr go to <strong>Settings → Profiles → Quality Profile</strong></li>
-                <li>Set <strong>Upgrade Until Custom Format Score</strong> to at least <strong>10000</strong> (or your target). Radarr will then treat "cutoff unmet" as "below this custom format score" and include those movies in Wanted → Cutoff Unmet.</li>
+                <li><strong>Quality Cutoff:</strong> The minimum quality level you're willing to accept (e.g., 1080p Bluray, 2160p WEB-DL)</li>
+                <li><strong>Custom Formats:</strong> Additional scoring criteria beyond basic quality (e.g., HDR formats, audio codecs, preferred release groups, streaming service tiers)</li>
+                <li><strong>Upgrade Until Custom Format Score:</strong> The score threshold at which Radarr stops considering upgrades. Setting this to 10000 (or higher) ensures Radarr will continue upgrading as long as better-scoring releases are found</li>
             </ul>
-            <p>Same requirement as tools like <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr</a>: the *arr app must have this set so it knows to upgrade by custom format score. Huntarr only triggers the search; Radarr applies your scores and picks the release.</p>
+            
+            <p><strong>How It Works:</strong></p>
+            <ol>
+                <li>Huntarr retrieves movies from Radarr's <strong>Wanted → Cutoff Unmet</strong> API (movies below your quality cutoff or custom format score threshold)</li>
+                <li>Huntarr triggers a <strong>MoviesSearch</strong> command in Radarr (same as a manual search)</li>
+                <li>Radarr searches indexers and scores each result using your quality profile + custom formats</li>
+                <li>Radarr automatically grabs releases that score higher than your current file (up to your "Upgrade Until" threshold)</li>
+                <li>Without proper custom format scoring configured, Radarr may not grab upgrades even when better releases are available</li>
+            </ol>
+            
+            <p>Same requirement as tools like <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr</a>: the *arr app must have this configured so it knows to upgrade by custom format score. Huntarr only triggers the search; Radarr applies your scores and picks the release.</p>
+            
+            <div class="alert alert-success">
+                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/Radarr/radarr-setup-quality-profiles/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides, recommended scores for HDR formats, DV, audio codecs, and best practices for quality upgrades in Radarr.
+            </div>
+            
+            <h3 id="upgrade-selection-method"><i class="fas fa-list-check" style="margin-right: 10px; color: #2ecc71;"></i>Upgrade Selection Method</h3>
+            <p>You can choose how Huntarr selects which movies to consider for upgrades:</p>
+            <ul>
+                <li><strong>Cutoff unmet (default):</strong> Uses Radarr's <strong>Wanted → Cutoff Unmet</strong> list. Only movies that don't meet your quality/custom-format cutoff are eligible. Same behavior as before.</li>
+                <li><strong>Tags (Upgradinatorr-style):</strong> Huntarr finds movies that <strong>DON'T</strong> have your specified tag (e.g. <code>upgradinatorr</code>), searches for upgrades, then <strong>ADDS</strong> the tag after processing to mark them as complete. This matches <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr's</a> behavior: the tag tracks which movies have already been processed, not which ones to search. The tag is automatically created in Radarr if it doesn't exist.</li>
+            </ul>
+            <p>In both cases, Huntarr triggers <strong>MoviesSearch</strong> for the selected movies; Radarr still decides what to grab based on your quality profile and custom format scores.</p>
+            
+            <div class="alert alert-success">
+                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides and best practices for quality upgrades.
+            </div>
+            
+            <h4 id="upgrade-mode-comparison"><i class="fas fa-balance-scale" style="margin-right: 10px; color: #9b59b6;"></i>Cutoff Unmet vs Tags: Which Should I Use?</h4>
+            <p>Understanding the difference between these two modes will help you choose the right approach for your library:</p>
+            
+            <table>
+                <tr>
+                    <th>Feature</th>
+                    <th>Cutoff Unmet (Huntarr Standard)</th>
+                    <th>Tags (Upgradinatorr-style)</th>
+                </tr>
+                <tr>
+                    <td><strong>How It Works</strong></td>
+                    <td>Queries Radarr's <code>Wanted → Cutoff Unmet</code> list every cycle</td>
+                    <td>Searches movies WITHOUT the tag, then ADDS tag after processing</td>
+                </tr>
+                <tr>
+                    <td><strong>Re-processing</strong></td>
+                    <td>Same movies appear in every cycle until they meet cutoff</td>
+                    <td>Once tagged, movies are NEVER searched again (unless you manually remove tag)</td>
+                </tr>
+                <tr>
+                    <td><strong>Best For</strong></td>
+                    <td>Dynamic quality targets - continuously searching until perfect quality is found</td>
+                    <td>One-time library upgrade - systematically process entire library once</td>
+                </tr>
+                <tr>
+                    <td><strong>Indexer Impact</strong></td>
+                    <td>Higher - searches same movies repeatedly if upgrades not found</td>
+                    <td>Lower - each movie searched once, then marked complete</td>
+                </tr>
+                <tr>
+                    <td><strong>Progress Tracking</strong></td>
+                    <td>Based on cutoff status - movies drop off list when upgraded</td>
+                    <td>Visual tags in Radarr UI - see which movies have been processed</td>
+                </tr>
+                <tr>
+                    <td><strong>Use Case Example</strong></td>
+                    <td>"Keep searching until every movie reaches my quality target"</td>
+                    <td>"I just set up TRaSH guides - process my entire 2000 movie library once"</td>
+                </tr>
+                <tr>
+                    <td><strong>Stops When</strong></td>
+                    <td>Movie meets quality cutoff or custom format score threshold</td>
+                    <td>Tag is applied (regardless of whether upgrade was found)</td>
+                </tr>
+            </table>
+            
+            <div class="alert alert-info">
+                <strong>📊 Example Scenario:</strong><br>
+                <strong>Cutoff Unmet:</strong> You have 100 movies below cutoff. Huntarr searches 5 per cycle, finds upgrades for 3. Next cycle, those 3 are gone (met cutoff), but the other 2 appear again along with 3 new ones from the remaining 95. This continues until all 100 meet cutoff or no more upgrades exist.<br><br>
+                <strong>Tags:</strong> You have 2000 movies with no <code>upgradinatorr</code> tag. Huntarr searches 5 per cycle, tags all 5 (whether upgrades found or not). Next cycle searches 5 different movies. After 400 cycles, all 2000 movies have been searched once and tagged - done forever.
+            </div>
+            
+            <div class="alert alert-warning">
+                <strong>⚠️ Important:</strong> With <strong>Tags mode</strong>, movies are marked as "processed" even if no upgrade was found. If you want to re-process movies later (e.g., after adding new indexers), you must manually remove the tag in Radarr.
+            </div>
             
             <h3 id="search-limits"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Search Limits</h3>
             <p>Control how many items Huntarr processes per cycle to avoid overwhelming your indexers:</p>

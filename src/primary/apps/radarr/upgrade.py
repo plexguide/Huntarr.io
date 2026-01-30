@@ -89,6 +89,10 @@ def process_cutoff_upgrades(
     command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
     
     instance_name = app_settings.get("instance_name", app_settings.get("name", "Radarr Default"))
+    upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()
+    if upgrade_selection_method not in ("cutoff", "tags"):
+        upgrade_selection_method = "cutoff"
+    upgrade_tag = (app_settings.get("upgrade_tag") or "").strip()
  
     quality_profiles = radarr_api.get_quality_profiles(api_url, api_key, api_timeout)
  
@@ -114,16 +118,29 @@ def process_cutoff_upgrades(
     if no_upgrade_profiles:
         radarr_logger.info(f"Quality profiles without upgrade allowed: {', '.join(no_upgrade_profiles)}")
  
-    radarr_logger.info("Retrieving movies eligible for cutoff upgrade...")
-    upgrade_eligible_data = radarr_api.get_cutoff_unmet_movies_random_page(
-        api_url, api_key, api_timeout, monitored_only, count=50
-    )
- 
-    if not upgrade_eligible_data:
-        radarr_logger.info("No movies found eligible for upgrade or error retrieving them.")
-        return False
- 
-    radarr_logger.info(f"Found {len(upgrade_eligible_data)} movies below quality cutoff.")
+    if upgrade_selection_method == "tags":
+        if not upgrade_tag:
+            radarr_logger.warning("Upgrade selection method is 'Tags' but no upgrade tag is configured. Skipping.")
+            return False
+        radarr_logger.info(f"Retrieving movies WITHOUT tag \"{upgrade_tag}\" (Upgradinatorr-style: tag tracks processed)...")
+        upgrade_eligible_data = radarr_api.get_movies_without_tag(
+            api_url, api_key, api_timeout, upgrade_tag, monitored_only
+        )
+        if upgrade_eligible_data is None:
+            return False
+        if not upgrade_eligible_data:
+            radarr_logger.info(f"No movies found without the tag \"{upgrade_tag}\" (all have been processed).")
+            return False
+        radarr_logger.info(f"Found {len(upgrade_eligible_data)} movies without tag \"{upgrade_tag}\".")
+    else:
+        radarr_logger.info("Retrieving movies eligible for cutoff upgrade...")
+        upgrade_eligible_data = radarr_api.get_cutoff_unmet_movies_random_page(
+            api_url, api_key, api_timeout, monitored_only, count=50
+        )
+        if not upgrade_eligible_data:
+            radarr_logger.info("No movies found eligible for upgrade or error retrieving them.")
+            return False
+        radarr_logger.info(f"Found {len(upgrade_eligible_data)} movies below quality cutoff.")
  
     upgrade_allowed_movies = []
     filtered_count = 0
@@ -283,7 +300,17 @@ def process_cutoff_upgrades(
             add_processed_id("radarr", instance_name, str(movie_id))
             increment_stat_only("radarr", "upgraded", 1, instance_name)
             
-            # Tag the movie if enabled
+            # For tag-based method: add the upgrade tag to mark as processed (Upgradinatorr-style)
+            if upgrade_selection_method == "tags" and upgrade_tag:
+                try:
+                    tag_id = radarr_api.get_or_create_tag(api_url, api_key, api_timeout, upgrade_tag)
+                    if tag_id:
+                        radarr_api.add_tag_to_movie(api_url, api_key, api_timeout, movie_id, tag_id)
+                        radarr_logger.debug(f"Added upgrade tag '{upgrade_tag}' to movie {movie_id} to mark as processed")
+                except Exception as e:
+                    radarr_logger.warning(f"Failed to add upgrade tag '{upgrade_tag}' to movie {movie_id}: {e}")
+            
+            # Also tag with huntarr-upgraded if enabled (separate tracking feature)
             if tag_processed_items:
                 from src.primary.settings_manager import get_custom_tag
                 custom_tag = get_custom_tag("radarr", "upgrade", "huntarr-upgraded")
