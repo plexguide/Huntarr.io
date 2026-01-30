@@ -5,7 +5,29 @@
         // Add data-app-type attribute to container
         container.setAttribute("data-app-type", "notifications");
 
-        container.innerHTML = `
+        const saveButtonTopHtml = `
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="notifications-save-button" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        `;
+
+        container.innerHTML = saveButtonTopHtml + `
                 <div class="settings-group" style="
                     background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
                     border: 2px solid rgba(90, 109, 137, 0.3);
@@ -114,25 +136,6 @@
                             <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                         </label>
                         <p class="setting-help" style="margin-left: -3ch !important;">Include app name (Sonarr, Radarr, etc.) in notification messages</p>
-                    </div>
-                    <div style="margin-top: 20px;">
-                        <button type="button" id="notifications-save-button" disabled style="
-                            background: #6b7280;
-                            color: #9ca3af;
-                            border: 1px solid #4b5563;
-                            padding: 8px 16px;
-                            border-radius: 6px;
-                            font-size: 14px;
-                            font-weight: 500;
-                            cursor: not-allowed;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                            transition: all 0.2s ease;
-                        ">
-                            <i class="fas fa-save"></i>
-                            Save Changes
-                        </button>
                     </div>
                 </div>
             `;
@@ -315,11 +318,12 @@
           );
 
           if (hasChanges) {
-            // Red enabled state
+            // Red/white bold enabled state
             saveButton.disabled = false;
             saveButton.style.background = "#dc2626";
             saveButton.style.color = "#ffffff";
-            saveButton.style.borderColor = "#dc2626";
+            saveButton.style.borderColor = "#b91c1c";
+            saveButton.style.fontWeight = "600";
             saveButton.style.cursor = "pointer";
             console.log("[SettingsForms] Notifications save button enabled (red)");
 
@@ -331,6 +335,7 @@
             saveButton.style.background = "#6b7280";
             saveButton.style.color = "#9ca3af";
             saveButton.style.borderColor = "#4b5563";
+            saveButton.style.fontWeight = "500";
             saveButton.style.cursor = "not-allowed";
             console.log(
               "[SettingsForms] Notifications save button disabled (grey)"

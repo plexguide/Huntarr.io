@@ -432,6 +432,9 @@ window.SettingsForms = {
             safeInstance.hunt_missing_items = instance.hunt_missing_books !== undefined ? instance.hunt_missing_books : 1;
             safeInstance.hunt_upgrade_items = instance.hunt_upgrade_books !== undefined ? instance.hunt_upgrade_books : 0;
         }
+
+        const devMode = !!(window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general && window.huntarrUI.originalSettings.general.dev_mode);
+        const sleepMin = devMode ? 1 : 10;
         
         let html = `
             <style>
@@ -735,9 +738,9 @@ window.SettingsForms = {
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label>Sleep Duration (Minutes)</label>
-                            <input type="number" id="editor-sleep-duration" value="${Math.round((safeInstance.sleep_duration || 900) / 60)}" min="10" max="1440">
+                            <input type="number" id="editor-sleep-duration" value="${Math.round((safeInstance.sleep_duration || 900) / 60)}" min="${sleepMin}" max="1440">
                         </div>
-                        <p class="editor-help-text">Time in minutes between processing cycles for this instance (minimum 10 minutes)</p>
+                        <p class="editor-help-text">Time in minutes between processing cycles (minimum ${sleepMin} minute${sleepMin === 1 ? '' : 's'}${devMode ? '; dev mode' : ''})</p>
                     </div>
                     
                     <div class="editor-field-group">
@@ -1070,16 +1073,25 @@ window.SettingsForms = {
                 window.huntarrUI.showNotification(successMessage, 'success');
             }
             
-            // Re-sync memory again just to be safe
+            // Re-sync memory. For general, use API response so dev_mode is current (indicator updates).
             if (window.huntarrUI && window.huntarrUI.originalSettings) {
-                window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
+                if (appType === 'general' && data && data.general) {
+                    window.huntarrUI.originalSettings.general = JSON.parse(JSON.stringify(data.general));
+                } else {
+                    window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
+                }
             }
             
-            // Target the form inside the app panel (e.g. #sonarrApps > form) so we never update wrong element
-            const appPanel = document.getElementById(appType + 'Apps');
-            let container = appPanel ? appPanel.querySelector('form.settings-form') : null;
+            let container = null;
+            if (appType === 'general') {
+                container = document.getElementById('generalSettings');
+            }
             if (!container) {
-                container = document.querySelector(`form[data-app-type="${appType}"]`);
+                const appPanel = document.getElementById(appType + 'Apps');
+                container = appPanel ? appPanel.querySelector('form.settings-form') : null;
+            }
+            if (!container) {
+                container = document.querySelector(`form[data-app-type="${appType}"]`) || document.querySelector(`[data-app-type="${appType}"]`);
             }
             if (container) {
                 // Use latest settings from global state so re-render always has current data (e.g. after delete)
@@ -1869,6 +1881,7 @@ window.SettingsForms = {
             settings.auth_mode = authMode;
             settings.ssl_verify = getInputValue("#ssl_verify", true);
             settings.base_url = getInputValue("#base_url", "");
+            settings.dev_key = getInputValue("#dev_key", "");
 
             const notificationsContainer = document.querySelector("#notificationsContainer");
             const getNotificationInputValue = (id, defaultValue) => {

@@ -8,7 +8,29 @@
 
         container.setAttribute("data-app-type", "general");
 
-        container.innerHTML = `
+        const saveButtonTopHtml = `
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="settings-save-button" disabled style="
+                    background: #6b7280;
+                    color: #9ca3af;
+                    border: 1px solid #4b5563;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: not-allowed;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                ">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        `;
+
+        container.innerHTML = saveButtonTopHtml + `
             <div class="settings-group" style="
                 background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
                 border: 2px solid rgba(90, 109, 137, 0.3);
@@ -136,6 +158,22 @@
                     <input type="text" id="base_url" value="${settings.base_url || ""}" placeholder="/huntarr">
                     <p class="setting-help" style="margin-left: -3ch !important;">Base URL path for reverse proxy. Requires restart.</p>
                 </div>
+                <div class="setting-item">
+                    <label for="dev_key">Huntarr Dev Key:</label>
+                    <input type="password" id="dev_key" value="${settings.dev_key || ""}" placeholder="Enter dev key" style="width: 300px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
+                    <p class="setting-help" style="margin-left: -3ch !important;">Enter development key to enable dev mode (allows per-instance sleep down to 1 minute).</p>
+                </div>
+                <div class="setting-item" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span style="color: #94a3b8;">Dev mode:</span>
+                    <span id="dev-mode-indicator" class="dev-mode-badge" style="
+                        padding: 4px 12px;
+                        border-radius: 6px;
+                        font-size: 13px;
+                        font-weight: 600;
+                        ${(settings.dev_mode === true) ? "background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4);" : "background: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.4);"}
+                    ">${(settings.dev_mode === true) ? "ON" : "OFF"}</span>
+                    <span class="setting-help" style="margin: 0; color: #64748b;">${(settings.dev_mode === true) ? "Allows per-instance sleep as low as 1 minute." : "Valid key + save to enable."}</span>
+                </div>
             </div>
 
             <div class="settings-group" style="
@@ -168,26 +206,6 @@
                     <p class="setting-help" style="margin-left: -3ch !important;">Display support section</p>
                 </div>
             </div>
-            
-            <div style="margin-top: 20px;">
-                <button type="button" id="settings-save-button" disabled style="
-                    background: #6b7280;
-                    color: #9ca3af;
-                    border: 1px solid #4b5563;
-                    padding: 8px 16px;
-                    border-radius: 6px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    cursor: not-allowed;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    transition: all 0.2s ease;
-                ">
-                    <i class="fas fa-save"></i>
-                    Save Changes
-                </button>
-            </div>
         `;
 
         if (window.SettingsForms.setupSettingsManualSave) {
@@ -196,7 +214,8 @@
     };
 
     window.SettingsForms.setupSettingsManualSave = function(container, originalSettings = {}) {
-        const saveButton = container.querySelector("#settings-save-button");
+        let saveButton = container.querySelector("#settings-save-button");
+        if (!saveButton) saveButton = document.getElementById("settings-save-button");
         if (!saveButton) return;
 
         saveButton.disabled = true;
@@ -209,21 +228,29 @@
             window.SettingsForms.removeUnsavedChangesWarning();
         }
 
+        const getLiveSaveButton = () => container.querySelector("#settings-save-button") || document.getElementById("settings-save-button");
         const updateSaveButtonState = (changesDetected) => {
             hasChanges = changesDetected;
             window.settingsUnsavedChanges = changesDetected;
-
+            const btn = getLiveSaveButton();
+            if (!btn) return;
             if (hasChanges) {
-                saveButton.disabled = false;
-                saveButton.style.background = "#dc2626";
-                saveButton.style.cursor = "pointer";
+                btn.disabled = false;
+                btn.style.background = "#dc2626";
+                btn.style.color = "#ffffff";
+                btn.style.borderColor = "#b91c1c";
+                btn.style.fontWeight = "600";
+                btn.style.cursor = "pointer";
                 if (window.SettingsForms.addUnsavedChangesWarning) {
                     window.SettingsForms.addUnsavedChangesWarning();
                 }
             } else {
-                saveButton.disabled = true;
-                saveButton.style.background = "#6b7280";
-                saveButton.style.cursor = "not-allowed";
+                btn.disabled = true;
+                btn.style.background = "#6b7280";
+                btn.style.color = "#9ca3af";
+                btn.style.borderColor = "#4b5563";
+                btn.style.fontWeight = "500";
+                btn.style.cursor = "not-allowed";
                 if (window.SettingsForms.removeUnsavedChangesWarning) {
                     window.SettingsForms.removeUnsavedChangesWarning();
                 }
@@ -238,16 +265,16 @@
 
         newSaveButton.addEventListener("click", () => {
             if (!hasChanges) return;
+            const liveBtn = getLiveSaveButton();
+            if (liveBtn) {
+                liveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                liveBtn.disabled = true;
+            }
 
-            newSaveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            newSaveButton.disabled = true;
-
-            // Collect data using the centralized getFormSettings
             const settings = window.SettingsForms.getFormSettings(container, "general");
-
             window.SettingsForms.saveAppSettings("general", settings);
-            
-            newSaveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+
+            if (liveBtn) liveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
             updateSaveButtonState(false);
         });
     };

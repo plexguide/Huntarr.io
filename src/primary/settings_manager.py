@@ -8,8 +8,12 @@ Supports default configurations for different Arr applications
 import os
 import json
 import logging
+import hashlib
 import time
 from typing import Dict, Any, Optional, List
+
+# SHA-256 hash of the valid Huntarr dev key (constant only; plaintext never stored)
+_DEV_KEY_HASH = "81fc4fcfa6ec4a7a19c9aafe60eea0022ef2c5d05f78484b77cf6578d983f6d3"
 
 # Create a simple logger for settings_manager
 logging.basicConfig(level=logging.INFO)
@@ -185,12 +189,14 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
         'hunt_missing_movies', 'hunt_upgrade_movies', 'hunt_missing_books', 'hunt_upgrade_books'
     ]
     
-    # Special validation for sleep_duration (minimum 600 seconds = 10 minutes)
+    # Sleep duration: min 600s (10 min) normally; min 60s (1 min) when dev mode (allows 1-min, does not force it)
+    _dev = is_dev_mode()
+    _sleep_min = 60 if _dev else 600
     if 'sleep_duration' in settings_data:
         original_value = settings_data['sleep_duration']
-        if isinstance(original_value, (int, float)) and original_value < 600:
-            settings_data['sleep_duration'] = 600
-            settings_logger.warning(f"Sleep duration for {app_name} was {original_value} seconds, automatically set to minimum allowed value of 600 seconds (10 minutes)")
+        if isinstance(original_value, (int, float)) and original_value < _sleep_min:
+            settings_data['sleep_duration'] = _sleep_min
+            settings_logger.warning(f"Sleep duration for {app_name} was {original_value}s, set to minimum {_sleep_min}s" + (" (dev mode)" if _dev else " (10 minutes)"))
     
     for field in numeric_fields:
         if field in settings_data:
@@ -203,12 +209,11 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
     if 'instances' in settings_data and isinstance(settings_data['instances'], list):
         for i, instance in enumerate(settings_data['instances']):
             if isinstance(instance, dict):
-                # Special validation for sleep_duration in instances
                 if 'sleep_duration' in instance:
                     original_value = instance['sleep_duration']
-                    if isinstance(original_value, (int, float)) and original_value < 600:
-                        instance['sleep_duration'] = 600
-                        settings_logger.warning(f"Sleep duration for {app_name} instance {i+1} was {original_value} seconds, automatically set to minimum allowed value of 600 seconds (10 minutes)")
+                    if isinstance(original_value, (int, float)) and original_value < _sleep_min:
+                        instance['sleep_duration'] = _sleep_min
+                        settings_logger.warning(f"Sleep duration for {app_name} instance {i+1} was {original_value}s, set to minimum {_sleep_min}s" + (" (dev mode)" if _dev else " (10 minutes)"))
                 # Enforce hourly_cap max 400 per instance
                 if 'hourly_cap' in instance:
                     original_cap = instance['hourly_cap']
@@ -270,14 +275,29 @@ def get_api_key(app_name: str) -> Optional[str]:
     """Get the API Key for a specific app."""
     return get_setting(app_name, "api_key", "")
 
+
+def is_dev_mode() -> bool:
+    """Return True if Huntarr dev mode is enabled (valid dev key saved in general settings)."""
+    general = load_settings("general", use_cache=True)
+    key = (general.get("dev_key") or "").strip()
+    if not key:
+        return False
+    return hashlib.sha256(key.encode()).hexdigest() == _DEV_KEY_HASH
+
+
 def get_all_settings() -> Dict[str, Dict[str, Any]]:
     """Load settings for all known apps."""
     all_settings = {}
     for app_name in KNOWN_APP_TYPES:
-        # Only include apps if their config exists or can be created from defaults
         settings = load_settings(app_name)
-        if settings: # Only add if settings were successfully loaded
-             all_settings[app_name] = settings
+        if not settings:
+            continue
+        if app_name == "general":
+            s = dict(settings)
+            s["dev_mode"] = is_dev_mode()
+            all_settings[app_name] = s
+        else:
+            all_settings[app_name] = settings
     return all_settings
 
 def get_configured_apps() -> List[str]:

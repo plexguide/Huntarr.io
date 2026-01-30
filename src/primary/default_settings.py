@@ -186,6 +186,7 @@ GENERAL_DEFAULTS = {
     "minimum_download_queue_size": -1,
     "ssl_verify": True,
     "base_url": "",
+    "dev_key": "",
     "log_rotation_enabled": True,
     "log_max_size_mb": 50,
     "log_backup_count": 5,
