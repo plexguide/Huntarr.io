@@ -754,7 +754,7 @@ window.SettingsForms = {
                             <label>API Cap - Hourly</label>
                             <input type="number" id="editor-hourly-cap" value="${safeInstance.hourly_cap !== undefined ? safeInstance.hourly_cap : 20}" min="1" max="400">
                         </div>
-                        <p class="editor-help-text">Maximum API requests per hour for this instance (20-50 recommended, max 400)</p>
+                        <p class="editor-help-text">Maximum API requests per hour for this instance (10-20 recommended, max 400)</p>
                     </div>
                     
                     <div class="editor-field-group">
