@@ -12,6 +12,8 @@ window.CycleCountdown = (function() {
     const runningCycles = {};
     // Track instances that have a pending reset (show "Pending Reset" until cycle ends and sleep starts)
     const pendingResets = {};
+    // Per-instance cycle activity (e.g. "Season Search (360/600)" or "Processing missing") when running
+    const cycleActivities = {};
     // List of apps to track
     const trackedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'whisparr-v3', 'eros', 'swaparr'];
     
@@ -323,13 +325,18 @@ window.CycleCountdown = (function() {
                         Object.keys(pendingResets).filter(function(k) { return k === app || k.startsWith(app + '-'); }).forEach(function(k) { delete pendingResets[k]; });
                         for (const instanceName in appData.instances) {
                             const inst = appData.instances[instanceName];
-                            if (!inst || !inst.next_cycle) continue;
-                            const nextCycleTime = new Date(inst.next_cycle);
-                            if (isNaN(nextCycleTime.getTime())) continue;
+                            if (!inst) continue;
+                            
                             const key = stateKey(app, instanceName);
-                            nextCycleTimes[key] = nextCycleTime;
+                            const nextCycleTime = inst.next_cycle ? new Date(inst.next_cycle) : null;
+                            
+                            if (nextCycleTime && !isNaN(nextCycleTime.getTime())) {
+                                nextCycleTimes[key] = nextCycleTime;
+                            }
+                            
                             runningCycles[key] = inst.cyclelock !== undefined ? inst.cyclelock : true;
                             pendingResets[key] = inst.pending_reset === true;
+                            cycleActivities[key] = inst.cycle_activity || null;
                             dataProcessed = true;
                         }
                         getTimerElements(app).forEach(timerElement => {
@@ -345,13 +352,13 @@ window.CycleCountdown = (function() {
                         continue;
                     }
                     // Single-app format: { next_cycle, cyclelock, pending_reset }
-                    if (appData.next_cycle) {
-                        const nextCycleTime = new Date(appData.next_cycle);
-                        if (isNaN(nextCycleTime.getTime())) {
-                            console.warn(`[CycleCountdown] Invalid date for ${app}:`, appData.next_cycle);
-                            continue;
+                    if (appData.next_cycle || appData.cyclelock !== undefined) {
+                        const nextCycleTime = appData.next_cycle ? new Date(appData.next_cycle) : null;
+                        
+                        if (nextCycleTime && !isNaN(nextCycleTime.getTime())) {
+                            nextCycleTimes[app] = nextCycleTime;
                         }
-                        nextCycleTimes[app] = nextCycleTime;
+                        
                         pendingResets[app] = appData.pending_reset === true;
                         getTimerElements(app).forEach(timerElement => {
                             const timerValue = timerElement.querySelector('.timer-value');
@@ -518,7 +525,8 @@ window.CycleCountdown = (function() {
                 return;
             }
             if (isRunning) {
-                timerValue.textContent = 'Running Cycle';
+                const activity = cycleActivities[key];
+                timerValue.textContent = (activity && String(activity).trim()) ? ('Running - ' + activity) : 'Running Cycle';
                 timerValue.classList.remove('refreshing-state');
                 timerValue.classList.add('running-state');
                 timerValue.style.color = '#00ff88';

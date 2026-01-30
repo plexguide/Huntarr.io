@@ -252,10 +252,10 @@ def app_specific_loop(app_type: str) -> None:
         enabled_instances = []
         
         try:
-            from src.primary.cycle_tracker import start_cycle, end_cycle
+            from src.primary.cycle_tracker import start_cycle, end_cycle, set_cycle_activity, clear_cycle_activity
             from src.primary.utils.clean_logger import set_instance_log_context, clear_instance_log_context, set_instance_name_for_cap
         except Exception:
-            start_cycle = end_cycle = None
+            start_cycle = end_cycle = set_cycle_activity = clear_cycle_activity = None
             set_instance_log_context = clear_instance_log_context = set_instance_name_for_cap = None
 
         def _has_pending_reset(atype: str, iname: str) -> bool:
@@ -438,6 +438,8 @@ def app_specific_loop(app_type: str) -> None:
             # --- Process Missing --- #
             if hunt_missing_enabled and process_missing:
                 try:
+                    if set_cycle_activity:
+                        set_cycle_activity(app_type, instance_name, "Processing missing")
                     # Extract settings for direct function calls
                     api_url = combined_settings.get("api_url", "").strip()
                     api_key = combined_settings.get("api_key", "").strip()
@@ -481,6 +483,9 @@ def app_specific_loop(app_type: str) -> None:
                         processed_any_this = True
                 except Exception as e:
                     app_logger.error(f"Error during missing processing for {instance_name}: {e}", exc_info=True)
+                finally:
+                    if clear_cycle_activity:
+                        clear_cycle_activity(app_type, instance_name)
                 if _has_pending_reset(app_type, instance_name):
                     app_logger.info(f"Reset requested for {app_type} instance {instance_name}; ending cycle after missing.")
                     if end_cycle:
@@ -492,6 +497,8 @@ def app_specific_loop(app_type: str) -> None:
             # --- Process Upgrades --- #
             if hunt_upgrade_enabled and process_upgrades:
                 try:
+                    if set_cycle_activity:
+                        set_cycle_activity(app_type, instance_name, "Processing upgrades")
                     # Extract settings for direct function calls (only for Sonarr)
                     if app_type == "sonarr":
                         api_url = combined_settings.get("api_url", "").strip()
@@ -531,6 +538,9 @@ def app_specific_loop(app_type: str) -> None:
                         processed_any_this = True
                 except Exception as e:
                     app_logger.error(f"Error during upgrade processing for {instance_name}: {e}", exc_info=True)
+                finally:
+                    if clear_cycle_activity:
+                        clear_cycle_activity(app_type, instance_name)
                 if _has_pending_reset(app_type, instance_name):
                     app_logger.info(f"Reset requested for {app_type} instance {instance_name}; ending cycle after upgrades.")
                     if end_cycle:
@@ -563,7 +573,6 @@ def app_specific_loop(app_type: str) -> None:
                 pass
             if clear_instance_log_context:
                 clear_instance_log_context()
-
             return (processed_any_this, instance_name, False, True)
 
         # Run all instances in parallel (each has its own settings; they do not run in order)

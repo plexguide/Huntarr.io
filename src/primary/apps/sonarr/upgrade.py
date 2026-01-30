@@ -5,7 +5,7 @@ Sonarr cutoff upgrade processing module for Huntarr
 
 import time
 import random
-from typing import List, Dict, Any, Set, Callable, Union
+from typing import List, Dict, Any, Set, Callable, Union, Optional, Optional
 from src.primary.utils.logger import get_logger
 from src.primary.apps.sonarr import api as sonarr_api
 from src.primary.stats_manager import increment_stat, check_hourly_cap_exceeded
@@ -240,7 +240,8 @@ def process_upgrade_seasons_mode(
             # Wait for search command to complete
             if wait_for_command(
                 api_url, api_key, api_timeout, search_command_id,
-                command_wait_delay, command_wait_attempts, "Episode Upgrade Search", stop_check
+                command_wait_delay, command_wait_attempts, "Episode Upgrade Search", stop_check,
+                instance_name=instance_name
             ):
                 # Mark as processed if search command completed successfully
                 processed_any = True
@@ -432,7 +433,8 @@ def process_upgrade_shows_mode(
             # Wait for search command to complete
             if wait_for_command(
                 api_url, api_key, api_timeout, search_command_id,
-                command_wait_delay, command_wait_attempts, "Episode Upgrade Search", stop_check
+                command_wait_delay, command_wait_attempts, "Episode Upgrade Search", stop_check,
+                instance_name=instance_name
             ):
                 # Mark as processed if search command completed successfully
                 processed_any = True
@@ -611,7 +613,8 @@ def process_upgrade_episodes_mode(
             if command_wait_delay > 0 and command_wait_attempts > 0:
                 if wait_for_command(
                     api_url, api_key, api_timeout, search_successful,
-                    command_wait_delay, command_wait_attempts, "Episode Upgrade Search", stop_check
+                    command_wait_delay, command_wait_attempts, "Episode Upgrade Search", stop_check,
+                    instance_name=instance_name
                 ):
                     processed_any = True
                     processed_count += 1
@@ -665,7 +668,8 @@ def wait_for_command(
     wait_delay: int,
     max_attempts: int,
     command_name: str = "Command",
-    stop_check: Callable[[], bool] = lambda: False
+    stop_check: Callable[[], bool] = lambda: False,
+    instance_name: Optional[str] = None
 ) -> bool:
     """
     Wait for a Sonarr command to complete or timeout.
@@ -679,44 +683,58 @@ def wait_for_command(
         max_attempts: Maximum number of status check attempts
         command_name: Name of the command (for logging)
         stop_check: Optional function to check if operation should be aborted
+        instance_name: Optional instance name for UI cycle activity (e.g. "Episode Upgrade Search (360/600)")
         
     Returns:
         True if command completed successfully, False otherwise
     """
-    if wait_delay <= 0 or max_attempts <= 0:
-        sonarr_logger.debug(f"Not waiting for command to complete (wait_delay={wait_delay}, max_attempts={max_attempts})")
-        return True  # Return as if successful since we're not checking
-    
-    sonarr_logger.debug(f"Waiting for {command_name} to complete (command ID: {command_id}). Checking every {wait_delay}s for up to {max_attempts} attempts")
-    
-    # Wait for command completion
-    attempts = 0
-    while attempts < max_attempts:
-        if stop_check():
-            sonarr_logger.info(f"Stopping wait for {command_name} due to stop request")
-            return False
+    try:
+        if wait_delay <= 0 or max_attempts <= 0:
+            sonarr_logger.debug(f"Not waiting for command to complete (wait_delay={wait_delay}, max_attempts={max_attempts})")
+            return True  # Return as if successful since we're not checking
+        
+        sonarr_logger.debug(f"Waiting for {command_name} to complete (command ID: {command_id}). Checking every {wait_delay}s for up to {max_attempts} attempts")
+        
+        # Wait for command completion
+        attempts = 0
+        while attempts < max_attempts:
+            if stop_check():
+                sonarr_logger.info(f"Stopping wait for {command_name} due to stop request")
+                return False
+            if instance_name:
+                try:
+                    from src.primary.cycle_tracker import set_cycle_activity
+                    set_cycle_activity("sonarr", instance_name, f"{command_name} ({attempts+1}/{max_attempts})")
+                except Exception:
+                    pass
+            command_status = sonarr_api.get_command_status(api_url, api_key, api_timeout, command_id)
             
-        command_status = sonarr_api.get_command_status(api_url, api_key, api_timeout, command_id)
-        
-        if command_status is None: 
-            sonarr_logger.warning(
-                f"Failed to get status for {command_name} (ID: {command_id}), attempt {attempts+1}. "
-                f"Command may have already completed or the ID is no longer valid."
-            )
-            return False # Stop polling if command ID is not found or error occurs
+            if command_status is None: 
+                sonarr_logger.warning(
+                    f"Failed to get status for {command_name} (ID: {command_id}), attempt {attempts+1}. "
+                    f"Command may have already completed or the ID is no longer valid."
+                )
+                return False # Stop polling if command ID is not found or error occurs
+                
+            status = command_status.get('status')
+            if status == 'completed':
+                sonarr_logger.debug(f"Sonarr {command_name} (ID: {command_id}) completed successfully")
+                return True
+            elif status in ['failed', 'aborted']:
+                sonarr_logger.warning(f"Sonarr {command_name} (ID: {command_id}) {status}")
+                return False
             
-        status = command_status.get('status')
-        if status == 'completed':
-            sonarr_logger.debug(f"Sonarr {command_name} (ID: {command_id}) completed successfully")
-            return True
-        elif status in ['failed', 'aborted']:
-            sonarr_logger.warning(f"Sonarr {command_name} (ID: {command_id}) {status}")
-            return False
+            sonarr_logger.debug(f"Sonarr {command_name} (ID: {command_id}) status: {status}, attempt {attempts+1}/{max_attempts}")
+            
+            attempts += 1
+            time.sleep(wait_delay)
         
-        sonarr_logger.debug(f"Sonarr {command_name} (ID: {command_id}) status: {status}, attempt {attempts+1}/{max_attempts}")
-        
-        attempts += 1
-        time.sleep(wait_delay)
-    
-    sonarr_logger.error(f"Sonarr command '{command_name}' (ID: {command_id}) timed out after {max_attempts} attempts.")
-    return False
+        sonarr_logger.error(f"Sonarr command '{command_name}' (ID: {command_id}) timed out after {max_attempts} attempts.")
+        return False
+    finally:
+        if instance_name:
+            try:
+                from src.primary.cycle_tracker import clear_cycle_activity
+                clear_cycle_activity("sonarr", instance_name)
+            except Exception:
+                pass
