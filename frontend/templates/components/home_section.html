@@ -113,6 +113,32 @@
             font-size: 0.85em !important; /* Smaller font size */
         }
 
+        /* Live Hunts / Swaparr header reset button – solid blue, matches Reset Stats */
+        .stats-card .card-header .cycle-reset-button {
+            background: #316893 !important;
+            color: #fff !important;
+            border: 1px solid rgba(99, 141, 185, 0.5) !important;
+            padding: 6px 14px !important;
+            border-radius: 8px !important;
+            font-size: 0.85em !important;
+            font-weight: 500 !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+        }
+        .stats-card .card-header .cycle-reset-button:hover {
+            background: #3d7aa8 !important;
+            color: #fff !important;
+            border-color: rgba(99, 141, 185, 0.7) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25) !important;
+        }
+        .stats-card .card-header .cycle-reset-button:active {
+            background: #2a5a7a !important;
+            transform: translateY(0);
+        }
+        .stats-card .card-header .cycle-reset-button i {
+            color: #fff !important;
+        }
+
         /* Requestarr home discovery block */
         .requestarr-home-card {
             padding: 16px 22px 10px;
@@ -788,7 +814,7 @@
         <div class="card stats-card" id="swaparrStatusCard" style="display: none;">
             <div class="card-header">
                 <h3><i class="fas fa-download"></i> Swaparr Status</h3>
-                <button id="reset-swaparr-data" class="action-button danger"><i class="fas fa-trash"></i> Reset</button>
+                <button id="reset-swaparr-data" class="cycle-reset-button"><i class="fas fa-trash"></i> Reset</button>
             </div>
             <div class="media-stats-container">
                 <div class="swaparr-stats-grid">
@@ -814,10 +840,6 @@
                         </div>
                         <div class="reset-button-container">
                             <button id="reset-swaparr-cycle-inline" class="cycle-reset-button" data-app="swaparr"><i class="fas fa-sync-alt"></i> Reset</button>
-                            <div id="swaparrCycleTimer" class="cycle-timer">
-                                <i class="fas fa-clock"></i>
-                                <span class="timer-value">--:--:--</span>
-                            </div>
                         </div>
                     </div>
                 </div>

@@ -446,8 +446,8 @@
             }, 100);
         }
 
-        if (window.SettingsForms.setupAppManualSave) {
-            window.SettingsForms.setupAppManualSave(container, "swaparr", settings);
+        if (window.SettingsForms.setupSwaparrManualSave) {
+            window.SettingsForms.setupSwaparrManualSave(container, settings);
         }
     };
 
@@ -653,22 +653,24 @@
         const updateSaveButtonState = (changesDetected) => {
             hasChanges = changesDetected;
             window.swaparrUnsavedChanges = changesDetected;
+            const btn = container.querySelector("#swaparr-save-button");
+            if (!btn) return;
 
             if (hasChanges) {
-                saveButton.disabled = false;
-                saveButton.style.background = "#dc2626";
-                saveButton.style.color = "#ffffff";
-                saveButton.style.borderColor = "#dc2626";
-                saveButton.style.cursor = "pointer";
+                btn.disabled = false;
+                btn.style.background = "#dc2626";
+                btn.style.color = "#ffffff";
+                btn.style.borderColor = "#dc2626";
+                btn.style.cursor = "pointer";
                 if (window.SettingsForms.addUnsavedChangesWarning) {
                     window.SettingsForms.addUnsavedChangesWarning();
                 }
             } else {
-                saveButton.disabled = true;
-                saveButton.style.background = "#6b7280";
-                saveButton.style.color = "#9ca3af";
-                saveButton.style.borderColor = "#4b5563";
-                saveButton.style.cursor = "not-allowed";
+                btn.disabled = true;
+                btn.style.background = "#6b7280";
+                btn.style.color = "#9ca3af";
+                btn.style.borderColor = "#4b5563";
+                btn.style.cursor = "not-allowed";
                 if (window.SettingsForms.removeUnsavedChangesWarning) {
                     window.SettingsForms.removeUnsavedChangesWarning();
                 }

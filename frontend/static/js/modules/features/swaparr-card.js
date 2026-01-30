@@ -47,9 +47,10 @@ window.HuntarrSwaparr = {
     },
 
     setupSwaparrResetCycle: function() {
-        // Handle header reset data button
+        // Handle header reset data button (only attach once to avoid multiple confirm dialogs)
         const resetDataButton = document.getElementById('reset-swaparr-data');
-        if (resetDataButton) {
+        if (resetDataButton && !resetDataButton.dataset.swaparrResetBound) {
+            resetDataButton.dataset.swaparrResetBound = 'true';
             resetDataButton.addEventListener('click', () => {
                 this.resetSwaparrData();
             });
