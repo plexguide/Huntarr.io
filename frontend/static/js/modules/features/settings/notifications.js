@@ -273,8 +273,10 @@
           });
         }
 
-        // Set up manual save functionality for Notifications
-        this.setupNotificationsManualSave(container, settings);
+        // Use standard setupAppManualSave with section so save/refresh target notifications only
+        if (window.SettingsForms.setupAppManualSave) {
+            window.SettingsForms.setupAppManualSave(container, "general", settings, { section: "notifications" });
+        }
     };
 
     window.SettingsForms.setupNotificationsManualSave = function (container, originalSettings = {}) {

@@ -10,7 +10,7 @@
 
         let logsSaveButtonHtml = `
             <div style="margin-bottom: 20px;">
-                <button type="button" id="general-save-button" disabled style="
+                <button type="button" id="logs-save-button" disabled style="
                     background: #6b7280;
                     color: #9ca3af;
                     border: 1px solid #4b5563;
@@ -113,7 +113,7 @@
             .catch(err => console.error('Error fetching log usage:', err));
 
         if (window.SettingsForms.setupAppManualSave) {
-            window.SettingsForms.setupAppManualSave(container, "general", settings);
+            window.SettingsForms.setupAppManualSave(container, "general", settings, { section: "logs" });
         }
     };
 })();

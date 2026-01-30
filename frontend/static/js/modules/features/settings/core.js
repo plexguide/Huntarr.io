@@ -1058,7 +1058,8 @@ window.SettingsForms = {
         if (typeof successMessage !== 'string') {
             options = successMessage;
             successMessage = 'Settings saved successfully';
-        } else if (!options || typeof options !== 'object') {
+        }
+        if (!options || typeof options !== 'object') {
             options = {};
         }
         const section = options.section;
@@ -1286,12 +1287,14 @@ window.SettingsForms = {
         // For now, let's stick to the core logic I wrote.
     },
 
-    // Manual save setup (Needed for global settings panels)
-    setupAppManualSave: function (container, appType, originalSettings = {}) {
-        console.log(`[huntarrUI] setupAppManualSave for ${appType}`);
-        const saveButton = document.querySelector(`#${appType}-save-button`);
+    // Manual save setup (Needed for global settings panels). options: { section: 'main'|'notifications'|'logs' } for general.
+    setupAppManualSave: function (container, appType, originalSettings = {}, options) {
+        const section = (options && options.section) ? options.section : null;
+        const buttonId = section ? `${section}-save-button` : `${appType}-save-button`;
+        console.log(`[huntarrUI] setupAppManualSave for ${appType}` + (section ? ` section=${section}` : ''));
+        const saveButton = document.querySelector(`#${buttonId}`);
         if (!saveButton) {
-            console.warn(`[huntarrUI] Save button #${appType}-save-button not found`);
+            console.warn(`[huntarrUI] Save button #${buttonId} not found`);
             return;
         }
 
@@ -1304,7 +1307,7 @@ window.SettingsForms = {
         saveButton.style.setProperty('opacity', '0.6', 'important');
 
         const updateSaveButtonState = (changed) => {
-            const currentSaveButton = document.querySelector(`#${appType}-save-button`);
+            const currentSaveButton = document.querySelector(`#${buttonId}`);
             if (!currentSaveButton) return;
             
             if (changed) {
@@ -1358,10 +1361,13 @@ window.SettingsForms = {
         saveButton.parentNode.replaceChild(newSaveButton, saveButton);
         
         newSaveButton.addEventListener('click', () => {
-            console.log(`[huntarrUI] Save button clicked for ${appType}`);
-            const collectedSettings = this.getFormSettings(container, appType);
-            this.saveAppSettings(appType, collectedSettings);
-            
+            console.log(`[huntarrUI] Save button clicked for ${appType}` + (section ? ` section=${section}` : ''));
+            const apiType = (appType === 'logs') ? 'general' : appType;
+            const collectedSettings = (section && this.getFormSettingsGeneralSection)
+                ? this.getFormSettingsGeneralSection(container, section)
+                : this.getFormSettings(container, appType);
+            this.saveAppSettings(apiType, collectedSettings, 'Settings saved successfully', options || (section ? { section } : {}));
+
             newSaveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
             updateSaveButtonState(false);
         });

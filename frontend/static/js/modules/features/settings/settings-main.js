@@ -368,7 +368,8 @@ window.HuntarrSettings = {
             if (data.general && window.huntarrUI && window.huntarrUI.originalSettings) {
                 window.huntarrUI.originalSettings.general = JSON.parse(JSON.stringify(data.general));
             }
-            if (typeof SettingsForms !== 'undefined' && SettingsForms.reRenderGeneralSection && data.general) {
+            // Don't re-render notifications - it has its own change-detection that would be reset
+            if (section !== 'notifications' && typeof SettingsForms !== 'undefined' && SettingsForms.reRenderGeneralSection && data.general) {
                 SettingsForms.reRenderGeneralSection(section, data.general);
             }
             this.settingsCurrentlySaving = false;

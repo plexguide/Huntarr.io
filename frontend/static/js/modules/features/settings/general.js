@@ -272,7 +272,7 @@
             }
 
             const settings = window.SettingsForms.getFormSettings(container, "general");
-            window.SettingsForms.saveAppSettings("general", settings);
+            window.SettingsForms.saveAppSettings("general", settings, "Settings saved successfully", { section: "main" });
 
             if (liveBtn) liveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
             updateSaveButtonState(false);
