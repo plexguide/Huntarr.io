@@ -298,6 +298,7 @@ def app_specific_loop(app_type: str) -> None:
             # Get instance-specific settings from the instance_details dict
             api_url = instance_details.get("api_url", "")
             api_key = instance_details.get("api_key", "")
+            api_timeout = instance_details.get("api_timeout", 120)
 
             # Get global/shared settings from app_settings loaded at the start of the loop
             # Example: monitored_only = app_settings.get("monitored_only", True)
