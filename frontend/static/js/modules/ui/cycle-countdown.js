@@ -80,11 +80,11 @@ window.CycleCountdown = (function() {
                 clearInterval(refreshInterval);
             }
             
-            // Set up API sync every 30 seconds (reduced from 10 seconds, not for display, just for accuracy)
+            // Set up API sync every 15 seconds so countdown appears soon after cycle ends (when backend sets next_cycle)
             refreshInterval = setInterval(() => {
                 // Only refresh if not already fetching
                 if (!isFetchingData) {
-                    console.log('[CycleCountdown] API sync (every 30s) to maintain accuracy...');
+                    console.log('[CycleCountdown] API sync (every 15s) to maintain accuracy...');
                     fetchAllCycleData()
                         .then((data) => {
                             if (data && Object.keys(data).length > 0) {
@@ -96,9 +96,9 @@ window.CycleCountdown = (function() {
                             console.log('[CycleCountdown] API sync failed, timers continue with last known data');
                         });
                 }
-            }, 30000); // API sync every 30 seconds (reduced from 10 seconds)
+            }, 15000); // API sync every 15 seconds so "Starting Cycle" updates to countdown soon after sleep starts
             
-            console.log('[CycleCountdown] API sync interval started (30s) - timers run independently at 1s');
+            console.log('[CycleCountdown] API sync interval started (15s) - timers run independently at 1s');
         }
         
         // Start the refresh cycle
@@ -208,12 +208,14 @@ window.CycleCountdown = (function() {
         return document.querySelectorAll('.app-stats-card.' + app + ' .cycle-timer');
     }
     
-    // Get instance name for a timer (from reset button in same card); returns null for single-app (e.g. swaparr)
+    // Get instance name for a timer (from reset button or card in same card); returns null for single-app (e.g. swaparr)
     function getInstanceNameForTimer(timerElement) {
         const card = timerElement.closest('.app-stats-card');
         if (!card) return null;
         const resetBtn = card.querySelector('.cycle-reset-button[data-instance-name]');
-        return resetBtn ? resetBtn.getAttribute('data-instance-name') : null;
+        const fromBtn = resetBtn ? resetBtn.getAttribute('data-instance-name') : null;
+        const fromCard = card.getAttribute('data-instance-name');
+        return fromBtn || fromCard || null;
     }
     
     // Key for per-instance state: "app" for single-app, "app-instanceName" for *arr instances
@@ -398,6 +400,24 @@ window.CycleCountdown = (function() {
                 }
                 
                 if (dataProcessed) {
+                    // When any instance still has no next_cycle (shows "Starting Cycle"), refetch soon so we pick up
+                    // the countdown right after the backend sets next_cycle (when sleep starts)
+                    const hasStartingCycleWithInstances = Object.keys(data).some(app => {
+                        const appData = data[app];
+                        if (!appData || !appData.instances) return false;
+                        return Object.keys(appData.instances).some(instanceName => {
+                            const inst = appData.instances[instanceName];
+                            return inst && !inst.next_cycle;
+                        });
+                    });
+                    if (hasStartingCycleWithInstances) {
+                        safeSetTimeout(() => {
+                            if (!isFetchingData) {
+                                console.log('[CycleCountdown] Quick refetch to pick up countdown after cycle ended');
+                                fetchAllCycleData().catch(() => {});
+                            }
+                        }, 4000);
+                    }
                     resolve(data);
                 } else {
                     // No valid app data likely means no apps are configured yet - this is normal
