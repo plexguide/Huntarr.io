@@ -389,8 +389,8 @@ def movie_search(api_url: str, api_key: str, api_timeout: int, movie_ids: List[i
         "movieIds": movie_ids
     }
     
-    # Use the updated arr_request
-    response = arr_request(api_url, api_key, api_timeout, endpoint, method="POST", data=data)
+    # count_api=False: caller (missing/upgrade) uses increment_stat_only so API bar = searches + upgrades (one count per action)
+    response = arr_request(api_url, api_key, api_timeout, endpoint, method="POST", data=data, count_api=False)
     if response and 'id' in response:
         command_id = response['id']
         radarr_logger.debug(f"Triggered search for movie IDs: {movie_ids}. Command ID: {command_id}")

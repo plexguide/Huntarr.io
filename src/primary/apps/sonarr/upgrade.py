@@ -704,7 +704,7 @@ def wait_for_command(
             if instance_name:
                 try:
                     from src.primary.cycle_tracker import set_cycle_activity
-                    set_cycle_activity("sonarr", instance_name, f"{command_name} ({attempts+1}/{max_attempts})")
+                    set_cycle_activity("sonarr", instance_name, f"Search {attempts+1}/{max_attempts}")
                 except Exception:
                     pass
             command_status = sonarr_api.get_command_status(api_url, api_key, api_timeout, command_id)

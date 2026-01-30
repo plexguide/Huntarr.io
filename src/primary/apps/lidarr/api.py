@@ -434,19 +434,12 @@ def search_albums(api_url: str, api_key: str, api_timeout: int, album_ids: List[
         "name": "AlbumSearch",
         "albumIds": album_ids
     }
-    response = arr_request(api_url, api_key, api_timeout, "command", method="POST", data=payload)
+    # count_api=False: caller uses increment_stat so API bar = searches + upgrades (one count per action)
+    response = arr_request(api_url, api_key, api_timeout, "command", method="POST", data=payload, count_api=False)
     
     if response and isinstance(response, dict) and 'id' in response:
         command_id = response.get('id')
         lidarr_logger.info(f"Triggered Lidarr AlbumSearch for album IDs: {album_ids}. Command ID: {command_id}")
-        
-        # Increment API counter after successful request
-        try:
-            from src.primary.stats_manager import increment_hourly_cap
-            increment_hourly_cap("lidarr", 1)
-            lidarr_logger.debug(f"Incremented Lidarr hourly API cap for album search ({len(album_ids)} albums)")
-        except Exception as cap_error:
-            lidarr_logger.error(f"Failed to increment hourly API cap for album search: {cap_error}")
         
         return response # Return the full command object including ID
     else:
@@ -470,20 +463,12 @@ def search_artist(api_url: str, api_key: str, api_timeout: int, artist_id: int) 
         "name": "ArtistSearch",
         "artistIds": [artist_id]
     }
-    response = arr_request(api_url, api_key, api_timeout, "command", method="POST", data=payload)
+    # count_api=False: caller uses increment_stat so API bar = searches + upgrades (one count per action)
+    response = arr_request(api_url, api_key, api_timeout, "command", method="POST", data=payload, count_api=False)
 
     if response and isinstance(response, dict) and 'id' in response:
-        command_id = response.get('id')
+        command_id = response.get("id")
         lidarr_logger.info(f"Triggered Lidarr ArtistSearch for artist ID: {artist_id}. Command ID: {command_id}")
-        
-        # Increment API counter after successful request
-        try:
-            from src.primary.stats_manager import increment_hourly_cap
-            increment_hourly_cap("lidarr", 1)
-            lidarr_logger.debug(f"Incremented Lidarr hourly API cap for artist search (artist {artist_id})")
-        except Exception as cap_error:
-            lidarr_logger.error(f"Failed to increment hourly API cap for artist search: {cap_error}")
-        
         return response # Return the full command object
     else:
         lidarr_logger.error(f"Failed to trigger Lidarr ArtistSearch for artist ID {artist_id}. Response: {response}")

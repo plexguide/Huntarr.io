@@ -526,7 +526,7 @@ window.CycleCountdown = (function() {
             }
             if (isRunning) {
                 const activity = cycleActivities[key];
-                timerValue.textContent = (activity && String(activity).trim()) ? ('Running - ' + activity) : 'Running Cycle';
+                timerValue.textContent = (activity && String(activity).trim()) ? activity : 'Running Cycle';
                 timerValue.classList.remove('refreshing-state');
                 timerValue.classList.add('running-state');
                 timerValue.style.color = '#00ff88';

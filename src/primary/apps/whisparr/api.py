@@ -315,15 +315,7 @@ def item_search(api_url: str, api_key: str, api_timeout: int, item_ids: List[int
             if result and "id" in result:
                 command_id = result["id"]
                 whisparr_logger.debug(f"Search command triggered with ID {command_id}")
-                
-                # Increment API counter after successful request
-                try:
-                    from src.primary.stats_manager import increment_hourly_cap
-                    increment_hourly_cap("whisparr", 1)
-                    whisparr_logger.debug(f"Incremented Whisparr hourly API cap for item search ({len(item_ids)} items)")
-                except Exception as cap_error:
-                    whisparr_logger.error(f"Failed to increment hourly API cap for item search: {cap_error}")
-                
+                # API bar incremented by caller via increment_stat (one count per hunt/upgrade)
                 return command_id
             else:
                 whisparr_logger.error("Failed to trigger search command - no command ID returned")

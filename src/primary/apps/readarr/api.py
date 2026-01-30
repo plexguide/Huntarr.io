@@ -575,14 +575,7 @@ def search_books(api_url: str, api_key: str, book_ids: List[int], api_timeout: i
         command_id = command_data.get('id')
         logger.info(f"Successfully triggered BookSearch command for book IDs: {book_ids}. Command ID: {command_id}")
         
-        # Increment API counter after successful request
-        try:
-            from src.primary.stats_manager import increment_hourly_cap
-            increment_hourly_cap("readarr", 1)
-            logger.debug(f"Incremented Readarr hourly API cap for book search ({len(book_ids)} books)")
-        except Exception as cap_error:
-            logger.error(f"Failed to increment hourly API cap for book search: {cap_error}")
-        
+        # API bar incremented by caller via increment_stat (one count per hunt/upgrade)
         return command_data # Return the full command object which includes the ID
     except requests.exceptions.RequestException as e:
         logger.error(f"Error triggering BookSearch command for book IDs {book_ids} via {endpoint}: {e}")
