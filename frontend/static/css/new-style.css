@@ -246,23 +246,54 @@ button {
 }
 
 .nav-item.active {
-    background-color: var(--sidebar-item-active);
+    background-color: var(--sidebar-item-hover);
     font-weight: 600;
     position: relative;
-    box-shadow: 0 0 8px 2px rgba(52, 152, 219, 0.5);
     z-index: 1;
     outline: none;
-    border-radius: 4px;
-    animation: glowPulse 1.5s infinite alternate;
+    border-radius: 0 4px 4px 0;
+    border-left: 4px solid var(--sidebar-item-active);
+    padding-left: 20px;
 }
 
-@keyframes glowPulse {
-    from {
-        box-shadow: 0 0 8px 2px rgba(52, 152, 219, 0.5);
-    }
-    to {
-        box-shadow: 0 0 15px 4px rgba(52, 152, 219, 0.7);
-    }
+.nav-item.active .nav-icon-wrapper {
+    margin-right: 14px;
+}
+
+/* Indented sub-items under Settings (Radarr-style hierarchy) */
+.nav-sub-group {
+    margin-left: 0;
+}
+
+.nav-item-sub {
+    padding-left: 48px !important;
+}
+
+.nav-item-sub .nav-icon-wrapper {
+    width: 20px;
+    font-size: 16px;
+}
+
+.nav-item-sub.active {
+    padding-left: 44px !important;
+}
+
+/* Settings sub-pages (Indexers, Clients) */
+.settings-subpanel {
+    padding: 24px;
+    max-width: 900px;
+}
+
+.settings-subpanel-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.settings-subpanel-description {
+    color: var(--text-secondary);
+    margin-bottom: 24px;
 }
 
 /* Theme Switch */

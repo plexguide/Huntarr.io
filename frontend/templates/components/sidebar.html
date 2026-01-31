@@ -142,6 +142,20 @@
                 </div>
                 <span>Settings</span>
             </a>
+            <div class="nav-sub-group">
+                <a href="./#settings-indexers" class="nav-item nav-item-sub" id="movieHuntSettingsIndexersNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <span>Indexers</span>
+                </a>
+                <a href="./#settings-clients" class="nav-item nav-item-sub" id="movieHuntSettingsClientsNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-cloud-download-alt"></i>
+                    </div>
+                    <span>Clients</span>
+                </a>
+            </div>
         </div>
     </nav>
 
@@ -1082,10 +1096,18 @@
         // Settings sidebar items
         else if (currentHash === '#settings') {
             selector = '#settingsMainNav';
+        } else if (currentHash === '#settings-indexers') {
+            selector = '#movieHuntSettingsIndexersNav';
+        } else if (currentHash === '#settings-clients') {
+            selector = '#movieHuntSettingsClientsNav';
         } else if (currentHash === '#scheduling') {
             selector = '#settingsSchedulingNav';
         } else if (currentHash === '#notifications') {
             selector = '#settingsNotificationsNav';
+        } else if (currentHash === '#backup-restore') {
+            selector = '#settingsBackupRestoreNav';
+        } else if (currentHash === '#settings-logs') {
+            selector = '#settingsLogsNav';
         } else if (currentHash === '#user') {
             selector = '#settingsUserNav';
         }

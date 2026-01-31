@@ -105,7 +105,7 @@ let huntarrUI = {
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user' || this.currentSection === 'settings-logs') {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
-        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-settings') {
+        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings') {
@@ -464,7 +464,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-settings'];
+            const noRefreshSections = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-settings', 'settings-indexers', 'settings-clients'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -578,32 +578,16 @@ let huntarrUI = {
         } else if ((section === 'requestarr' || section.startsWith('requestarr-')) && this._enableRequestarr === false) {
             this.switchSection('home');
             return;
-        } else if (section === 'movie-hunt-home' && document.getElementById('requestarr-section')) {
-            document.getElementById('requestarr-section').classList.add('active');
-            document.getElementById('requestarr-section').style.display = 'block';
+        } else if (section === 'movie-hunt-home' && document.getElementById('movie-hunt-section')) {
+            document.getElementById('movie-hunt-section').classList.add('active');
+            document.getElementById('movie-hunt-section').style.display = 'block';
             if (document.getElementById('movieHuntHomeNav')) document.getElementById('movieHuntHomeNav').classList.add('active');
             newTitle = 'Movie Hunt';
             this.currentSection = 'movie-hunt-home';
             this.showMovieHuntSidebar();
-            const viewIds = [
-                'requestarr-discover-view',
-                'requestarr-movies-view',
-                'requestarr-tv-view',
-                'requestarr-hidden-view',
-                'requestarr-settings-view'
-            ];
-            viewIds.forEach((viewId) => {
-                const v = document.getElementById(viewId);
-                if (v) { v.classList.remove('active'); v.style.display = 'none'; }
-            });
-            const moviesView = document.getElementById('requestarr-movies-view');
-            if (moviesView) {
-                moviesView.classList.add('active');
-                moviesView.style.display = 'block';
+            if (window.MovieHunt && typeof window.MovieHunt.init === 'function') {
+                window.MovieHunt.init();
             }
-            this.runWhenRequestarrReady('movies', () => {
-                window.RequestarrDiscover.switchView('movies');
-            });
         } else if (section === 'movie-hunt-settings' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
@@ -865,6 +849,20 @@ let huntarrUI = {
             
             // Initialize settings if not already done
             this.initializeSettings();
+        } else if (section === 'settings-indexers' && document.getElementById('settingsIndexersSection')) {
+            document.getElementById('settingsIndexersSection').classList.add('active');
+            document.getElementById('settingsIndexersSection').style.display = 'block';
+            if (document.getElementById('movieHuntSettingsIndexersNav')) document.getElementById('movieHuntSettingsIndexersNav').classList.add('active');
+            newTitle = 'Indexers';
+            this.currentSection = 'settings-indexers';
+            this.showMovieHuntSidebar();
+        } else if (section === 'settings-clients' && document.getElementById('settingsClientsSection')) {
+            document.getElementById('settingsClientsSection').classList.add('active');
+            document.getElementById('settingsClientsSection').style.display = 'block';
+            if (document.getElementById('movieHuntSettingsClientsNav')) document.getElementById('movieHuntSettingsClientsNav').classList.add('active');
+            newTitle = 'Clients';
+            this.currentSection = 'settings-clients';
+            this.showMovieHuntSidebar();
         } else if (section === 'settings-logs' && document.getElementById('settingsLogsSection')) {
             document.getElementById('settingsLogsSection').classList.add('active');
             document.getElementById('settingsLogsSection').style.display = 'block';

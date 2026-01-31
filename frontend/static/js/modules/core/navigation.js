@@ -63,7 +63,7 @@ window.HuntarrNavigation = {
             if (['apps'].includes(ui.currentSection) && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             if (ui.currentSection === 'prowlarr' && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             
-            const noRefresh = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-settings'];
+            const noRefresh = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-settings', 'settings-indexers', 'settings-clients'];
             if (!noRefresh.includes(section) && !noRefresh.includes(ui.currentSection)) {
                 localStorage.setItem('huntarr-target-section', section);
                 location.reload();
@@ -85,7 +85,7 @@ window.HuntarrNavigation = {
             'home': { title: 'Home', nav: ui.elements.homeNav, section: ui.elements.homeSection, sidebar: 'main' },
             'logs': { title: 'Logs', nav: ui.elements.logsNav, section: ui.elements.logsSection, sidebar: 'main' },
             'hunt-manager': { title: 'Hunt Manager', nav: ui.elements.huntManagerNav, section: document.getElementById('huntManagerSection'), sidebar: 'main' },
-            'movie-hunt-home': { title: 'Movie Hunt', nav: document.getElementById('movieHuntHomeNav'), section: document.getElementById('requestarr-section'), sidebar: 'moviehunt', view: 'movies' },
+            'movie-hunt-home': { title: 'Movie Hunt', nav: document.getElementById('movieHuntHomeNav'), section: document.getElementById('movie-hunt-section'), sidebar: 'moviehunt', view: 'movies' },
             'movie-hunt-settings': { title: 'Movie Hunt Settings', nav: document.getElementById('movieHuntSettingsNav'), section: document.getElementById('requestarr-section'), sidebar: 'moviehunt', view: 'settings' },
             'requestarr': { title: 'Discover', nav: document.getElementById('requestarrNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'discover' },
             'requestarr-discover': { title: 'Discover', nav: document.getElementById('requestarrDiscoverNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'discover' },
@@ -101,6 +101,8 @@ window.HuntarrNavigation = {
             'eros': { title: 'Whisparr V3', nav: document.getElementById('appsErosNav'), section: document.getElementById('erosSection'), sidebar: 'apps', app: 'eros' },
             'swaparr': { title: 'Swaparr', nav: document.getElementById('swaparrNav'), section: document.getElementById('swaparrSection'), sidebar: 'main', init: 'initializeSwaparr' },
             'settings': { title: 'Settings', nav: document.getElementById('settingsNav'), section: document.getElementById('settingsSection'), sidebar: 'settings', init: 'initializeSettings' },
+            'settings-indexers': { title: 'Indexers', nav: document.getElementById('movieHuntSettingsIndexersNav'), section: document.getElementById('settingsIndexersSection'), sidebar: 'moviehunt' },
+            'settings-clients': { title: 'Clients', nav: document.getElementById('movieHuntSettingsClientsNav'), section: document.getElementById('settingsClientsSection'), sidebar: 'moviehunt' },
             'settings-logs': { title: 'Log Settings', nav: document.getElementById('settingsLogsNav'), section: document.getElementById('settingsLogsSection'), sidebar: 'settings', init: 'initializeLogsSettings' },
             'scheduling': { title: 'Scheduling', nav: document.getElementById('schedulingNav'), section: document.getElementById('schedulingSection'), sidebar: 'settings' },
             'notifications': { title: 'Notifications', nav: document.getElementById('settingsNotificationsNav'), section: document.getElementById('notificationsSection'), sidebar: 'settings', init: 'initializeNotifications' },
@@ -143,8 +145,11 @@ window.HuntarrNavigation = {
             if (window.huntManagerModule?.refresh) window.huntManagerModule.refresh();
         }
         
-        if (config.view && ui.runWhenRequestarrReady) {
+        if (config.view && section.startsWith('requestarr') && ui.runWhenRequestarrReady) {
             ui.runWhenRequestarrReady(config.view, () => window.RequestarrDiscover.switchView(config.view));
+        }
+        if (section === 'movie-hunt-home' && window.MovieHunt && typeof window.MovieHunt.init === 'function') {
+            window.MovieHunt.init();
         }
         
         if (config.app && typeof appsModule !== 'undefined') {
@@ -253,10 +258,9 @@ window.HuntarrNavigation = {
         const items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
         items.forEach(item => {
             item.classList.remove('active');
-            const link = item.querySelector('a');
-            if (link) {
-                const href = link.getAttribute('href');
-                if (href === `#${currentSection}`) item.classList.add('active');
+            const href = item.getAttribute && item.getAttribute('href') || (item.querySelector('a') && item.querySelector('a').getAttribute('href'));
+            if (href && (href === '#' + currentSection || href.endsWith('#' + currentSection))) {
+                item.classList.add('active');
             }
         });
     },
@@ -287,12 +291,9 @@ window.HuntarrNavigation = {
         
         settingsSidebarItems.forEach(item => {
             item.classList.remove('active');
-            const link = item.querySelector('a');
-            if (link) {
-                const href = link.getAttribute('href');
-                if (href === `#${currentSection}`) {
-                    item.classList.add('active');
-                }
+            const href = item.getAttribute && item.getAttribute('href') || (item.querySelector('a') && item.querySelector('a').getAttribute('href'));
+            if (href && (href === '#' + currentSection || href.endsWith('#' + currentSection))) {
+                item.classList.add('active');
             }
         });
     },
