@@ -38,6 +38,7 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 const list = (data && data.indexers) ? data.indexers : [];
+                window.SettingsForms._indexersList = list;
                 let html = '';
                 for (let i = 0; i < list.length; i++) {
                     html += window.SettingsForms.renderIndexerCard(list[i], i);

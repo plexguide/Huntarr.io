@@ -257,21 +257,40 @@ def _save_indexers_list(indexers_list):
     db.save_app_config('indexers', {'indexers': indexers_list})
 
 
+# Default indexer categories (TV and sub-categories). By default 6 are selected; 3 (Sport, Anime, Documentary) are not.
+INDEXER_CATEGORIES = [
+    {'id': 5000, 'name': 'TV'},
+    {'id': 5020, 'name': 'TV/Foreign'},
+    {'id': 5030, 'name': 'TV/SD'},
+    {'id': 5040, 'name': 'TV/HD'},
+    {'id': 5045, 'name': 'TV/UHD'},
+    {'id': 5050, 'name': 'TV/Other'},
+    {'id': 5060, 'name': 'TV/Sport'},
+    {'id': 5070, 'name': 'TV/Anime'},
+    {'id': 5080, 'name': 'TV/Documentary'},
+]
+INDEXER_CATEGORIES_DEFAULT_IDS = [5000, 5020, 5030, 5040, 5045, 5050]
+
+
 @common_bp.route('/api/indexers', methods=['GET'])
 def api_indexers_list():
-    """List saved indexers (API key masked to last 4 chars)."""
+    """List saved indexers (API key masked to last 4 chars). Includes categories for editor."""
     try:
         indexers = _get_indexers_config()
         out = []
         for i, idx in enumerate(indexers):
             key = (idx.get('api_key') or '')
             last4 = key[-4:] if len(key) >= 4 else '****'
+            cats = idx.get('categories')
+            if not isinstance(cats, list):
+                cats = list(INDEXER_CATEGORIES_DEFAULT_IDS)
             out.append({
                 'index': i,
                 'name': idx.get('name') or 'Unnamed',
                 'preset': idx.get('preset') or 'manual',
                 'enabled': idx.get('enabled', True),
                 'api_key_last4': last4,
+                'categories': cats,
             })
         return jsonify({'indexers': out}), 200
     except Exception as e:
@@ -281,19 +300,23 @@ def api_indexers_list():
 
 @common_bp.route('/api/indexers', methods=['POST'])
 def api_indexers_add():
-    """Add a new indexer. Body: { name, preset, api_key, enabled }."""
+    """Add a new indexer. Body: { name, preset, api_key, enabled, categories }."""
     try:
         data = request.get_json() or {}
         name = (data.get('name') or '').strip() or 'Unnamed'
         preset = (data.get('preset') or 'manual').strip().lower()
         api_key = (data.get('api_key') or '').strip()
         enabled = data.get('enabled', True)
+        categories = data.get('categories')
+        if not isinstance(categories, list):
+            categories = list(INDEXER_CATEGORIES_DEFAULT_IDS)
         indexers = _get_indexers_config()
         indexers.append({
             'name': name,
             'preset': preset,
             'api_key': api_key,
             'enabled': enabled,
+            'categories': categories,
         })
         _save_indexers_list(indexers)
         return jsonify({'success': True, 'index': len(indexers) - 1}), 200
@@ -304,7 +327,7 @@ def api_indexers_add():
 
 @common_bp.route('/api/indexers/<int:index>', methods=['PUT'])
 def api_indexers_update(index):
-    """Update indexer at index. Body: { name, preset, api_key?, enabled }. Omit api_key to keep existing."""
+    """Update indexer at index. Body: { name, preset, api_key?, enabled, categories? }. Omit api_key to keep existing."""
     try:
         indexers = _get_indexers_config()
         if index < 0 or index >= len(indexers):
@@ -314,6 +337,10 @@ def api_indexers_update(index):
         preset = (data.get('preset') or 'manual').strip().lower()
         api_key_new = (data.get('api_key') or '').strip()
         enabled = data.get('enabled', True)
+        categories = data.get('categories')
+        if not isinstance(categories, list):
+            existing_cats = indexers[index].get('categories')
+            categories = list(existing_cats) if isinstance(existing_cats, list) else list(INDEXER_CATEGORIES_DEFAULT_IDS)
         existing = indexers[index]
         api_key = api_key_new if api_key_new else (existing.get('api_key') or '')
         indexers[index] = {
@@ -321,6 +348,7 @@ def api_indexers_update(index):
             'preset': preset,
             'api_key': api_key,
             'enabled': enabled,
+            'categories': categories,
         }
         _save_indexers_list(indexers)
         return jsonify({'success': True}), 200

@@ -64,15 +64,18 @@
 
             if (editBtn) {
                 e.preventDefault();
-                var card = editBtn.closest('.instance-card');
-                var nameEl = card ? card.querySelector('.instance-name span') : null;
-                var keyEl = card ? card.querySelector('.instance-card-body .instance-detail span') : null;
-                var name = nameEl ? nameEl.textContent.trim() : '';
-                var keyText = keyEl ? keyEl.textContent.trim() : '';
                 var index = parseInt(editBtn.dataset.instanceIndex, 10);
-                var preset = card ? (card.getAttribute('data-preset') || 'manual') : 'manual';
-                var enabled = card ? (card.getAttribute('data-enabled') !== 'false') : true;
-                var instance = { name: name, preset: preset, enabled: enabled, api_key: '', api_key_last4: keyText.replace(/\D/g, '').slice(-4) || '' };
+                var instance = (window.SettingsForms && window.SettingsForms._indexersList && window.SettingsForms._indexersList[index]) ? window.SettingsForms._indexersList[index] : null;
+                if (!instance) {
+                    var card = editBtn.closest('.instance-card');
+                    var nameEl = card ? card.querySelector('.instance-name span') : null;
+                    var keyEl = card ? card.querySelector('.instance-card-body .instance-detail span') : null;
+                    var name = nameEl ? nameEl.textContent.trim() : '';
+                    var keyText = keyEl ? keyEl.textContent.trim() : '';
+                    var preset = card ? (card.getAttribute('data-preset') || 'manual') : 'manual';
+                    var enabled = card ? (card.getAttribute('data-enabled') !== 'false') : true;
+                    instance = { name: name, preset: preset, enabled: enabled, api_key: '', api_key_last4: keyText.replace(/\D/g, '').slice(-4) || '' };
+                }
                 if (window.SettingsForms && window.SettingsForms.openIndexerEditor) {
                     window.SettingsForms.openIndexerEditor(false, index, instance);
                 }

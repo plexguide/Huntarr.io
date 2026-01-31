@@ -27,6 +27,41 @@
         }
         if (backBtn) backBtn.onclick = () => this.cancelInstanceEditor();
 
+        this.populateIndexerCategoriesDropdown();
+        const catSelect = document.getElementById('editor-categories-select');
+        const catPills = document.getElementById('indexer-categories-pills');
+        if (catSelect) {
+            catSelect.addEventListener('change', function() {
+                const id = parseInt(catSelect.value, 10);
+                if (!id) return;
+                const pill = catPills ? catPills.querySelector('.indexer-category-pill[data-category-id="' + id + '"]') : null;
+                if (pill) return;
+                const c = Forms.INDEXER_CATEGORIES.find(function(x) { return x.id === id; });
+                const label = c ? (c.name + ' (' + c.id + ')') : String(id);
+                const span = document.createElement('span');
+                span.className = 'indexer-category-pill';
+                span.setAttribute('data-category-id', id);
+                span.innerHTML = '<span class="indexer-category-remove" aria-label="Remove">×</span><span>' + String(label).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+                span.querySelector('.indexer-category-remove').addEventListener('click', function() {
+                    span.remove();
+                    Forms.populateIndexerCategoriesDropdown();
+                });
+                if (catPills) catPills.appendChild(span);
+                Forms.populateIndexerCategoriesDropdown();
+                catSelect.value = '';
+            });
+        }
+        if (catPills) {
+            catPills.addEventListener('click', function(e) {
+                const remove = e.target.classList.contains('indexer-category-remove') ? e.target : e.target.closest('.indexer-category-remove');
+                if (remove) {
+                    const pill = remove.closest('.indexer-category-pill');
+                    if (pill) pill.remove();
+                    Forms.populateIndexerCategoriesDropdown();
+                }
+            });
+        }
+
         const presetEl = document.getElementById('editor-preset');
         const keyInput = document.getElementById('editor-key');
         if (presetEl && keyInput) {
@@ -56,6 +91,20 @@
         }
     };
 
+    // Indexer categories (same as backend). Default selected: 5000,5020,5030,5040,5045,5050; not selected: 5060,5070,5080
+    Forms.INDEXER_CATEGORIES = [
+        { id: 5000, name: 'TV' },
+        { id: 5020, name: 'TV/Foreign' },
+        { id: 5030, name: 'TV/SD' },
+        { id: 5040, name: 'TV/HD' },
+        { id: 5045, name: 'TV/UHD' },
+        { id: 5050, name: 'TV/Other' },
+        { id: 5060, name: 'TV/Sport' },
+        { id: 5070, name: 'TV/Anime' },
+        { id: 5080, name: 'TV/Documentary' }
+    ];
+    Forms.INDEXER_CATEGORIES_DEFAULT_IDS = [5000, 5020, 5030, 5040, 5045, 5050];
+
     Forms.generateIndexerEditorHtml = function(instance) {
         const name = (instance.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const preset = (instance.preset || 'manual').toLowerCase().replace(/[^a-z0-9.-]/g, '');
@@ -72,6 +121,12 @@
         const selectedPreset = ['nzbgeek', 'nzbfinder.ws', 'manual'].includes(preset) ? preset : 'manual';
         const optionsHtml = presetOptions.map(function(o) {
             return '<option value="' + o.value + '"' + (selectedPreset === o.value ? ' selected' : '') + '>' + o.label + '</option>';
+        }).join('');
+        var categoryIds = Array.isArray(instance.categories) ? instance.categories.slice() : Forms.INDEXER_CATEGORIES_DEFAULT_IDS.slice();
+        var categoryChipsHtml = categoryIds.map(function(id) {
+            var c = Forms.INDEXER_CATEGORIES.find(function(x) { return x.id === id; });
+            var label = c ? (c.name + ' (' + c.id + ')') : String(id);
+            return '<span class="indexer-category-pill" data-category-id="' + id + '"><span class="indexer-category-remove" aria-label="Remove">×</span><span>' + String(label).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></span>';
         }).join('');
         return `
             <div class="editor-grid">
@@ -109,8 +164,35 @@
                         <p class="editor-help-text">Only the last 4 characters will be shown on the card after saving.</p>
                     </div>
                 </div>
+                <div class="editor-section">
+                    <div class="editor-section-title">Additional Configurations</div>
+                    <div class="editor-field-group">
+                        <label for="editor-categories-select">Categories</label>
+                        <select id="editor-categories-select" class="settings-select" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">
+                            <option value="">Select a category to add...</option>
+                        </select>
+                        <p class="editor-help-text">Categories to use for this indexer.</p>
+                        <div id="indexer-categories-pills" class="indexer-categories-pills" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 24px;">${categoryChipsHtml}</div>
+                    </div>
+                </div>
             </div>
         `;
+    };
+
+    Forms.populateIndexerCategoriesDropdown = function() {
+        const select = document.getElementById('editor-categories-select');
+        const pills = document.getElementById('indexer-categories-pills');
+        if (!select || !pills) return;
+        const selectedIds = Array.from(pills.querySelectorAll('.indexer-category-pill')).map(function(el) { return parseInt(el.getAttribute('data-category-id'), 10); }).filter(function(id) { return !isNaN(id); });
+        select.innerHTML = '<option value="">Select a category to add...</option>';
+        Forms.INDEXER_CATEGORIES.forEach(function(c) {
+            if (selectedIds.indexOf(c.id) === -1) {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name + ' (' + c.id + ')';
+                select.appendChild(opt);
+            }
+        });
     };
 
     Forms.checkIndexerConnection = function() {
@@ -166,9 +248,10 @@
         const apiKey = keyEl ? keyEl.value.trim() : '';
         const isAdd = this._currentEditing.isAdd;
         const index = this._currentEditing.index;
-        this._currentEditing = null;
+        const pillsEl = document.getElementById('indexer-categories-pills');
+        const categories = pillsEl ? Array.from(pillsEl.querySelectorAll('.indexer-category-pill')).map(function(el) { return parseInt(el.getAttribute('data-category-id'), 10); }).filter(function(id) { return !isNaN(id); }) : this.INDEXER_CATEGORIES_DEFAULT_IDS.slice();
 
-        const body = { name: name || 'Unnamed', preset: preset, api_key: apiKey, enabled: enabled };
+        const body = { name: name || 'Unnamed', preset: preset, api_key: apiKey, enabled: enabled, categories: categories };
         const url = isAdd ? './api/indexers' : './api/indexers/' + index;
         const method = isAdd ? 'POST' : 'PUT';
         fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -180,8 +263,12 @@
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification(isAdd ? 'Indexer added.' : 'Indexer updated.', 'success');
                 }
-                if (window.huntarrUI && window.huntarrUI.switchSection) {
-                    window.huntarrUI.switchSection('settings-indexers');
+                // Stay on Indexer Editor after save (do not navigate back to indexer list)
+                if (window.SettingsForms && window.SettingsForms._currentEditing) {
+                    window.SettingsForms._currentEditing.isAdd = false;
+                    if (data && (data.index !== undefined || data.indexer !== undefined)) {
+                        window.SettingsForms._currentEditing.index = data.index !== undefined ? data.index : (data.indexer && data.indexer.index !== undefined ? data.indexer.index : index);
+                    }
                 }
             })
             .catch(function(err) {
