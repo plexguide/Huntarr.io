@@ -70,27 +70,33 @@
         margin-right: 0 !important;
     }
     
-    /* Requestarr sidebar - same JavaScript behavior as desktop */
-    #requestarr-sidebar {
+    /* Requestarr and Movie Hunt sidebars - same JavaScript behavior as desktop */
+    #requestarr-sidebar,
+    #movie-hunt-sidebar {
         width: 60px !important;
         padding: 20px 0 !important;
     }
     
     /* When JavaScript sets display: none, enforce it */
     #sidebar[style*="display: none"],
-    #requestarr-sidebar[style*="display: none"] {
+    #requestarr-sidebar[style*="display: none"],
+    #movie-hunt-sidebar[style*="display: none"] {
         display: none !important;
     }
     
-    /* When JavaScript sets display: block, show as flex */
+    /* When JavaScript sets display: block/flex, show as flex */
     #sidebar[style*="display: block"],
-    #requestarr-sidebar[style*="display: block"] {
+    #requestarr-sidebar[style*="display: block"],
+    #requestarr-sidebar[style*="display: flex"],
+    #movie-hunt-sidebar[style*="display: block"],
+    #movie-hunt-sidebar[style*="display: flex"] {
         display: flex !important;
         flex-direction: column !important;
     }
     
     /* Ensure only one sidebar shows at a time - default state */
-    #requestarr-sidebar:not([style*="display: block"]) {
+    #requestarr-sidebar:not([style*="display: block"]):not([style*="display: flex"]),
+    #movie-hunt-sidebar:not([style*="display: block"]):not([style*="display: flex"]) {
         display: none !important;
     }
     
@@ -117,7 +123,8 @@
 /* Very small screens */
 @media (max-width: 480px) {
     .sidebar,
-    #requestarr-sidebar {
+    #requestarr-sidebar,
+    #movie-hunt-sidebar {
         width: 50px !important;
     }
     

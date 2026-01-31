@@ -33,6 +33,12 @@
                 </div>
                 <span>Apps</span>
             </a>
+            <a href="./#movie-hunt-home" class="nav-item" id="movieHuntNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-film"></i>
+                </div>
+                <span>Movie Hunt</span>
+            </a>
             <a href="./#requestarr" class="nav-item" id="requestarrNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-plus-circle"></i>
@@ -88,6 +94,60 @@
     <div class="dev-mode-indicator" id="sidebar-dev-indicator">
         <i class="fas fa-code"></i>
         <span>Dev: <a href="https://github.com/Admin9705/" target="_blank" rel="noopener" id="sidebar-dev-username">Admin9705</a></span>
+    </div>
+</div>
+
+<!-- Movie Hunt Sidebar -->
+<div class="sidebar movie-hunt-sidebar" id="movie-hunt-sidebar" style="display: none;">
+    <div class="sidebar-top-line"></div>
+    <div class="logo-container">
+        <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer"
+            style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+            <img src="./static/logo/256.png" alt="Huntarr Logo" class="logo logo-large">
+            <img src="./static/logo/32.png" alt="Huntarr Logo" class="logo logo-small">
+            <h1>Huntarr</h1>
+        </a>
+    </div>
+
+    <nav class="nav-menu">
+        <a href="https://plexguide.github.io/Huntarr.io/donate.html" class="nav-item" target="_blank"
+            rel="noopener noreferrer">
+            <div class="nav-icon-wrapper heart-icon">
+                <i class="fas fa-heart"></i>
+            </div>
+            <span>Become A Sponsor</span>
+        </a>
+
+        <div class="nav-group" style="margin-top: -10px;">
+            <div class="nav-group-title">Huntarr</div>
+            <a href="./" class="nav-item" id="movieHuntMainHomeNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-home"></i>
+                </div>
+                <span>Home</span>
+            </a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-group-title">Movie Hunt</div>
+            <a href="./#movie-hunt-home" class="nav-item" id="movieHuntHomeNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-film"></i>
+                </div>
+                <span>Movie Home</span>
+            </a>
+            <a href="./#movie-hunt-settings" class="nav-item" id="movieHuntSettingsNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <span>Settings</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="dev-mode-indicator" id="sidebar-dev-indicator-movie-hunt">
+        <i class="fas fa-code"></i>
+        <span>Dev: <a href="https://github.com/Admin9705/" target="_blank" rel="noopener" id="sidebar-dev-username-movie-hunt">Admin9705</a></span>
     </div>
 </div>
 
@@ -1030,7 +1090,11 @@
             selector = '#settingsUserNav';
         }
         // Requestarr sidebar items
-        else if (currentHash === '#requestarr') {
+        else if (currentHash === '#movie-hunt-home') {
+            selector = '#movieHuntHomeNav';
+        } else if (currentHash === '#movie-hunt-settings') {
+            selector = '#movieHuntSettingsNav';
+        } else if (currentHash === '#requestarr') {
             selector = '#requestarrHomeNav';
         } else if (currentHash === '#requestarr-discover') {
             selector = '#requestarrDiscoverNav';

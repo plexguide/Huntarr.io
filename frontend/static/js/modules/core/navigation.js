@@ -63,7 +63,7 @@ window.HuntarrNavigation = {
             if (['apps'].includes(ui.currentSection) && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             if (ui.currentSection === 'prowlarr' && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             
-            const noRefresh = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr'];
+            const noRefresh = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-settings'];
             if (!noRefresh.includes(section) && !noRefresh.includes(ui.currentSection)) {
                 localStorage.setItem('huntarr-target-section', section);
                 location.reload();
@@ -85,6 +85,8 @@ window.HuntarrNavigation = {
             'home': { title: 'Home', nav: ui.elements.homeNav, section: ui.elements.homeSection, sidebar: 'main' },
             'logs': { title: 'Logs', nav: ui.elements.logsNav, section: ui.elements.logsSection, sidebar: 'main' },
             'hunt-manager': { title: 'Hunt Manager', nav: ui.elements.huntManagerNav, section: document.getElementById('huntManagerSection'), sidebar: 'main' },
+            'movie-hunt-home': { title: 'Movie Hunt', nav: document.getElementById('movieHuntHomeNav'), section: document.getElementById('requestarr-section'), sidebar: 'moviehunt', view: 'movies' },
+            'movie-hunt-settings': { title: 'Movie Hunt Settings', nav: document.getElementById('movieHuntSettingsNav'), section: document.getElementById('requestarr-section'), sidebar: 'moviehunt', view: 'settings' },
             'requestarr': { title: 'Discover', nav: document.getElementById('requestarrNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'discover' },
             'requestarr-discover': { title: 'Discover', nav: document.getElementById('requestarrDiscoverNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'discover' },
             'requestarr-movies': { title: 'Movies', nav: document.getElementById('requestarrMoviesNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'movies' },
@@ -128,6 +130,8 @@ window.HuntarrNavigation = {
             this.showSettingsSidebar();
         } else if (config.sidebar === 'requestarr') {
             this.showRequestarrSidebar();
+        } else if (config.sidebar === 'moviehunt') {
+            this.showMovieHuntSidebar();
         }
 
         if (section === 'home') {
@@ -168,7 +172,9 @@ window.HuntarrNavigation = {
         const appsSidebar = document.getElementById('apps-sidebar');
         const settingsSidebar = document.getElementById('settings-sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
         
+        if (movieHuntSidebar) movieHuntSidebar.style.display = 'none';
         if (mainSidebar) mainSidebar.style.display = 'block';
         if (appsSidebar) appsSidebar.style.display = 'none';
         if (settingsSidebar) settingsSidebar.style.display = 'none';
@@ -180,7 +186,9 @@ window.HuntarrNavigation = {
         const appsSidebar = document.getElementById('apps-sidebar');
         const settingsSidebar = document.getElementById('settings-sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
         
+        if (movieHuntSidebar) movieHuntSidebar.style.display = 'none';
         if (mainSidebar) mainSidebar.style.display = 'none';
         if (appsSidebar) appsSidebar.style.display = 'block';
         if (settingsSidebar) settingsSidebar.style.display = 'none';
@@ -195,7 +203,9 @@ window.HuntarrNavigation = {
         const appsSidebar = document.getElementById('apps-sidebar');
         const settingsSidebar = document.getElementById('settings-sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
         
+        if (movieHuntSidebar) movieHuntSidebar.style.display = 'none';
         if (mainSidebar) mainSidebar.style.display = 'none';
         if (appsSidebar) appsSidebar.style.display = 'none';
         if (settingsSidebar) settingsSidebar.style.display = 'block';
@@ -210,14 +220,45 @@ window.HuntarrNavigation = {
         const appsSidebar = document.getElementById('apps-sidebar');
         const settingsSidebar = document.getElementById('settings-sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
         
         if (mainSidebar) mainSidebar.style.display = 'none';
         if (appsSidebar) appsSidebar.style.display = 'none';
         if (settingsSidebar) settingsSidebar.style.display = 'none';
+        if (movieHuntSidebar) movieHuntSidebar.style.display = 'none';
         if (requestarrSidebar) requestarrSidebar.style.display = 'block';
         
-        // Update active state
         this.updateRequestarrSidebarActive();
+    },
+
+    showMovieHuntSidebar: function() {
+        const mainSidebar = document.getElementById('sidebar');
+        const appsSidebar = document.getElementById('apps-sidebar');
+        const settingsSidebar = document.getElementById('settings-sidebar');
+        const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
+        
+        if (mainSidebar) mainSidebar.style.display = 'none';
+        if (appsSidebar) appsSidebar.style.display = 'none';
+        if (settingsSidebar) settingsSidebar.style.display = 'none';
+        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+        if (movieHuntSidebar) movieHuntSidebar.style.display = 'flex';
+        
+        this.updateMovieHuntSidebarActive();
+    },
+
+    updateMovieHuntSidebarActive: function() {
+        if (!window.huntarrUI) return;
+        const currentSection = window.huntarrUI.currentSection;
+        const items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
+        items.forEach(item => {
+            item.classList.remove('active');
+            const link = item.querySelector('a');
+            if (link) {
+                const href = link.getAttribute('href');
+                if (href === `#${currentSection}`) item.classList.add('active');
+            }
+        });
     },
 
     updateAppsSidebarActive: function() {
@@ -315,6 +356,17 @@ window.HuntarrNavigation = {
                 if (href) {
                     window.location.hash = href;
                 }
+            });
+        });
+    },
+
+    setupMovieHuntNavigation: function() {
+        const movieHuntNavItems = document.querySelectorAll('#movie-hunt-sidebar .nav-item a');
+        movieHuntNavItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const href = item.getAttribute('href');
+                if (href) window.location.hash = href;
             });
         });
     },
