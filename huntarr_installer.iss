@@ -42,9 +42,13 @@ RestartApplications=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
+; Additional icons
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
-Name: "installservice"; Description: "Install as Windows Service"; GroupDescription: "Windows Service"; Flags: checkedonce
+; Start automatically: mutually exclusive (like Sonarr) - Service = no tray; Startup = tray icon
+Name: "windowsService"; Description: "Install Windows Service (Starts when the computer starts. No system tray icon.)"; GroupDescription: "Start automatically"; Flags: exclusive unchecked
+Name: "startupShortcut"; Description: "Create shortcut in Startup folder (Starts when you log in. System tray icon will appear.)"; GroupDescription: "Start automatically"; Flags: exclusive
+Name: "none"; Description: "Do not start automatically"; GroupDescription: "Start automatically"; Flags: exclusive unchecked
 
 [Files]
 Source: "dist\Huntarr\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -55,30 +59,32 @@ Source: "LICENSE"; DestDir: "{app}\config"; Flags: ignoreversion; AfterInstall: 
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+; Startup shortcut: run Huntarr in user session so system tray icon appears (like Sonarr)
+Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: startupShortcut
 
 [Run]
-; First, remove any existing service
+; Remove any existing service first (so upgrade from service to startup works)
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--remove-service"; Flags: runhidden
-; Wait a moment for the service to be properly removed
 Filename: "{sys}\cmd.exe"; Parameters: "/c timeout /t 3"; Flags: runhidden
-; Install the service
-Filename: "{app}\{#MyAppExeName}"; Parameters: "--install-service"; Description: "Install Huntarr as a Windows Service"; Tasks: installservice; Flags: runhidden
-; Grant permissions to the config directory 
+; Grant permissions to the config directory
 Filename: "{sys}\cmd.exe"; Parameters: '/c icacls "{app}\config" /grant Everyone:(OI)(CI)F'; Flags: runhidden shellexec
-; Start the service
-Filename: "{sys}\net.exe"; Parameters: "start Huntarr"; Flags: runhidden; Tasks: installservice
-; Launch Huntarr
+; If user chose Windows Service: install and start it (no tray - runs in Session 0)
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--install-service"; StatusMsg: "Installing Windows Service"; Tasks: windowsService; Flags: runhidden
+Filename: "{sys}\net.exe"; Parameters: "start Huntarr"; Flags: runhidden; Tasks: windowsService
+; Post-install: open Web UI
 Filename: "http://localhost:9705"; Description: "Open Huntarr Web Interface"; Flags: postinstall shellexec nowait
-; Launch Huntarr
-Filename: "{app}\{#MyAppExeName}"; Description: "Run Huntarr Application"; Flags: nowait postinstall skipifsilent; Check: not IsTaskSelected('installservice')
+; If user chose Startup or None: run Huntarr now (tray will show when Startup was chosen)
+Filename: "{app}\{#MyAppExeName}"; Description: "Start Huntarr"; Flags: postinstall skipifsilent nowait; Tasks: startupShortcut none
 
 [UninstallRun]
-; Stop the service first
+; Stop and remove the Windows Service if it was installed
 Filename: "{sys}\net.exe"; Parameters: "stop Huntarr"; Flags: runhidden
-; Wait a moment for the service to stop
 Filename: "{sys}\cmd.exe"; Parameters: "/c timeout /t 3"; Flags: runhidden
-; Then remove it
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--remove-service"; Flags: runhidden
+
+[UninstallDelete]
+; Remove Startup folder shortcut if it was created (like Sonarr cleanup)
+Type: files; Name: "{userstartup}\{#MyAppName}.lnk"
 
 [Code]
 procedure CreateConfigDirs;

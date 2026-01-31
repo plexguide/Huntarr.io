@@ -233,9 +233,18 @@ def run_web_server():
     
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
     
-    # TODO: System tray implementation temporarily disabled
-    # Will be re-enabled in a future update after thorough testing
-    # For now, console=False in PyInstaller spec provides silent background operation
+    # Start Windows system tray icon when running as normal app (not as a service).
+    # Tray only appears when Huntarr runs in the user session (e.g. double-click exe or Startup shortcut).
+    # When run as a Windows Service, the tray never shows (Session 0 has no taskbar).
+    if sys.platform == 'win32':
+        try:
+            from primary.windows_tray import start_system_tray
+            if start_system_tray(port):
+                web_logger.info("Windows system tray icon started")
+            else:
+                web_logger.debug("System tray not started (pystray may be missing)")
+        except Exception as tray_err:
+            web_logger.debug("System tray skipped: %s", tray_err)
 
     # Log the current authentication mode once at startup
     try:

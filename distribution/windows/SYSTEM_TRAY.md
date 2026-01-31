@@ -1,7 +1,7 @@
 # Windows System Tray Implementation
 
 ## Overview
-Huntarr now includes a Windows system tray icon that allows it to run silently in the background without cluttering the taskbar.
+Huntarr includes a Windows system tray icon when run as a **normal application** in your user session. The tray icon does **not** appear when Huntarr runs as a Windows Service (Session 0 has no taskbar). To get the tray, run Huntarr at logon via a Startup shortcut (see "Run Huntarr so the tray appears" below).
 
 ## Features
 
@@ -22,9 +22,10 @@ Double-click the system tray icon to quickly open the Huntarr web interface.
 ## Technical Implementation
 
 ### Components
-- **`distribution/windows/resources/system_tray.py`** - Main system tray implementation
+- **`src/primary/windows_tray.py`** - System tray implementation (used by main app)
+- **`distribution/windows/resources/system_tray.py`** - Legacy/standalone reference
 - **`pystray`** library - Cross-platform system tray support
-- Integrated into `main.py` for Windows builds
+- Integrated into `main.py` when running as a normal Windows process (not as a service)
 
 ### How It Works
 1. When Huntarr starts on Windows (non-debug mode), it automatically creates a system tray icon
@@ -81,9 +82,41 @@ python build.py
 - Windows Service mode (tray icon not needed)
 
 ### Not Active When
+- **Running as a Windows Service** – Services run in Session 0 and have no access to the taskbar or system tray. Use the Startup shortcut (see below) to run Huntarr in your user session so the tray appears.
 - Running in debug mode (`DEBUG=true`)
-- Running as a Windows Service (already background)
 - Running on non-Windows platforms (Linux, macOS)
+
+## Run Huntarr so the tray appears
+
+The tray icon only shows when Huntarr runs in your **user session** (e.g. double‑click exe or a shortcut that runs at logon). If you installed Huntarr as a Windows Service, it runs in Session 0 and the tray will never appear.
+
+**Option 1 – PowerShell: add Startup shortcut (recommended)**  
+From an elevated or user PowerShell, run:
+
+```powershell
+# If you built/installed Huntarr.exe (adjust path if needed):
+cd "C:\Users\micro\OneDrive\Documents\GitHub\Huntarr.io\distribution\windows\scripts"
+.\Install-TrayStartup.ps1 -HuntarrExePath "C:\Path\To\Huntarr.exe"
+
+# If you run from source (Python):
+.\Install-TrayStartup.ps1 -ProjectRoot "C:\Users\micro\OneDrive\Documents\GitHub\Huntarr.io"
+```
+
+This creates a shortcut in your **Startup** folder. At next logon, Huntarr starts as a normal app and the system tray icon appears.
+
+**Option 2 – Installer (recommended for new installs)**  
+The Windows installer (Inno Setup) offers the same pattern as [Sonarr’s Windows installer](https://github.com/Sonarr/Sonarr/blob/v5-develop/distribution/windows/setup/sonarr.iss): you choose **one** of:
+
+- **Install Windows Service** – Starts with the computer; no system tray (runs in Session 0).
+- **Create shortcut in Startup folder** – Starts when you log in; system tray icon will appear.
+- **Do not start automatically** – You start Huntarr manually (tray appears when you run it).
+
+Choosing “Create shortcut in Startup folder” creates a shortcut in your Startup folder and makes the tray the default way to run Huntarr.
+
+**Option 3 – Manual**  
+1. Do **not** start Huntarr as a service (or stop the service).  
+2. Double‑click `Huntarr.exe` or run `python main.py` from the repo.  
+3. The tray icon appears next to the clock.
 
 ## Testing
 
