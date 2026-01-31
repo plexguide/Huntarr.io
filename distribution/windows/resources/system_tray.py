@@ -32,12 +32,10 @@ class HuntarrSystemTray:
         try:
             # Try to load the Huntarr icon from the static folder
             if getattr(sys, 'frozen', False):
-                # Running as PyInstaller bundle
                 base_path = sys._MEIPASS
             else:
-                # Running as script
-                base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            
+                # distribution/windows/resources/system_tray.py -> project root is ../../..
+                base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
             icon_path = os.path.join(base_path, 'frontend', 'static', 'logo', 'huntarr.ico')
             
             if os.path.exists(icon_path):
@@ -85,21 +83,17 @@ class HuntarrSystemTray:
         if self.icon:
             self.icon.stop()
         
-        # Signal the main application to shut down
+        # Signal the main application to shut down (graceful; no os._exit)
         try:
-            from primary.background import stop_event
+            try:
+                from primary.background import stop_event
+            except Exception:
+                from src.primary.background import stop_event
             if not stop_event.is_set():
                 stop_event.set()
                 logger.info("Stop event set for main application")
         except Exception as e:
             logger.error(f"Error signaling main application shutdown: {e}")
-        
-        # Give threads time to clean up
-        import time
-        time.sleep(1)
-        
-        # Force exit if needed
-        os._exit(0)
     
     def create_menu(self):
         """Create the system tray context menu"""

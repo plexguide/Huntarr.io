@@ -233,7 +233,7 @@ def run_web_server():
     
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
     
-    # Start Windows system tray (Open Huntarr / Quit) when not debugging
+    # Windows system tray (Open Huntarr / Quit) when not debugging
     if sys.platform == "win32" and not debug_mode:
         try:
             from primary.windows_tray import start_windows_tray

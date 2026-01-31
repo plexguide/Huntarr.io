@@ -1,12 +1,11 @@
 """
 Windows system tray icon for Huntarr.
 Provides Open Huntarr and Quit from the notification area.
-Only used when running on Windows (GUI mode, not as a service).
+Uses pystray run_detached() so the icon runs in its own thread without blocking the main thread.
 """
 
 import os
 import sys
-import threading
 import webbrowser
 import logging
 
@@ -14,6 +13,9 @@ logger = logging.getLogger("Huntarr")
 
 # Default port; matches main.py
 DEFAULT_PORT = int(os.environ.get("HUNTARR_PORT", os.environ.get("PORT", 9705)))
+
+# Module-level reference so quit callback can call icon.stop()
+_tray_icon = None
 
 
 def _get_stop_event():
@@ -29,93 +31,112 @@ def _get_stop_event():
             return None
 
 
-def _icon_path():
-    """Path to icon for the system tray (ICO or PNG)."""
+def _project_base():
+    """Project root: works when running as script or from frozen bundle."""
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-        base = sys._MEIPASS
-    else:
-        base = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        return sys._MEIPASS
+    # __file__ is src/primary/windows_tray.py -> project root is ../..
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+
+def _load_icon_image():
+    """Load and prepare icon for Windows tray (32x32 RGBA recommended)."""
+    try:
+        from PIL import Image
+    except ImportError:
+        logger.warning("PIL not available for system tray icon")
+        return None
+    base = _project_base()
     # Prefer ICO on Windows
     ico = os.path.join(base, "frontend", "static", "logo", "huntarr.ico")
     if os.path.isfile(ico):
-        return ico
-    for name in ("64.png", "48.png", "32.png"):
+        try:
+            img = Image.open(ico)
+            img = img.convert("RGBA")
+            # Windows tray typically uses 16x16 or 32x32
+            if img.size != (32, 32):
+                resample = getattr(getattr(Image, "Resampling", None), "LANCZOS", Image.LANCZOS if hasattr(Image, "LANCZOS") else 1)
+                img = img.resize((32, 32), resample)
+            return img
+        except Exception as e:
+            logger.debug("Could not load ICO: %s", e)
+    for name in ("32.png", "48.png", "64.png"):
         path = os.path.join(base, "frontend", "static", "logo", name)
         if os.path.isfile(path):
-            return path
-    return None
-
-
-def _create_icon_image(path):
-    """Load image for pystray; pystray on Windows can use file path or PIL Image."""
-    try:
-        from PIL import Image
-        if path and os.path.isfile(path):
-            return Image.open(path)
-        # Fallback placeholder
-        return Image.new("RGB", (64, 64), color=(255, 127, 0))
-    except Exception as e:
-        logger.warning("Could not load tray icon: %s", e)
-        try:
-            from PIL import Image
-            return Image.new("RGB", (64, 64), color=(255, 127, 0))
-        except Exception:
-            return None
-
-
-def run_tray(port=DEFAULT_PORT):
-    """Run the Windows system tray icon. Blocking; call from a dedicated thread."""
-    try:
-        import pystray
-    except ImportError:
-        logger.warning("pystray not installed; system tray will not be shown")
-        return
-
-    stop_ev = _get_stop_event()
-    icon_path = _icon_path()
-    image = _create_icon_image(icon_path)
-    if image is None:
-        logger.warning("No tray icon image available")
-        return
-
-    def open_huntarr_cb(icon=None, item=None):
-        webbrowser.open(f"http://127.0.0.1:{port}")
-
-    def quit_cb(icon=None, item=None):
-        if stop_ev and not stop_ev.is_set():
-            stop_ev.set()
-            logger.info("System tray requested quit; stop_event set")
-        if icon:
-            icon.stop()
-
-    menu = pystray.Menu(
-        pystray.MenuItem("Open Huntarr", open_huntarr_cb, default=True),
-        pystray.Menu.SEPARATOR,
-        pystray.MenuItem("Quit", quit_cb),
-    )
-    tray_icon = pystray.Icon(
-        "Huntarr",
-        image,
-        "Huntarr - Media Management",
-        menu,
-    )
-    logger.info("Starting Windows system tray icon")
-    tray_icon.run()
+            try:
+                img = Image.open(path).convert("RGBA")
+                if img.size != (32, 32):
+                    resample = getattr(getattr(Image, "Resampling", None), "LANCZOS", Image.LANCZOS if hasattr(Image, "LANCZOS") else 1)
+                    img = img.resize((32, 32), resample)
+                return img
+            except Exception as e:
+                logger.debug("Could not load %s: %s", name, e)
+    # Fallback
+    return Image.new("RGBA", (32, 32), (255, 127, 0, 255))
 
 
 def start_windows_tray(port=DEFAULT_PORT):
-    """Start the Windows system tray in a background thread. Non-blocking."""
+    """
+    Start the Windows system tray icon (non-blocking).
+    Uses run_detached() so the main thread can continue running the web server.
+    Returns True if the tray was started, False otherwise.
+    """
+    global _tray_icon
     try:
         import pystray
     except ImportError:
         logger.warning("pystray not installed; system tray will not be shown")
         return False
-    t = threading.Thread(
-        target=run_tray,
-        args=(port,),
-        name="WindowsSystemTray",
-        daemon=True,
+
+    stop_ev = _get_stop_event()
+    image = _load_icon_image()
+    if image is None:
+        logger.warning("No tray icon image available")
+        return False
+
+    def open_cb(icon=None, item=None):
+        webbrowser.open(f"http://127.0.0.1:{port}")
+
+    def quit_cb(icon=None, item=None):
+        if stop_ev and not stop_ev.is_set():
+            stop_ev.set()
+            logger.info("System tray Quit: stop_event set")
+        if icon:
+            try:
+                icon.stop()
+            except Exception as e:
+                logger.debug("icon.stop(): %s", e)
+
+    menu = pystray.Menu(
+        pystray.MenuItem("Open Huntarr", open_cb, default=True),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("Quit", quit_cb),
     )
-    t.start()
-    logger.info("Windows system tray thread started")
-    return True
+    _tray_icon = pystray.Icon(
+        "Huntarr",
+        image,
+        "Huntarr - Media Management",
+        menu,
+    )
+    try:
+        # run_detached() runs the icon in a separate thread and returns immediately.
+        # Pass setup=lambda: None to avoid NameError on older pystray (issue #102).
+        _tray_icon.run_detached(setup=lambda: None)
+        logger.info("Windows system tray started (run_detached)")
+        return True
+    except TypeError:
+        # Older pystray: run_detached() may not accept setup
+        try:
+            _tray_icon.run_detached()
+            logger.info("Windows system tray started (run_detached)")
+            return True
+        except Exception as e:
+            logger.warning("run_detached failed, trying thread: %s", e)
+            import threading
+            t = threading.Thread(target=_tray_icon.run, name="WindowsSystemTray", daemon=True)
+            t.start()
+            logger.info("Windows system tray started (thread)")
+            return True
+    except Exception as e:
+        logger.warning("Failed to start system tray: %s", e)
+        return False
