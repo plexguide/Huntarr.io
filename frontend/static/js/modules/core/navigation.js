@@ -155,6 +155,9 @@ window.HuntarrNavigation = {
         if (section === 'movie-hunt-home' && window.MovieHunt && typeof window.MovieHunt.init === 'function') {
             window.MovieHunt.init();
         }
+        if (section === 'settings-indexers' && window.SettingsForms && typeof window.SettingsForms.refreshIndexersList === 'function') {
+            window.SettingsForms.refreshIndexersList();
+        }
         
         if (config.app && typeof appsModule !== 'undefined') {
             appsModule.init(config.app);

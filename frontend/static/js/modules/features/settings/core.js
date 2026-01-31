@@ -1430,11 +1430,74 @@ window.SettingsForms = {
         const preset = presetEl ? presetEl.value : 'manual';
         const name = nameEl ? nameEl.value.trim() : '';
         const apiKey = keyEl ? keyEl.value.trim() : '';
-        // TODO: call backend API to add/update indexer (enabled, preset, name, apiKey); for now just navigate back
+        const isAdd = this._currentEditing && this._currentEditing.isAdd;
+        const index = this._currentEditing ? this._currentEditing.index : 0;
         this._currentEditing = null;
-        if (window.huntarrUI && window.huntarrUI.switchSection) {
-            window.huntarrUI.switchSection('settings-indexers');
-        }
+
+        const body = { name: name || 'Unnamed', preset: preset, api_key: apiKey, enabled: enabled };
+        const url = isAdd ? './api/indexers' : './api/indexers/' + index;
+        const method = isAdd ? 'POST' : 'PUT';
+        fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
+                    window.SettingsForms.refreshIndexersList();
+                }
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(isAdd ? 'Indexer added.' : 'Indexer updated.', 'success');
+                }
+                if (window.huntarrUI && window.huntarrUI.switchSection) {
+                    window.huntarrUI.switchSection('settings-indexers');
+                }
+            })
+            .catch(function(err) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(err.message || 'Failed to save indexer', 'error');
+                }
+            });
+    },
+
+    // Render one indexer card for the Indexer Management grid
+    renderIndexerCard: function(indexer, index) {
+        const isDefault = index === 0;
+        const name = (indexer.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const last4 = indexer.api_key_last4 || '****';
+        const preset = (indexer.preset || 'manual').replace(/"/g, '&quot;');
+        const enabled = indexer.enabled !== false;
+        const statusClass = enabled ? 'status-connected' : 'status-error';
+        const statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
+        return '<div class="instance-card ' + (isDefault ? 'default-instance' : '') + '" data-instance-index="' + index + '" data-app-type="indexer" data-preset="' + preset + '" data-enabled="' + enabled + '">' +
+            '<div class="instance-card-header">' +
+            '<div class="instance-name"><i class="fas fa-server"></i><span>' + name + '</span>' + (isDefault ? '<span class="default-badge">Default</span>' : '') + '</div>' +
+            '<div class="instance-status-icon ' + statusClass + '"><i class="fas ' + statusIcon + '"></i></div>' +
+            '</div>' +
+            '<div class="instance-card-body">' +
+            '<div class="instance-detail"><i class="fas fa-key"></i><span>••••••••' + last4 + '</span></div>' +
+            '</div>' +
+            '<div class="instance-card-footer">' +
+            '<button type="button" class="btn-card edit" data-app-type="indexer" data-instance-index="' + index + '"><i class="fas fa-edit"></i> Edit</button>' +
+            '<button type="button" class="btn-card delete" data-app-type="indexer" data-instance-index="' + index + '"><i class="fas fa-trash"></i> Delete</button>' +
+            '</div></div>';
+    },
+
+    // Fetch indexers from API and refresh the Indexer Management grid
+    refreshIndexersList: function() {
+        const grid = document.getElementById('indexer-instances-grid');
+        if (!grid) return;
+        fetch('./api/indexers')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                const list = (data && data.indexers) ? data.indexers : [];
+                let html = '';
+                for (let i = 0; i < list.length; i++) {
+                    html += window.SettingsForms.renderIndexerCard(list[i], i);
+                }
+                html += '<div class="add-instance-card" data-app-type="indexer"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Adding Indexer</div></div>';
+                grid.innerHTML = html;
+            })
+            .catch(function(err) {
+                grid.innerHTML = '<div class="add-instance-card" data-app-type="indexer"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Adding Indexer</div></div>';
+            });
     },
 
     // Open the modal for adding/editing an instance

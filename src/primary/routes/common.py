@@ -240,6 +240,110 @@ def api_indexers_validate():
         return jsonify({'valid': False, 'message': str(e)}), 200
 
 
+def _get_indexers_config():
+    """Get indexers list from database (app_config app_type=indexers)."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('indexers')
+    if not config or not isinstance(config.get('indexers'), list):
+        return []
+    return config['indexers']
+
+
+def _save_indexers_list(indexers_list):
+    """Save indexers list to database."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    db.save_app_config('indexers', {'indexers': indexers_list})
+
+
+@common_bp.route('/api/indexers', methods=['GET'])
+def api_indexers_list():
+    """List saved indexers (API key masked to last 4 chars)."""
+    try:
+        indexers = _get_indexers_config()
+        out = []
+        for i, idx in enumerate(indexers):
+            key = (idx.get('api_key') or '')
+            last4 = key[-4:] if len(key) >= 4 else '****'
+            out.append({
+                'index': i,
+                'name': idx.get('name') or 'Unnamed',
+                'preset': idx.get('preset') or 'manual',
+                'enabled': idx.get('enabled', True),
+                'api_key_last4': last4,
+            })
+        return jsonify({'indexers': out}), 200
+    except Exception as e:
+        logger.exception('Indexers list error')
+        return jsonify({'indexers': [], 'error': str(e)}), 200
+
+
+@common_bp.route('/api/indexers', methods=['POST'])
+def api_indexers_add():
+    """Add a new indexer. Body: { name, preset, api_key, enabled }."""
+    try:
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip() or 'Unnamed'
+        preset = (data.get('preset') or 'manual').strip().lower()
+        api_key = (data.get('api_key') or '').strip()
+        enabled = data.get('enabled', True)
+        indexers = _get_indexers_config()
+        indexers.append({
+            'name': name,
+            'preset': preset,
+            'api_key': api_key,
+            'enabled': enabled,
+        })
+        _save_indexers_list(indexers)
+        return jsonify({'success': True, 'index': len(indexers) - 1}), 200
+    except Exception as e:
+        logger.exception('Indexers add error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@common_bp.route('/api/indexers/<int:index>', methods=['PUT'])
+def api_indexers_update(index):
+    """Update indexer at index. Body: { name, preset, api_key?, enabled }. Omit api_key to keep existing."""
+    try:
+        indexers = _get_indexers_config()
+        if index < 0 or index >= len(indexers):
+            return jsonify({'success': False, 'error': 'Index out of range'}), 400
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip() or 'Unnamed'
+        preset = (data.get('preset') or 'manual').strip().lower()
+        api_key_new = (data.get('api_key') or '').strip()
+        enabled = data.get('enabled', True)
+        existing = indexers[index]
+        api_key = api_key_new if api_key_new else (existing.get('api_key') or '')
+        indexers[index] = {
+            'name': name,
+            'preset': preset,
+            'api_key': api_key,
+            'enabled': enabled,
+        }
+        _save_indexers_list(indexers)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Indexers update error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@common_bp.route('/api/indexers/<int:index>', methods=['DELETE'])
+def api_indexers_delete(index):
+    """Delete indexer at index."""
+    try:
+        indexers = _get_indexers_config()
+        if index < 0 or index >= len(indexers):
+            return jsonify({'success': False, 'error': 'Index out of range'}), 400
+        indexers.pop(index)
+        _save_indexers_list(indexers)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Indexers delete error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @common_bp.route('/api/sleep.json', methods=['GET'])
 def api_get_sleep_json():
     """API endpoint to serve sleep/cycle data from the database for frontend access"""
