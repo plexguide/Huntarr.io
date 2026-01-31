@@ -236,6 +236,18 @@ jobs:
                   logger.error(f"Failed to import main: {str(e)}")
                   raise
               
+              # Open default browser after a short delay so user sees the app is running
+              def open_browser():
+                  time.sleep(3)
+                  try:
+                      import webbrowser
+                      webbrowser.open('http://127.0.0.1:9705')
+                  except Exception as e:
+                      logger.debug(f"Could not open browser: {e}")
+              
+              import threading
+              threading.Thread(target=open_browser, daemon=True).start()
+              
               # Start the main application
               logger.debug("Starting main application")
               main.main()
@@ -445,6 +457,7 @@ jobs:
                   'CFBundleVersion': '${{ steps.meta.outputs.VERSION }}',
                   'NSHighResolutionCapable': True,
                   'NSRequiresAquaSystemAppearance': False,
+                  'LSUIElement': False,
                   'LSEnvironment': {
                       'HUNTARR_CONFIG_DIR': '~/Library/Application Support/Huntarr/config',
                       'PYTHONPATH': '@executable_path/../Resources',
@@ -502,11 +515,27 @@ jobs:
                   --install-location /Applications \
                   ${pkg_name}
       
+      - name: Create macOS run instructions
+        run: |
+          cat > Huntarr-macOS-README.txt << 'EOF'
+          Huntarr macOS (Apple Silicon)
+
+          After installing, open Huntarr from Applications. The app will start the server
+          and open your browser at http://127.0.0.1:9705 after a few seconds.
+
+          If nothing appears:
+          - Check ~/Desktop/huntarr_error.log for startup errors.
+          - Open http://127.0.0.1:9705 in your browser manually; the server may already be running.
+          - Config and logs: ~/Library/Application Support/Huntarr/config
+          EOF
+
       - name: Upload installer as artifact
         uses: actions/upload-artifact@v4
         with:
           name: huntarr-macos-arm64-installer
-          path: '*.pkg'
+          path: |
+            *.pkg
+            Huntarr-macOS-README.txt
           retention-days: 30
       
       - name: Upload to release
