@@ -1288,15 +1288,28 @@ window.SettingsForms = {
         if (backBtn) {
             backBtn.onclick = () => this.cancelInstanceEditor();
         }
-        const testBtn = document.getElementById('indexer-test-btn');
-        if (testBtn) {
-            testBtn.onclick = () => this.validateIndexerApiKey();
-        }
+        // Auto-check connection on preset/API key input (like Sonarr) - debounced 500ms
         const presetEl = document.getElementById('editor-preset');
-        if (presetEl) {
-            presetEl.addEventListener('change', () => {
-                const c = document.getElementById('indexer-connection-status-container');
-                if (c) c.innerHTML = '';
+        const keyInput = document.getElementById('editor-key');
+        if (presetEl && keyInput) {
+            let validationTimeout;
+            const runCheck = () => {
+                clearTimeout(validationTimeout);
+                validationTimeout = setTimeout(() => this.checkIndexerConnection(), 500);
+            };
+            presetEl.addEventListener('change', runCheck);
+            keyInput.addEventListener('input', runCheck);
+            keyInput.addEventListener('change', runCheck);
+            this.checkIndexerConnection();
+        }
+        // Enable Status icon and dropdown (like Sonarr)
+        const enabledSelect = document.getElementById('editor-enabled');
+        const enableIcon = document.getElementById('indexer-enable-status-icon');
+        if (enabledSelect && enableIcon) {
+            enabledSelect.addEventListener('change', function() {
+                const isEnabled = enabledSelect.value === 'true';
+                enableIcon.className = isEnabled ? 'fas fa-check-circle' : 'fas fa-minus-circle';
+                enableIcon.style.color = isEnabled ? '#10b981' : '#ef4444';
             });
         }
 
@@ -1305,10 +1318,11 @@ window.SettingsForms = {
         }
     },
 
-    // Generate HTML for the indexer full-page editor (Preset, Name, API Key)
+    // Generate HTML for the indexer full-page editor (Enable Status, Preset, Name, API Key) - same layout as Sonarr Connection Details
     generateIndexerEditorHtml: function(instance) {
         const name = (instance.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const preset = (instance.preset || 'manual').toLowerCase().replace(/[^a-z0-9.-]/g, '');
+        const enabled = instance.enabled !== false;
         const isEdit = !!(instance && (instance.api_key_last4 || (instance.name && instance.name.trim())));
         const keyPlaceholder = isEdit && (instance.api_key_last4 || '')
             ? ('Enter new key or leave blank to keep existing (••••' + (instance.api_key_last4 || '') + ')')
@@ -1326,11 +1340,21 @@ window.SettingsForms = {
             <div class="editor-grid">
                 <div class="editor-section">
                     <div class="editor-section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <span>Indexer Details</span>
-                        <span style="display: flex; align-items: center; gap: 10px;">
-                            <span id="indexer-connection-status-container"></span>
-                            <button type="button" id="indexer-test-btn" class="btn-card" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">Test</button>
-                        </span>
+                        <span>Connection Settings</span>
+                        <div id="indexer-connection-status-container" style="display: flex; justify-content: flex-end; flex: 1;"></div>
+                    </div>
+                    <div class="editor-field-group">
+                        <div class="editor-setting-item">
+                            <label style="display: flex; align-items: center;">
+                                <span>Enable Status </span>
+                                <i id="indexer-enable-status-icon" class="fas ${enabled ? 'fa-check-circle' : 'fa-minus-circle'}" style="color: ${enabled ? '#10b981' : '#ef4444'}; font-size: 1.1rem;"></i>
+                            </label>
+                            <select id="editor-enabled">
+                                <option value="true" ${enabled ? 'selected' : ''}>Enabled</option>
+                                <option value="false" ${!enabled ? 'selected' : ''}>Disabled</option>
+                            </select>
+                        </div>
+                        <p class="editor-help-text">Enable or disable this instance</p>
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-preset">Presets</label>
@@ -1352,23 +1376,25 @@ window.SettingsForms = {
         `;
     },
 
-    // Validate indexer API key via backend (per preset: NZBGeek, NZBFinder.ws)
-    validateIndexerApiKey: function() {
+    // Check indexer connection status (auto-called on preset/API key input, like Sonarr) - updates status container
+    checkIndexerConnection: function() {
         const container = document.getElementById('indexer-connection-status-container');
         const presetEl = document.getElementById('editor-preset');
         const keyEl = document.getElementById('editor-key');
         if (!container || !presetEl || !keyEl) return;
+        container.style.display = 'flex';
+        container.style.justifyContent = 'flex-end';
         const preset = (presetEl.value || '').trim().toLowerCase();
         const apiKey = (keyEl.value || '').trim();
         if (preset === 'manual') {
-            container.innerHTML = '<span class="connection-status" style="color: #94a3b8;">Manual configuration is not validated.</span>';
+            container.innerHTML = '<span class="connection-status" style="background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2);"><i class="fas fa-info-circle"></i><span>Manual configuration is not validated.</span></span>';
             return;
         }
-        if (!apiKey) {
-            container.innerHTML = '<span class="connection-status error"><i class="fas fa-minus-circle"></i> Enter an API key to test.</span>';
+        if (!apiKey || apiKey.length < 10) {
+            container.innerHTML = '<span class="connection-status" style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2);"><i class="fas fa-exclamation-triangle"></i><span>Enter API key</span></span>';
             return;
         }
-        container.innerHTML = '<span class="connection-status checking"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
+        container.innerHTML = '<span class="connection-status checking"><i class="fas fa-spinner fa-spin"></i><span>Checking...</span></span>';
         fetch('./api/indexers/validate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1378,26 +1404,33 @@ window.SettingsForms = {
             .then(function(result) {
                 const data = result.data || {};
                 if (data.valid === true) {
-                    container.innerHTML = '<span class="connection-status success"><i class="fas fa-check-circle"></i> API key valid</span>';
+                    container.innerHTML = '<span class="connection-status success"><i class="fas fa-check-circle"></i><span>Connected</span></span>';
                 } else {
-                    container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i> ' + (data.message || 'Invalid API key') + '</span>';
+                    container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i><span>' + (data.message || 'Invalid API key') + '</span></span>';
                 }
             })
             .catch(function(err) {
-                container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i> ' + (err.message || 'Validation failed') + '</span>';
+                container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i><span>' + (err.message || 'Connection failed') + '</span></span>';
             });
+    },
+
+    // Alias for auto-check (same as checkIndexerConnection)
+    validateIndexerApiKey: function() {
+        this.checkIndexerConnection();
     },
 
     // Save indexer from full-page editor and return to Indexer Management
     saveIndexerFromEditor: function() {
         if (!this._currentEditing || this._currentEditing.appType !== 'indexer') return;
+        const enabledEl = document.getElementById('editor-enabled');
         const presetEl = document.getElementById('editor-preset');
         const nameEl = document.getElementById('editor-name');
         const keyEl = document.getElementById('editor-key');
+        const enabled = enabledEl ? enabledEl.value === 'true' : true;
         const preset = presetEl ? presetEl.value : 'manual';
         const name = nameEl ? nameEl.value.trim() : '';
         const apiKey = keyEl ? keyEl.value.trim() : '';
-        // TODO: call backend API to add/update indexer (preset, name, apiKey); for now just navigate back
+        // TODO: call backend API to add/update indexer (enabled, preset, name, apiKey); for now just navigate back
         this._currentEditing = null;
         if (window.huntarrUI && window.huntarrUI.switchSection) {
             window.huntarrUI.switchSection('settings-indexers');
