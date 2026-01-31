@@ -958,13 +958,13 @@ let huntarrUI = {
         } else if (section === 'instance-editor' && document.getElementById('instanceEditorSection')) {
             document.getElementById('instanceEditorSection').classList.add('active');
             document.getElementById('instanceEditorSection').style.display = 'block';
-            newTitle = 'Instance Editor';
             this.currentSection = 'instance-editor';
-            
-            // Indexer editor is part of Movie Hunt; app instance editor uses Apps sidebar
+            // Indexer editor is its own thing; app instance editor stays "Instance Editor"
             if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
+                newTitle = 'Indexer Editor';
                 this.showMovieHuntSidebar();
             } else {
+                newTitle = 'Instance Editor';
                 this.showAppsSidebar();
             }
         } else {

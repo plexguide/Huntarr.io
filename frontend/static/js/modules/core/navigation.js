@@ -115,6 +115,9 @@ window.HuntarrNavigation = {
         const config = sectionMap[section] || sectionMap['home'];
         ui.currentSection = section;
         newTitle = config.title;
+        if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
+            newTitle = 'Indexer Editor';
+        }
         
         if (config.section) {
             config.section.classList.add('active');
