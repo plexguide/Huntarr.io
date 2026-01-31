@@ -34,7 +34,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install py2app==0.28.6 "pyinstaller>=6.1.0,<7"
+          pip install py2app==0.28.6 "pyinstaller>=6.1.0,<7" rumps pyobjc-framework-ServiceManagement
       
       - name: Extract metadata
         id: meta
@@ -248,9 +248,19 @@ jobs:
               import threading
               threading.Thread(target=open_browser, daemon=True).start()
               
-              # Start the main application
-              logger.debug("Starting main application")
-              main.main()
+              # On macOS run server in a thread and show menu bar icon (Open Huntarr, Quit, Open at Login)
+              if sys.platform == 'darwin':
+                  logger.debug("Starting main application in background thread (macOS menu bar)")
+                  server_thread = threading.Thread(target=main.main, daemon=False)
+                  server_thread.start()
+                  try:
+                      from src.primary.macos_menubar import run_menubar
+                      run_menubar()
+                  finally:
+                      server_thread.join(timeout=10)
+              else:
+                  logger.debug("Starting main application")
+                  main.main()
           except Exception as e:
               logger.exception(f"Fatal error in app_launcher: {str(e)}")
               with open(desktop_log, "a") as f:
@@ -384,6 +394,12 @@ jobs:
                   'qrcode.image.pil',
                   'routes',
                   'main',
+                  # macOS menu bar (status bar) icon
+                  'rumps',
+                  'Foundation',
+                  'AppKit',
+                  'ServiceManagement',
+                  'objc',
                   # Apprise notification support
                   'apprise',
                   'apprise.common', 
