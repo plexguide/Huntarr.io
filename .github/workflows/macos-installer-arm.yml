@@ -34,7 +34,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install py2app==0.28.6 pyinstaller==6.1.0
+          pip install py2app==0.28.6 "pyinstaller>=6.1.0,<7"
       
       - name: Extract metadata
         id: meta
@@ -287,35 +287,45 @@ jobs:
       - name: Create icon
         run: |
           mkdir -p icon.iconset
-          sips -s format png frontend/static/logo/huntarr.ico --out icon.iconset/icon_16x16.png --resampleWidth 16 || true
-          sips -s format png frontend/static/logo/huntarr.ico --out icon.iconset/icon_32x32.png --resampleWidth 32 || true
-          sips -s format png frontend/static/logo/huntarr.ico --out icon.iconset/icon_64x64.png --resampleWidth 64 || true
-          sips -s format png frontend/static/logo/huntarr.ico --out icon.iconset/icon_128x128.png --resampleWidth 128 || true
-          sips -s format png frontend/static/logo/huntarr.ico --out icon.iconset/icon_256x256.png --resampleWidth 256 || true
-          sips -s format png frontend/static/logo/huntarr.ico --out icon.iconset/icon_512x512.png --resampleWidth 512 || true
-          
-          cp icon.iconset/icon_32x32.png icon.iconset/icon_16x16@2x.png || true
-          cp icon.iconset/icon_64x64.png icon.iconset/icon_32x32@2x.png || true
-          cp icon.iconset/icon_128x128.png icon.iconset/icon_64x64@2x.png || true
-          cp icon.iconset/icon_256x256.png icon.iconset/icon_128x128@2x.png || true
-          cp icon.iconset/icon_512x512.png icon.iconset/icon_256x256@2x.png || true
-          
-          iconutil -c icns icon.iconset -o frontend/static/logo/huntarr.icns || true
-          
-          # If icon conversion fails, create a fallback icon
+          # Use existing PNGs from repo (sips may not handle .ico on all macOS)
+          for size in 16 32 64 128 256 512; do
+            src="frontend/static/logo/${size}.png"
+            if [ -f "$src" ]; then
+              cp "$src" "icon.iconset/icon_${size}x${size}.png"
+            else
+              sips -s format png frontend/static/logo/huntarr.ico --out "icon.iconset/icon_${size}x${size}.png" --resampleWidth $size 2>/dev/null || true
+            fi
+          done
+          # Create @2x variants from next size up
+          [ -f icon.iconset/icon_32x32.png ] && cp icon.iconset/icon_32x32.png icon.iconset/icon_16x16@2x.png
+          [ -f icon.iconset/icon_64x64.png ] && cp icon.iconset/icon_64x64.png icon.iconset/icon_32x32@2x.png
+          [ -f icon.iconset/icon_128x128.png ] && cp icon.iconset/icon_128x128.png icon.iconset/icon_64x64@2x.png
+          [ -f icon.iconset/icon_256x256.png ] && cp icon.iconset/icon_256x256.png icon.iconset/icon_128x128@2x.png
+          [ -f icon.iconset/icon_512x512.png ] && cp icon.iconset/icon_512x512.png icon.iconset/icon_256x256@2x.png
+          iconutil -c icns icon.iconset -o frontend/static/logo/huntarr.icns
           if [ ! -f frontend/static/logo/huntarr.icns ]; then
-            cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns frontend/static/logo/huntarr.icns || true
+            cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns frontend/static/logo/huntarr.icns
           fi
 
       - name: Create PyInstaller spec
         run: |
-          cat > Huntarr.spec << 'EOF'
+          cat > Huntarr.spec << 'SPECEOF'
           # -*- mode: python ; coding: utf-8 -*-
+          import os
+          import sys
           from PyInstaller.building.api import PYZ, EXE, COLLECT
           from PyInstaller.building.build_main import Analysis
           from PyInstaller.building.datastruct import Tree
-          import os
-          import sys
+          # BUNDLE is macOS-only (wraps COLLECT into .app); location varies by PyInstaller version
+          if sys.platform != 'darwin':
+              raise SystemExit('This spec is for macOS only.')
+          try:
+              from PyInstaller.building.api import BUNDLE
+          except ImportError:
+              try:
+                  from PyInstaller.building.osx import BUNDLE
+              except ImportError:
+                  from PyInstaller.utils.osx import BUNDLE
           
           block_cipher = None
           
@@ -408,7 +418,7 @@ jobs:
               console=True,
               disable_windowed_traceback=False,
               argv_emulation=True,
-              target_arch=None,
+              target_arch='arm64',
               codesign_identity=None,
               entitlements_file=None,
               icon='frontend/static/logo/huntarr.icns',
@@ -443,7 +453,7 @@ jobs:
                   'NSPrincipalClass': 'NSApplication',
               },
           )
-          EOF
+          SPECEOF
 
       - name: Build macOS app bundle
         run: python -m PyInstaller Huntarr.spec --clean
