@@ -1,39 +1,9 @@
 <section id="settingsIndexersSection" class="content-section" style="display: none;">
-    <div class="settings-subpanel indexer-management-panel">
-        <!-- Full-width title bar (like Sonarr Instances) -->
-        <div class="indexer-management-banner" id="indexer-management-banner">
+    <div id="indexerManagementContainer" class="app-content-panel">
+        <!-- Same structure as Sonarr Instances: settings-group with dark gradient, h3, grid -->
+        <div class="settings-group indexer-settings-group">
             <h3>Indexer Management</h3>
-        </div>
-        <!-- Card grid container -->
-        <div class="indexer-management-content">
             <div class="instance-card-grid" id="indexer-instances-grid">
-                <!-- Placeholder indexer card (design) - replace with JS-rendered cards when backend is ready -->
-                <div class="instance-card default-instance" data-instance-index="0" data-app-type="indexer">
-                    <div class="instance-card-header">
-                        <div class="instance-name">
-                            <i class="fas fa-server"></i>
-                            <span>Example Indexer</span>
-                            <span class="default-badge">Default</span>
-                        </div>
-                        <div class="instance-status-icon status-connected">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                    </div>
-                    <div class="instance-card-body">
-                        <div class="instance-detail">
-                            <i class="fas fa-key"></i>
-                            <span>••••••••1234</span>
-                        </div>
-                    </div>
-                    <div class="instance-card-footer">
-                        <button type="button" class="btn-card edit" data-app-type="indexer" data-instance-index="0">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <button type="button" class="btn-card delete" data-app-type="indexer" data-instance-index="0">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
-                </div>
                 <div class="add-instance-card" data-app-type="indexer">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
                     <div class="add-text">Adding Indexer</div>
@@ -41,31 +11,43 @@
             </div>
         </div>
     </div>
-
 </section>
 
 <style>
-    /* Full-width banner (like Sonarr Instances) - extends to content edges */
-    .indexer-management-panel {
-        padding: 24px;
-        box-sizing: border-box;
-    }
-    .indexer-management-banner {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #1d4ed8 100%);
-        color: #fff;
-        padding: 14px 24px;
-        margin: -24px -24px 20px -24px;
-        border-radius: 0;
-        width: calc(100% + 48px);
-        box-sizing: border-box;
-    }
-    .indexer-management-banner h3 {
+    /* Match Sonarr section layout: full width, same padding */
+    #settingsIndexersSection {
+        width: 100%;
+        min-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
         margin: 0;
+    }
+    #settingsIndexersSection.active {
+        display: block !important;
+    }
+    #indexerManagementContainer {
+        width: 100%;
+        padding: 20px;
+        margin: 0;
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
+    }
+    /* Same box as Sonarr Instances: dark slate gradient, border, rounded */
+    .indexer-settings-group {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        border: 2px solid rgba(90, 109, 137, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0 25px 0;
+        box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    .indexer-settings-group h3 {
+        margin: 0 0 20px 0;
         font-size: 1.2rem;
         font-weight: 600;
-    }
-    .indexer-management-content {
-        padding: 0 4px;
+        color: #f8fafc;
     }
 </style>
 
