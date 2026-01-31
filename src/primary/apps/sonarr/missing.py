@@ -51,6 +51,23 @@ def should_delay_episode_search(air_date_str: str, delay_days: int) -> bool:
 # Get logger for the Sonarr app
 sonarr_logger = get_logger("sonarr")
 
+def _get_exempt_series_ids(api_url: str, api_key: str, api_timeout: int, exempt_tags: list) -> set:
+    """Return set of series IDs that have any exempt tag."""
+    exempt_series_ids = set()
+    if not exempt_tags:
+        return exempt_series_ids
+    exempt_id_to_label = sonarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
+    if not exempt_id_to_label:
+        return exempt_series_ids
+    all_series = sonarr_api.get_series(api_url, api_key, api_timeout)
+    for s in (all_series or []):
+        for tid in s.get("tags", []):
+            if tid in exempt_id_to_label:
+                exempt_series_ids.add(s.get("id"))
+                break
+    return exempt_series_ids
+
+
 def process_missing_episodes(
     api_url: str,
     api_key: str,
@@ -66,7 +83,8 @@ def process_missing_episodes(
     command_wait_attempts: int = get_advanced_setting("command_wait_attempts", 600),
     stop_check: Callable[[], bool] = lambda: False,
     tag_processed_items: bool = True,
-    custom_tags: dict = None
+    custom_tags: dict = None,
+    exempt_tags: list = None
 ) -> bool:
     """
     Process missing episodes for Sonarr.
@@ -87,6 +105,8 @@ def process_missing_episodes(
             "shows_missing": "huntarr-shows-missing"
         }
 
+    exempt_tags = exempt_tags or []
+
     # Handle different modes
     if hunt_missing_mode == "seasons_packs":
         # Handle season pack searches (using SeasonSearch command)
@@ -95,7 +115,8 @@ def process_missing_episodes(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, custom_tags
+            tag_processed_items, custom_tags, exempt_tags=exempt_tags,
+            hunt_missing_mode=hunt_missing_mode
         )
     elif hunt_missing_mode == "shows":
         # Handle show-based missing items (all episodes from a show)
@@ -104,7 +125,7 @@ def process_missing_episodes(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, custom_tags
+            tag_processed_items, custom_tags, exempt_tags=exempt_tags
         )
     elif hunt_missing_mode == "episodes":
         # Handle individual episode processing (reinstated with warnings)
@@ -113,7 +134,7 @@ def process_missing_episodes(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, custom_tags
+            tag_processed_items, custom_tags, exempt_tags=exempt_tags
         )
     else:
         sonarr_logger.error(f"Invalid hunt_missing_mode: {hunt_missing_mode}. Valid options are 'seasons_packs', 'shows', or 'episodes'.")
@@ -132,7 +153,9 @@ def process_missing_seasons_packs_mode(
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
     tag_processed_items: bool = True,
-    custom_tags: dict = None
+    custom_tags: dict = None,
+    exempt_tags: list = None,
+    hunt_missing_mode: str = "seasons_packs"
 ) -> bool:
     """
     Process missing seasons using the SeasonSearch command
@@ -140,7 +163,8 @@ def process_missing_seasons_packs_mode(
     Uses a direct episode lookup approach which is much more efficient
     """
     processed_any = False
-    
+    exempt_tags = exempt_tags or []
+
     # Use custom tags if provided, otherwise use defaults
     if custom_tags is None:
         custom_tags = {
@@ -235,6 +259,19 @@ def process_missing_seasons_packs_mode(
     # Convert to list and sort by episode count (most missing episodes first)
     seasons_list = list(missing_seasons.values())
     seasons_list.sort(key=lambda x: x['episode_count'], reverse=True)
+
+    # Filter out series with exempt tags
+    if exempt_tags:
+        exempt_series_ids = _get_exempt_series_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_series_ids:
+            series_id_to_title = {s['series_id']: s['series_title'] for s in seasons_list}
+            for sid in exempt_series_ids:
+                if sid in series_id_to_title:
+                    sonarr_logger.info(
+                        f"Skipping series \"{series_id_to_title[sid]}\" (ID: {sid}) - has exempt tag"
+                    )
+            seasons_list = [s for s in seasons_list if s['series_id'] not in exempt_series_ids]
+            sonarr_logger.info(f"Exempt tags filter: {len(seasons_list)} seasons remaining after excluding series with exempt tags.")
     
     # Filter out already processed seasons
     unprocessed_seasons = []
@@ -350,11 +387,13 @@ def process_missing_shows_mode(
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
     tag_processed_items: bool = True,
-    custom_tags: dict = None
+    custom_tags: dict = None,
+    exempt_tags: list = None
 ) -> bool:
     """Process missing episodes in show mode - gets all missing episodes for entire shows."""
     processed_any = False
-    
+    exempt_tags = exempt_tags or []
+
     # Use custom tags if provided, otherwise use defaults
     if custom_tags is None:
         custom_tags = {
@@ -371,6 +410,18 @@ def process_missing_shows_mode(
     if not series_with_missing:
         sonarr_logger.info("No series with missing episodes found.")
         return False
+
+    # Filter out series with exempt tags
+    if exempt_tags:
+        exempt_series_ids = _get_exempt_series_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_series_ids:
+            for show in series_with_missing:
+                if show.get("series_id") in exempt_series_ids:
+                    sonarr_logger.info(
+                        f"Skipping series \"{show.get('series_title', 'Unknown')}\" (ID: {show.get('series_id')}) - has exempt tag"
+                    )
+            series_with_missing = [s for s in series_with_missing if s.get("series_id") not in exempt_series_ids]
+            sonarr_logger.info(f"Exempt tags filter: {len(series_with_missing)} series remaining after excluding series with exempt tags.")
     
     # Filter out shows that have been processed
     unprocessed_series = []
@@ -553,7 +604,8 @@ def process_missing_episodes_mode(
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
     tag_processed_items: bool = True,
-    custom_tags: dict = None
+    custom_tags: dict = None,
+    exempt_tags: list = None
 ) -> bool:
     """
     Process missing episodes in individual episode mode.
@@ -565,7 +617,8 @@ def process_missing_episodes_mode(
     which can be useful for targeting specific episodes but is not recommended for most users.
     """
     processed_any = False
-    
+    exempt_tags = exempt_tags or []
+
     # Use custom tags if provided, otherwise use defaults
     if custom_tags is None:
         custom_tags = {
@@ -583,6 +636,18 @@ def process_missing_episodes_mode(
     
     if not missing_episodes:
         sonarr_logger.info("No missing episodes found for individual processing.")
+        return False
+
+    # Filter out episodes from series with exempt tags
+    if exempt_tags:
+        exempt_series_ids = _get_exempt_series_ids(api_url, api_key, api_timeout, exempt_tags)
+        if exempt_series_ids:
+            original_count = len(missing_episodes)
+            missing_episodes = [e for e in missing_episodes if e.get("seriesId") not in exempt_series_ids]
+            if original_count != len(missing_episodes):
+                sonarr_logger.info(f"Exempt tags filter: {len(missing_episodes)} episodes remaining after excluding series with exempt tags.")
+    if not missing_episodes:
+        sonarr_logger.info("No missing episodes left after exempt tags filter.")
         return False
     
     # Filter out future episodes if configured
