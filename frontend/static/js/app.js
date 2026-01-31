@@ -856,6 +856,9 @@ let huntarrUI = {
             newTitle = 'Indexers';
             this.currentSection = 'settings-indexers';
             this.showMovieHuntSidebar();
+            if (window.SettingsForms && typeof window.SettingsForms.refreshIndexersList === 'function') {
+                window.SettingsForms.refreshIndexersList();
+            }
         } else if (section === 'settings-clients' && document.getElementById('settingsClientsSection')) {
             document.getElementById('settingsClientsSection').classList.add('active');
             document.getElementById('settingsClientsSection').style.display = 'block';
@@ -958,8 +961,12 @@ let huntarrUI = {
             newTitle = 'Instance Editor';
             this.currentSection = 'instance-editor';
             
-            // Show apps sidebar for instance editor
-            this.showAppsSidebar();
+            // Indexer editor is part of Movie Hunt; app instance editor uses Apps sidebar
+            if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
+                this.showMovieHuntSidebar();
+            } else {
+                this.showAppsSidebar();
+            }
         } else {
             // Default to home if section is unknown or element missing
             if (this.elements.homeSection) {
