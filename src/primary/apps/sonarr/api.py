@@ -281,6 +281,7 @@ def get_missing_episodes(api_url: str, api_key: str, api_timeout: int, monitored
     while True:
         retry_count = 0
         success = False
+        records = []  # Ensure defined for "if not records" after inner loop (e.g. on request exception)
         
         while retry_count <= retries_per_page and not success:
             # Parameters for the request
@@ -288,7 +289,7 @@ def get_missing_episodes(api_url: str, api_key: str, api_timeout: int, monitored
                 "page": page,
                 "pageSize": page_size,
                 "includeSeries": "true",
-                "monitored": monitored_only
+                "monitored": str(monitored_only).lower()  # Sonarr API expects "true"/"false"
             }
             
             # Add series ID filter if provided
@@ -650,9 +651,10 @@ def get_missing_episodes_random_page(api_url: str, api_key: str, api_timeout: in
         "page": 1,
         "pageSize": 1,
         "includeSeries": "true",  # Include series info for filtering
-        "monitored": monitored_only
+        "monitored": str(monitored_only).lower()  # Sonarr API expects "true"/"false"
     }
-    url = f"{api_url}/api/v3/{endpoint}"
+    base_url = api_url.rstrip('/')
+    url = f"{base_url}/api/v3/{endpoint.lstrip('/')}"
     
     for attempt in range(retries + 1):
         try:
@@ -670,14 +672,17 @@ def get_missing_episodes_random_page(api_url: str, api_key: str, api_timeout: in
                 
             try:
                 data = response.json()
-                total_records = data.get('totalRecords', 0)
+                # Support both totalRecords (Sonarr v3) and total (some versions)
+                total_records = data.get('totalRecords', data.get('total', 0))
+                if isinstance(total_records, dict):
+                    total_records = 0
                 
                 if total_records == 0:
                     sonarr_logger.info("No missing episodes found in Sonarr.")
                     return []
                     
                 # Calculate total pages with our desired page size
-                total_pages = (total_records + page_size - 1) // page_size
+                total_pages = max(1, (total_records + page_size - 1) // page_size)
                 sonarr_logger.info(f"Found {total_records} total missing episodes across {total_pages} pages")
                 
                 if total_pages == 0:
@@ -693,7 +698,7 @@ def get_missing_episodes_random_page(api_url: str, api_key: str, api_timeout: in
                     "page": random_page,
                     "pageSize": page_size,
                     "includeSeries": "true",
-                    "monitored": monitored_only
+                    "monitored": str(monitored_only).lower()  # Sonarr API expects "true"/"false"
                 }
                 
                 if series_id is not None:
@@ -1180,14 +1185,19 @@ def get_tag_id_by_label(api_url: str, api_key: str, api_timeout: int, tag_label:
 
 
 def get_exempt_tag_ids(api_url: str, api_key: str, api_timeout: int, exempt_tag_labels: list) -> dict:
-    """Resolve exempt tag labels to tag IDs. Returns dict tag_id -> label. Exact match. Issue #676."""
-    if not exempt_tag_labels:
+    """Resolve exempt tag labels to tag IDs. Returns dict tag_id -> label. Exact match. Issue #676.
+    Only counts tags that are actually entered (non-empty); empty list or all-whitespace = no exclusions.
+    """
+    if exempt_tag_labels is None:
+        return {}
+    # Normalize: accept list or single string; only consider non-empty stripped labels
+    if isinstance(exempt_tag_labels, str):
+        exempt_tag_labels = [exempt_tag_labels]
+    labels = [str(l).strip() for l in (exempt_tag_labels or []) if l is not None and str(l).strip()]
+    if not labels:
         return {}
     result = {}
-    for label in exempt_tag_labels:
-        label = (label or "").strip()
-        if not label:
-            continue
+    for label in labels:
         tid = get_tag_id_by_label(api_url, api_key, api_timeout, label)
         if tid is not None:
             result[tid] = label

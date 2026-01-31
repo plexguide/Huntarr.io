@@ -51,9 +51,19 @@ def should_delay_episode_search(air_date_str: str, delay_days: int) -> bool:
 # Get logger for the Sonarr app
 sonarr_logger = get_logger("sonarr")
 
+
+def _normalize_exempt_tags(exempt_tags: list) -> list:
+    """Only count tags that are entered (non-empty). Empty/whitespace = no exclusions. Issue #805."""
+    if exempt_tags is None:
+        return []
+    return [t for t in (exempt_tags if isinstance(exempt_tags, list) else [exempt_tags])
+            if isinstance(t, str) and (t or "").strip()]
+
+
 def _get_exempt_series_ids(api_url: str, api_key: str, api_timeout: int, exempt_tags: list) -> set:
-    """Return set of series IDs that have any exempt tag."""
+    """Return set of series IDs that have any exempt tag. Empty exempt list = no series excluded."""
     exempt_series_ids = set()
+    exempt_tags = _normalize_exempt_tags(exempt_tags)
     if not exempt_tags:
         return exempt_series_ids
     exempt_id_to_label = sonarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
@@ -105,7 +115,8 @@ def process_missing_episodes(
             "shows_missing": "huntarr-shows-missing"
         }
 
-    exempt_tags = exempt_tags or []
+    # Only count tags that are entered; empty = process every item (Issue #805)
+    exempt_tags = _normalize_exempt_tags(exempt_tags or [])
 
     # Handle different modes
     if hunt_missing_mode == "seasons_packs":
@@ -163,7 +174,7 @@ def process_missing_seasons_packs_mode(
     Uses a direct episode lookup approach which is much more efficient
     """
     processed_any = False
-    exempt_tags = exempt_tags or []
+    exempt_tags = _normalize_exempt_tags(exempt_tags or [])
 
     # Use custom tags if provided, otherwise use defaults
     if custom_tags is None:
@@ -392,7 +403,7 @@ def process_missing_shows_mode(
 ) -> bool:
     """Process missing episodes in show mode - gets all missing episodes for entire shows."""
     processed_any = False
-    exempt_tags = exempt_tags or []
+    exempt_tags = _normalize_exempt_tags(exempt_tags or [])
 
     # Use custom tags if provided, otherwise use defaults
     if custom_tags is None:
@@ -617,7 +628,7 @@ def process_missing_episodes_mode(
     which can be useful for targeting specific episodes but is not recommended for most users.
     """
     processed_any = False
-    exempt_tags = exempt_tags or []
+    exempt_tags = _normalize_exempt_tags(exempt_tags or [])
 
     # Use custom tags if provided, otherwise use defaults
     if custom_tags is None:

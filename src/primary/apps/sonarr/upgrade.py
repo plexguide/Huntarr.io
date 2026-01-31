@@ -8,6 +8,7 @@ import random
 from typing import List, Dict, Any, Set, Callable, Union, Optional, Optional
 from src.primary.utils.logger import get_logger
 from src.primary.apps.sonarr import api as sonarr_api
+from src.primary.apps.sonarr.missing import _normalize_exempt_tags
 from src.primary.stats_manager import increment_stat, check_hourly_cap_exceeded
 from src.primary.stateful_manager import is_processed, add_processed_id
 from src.primary.utils.history_utils import log_processed_media
@@ -135,8 +136,7 @@ def process_cutoff_upgrades(
     
     sonarr_logger.info(f"Using {upgrade_mode.upper()} mode for quality upgrades")
 
-    # Use seasons_packs mode or episodes mode
-    exempt_tags = exempt_tags or []
+    # Use seasons_packs mode or episodes mode (exempt_tags already normalized above)
     if upgrade_mode == "seasons_packs":
         return process_upgrade_seasons_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 

@@ -516,14 +516,18 @@ def get_tag_id_by_label(api_url: str, api_key: str, api_timeout: int, tag_label:
 
 
 def get_exempt_tag_ids(api_url: str, api_key: str, api_timeout: int, exempt_tag_labels: list) -> dict:
-    """Resolve exempt tag labels to tag IDs. Returns dict tag_id -> label. Exact match. Issue #676."""
-    if not exempt_tag_labels:
+    """Resolve exempt tag labels to tag IDs. Returns dict tag_id -> label. Exact match. Issue #676.
+    Only counts tags that are actually entered (non-empty); empty list or all-whitespace = no exclusions.
+    """
+    if exempt_tag_labels is None:
+        return {}
+    if isinstance(exempt_tag_labels, str):
+        exempt_tag_labels = [exempt_tag_labels]
+    labels = [str(l).strip() for l in (exempt_tag_labels or []) if l is not None and str(l).strip()]
+    if not labels:
         return {}
     result = {}
-    for label in exempt_tag_labels:
-        label = (label or "").strip()
-        if not label:
-            continue
+    for label in labels:
         tid = get_tag_id_by_label(api_url, api_key, api_timeout, label)
         if tid is not None:
             result[tid] = label
