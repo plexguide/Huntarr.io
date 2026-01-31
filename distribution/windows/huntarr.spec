@@ -176,6 +176,10 @@ a = Analysis(
         'cryptography.hazmat.primitives.ciphers',
         'cryptography.hazmat.backends',
         'cryptography.hazmat.backends.openssl',
+        # Optional Windows system tray
+        'pystray',
+        'pystray._win32',
+        'pystray._win32_icon',
     ],
     hookspath=[],
     hooksconfig={},

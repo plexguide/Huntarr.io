@@ -233,9 +233,14 @@ def run_web_server():
     
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
     
-    # TODO: System tray implementation temporarily disabled
-    # Will be re-enabled in a future update after thorough testing
-    # For now, console=False in PyInstaller spec provides silent background operation
+    # Optional Windows system tray (Sonarr does not ship a tray; this is Huntarr-only).
+    # Fully defensive: any failure is caught and Huntarr runs normally without tray.
+    if sys.platform == 'win32':
+        try:
+            from primary.windows_tray import start_system_tray
+            start_system_tray(port)
+        except Exception:
+            pass
 
     # Log the current authentication mode once at startup
     try:
