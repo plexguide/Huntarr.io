@@ -126,7 +126,11 @@ window.HuntarrNavigation = {
             localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
         } else if (config.sidebar === 'apps') {
-            this.showAppsSidebar();
+            if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
+                this.showMovieHuntSidebar();
+            } else {
+                this.showAppsSidebar();
+            }
         } else if (config.sidebar === 'settings') {
             localStorage.setItem('huntarr-settings-sidebar', 'true');
             this.showSettingsSidebar();
@@ -263,6 +267,11 @@ window.HuntarrNavigation = {
                 item.classList.add('active');
             }
         });
+        var subGroup = document.getElementById('movie-hunt-settings-sub');
+        if (subGroup) {
+            var showSub = ['movie-hunt-settings', 'settings-indexers', 'settings-clients'].indexOf(currentSection) !== -1;
+            subGroup.classList.toggle('expanded', showSub);
+        }
     },
 
     updateAppsSidebarActive: function() {

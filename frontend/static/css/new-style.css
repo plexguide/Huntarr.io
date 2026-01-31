@@ -278,6 +278,15 @@ button {
     padding-left: 44px !important;
 }
 
+/* Movie Hunt sidebar: sub-settings (Indexers, Clients) only visible when Settings is active */
+#movie-hunt-settings-sub {
+    display: none;
+}
+
+#movie-hunt-settings-sub.expanded {
+    display: block;
+}
+
 /* Settings sub-pages (Indexers, Clients) */
 .settings-subpanel {
     padding: 24px;

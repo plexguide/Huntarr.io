@@ -1245,19 +1245,163 @@ window.SettingsForms = {
         // Stay on the editor page - don't navigate away
     },
 
-    // Cancel editing and return to app section
+    // Cancel editing and return to app section (or settings-indexers for indexer)
     cancelInstanceEditor: function() {
         // Stop polling when leaving editor
         this.stopStateStatusPolling();
         
-        // Return to the specific app that we were editing
-        if (this._currentEditing && this._currentEditing.appType) {
-            window.huntarrUI.switchSection(this._currentEditing.appType);
-        } else {
-            // Fallback to sonarr if no editing state
+        if (!this._currentEditing) {
             window.huntarrUI.switchSection('sonarr');
+            this._currentEditing = null;
+            return;
         }
+        const appType = this._currentEditing.appType;
         this._currentEditing = null;
+        if (appType === 'indexer') {
+            window.huntarrUI.switchSection('settings-indexers');
+        } else {
+            window.huntarrUI.switchSection(appType);
+        }
+    },
+
+    // Open full-page instance editor for an indexer (Edit or Add)
+    openIndexerEditor: function(isAdd, index, instance) {
+        this._currentEditing = { appType: 'indexer', index: index, isAdd: isAdd, originalInstance: JSON.parse(JSON.stringify(instance || {})) };
+
+        const titleEl = document.getElementById('instance-editor-title');
+        if (titleEl) {
+            titleEl.textContent = isAdd ? 'Adding Indexer' : 'Edit Indexer';
+        }
+
+        const contentEl = document.getElementById('instance-editor-content');
+        if (contentEl) {
+            contentEl.innerHTML = this.generateIndexerEditorHtml(instance || {});
+        }
+
+        const saveBtn = document.getElementById('instance-editor-save');
+        const backBtn = document.getElementById('instance-editor-back');
+        if (saveBtn) {
+            saveBtn.onclick = () => this.saveIndexerFromEditor();
+            saveBtn.disabled = false;
+            saveBtn.classList.add('enabled');
+        }
+        if (backBtn) {
+            backBtn.onclick = () => this.cancelInstanceEditor();
+        }
+        const testBtn = document.getElementById('indexer-test-btn');
+        if (testBtn) {
+            testBtn.onclick = () => this.validateIndexerApiKey();
+        }
+        const presetEl = document.getElementById('editor-preset');
+        if (presetEl) {
+            presetEl.addEventListener('change', () => {
+                const c = document.getElementById('indexer-connection-status-container');
+                if (c) c.innerHTML = '';
+            });
+        }
+
+        if (window.huntarrUI && window.huntarrUI.switchSection) {
+            window.huntarrUI.switchSection('instance-editor');
+        }
+    },
+
+    // Generate HTML for the indexer full-page editor (Preset, Name, API Key)
+    generateIndexerEditorHtml: function(instance) {
+        const name = (instance.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const preset = (instance.preset || 'manual').toLowerCase().replace(/[^a-z0-9.-]/g, '');
+        const isEdit = !!(instance && (instance.api_key_last4 || (instance.name && instance.name.trim())));
+        const keyPlaceholder = isEdit && (instance.api_key_last4 || '')
+            ? ('Enter new key or leave blank to keep existing (••••' + (instance.api_key_last4 || '') + ')')
+            : 'Your API Key';
+        const presetOptions = [
+            { value: 'nzbgeek', label: 'NZBGeek' },
+            { value: 'nzbfinder.ws', label: 'NZBFinder.ws' },
+            { value: 'manual', label: 'Manual Configuration' }
+        ];
+        const selectedPreset = ['nzbgeek', 'nzbfinder.ws', 'manual'].includes(preset) ? preset : 'manual';
+        const optionsHtml = presetOptions.map(function(o) {
+            return '<option value="' + o.value + '"' + (selectedPreset === o.value ? ' selected' : '') + '>' + o.label + '</option>';
+        }).join('');
+        return `
+            <div class="editor-grid">
+                <div class="editor-section">
+                    <div class="editor-section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <span>Indexer Details</span>
+                        <span style="display: flex; align-items: center; gap: 10px;">
+                            <span id="indexer-connection-status-container"></span>
+                            <button type="button" id="indexer-test-btn" class="btn-card" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">Test</button>
+                        </span>
+                    </div>
+                    <div class="editor-field-group">
+                        <label for="editor-preset">Presets</label>
+                        <select id="editor-preset">${optionsHtml}</select>
+                        <p class="editor-help-text">Choose a preset or Manual Configuration to enter details yourself.</p>
+                    </div>
+                    <div class="editor-field-group">
+                        <label for="editor-name">Name</label>
+                        <input type="text" id="editor-name" value="${name}" placeholder="e.g. Prowlarr, NZBGeek">
+                        <p class="editor-help-text">A friendly name to identify this indexer.</p>
+                    </div>
+                    <div class="editor-field-group">
+                        <label for="editor-key">API Key</label>
+                        <input type="text" id="editor-key" placeholder="${keyPlaceholder.replace(/"/g, '&quot;')}">
+                        <p class="editor-help-text">Only the last 4 characters will be shown on the card after saving.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    // Validate indexer API key via backend (per preset: NZBGeek, NZBFinder.ws)
+    validateIndexerApiKey: function() {
+        const container = document.getElementById('indexer-connection-status-container');
+        const presetEl = document.getElementById('editor-preset');
+        const keyEl = document.getElementById('editor-key');
+        if (!container || !presetEl || !keyEl) return;
+        const preset = (presetEl.value || '').trim().toLowerCase();
+        const apiKey = (keyEl.value || '').trim();
+        if (preset === 'manual') {
+            container.innerHTML = '<span class="connection-status" style="color: #94a3b8;">Manual configuration is not validated.</span>';
+            return;
+        }
+        if (!apiKey) {
+            container.innerHTML = '<span class="connection-status error"><i class="fas fa-minus-circle"></i> Enter an API key to test.</span>';
+            return;
+        }
+        container.innerHTML = '<span class="connection-status checking"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
+        fetch('./api/indexers/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ preset: preset, api_key: apiKey })
+        })
+            .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+            .then(function(result) {
+                const data = result.data || {};
+                if (data.valid === true) {
+                    container.innerHTML = '<span class="connection-status success"><i class="fas fa-check-circle"></i> API key valid</span>';
+                } else {
+                    container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i> ' + (data.message || 'Invalid API key') + '</span>';
+                }
+            })
+            .catch(function(err) {
+                container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i> ' + (err.message || 'Validation failed') + '</span>';
+            });
+    },
+
+    // Save indexer from full-page editor and return to Indexer Management
+    saveIndexerFromEditor: function() {
+        if (!this._currentEditing || this._currentEditing.appType !== 'indexer') return;
+        const presetEl = document.getElementById('editor-preset');
+        const nameEl = document.getElementById('editor-name');
+        const keyEl = document.getElementById('editor-key');
+        const preset = presetEl ? presetEl.value : 'manual';
+        const name = nameEl ? nameEl.value.trim() : '';
+        const apiKey = keyEl ? keyEl.value.trim() : '';
+        // TODO: call backend API to add/update indexer (preset, name, apiKey); for now just navigate back
+        this._currentEditing = null;
+        if (window.huntarrUI && window.huntarrUI.switchSection) {
+            window.huntarrUI.switchSection('settings-indexers');
+        }
     },
 
     // Open the modal for adding/editing an instance

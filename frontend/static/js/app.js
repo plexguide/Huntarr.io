@@ -1037,6 +1037,9 @@ let huntarrUI = {
         document.getElementById('requestarr-sidebar').style.display = 'none';
         const mh = document.getElementById('movie-hunt-sidebar');
         if (mh) mh.style.display = 'flex';
+        if (window.HuntarrNavigation && typeof window.HuntarrNavigation.updateMovieHuntSidebarActive === 'function') {
+            window.HuntarrNavigation.updateMovieHuntSidebarActive();
+        }
     },
     
     // Simple event source disconnection for compatibility

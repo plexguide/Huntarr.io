@@ -1,6 +1,114 @@
 <section id="settingsIndexersSection" class="content-section" style="display: none;">
-    <div class="settings-subpanel">
-        <h2 class="settings-subpanel-title">Indexers</h2>
-        <p class="settings-subpanel-description">Configure indexers for content discovery. This section will be expanded in a future release.</p>
+    <div class="settings-subpanel indexer-management-panel">
+        <!-- Full-width title bar (like Sonarr Instances) -->
+        <div class="indexer-management-banner" id="indexer-management-banner">
+            <h3>Indexer Management</h3>
+        </div>
+        <!-- Card grid container -->
+        <div class="indexer-management-content">
+            <div class="instance-card-grid" id="indexer-instances-grid">
+                <!-- Placeholder indexer card (design) - replace with JS-rendered cards when backend is ready -->
+                <div class="instance-card default-instance" data-instance-index="0" data-app-type="indexer">
+                    <div class="instance-card-header">
+                        <div class="instance-name">
+                            <i class="fas fa-server"></i>
+                            <span>Example Indexer</span>
+                            <span class="default-badge">Default</span>
+                        </div>
+                        <div class="instance-status-icon status-connected">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="instance-card-body">
+                        <div class="instance-detail">
+                            <i class="fas fa-key"></i>
+                            <span>••••••••1234</span>
+                        </div>
+                    </div>
+                    <div class="instance-card-footer">
+                        <button type="button" class="btn-card edit" data-app-type="indexer" data-instance-index="0">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button type="button" class="btn-card delete" data-app-type="indexer" data-instance-index="0">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+                <div class="add-instance-card" data-app-type="indexer">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Adding Indexer</div>
+                </div>
+            </div>
+        </div>
     </div>
+
 </section>
+
+<style>
+    /* Full-width banner (like Sonarr Instances) - extends to content edges */
+    .indexer-management-panel {
+        padding: 24px;
+        box-sizing: border-box;
+    }
+    .indexer-management-banner {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #1d4ed8 100%);
+        color: #fff;
+        padding: 14px 24px;
+        margin: -24px -24px 20px -24px;
+        border-radius: 0;
+        width: calc(100% + 48px);
+        box-sizing: border-box;
+    }
+    .indexer-management-banner h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    .indexer-management-content {
+        padding: 0 4px;
+    }
+</style>
+
+<script>
+(function() {
+    function initIndexerGrid() {
+        var grid = document.getElementById('indexer-instances-grid');
+        if (!grid) return;
+
+        grid.addEventListener('click', function(e) {
+            var editBtn = e.target.closest('.btn-card.edit[data-app-type="indexer"]');
+            var deleteBtn = e.target.closest('.btn-card.delete[data-app-type="indexer"]');
+            var addCard = e.target.closest('.add-instance-card[data-app-type="indexer"]');
+
+            if (editBtn) {
+                e.preventDefault();
+                var card = editBtn.closest('.instance-card');
+                var nameEl = card ? card.querySelector('.instance-name span') : null;
+                var keyEl = card ? card.querySelector('.instance-card-body .instance-detail span') : null;
+                var name = nameEl ? nameEl.textContent.trim() : '';
+                var keyText = keyEl ? keyEl.textContent.trim() : '';
+                var index = parseInt(editBtn.dataset.instanceIndex, 10);
+                var instance = { name: name, api_key: '', api_key_last4: keyText.replace(/\D/g, '').slice(-4) || '' };
+                if (window.SettingsForms && window.SettingsForms.openIndexerEditor) {
+                    window.SettingsForms.openIndexerEditor(false, index, instance);
+                }
+            } else if (addCard) {
+                e.preventDefault();
+                if (window.SettingsForms && window.SettingsForms.openIndexerEditor) {
+                    window.SettingsForms.openIndexerEditor(true, null, { name: '', api_key: '' });
+                }
+            } else if (deleteBtn) {
+                e.preventDefault();
+                if (confirm('Delete this indexer?')) {
+                    // TODO: wire to backend; for now no-op
+                }
+            }
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initIndexerGrid);
+    } else {
+        initIndexerGrid();
+    }
+})();
+</script>
