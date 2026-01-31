@@ -61,6 +61,9 @@ let huntarrUI = {
                     window.location.hash = '#';
                     this.switchSection('home');
                 }
+                if (!this.originalSettings) this.originalSettings = {};
+                this.originalSettings.general = all.general || {};
+                this.updateMovieHuntNavVisibility();
             })
             .catch(() => {});
         
@@ -1046,6 +1049,20 @@ let huntarrUI = {
         if (mh) mh.style.display = 'flex';
         if (window.HuntarrNavigation && typeof window.HuntarrNavigation.updateMovieHuntSidebarActive === 'function') {
             window.HuntarrNavigation.updateMovieHuntSidebarActive();
+        }
+    },
+
+    /** Show Movie Hunt nav item in main sidebar only when dev_mode is on (Settings > Main > Dev mode). */
+    updateMovieHuntNavVisibility: function() {
+        const devMode = !!(this.originalSettings && this.originalSettings.general && this.originalSettings.general.dev_mode === true);
+        const mhNav = document.getElementById('movieHuntNav');
+        if (mhNav) mhNav.style.display = devMode ? '' : 'none';
+        const onMovieHuntSection = this.currentSection && (
+            ['movie-hunt-home', 'movie-hunt-settings', 'settings-indexers', 'settings-clients'].indexOf(this.currentSection) !== -1 ||
+            (this.currentSection === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer')
+        );
+        if (!devMode && onMovieHuntSection) {
+            this.switchSection('home');
         }
     },
     

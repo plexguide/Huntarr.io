@@ -122,6 +122,9 @@ window.SettingsForms = {
             if (window.huntarrUI && window.huntarrUI.originalSettings) {
                 if (appType === 'general' && data && data.general) {
                     window.huntarrUI.originalSettings.general = JSON.parse(JSON.stringify(data.general));
+                    if (typeof window.huntarrUI.updateMovieHuntNavVisibility === 'function') {
+                        window.huntarrUI.updateMovieHuntNavVisibility();
+                    }
                 } else {
                     window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
                 }

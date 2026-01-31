@@ -369,6 +369,9 @@ window.HuntarrSettings = {
             if (data.success && !silent && window.HuntarrNotifications) window.HuntarrNotifications.showNotification('General settings auto-saved', 'success');
             if (data.general && window.huntarrUI && window.huntarrUI.originalSettings) {
                 window.huntarrUI.originalSettings.general = JSON.parse(JSON.stringify(data.general));
+                if (typeof window.huntarrUI.updateMovieHuntNavVisibility === 'function') {
+                    window.huntarrUI.updateMovieHuntNavVisibility();
+                }
             }
             // Don't re-render notifications - it has its own change-detection that would be reset
             if (section !== 'notifications' && typeof SettingsForms !== 'undefined' && SettingsForms.reRenderGeneralSection && data.general) {
