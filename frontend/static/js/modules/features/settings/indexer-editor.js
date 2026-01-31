@@ -118,19 +118,24 @@
         }
     };
 
-    // Preset-specific indexer categories (Movies only). Movies/3D (2060) unchecked by default.
-    var MOVIE_CATS = [
+    // Preset-specific indexer categories (Movies only). NZBGeek has 8 (no DVD); NZBFinder has 9 (includes DVD). Movies/3D (2060) unchecked by default.
+    var NZBGEEK_CATS = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Movies/Foreign' }, { id: 2020, name: 'Movies/Other' },
+        { id: 2030, name: 'Movies/SD' }, { id: 2040, name: 'Movies/HD' }, { id: 2045, name: 'Movies/UHD' },
+        { id: 2050, name: 'Movies/BluRay' }, { id: 2060, name: 'Movies/3D' }
+    ];
+    var NZBFINDER_CATS = [
         { id: 2000, name: 'Movies' }, { id: 2010, name: 'Movies/Foreign' }, { id: 2020, name: 'Movies/Other' },
         { id: 2030, name: 'Movies/SD' }, { id: 2040, name: 'Movies/HD' }, { id: 2045, name: 'Movies/UHD' },
         { id: 2050, name: 'Movies/BluRay' }, { id: 2060, name: 'Movies/3D' }, { id: 2070, name: 'Movies/DVD' }
     ];
     Forms.INDEXER_CATEGORIES_BY_PRESET = {
-        nzbgeek: MOVIE_CATS,
-        'nzbfinder.ws': MOVIE_CATS,
-        manual: MOVIE_CATS
+        nzbgeek: NZBGEEK_CATS,
+        'nzbfinder.ws': NZBFINDER_CATS,
+        manual: NZBFINDER_CATS
     };
     Forms.INDEXER_DEFAULT_IDS_BY_PRESET = {
-        nzbgeek: [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070],
+        nzbgeek: [2000, 2010, 2020, 2030, 2040, 2045, 2050],
         'nzbfinder.ws': [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070],
         manual: [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
     };
