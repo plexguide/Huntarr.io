@@ -61,51 +61,51 @@ jobs:
           import time
           from datetime import datetime
 
-          # Ensure Desktop log for critical errors
-          desktop_log = os.path.expanduser("~/Desktop/huntarr_error.log")
-          with open(desktop_log, "a") as f:
-              f.write(f"\n[{datetime.now().isoformat()}] Starting app_launcher.py\n")
-
           # Setup base paths before anything else - Use a location that doesn't require admin privileges
-          # First try the app bundle location, then fall back to Documents folder which usually has permissions
           bundle_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
           if hasattr(sys, "_MEIPASS"):
               bundle_dir = sys._MEIPASS
           
           app_name = "Huntarr"
-          # Use app's own directory for storage to avoid permission issues
+          home = os.path.expanduser("~")
           if os.path.exists(os.path.join(bundle_dir, "Contents", "Resources")):
-              # Running as a .app bundle
-              with open(desktop_log, "a") as f:
-                  f.write(f"Detected running as .app bundle\n")
               resources_dir = os.path.join(bundle_dir, "Contents", "Resources")
               config_dir = os.path.join(resources_dir, "config")
           else:
-              # Create config in user's Documents folder as a safer alternative
-              home = os.path.expanduser("~")
               config_dir = os.path.join(home, "Documents", app_name, "config")
-              with open(desktop_log, "a") as f:
-                  f.write(f"Using Documents folder for configuration: {config_dir}\n")
           
-          # Set up log directory
           log_dir = os.path.join(config_dir, "logs")
+          # Create config and logs dirs first so we can write error log there (not on Desktop)
+          try:
+              os.makedirs(config_dir, exist_ok=True)
+              os.makedirs(log_dir, exist_ok=True)
+          except Exception:
+              pass
+          error_log = os.path.join(log_dir, "huntarr_error.log")
+          try:
+              with open(error_log, "a") as f:
+                  f.write(f"\n[{datetime.now().isoformat()}] Starting app_launcher.py\n")
+                  f.write(f"Config: {config_dir}\n")
+          except Exception:
+              pass
 
-          # Create essential directories
+          # Create remaining essential directories
           for dir_path in [
-              config_dir,
               os.path.join(config_dir, "settings"),
               os.path.join(config_dir, "stateful"),
               os.path.join(config_dir, "user"),
-              os.path.join(config_dir, "logs"),
               os.path.join(config_dir, "scheduler"),
           ]:
               try:
                   os.makedirs(dir_path, exist_ok=True)
-                  with open(desktop_log, "a") as f:
+                  with open(error_log, "a") as f:
                       f.write(f"Created directory: {dir_path}\n")
               except Exception as e:
-                  with open(desktop_log, "a") as f:
-                      f.write(f"Error creating directory {dir_path}: {str(e)}\n")
+                  try:
+                      with open(error_log, "a") as f:
+                          f.write(f"Error creating directory {dir_path}: {str(e)}\n")
+                  except Exception:
+                      pass
 
           # Configure logging
           try:
@@ -120,19 +120,18 @@ jobs:
               logger = logging.getLogger("Huntarr")
               logger.setLevel(logging.DEBUG)
               
-              # Make sure log messages appear at the appropriate levels
               for handler in logger.handlers:
                   handler.setLevel(logging.DEBUG)
-                  
-              # Keep routine success messages at DEBUG level to reduce log clutter
-              # Only show ERROR level for actual errors
               logging.getLogger('werkzeug').setLevel(logging.WARNING)
               
-              with open(desktop_log, "a") as f:
+              with open(error_log, "a") as f:
                   f.write("Logging system initialized\n")
           except Exception as e:
-              with open(desktop_log, "a") as f:
-                  f.write(f"Error setting up logging: {str(e)}\n")
+              try:
+                  with open(error_log, "a") as f:
+                      f.write(f"Error setting up logging: {str(e)}\n")
+              except Exception:
+                  pass
               raise
 
           # Create necessary default config files if they don't exist
@@ -172,8 +171,8 @@ jobs:
               os.environ["HUNTARR_CONFIG_DIR"] = config_dir
               os.environ["FLASK_ENV"] = "production"
               
-              # Create a file to record the config location for other processes
-              config_location_file = os.path.join(os.path.dirname(desktop_log), "huntarr_config_location.txt")
+              # Create a file to record the config location for other processes (in Huntarr config, not Desktop)
+              config_location_file = os.path.join(config_dir, "config_location.txt")
               with open(config_location_file, "w") as f:
                   f.write(config_dir)
               
@@ -193,6 +192,7 @@ jobs:
                   config_dir = temp_config_dir
                   log_dir = os.path.join(config_dir, "logs")
                   os.makedirs(log_dir, exist_ok=True)
+                  error_log = os.path.join(log_dir, "huntarr_error.log")
                   os.environ["HUNTARR_CONFIG_DIR"] = config_dir
                   logger.warning(f"Switched to temporary directory: {config_dir}")
                   with open(config_location_file, "w") as f:
@@ -263,24 +263,23 @@ jobs:
                   main.main()
           except Exception as e:
               logger.exception(f"Fatal error in app_launcher: {str(e)}")
-              with open(desktop_log, "a") as f:
-                  f.write(f"\n[{datetime.now().isoformat()}] FATAL ERROR: {str(e)}\n")
-                  f.write("\nTraceback:\n")
-                  traceback.print_exc(file=f)
-                  
-                  # Add more diagnostic information
-                  f.write("\n\nSystem Information:\n")
-                  f.write(f"Python version: {sys.version}\n")
-                  f.write(f"Python path: {sys.path}\n")
-                  f.write(f"Working directory: {os.getcwd()}\n")
-                  
-                  # Try to list directory contents
-                  try:
-                      f.write("\nDirectory contents:\n")
-                      for item in os.listdir(os.getcwd()):
-                          f.write(f"  {item}\n")
-                  except Exception as dir_err:
-                      f.write(f"Error listing directory: {str(dir_err)}\n")
+              try:
+                  with open(error_log, "a") as f:
+                      f.write(f"\n[{datetime.now().isoformat()}] FATAL ERROR: {str(e)}\n")
+                      f.write("\nTraceback:\n")
+                      traceback.print_exc(file=f)
+                      f.write("\n\nSystem Information:\n")
+                      f.write(f"Python version: {sys.version}\n")
+                      f.write(f"Python path: {sys.path}\n")
+                      f.write(f"Working directory: {os.getcwd()}\n")
+                      try:
+                          f.write("\nDirectory contents:\n")
+                          for item in os.listdir(os.getcwd()):
+                              f.write(f"  {item}\n")
+                      except Exception as dir_err:
+                          f.write(f"Error listing directory: {str(dir_err)}\n")
+              except Exception:
+                  pass
           EOF
 
       - name: Create runtime hook
@@ -540,9 +539,9 @@ jobs:
           and open your browser at http://127.0.0.1:9705 after a few seconds.
 
           If nothing appears:
-          - Check ~/Desktop/huntarr_error.log for startup errors.
+          - Check Huntarr logs for startup errors: ~/Documents/Huntarr/config/logs/huntarr_error.log (or ~/Library/Application Support/Huntarr/config/logs/)
           - Open http://127.0.0.1:9705 in your browser manually; the server may already be running.
-          - Config and logs: ~/Library/Application Support/Huntarr/config
+          - Config and logs: ~/Documents/Huntarr/config or ~/Library/Application Support/Huntarr/config
           EOF
 
       - name: Upload installer as artifact

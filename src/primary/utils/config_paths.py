@@ -58,13 +58,15 @@ except Exception as e:
     CONFIG_PATH.mkdir(parents=True, exist_ok=True)
     print(f"Using temporary config directory: {CONFIG_DIR}")
     
-    # Also write to desktop log for visibility in case of issues
+    # Write to Huntarr logs (not Desktop) for visibility in case of issues
     try:
-        desktop_log = os.path.expanduser("~/Desktop/huntarr_error.log")
-        with open(desktop_log, "a") as f:
+        log_dir = CONFIG_PATH / "logs"
+        log_dir.mkdir(exist_ok=True)
+        error_log = log_dir / "huntarr_error.log"
+        with open(error_log, "a") as f:
             f.write(f"\nUsing temporary config directory: {CONFIG_DIR}\n")
             f.write(f"Original error accessing primary config: {str(e)}\n")
-    except:
+    except Exception:
         pass
 
 # Create standard directories - only the ones we actually use
