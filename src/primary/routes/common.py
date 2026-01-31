@@ -257,19 +257,19 @@ def _save_indexers_list(indexers_list):
     db.save_app_config('indexers', {'indexers': indexers_list})
 
 
-# Default indexer categories (TV and sub-categories). By default 6 are selected; 3 (Sport, Anime, Documentary) are not.
+# Indexer categories (Movies only). By default all selected except Movies/3D (2060).
 INDEXER_CATEGORIES = [
-    {'id': 5000, 'name': 'TV'},
-    {'id': 5020, 'name': 'TV/Foreign'},
-    {'id': 5030, 'name': 'TV/SD'},
-    {'id': 5040, 'name': 'TV/HD'},
-    {'id': 5045, 'name': 'TV/UHD'},
-    {'id': 5050, 'name': 'TV/Other'},
-    {'id': 5060, 'name': 'TV/Sport'},
-    {'id': 5070, 'name': 'TV/Anime'},
-    {'id': 5080, 'name': 'TV/Documentary'},
+    {'id': 2000, 'name': 'Movies'},
+    {'id': 2010, 'name': 'Movies/Foreign'},
+    {'id': 2020, 'name': 'Movies/Other'},
+    {'id': 2030, 'name': 'Movies/SD'},
+    {'id': 2040, 'name': 'Movies/HD'},
+    {'id': 2045, 'name': 'Movies/UHD'},
+    {'id': 2050, 'name': 'Movies/BluRay'},
+    {'id': 2060, 'name': 'Movies/3D'},
+    {'id': 2070, 'name': 'Movies/DVD'},
 ]
-INDEXER_CATEGORIES_DEFAULT_IDS = [5000, 5020, 5030, 5040, 5045, 5050]
+INDEXER_CATEGORIES_DEFAULT_IDS = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
 
 
 @common_bp.route('/api/indexers', methods=['GET'])

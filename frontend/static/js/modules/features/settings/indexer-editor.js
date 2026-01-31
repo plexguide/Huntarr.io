@@ -30,13 +30,16 @@
         this.populateIndexerCategoriesDropdown();
         const catSelect = document.getElementById('editor-categories-select');
         const catPills = document.getElementById('indexer-categories-pills');
+        const presetElForCat = document.getElementById('editor-preset');
         if (catSelect) {
             catSelect.addEventListener('change', function() {
                 const id = parseInt(catSelect.value, 10);
                 if (!id) return;
                 const pill = catPills ? catPills.querySelector('.indexer-category-pill[data-category-id="' + id + '"]') : null;
                 if (pill) return;
-                const c = Forms.INDEXER_CATEGORIES.find(function(x) { return x.id === id; });
+                const preset = (presetElForCat && presetElForCat.value) ? presetElForCat.value.toLowerCase().trim() : 'manual';
+                const cats = Forms.getIndexerCategoriesForPreset(preset);
+                const c = cats.find(function(x) { return x.id === id; });
                 const label = c ? (c.name + ' (' + c.id + ')') : String(id);
                 const span = document.createElement('span');
                 span.className = 'indexer-category-pill';
@@ -75,6 +78,30 @@
             keyInput.addEventListener('change', runCheck);
             this.checkIndexerConnection();
         }
+        if (presetEl) {
+            presetEl.addEventListener('change', function() {
+                var pills = document.getElementById('indexer-categories-pills');
+                if (!pills) return;
+                var preset = (presetEl.value || 'manual').toLowerCase().trim();
+                var defaultIds = Forms.getIndexerDefaultIdsForPreset(preset);
+                var cats = Forms.getIndexerCategoriesForPreset(preset);
+                pills.innerHTML = '';
+                defaultIds.forEach(function(id) {
+                    var c = cats.find(function(x) { return x.id === id; });
+                    var label = c ? (c.name + ' (' + c.id + ')') : String(id);
+                    var span = document.createElement('span');
+                    span.className = 'indexer-category-pill';
+                    span.setAttribute('data-category-id', id);
+                    span.innerHTML = '<span class="indexer-category-remove" aria-label="Remove">×</span><span>' + String(label).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+                    span.querySelector('.indexer-category-remove').addEventListener('click', function() {
+                        span.remove();
+                        Forms.populateIndexerCategoriesDropdown();
+                    });
+                    pills.appendChild(span);
+                });
+                Forms.populateIndexerCategoriesDropdown();
+            });
+        }
 
         const enabledSelect = document.getElementById('editor-enabled');
         const enableIcon = document.getElementById('indexer-enable-status-icon');
@@ -91,19 +118,30 @@
         }
     };
 
-    // Indexer categories (same as backend). Default selected: 5000,5020,5030,5040,5045,5050; not selected: 5060,5070,5080
-    Forms.INDEXER_CATEGORIES = [
-        { id: 5000, name: 'TV' },
-        { id: 5020, name: 'TV/Foreign' },
-        { id: 5030, name: 'TV/SD' },
-        { id: 5040, name: 'TV/HD' },
-        { id: 5045, name: 'TV/UHD' },
-        { id: 5050, name: 'TV/Other' },
-        { id: 5060, name: 'TV/Sport' },
-        { id: 5070, name: 'TV/Anime' },
-        { id: 5080, name: 'TV/Documentary' }
+    // Preset-specific indexer categories (Movies only). Movies/3D (2060) unchecked by default.
+    var MOVIE_CATS = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Movies/Foreign' }, { id: 2020, name: 'Movies/Other' },
+        { id: 2030, name: 'Movies/SD' }, { id: 2040, name: 'Movies/HD' }, { id: 2045, name: 'Movies/UHD' },
+        { id: 2050, name: 'Movies/BluRay' }, { id: 2060, name: 'Movies/3D' }, { id: 2070, name: 'Movies/DVD' }
     ];
-    Forms.INDEXER_CATEGORIES_DEFAULT_IDS = [5000, 5020, 5030, 5040, 5045, 5050];
+    Forms.INDEXER_CATEGORIES_BY_PRESET = {
+        nzbgeek: MOVIE_CATS,
+        'nzbfinder.ws': MOVIE_CATS,
+        manual: MOVIE_CATS
+    };
+    Forms.INDEXER_DEFAULT_IDS_BY_PRESET = {
+        nzbgeek: [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070],
+        'nzbfinder.ws': [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070],
+        manual: [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
+    };
+    Forms.getIndexerCategoriesForPreset = function(preset) {
+        var p = (preset || 'manual').toLowerCase().trim();
+        return Forms.INDEXER_CATEGORIES_BY_PRESET[p] || Forms.INDEXER_CATEGORIES_BY_PRESET.manual;
+    };
+    Forms.getIndexerDefaultIdsForPreset = function(preset) {
+        var p = (preset || 'manual').toLowerCase().trim();
+        return (Forms.INDEXER_DEFAULT_IDS_BY_PRESET[p] || Forms.INDEXER_DEFAULT_IDS_BY_PRESET.manual).slice();
+    };
 
     Forms.generateIndexerEditorHtml = function(instance) {
         const name = (instance.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -122,9 +160,13 @@
         const optionsHtml = presetOptions.map(function(o) {
             return '<option value="' + o.value + '"' + (selectedPreset === o.value ? ' selected' : '') + '>' + o.label + '</option>';
         }).join('');
-        var categoryIds = Array.isArray(instance.categories) ? instance.categories.slice() : Forms.INDEXER_CATEGORIES_DEFAULT_IDS.slice();
+        var presetKey = (preset || 'manual').toLowerCase().trim();
+        var presetCats = Forms.getIndexerCategoriesForPreset(presetKey);
+        var defaultIds = Forms.getIndexerDefaultIdsForPreset(presetKey);
+        var categoryIds = Array.isArray(instance.categories) ? instance.categories.filter(function(id) { return presetCats.some(function(c) { return c.id === id; }); }) : defaultIds;
+        if (categoryIds.length === 0) categoryIds = defaultIds;
         var categoryChipsHtml = categoryIds.map(function(id) {
-            var c = Forms.INDEXER_CATEGORIES.find(function(x) { return x.id === id; });
+            var c = presetCats.find(function(x) { return x.id === id; });
             var label = c ? (c.name + ' (' + c.id + ')') : String(id);
             return '<span class="indexer-category-pill" data-category-id="' + id + '"><span class="indexer-category-remove" aria-label="Remove">×</span><span>' + String(label).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></span>';
         }).join('');
@@ -182,10 +224,13 @@
     Forms.populateIndexerCategoriesDropdown = function() {
         const select = document.getElementById('editor-categories-select');
         const pills = document.getElementById('indexer-categories-pills');
+        const presetEl = document.getElementById('editor-preset');
         if (!select || !pills) return;
+        const preset = (presetEl && presetEl.value) ? presetEl.value.toLowerCase().trim() : 'manual';
+        const categories = Forms.getIndexerCategoriesForPreset(preset);
         const selectedIds = Array.from(pills.querySelectorAll('.indexer-category-pill')).map(function(el) { return parseInt(el.getAttribute('data-category-id'), 10); }).filter(function(id) { return !isNaN(id); });
         select.innerHTML = '<option value="">Select a category to add...</option>';
-        Forms.INDEXER_CATEGORIES.forEach(function(c) {
+        categories.forEach(function(c) {
             if (selectedIds.indexOf(c.id) === -1) {
                 const opt = document.createElement('option');
                 opt.value = c.id;
@@ -249,7 +294,8 @@
         const isAdd = this._currentEditing.isAdd;
         const index = this._currentEditing.index;
         const pillsEl = document.getElementById('indexer-categories-pills');
-        const categories = pillsEl ? Array.from(pillsEl.querySelectorAll('.indexer-category-pill')).map(function(el) { return parseInt(el.getAttribute('data-category-id'), 10); }).filter(function(id) { return !isNaN(id); }) : this.INDEXER_CATEGORIES_DEFAULT_IDS.slice();
+        var categories = pillsEl ? Array.from(pillsEl.querySelectorAll('.indexer-category-pill')).map(function(el) { return parseInt(el.getAttribute('data-category-id'), 10); }).filter(function(id) { return !isNaN(id); }) : [];
+        if (categories.length === 0) categories = Forms.getIndexerDefaultIdsForPreset(preset);
 
         const body = { name: name || 'Unnamed', preset: preset, api_key: apiKey, enabled: enabled, categories: categories };
         const url = isAdd ? './api/indexers' : './api/indexers/' + index;
