@@ -176,6 +176,11 @@ a = Analysis(
         'cryptography.hazmat.primitives.ciphers',
         'cryptography.hazmat.backends',
         'cryptography.hazmat.backends.openssl',
+        # Windows system tray (Open Huntarr / Quit)
+        'pystray',
+        'pystray._win32',
+        'PIL',
+        'PIL.Image',
     ],
     hookspath=[],
     hooksconfig={},

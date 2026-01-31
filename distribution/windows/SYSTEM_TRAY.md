@@ -22,9 +22,9 @@ Double-click the system tray icon to quickly open the Huntarr web interface.
 ## Technical Implementation
 
 ### Components
-- **`distribution/windows/resources/system_tray.py`** - Main system tray implementation
+- **`src/primary/windows_tray.py`** - Main system tray implementation (Open Huntarr / Quit)
 - **`pystray`** library - Cross-platform system tray support
-- Integrated into `main.py` for Windows builds
+- Integrated into `main.py`: starts tray when on Windows and not in debug mode
 
 ### How It Works
 1. When Huntarr starts on Windows (non-debug mode), it automatically creates a system tray icon

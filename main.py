@@ -233,9 +233,14 @@ def run_web_server():
     
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
     
-    # TODO: System tray implementation temporarily disabled
-    # Will be re-enabled in a future update after thorough testing
-    # For now, console=False in PyInstaller spec provides silent background operation
+    # Start Windows system tray (Open Huntarr / Quit) when not debugging
+    if sys.platform == "win32" and not debug_mode:
+        try:
+            from primary.windows_tray import start_windows_tray
+            if start_windows_tray(port):
+                web_logger.info("Windows system tray icon initialized")
+        except Exception as e:
+            web_logger.warning("Could not start Windows system tray: %s", e)
 
     # Log the current authentication mode once at startup
     try:
