@@ -535,11 +535,19 @@ jobs:
           cat > Huntarr-macOS-README.txt << 'EOF'
           Huntarr macOS (Apple Silicon)
 
-          After installing, open Huntarr from Applications. The app will start the server
-          and open your browser at http://127.0.0.1:9705 after a few seconds.
+          INSTALLATION
+          -------------
+          When you run the installer, macOS may show "Huntarr cannot be opened" or ask you to move to Trash or hit Done. Hit DONE (do not move to Trash).
+
+          Then:
+          1. Go to System Settings (or System Preferences) → Privacy and Security.
+          2. Under Security, find the message about Huntarr being blocked. Click "Allow" or "Open Anyway" for Huntarr.
+          3. When the install prompt appears again, click "Open Anyway" again. Huntarr will then install.
+
+          After installing, open Huntarr from Applications. The app will start the server and open your browser at http://127.0.0.1:9705 after a few seconds.
 
           If nothing appears:
-          - Check Huntarr logs for startup errors: ~/Documents/Huntarr/config/logs/huntarr_error.log (or ~/Library/Application Support/Huntarr/config/logs/)
+          - Check Huntarr logs: ~/Documents/Huntarr/config/logs/huntarr_error.log (or ~/Library/Application Support/Huntarr/config/logs/)
           - Open http://127.0.0.1:9705 in your browser manually; the server may already be running.
           - Config and logs: ~/Documents/Huntarr/config or ~/Library/Application Support/Huntarr/config
           EOF
