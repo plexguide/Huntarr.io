@@ -105,23 +105,12 @@ class BackupManager:
         self.ensure_backup_directory()
     
     def _get_backup_directory(self):
-        """Get the backup directory path based on environment"""
-        # Check if running in Docker (config directory exists)
-        config_dir = Path("/config")
-        if config_dir.exists() and config_dir.is_dir():
-            return config_dir / "backups"
-        
-        # Check Windows AppData
-        import platform
-        if platform.system() == "Windows":
-            appdata = os.environ.get("APPDATA", os.path.expanduser("~"))
-            windows_config_dir = Path(appdata) / "Huntarr"
-            return windows_config_dir / "backups"
-        
-        # For local development, use data directory in project root
-        project_root = Path(__file__).parent.parent.parent
-        data_dir = project_root / "data"
-        return data_dir / "backups"
+        """Get the backup directory path based on environment.
+        Use the same config directory as the database so it works when frozen (macOS .app)
+        and avoids writing inside the read-only app bundle.
+        """
+        # Database is already initialized and uses HUNTARR_CONFIG_DIR / Docker / Windows / project data
+        return Path(self.db.db_path).parent / "backups"
     
     def ensure_backup_directory(self):
         """Ensure backup directory exists"""
