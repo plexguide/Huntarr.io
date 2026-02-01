@@ -270,6 +270,17 @@
             modal.style.display = 'none';
             document.body.classList.remove('client-type-modal-open');
         }
+        var selectEl = document.getElementById('client-type-select');
+        if (selectEl) selectEl.value = '';
+        var continueBtn = document.getElementById('client-type-modal-continue');
+        if (continueBtn) continueBtn.disabled = true;
+    }
+    function selectClientType(type) {
+        closeClientTypeModal();
+        if (window.SettingsForms && window.SettingsForms.openClientEditor) {
+            var payload = { name: '', type: type, host: '', port: 8080, enabled: true, category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 50 };
+            window.SettingsForms.openClientEditor(true, null, payload);
+        }
     }
     function initClientTypeModal() {
         var modal = document.getElementById('client-type-modal');
