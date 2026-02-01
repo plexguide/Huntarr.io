@@ -28,7 +28,7 @@
             enabled: settings.enabled !== false
         };
 
-        prowlarrHtml += window.SettingsForms.renderInstanceCard('prowlarr', prowlarrInstance, 0);
+        prowlarrHtml += window.SettingsForms.renderInstanceCard('prowlarr', prowlarrInstance, 0, { hideDelete: true });
 
         prowlarrHtml += `
                 </div>

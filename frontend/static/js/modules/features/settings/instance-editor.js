@@ -19,8 +19,8 @@
         return icons[appType] || 'fa-server';
     },
 
-    // Render a single instance card
-    renderInstanceCard: function(appType, instance, index) {
+    // Render a single instance card. options: { hideDelete: true } for single-instance apps (e.g. Prowlarr).
+    renderInstanceCard: function(appType, instance, index, options) {
         const isDefault = index === 0;
         
         // Determine connection status based on actual API connectivity
@@ -46,10 +46,15 @@
             statusIcon = 'fa-minus-circle';
         }
         
+        const hideDelete = (options && options.hideDelete) === true;
+        const footerButtons = hideDelete
+            ? `<button type="button" class="btn-card edit" data-app-type="${appType}" data-instance-index="${index}"><i class="fas fa-edit"></i> Edit</button>`
+            : `<button type="button" class="btn-card edit" data-app-type="${appType}" data-instance-index="${index}"><i class="fas fa-edit"></i> Edit</button>
+                    <button type="button" class="btn-card delete" data-app-type="${appType}" data-instance-index="${index}"><i class="fas fa-trash"></i> Delete</button>`;
         return `
             <div class="instance-card ${isDefault ? 'default-instance' : ''}" data-instance-index="${index}" data-app-type="${appType}">
                 <div class="instance-card-header">
-                    <div class="instance-name">
+                    <div class="instance-name instance-name-with-priority">
                         <i class="fas ${this.getAppIcon(appType)}"></i>
                         ${instance.name || 'Unnamed Instance'}
                         ${isDefault ? '<span class="default-badge">Default</span>' : ''}
@@ -69,12 +74,7 @@
                     </div>
                 </div>
                 <div class="instance-card-footer">
-                    <button type="button" class="btn-card edit" data-app-type="${appType}" data-instance-index="${index}">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button type="button" class="btn-card delete" data-app-type="${appType}" data-instance-index="${index}">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
+                    ${footerButtons}
                 </div>
             </div>
         `;
