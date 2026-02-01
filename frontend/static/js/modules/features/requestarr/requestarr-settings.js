@@ -803,7 +803,6 @@ export class RequestarrSettings {
             const savedSonarrPath = (savedRootData.default_root_folder_sonarr || '').trim();
 
             // Radarr root folders with bulletproof deduplication
-            radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
             if (movieInstance) {
                 const rfRes = await fetch(`./api/requestarr/rootfolders?app_type=radarr&instance_name=${encodeURIComponent(movieInstance)}`);
                 const rfData = await rfRes.json();
@@ -826,19 +825,30 @@ export class RequestarrSettings {
                         }
                     });
                     console.log('[RequestarrSettings] After deduplication:', seenPaths.size, 'unique Radarr root folders');
-                    // Add options from deduplicated map
-                    seenPaths.forEach(rf => {
-                        const opt = document.createElement('option');
-                        opt.value = rf.path;
-                        opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
-                        radarrSelect.appendChild(opt);
-                    });
-                    if (savedRadarrPath) radarrSelect.value = savedRadarrPath;
+                    
+                    // Only show fallback if NO root folders exist
+                    if (seenPaths.size === 0) {
+                        radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
+                    } else {
+                        // Clear and add only actual root folders
+                        radarrSelect.innerHTML = '';
+                        // Add options from deduplicated map
+                        seenPaths.forEach(rf => {
+                            const opt = document.createElement('option');
+                            opt.value = rf.path;
+                            opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
+                            radarrSelect.appendChild(opt);
+                        });
+                        if (savedRadarrPath) radarrSelect.value = savedRadarrPath;
+                    }
+                } else {
+                    radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
                 }
+            } else {
+                radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
             }
 
             // Sonarr root folders with bulletproof deduplication
-            sonarrSelect.innerHTML = '<option value="">Use first root folder in Sonarr</option>';
             if (tvInstance) {
                 const sfRes = await fetch(`./api/requestarr/rootfolders?app_type=sonarr&instance_name=${encodeURIComponent(tvInstance)}`);
                 const sfData = await sfRes.json();
@@ -861,18 +871,32 @@ export class RequestarrSettings {
                         }
                     });
                     console.log('[RequestarrSettings] After deduplication:', seenPaths.size, 'unique Sonarr root folders');
-                    // Add options from deduplicated map
-                    seenPaths.forEach(rf => {
-                        const opt = document.createElement('option');
-                        opt.value = rf.path;
-                        opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
-                        sonarrSelect.appendChild(opt);
-                    });
-                    if (savedSonarrPath) sonarrSelect.value = savedSonarrPath;
+                    
+                    // Only show fallback if NO root folders exist
+                    if (seenPaths.size === 0) {
+                        sonarrSelect.innerHTML = '<option value="">Use first root folder in Sonarr</option>';
+                    } else {
+                        // Clear and add only actual root folders
+                        sonarrSelect.innerHTML = '';
+                        // Add options from deduplicated map
+                        seenPaths.forEach(rf => {
+                            const opt = document.createElement('option');
+                            opt.value = rf.path;
+                            opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
+                            sonarrSelect.appendChild(opt);
+                        });
+                        if (savedSonarrPath) sonarrSelect.value = savedSonarrPath;
+                    }
+                } else {
+                    sonarrSelect.innerHTML = '<option value="">Use first root folder in Sonarr</option>';
                 }
+            } else {
+                sonarrSelect.innerHTML = '<option value="">Use first root folder in Sonarr</option>';
             }
         } catch (error) {
             console.error('[RequestarrSettings] Error loading default root folders:', error);
+            radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
+            sonarrSelect.innerHTML = '<option value="">Use first root folder in Sonarr</option>';
         } finally {
             this._loadingRootFolders = false;
         }

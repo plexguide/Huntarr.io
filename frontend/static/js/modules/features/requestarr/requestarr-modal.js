@@ -211,7 +211,6 @@ export class RequestarrModal {
             const data = await response.json();
             console.log('[RequestarrModal]', appType, 'API returned', data.root_folders?.length || 0, 'root folders');
             
-            rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
             if (data.success && data.root_folders && data.root_folders.length > 0) {
                 // Use Map to dedupe by normalized path, keeping first occurrence
                 const seenPaths = new Map();
@@ -231,13 +230,22 @@ export class RequestarrModal {
                 });
                 console.log('[RequestarrModal] After deduplication:', seenPaths.size, 'unique root folders');
                 
-                // Add options from deduplicated map
-                seenPaths.forEach(rf => {
-                    const opt = document.createElement('option');
-                    opt.value = rf.path;
-                    opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
-                    rootSelect.appendChild(opt);
-                });
+                // Only show fallback if NO root folders exist
+                if (seenPaths.size === 0) {
+                    rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
+                } else {
+                    // Clear and add only actual root folders
+                    rootSelect.innerHTML = '';
+                    // Add options from deduplicated map
+                    seenPaths.forEach(rf => {
+                        const opt = document.createElement('option');
+                        opt.value = rf.path;
+                        opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
+                        rootSelect.appendChild(opt);
+                    });
+                }
+            } else {
+                rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
             }
         } catch (error) {
             console.error('[RequestarrModal] Error loading root folders:', error);
