@@ -45,7 +45,10 @@ window.HuntarrNavigation = {
     },
     
     handleHashNavigation: function(hash) {
-        const section = hash.substring(1) || 'home';
+        let section = (hash || '').replace(/^#+/, '').trim();
+        if (section.indexOf('%23') >= 0) section = section.split('%23').pop() || section;
+        if (section.indexOf('./') === 0) section = section.replace(/^\.?\/*/, '');
+        if (!section) section = 'home';
         if (window.huntarrUI) {
             window.huntarrUI.switchSection(section);
         }
@@ -388,8 +391,10 @@ window.HuntarrNavigation = {
         movieHuntNavItems.forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
-                const href = item.getAttribute('href');
-                if (href) window.location.hash = href;
+                const href = item.getAttribute('href') || '';
+                const hashIdx = href.indexOf('#');
+                const fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : href.replace(/^\.?\/*/, '');
+                if (fragment) window.location.hash = fragment;
             });
         });
     },

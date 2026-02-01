@@ -26,6 +26,7 @@
             const section = document.getElementById('movie-hunt-section');
             if (!section) return;
 
+            this.showMainView();
             this.setupSearch();
             this.setupSort();
             this.setupFilterButton();
