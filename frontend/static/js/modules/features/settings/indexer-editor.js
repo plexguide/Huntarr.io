@@ -9,11 +9,21 @@
 
     const Forms = window.SettingsForms;
 
+    Forms.getIndexerPresetLabel = function(preset) {
+        var p = (preset || 'manual').toLowerCase().trim();
+        if (p === 'nzbgeek') return 'NZBGeek';
+        if (p === 'nzbfinder.ws') return 'NZBFinder.ws';
+        return 'Manual Configuration';
+    };
+
     Forms.openIndexerEditor = function(isAdd, index, instance) {
         this._currentEditing = { appType: 'indexer', index: index, isAdd: isAdd, originalInstance: JSON.parse(JSON.stringify(instance || {})) };
 
-        const titleEl = document.getElementById('instance-editor-title');
-        if (titleEl) titleEl.textContent = isAdd ? 'Adding Indexer' : 'Edit Indexer';
+        var preset = (instance && instance.preset) ? (instance.preset + '').toLowerCase().trim() : 'manual';
+        var presetLabel = this.getIndexerPresetLabel(preset);
+        var titleHtml = '<span class="client-editor-title-app">' + String(presetLabel).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span> Indexer Editor';
+        var pageTitleEl = document.getElementById('currentPageTitle');
+        if (pageTitleEl) pageTitleEl.innerHTML = titleHtml;
 
         const contentEl = document.getElementById('instance-editor-content');
         if (contentEl) contentEl.innerHTML = this.generateIndexerEditorHtml(instance || {});
@@ -67,40 +77,15 @@
 
         const presetEl = document.getElementById('editor-preset');
         const keyInput = document.getElementById('editor-key');
-        if (presetEl && keyInput) {
+        if (keyInput) {
             let validationTimeout;
             const runCheck = () => {
                 clearTimeout(validationTimeout);
                 validationTimeout = setTimeout(() => this.checkIndexerConnection(), 500);
             };
-            presetEl.addEventListener('change', runCheck);
             keyInput.addEventListener('input', runCheck);
             keyInput.addEventListener('change', runCheck);
             this.checkIndexerConnection();
-        }
-        if (presetEl) {
-            presetEl.addEventListener('change', function() {
-                var pills = document.getElementById('indexer-categories-pills');
-                if (!pills) return;
-                var preset = (presetEl.value || 'manual').toLowerCase().trim();
-                var defaultIds = Forms.getIndexerDefaultIdsForPreset(preset);
-                var cats = Forms.getIndexerCategoriesForPreset(preset);
-                pills.innerHTML = '';
-                defaultIds.forEach(function(id) {
-                    var c = cats.find(function(x) { return x.id === id; });
-                    var label = c ? (c.name + ' (' + c.id + ')') : String(id);
-                    var span = document.createElement('span');
-                    span.className = 'indexer-category-pill';
-                    span.setAttribute('data-category-id', id);
-                    span.innerHTML = '<span class="indexer-category-remove" aria-label="Remove">×</span><span>' + String(label).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
-                    span.querySelector('.indexer-category-remove').addEventListener('click', function() {
-                        span.remove();
-                        Forms.populateIndexerCategoriesDropdown();
-                    });
-                    pills.appendChild(span);
-                });
-                Forms.populateIndexerCategoriesDropdown();
-            });
         }
 
         const enabledSelect = document.getElementById('editor-enabled');
@@ -151,20 +136,13 @@
     Forms.generateIndexerEditorHtml = function(instance) {
         const name = (instance.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const preset = (instance.preset || 'manual').toLowerCase().replace(/[^a-z0-9.-]/g, '');
+        const selectedPreset = ['nzbgeek', 'nzbfinder.ws', 'manual'].includes(preset) ? preset : 'manual';
+        const presetLabel = Forms.getIndexerPresetLabel(selectedPreset);
         const enabled = instance.enabled !== false;
         const isEdit = !!(instance && (instance.api_key_last4 || (instance.name && instance.name.trim())));
         const keyPlaceholder = isEdit && (instance.api_key_last4 || '')
             ? ('Enter new key or leave blank to keep existing (••••' + (instance.api_key_last4 || '') + ')')
             : 'Your API Key';
-        const presetOptions = [
-            { value: 'nzbgeek', label: 'NZBGeek' },
-            { value: 'nzbfinder.ws', label: 'NZBFinder.ws' },
-            { value: 'manual', label: 'Manual Configuration' }
-        ];
-        const selectedPreset = ['nzbgeek', 'nzbfinder.ws', 'manual'].includes(preset) ? preset : 'manual';
-        const optionsHtml = presetOptions.map(function(o) {
-            return '<option value="' + o.value + '"' + (selectedPreset === o.value ? ' selected' : '') + '>' + o.label + '</option>';
-        }).join('');
         var presetKey = (preset || 'manual').toLowerCase().trim();
         var presetCats = Forms.getIndexerCategoriesForPreset(presetKey);
         var defaultIds = Forms.getIndexerDefaultIdsForPreset(presetKey);
@@ -176,6 +154,7 @@
             return '<span class="indexer-category-pill" data-category-id="' + id + '"><span class="indexer-category-remove" aria-label="Remove">×</span><span>' + String(label).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></span>';
         }).join('');
         return `
+            <input type="hidden" id="editor-preset" value="${String(selectedPreset).replace(/"/g, '&quot;')}">
             <div class="editor-grid">
                 <div class="editor-section">
                     <div class="editor-section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -196,9 +175,9 @@
                         <p class="editor-help-text">Enable or disable this instance</p>
                     </div>
                     <div class="editor-field-group">
-                        <label for="editor-preset">Presets</label>
-                        <select id="editor-preset">${optionsHtml}</select>
-                        <p class="editor-help-text">Choose a preset or Manual Configuration to enter details yourself.</p>
+                        <label>Preset</label>
+                        <div class="editor-readonly-preset" style="color: #f59e0b; font-weight: 600;">${String(presetLabel).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                        <p class="editor-help-text">Indexer type was set when adding. Change by editing from the list.</p>
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-name">Name</label>

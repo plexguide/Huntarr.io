@@ -967,7 +967,9 @@ let huntarrUI = {
             this.currentSection = 'instance-editor';
             // Indexer/Client editor use Movie Hunt sidebar; app instance editor stays "Instance Editor"
             if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
-                newTitle = 'Indexer Editor';
+                var inst = window.SettingsForms._currentEditing.originalInstance || {};
+                var preset = (inst.preset || 'manual').toString().toLowerCase().trim();
+                newTitle = (window.SettingsForms.getIndexerPresetLabel && window.SettingsForms.getIndexerPresetLabel(preset)) ? (window.SettingsForms.getIndexerPresetLabel(preset) + ' Indexer Editor') : 'Indexer Editor';
                 this.showMovieHuntSidebar();
             } else if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'client') {
                 var ct = (window.SettingsForms._currentEditing.originalInstance && window.SettingsForms._currentEditing.originalInstance.type) ? String(window.SettingsForms._currentEditing.originalInstance.type).toLowerCase() : 'nzbget';
@@ -1000,7 +1002,14 @@ let huntarrUI = {
         // Update the page title
         const pageTitleElement = document.getElementById('currentPageTitle');
         if (pageTitleElement) {
-            pageTitleElement.textContent = newTitle;
+            if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
+                var inst = window.SettingsForms._currentEditing.originalInstance || {};
+                var preset = (inst.preset || 'manual').toString().toLowerCase().trim();
+                var label = (window.SettingsForms.getIndexerPresetLabel && window.SettingsForms.getIndexerPresetLabel(preset)) || 'Indexer';
+                pageTitleElement.innerHTML = '<span class="client-editor-title-app">' + String(label).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span> Indexer Editor';
+            } else {
+                pageTitleElement.textContent = newTitle;
+            }
             // Also update mobile page title
             if (typeof window.updateMobilePageTitle === 'function') {
                 window.updateMobilePageTitle(newTitle);

@@ -120,8 +120,12 @@ window.HuntarrNavigation = {
         newTitle = config.title;
         if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
             const appType = window.SettingsForms._currentEditing.appType;
-            if (appType === 'indexer') newTitle = 'Indexer Editor';
-            else if (appType === 'client') {
+            if (appType === 'indexer') {
+                const inst = window.SettingsForms._currentEditing.originalInstance || {};
+                const preset = (inst.preset || 'manual').toString().toLowerCase().trim();
+                const label = (window.SettingsForms.getIndexerPresetLabel && window.SettingsForms.getIndexerPresetLabel(preset)) || 'Indexer';
+                newTitle = label + ' Indexer Editor';
+            } else if (appType === 'client') {
                 const ct = (window.SettingsForms._currentEditing.originalInstance && window.SettingsForms._currentEditing.originalInstance.type) ? String(window.SettingsForms._currentEditing.originalInstance.type).toLowerCase() : 'nzbget';
                 newTitle = (ct === 'sabnzbd' ? 'SABnzbd' : ct === 'nzbget' ? 'NZBGet' : ct) + ' Connection Settings';
             }
@@ -189,7 +193,14 @@ window.HuntarrNavigation = {
 
         const pageTitle = document.getElementById('currentPageTitle');
         if (pageTitle) {
-            pageTitle.textContent = newTitle;
+            if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
+                const inst = window.SettingsForms._currentEditing.originalInstance || {};
+                const preset = (inst.preset || 'manual').toString().toLowerCase().trim();
+                const label = (window.SettingsForms.getIndexerPresetLabel && window.SettingsForms.getIndexerPresetLabel(preset)) || 'Indexer';
+                pageTitle.innerHTML = '<span class="client-editor-title-app">' + String(label).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span> Indexer Editor';
+            } else {
+                pageTitle.textContent = newTitle;
+            }
             if (typeof window.updateMobilePageTitle === 'function') window.updateMobilePageTitle(newTitle);
         }
     },
