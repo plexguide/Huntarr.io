@@ -389,6 +389,15 @@ def _save_clients_list(clients_list):
     db.save_app_config('clients', {'clients': clients_list})
 
 
+def _clamp_priority(val, lo=1, hi=99, default=50):
+    """Clamp client_priority to [lo, hi]; return default if invalid."""
+    try:
+        n = int(val, 10)
+        return max(lo, min(hi, n))
+    except (TypeError, ValueError):
+        return default
+
+
 @common_bp.route('/api/clients', methods=['GET'])
 def api_clients_list():
     """List saved download clients (password masked to last 4 chars)."""
@@ -406,6 +415,10 @@ def api_clients_list():
                 'port': c.get('port') or 8080,
                 'enabled': c.get('enabled', True),
                 'password_last4': last4,
+                'category': c.get('category') or 'movies',
+                'recent_priority': c.get('recent_priority') or 'default',
+                'older_priority': c.get('older_priority') or 'default',
+                'client_priority': _clamp_priority(c.get('client_priority'), 1, 99, 50),
             })
         return jsonify({'clients': out}), 200
     except Exception as e:
@@ -460,6 +473,10 @@ def api_clients_update(index):
         password_new = (data.get('password') or '').strip()
         existing = clients[index]
         password = password_new if password_new else (existing.get('password') or '')
+        category = (data.get('category') or existing.get('category') or 'movies').strip() or 'movies'
+        recent_priority = (data.get('recent_priority') or existing.get('recent_priority') or 'default').strip().lower() or 'default'
+        older_priority = (data.get('older_priority') or existing.get('older_priority') or 'default').strip().lower() or 'default'
+        client_priority = _clamp_priority(data.get('client_priority') if 'client_priority' in data else existing.get('client_priority'), 1, 99, 50)
         clients[index] = {
             'name': name,
             'type': client_type,
@@ -467,6 +484,10 @@ def api_clients_update(index):
             'port': port,
             'enabled': enabled,
             'password': password,
+            'category': category,
+            'recent_priority': recent_priority,
+            'older_priority': older_priority,
+            'client_priority': client_priority,
         }
         _save_clients_list(clients)
         return jsonify({'success': True}), 200

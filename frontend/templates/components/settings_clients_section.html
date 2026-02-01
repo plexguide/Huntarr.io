@@ -71,7 +71,7 @@
                     var bodyDetails = card ? card.querySelectorAll('.instance-card-body .instance-detail span') : [];
                     var hostPort = bodyDetails[1] ? bodyDetails[1].textContent.trim() : '';
                     var parts = hostPort.split(':');
-                    instance = { name: nameEl ? nameEl.textContent.trim() : '', type: type, host: parts[0] || '', port: parts[1] ? parseInt(parts[1], 10) : 8080, enabled: enabled, password_last4: '' };
+                    instance = { name: nameEl ? nameEl.textContent.trim() : '', type: type, host: parts[0] || '', port: parts[1] ? parseInt(parts[1], 10) : 8080, enabled: enabled, password_last4: '', category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 50 };
                 }
                 if (window.SettingsForms && window.SettingsForms.openClientEditor) {
                     window.SettingsForms.openClientEditor(false, index, instance);
@@ -79,7 +79,7 @@
             } else if (addCard) {
                 e.preventDefault();
                 if (window.SettingsForms && window.SettingsForms.openClientEditor) {
-                    window.SettingsForms.openClientEditor(true, null, { name: '', type: 'qbittorrent', host: '', port: 8080, enabled: true });
+                    window.SettingsForms.openClientEditor(true, null, { name: '', type: 'qbittorrent', host: '', port: 8080, enabled: true, category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 50 });
                 }
             } else if (deleteBtn) {
                 e.preventDefault();

@@ -20,6 +20,14 @@
         { value: 'sabnzbd', label: 'SABnzbd' }
     ];
 
+    var PRIORITY_OPTIONS = [
+        { value: 'last', label: 'Last' },
+        { value: 'first', label: 'First' },
+        { value: 'default', label: 'Default' },
+        { value: 'high', label: 'High' },
+        { value: 'low', label: 'Low' }
+    ];
+
     Forms.openClientEditor = function(isAdd, index, instance) {
         this._currentEditing = { appType: 'client', index: index, isAdd: isAdd, originalInstance: JSON.parse(JSON.stringify(instance || {})) };
 
@@ -63,9 +71,21 @@
         const pwdPlaceholder = isEdit && (instance.password_last4 || '')
             ? ('Enter new password or leave blank to keep existing (••••' + (instance.password_last4 || '') + ')')
             : 'Password (if required)';
+        const category = (instance.category || 'movies').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const recentPriority = (instance.recent_priority || 'default').toLowerCase();
+        const olderPriority = (instance.older_priority || 'default').toLowerCase();
+        let clientPriority = parseInt(instance.client_priority, 10);
+        if (isNaN(clientPriority) || clientPriority < 1 || clientPriority > 99) clientPriority = 50;
 
         const optionsHtml = CLIENT_TYPES.map(function(o) {
             return '<option value="' + o.value + '"' + (typeVal === o.value ? ' selected' : '') + '>' + o.label + '</option>';
+        }).join('');
+
+        const recentOptionsHtml = PRIORITY_OPTIONS.map(function(o) {
+            return '<option value="' + o.value + '"' + (recentPriority === o.value ? ' selected' : '') + '>' + o.label + '</option>';
+        }).join('');
+        const olderOptionsHtml = PRIORITY_OPTIONS.map(function(o) {
+            return '<option value="' + o.value + '"' + (olderPriority === o.value ? ' selected' : '') + '>' + o.label + '</option>';
         }).join('');
 
         return `
@@ -105,6 +125,29 @@
                         <input type="password" id="editor-client-password" placeholder="${pwdPlaceholder.replace(/"/g, '&quot;')}" autocomplete="off" />
                     </div>
                 </div>
+                <div class="editor-section">
+                    <div class="editor-section-title">Additional Configurations</div>
+                    <div class="editor-field-group">
+                        <label for="editor-client-category">Category</label>
+                        <input type="text" id="editor-client-category" value="${category}" placeholder="movies" />
+                        <p class="editor-help-text">Adding a category specific to Radarr avoids conflicts with unrelated non-Radarr downloads. Using a category is optional, but strongly recommended.</p>
+                    </div>
+                    <div class="editor-field-group">
+                        <label for="editor-client-recent-priority">Recent Priority</label>
+                        <select id="editor-client-recent-priority">${recentOptionsHtml}</select>
+                        <p class="editor-help-text">Priority to use when grabbing movies that aired within the last 21 days.</p>
+                    </div>
+                    <div class="editor-field-group">
+                        <label for="editor-client-older-priority">Older Priority</label>
+                        <select id="editor-client-older-priority">${olderOptionsHtml}</select>
+                        <p class="editor-help-text">Priority to use when grabbing movies that aired over 21 days ago.</p>
+                    </div>
+                    <div class="editor-field-group">
+                        <label for="editor-client-priority">Client Priority</label>
+                        <input type="number" id="editor-client-priority" value="${clientPriority}" min="1" max="99" placeholder="50" />
+                        <p class="editor-help-text">Download Client Priority from 1 (Highest) to 99 (Lowest). Default: 50. Round-Robin is used for clients with the same priority.</p>
+                    </div>
+                </div>
             </div>
         `;
     };
@@ -117,6 +160,10 @@
         const portEl = document.getElementById('editor-client-port');
         const enabledEl = document.getElementById('editor-client-enabled');
         const passwordEl = document.getElementById('editor-client-password');
+        const categoryEl = document.getElementById('editor-client-category');
+        const recentPriorityEl = document.getElementById('editor-client-recent-priority');
+        const olderPriorityEl = document.getElementById('editor-client-older-priority');
+        const clientPriorityEl = document.getElementById('editor-client-priority');
 
         const name = nameEl ? nameEl.value.trim() : '';
         const type = typeEl ? typeEl.value.trim().toLowerCase() : 'qbittorrent';
@@ -128,8 +175,26 @@
         }
         const enabled = enabledEl ? enabledEl.value === 'true' : true;
         const password = passwordEl ? passwordEl.value.trim() : '';
+        const category = categoryEl ? categoryEl.value.trim() : 'movies';
+        const recentPriority = recentPriorityEl ? (recentPriorityEl.value || 'default').toLowerCase() : 'default';
+        const olderPriority = olderPriorityEl ? (olderPriorityEl.value || 'default').toLowerCase() : 'default';
+        let clientPriority = 50;
+        if (clientPriorityEl && clientPriorityEl.value.trim() !== '') {
+            const p = parseInt(clientPriorityEl.value, 10);
+            if (!isNaN(p) && p >= 1 && p <= 99) clientPriority = p;
+        }
 
-        const body = { name: name || 'Unnamed', type: type, host: host, port: port, enabled: enabled };
+        const body = {
+            name: name || 'Unnamed',
+            type: type,
+            host: host,
+            port: port,
+            enabled: enabled,
+            category: category || 'movies',
+            recent_priority: recentPriority,
+            older_priority: olderPriority,
+            client_priority: clientPriority
+        };
         if (password) body.password = password;
 
         const isAdd = this._currentEditing.isAdd;
