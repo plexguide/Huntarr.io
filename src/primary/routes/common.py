@@ -57,7 +57,7 @@ def tmdb_image_proxy():
             return jsonify({'error': 'Missing url parameter'}), 400
         
         # Get cache settings
-        general_settings = settings_manager.get_settings('general')
+        general_settings = settings_manager.load_settings('general')
         cache_days = int(general_settings.get('tmdb_image_cache_days', 7))
         cache_storage = general_settings.get('tmdb_cache_storage', 'server')
         
