@@ -3374,6 +3374,10 @@ input:disabled + .toggle-slider {
     filter: drop-shadow(0 0 8px rgba(255, 100, 50, 0.8)) drop-shadow(0 0 16px rgba(255, 150, 50, 0.6));
 }
 
+.movie-emoji, .tv-emoji {
+    font-size: 1.3em;
+}
+
 @keyframes fire-pulse {
     0%, 100% {
         transform: scale(1);
