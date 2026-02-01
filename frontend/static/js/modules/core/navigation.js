@@ -121,7 +121,10 @@ window.HuntarrNavigation = {
         if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
             const appType = window.SettingsForms._currentEditing.appType;
             if (appType === 'indexer') newTitle = 'Indexer Editor';
-            else if (appType === 'client') newTitle = 'Client Editor';
+            else if (appType === 'client') {
+                const ct = (window.SettingsForms._currentEditing.originalInstance && window.SettingsForms._currentEditing.originalInstance.type) ? String(window.SettingsForms._currentEditing.originalInstance.type).toLowerCase() : 'nzbget';
+                newTitle = (ct === 'sabnzbd' ? 'SABnzbd' : ct === 'nzbget' ? 'NZBGet' : ct) + ' Connection Settings';
+            }
         }
         
         if (config.section) {

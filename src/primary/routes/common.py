@@ -410,7 +410,7 @@ def api_clients_list():
             out.append({
                 'index': i,
                 'name': c.get('name') or 'Unnamed',
-                'type': c.get('type') or 'qbittorrent',
+                'type': c.get('type') or 'nzbget',
                 'host': c.get('host') or '',
                 'port': c.get('port') or 8080,
                 'enabled': c.get('enabled', True),
@@ -432,7 +432,7 @@ def api_clients_add():
     try:
         data = request.get_json() or {}
         name = (data.get('name') or '').strip() or 'Unnamed'
-        client_type = (data.get('type') or 'qbittorrent').strip().lower()
+        client_type = (data.get('type') or 'nzbget').strip().lower()
         host = (data.get('host') or '').strip()
         raw_port = data.get('port')
         try:
@@ -466,7 +466,7 @@ def api_clients_update(index):
             return jsonify({'success': False, 'error': 'Index out of range'}), 400
         data = request.get_json() or {}
         name = (data.get('name') or '').strip() or 'Unnamed'
-        client_type = (data.get('type') or 'qbittorrent').strip().lower()
+        client_type = (data.get('type') or 'nzbget').strip().lower()
         host = (data.get('host') or '').strip()
         port = int(data.get('port'), 10) if data.get('port') is not None else clients[index].get('port', 8080)
         enabled = data.get('enabled', True)

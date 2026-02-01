@@ -970,7 +970,8 @@ let huntarrUI = {
                 newTitle = 'Indexer Editor';
                 this.showMovieHuntSidebar();
             } else if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'client') {
-                newTitle = 'Client Editor';
+                var ct = (window.SettingsForms._currentEditing.originalInstance && window.SettingsForms._currentEditing.originalInstance.type) ? String(window.SettingsForms._currentEditing.originalInstance.type).toLowerCase() : 'nzbget';
+                newTitle = (ct === 'sabnzbd' ? 'SABnzbd' : ct === 'nzbget' ? 'NZBGet' : ct) + ' Connection Settings';
                 this.showMovieHuntSidebar();
             } else {
                 newTitle = 'Instance Editor';

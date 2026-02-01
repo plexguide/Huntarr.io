@@ -13,7 +13,7 @@
         const isDefault = index === 0;
         const name = (client.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const last4 = client.password_last4 || '****';
-        const type = (client.type || 'qbittorrent').replace(/"/g, '&quot;');
+        const type = (client.type || 'nzbget').replace(/"/g, '&quot;');
         const enabled = client.enabled !== false;
         const statusClass = enabled ? 'status-connected' : 'status-error';
         const statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';

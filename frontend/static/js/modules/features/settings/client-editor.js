@@ -10,12 +10,6 @@
     const Forms = window.SettingsForms;
 
     var CLIENT_TYPES = [
-        { value: 'qbittorrent', label: 'qBittorrent' },
-        { value: 'transmission', label: 'Transmission' },
-        { value: 'deluge', label: 'Deluge' },
-        { value: 'utorrent', label: 'uTorrent' },
-        { value: 'flood', label: 'Flood' },
-        { value: 'rtorrent', label: 'rTorrent' },
         { value: 'nzbget', label: 'NZBGet' },
         { value: 'sabnzbd', label: 'SABnzbd' }
     ];
@@ -29,13 +23,20 @@
     ];
 
     Forms.openClientEditor = function(isAdd, index, instance) {
-        this._currentEditing = { appType: 'client', index: index, isAdd: isAdd, originalInstance: JSON.parse(JSON.stringify(instance || {})) };
+        const inst = instance || {};
+        this._currentEditing = { appType: 'client', index: index, isAdd: isAdd, originalInstance: JSON.parse(JSON.stringify(inst)) };
+
+        const typeRaw = (inst.type || 'nzbget').toLowerCase().trim();
+        const typeVal = CLIENT_TYPES.some(function(o) { return o.value === typeRaw; }) ? typeRaw : 'nzbget';
+        const clientDisplayName = (CLIENT_TYPES.find(function(o) { return o.value === typeVal; }) || { label: typeVal }).label;
 
         const titleEl = document.getElementById('instance-editor-title');
-        if (titleEl) titleEl.textContent = isAdd ? 'Adding Client' : 'Edit Client';
+        if (titleEl) {
+            titleEl.innerHTML = '<span class="client-editor-title-app">' + String(clientDisplayName).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span> Connection Settings';
+        }
 
         const contentEl = document.getElementById('instance-editor-content');
-        if (contentEl) contentEl.innerHTML = this.generateClientEditorHtml(instance || {});
+        if (contentEl) contentEl.innerHTML = this.generateClientEditorHtml(inst);
 
         const saveBtn = document.getElementById('instance-editor-save');
         const backBtn = document.getElementById('instance-editor-back');
@@ -63,7 +64,8 @@
 
     Forms.generateClientEditorHtml = function(instance) {
         const name = (instance.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        const typeVal = (instance.type || 'qbittorrent').toLowerCase().trim();
+        const typeRaw = (instance.type || 'nzbget').toLowerCase().trim();
+        const typeVal = CLIENT_TYPES.some(function(o) { return o.value === typeRaw; }) ? typeRaw : 'nzbget';
         const host = (instance.host || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const port = instance.port !== undefined && instance.port !== '' ? String(instance.port) : '8080';
         const enabled = instance.enabled !== false;
@@ -76,10 +78,6 @@
         const olderPriority = (instance.older_priority || 'default').toLowerCase();
         let clientPriority = parseInt(instance.client_priority, 10);
         if (isNaN(clientPriority) || clientPriority < 1 || clientPriority > 99) clientPriority = 50;
-
-        const optionsHtml = CLIENT_TYPES.map(function(o) {
-            return '<option value="' + o.value + '"' + (typeVal === o.value ? ' selected' : '') + '>' + o.label + '</option>';
-        }).join('');
 
         const recentOptionsHtml = PRIORITY_OPTIONS.map(function(o) {
             return '<option value="' + o.value + '"' + (recentPriority === o.value ? ' selected' : '') + '>' + o.label + '</option>';
@@ -106,11 +104,7 @@
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-client-name">Name</label>
-                        <input type="text" id="editor-client-name" value="${name}" placeholder="e.g. My qBittorrent" />
-                    </div>
-                    <div class="editor-field-group">
-                        <label for="editor-client-type">Client Type</label>
-                        <select id="editor-client-type">${optionsHtml}</select>
+                        <input type="text" id="editor-client-name" value="${name}" placeholder="e.g. My NZBGet" />
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-client-host">Host</label>
@@ -155,7 +149,6 @@
     Forms.saveClientFromEditor = function() {
         if (!this._currentEditing || this._currentEditing.appType !== 'client') return;
         const nameEl = document.getElementById('editor-client-name');
-        const typeEl = document.getElementById('editor-client-type');
         const hostEl = document.getElementById('editor-client-host');
         const portEl = document.getElementById('editor-client-port');
         const enabledEl = document.getElementById('editor-client-enabled');
@@ -166,7 +159,9 @@
         const clientPriorityEl = document.getElementById('editor-client-priority');
 
         const name = nameEl ? nameEl.value.trim() : '';
-        const type = typeEl ? typeEl.value.trim().toLowerCase() : 'qbittorrent';
+        const type = (this._currentEditing && this._currentEditing.originalInstance && this._currentEditing.originalInstance.type)
+            ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
+            : 'nzbget';
         const host = hostEl ? hostEl.value.trim() : '';
         let port = 8080;
         if (portEl && portEl.value.trim() !== '') {

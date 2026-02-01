@@ -10,6 +10,37 @@
             </div>
         </div>
     </div>
+
+    <!-- Add Download Client type selection modal (like request modal) -->
+    <div id="client-type-modal" class="client-type-modal" style="display: none;">
+        <div class="client-type-modal-backdrop" id="client-type-modal-backdrop"></div>
+        <div class="client-type-modal-content">
+            <div class="client-type-modal-header">
+                <button type="button" class="client-type-modal-close" id="client-type-modal-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="client-type-modal-header-overlay">
+                    <h2 class="client-type-modal-title">Add Download Client</h2>
+                    <p class="client-type-modal-subtitle">Choose a client type to configure.</p>
+                </div>
+            </div>
+            <div class="client-type-modal-body">
+                <p class="client-type-modal-info">Huntarr supports usenet download clients. Select one to continue.</p>
+                <div class="client-type-form-group">
+                    <label for="client-type-select">Client Type</label>
+                    <select id="client-type-select" class="client-type-select">
+                        <option value="">Select a client...</option>
+                        <option value="sabnzbd">SABnzbd</option>
+                        <option value="nzbget">NZBGet</option>
+                    </select>
+                </div>
+                <div class="client-type-modal-actions">
+                    <button type="button" class="client-type-modal-cancel" id="client-type-modal-cancel">Cancel</button>
+                    <button type="button" class="client-type-modal-continue" id="client-type-modal-continue">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </section>
 
 <style>
@@ -46,10 +77,232 @@
         font-weight: 600;
         color: #f8fafc;
     }
+
+    /* Client type selection modal (like request/movie modal) */
+    .client-type-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .client-type-modal[style*="display: flex"] {
+        display: flex !important;
+    }
+    body.client-type-modal-open {
+        overflow: hidden;
+    }
+    body.client-type-modal-open .app-container {
+        filter: blur(10px);
+    }
+    .client-type-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+    }
+    .client-type-modal-content {
+        position: relative;
+        z-index: 1001;
+        background: rgba(15, 23, 42, 0.98);
+        border: 2px solid rgba(245, 158, 11, 0.4);
+        border-radius: 12px;
+        max-width: 480px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+    }
+    .client-type-modal-header {
+        position: relative;
+        min-height: 120px;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
+        background-size: cover;
+        background-position: center;
+        padding: 20px 24px 24px;
+    }
+    .client-type-modal-header::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        background: linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.98));
+    }
+    .client-type-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+    }
+    .client-type-modal-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .client-type-modal-header-overlay {
+        position: relative;
+        z-index: 2;
+        margin-top: 20px;
+    }
+    .client-type-modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0 0 4px 0;
+    }
+    .client-type-modal-subtitle {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.6);
+        margin: 0;
+    }
+    .client-type-modal-body {
+        padding: 24px;
+    }
+    .client-type-modal-info {
+        font-size: 13px;
+        color: #94a3b8;
+        margin: 0 0 20px 0;
+    }
+    .client-type-form-group {
+        margin-bottom: 24px;
+    }
+    .client-type-form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #e2e8f0;
+        margin-bottom: 8px;
+    }
+    .client-type-select {
+        width: 100%;
+        padding: 12px 14px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid #475569;
+        border-radius: 8px;
+        color: #e2e8f0;
+        font-size: 15px;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+    }
+    .client-type-select:focus {
+        border-color: #f59e0b;
+        outline: none;
+    }
+    .client-type-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    .client-type-modal-cancel {
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 8px;
+        color: #e2e8f0;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .client-type-modal-cancel:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    .client-type-modal-continue {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border: 1px solid rgba(245, 158, 11, 0.5);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .client-type-modal-continue:hover {
+        filter: brightness(1.1);
+    }
+    .client-type-modal-continue:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 </style>
 
 <script>
 (function() {
+    function ensureClientTypeModalInBody() {
+        var modal = document.getElementById('client-type-modal');
+        if (modal && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+    }
+    function openClientTypeModal() {
+        var modal = document.getElementById('client-type-modal');
+        if (modal) {
+            ensureClientTypeModalInBody();
+            var selectEl = document.getElementById('client-type-select');
+            var continueBtn = document.getElementById('client-type-modal-continue');
+            if (selectEl) selectEl.value = '';
+            if (continueBtn) continueBtn.disabled = true;
+            modal.style.display = 'flex';
+            document.body.classList.add('client-type-modal-open');
+        }
+    }
+    function closeClientTypeModal() {
+        var modal = document.getElementById('client-type-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.classList.remove('client-type-modal-open');
+        }
+    }
+    function initClientTypeModal() {
+        var modal = document.getElementById('client-type-modal');
+        if (!modal) return;
+        var backdrop = document.getElementById('client-type-modal-backdrop');
+        var closeBtn = document.getElementById('client-type-modal-close');
+        var cancelBtn = document.getElementById('client-type-modal-cancel');
+        var continueBtn = document.getElementById('client-type-modal-continue');
+        var selectEl = document.getElementById('client-type-select');
+
+        if (backdrop) backdrop.addEventListener('click', closeClientTypeModal);
+        if (closeBtn) closeBtn.addEventListener('click', closeClientTypeModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeClientTypeModal);
+        if (continueBtn) {
+            continueBtn.addEventListener('click', function() {
+                var type = selectEl ? (selectEl.value || '').trim().toLowerCase() : '';
+                if (type === 'sabnzbd' || type === 'nzbget') selectClientType(type);
+            });
+        }
+        if (selectEl) {
+            selectEl.addEventListener('change', function() {
+                var type = (selectEl.value || '').trim().toLowerCase();
+                if (continueBtn) continueBtn.disabled = type !== 'sabnzbd' && type !== 'nzbget';
+            });
+            if (continueBtn) continueBtn.disabled = true;
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('client-type-modal').style.display === 'flex') {
+                closeClientTypeModal();
+            }
+        });
+    }
+
     function initClientGrid() {
         var grid = document.getElementById('client-instances-grid');
         if (!grid) return;
@@ -66,7 +319,7 @@
                 if (!instance) {
                     var card = editBtn.closest('.instance-card');
                     var nameEl = card ? card.querySelector('.instance-name span') : null;
-                    var type = card ? (card.getAttribute('data-type') || 'qbittorrent') : 'qbittorrent';
+                    var type = card ? (card.getAttribute('data-type') || 'nzbget') : 'nzbget';
                     var enabled = card ? (card.getAttribute('data-enabled') !== 'false') : true;
                     var bodyDetails = card ? card.querySelectorAll('.instance-card-body .instance-detail span') : [];
                     var hostPort = bodyDetails[1] ? bodyDetails[1].textContent.trim() : '';
@@ -78,9 +331,7 @@
                 }
             } else if (addCard) {
                 e.preventDefault();
-                if (window.SettingsForms && window.SettingsForms.openClientEditor) {
-                    window.SettingsForms.openClientEditor(true, null, { name: '', type: 'qbittorrent', host: '', port: 8080, enabled: true, category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 50 });
-                }
+                openClientTypeModal();
             } else if (deleteBtn) {
                 e.preventDefault();
                 var index = parseInt(deleteBtn.dataset.instanceIndex, 10);
@@ -106,10 +357,15 @@
             }
         });
     }
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initClientGrid);
+        document.addEventListener('DOMContentLoaded', function() {
+            initClientGrid();
+            initClientTypeModal();
+        });
     } else {
         initClientGrid();
+        initClientTypeModal();
     }
 })();
 </script>
