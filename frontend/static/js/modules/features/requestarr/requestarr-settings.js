@@ -784,6 +784,14 @@ export class RequestarrSettings {
         const movieInstanceSelect = document.getElementById('default-movie-instance');
         const tvInstanceSelect = document.getElementById('default-tv-instance');
         if (!radarrSelect || !sonarrSelect) return;
+        
+        // Prevent concurrent calls (race condition protection)
+        if (this._loadingRootFolders) {
+            console.log('[RequestarrSettings] loadDefaultRootFolders already in progress, skipping');
+            return;
+        }
+        this._loadingRootFolders = true;
+        
         try {
             const defaultsRes = await fetch('./api/requestarr/settings/default-instances');
             const rootFoldersRes = await fetch('./api/requestarr/settings/default-root-folders');
@@ -794,16 +802,32 @@ export class RequestarrSettings {
             const savedRadarrPath = (savedRootData.default_root_folder_radarr || '').trim();
             const savedSonarrPath = (savedRootData.default_root_folder_sonarr || '').trim();
 
-            // Radarr root folders (dedupe by path to avoid doubling)
+            // Radarr root folders with bulletproof deduplication
             radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
             if (movieInstance) {
                 const rfRes = await fetch(`./api/requestarr/rootfolders?app_type=radarr&instance_name=${encodeURIComponent(movieInstance)}`);
                 const rfData = await rfRes.json();
+                console.log('[RequestarrSettings] Radarr API returned', rfData.root_folders?.length || 0, 'root folders');
                 if (rfData.success && rfData.root_folders && rfData.root_folders.length > 0) {
-                    const seen = new Set();
+                    // Use Map to dedupe by normalized path, keeping first occurrence
+                    const seenPaths = new Map();
                     rfData.root_folders.forEach(rf => {
-                        if (seen.has(rf.path)) return;
-                        seen.add(rf.path);
+                        if (!rf || !rf.path) return;
+                        // Normalize: trim, remove trailing slashes, lowercase
+                        const originalPath = rf.path.trim();
+                        const normalized = originalPath.replace(/\/+$/, '').toLowerCase();
+                        if (!normalized) return;
+                        // Only add if not seen before (keeps first occurrence)
+                        if (!seenPaths.has(normalized)) {
+                            seenPaths.set(normalized, {
+                                path: originalPath,
+                                freeSpace: rf.freeSpace
+                            });
+                        }
+                    });
+                    console.log('[RequestarrSettings] After deduplication:', seenPaths.size, 'unique Radarr root folders');
+                    // Add options from deduplicated map
+                    seenPaths.forEach(rf => {
                         const opt = document.createElement('option');
                         opt.value = rf.path;
                         opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
@@ -813,16 +837,32 @@ export class RequestarrSettings {
                 }
             }
 
-            // Sonarr root folders (dedupe by path)
+            // Sonarr root folders with bulletproof deduplication
             sonarrSelect.innerHTML = '<option value="">Use first root folder in Sonarr</option>';
             if (tvInstance) {
                 const sfRes = await fetch(`./api/requestarr/rootfolders?app_type=sonarr&instance_name=${encodeURIComponent(tvInstance)}`);
                 const sfData = await sfRes.json();
+                console.log('[RequestarrSettings] Sonarr API returned', sfData.root_folders?.length || 0, 'root folders');
                 if (sfData.success && sfData.root_folders && sfData.root_folders.length > 0) {
-                    const seen = new Set();
+                    // Use Map to dedupe by normalized path, keeping first occurrence
+                    const seenPaths = new Map();
                     sfData.root_folders.forEach(rf => {
-                        if (seen.has(rf.path)) return;
-                        seen.add(rf.path);
+                        if (!rf || !rf.path) return;
+                        // Normalize: trim, remove trailing slashes, lowercase
+                        const originalPath = rf.path.trim();
+                        const normalized = originalPath.replace(/\/+$/, '').toLowerCase();
+                        if (!normalized) return;
+                        // Only add if not seen before (keeps first occurrence)
+                        if (!seenPaths.has(normalized)) {
+                            seenPaths.set(normalized, {
+                                path: originalPath,
+                                freeSpace: rf.freeSpace
+                            });
+                        }
+                    });
+                    console.log('[RequestarrSettings] After deduplication:', seenPaths.size, 'unique Sonarr root folders');
+                    // Add options from deduplicated map
+                    seenPaths.forEach(rf => {
                         const opt = document.createElement('option');
                         opt.value = rf.path;
                         opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
@@ -833,6 +873,8 @@ export class RequestarrSettings {
             }
         } catch (error) {
             console.error('[RequestarrSettings] Error loading default root folders:', error);
+        } finally {
+            this._loadingRootFolders = false;
         }
     }
 

@@ -1107,7 +1107,7 @@ class RequestarrAPI:
             raise
 
     def get_root_folders(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
-        """Fetch root folders from *arr instance (for settings UI, issue #806)."""
+        """Fetch root folders from *arr instance (for settings UI, issue #806). Deduped by ID and path."""
         if app_type not in ('radarr', 'sonarr'):
             return []
         try:
@@ -1131,7 +1131,48 @@ class RequestarrAPI:
                 timeout=10
             )
             resp.raise_for_status()
-            return resp.json()
+            raw = resp.json()
+            
+            # Dedupe by BOTH ID and path - *arr APIs can return duplicates (issue #806)
+            if not isinstance(raw, list):
+                return []
+            
+            seen_ids = set()
+            seen_paths = set()
+            deduped = []
+            for rf in raw:
+                if not isinstance(rf, dict):
+                    continue
+                
+                # Check both ID and path for duplicates
+                rf_id = rf.get('id')
+                path = (rf.get('path') or '').strip().rstrip('/')
+                
+                if not path:
+                    continue
+                
+                # Normalize path for comparison (lowercase, no trailing slash)
+                path_lower = path.lower()
+                
+                # Skip if we've seen this ID or this path
+                if rf_id is not None and rf_id in seen_ids:
+                    logger.debug(f"Skipping duplicate root folder ID: {rf_id}")
+                    continue
+                if path_lower in seen_paths:
+                    logger.debug(f"Skipping duplicate root folder path: {path}")
+                    continue
+                
+                # Add to seen sets
+                if rf_id is not None:
+                    seen_ids.add(rf_id)
+                seen_paths.add(path_lower)
+                
+                # Keep original object
+                deduped.append(rf)
+            
+            logger.info(f"Root folders for {app_type}/{instance_name}: {len(raw)} raw, {len(deduped)} after dedupe")
+            return deduped
+            
         except Exception as e:
             logger.error(f"Error fetching root folders from {app_type}/{instance_name}: {e}")
             return []

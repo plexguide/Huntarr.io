@@ -196,17 +196,43 @@ export class RequestarrModal {
     async loadModalRootFolders(instanceName, isTVShow) {
         const rootSelect = document.getElementById('modal-root-folder');
         if (!rootSelect) return;
+        
+        // Prevent concurrent calls (race condition protection)
+        if (this._loadingModalRootFolders) {
+            console.log('[RequestarrModal] loadModalRootFolders already in progress, skipping');
+            return;
+        }
+        this._loadingModalRootFolders = true;
+        
         const appType = isTVShow ? 'sonarr' : 'radarr';
         rootSelect.innerHTML = '<option value="">Loading...</option>';
         try {
             const response = await fetch(`./api/requestarr/rootfolders?app_type=${appType}&instance_name=${encodeURIComponent(instanceName)}`);
             const data = await response.json();
+            console.log('[RequestarrModal]', appType, 'API returned', data.root_folders?.length || 0, 'root folders');
+            
             rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
             if (data.success && data.root_folders && data.root_folders.length > 0) {
-                const seen = new Set();
+                // Use Map to dedupe by normalized path, keeping first occurrence
+                const seenPaths = new Map();
                 data.root_folders.forEach(rf => {
-                    if (seen.has(rf.path)) return;
-                    seen.add(rf.path);
+                    if (!rf || !rf.path) return;
+                    // Normalize: trim, remove trailing slashes, lowercase
+                    const originalPath = rf.path.trim();
+                    const normalized = originalPath.replace(/\/+$/, '').toLowerCase();
+                    if (!normalized) return;
+                    // Only add if not seen before (keeps first occurrence)
+                    if (!seenPaths.has(normalized)) {
+                        seenPaths.set(normalized, {
+                            path: originalPath,
+                            freeSpace: rf.freeSpace
+                        });
+                    }
+                });
+                console.log('[RequestarrModal] After deduplication:', seenPaths.size, 'unique root folders');
+                
+                // Add options from deduplicated map
+                seenPaths.forEach(rf => {
                     const opt = document.createElement('option');
                     opt.value = rf.path;
                     opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
@@ -216,6 +242,8 @@ export class RequestarrModal {
         } catch (error) {
             console.error('[RequestarrModal] Error loading root folders:', error);
             rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
+        } finally {
+            this._loadingModalRootFolders = false;
         }
     }
 
