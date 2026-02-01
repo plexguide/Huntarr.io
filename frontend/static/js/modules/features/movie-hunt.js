@@ -213,6 +213,15 @@
             } finally {
                 this.loading = false;
                 this.page = page;
+                // If sentinel is already in view (e.g. first page didn't fill the screen), load more
+                const sentinel = document.getElementById('movie-hunt-scroll-sentinel');
+                if (sentinel && this.hasMore && !this.loading) {
+                    const rect = sentinel.getBoundingClientRect();
+                    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                    if (rect.top <= viewportHeight + 200) {
+                        this.loadMovies(this.page + 1);
+                    }
+                }
             }
         },
 
@@ -220,6 +229,8 @@
             const sentinel = document.getElementById('movie-hunt-scroll-sentinel');
             if (!sentinel || this.observer) return;
 
+            // Use main-content as root when present so scrolling the content area triggers load
+            const scrollRoot = document.querySelector('.main-content') || null;
             const self = this;
             this.observer = new IntersectionObserver(
                 (entries) => {
@@ -230,7 +241,7 @@
                         }
                     });
                 },
-                { root: null, rootMargin: '200px 0px', threshold: 0 }
+                { root: scrollRoot, rootMargin: '200px 0px', threshold: 0 }
             );
             this.observer.observe(sentinel);
         },
@@ -243,7 +254,12 @@
             card.setAttribute('data-media-type', 'movie');
             card.itemData = item;
 
-            const posterUrl = item.poster_path || './static/images/blackout.jpg';
+            let posterUrl = item.poster_path || './static/images/blackout.jpg';
+            // Use TMDB cache: server-side = proxy URL, browser = set below after render
+            const isTmdbUrl = posterUrl && !posterUrl.includes('./static/images/');
+            if (isTmdbUrl && window.tmdbImageCache && window.tmdbImageCache.enabled && window.tmdbImageCache.storage === 'server') {
+                posterUrl = `./api/tmdb/image?url=${encodeURIComponent(posterUrl)}`;
+            }
             const year = item.year || 'N/A';
             const rating = item.vote_average != null ? Number(item.vote_average).toFixed(1) : 'N/A';
             const overview = item.overview || 'No description available.';
@@ -295,6 +311,19 @@
                     </div>
                 </div>
             `;
+
+            // Browser-side cache: load and update img asynchronously
+            const originalPosterUrl = item.poster_path || './static/images/blackout.jpg';
+            if (originalPosterUrl && !originalPosterUrl.includes('./static/images/') && window.getCachedTMDBImage && window.tmdbImageCache && window.tmdbImageCache.enabled && window.tmdbImageCache.storage === 'browser') {
+                const imgEl = card.querySelector('.media-card-poster img');
+                if (imgEl) {
+                    window.getCachedTMDBImage(originalPosterUrl, window.tmdbImageCache).then(function(cachedUrl) {
+                        if (cachedUrl && cachedUrl !== originalPosterUrl) imgEl.src = cachedUrl;
+                    }).catch(function(err) {
+                        console.error('[MovieHunt] Failed to cache image:', err);
+                    });
+                }
+            }
 
             const posterDiv = card.querySelector('.media-card-poster');
             const requestBtn = card.querySelector('.media-card-request-btn');
