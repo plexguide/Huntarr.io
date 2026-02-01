@@ -193,14 +193,7 @@ window.HuntarrNavigation = {
 
         const pageTitle = document.getElementById('currentPageTitle');
         if (pageTitle) {
-            if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
-                const inst = window.SettingsForms._currentEditing.originalInstance || {};
-                const preset = (inst.preset || 'manual').toString().toLowerCase().trim();
-                const label = (window.SettingsForms.getIndexerPresetLabel && window.SettingsForms.getIndexerPresetLabel(preset)) || 'Indexer';
-                pageTitle.innerHTML = '<span class="client-editor-title-app">' + String(label).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span> Indexer Editor';
-            } else {
-                pageTitle.textContent = newTitle;
-            }
+            pageTitle.textContent = newTitle;
             if (typeof window.updateMobilePageTitle === 'function') window.updateMobilePageTitle(newTitle);
         }
     },

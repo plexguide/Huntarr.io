@@ -21,9 +21,8 @@
 
         var preset = (instance && instance.preset) ? (instance.preset + '').toLowerCase().trim() : 'manual';
         var presetLabel = this.getIndexerPresetLabel(preset);
-        var titleHtml = '<span class="client-editor-title-app">' + String(presetLabel).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span> Indexer Editor';
         var pageTitleEl = document.getElementById('currentPageTitle');
-        if (pageTitleEl) pageTitleEl.innerHTML = titleHtml;
+        if (pageTitleEl) pageTitleEl.textContent = presetLabel + ' Indexer Editor';
 
         const contentEl = document.getElementById('instance-editor-content');
         if (contentEl) contentEl.innerHTML = this.generateIndexerEditorHtml(instance || {});
@@ -173,11 +172,6 @@
                             </select>
                         </div>
                         <p class="editor-help-text">Enable or disable this instance</p>
-                    </div>
-                    <div class="editor-field-group">
-                        <label>Preset</label>
-                        <div class="editor-readonly-preset" style="color: #f59e0b; font-weight: 600;">${String(presetLabel).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-                        <p class="editor-help-text">Indexer type was set when adding. Change by editing from the list.</p>
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-name">Name</label>

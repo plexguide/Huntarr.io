@@ -1002,14 +1002,7 @@ let huntarrUI = {
         // Update the page title
         const pageTitleElement = document.getElementById('currentPageTitle');
         if (pageTitleElement) {
-            if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
-                var inst = window.SettingsForms._currentEditing.originalInstance || {};
-                var preset = (inst.preset || 'manual').toString().toLowerCase().trim();
-                var label = (window.SettingsForms.getIndexerPresetLabel && window.SettingsForms.getIndexerPresetLabel(preset)) || 'Indexer';
-                pageTitleElement.innerHTML = '<span class="client-editor-title-app">' + String(label).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span> Indexer Editor';
-            } else {
-                pageTitleElement.textContent = newTitle;
-            }
+            pageTitleElement.textContent = newTitle;
             // Also update mobile page title
             if (typeof window.updateMobilePageTitle === 'function') {
                 window.updateMobilePageTitle(newTitle);
