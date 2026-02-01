@@ -10,16 +10,16 @@
     const Forms = window.SettingsForms;
 
     Forms.renderClientCard = function(client, index) {
-        const isDefault = index === 0;
         const name = (client.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const last4 = client.password_last4 || '****';
         const type = (client.type || 'nzbget').replace(/"/g, '&quot;');
         const enabled = client.enabled !== false;
         const statusClass = enabled ? 'status-connected' : 'status-error';
         const statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
-        return '<div class="instance-card ' + (isDefault ? 'default-instance' : '') + '" data-instance-index="' + index + '" data-app-type="client" data-type="' + type + '" data-enabled="' + enabled + '">' +
+        const priority = client.client_priority !== undefined && client.client_priority !== null ? Number(client.client_priority) : 50;
+        return '<div class="instance-card" data-instance-index="' + index + '" data-app-type="client" data-type="' + type + '" data-enabled="' + enabled + '">' +
             '<div class="instance-card-header">' +
-            '<div class="instance-name"><i class="fas fa-download"></i><span>' + name + '</span>' + (isDefault ? '<span class="default-badge">Default</span>' : '') + '</div>' +
+            '<div class="instance-name instance-name-with-priority"><i class="fas fa-download"></i><span>' + name + '</span><span class="client-priority-badge">Priority: ' + String(priority) + '</span></div>' +
             '<div class="instance-status-icon ' + statusClass + '"><i class="fas ' + statusIcon + '"></i></div>' +
             '</div>' +
             '<div class="instance-card-body">' +
@@ -40,9 +40,18 @@
             .then(function(data) {
                 const list = (data && data.clients) ? data.clients : [];
                 window.SettingsForms._clientsList = list;
-                let html = '';
-                for (let i = 0; i < list.length; i++) {
-                    html += window.SettingsForms.renderClientCard(list[i], i);
+                var withIndex = list.map(function(c, i) { return { client: c, originalIndex: i }; });
+                withIndex.sort(function(a, b) {
+                    var pa = Number(a.client.client_priority) || 50;
+                    var pb = Number(b.client.client_priority) || 50;
+                    if (pa !== pb) return pa - pb;
+                    var na = (a.client.name || '').toLowerCase();
+                    var nb = (b.client.name || '').toLowerCase();
+                    return na.localeCompare(nb);
+                });
+                var html = '';
+                for (var i = 0; i < withIndex.length; i++) {
+                    html += window.SettingsForms.renderClientCard(withIndex[i].client, withIndex[i].originalIndex);
                 }
                 html += '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Adding Client</div></div>';
                 grid.innerHTML = html;

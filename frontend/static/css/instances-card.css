@@ -44,6 +44,15 @@
     gap: 8px;
 }
 
+.instance-name-with-priority {
+    flex: 1;
+    min-width: 0;
+}
+
+.instance-name-with-priority .client-priority-badge {
+    margin-left: auto;
+}
+
 .default-badge {
     font-size: 0.7rem;
     background: #4f46e5;
@@ -53,6 +62,16 @@
     text-transform: uppercase;
     font-weight: 700;
     letter-spacing: 0.5px;
+}
+
+.client-priority-badge {
+    font-size: 0.75rem;
+    background: #4f46e5;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
 }
 
 .instance-status-icon {
