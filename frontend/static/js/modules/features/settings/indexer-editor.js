@@ -163,8 +163,8 @@
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label style="display: flex; align-items: center;">
-                                <span>Enable Status </span>
-                                <i id="indexer-enable-status-icon" class="fas ${enabled ? 'fa-check-circle' : 'fa-minus-circle'}" style="color: ${enabled ? '#10b981' : '#ef4444'}; font-size: 1.1rem;"></i>
+                                <span>Enable Status</span>
+                                <i id="indexer-enable-status-icon" class="fas ${enabled ? 'fa-check-circle' : 'fa-minus-circle'}" style="color: ${enabled ? '#10b981' : '#ef4444'}; font-size: 1.1rem; margin-left: 8px;"></i>
                             </label>
                             <select id="editor-enabled">
                                 <option value="true" ${enabled ? 'selected' : ''}>Enabled</option>
