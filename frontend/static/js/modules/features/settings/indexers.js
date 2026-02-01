@@ -19,7 +19,7 @@
         const statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
         return '<div class="instance-card ' + (isDefault ? 'default-instance' : '') + '" data-instance-index="' + index + '" data-app-type="indexer" data-preset="' + preset + '" data-enabled="' + enabled + '">' +
             '<div class="instance-card-header">' +
-            '<div class="instance-name"><i class="fas fa-server"></i><span>' + name + '</span>' + (isDefault ? '<span class="default-badge">Default</span>' : '') + '</div>' +
+            '<div class="instance-name instance-name-with-priority"><i class="fas fa-server"></i><span>' + name + '</span>' + (isDefault ? '<span class="default-badge">Default</span>' : '') + '</div>' +
             '<div class="instance-status-icon ' + statusClass + '"><i class="fas ' + statusIcon + '"></i></div>' +
             '</div>' +
             '<div class="instance-card-body">' +
