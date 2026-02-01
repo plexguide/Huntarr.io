@@ -74,7 +74,7 @@
     }
     
     function updateAllAppBanners(sponsor) {
-        const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr'];
+        const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'requestarr'];
         appTypes.forEach(appType => {
             updateSponsorBanner(sponsor, appType);
         });

@@ -1,7 +1,8 @@
 /* Requestarr Discover - Horizontal Scrolling Style */
 
+/* Space above sponsor = space below (20px); minimal top so it matches bottom */
 #requestarr-section .requestarr-content {
-    padding: 12px 30px 20px 30px;
+    padding: 0 30px 20px 30px;
     width: 100%;
     max-width: none !important;
     margin: 0;
@@ -9,11 +10,11 @@
     box-sizing: border-box;
 }
 
-/* Global Search Bar - Full Width */
+/* Global Search Bar - Full Width (8px below to match app pages) */
 .global-search-bar {
     position: relative;
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 8px;
 }
 
 .global-search-bar i {
@@ -133,10 +134,10 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
-/* Carousel Sections */
+/* Carousel Sections (8px spacing to match app pages) */
 .carousel-section {
-    margin-bottom: 20px;
-    padding-top: 8px; /* More padding for scaled hover effect */
+    margin-bottom: 8px;
+    padding-top: 8px;
 }
 
 .section-title {
@@ -3142,9 +3143,9 @@ input:disabled + .toggle-slider {
     box-sizing: border-box;
 }
 
-/* Match Movies view layout exactly to Discover view */
+/* Match Movies view layout exactly to Discover view - 0 top padding */
 #requestarr-section .requestarr-content {
-    padding: 20px 30px;
+    padding: 0 30px 20px 30px;
     overflow-x: hidden;
     overflow-y: auto;
 }
@@ -3183,7 +3184,7 @@ input:disabled + .toggle-slider {
 
 @media (max-width: 768px) {
     #requestarr-section .requestarr-content {
-        padding: 20px 15px;
+        padding: 0 15px 20px 15px;
     }
     
     .media-grid {
