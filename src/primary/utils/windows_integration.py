@@ -121,25 +121,22 @@ def prepare_windows_environment():
     logger.info("Preparing Windows environment")
     
     try:
-        # Create a special error log on the desktop for visibility
-        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-        if os.path.exists(desktop_path):
-            error_log_path = os.path.join(desktop_path, "huntarr_startup.log")
-            
-            # Configure a file handler to log startup issues
-            file_handler = logging.FileHandler(error_log_path)
+        # Ensure key directories exist first (needed for startup log path)
+        from src.primary.utils.config_paths import CONFIG_DIR, LOG_DIR
+        
+        # Log startup info to config logs directory, not Desktop (issue #808)
+        startup_log_path = Path(LOG_DIR) / "huntarr_startup.log"
+        try:
+            Path(LOG_DIR).mkdir(parents=True, exist_ok=True)
+            file_handler = logging.FileHandler(str(startup_log_path))
             file_handler.setLevel(logging.INFO)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             file_handler.setFormatter(formatter)
-            
-            # Add the handler to the root logger
             root_logger = logging.getLogger()
             root_logger.addHandler(file_handler)
-            
-            logger.info(f"Logging Windows startup info to: {error_log_path}")
-        
-        # Ensure key directories exist
-        from src.primary.utils.config_paths import CONFIG_DIR, LOG_DIR
+            logger.info(f"Logging Windows startup info to: {startup_log_path}")
+        except Exception as e:
+            logger.warning(f"Could not create startup log at {startup_log_path}: {e}")
         
         # Double-check that directories were created correctly
         os.makedirs(CONFIG_DIR, exist_ok=True)
