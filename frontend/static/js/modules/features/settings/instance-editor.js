@@ -29,7 +29,7 @@
         
         if (instance.enabled === false) {
             statusClass = 'status-disabled';
-            statusIcon = 'fa-toggle-off';
+            statusIcon = 'fa-ban';
         } else if (instance.api_url && instance.api_key) {
             // Has URL and API key - check if connection test passed
             if (instance.connection_status === 'connected' || instance.connection_test_passed === true) {
@@ -164,8 +164,6 @@
                 validationTimeout = setTimeout(() => {
                     const url = urlInput.value.trim();
                     const key = keyInput.value.trim();
-                    
-                    // Always call checkEditorConnection, it will handle empty values
                     this.checkEditorConnection(appType, url, key);
                 }, 500); // Debounce 500ms
             };
@@ -173,7 +171,12 @@
             urlInput.addEventListener('input', validateConnection);
             keyInput.addEventListener('input', validateConnection);
             
-            // Initial validation - always check status on load
+            const enabledSelect = document.getElementById('editor-enabled');
+            if (enabledSelect) {
+                enabledSelect.addEventListener('change', validateConnection);
+            }
+            
+            // Initial validation - checkEditorConnection shows "Disabled" or runs test
             this.checkEditorConnection(appType, urlInput.value.trim(), keyInput.value.trim());
         }
 
@@ -287,6 +290,18 @@
         container.style.display = 'flex';
         container.style.justifyContent = 'flex-end';
         container.style.flex = '1';
+        
+        // If instance is disabled, do not attempt or show connection status
+        const enabledEl = document.getElementById('editor-enabled');
+        if (enabledEl && enabledEl.value === 'false') {
+            container.innerHTML = `
+                <div class="connection-status" style="background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25);">
+                    <i class="fas fa-ban"></i>
+                    <span>Disabled</span>
+                </div>
+            `;
+            return;
+        }
         
         // Show appropriate status for incomplete fields (like old version)
         const urlLen = url ? url.trim().length : 0;

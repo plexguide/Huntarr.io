@@ -285,7 +285,7 @@ window.SettingsForms = {
             iconClass = 'fa-minus-circle';
             statusClass = 'status-error';
         } else if (status === 'disabled') {
-            iconClass = 'fa-toggle-off';
+            iconClass = 'fa-ban';
             statusClass = 'status-disabled';
         } else if (status === 'loading') {
             iconClass = 'fa-spinner fa-spin';
