@@ -224,6 +224,33 @@
                     </div>
                 </div>
 
+                <!-- Default Root Folders Card (issue #806) -->
+                <div class="settings-card">
+                    <h3>Default Root Folders</h3>
+                    <p style="color: #888; margin-bottom: 20px; font-size: 14px;">
+                        When requesting movies or TV shows, the chosen root folder is used. If not set, the first root folder in the *arr app is used. Set a default per app so requests go to the correct disk (e.g. when your first root is full).
+                    </p>
+                    <div class="settings-field">
+                        <label for="default-root-folder-radarr">Default Root Folder (Radarr)</label>
+                        <select id="default-root-folder-radarr" class="settings-select">
+                            <option value="">Use first root folder in Radarr</option>
+                        </select>
+                        <small>Root folder used when adding movies via Requestarr</small>
+                    </div>
+                    <div class="settings-field">
+                        <label for="default-root-folder-sonarr">Default Root Folder (Sonarr)</label>
+                        <select id="default-root-folder-sonarr" class="settings-select">
+                            <option value="">Use first root folder in Sonarr</option>
+                        </select>
+                        <small>Root folder used when adding TV shows via Requestarr</small>
+                    </div>
+                    <div class="settings-actions">
+                        <button id="save-default-root-folders" class="btn-primary">
+                            <i class="fas fa-save"></i> Save Default Root Folders
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Filters Card -->
                 <div class="settings-card">
                     <h3>Filters</h3>

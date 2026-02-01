@@ -1078,6 +1078,64 @@ class RequestarrAPI:
             logger.error(f"Error setting default instances: {e}")
             raise
 
+    def get_default_root_folders(self) -> Dict[str, str]:
+        """Get default root folder paths per app (issue #806). Returns paths for radarr/sonarr."""
+        try:
+            requestarr_config = self.db.get_app_config('requestarr')
+            if requestarr_config:
+                return {
+                    'default_root_folder_radarr': (requestarr_config.get('default_root_folder_radarr') or '').strip(),
+                    'default_root_folder_sonarr': (requestarr_config.get('default_root_folder_sonarr') or '').strip()
+                }
+            return {'default_root_folder_radarr': '', 'default_root_folder_sonarr': ''}
+        except Exception as e:
+            logger.error(f"Error getting default root folders: {e}")
+            return {'default_root_folder_radarr': '', 'default_root_folder_sonarr': ''}
+
+    def set_default_root_folders(self, default_root_folder_radarr: str = None, default_root_folder_sonarr: str = None):
+        """Set default root folder path per app (issue #806)."""
+        try:
+            requestarr_config = self.db.get_app_config('requestarr') or {}
+            if default_root_folder_radarr is not None:
+                requestarr_config['default_root_folder_radarr'] = (default_root_folder_radarr or '').strip()
+            if default_root_folder_sonarr is not None:
+                requestarr_config['default_root_folder_sonarr'] = (default_root_folder_sonarr or '').strip()
+            self.db.save_app_config('requestarr', requestarr_config)
+            logger.info(f"Set default root folders - Radarr: {requestarr_config.get('default_root_folder_radarr') or 'None'}, Sonarr: {requestarr_config.get('default_root_folder_sonarr') or 'None'}")
+        except Exception as e:
+            logger.error(f"Error setting default root folders: {e}")
+            raise
+
+    def get_root_folders(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
+        """Fetch root folders from *arr instance (for settings UI, issue #806)."""
+        if app_type not in ('radarr', 'sonarr'):
+            return []
+        try:
+            app_config = self.db.get_app_config(app_type)
+            if not app_config or not app_config.get('instances'):
+                return []
+            instance = None
+            for inst in app_config['instances']:
+                if inst.get('name') == instance_name:
+                    instance = inst
+                    break
+            if not instance:
+                return []
+            url = (instance.get('api_url') or instance.get('url') or '').rstrip('/')
+            api_key = instance.get('api_key', '')
+            if not url or not api_key:
+                return []
+            resp = requests.get(
+                f"{url}/api/v3/rootfolder",
+                headers={'X-Api-Key': api_key},
+                timeout=10
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            logger.error(f"Error fetching root folders from {app_type}/{instance_name}: {e}")
+            return []
+
     def get_watch_providers(self, media_type: str, region: str = '') -> List[Dict[str, Any]]:
         """Get watch providers for a media type and region"""
         api_key = self.get_tmdb_api_key()
@@ -1879,6 +1937,14 @@ class RequestarrAPI:
                     'message': 'No root folders configured in Radarr'
                 }
             
+            # Use default root folder from Requestarr settings if set and valid (issue #806)
+            root_paths = [rf['path'] for rf in root_folders]
+            default_radarr = (self.get_default_root_folders().get('default_root_folder_radarr') or '').strip()
+            if default_radarr and default_radarr in root_paths:
+                selected_root = default_radarr
+            else:
+                selected_root = root_folders[0]['path']
+            
             # Get quality profiles
             profiles_response = requests.get(
                 f"{url}/api/v3/qualityprofile",
@@ -1902,7 +1968,7 @@ class RequestarrAPI:
                 'title': movie_data['title'],
                 'tmdbId': movie_data['tmdbId'],
                 'year': movie_data['year'],
-                'rootFolderPath': root_folders[0]['path'],
+                'rootFolderPath': selected_root,
                 'qualityProfileId': selected_profile_id,
                 'monitored': True,
                 'addOptions': {
@@ -1972,6 +2038,14 @@ class RequestarrAPI:
                     'message': 'No root folders configured in Sonarr'
                 }
             
+            # Use default root folder from Requestarr settings if set and valid (issue #806)
+            root_paths = [rf['path'] for rf in root_folders]
+            default_sonarr = (self.get_default_root_folders().get('default_root_folder_sonarr') or '').strip()
+            if default_sonarr and default_sonarr in root_paths:
+                selected_root = default_sonarr
+            else:
+                selected_root = root_folders[0]['path']
+            
             # Get quality profiles
             profiles_response = requests.get(
                 f"{url}/api/v3/qualityprofile",
@@ -1995,7 +2069,7 @@ class RequestarrAPI:
                 'title': series_data['title'],
                 'tvdbId': series_data.get('tvdbId'),
                 'year': series_data.get('year'),
-                'rootFolderPath': root_folders[0]['path'],
+                'rootFolderPath': selected_root,
                 'qualityProfileId': selected_profile_id,
                 'monitored': True,
                 'addOptions': {

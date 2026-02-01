@@ -446,6 +446,8 @@ export class RequestarrSettings {
         
         // Load default instances
         await this.loadDefaultInstances();
+        // Load default root folders (issue #806)
+        await this.loadDefaultRootFolders();
         
         // Load discover filters
         await this.loadDiscoverFilters();
@@ -461,6 +463,18 @@ export class RequestarrSettings {
         const saveDefaultInstancesBtn = document.getElementById('save-default-instances');
         if (saveDefaultInstancesBtn) {
             saveDefaultInstancesBtn.onclick = () => this.saveDefaultInstances();
+        }
+        const saveDefaultRootFoldersBtn = document.getElementById('save-default-root-folders');
+        if (saveDefaultRootFoldersBtn) {
+            saveDefaultRootFoldersBtn.onclick = () => this.saveDefaultRootFolders();
+        }
+        const movieInstanceSelect = document.getElementById('default-movie-instance');
+        const tvInstanceSelect = document.getElementById('default-tv-instance');
+        if (movieInstanceSelect) {
+            movieInstanceSelect.addEventListener('change', () => this.loadDefaultRootFolders());
+        }
+        if (tvInstanceSelect) {
+            tvInstanceSelect.addEventListener('change', () => this.loadDefaultRootFolders());
         }
         
         const saveFiltersBtn = document.getElementById('save-discover-filters');
@@ -741,11 +755,8 @@ export class RequestarrSettings {
             if (data.success) {
                 if (!silent) {
                     this.core.showNotification('Default instances saved! Reloading discovery content...', 'success');
-                    
-                    // Wait a bit longer to ensure database is fully updated
+                    await this.loadDefaultRootFolders();
                     await new Promise(resolve => setTimeout(resolve, 1000));
-                    
-                    // Reload discovery carousels with new instances
                     this.core.content.loadDiscoverContent();
                 }
             } else {
@@ -762,6 +773,94 @@ export class RequestarrSettings {
             if (saveBtn && !silent) {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Default Instances';
+            }
+        }
+    }
+
+    /** Default root folders per app (issue #806) */
+    async loadDefaultRootFolders() {
+        const radarrSelect = document.getElementById('default-root-folder-radarr');
+        const sonarrSelect = document.getElementById('default-root-folder-sonarr');
+        const movieInstanceSelect = document.getElementById('default-movie-instance');
+        const tvInstanceSelect = document.getElementById('default-tv-instance');
+        if (!radarrSelect || !sonarrSelect) return;
+        try {
+            const defaultsRes = await fetch('./api/requestarr/settings/default-instances');
+            const rootFoldersRes = await fetch('./api/requestarr/settings/default-root-folders');
+            const defaultsData = await defaultsRes.json();
+            const savedRootData = rootFoldersRes.ok ? await rootFoldersRes.json() : {};
+            const movieInstance = (defaultsData.defaults && defaultsData.defaults.movie_instance) || (movieInstanceSelect && movieInstanceSelect.value) || '';
+            const tvInstance = (defaultsData.defaults && defaultsData.defaults.tv_instance) || (tvInstanceSelect && tvInstanceSelect.value) || '';
+            const savedRadarrPath = (savedRootData.default_root_folder_radarr || '').trim();
+            const savedSonarrPath = (savedRootData.default_root_folder_sonarr || '').trim();
+
+            // Radarr root folders
+            radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
+            if (movieInstance) {
+                const rfRes = await fetch(`./api/requestarr/rootfolders?app_type=radarr&instance_name=${encodeURIComponent(movieInstance)}`);
+                const rfData = await rfRes.json();
+                if (rfData.success && rfData.root_folders && rfData.root_folders.length > 0) {
+                    rfData.root_folders.forEach(rf => {
+                        const opt = document.createElement('option');
+                        opt.value = rf.path;
+                        opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
+                        radarrSelect.appendChild(opt);
+                    });
+                    if (savedRadarrPath) radarrSelect.value = savedRadarrPath;
+                }
+            }
+
+            // Sonarr root folders
+            sonarrSelect.innerHTML = '<option value="">Use first root folder in Sonarr</option>';
+            if (tvInstance) {
+                const sfRes = await fetch(`./api/requestarr/rootfolders?app_type=sonarr&instance_name=${encodeURIComponent(tvInstance)}`);
+                const sfData = await sfRes.json();
+                if (sfData.success && sfData.root_folders && sfData.root_folders.length > 0) {
+                    sfData.root_folders.forEach(rf => {
+                        const opt = document.createElement('option');
+                        opt.value = rf.path;
+                        opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
+                        sonarrSelect.appendChild(opt);
+                    });
+                    if (savedSonarrPath) sonarrSelect.value = savedSonarrPath;
+                }
+            }
+        } catch (error) {
+            console.error('[RequestarrSettings] Error loading default root folders:', error);
+        }
+    }
+
+    async saveDefaultRootFolders() {
+        const radarrSelect = document.getElementById('default-root-folder-radarr');
+        const sonarrSelect = document.getElementById('default-root-folder-sonarr');
+        const saveBtn = document.getElementById('save-default-root-folders');
+        if (!radarrSelect || !sonarrSelect) return;
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        }
+        try {
+            const response = await fetch('./api/requestarr/settings/default-root-folders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    default_root_folder_radarr: radarrSelect.value || '',
+                    default_root_folder_sonarr: sonarrSelect.value || ''
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                this.core.showNotification('Default root folders saved.', 'success');
+            } else {
+                this.core.showNotification('Failed to save default root folders', 'error');
+            }
+        } catch (error) {
+            console.error('[RequestarrSettings] Error saving default root folders:', error);
+            this.core.showNotification('Failed to save default root folders', 'error');
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Default Root Folders';
             }
         }
     }

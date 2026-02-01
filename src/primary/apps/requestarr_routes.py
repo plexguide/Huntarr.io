@@ -466,6 +466,43 @@ def set_default_instances():
         logger.error(f"Error setting default instances: {e}")
         return jsonify({'success': False, 'error': 'Failed to set default instances'}), 500
 
+@requestarr_bp.route('/rootfolders', methods=['GET'])
+def get_root_folders():
+    """Get root folders for a *arr instance (for default root folder dropdown, issue #806)"""
+    try:
+        app_type = request.args.get('app_type', '').strip().lower()
+        instance_name = request.args.get('instance_name', '').strip()
+        if app_type not in ('radarr', 'sonarr') or not instance_name:
+            return jsonify({'success': False, 'error': 'app_type (radarr/sonarr) and instance_name required'}), 400
+        folders = requestarr_api.get_root_folders(app_type, instance_name)
+        return jsonify({'success': True, 'root_folders': folders})
+    except Exception as e:
+        logger.error(f"Error getting root folders: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get root folders'}), 500
+
+@requestarr_bp.route('/settings/default-root-folders', methods=['GET'])
+def get_default_root_folders():
+    """Get default root folder paths per app (issue #806)"""
+    try:
+        data = requestarr_api.get_default_root_folders()
+        return jsonify({'success': True, **data})
+    except Exception as e:
+        logger.error(f"Error getting default root folders: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get default root folders'}), 500
+
+@requestarr_bp.route('/settings/default-root-folders', methods=['POST'])
+def set_default_root_folders():
+    """Set default root folder paths per app (issue #806)"""
+    try:
+        data = request.get_json() or {}
+        radarr_path = data.get('default_root_folder_radarr', '')
+        sonarr_path = data.get('default_root_folder_sonarr', '')
+        requestarr_api.set_default_root_folders(default_root_folder_radarr=radarr_path, default_root_folder_sonarr=sonarr_path)
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error setting default root folders: {e}")
+        return jsonify({'success': False, 'error': 'Failed to set default root folders'}), 500
+
 @requestarr_bp.route('/watch-providers/<media_type>', methods=['GET'])
 def get_watch_providers(media_type):
     """Get watch providers for a media type and region"""
