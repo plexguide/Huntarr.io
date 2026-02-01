@@ -121,6 +121,15 @@ export class RequestarrModal {
                     </select>
                 </div>
             </div>
+            <div class="request-advanced-section">
+                <div class="advanced-field">
+                    <label>Root Folder</label>
+                    <select id="modal-root-folder" class="advanced-select">
+                        <option value="">Loading...</option>
+                    </select>
+                    <small style="color: #888; display: block; margin-top: 4px;">Where to store this ${isTVShow ? 'series' : 'movie'}</small>
+                </div>
+            </div>
         `;
         
         // Quality Profile section
@@ -160,6 +169,14 @@ export class RequestarrModal {
         
         this.core.currentModalData = data;
         
+        // Load root folders for selected instance (above profile, dynamic by instance)
+        if (defaultInstance) {
+            this.loadModalRootFolders(defaultInstance, isTVShow);
+        } else {
+            const rootSelect = document.getElementById('modal-root-folder');
+            if (rootSelect) rootSelect.innerHTML = '<option value="">Select an instance first</option>';
+        }
+        
         // Load status if instance is already selected
         if (defaultInstance) {
             if (isTVShow) {
@@ -173,6 +190,32 @@ export class RequestarrModal {
         if (uniqueInstances.length === 0) {
             document.getElementById('modal-request-btn').disabled = true;
             document.getElementById('modal-request-btn').classList.add('disabled');
+        }
+    }
+
+    async loadModalRootFolders(instanceName, isTVShow) {
+        const rootSelect = document.getElementById('modal-root-folder');
+        if (!rootSelect) return;
+        const appType = isTVShow ? 'sonarr' : 'radarr';
+        rootSelect.innerHTML = '<option value="">Loading...</option>';
+        try {
+            const response = await fetch(`./api/requestarr/rootfolders?app_type=${appType}&instance_name=${encodeURIComponent(instanceName)}`);
+            const data = await response.json();
+            rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
+            if (data.success && data.root_folders && data.root_folders.length > 0) {
+                const seen = new Set();
+                data.root_folders.forEach(rf => {
+                    if (seen.has(rf.path)) return;
+                    seen.add(rf.path);
+                    const opt = document.createElement('option');
+                    opt.value = rf.path;
+                    opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
+                    rootSelect.appendChild(opt);
+                });
+            }
+        } catch (error) {
+            console.error('[RequestarrModal] Error loading root folders:', error);
+            rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
         }
     }
 
@@ -421,6 +464,9 @@ export class RequestarrModal {
         localStorage.setItem(`huntarr-requestarr-instance-${instanceKey}`, instanceName);
         console.log('[RequestarrDiscover] Instance changed to:', instanceName);
         
+        // Reload root folder dropdown for new instance (above profile)
+        this.loadModalRootFolders(instanceName, isTVShow);
+        
         // Update quality profile dropdown
         const appType = isTVShow ? 'sonarr' : 'radarr';
         const profileKey = `${appType}-${instanceName}`;
@@ -450,6 +496,8 @@ export class RequestarrModal {
     async submitRequest() {
         const instanceSelect = document.getElementById('modal-instance-select');
         const qualityProfile = document.getElementById('modal-quality-profile').value;
+        const rootFolderSelect = document.getElementById('modal-root-folder');
+        const rootFolderPath = rootFolderSelect && rootFolderSelect.value ? rootFolderSelect.value : '';
         const requestBtn = document.getElementById('modal-request-btn');
         
         if (!instanceSelect.value) {
@@ -472,6 +520,7 @@ export class RequestarrModal {
                 poster_path: this.core.currentModalData.poster_path || '',
                 backdrop_path: this.core.currentModalData.backdrop_path || '',
                 instance: instanceSelect.value,
+                root_folder_path: rootFolderPath || undefined,
                 quality_profile: qualityProfile
             };
             

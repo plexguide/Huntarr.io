@@ -106,6 +106,7 @@ def request_media():
         # Get quality_profile from request, convert empty string to None
         quality_profile = data.get('quality_profile')
         quality_profile_id = int(quality_profile) if quality_profile and quality_profile != '' else None
+        root_folder_path = (data.get('root_folder_path') or '').strip() or None
         
         result = requestarr_api.request_media(
             tmdb_id=data['tmdb_id'],
@@ -117,7 +118,8 @@ def request_media():
             backdrop_path=data.get('backdrop_path', ''),
             app_type=app_type,
             instance_name=instance_name,
-            quality_profile_id=quality_profile_id
+            quality_profile_id=quality_profile_id,
+            root_folder_path=root_folder_path
         )
         
         logger.info(f"[Requestarr] Request result: {result}")

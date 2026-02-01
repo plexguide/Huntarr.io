@@ -794,13 +794,16 @@ export class RequestarrSettings {
             const savedRadarrPath = (savedRootData.default_root_folder_radarr || '').trim();
             const savedSonarrPath = (savedRootData.default_root_folder_sonarr || '').trim();
 
-            // Radarr root folders
+            // Radarr root folders (dedupe by path to avoid doubling)
             radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
             if (movieInstance) {
                 const rfRes = await fetch(`./api/requestarr/rootfolders?app_type=radarr&instance_name=${encodeURIComponent(movieInstance)}`);
                 const rfData = await rfRes.json();
                 if (rfData.success && rfData.root_folders && rfData.root_folders.length > 0) {
+                    const seen = new Set();
                     rfData.root_folders.forEach(rf => {
+                        if (seen.has(rf.path)) return;
+                        seen.add(rf.path);
                         const opt = document.createElement('option');
                         opt.value = rf.path;
                         opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
@@ -810,13 +813,16 @@ export class RequestarrSettings {
                 }
             }
 
-            // Sonarr root folders
+            // Sonarr root folders (dedupe by path)
             sonarrSelect.innerHTML = '<option value="">Use first root folder in Sonarr</option>';
             if (tvInstance) {
                 const sfRes = await fetch(`./api/requestarr/rootfolders?app_type=sonarr&instance_name=${encodeURIComponent(tvInstance)}`);
                 const sfData = await sfRes.json();
                 if (sfData.success && sfData.root_folders && sfData.root_folders.length > 0) {
+                    const seen = new Set();
                     sfData.root_folders.forEach(rf => {
+                        if (seen.has(rf.path)) return;
+                        seen.add(rf.path);
                         const opt = document.createElement('option');
                         opt.value = rf.path;
                         opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');

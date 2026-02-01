@@ -1566,7 +1566,8 @@ class RequestarrAPI:
     
     def request_media(self, tmdb_id: int, media_type: str, title: str, year: int,
                      overview: str, poster_path: str, backdrop_path: str,
-                     app_type: str, instance_name: str, quality_profile_id: int = None) -> Dict[str, Any]:
+                     app_type: str, instance_name: str, quality_profile_id: int = None,
+                     root_folder_path: str = None) -> Dict[str, Any]:
         """Request media through the specified app instance"""
         try:
             # Get instance configuration first
@@ -1721,7 +1722,7 @@ class RequestarrAPI:
                     }
             else:
                 # Add new media to the app
-                add_result = self._add_media_to_app(tmdb_id, media_type, target_instance, app_type, quality_profile_id)
+                add_result = self._add_media_to_app(tmdb_id, media_type, target_instance, app_type, quality_profile_id, root_folder_path)
                 
                 if add_result['success']:
                     # Save request to database
@@ -1871,7 +1872,7 @@ class RequestarrAPI:
                 'message': f'Error requesting missing episodes: {str(e)}'
             }
     
-    def _add_media_to_app(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str, quality_profile_id: int = None) -> Dict[str, Any]:
+    def _add_media_to_app(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str, quality_profile_id: int = None, root_folder_path: str = None) -> Dict[str, Any]:
         """Add media to the app instance"""
         try:
             # Database stores URL as 'api_url', map it to 'url' for consistency
@@ -1885,9 +1886,9 @@ class RequestarrAPI:
                 }
             
             if app_type == 'radarr' and media_type == 'movie':
-                return self._add_movie_to_radarr(tmdb_id, url, api_key, quality_profile_id)
+                return self._add_movie_to_radarr(tmdb_id, url, api_key, quality_profile_id, root_folder_path)
             elif app_type == 'sonarr' and media_type == 'tv':
-                return self._add_series_to_sonarr(tmdb_id, url, api_key, quality_profile_id)
+                return self._add_series_to_sonarr(tmdb_id, url, api_key, quality_profile_id, root_folder_path)
             else:
                 return {
                     'success': False,
@@ -1901,7 +1902,7 @@ class RequestarrAPI:
                 'message': f'Error adding media: {str(e)}'
             }
     
-    def _add_movie_to_radarr(self, tmdb_id: int, url: str, api_key: str, quality_profile_id: int = None) -> Dict[str, Any]:
+    def _add_movie_to_radarr(self, tmdb_id: int, url: str, api_key: str, quality_profile_id: int = None, root_folder_path: str = None) -> Dict[str, Any]:
         """Add movie to Radarr"""
         try:
             # First, get movie details from Radarr's lookup
@@ -1937,13 +1938,15 @@ class RequestarrAPI:
                     'message': 'No root folders configured in Radarr'
                 }
             
-            # Use default root folder from Requestarr settings if set and valid (issue #806)
+            # Use per-request root, then default from settings, then first folder (issue #806)
             root_paths = [rf['path'] for rf in root_folders]
-            default_radarr = (self.get_default_root_folders().get('default_root_folder_radarr') or '').strip()
-            if default_radarr and default_radarr in root_paths:
-                selected_root = default_radarr
+            selected_root = root_folders[0]['path']
+            if root_folder_path and root_folder_path in root_paths:
+                selected_root = root_folder_path
             else:
-                selected_root = root_folders[0]['path']
+                default_radarr = (self.get_default_root_folders().get('default_root_folder_radarr') or '').strip()
+                if default_radarr and default_radarr in root_paths:
+                    selected_root = default_radarr
             
             # Get quality profiles
             profiles_response = requests.get(
@@ -2002,7 +2005,7 @@ class RequestarrAPI:
                 'message': f'Error adding movie to Radarr: {str(e)}'
             }
     
-    def _add_series_to_sonarr(self, tmdb_id: int, url: str, api_key: str, quality_profile_id: int = None) -> Dict[str, Any]:
+    def _add_series_to_sonarr(self, tmdb_id: int, url: str, api_key: str, quality_profile_id: int = None, root_folder_path: str = None) -> Dict[str, Any]:
         """Add series to Sonarr"""
         try:
             # First, get series details from Sonarr's lookup
@@ -2038,13 +2041,15 @@ class RequestarrAPI:
                     'message': 'No root folders configured in Sonarr'
                 }
             
-            # Use default root folder from Requestarr settings if set and valid (issue #806)
+            # Use per-request root, then default from settings, then first folder (issue #806)
             root_paths = [rf['path'] for rf in root_folders]
-            default_sonarr = (self.get_default_root_folders().get('default_root_folder_sonarr') or '').strip()
-            if default_sonarr and default_sonarr in root_paths:
-                selected_root = default_sonarr
+            selected_root = root_folders[0]['path']
+            if root_folder_path and root_folder_path in root_paths:
+                selected_root = root_folder_path
             else:
-                selected_root = root_folders[0]['path']
+                default_sonarr = (self.get_default_root_folders().get('default_root_folder_sonarr') or '').strip()
+                if default_sonarr and default_sonarr in root_paths:
+                    selected_root = default_sonarr
             
             # Get quality profiles
             profiles_response = requests.get(
