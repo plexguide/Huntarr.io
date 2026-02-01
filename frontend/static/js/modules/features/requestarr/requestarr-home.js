@@ -10,6 +10,11 @@ const HomeRequestarr = {
     defaultTVInstance: null,
     showTrending: true,
     enableRequestarr: true,
+    
+    // Section rotation
+    sections: ['trending', 'movies', 'tv'],
+    currentSection: null,
+    ROTATION_KEY: 'home_section_rotation',
 
     init() {
         this.cacheElements();
@@ -38,7 +43,7 @@ const HomeRequestarr = {
 
                 this.applyTrendingVisibility();
 
-                if (!this.showTrending || !this.elements.trendingCarousel) {
+                if (!this.showTrending) {
                     this.setupSearch();
                     return;
                 }
@@ -48,7 +53,10 @@ const HomeRequestarr = {
                         this.core = core;
                         this.setupSearch();
                         this.loadDefaultInstances().then(() => {
-                            this.loadTrending();
+                            // Determine which section to show
+                            const sectionToShow = this.getNextSection();
+                            this.showSection(sectionToShow);
+                            this.saveSection(sectionToShow);
                         });
                     })
                     .catch(() => {
@@ -106,6 +114,80 @@ const HomeRequestarr = {
         this.elements.searchResultsGrid = document.getElementById('home-search-results-grid');
         this.elements.discoverView = document.getElementById('home-requestarr-discover-view');
         this.elements.trendingCarousel = document.getElementById('home-trending-carousel');
+        this.elements.moviesCarousel = document.getElementById('home-movies-carousel');
+        this.elements.tvCarousel = document.getElementById('home-tv-carousel');
+        this.elements.trendingSection = document.getElementById('home-trending-section');
+        this.elements.moviesSection = document.getElementById('home-movies-section');
+        this.elements.tvSection = document.getElementById('home-tv-section');
+    },
+    
+    getLastSection() {
+        try {
+            const data = localStorage.getItem(this.ROTATION_KEY);
+            if (data) {
+                const { section } = JSON.parse(data);
+                return section;
+            }
+        } catch (e) {
+            console.error('[HomeRequestarr] Error reading last section:', e);
+        }
+        return null;
+    },
+    
+    getNextSection() {
+        const lastSection = this.getLastSection();
+        
+        if (!lastSection || !this.sections.includes(lastSection)) {
+            return 'trending';
+        }
+        
+        const currentIndex = this.sections.indexOf(lastSection);
+        const nextIndex = (currentIndex + 1) % this.sections.length;
+        return this.sections[nextIndex];
+    },
+    
+    saveSection(section) {
+        try {
+            const data = {
+                section: section,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(this.ROTATION_KEY, JSON.stringify(data));
+        } catch (e) {
+            console.error('[HomeRequestarr] Error saving section:', e);
+        }
+    },
+    
+    showSection(section) {
+        console.log('[HomeRequestarr] Showing section:', section);
+        this.currentSection = section;
+        
+        // Hide all sections
+        if (this.elements.trendingSection) this.elements.trendingSection.style.display = 'none';
+        if (this.elements.moviesSection) this.elements.moviesSection.style.display = 'none';
+        if (this.elements.tvSection) this.elements.tvSection.style.display = 'none';
+        
+        // Show and load the selected section
+        switch (section) {
+            case 'trending':
+                if (this.elements.trendingSection) {
+                    this.elements.trendingSection.style.display = 'block';
+                    this.loadTrending();
+                }
+                break;
+            case 'movies':
+                if (this.elements.moviesSection) {
+                    this.elements.moviesSection.style.display = 'block';
+                    this.loadPopularMovies();
+                }
+                break;
+            case 'tv':
+                if (this.elements.tvSection) {
+                    this.elements.tvSection.style.display = 'block';
+                    this.loadPopularTV();
+                }
+                break;
+        }
     },
 
     waitForCore() {
@@ -273,6 +355,58 @@ const HomeRequestarr = {
         } catch (error) {
             console.error('[HomeRequestarr] Error loading trending:', error);
             this.showTrendingError('Failed to load trending content');
+        }
+    },
+    
+    async loadPopularMovies() {
+        if (!this.enableRequestarr || !this.elements.moviesCarousel) {
+            return;
+        }
+
+        try {
+            const response = await fetch('./api/requestarr/discover/movies?sort_by=popularity.desc');
+            const data = await response.json();
+
+            if (data.results && data.results.length > 0) {
+                this.elements.moviesCarousel.innerHTML = '';
+                data.results.slice(0, 20).forEach((item) => {
+                    const card = this.createMediaCard(item, this.defaultMovieInstance);
+                    if (card) {
+                        this.elements.moviesCarousel.appendChild(card);
+                    }
+                });
+            } else {
+                this.elements.moviesCarousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No popular movies available</p>';
+            }
+        } catch (error) {
+            console.error('[HomeRequestarr] Error loading popular movies:', error);
+            this.elements.moviesCarousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load popular movies</p>';
+        }
+    },
+    
+    async loadPopularTV() {
+        if (!this.enableRequestarr || !this.elements.tvCarousel) {
+            return;
+        }
+
+        try {
+            const response = await fetch('./api/requestarr/discover/tv?sort_by=popularity.desc');
+            const data = await response.json();
+
+            if (data.results && data.results.length > 0) {
+                this.elements.tvCarousel.innerHTML = '';
+                data.results.slice(0, 20).forEach((item) => {
+                    const card = this.createMediaCard(item, this.defaultTVInstance);
+                    if (card) {
+                        this.elements.tvCarousel.appendChild(card);
+                    }
+                });
+            } else {
+                this.elements.tvCarousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No popular TV shows available</p>';
+            }
+        } catch (error) {
+            console.error('[HomeRequestarr] Error loading popular TV:', error);
+            this.elements.tvCarousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load popular TV shows</p>';
         }
     },
 
