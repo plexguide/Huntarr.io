@@ -247,6 +247,16 @@
             ">
                 <h3>Display Settings</h3>
                 <div class="setting-item">
+                    <label for="tmdb_image_cache_days"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#tmdb-image-cache" class="info-icon" title="Learn more about TMDB image caching" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>TMDB Image Cache:</label>
+                    <select id="tmdb_image_cache_days" class="control-select" style="width: 200px;">
+                        <option value="0" ${settings.tmdb_image_cache_days === 0 ? "selected" : ""}>Disabled (Always Load)</option>
+                        <option value="1" ${settings.tmdb_image_cache_days === 1 ? "selected" : ""}>1 Day</option>
+                        <option value="7" ${(settings.tmdb_image_cache_days === 7 || settings.tmdb_image_cache_days === undefined) ? "selected" : ""}>7 Days</option>
+                        <option value="30" ${settings.tmdb_image_cache_days === 30 ? "selected" : ""}>30 Days</option>
+                    </select>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Cache TMDB images to reduce load times and API usage. Missing images will still attempt to load. Set to "Disabled" to always fetch fresh images.</p>
+                </div>
+                <div class="setting-item">
                     <label for="enable_requestarr">Enable Requestarr:</label>
                     <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                         <input type="checkbox" id="enable_requestarr" ${

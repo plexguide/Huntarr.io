@@ -2404,6 +2404,13 @@ let huntarrUI = {
 
 // Initialize when document is ready
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize TMDB image cache first
+    if (typeof tmdbImageCache !== 'undefined') {
+        tmdbImageCache.init().catch(error => {
+            console.error('[app.js] Failed to initialize TMDB image cache:', error);
+        });
+    }
+    
     huntarrUI.init();
     
     // Initialize our enhanced UI features

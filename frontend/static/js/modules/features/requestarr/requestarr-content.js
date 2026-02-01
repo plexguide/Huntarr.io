@@ -862,6 +862,20 @@ export class RequestarrContent {
             </div>
         `;
         
+        // Load and cache image asynchronously after card is created
+        if (posterUrl && !posterUrl.includes('./static/images/') && window.getCachedTMDBImage && window.tmdbImageCache) {
+            const imgElement = card.querySelector('.media-card-poster img');
+            if (imgElement) {
+                window.getCachedTMDBImage(posterUrl, window.tmdbImageCache).then(cachedUrl => {
+                    if (cachedUrl && cachedUrl !== posterUrl) {
+                        imgElement.src = cachedUrl;
+                    }
+                }).catch(err => {
+                    console.error('[RequestarrContent] Failed to cache image:', err);
+                });
+            }
+        }
+        
         const posterDiv = card.querySelector('.media-card-poster');
         const requestBtn = card.querySelector('.media-card-request-btn');
         const hideBtn = card.querySelector('.media-card-hide-btn');

@@ -34,9 +34,11 @@ export class RequestarrSettings {
             
             if (data.requests && data.requests.length > 0) {
                 container.innerHTML = '';
-                data.requests.forEach(request => {
-                    container.appendChild(this.createHistoryItem(request));
-                });
+                // Use Promise.all to wait for all async createHistoryItem calls
+                const items = await Promise.all(
+                    data.requests.map(request => this.createHistoryItem(request))
+                );
+                items.forEach(item => container.appendChild(item));
             } else {
                 container.innerHTML = '<p style="color: #888; text-align: center; padding: 60px;">No request history</p>';
             }
@@ -46,7 +48,7 @@ export class RequestarrSettings {
         }
     }
 
-    createHistoryItem(request) {
+    async createHistoryItem(request) {
         const item = document.createElement('div');
         item.className = 'history-item';
         
@@ -65,6 +67,19 @@ export class RequestarrSettings {
                 <span class="history-status">Requested</span>
             </div>
         `;
+        
+        // Load and cache image asynchronously
+        if (posterUrl && !posterUrl.includes('./static/images/') && window.getCachedTMDBImage && window.tmdbImageCache) {
+            try {
+                const cachedUrl = await window.getCachedTMDBImage(posterUrl, window.tmdbImageCache);
+                if (cachedUrl && cachedUrl !== posterUrl) {
+                    const imgElement = item.querySelector('.history-poster img');
+                    if (imgElement) imgElement.src = cachedUrl;
+                }
+            } catch (err) {
+                console.error('[RequestarrSettings] Failed to cache history image:', err);
+            }
+        }
         
         return item;
     }
@@ -362,7 +377,7 @@ export class RequestarrSettings {
         };
     }
 
-    createHiddenMediaCard(item) {
+    async createHiddenMediaCard(item) {
         const card = document.createElement('div');
         card.className = 'media-card';
         card.setAttribute('data-tmdb-id', item.tmdb_id);
@@ -378,6 +393,19 @@ export class RequestarrSettings {
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
             </div>
         `;
+        
+        // Load and cache image asynchronously
+        if (posterUrl && !posterUrl.includes('./static/images/') && window.getCachedTMDBImage && window.tmdbImageCache) {
+            try {
+                const cachedUrl = await window.getCachedTMDBImage(posterUrl, window.tmdbImageCache);
+                if (cachedUrl && cachedUrl !== posterUrl) {
+                    const imgElement = card.querySelector('.media-card-poster img');
+                    if (imgElement) imgElement.src = cachedUrl;
+                }
+            } catch (err) {
+                console.error('[RequestarrSettings] Failed to cache hidden media image:', err);
+            }
+        }
         
         const unhideBtn = card.querySelector('.media-card-unhide-btn');
         if (unhideBtn) {

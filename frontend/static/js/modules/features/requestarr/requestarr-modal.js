@@ -85,8 +85,10 @@ export class RequestarrModal {
             finalDefault: defaultInstance
         });
         
+        const backdropUrl = data.backdrop_path || '';
+        
         let modalHTML = `
-            <div class="request-modal-header" style="background-image: url(${data.backdrop_path || ''});">
+            <div class="request-modal-header" style="background-image: url(${backdropUrl});">
                 <button class="modal-close-btn" onclick="window.RequestarrDiscover.modal.closeModal()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -646,6 +648,21 @@ export class RequestarrModal {
         }
 
         document.body.appendChild(modal);
+        
+        // Cache backdrop image asynchronously after modal is in DOM
+        const backdropUrl = this.core.currentModalData?.backdrop_path;
+        if (backdropUrl && !backdropUrl.includes('./static/images/') && window.getCachedTMDBImage && window.tmdbImageCache) {
+            const header = modal.querySelector('.request-modal-header');
+            if (header) {
+                window.getCachedTMDBImage(backdropUrl, window.tmdbImageCache).then(cachedUrl => {
+                    if (cachedUrl && cachedUrl !== backdropUrl) {
+                        header.style.backgroundImage = `url(${cachedUrl})`;
+                    }
+                }).catch(err => {
+                    console.error('[RequestarrModal] Failed to cache backdrop:', err);
+                });
+            }
+        }
     }
 
     closeModal() {

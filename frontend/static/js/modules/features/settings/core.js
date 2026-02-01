@@ -757,6 +757,7 @@ window.SettingsForms = {
                 enable_requestarr: getVal('enable_requestarr', true),
                 low_usage_mode: getVal('low_usage_mode', true),
                 show_trending: getVal('show_trending', true),
+                tmdb_image_cache_days: parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '7'),
                 auth_mode: (container.querySelector('#auth_mode') && container.querySelector('#auth_mode').value) || 'login',
                 ssl_verify: getVal('ssl_verify', true),
                 base_url: getVal('base_url', ''),
