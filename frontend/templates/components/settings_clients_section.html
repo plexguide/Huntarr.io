@@ -278,7 +278,8 @@
     function selectClientType(type) {
         closeClientTypeModal();
         if (window.SettingsForms && window.SettingsForms.openClientEditor) {
-            var payload = { name: '', type: type, host: '', port: 8080, enabled: true, category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 50 };
+            var defaultName = type === 'sabnzbd' ? 'SABnzbd' : type === 'nzbget' ? 'NZBGet' : type;
+            var payload = { name: defaultName, type: type, host: '', port: 8080, enabled: true, category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 50 };
             window.SettingsForms.openClientEditor(true, null, payload);
         }
     }

@@ -124,7 +124,7 @@
                     <div class="editor-field-group">
                         <label for="editor-client-category">Category</label>
                         <input type="text" id="editor-client-category" value="${category}" placeholder="movies" />
-                        <p class="editor-help-text">Adding a category specific to Radarr avoids conflicts with unrelated non-Radarr downloads. Using a category is optional, but strongly recommended.</p>
+                        <p class="editor-help-text">Adding a category specific to Movie Hunt avoids conflicts with unrelated non–Movie Hunt downloads. Using a category is optional, but strongly recommended.</p>
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-client-recent-priority">Recent Priority</label>
