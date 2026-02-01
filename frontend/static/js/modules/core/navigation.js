@@ -115,8 +115,10 @@ window.HuntarrNavigation = {
         const config = sectionMap[section] || sectionMap['home'];
         ui.currentSection = section;
         newTitle = config.title;
-        if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
-            newTitle = 'Indexer Editor';
+        if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
+            const appType = window.SettingsForms._currentEditing.appType;
+            if (appType === 'indexer') newTitle = 'Indexer Editor';
+            else if (appType === 'client') newTitle = 'Client Editor';
         }
         
         if (config.section) {
@@ -129,8 +131,10 @@ window.HuntarrNavigation = {
             localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
         } else if (config.sidebar === 'apps') {
-            if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
-                this.showMovieHuntSidebar();
+            if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
+                const appType = window.SettingsForms._currentEditing.appType;
+                if (appType === 'indexer' || appType === 'client') this.showMovieHuntSidebar();
+                else this.showAppsSidebar();
             } else {
                 this.showAppsSidebar();
             }
@@ -160,6 +164,9 @@ window.HuntarrNavigation = {
         }
         if (section === 'settings-indexers' && window.SettingsForms && typeof window.SettingsForms.refreshIndexersList === 'function') {
             window.SettingsForms.refreshIndexersList();
+        }
+        if (section === 'settings-clients' && window.SettingsForms && typeof window.SettingsForms.refreshClientsList === 'function') {
+            window.SettingsForms.refreshClientsList();
         }
         
         if (config.app && typeof appsModule !== 'undefined') {

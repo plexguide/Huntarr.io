@@ -1,6 +1,115 @@
 <section id="settingsClientsSection" class="content-section" style="display: none;">
-    <div class="settings-subpanel">
-        <h2 class="settings-subpanel-title">Clients</h2>
-        <p class="settings-subpanel-description">Configure download and other clients. This section will be expanded in a future release.</p>
+    <div id="clientManagementContainer" class="app-content-panel">
+        <div class="settings-group client-settings-group">
+            <h3>Client Management</h3>
+            <div class="instance-card-grid" id="client-instances-grid">
+                <div class="add-instance-card" data-app-type="client">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Adding Client</div>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
+
+<style>
+    #settingsClientsSection {
+        width: 100%;
+        min-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+        margin: 0;
+    }
+    #settingsClientsSection.active {
+        display: block !important;
+    }
+    #clientManagementContainer {
+        width: 100%;
+        padding: 20px;
+        margin: 0;
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
+    }
+    .client-settings-group {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        border: 2px solid rgba(90, 109, 137, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0 25px 0;
+        box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    .client-settings-group h3 {
+        margin: 0 0 20px 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #f8fafc;
+    }
+</style>
+
+<script>
+(function() {
+    function initClientGrid() {
+        var grid = document.getElementById('client-instances-grid');
+        if (!grid) return;
+
+        grid.addEventListener('click', function(e) {
+            var editBtn = e.target.closest('.btn-card.edit[data-app-type="client"]');
+            var deleteBtn = e.target.closest('.btn-card.delete[data-app-type="client"]');
+            var addCard = e.target.closest('.add-instance-card[data-app-type="client"]');
+
+            if (editBtn) {
+                e.preventDefault();
+                var index = parseInt(editBtn.dataset.instanceIndex, 10);
+                var instance = (window.SettingsForms && window.SettingsForms._clientsList && window.SettingsForms._clientsList[index]) ? window.SettingsForms._clientsList[index] : null;
+                if (!instance) {
+                    var card = editBtn.closest('.instance-card');
+                    var nameEl = card ? card.querySelector('.instance-name span') : null;
+                    var type = card ? (card.getAttribute('data-type') || 'qbittorrent') : 'qbittorrent';
+                    var enabled = card ? (card.getAttribute('data-enabled') !== 'false') : true;
+                    var bodyDetails = card ? card.querySelectorAll('.instance-card-body .instance-detail span') : [];
+                    var hostPort = bodyDetails[1] ? bodyDetails[1].textContent.trim() : '';
+                    var parts = hostPort.split(':');
+                    instance = { name: nameEl ? nameEl.textContent.trim() : '', type: type, host: parts[0] || '', port: parts[1] ? parseInt(parts[1], 10) : 8080, enabled: enabled, password_last4: '' };
+                }
+                if (window.SettingsForms && window.SettingsForms.openClientEditor) {
+                    window.SettingsForms.openClientEditor(false, index, instance);
+                }
+            } else if (addCard) {
+                e.preventDefault();
+                if (window.SettingsForms && window.SettingsForms.openClientEditor) {
+                    window.SettingsForms.openClientEditor(true, null, { name: '', type: 'qbittorrent', host: '', port: 8080, enabled: true });
+                }
+            } else if (deleteBtn) {
+                e.preventDefault();
+                var index = parseInt(deleteBtn.dataset.instanceIndex, 10);
+                var card = deleteBtn.closest('.instance-card');
+                var nameEl = card ? card.querySelector('.instance-name span') : null;
+                var name = nameEl ? nameEl.textContent.trim() : 'this client';
+                if (!confirm('Delete "' + name + '"?')) return;
+                fetch('./api/clients/' + index, { method: 'DELETE' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && window.SettingsForms && window.SettingsForms.refreshClientsList) {
+                            window.SettingsForms.refreshClientsList();
+                        }
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Client deleted.', 'success');
+                        }
+                    })
+                    .catch(function() {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Failed to delete client', 'error');
+                        }
+                    });
+            }
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initClientGrid);
+    } else {
+        initClientGrid();
+    }
+})();
+</script>

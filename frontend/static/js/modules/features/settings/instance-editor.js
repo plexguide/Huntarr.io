@@ -1174,6 +1174,8 @@
         this._currentEditing = null;
         if (appType === 'indexer') {
             window.huntarrUI.switchSection('settings-indexers');
+        } else if (appType === 'client') {
+            window.huntarrUI.switchSection('settings-clients');
         } else {
             window.huntarrUI.switchSection(appType);
         }

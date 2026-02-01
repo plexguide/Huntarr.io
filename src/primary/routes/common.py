@@ -372,6 +372,124 @@ def api_indexers_delete(index):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+def _get_clients_config():
+    """Get download clients list from database (app_config app_type=clients)."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('clients')
+    if not config or not isinstance(config.get('clients'), list):
+        return []
+    return config['clients']
+
+
+def _save_clients_list(clients_list):
+    """Save download clients list to database."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    db.save_app_config('clients', {'clients': clients_list})
+
+
+@common_bp.route('/api/clients', methods=['GET'])
+def api_clients_list():
+    """List saved download clients (password masked to last 4 chars)."""
+    try:
+        clients = _get_clients_config()
+        out = []
+        for i, c in enumerate(clients):
+            pwd = (c.get('password') or '')
+            last4 = pwd[-4:] if len(pwd) >= 4 else '****'
+            out.append({
+                'index': i,
+                'name': c.get('name') or 'Unnamed',
+                'type': c.get('type') or 'qbittorrent',
+                'host': c.get('host') or '',
+                'port': c.get('port') or 8080,
+                'enabled': c.get('enabled', True),
+                'password_last4': last4,
+            })
+        return jsonify({'clients': out}), 200
+    except Exception as e:
+        logger.exception('Clients list error')
+        return jsonify({'clients': [], 'error': str(e)}), 200
+
+
+@common_bp.route('/api/clients', methods=['POST'])
+def api_clients_add():
+    """Add a new download client. Body: { name, type, host, port, enabled, password }."""
+    try:
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip() or 'Unnamed'
+        client_type = (data.get('type') or 'qbittorrent').strip().lower()
+        host = (data.get('host') or '').strip()
+        raw_port = data.get('port')
+        try:
+            port = int(raw_port, 10) if raw_port is not None and str(raw_port).strip() != '' else 8080
+        except (TypeError, ValueError):
+            port = 8080
+        enabled = data.get('enabled', True)
+        password = (data.get('password') or '').strip()
+        clients = _get_clients_config()
+        clients.append({
+            'name': name,
+            'type': client_type,
+            'host': host,
+            'port': port,
+            'enabled': enabled,
+            'password': password,
+        })
+        _save_clients_list(clients)
+        return jsonify({'success': True, 'index': len(clients) - 1}), 200
+    except Exception as e:
+        logger.exception('Clients add error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@common_bp.route('/api/clients/<int:index>', methods=['PUT'])
+def api_clients_update(index):
+    """Update download client at index. Body: { name, type, host, port, enabled, password? }. Omit password to keep existing."""
+    try:
+        clients = _get_clients_config()
+        if index < 0 or index >= len(clients):
+            return jsonify({'success': False, 'error': 'Index out of range'}), 400
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip() or 'Unnamed'
+        client_type = (data.get('type') or 'qbittorrent').strip().lower()
+        host = (data.get('host') or '').strip()
+        port = int(data.get('port'), 10) if data.get('port') is not None else clients[index].get('port', 8080)
+        enabled = data.get('enabled', True)
+        password_new = (data.get('password') or '').strip()
+        existing = clients[index]
+        password = password_new if password_new else (existing.get('password') or '')
+        clients[index] = {
+            'name': name,
+            'type': client_type,
+            'host': host,
+            'port': port,
+            'enabled': enabled,
+            'password': password,
+        }
+        _save_clients_list(clients)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Clients update error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@common_bp.route('/api/clients/<int:index>', methods=['DELETE'])
+def api_clients_delete(index):
+    """Delete download client at index."""
+    try:
+        clients = _get_clients_config()
+        if index < 0 or index >= len(clients):
+            return jsonify({'success': False, 'error': 'Index out of range'}), 400
+        clients.pop(index)
+        _save_clients_list(clients)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Clients delete error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @common_bp.route('/api/sleep.json', methods=['GET'])
 def api_get_sleep_json():
     """API endpoint to serve sleep/cycle data from the database for frontend access"""

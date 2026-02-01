@@ -869,6 +869,9 @@ let huntarrUI = {
             newTitle = 'Clients';
             this.currentSection = 'settings-clients';
             this.showMovieHuntSidebar();
+            if (window.SettingsForms && typeof window.SettingsForms.refreshClientsList === 'function') {
+                window.SettingsForms.refreshClientsList();
+            }
         } else if (section === 'settings-logs' && document.getElementById('settingsLogsSection')) {
             document.getElementById('settingsLogsSection').classList.add('active');
             document.getElementById('settingsLogsSection').style.display = 'block';
@@ -962,9 +965,12 @@ let huntarrUI = {
             document.getElementById('instanceEditorSection').classList.add('active');
             document.getElementById('instanceEditorSection').style.display = 'block';
             this.currentSection = 'instance-editor';
-            // Indexer editor is its own thing; app instance editor stays "Instance Editor"
+            // Indexer/Client editor use Movie Hunt sidebar; app instance editor stays "Instance Editor"
             if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer') {
                 newTitle = 'Indexer Editor';
+                this.showMovieHuntSidebar();
+            } else if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'client') {
+                newTitle = 'Client Editor';
                 this.showMovieHuntSidebar();
             } else {
                 newTitle = 'Instance Editor';
@@ -1059,7 +1065,7 @@ let huntarrUI = {
         if (mhNav) mhNav.style.display = devMode ? '' : 'none';
         const onMovieHuntSection = this.currentSection && (
             ['movie-hunt-home', 'movie-hunt-settings', 'settings-indexers', 'settings-clients'].indexOf(this.currentSection) !== -1 ||
-            (this.currentSection === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'indexer')
+            (this.currentSection === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && (window.SettingsForms._currentEditing.appType === 'indexer' || window.SettingsForms._currentEditing.appType === 'client'))
         );
         if (!devMode && onMovieHuntSection) {
             this.switchSection('home');
