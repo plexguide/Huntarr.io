@@ -84,6 +84,7 @@
 .status-error { color: #ef4444; }
 .status-unknown { color: #64748b; }
 .status-disconnected { color: #ef4444; }
+.status-disabled { color: #64748b; opacity: 0.8; }
 
 /* Card Body */
 .instance-card-body {

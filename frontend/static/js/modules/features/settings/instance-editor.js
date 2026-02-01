@@ -23,11 +23,14 @@
     renderInstanceCard: function(appType, instance, index, options) {
         const isDefault = index === 0;
         
-        // Determine connection status based on actual API connectivity
+        // Determine connection status; disabled instances are never tested
         let statusClass = 'status-unknown';
         let statusIcon = 'fa-question-circle';
         
-        if (instance.api_url && instance.api_key) {
+        if (instance.enabled === false) {
+            statusClass = 'status-disabled';
+            statusIcon = 'fa-toggle-off';
+        } else if (instance.api_url && instance.api_key) {
             // Has URL and API key - check if connection test passed
             if (instance.connection_status === 'connected' || instance.connection_test_passed === true) {
                 statusClass = 'status-connected';
@@ -36,12 +39,10 @@
                 statusClass = 'status-error';
                 statusIcon = 'fa-minus-circle';
             } else {
-                // No test result yet - show unknown
                 statusClass = 'status-unknown';
                 statusIcon = 'fa-question-circle';
             }
         } else {
-            // Missing URL or API key - show error
             statusClass = 'status-error';
             statusIcon = 'fa-minus-circle';
         }

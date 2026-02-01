@@ -206,7 +206,10 @@ window.SettingsForms = {
                 api_key: settings.api_key || '',
                 enabled: settings.enabled !== false
             };
-            
+            if (!prowlarrInstance.enabled) {
+                this.updateInstanceStatusIcon(appType, 0, 'disabled');
+                return;
+            }
             if (prowlarrInstance.api_url && prowlarrInstance.api_key) {
                 this.testInstanceConnection(appType, 0, prowlarrInstance);
             } else {
@@ -215,14 +218,17 @@ window.SettingsForms = {
             return;
         }
         
-        // Other apps use instances array
+        // Other apps use instances array - do not attempt connection for disabled instances
         if (!settings.instances || settings.instances.length === 0) return;
         
         settings.instances.forEach((instance, index) => {
+            if (instance.enabled === false) {
+                this.updateInstanceStatusIcon(appType, index, 'disabled');
+                return;
+            }
             if (instance.api_url && instance.api_key) {
                 this.testInstanceConnection(appType, index, instance);
             } else {
-                // Update icon to error if missing URL or API key
                 this.updateInstanceStatusIcon(appType, index, 'error');
             }
         });
@@ -266,7 +272,7 @@ window.SettingsForms = {
         if (!statusIcon) return;
         
         // Remove all status classes
-        statusIcon.classList.remove('status-connected', 'status-error', 'status-unknown', 'status-loading');
+        statusIcon.classList.remove('status-connected', 'status-error', 'status-unknown', 'status-loading', 'status-disabled');
         
         // Update icon and class based on status
         let iconClass = 'fa-question-circle';
@@ -278,6 +284,9 @@ window.SettingsForms = {
         } else if (status === 'error') {
             iconClass = 'fa-minus-circle';
             statusClass = 'status-error';
+        } else if (status === 'disabled') {
+            iconClass = 'fa-toggle-off';
+            statusClass = 'status-disabled';
         } else if (status === 'loading') {
             iconClass = 'fa-spinner fa-spin';
             statusClass = 'status-unknown';
