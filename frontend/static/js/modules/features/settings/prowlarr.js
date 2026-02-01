@@ -124,11 +124,21 @@
             const keyInput = document.getElementById('editor-key');
             
             const testConnection = () => {
-                const url = urlInput.value.trim();
-                const key = keyInput.value.trim();
-                
                 const statusBadge = document.getElementById('prowlarr-connection-status');
                 if (!statusBadge) return;
+                
+                const enabledEl = document.getElementById('editor-enabled');
+                if (enabledEl && enabledEl.value === 'false') {
+                    statusBadge.className = 'connection-status-badge status-disabled';
+                    statusBadge.innerHTML = '<i class="fas fa-ban"></i> Disabled';
+                    statusBadge.style.color = '#94a3b8';
+                    statusBadge.style.opacity = '0.9';
+                    return;
+                }
+                
+                const url = urlInput.value.trim();
+                const key = keyInput.value.trim();
+                statusBadge.removeAttribute('style');
                 
                 if (!url || !key) {
                     statusBadge.className = 'connection-status-badge status-error';
@@ -163,16 +173,14 @@
                 });
             };
             
-            // Test connection on input blur
+            // Test connection on input blur and when enabled changes
             if (urlInput) urlInput.addEventListener('blur', testConnection);
             if (keyInput) keyInput.addEventListener('blur', testConnection);
+            const enabledSelect = document.getElementById('editor-enabled');
+            if (enabledSelect) enabledSelect.addEventListener('change', testConnection);
             
-            // Auto-test if both fields have values
-            setTimeout(() => {
-                if (urlInput.value.trim() && keyInput.value.trim()) {
-                    testConnection();
-                }
-            }, 100);
+            // Initial status: testConnection() shows Disabled or runs test
+            setTimeout(() => testConnection(), 100);
         }
 
         // Setup button listeners
