@@ -860,9 +860,30 @@ class HuntarrDatabase:
             cursor = conn.execute('SELECT app_type FROM app_configs ORDER BY app_type')
             return [row[0] for row in cursor.fetchall()]
     
+    def _migrate_general_settings_from_app_configs_if_needed(self):
+        """
+        Migrate general settings from app_configs to general_settings table if needed.
+        Prevents upgrade from V8 (or older) from wiping notification config (issue #802).
+        When general_settings is empty but app_configs has a 'general' row, copy it over.
+        """
+        existing = self.get_general_settings()
+        if existing:
+            return
+        legacy = self.get_app_config('general')
+        if not legacy or not isinstance(legacy, dict):
+            return
+        try:
+            self.save_general_settings(legacy)
+            logger.info("Migrated general settings from app_configs to general_settings (upgrade preservation)")
+        except Exception as e:
+            logger.warning(f"Could not migrate general settings from app_configs: {e}")
+    
     def initialize_from_defaults(self):
         """Initialize database with default configurations if empty"""
         from src.primary.default_settings import get_all_app_types, get_default_config
+        
+        # Preserve general settings on upgrade: migrate from app_configs if general_settings is empty (issue #802)
+        self._migrate_general_settings_from_app_configs_if_needed()
         
         for app_type in get_all_app_types():
             # Check if config already exists
