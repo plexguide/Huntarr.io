@@ -40,12 +40,20 @@ export class RequestarrContent {
         const select = document.getElementById('movies-instance-select');
         if (!select) return;
 
+        // Prevent concurrent calls (race condition protection)
+        if (this._loadingMovieInstances) {
+            console.log('[RequestarrContent] loadMovieInstances already in progress, skipping');
+            return;
+        }
+        this._loadingMovieInstances = true;
+
         // Clear existing options immediately to prevent duplicates if called multiple times
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
             const response = await fetch('./api/requestarr/instances/radarr');
             const data = await response.json();
+            console.log('[RequestarrContent] Radarr API returned', data.instances?.length || 0, 'instances');
             
             if (data.instances && data.instances.length > 0) {
                 // Clear again before adding real instances
@@ -90,6 +98,7 @@ export class RequestarrContent {
                     uniqueInstances.push({ ...instance, name: normalizedName });
                     seenNames.add(seenKey);
                 });
+                console.log('[RequestarrContent] After deduplication:', uniqueInstances.length, 'unique Radarr instances');
                 
                 if (uniqueInstances.length === 0) {
                     select.innerHTML = '<option value="">No Radarr instances configured</option>';
@@ -174,6 +183,8 @@ export class RequestarrContent {
         } catch (error) {
             console.error('[RequestarrContent] Error loading movie instances:', error);
             select.innerHTML = '<option value="">Error loading instances</option>';
+        } finally {
+            this._loadingMovieInstances = false;
         }
     }
 
@@ -181,12 +192,20 @@ export class RequestarrContent {
         const select = document.getElementById('tv-instance-select');
         if (!select) return;
 
+        // Prevent concurrent calls (race condition protection)
+        if (this._loadingTVInstances) {
+            console.log('[RequestarrContent] loadTVInstances already in progress, skipping');
+            return;
+        }
+        this._loadingTVInstances = true;
+
         // Clear existing options immediately to prevent duplicates if called multiple times
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
             const response = await fetch('./api/requestarr/instances/sonarr');
             const data = await response.json();
+            console.log('[RequestarrContent] Sonarr API returned', data.instances?.length || 0, 'instances');
             
             if (data.instances && data.instances.length > 0) {
                 // Clear again before adding real instances
@@ -231,6 +250,7 @@ export class RequestarrContent {
                     uniqueInstances.push({ ...instance, name: normalizedName });
                     seenNames.add(seenKey);
                 });
+                console.log('[RequestarrContent] After deduplication:', uniqueInstances.length, 'unique Sonarr instances');
                 
                 if (uniqueInstances.length === 0) {
                     select.innerHTML = '<option value="">No Sonarr instances configured</option>';
@@ -315,6 +335,8 @@ export class RequestarrContent {
         } catch (error) {
             console.error('[RequestarrContent] Error loading TV instances:', error);
             select.innerHTML = '<option value="">Error loading instances</option>';
+        } finally {
+            this._loadingTVInstances = false;
         }
     }
 
