@@ -440,7 +440,7 @@ window.HuntarrSettings = {
     },
 
     applyShowTrendingChange: function(enabled) {
-        console.log(`[HuntarrSettings] Show Trending ${enabled ? 'enabled' : 'disabled'}`);
+        console.log(`[HuntarrSettings] Show Discover Content ${enabled ? 'enabled' : 'disabled'}`);
         if (window.HomeRequestarr) {
             window.HomeRequestarr.showTrending = enabled;
             if (typeof window.HomeRequestarr.applyTrendingVisibility === 'function') {
