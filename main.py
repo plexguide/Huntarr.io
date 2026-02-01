@@ -299,10 +299,10 @@ def run_web_server():
                 waitress_server.close()
                 web_logger.info("Waitress server close() called.")
                 
-                # Wait for server thread to finish
-                server_thread.join(timeout=3.0)
+                # Wait for server thread to finish with longer timeout
+                server_thread.join(timeout=5.0)
                 if server_thread.is_alive():
-                    web_logger.warning("Server thread did not stop within timeout.")
+                    web_logger.debug("Server thread did not stop within timeout (this is normal during container restart).")
                 else:
                     web_logger.info("Server thread stopped successfully.")
                     
