@@ -282,17 +282,24 @@ window.HuntarrNavigation = {
     updateMovieHuntSidebarActive: function() {
         if (!window.huntarrUI) return;
         const currentSection = window.huntarrUI.currentSection;
+        // When editing indexer or client (instance-editor), highlight the corresponding sidebar item
+        let sectionForNav = currentSection;
+        if (currentSection === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
+            const appType = window.SettingsForms._currentEditing.appType;
+            if (appType === 'indexer') sectionForNav = 'settings-indexers';
+            else if (appType === 'client') sectionForNav = 'settings-clients';
+        }
         const items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
         items.forEach(item => {
             item.classList.remove('active');
             const href = item.getAttribute && item.getAttribute('href') || (item.querySelector('a') && item.querySelector('a').getAttribute('href'));
-            if (href && (href === '#' + currentSection || href.endsWith('#' + currentSection))) {
+            if (href && (href === '#' + sectionForNav || href.endsWith('#' + sectionForNav))) {
                 item.classList.add('active');
             }
         });
         var subGroup = document.getElementById('movie-hunt-settings-sub');
         if (subGroup) {
-            var showSub = ['movie-hunt-settings', 'settings-indexers', 'settings-clients'].indexOf(currentSection) !== -1;
+            var showSub = ['movie-hunt-settings', 'settings-indexers', 'settings-clients', 'instance-editor'].indexOf(currentSection) !== -1;
             subGroup.classList.toggle('expanded', showSub);
         }
     },

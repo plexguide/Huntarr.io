@@ -971,10 +971,12 @@ let huntarrUI = {
                 var preset = (inst.preset || 'manual').toString().toLowerCase().trim();
                 newTitle = (window.SettingsForms.getIndexerPresetLabel && window.SettingsForms.getIndexerPresetLabel(preset)) ? (window.SettingsForms.getIndexerPresetLabel(preset) + ' Indexer Editor') : 'Indexer Editor';
                 this.showMovieHuntSidebar();
+                this._highlightMovieHuntNavForEditor('indexer');
             } else if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'client') {
                 var ct = (window.SettingsForms._currentEditing.originalInstance && window.SettingsForms._currentEditing.originalInstance.type) ? String(window.SettingsForms._currentEditing.originalInstance.type).toLowerCase() : 'nzbget';
                 newTitle = (ct === 'sabnzbd' ? 'SABnzbd' : ct === 'nzbget' ? 'NZBGet' : ct) + ' Connection Settings';
                 this.showMovieHuntSidebar();
+                this._highlightMovieHuntNavForEditor('client');
             } else {
                 newTitle = 'Instance Editor';
                 this.showAppsSidebar();
@@ -1059,6 +1061,16 @@ let huntarrUI = {
         if (window.HuntarrNavigation && typeof window.HuntarrNavigation.updateMovieHuntSidebarActive === 'function') {
             window.HuntarrNavigation.updateMovieHuntSidebarActive();
         }
+    },
+
+    /** When in instance-editor for indexer/client, keep Indexers or Clients nav item highlighted. */
+    _highlightMovieHuntNavForEditor: function(appType) {
+        var subGroup = document.getElementById('movie-hunt-settings-sub');
+        if (subGroup) subGroup.classList.add('expanded');
+        var items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
+        for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
+        var nav = appType === 'indexer' ? document.getElementById('movieHuntSettingsIndexersNav') : document.getElementById('movieHuntSettingsClientsNav');
+        if (nav) nav.classList.add('active');
     },
 
     /** Show Movie Hunt nav item in main sidebar only when dev_mode is on (Settings > Main > Dev mode). */
