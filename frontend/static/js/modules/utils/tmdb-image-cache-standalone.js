@@ -8,32 +8,39 @@
     const CACHE_METADATA_KEY = 'tmdb_cache_metadata';
 
     class TMDBImageCache {
-        constructor() {
-            this.cacheDays = 7; // Default to 7 days
-            this.enabled = true;
-            this.metadata = this.loadMetadata();
-        }
+    constructor() {
+        this.cacheDays = 7; // Default to 7 days
+        this.enabled = true;
+        this.storage = 'server'; // Default to server storage
+        this.metadata = this.loadMetadata();
+    }
 
-        /**
-         * Initialize cache with settings from API
-         */
-        async init() {
-            try {
-                const response = await fetch('./api/settings');
-                const data = await response.json();
-                if (data.success && data.settings && data.settings.general) {
-                    const cacheDays = data.settings.general.tmdb_image_cache_days;
-                    this.cacheDays = cacheDays !== undefined ? cacheDays : 7;
-                    this.enabled = this.cacheDays > 0;
-                    console.log(`[TMDBImageCache] Initialized with ${this.cacheDays} day cache ${this.enabled ? 'enabled' : 'disabled'}`);
-                }
-            } catch (error) {
-                console.error('[TMDBImageCache] Failed to load settings, using defaults:', error);
+    /**
+     * Initialize cache with settings from API
+     */
+    async init() {
+        try {
+            const response = await fetch('./api/settings');
+            const data = await response.json();
+            if (data.success && data.settings && data.settings.general) {
+                const cacheDays = data.settings.general.tmdb_image_cache_days;
+                const cacheStorage = data.settings.general.tmdb_cache_storage || 'server';
+                
+                this.cacheDays = cacheDays !== undefined ? cacheDays : 7;
+                this.enabled = this.cacheDays > 0;
+                this.storage = cacheStorage;
+                
+                console.log(`[TMDBImageCache] Initialized with ${this.cacheDays} day cache ${this.enabled ? 'enabled' : 'disabled'}, storage: ${this.storage}`);
             }
-            
-            // Clean up expired entries
+        } catch (error) {
+            console.error('[TMDBImageCache] Failed to load settings, using defaults:', error);
+        }
+        
+        // Clean up expired entries (only for browser storage)
+        if (this.storage === 'browser') {
             this.cleanup();
         }
+    }
 
         /**
          * Load cache metadata from localStorage
@@ -245,7 +252,13 @@
     async function getCachedTMDBImage(url, cache) {
         if (!url || !cache) return url;
         
-        // Check cache first
+        // If server-side storage, use proxy endpoint
+        if (cache.storage === 'server') {
+            // Use server proxy endpoint which handles caching
+            return `./api/tmdb/image?url=${encodeURIComponent(url)}`;
+        }
+        
+        // Browser-side storage - check cache first
         const cached = cache.get(url);
         if (cached) return cached;
         

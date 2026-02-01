@@ -24,6 +24,7 @@ from ..auth import (
 )
 from ..utils.logger import logger # Ensure logger is imported
 from .. import settings_manager # Import settings_manager
+from ..utils.tmdb_cache import tmdb_cache # Import TMDB cache
 from datetime import datetime
 
 
@@ -43,6 +44,46 @@ def favicon():
 def logo_files(filename):
     logo_dir = os.path.join(current_app.static_folder, 'logo')
     return send_from_directory(logo_dir, filename)
+
+@common_bp.route('/api/tmdb/image', methods=['GET'])
+def tmdb_image_proxy():
+    """
+    Proxy/cache TMDB images server-side
+    Query params: url (TMDB image URL), cache_days (optional)
+    """
+    try:
+        image_url = request.args.get('url')
+        if not image_url:
+            return jsonify({'error': 'Missing url parameter'}), 400
+        
+        # Get cache settings
+        general_settings = settings_manager.get_settings('general')
+        cache_days = int(general_settings.get('tmdb_image_cache_days', 7))
+        cache_storage = general_settings.get('tmdb_cache_storage', 'server')
+        
+        # If caching is disabled or browser-side, just redirect to TMDB
+        if cache_days == 0 or cache_storage == 'browser':
+            return redirect(image_url)
+        
+        # Check if image is cached and valid
+        if tmdb_cache.is_cached(image_url, max_age_days=cache_days):
+            cached_path = tmdb_cache.get_cached_path(image_url)
+            if cached_path and os.path.exists(cached_path):
+                logger.debug(f"[TMDBCache] Serving cached image: {image_url}")
+                return send_file(cached_path, mimetype='image/jpeg')
+        
+        # Cache the image
+        cached_path = tmdb_cache.cache_image(image_url)
+        if cached_path and os.path.exists(cached_path):
+            return send_file(cached_path, mimetype='image/jpeg')
+        
+        # Fallback to redirect if caching fails
+        return redirect(image_url)
+    
+    except Exception as e:
+        logger.error(f"Error in TMDB image proxy: {e}")
+        # Fallback to direct TMDB URL on error
+        return redirect(request.args.get('url', ''))
 
 # --- API Routes --- #
 

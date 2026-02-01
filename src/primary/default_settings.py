@@ -174,6 +174,7 @@ SWAPARR_DEFAULTS = {
 # General settings default configuration
 GENERAL_DEFAULTS = {
     "tmdb_image_cache_days": 7,
+    "tmdb_cache_storage": "server",  # "server" or "browser"
     "display_community_resources": True,
     "display_huntarr_support": True,
     "log_refresh_interval_seconds": 30,
