@@ -21,6 +21,8 @@ export class RequestarrContent {
         // Instance tracking
         this.selectedMovieInstance = null;
         this.selectedTVInstance = null;
+        this.defaultMovieInstance = '';
+        this.defaultTVInstance = '';
         
         // Hidden media tracking
         this.hiddenMediaSet = new Set();
@@ -918,7 +920,18 @@ export class RequestarrContent {
             
             // Determine app_type and instance from media_type
             const appType = mediaType === 'movie' ? 'radarr' : 'sonarr';
-            const instanceName = mediaType === 'movie' ? this.selectedMovieInstance : this.selectedTVInstance;
+            // Use view's selected instance, or card's suggested instance (search/discover), or default, or first available
+            let instanceName = mediaType === 'movie' ? this.selectedMovieInstance : this.selectedTVInstance;
+            if (!instanceName && cardElement.suggestedInstance) {
+                instanceName = cardElement.suggestedInstance;
+            }
+            if (!instanceName) {
+                instanceName = mediaType === 'movie' ? this.defaultMovieInstance : this.defaultTVInstance;
+            }
+            if (!instanceName && this.core && this.core.instances) {
+                const instances = mediaType === 'movie' ? (this.core.instances.radarr || []) : (this.core.instances.sonarr || []);
+                instanceName = instances.length > 0 ? instances[0].name : null;
+            }
             
             if (!instanceName) {
                 alert('No instance selected. Please select an instance first.');
