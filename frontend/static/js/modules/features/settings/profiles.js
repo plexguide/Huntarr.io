@@ -12,19 +12,37 @@
     Forms.renderProfileCard = function(profile, index) {
         const isDefault = Boolean(profile && profile.is_default);
         const name = (profile && profile.name) ? String(profile.name).replace(/</g, '&lt;').replace(/>/g, '&gt;') : 'Unnamed';
-        const isStandard = name === 'Standard';
+        var qualities = Array.isArray(profile && profile.qualities) ? profile.qualities : [];
+        var checkedOrder = [];
+        qualities.forEach(function(q) {
+            if (q && q.enabled !== false) {
+                var n = (q.name || q.id || '').trim();
+                if (n) checkedOrder.push(n);
+            }
+        });
+        var tagsHtml = '';
+        checkedOrder.forEach(function(qName, i) {
+            var esc = String(qName).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            var goldClass = (i === 0) ? ' profile-quality-tag-highest' : '';
+            tagsHtml += '<span class="profile-quality-tag' + goldClass + '">' + esc + '</span>';
+        });
+        if (tagsHtml === '') {
+            tagsHtml = '<span class="profile-quality-tag profile-quality-tag-empty">No qualities</span>';
+        }
         return '<div class="instance-card ' + (isDefault ? 'default-instance' : '') + '" data-instance-index="' + index + '" data-app-type="profile">' +
             '<div class="instance-card-header">' +
             '<div class="instance-name instance-name-with-priority"><i class="fas fa-id-card"></i><span>' + name + '</span>' + (isDefault ? '<span class="default-badge">Default</span>' : '') + '</div>' +
+            '<div class="instance-card-header-actions">' +
+            '<button type="button" class="btn-icon btn-clone-profile" data-app-type="profile" data-instance-index="' + index + '" title="Duplicate profile" aria-label="Duplicate profile"><i class="fas fa-clone"></i></button>' +
             '<div class="instance-status-icon status-connected"><i class="fas fa-check-circle"></i></div>' +
-            '</div>' +
+            '</div></div>' +
             '<div class="instance-card-body">' +
-            '<div class="instance-detail"><i class="fas fa-info-circle"></i><span>Profile for Movie Hunt</span></div>' +
+            '<div class="profile-card-quality-tags">' + tagsHtml + '</div>' +
             '</div>' +
             '<div class="instance-card-footer">' +
             '<button type="button" class="btn-card edit" data-app-type="profile" data-instance-index="' + index + '"><i class="fas fa-edit"></i> Edit</button>' +
             (isDefault ? '' : '<button type="button" class="btn-card set-default" data-app-type="profile" data-instance-index="' + index + '"><i class="fas fa-star"></i> Set as default</button>') +
-            (isStandard ? '' : '<button type="button" class="btn-card delete" data-app-type="profile" data-instance-index="' + index + '"><i class="fas fa-trash"></i> Delete</button>') +
+            '<button type="button" class="btn-card delete" data-app-type="profile" data-instance-index="' + index + '"><i class="fas fa-trash"></i> Delete</button>' +
             '</div></div>';
     };
 

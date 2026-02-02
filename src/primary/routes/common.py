@@ -597,6 +597,26 @@ def api_profiles_patch(index):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@common_bp.route('/api/profiles/<int:index>/clone', methods=['POST'])
+def api_profiles_clone(index):
+    """Duplicate profile at index. New profile has name + ' (Copy)' and is_default=False."""
+    try:
+        profiles = _get_profiles_config()
+        if index < 0 or index >= len(profiles):
+            return jsonify({'success': False, 'error': 'Index out of range'}), 400
+        source = profiles[index]
+        import copy
+        new_profile = copy.deepcopy(source)
+        new_profile['name'] = ((source.get('name') or '').strip() or 'Unnamed') + ' (Copy)'
+        new_profile['is_default'] = False
+        profiles.append(new_profile)
+        _save_profiles_config(profiles)
+        return jsonify({'success': True, 'index': len(profiles) - 1}), 200
+    except Exception as e:
+        logger.exception('Profiles clone error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @common_bp.route('/api/profiles/<int:index>', methods=['DELETE'])
 def api_profiles_delete(index):
     """Delete profile. Cannot delete profile named 'Standard' or the last profile."""

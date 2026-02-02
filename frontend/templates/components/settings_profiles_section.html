@@ -68,6 +68,103 @@
         font-weight: 600;
         color: #f8fafc;
     }
+    /* Profile cards: compact styling but wider like before */
+    #profile-instances-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+    #profile-instances-grid .instance-card {
+        padding: 12px 14px;
+        border-radius: 10px;
+    }
+    #profile-instances-grid .instance-card-header {
+        margin-bottom: 10px;
+    }
+    #profile-instances-grid .instance-name {
+        font-size: 0.95rem;
+        gap: 6px;
+    }
+    #profile-instances-grid .instance-name i {
+        font-size: 0.85rem;
+    }
+    #profile-instances-grid .default-badge {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+    }
+    #profile-instances-grid .instance-status-icon {
+        font-size: 1rem;
+        margin-left: 4px;
+    }
+    #profile-instances-grid .instance-card-body {
+        margin-bottom: 12px;
+    }
+    #profile-instances-grid .instance-card-footer {
+        gap: 6px;
+        margin-top: 0;
+    }
+    #profile-instances-grid .btn-card {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+    #profile-instances-grid .btn-card i {
+        font-size: 0.75rem;
+    }
+    #profile-instances-grid .add-instance-card {
+        min-height: 100px;
+    }
+    #profile-instances-grid .add-instance-card .add-icon {
+        font-size: 1.5rem;
+    }
+    #profile-instances-grid .add-instance-card .add-text {
+        font-size: 0.85rem;
+    }
+    /* Profile card: quality tags + clone button */
+    #profile-instances-grid .instance-card-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 8px;
+    }
+    #profile-instances-grid .btn-clone-profile {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        padding: 2px 4px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    #profile-instances-grid .btn-clone-profile:hover {
+        color: #6366f1;
+        background: rgba(99, 102, 241, 0.15);
+    }
+    #profile-instances-grid .profile-card-quality-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+    }
+    #profile-instances-grid .profile-quality-tag {
+        display: inline-block;
+        padding: 2px 6px;
+        font-size: 0.68rem;
+        border-radius: 4px;
+        background: rgba(71, 85, 105, 0.5);
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    #profile-instances-grid .profile-quality-tag-highest {
+        background: linear-gradient(135deg, rgba(202, 138, 4, 0.35) 0%, rgba(180, 83, 9, 0.35) 100%);
+        color: #fcd34d;
+        border-color: rgba(202, 138, 4, 0.5);
+        font-weight: 600;
+    }
+    #profile-instances-grid .profile-quality-tag-empty {
+        color: #64748b;
+        font-style: italic;
+        font-size: 0.7rem;
+    }
     .profile-add-modal {
         position: fixed;
         top: 0;
@@ -241,10 +338,30 @@
         if (!grid) return;
         grid.addEventListener('click', function(e) {
             var addCard = e.target.closest('.add-instance-card[data-app-type="profile"]');
+            var cloneBtn = e.target.closest('.btn-clone-profile[data-app-type="profile"]');
             var editBtn = e.target.closest('.btn-card.edit[data-app-type="profile"]');
             var setDefaultBtn = e.target.closest('.btn-card.set-default[data-app-type="profile"]');
             var deleteBtn = e.target.closest('.btn-card.delete[data-app-type="profile"]');
-            if (editBtn) {
+            if (cloneBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var index = parseInt(cloneBtn.dataset.instanceIndex, 10);
+                fetch('./api/profiles/' + index + '/clone', { method: 'POST' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && window.SettingsForms && window.SettingsForms.refreshProfilesList) {
+                            window.SettingsForms.refreshProfilesList();
+                        }
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Profile duplicated.', 'success');
+                        }
+                    })
+                    .catch(function() {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Failed to duplicate profile.', 'error');
+                        }
+                    });
+            } else if (editBtn) {
                 e.preventDefault();
                 var index = parseInt(editBtn.dataset.instanceIndex, 10);
                 if (window.SettingsForms && window.SettingsForms.openProfileEditor) {
@@ -289,7 +406,7 @@
                             window.SettingsForms.refreshProfilesList();
                         }
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Profile deleted.', 'success');
+                            window.huntarrUI.showNotification(data.success ? 'Profile deleted.' : (data.error || 'Could not delete.'), data.success ? 'success' : 'error');
                         }
                     })
                     .catch(function() {
