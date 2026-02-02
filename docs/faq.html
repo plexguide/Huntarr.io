@@ -70,6 +70,7 @@
                     <li><a href="#not-finding-content">🔍 "It's Not Finding Anything"</a></li>
                     <li><a href="#performance-issues">⚡ Performance & Speed</a></li>
                     <li><a href="#security-locked-out">🔒 Locked Out / Security</a></li>
+                    <li><a href="#api-endpoints">🔌 API Endpoints</a></li>
                 </ul>
             </section>
 
@@ -537,6 +538,141 @@ docker start huntarr</code></pre>
                         <div class="alert alert-info">
                             <strong>Best practice:</strong> Keep Huntarr on your local network and use VPN for remote access.
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="api-endpoints" class="faq-section">
+                <h2><i class="fas fa-code" style="margin-right: 10px; color: #3498db;"></i>API Endpoints</h2>
+
+                <div class="faq-item">
+                    <div class="faq-question">Does Huntarr have an API for external monitoring?</div>
+                    <div class="faq-answer">
+                        Yes! Huntarr provides public API endpoints for integration with monitoring tools like Argus, automation scripts, and health checks.
+                        
+                        <div class="alert alert-info">
+                            <strong>Available Endpoints:</strong>
+                            <br>• <code>GET /api/version</code> - Get current Huntarr version (public, no auth required)
+                            <br>• <code>GET /api/health</code> - Health check endpoint (public, no auth required)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">How do I get the current version via API?</div>
+                    <div class="faq-answer">
+                        <strong>Endpoint:</strong> <code>GET /api/version</code>
+                        
+                        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0;"><code style="color: #e2e8f0;"># Example request
+curl http://your-huntarr-instance:9705/api/version
+
+# Example response
+{
+  "version": "9.1.7"
+}</code></pre>
+
+                        <strong>Use Cases:</strong>
+                        <ul>
+                            <li><strong>Version Monitoring:</strong> Track updates with tools like <a href="https://github.com/release-argus/Argus" target="_blank">Argus</a></li>
+                            <li><strong>Deployment Automation:</strong> Verify successful deployments after updates</li>
+                            <li><strong>Multi-Instance Management:</strong> Monitor versions across multiple Huntarr instances</li>
+                            <li><strong>Health Dashboards:</strong> Display version info in monitoring dashboards</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">How do I set up health checks for Docker/Kubernetes?</div>
+                    <div class="faq-answer">
+                        Use the <code>/api/health</code> endpoint for container health checks:
+                        
+                        <strong>Docker Compose Example:</strong>
+                        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0;"><code style="color: #e2e8f0;">services:
+  huntarr:
+    image: ghcr.io/plexguide/huntarr:latest
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9705/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s</code></pre>
+
+                        <strong>Kubernetes Example:</strong>
+                        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0;"><code style="color: #e2e8f0;">livenessProbe:
+  httpGet:
+    path: /api/health
+    port: 9705
+  initialDelaySeconds: 30
+  periodSeconds: 10</code></pre>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Does the API work with reverse proxies / BASE_URL?</div>
+                    <div class="faq-answer">
+                        Yes! All API endpoints respect the <code>BASE_URL</code> configuration.
+                        
+                        <strong>Examples:</strong>
+                        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0;"><code style="color: #e2e8f0;"># Standard deployment
+curl http://localhost:9705/api/version
+
+# With BASE_URL=/huntarr
+curl http://localhost:9705/huntarr/api/version
+
+# Behind reverse proxy with SSL
+curl https://domain.com/huntarr/api/version</code></pre>
+
+                        <div class="alert alert-success">
+                            <strong>✓ No authentication required:</strong> Public endpoints work without login
+                            <br><strong>✓ Works anywhere:</strong> Compatible with all deployment methods
+                            <br><strong>✓ Firewall friendly:</strong> Use firewall rules if you want to restrict access
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Can I monitor Huntarr version updates with Argus?</div>
+                    <div class="faq-answer">
+                        Yes! Here's a sample Argus configuration:
+                        
+                        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0;"><code style="color: #e2e8f0;">service:
+  huntarr:
+    type: url
+    url: "http://your-huntarr-instance:9705/api/version"
+    url_commands:
+      - type: "json"
+        key: "version"
+    notify:
+      discord:
+        webhook_id: "your-webhook-id"</code></pre>
+
+                        Argus will automatically notify you when a new version is detected!
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">What programming languages can I use with the API?</div>
+                    <div class="faq-answer">
+                        Any language that supports HTTP requests! Here are examples:
+                        
+                        <strong>Python:</strong>
+                        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0;"><code style="color: #e2e8f0;">import requests
+
+response = requests.get('http://localhost:9705/api/version')
+version = response.json()['version']
+print(f"Huntarr version: {version}")</code></pre>
+
+                        <strong>JavaScript:</strong>
+                        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0;"><code style="color: #e2e8f0;">fetch('http://localhost:9705/api/version')
+  .then(response => response.json())
+  .then(data => console.log(`Version: ${data.version}`));</code></pre>
+
+                        <strong>PowerShell:</strong>
+                        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0;"><code style="color: #e2e8f0;">$response = Invoke-RestMethod -Uri "http://localhost:9705/api/version"
+Write-Host "Huntarr version: $($response.version)"</code></pre>
+
+                        <strong>Bash:</strong>
+                        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0;"><code style="color: #e2e8f0;">curl -s http://localhost:9705/api/version | jq -r '.version'</code></pre>
                     </div>
                 </div>
             </section>
