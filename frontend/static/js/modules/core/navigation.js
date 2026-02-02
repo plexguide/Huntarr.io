@@ -66,7 +66,7 @@ window.HuntarrNavigation = {
             if (['apps'].includes(ui.currentSection) && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             if (ui.currentSection === 'prowlarr' && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             
-            const noRefresh = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-settings', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-root-folders'];
+            const noRefresh = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-settings', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders'];
             if (!noRefresh.includes(section) && !noRefresh.includes(ui.currentSection)) {
                 localStorage.setItem('huntarr-target-section', section);
                 location.reload();
@@ -107,6 +107,7 @@ window.HuntarrNavigation = {
             'settings': { title: 'Settings', nav: document.getElementById('settingsNav'), section: document.getElementById('settingsSection'), sidebar: 'settings', init: 'initializeSettings' },
             'settings-profiles': { title: 'Profiles', nav: document.getElementById('movieHuntSettingsProfilesNav'), section: document.getElementById('settingsProfilesSection'), sidebar: 'moviehunt' },
             'profile-editor': { title: 'Profile Editor', nav: document.getElementById('movieHuntSettingsProfilesNav'), section: document.getElementById('profileEditorSection'), sidebar: 'moviehunt' },
+            'settings-custom-formats': { title: 'Custom Formats', nav: document.getElementById('movieHuntSettingsCustomFormatsNav'), section: document.getElementById('settingsCustomFormatsSection'), sidebar: 'moviehunt' },
             'settings-indexers': { title: 'Indexers', nav: document.getElementById('movieHuntSettingsIndexersNav'), section: document.getElementById('settingsIndexersSection'), sidebar: 'moviehunt' },
             'settings-clients': { title: 'Clients', nav: document.getElementById('movieHuntSettingsClientsNav'), section: document.getElementById('settingsClientsSection'), sidebar: 'moviehunt' },
             'settings-root-folders': { title: 'Root Folders', nav: document.getElementById('movieHuntSettingsRootFoldersNav'), section: document.getElementById('settingsRootFoldersSection'), sidebar: 'moviehunt' },
@@ -178,6 +179,9 @@ window.HuntarrNavigation = {
         }
         if (section === 'settings-profiles' && window.SettingsForms && typeof window.SettingsForms.refreshProfilesList === 'function') {
             window.SettingsForms.refreshProfilesList();
+        }
+        if (section === 'settings-custom-formats' && window.CustomFormats && typeof window.CustomFormats.refreshList === 'function') {
+            window.CustomFormats.refreshList();
         }
         if (section === 'settings-indexers' && window.SettingsForms && typeof window.SettingsForms.refreshIndexersList === 'function') {
             window.SettingsForms.refreshIndexersList();
@@ -309,7 +313,7 @@ window.HuntarrNavigation = {
         });
         var subGroup = document.getElementById('movie-hunt-settings-sub');
         if (subGroup) {
-            var showSub = ['movie-hunt-settings', 'settings-profiles', 'profile-editor', 'settings-indexers', 'settings-clients', 'settings-root-folders', 'instance-editor'].indexOf(currentSection) !== -1;
+            var showSub = ['movie-hunt-settings', 'settings-profiles', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-root-folders', 'instance-editor'].indexOf(currentSection) !== -1;
             subGroup.classList.toggle('expanded', showSub);
         }
     },

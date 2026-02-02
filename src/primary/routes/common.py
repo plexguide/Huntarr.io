@@ -673,6 +673,180 @@ def api_profiles_delete(index):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# --- Movie Hunt Custom Formats (Radarr-style JSON; Pre-Format + Import) ---
+# Pre-made Radarr-compatible custom format JSONs (id, name, json). Name is used for dropdown and initial title.
+# Minimal valid structure: name, includeCustomFormatWhenRenaming, specifications (array).
+PREMADE_CUSTOM_FORMATS = [
+    {'id': 'br-disk', 'name': 'BR-DISK', 'json': json.dumps({'name': 'BR-DISK', 'includeCustomFormatWhenRenaming': False, 'specifications': []})},
+    {'id': 'hdr', 'name': 'HDR', 'json': json.dumps({'name': 'HDR', 'includeCustomFormatWhenRenaming': False, 'specifications': []})},
+    {'id': 'hdr10', 'name': 'HDR10', 'json': json.dumps({'name': 'HDR10', 'includeCustomFormatWhenRenaming': False, 'specifications': []})},
+    {'id': 'dv', 'name': 'Dolby Vision', 'json': json.dumps({'name': 'Dolby Vision', 'includeCustomFormatWhenRenaming': False, 'specifications': []})},
+    {'id': 'remux', 'name': 'Remux', 'json': json.dumps({'name': 'Remux', 'includeCustomFormatWhenRenaming': False, 'specifications': []})},
+]
+
+
+def _custom_format_name_from_json(obj):
+    """Extract display name from Radarr-style custom format JSON (top-level 'name' field)."""
+    if isinstance(obj, dict) and obj.get('name') is not None:
+        return str(obj.get('name', '')).strip() or 'Unnamed'
+    return 'Unnamed'
+
+
+def _get_custom_formats_config():
+    """Get Movie Hunt custom formats list from database. Default: empty list."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('movie_hunt_custom_formats')
+    if not config or not isinstance(config.get('custom_formats'), list):
+        return []
+    return list(config['custom_formats'])
+
+
+def _save_custom_formats_config(formats_list):
+    """Save Movie Hunt custom formats list to database."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    db.save_app_config('movie_hunt_custom_formats', {'custom_formats': formats_list})
+
+
+@common_bp.route('/api/custom-formats', methods=['GET'])
+def api_custom_formats_list():
+    """List Movie Hunt custom formats. Returns list of { index, title, name, custom_format_json }."""
+    try:
+        formats = _get_custom_formats_config()
+        out = []
+        for i, f in enumerate(formats):
+            src = (f.get('source') or 'import').strip().lower()
+            if src not in ('import', 'preformat'):
+                src = 'import'
+            out.append({
+                'index': i,
+                'title': (f.get('title') or f.get('name') or 'Unnamed').strip() or 'Unnamed',
+                'name': (f.get('name') or 'Unnamed').strip() or 'Unnamed',
+                'custom_format_json': f.get('custom_format_json') or '{}',
+                'source': src,
+            })
+        return jsonify({'custom_formats': out}), 200
+    except Exception as e:
+        logger.exception('Custom formats list error')
+        return jsonify({'custom_formats': [], 'error': str(e)}), 200
+
+
+@common_bp.route('/api/custom-formats/preformats', methods=['GET'])
+def api_custom_formats_preformats():
+    """List pre-made custom formats for dropdown (id, name)."""
+    try:
+        out = [{'id': p['id'], 'name': p['name']} for p in PREMADE_CUSTOM_FORMATS]
+        return jsonify({'preformats': out}), 200
+    except Exception as e:
+        logger.exception('Preformats list error')
+        return jsonify({'preformats': [], 'error': str(e)}), 200
+
+
+@common_bp.route('/api/custom-formats', methods=['POST'])
+def api_custom_formats_add():
+    """Add custom format. Body: source='import'|'preformat', custom_format_json? (for import), preformat_id? (for preformat), title? (optional override)."""
+    try:
+        data = request.get_json() or {}
+        source = (data.get('source') or 'import').strip().lower()
+        if source not in ('import', 'preformat'):
+            return jsonify({'success': False, 'message': 'source must be import or preformat'}), 400
+
+        if source == 'import':
+            raw = data.get('custom_format_json')
+            if raw is None or (isinstance(raw, str) and not raw.strip()):
+                return jsonify({'success': False, 'message': 'custom_format_json is required for import'}), 400
+            if isinstance(raw, str):
+                try:
+                    obj = json.loads(raw)
+                except json.JSONDecodeError as e:
+                    return jsonify({'success': False, 'message': f'Invalid JSON: {e}'}), 400
+            else:
+                obj = raw
+            name = _custom_format_name_from_json(obj)
+            custom_format_json = json.dumps(obj) if isinstance(obj, dict) else json.dumps(raw)
+        else:
+            preformat_id = (data.get('preformat_id') or '').strip()
+            if not preformat_id:
+                return jsonify({'success': False, 'message': 'preformat_id is required for preformat'}), 400
+            match = next((p for p in PREMADE_CUSTOM_FORMATS if p.get('id') == preformat_id), None)
+            if not match:
+                return jsonify({'success': False, 'message': 'Unknown preformat_id'}), 400
+            name = match.get('name') or 'Unnamed'
+            custom_format_json = match.get('json') or '{}'
+
+        title = (data.get('title') or '').strip() or name
+        formats = _get_custom_formats_config()
+        formats.append({
+            'title': title,
+            'name': name,
+            'custom_format_json': custom_format_json,
+            'source': source,
+        })
+        _save_custom_formats_config(formats)
+        return jsonify({'success': True, 'index': len(formats) - 1}), 200
+    except Exception as e:
+        logger.exception('Custom formats add error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@common_bp.route('/api/custom-formats/<int:index>', methods=['PATCH'])
+def api_custom_formats_patch(index):
+    """Update custom format. Body: title?, custom_format_json?."""
+    try:
+        formats = _get_custom_formats_config()
+        if index < 0 or index >= len(formats):
+            return jsonify({'success': False, 'message': 'Index out of range'}), 400
+        data = request.get_json() or {}
+        if data.get('title') is not None:
+            formats[index]['title'] = (data.get('title') or '').strip() or formats[index].get('name') or 'Unnamed'
+        if data.get('custom_format_json') is not None:
+            raw = data['custom_format_json']
+            if isinstance(raw, str) and raw.strip():
+                try:
+                    obj = json.loads(raw)
+                    formats[index]['custom_format_json'] = json.dumps(obj)
+                    formats[index]['name'] = _custom_format_name_from_json(obj)
+                except json.JSONDecodeError:
+                    pass
+            elif isinstance(raw, dict):
+                formats[index]['custom_format_json'] = json.dumps(raw)
+                formats[index]['name'] = _custom_format_name_from_json(raw)
+        _save_custom_formats_config(formats)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Custom formats patch error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@common_bp.route('/api/custom-formats/<int:index>', methods=['DELETE'])
+def api_custom_formats_delete(index):
+    """Delete custom format at index."""
+    try:
+        formats = _get_custom_formats_config()
+        if index < 0 or index >= len(formats):
+            return jsonify({'success': False, 'message': 'Index out of range'}), 400
+        formats.pop(index)
+        _save_custom_formats_config(formats)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Custom formats delete error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@common_bp.route('/api/custom-formats/preformats/<preformat_id>', methods=['GET'])
+def api_custom_formats_preformat_json(preformat_id):
+    """Get full JSON for a pre-made format by id."""
+    try:
+        match = next((p for p in PREMADE_CUSTOM_FORMATS if p.get('id') == preformat_id), None)
+        if not match:
+            return jsonify({'success': False, 'message': 'Not found'}), 404
+        return jsonify({'success': True, 'name': match.get('name'), 'custom_format_json': match.get('json')}), 200
+    except Exception as e:
+        logger.exception('Preformat get error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 def _get_clients_config():
     """Get download clients list from database (app_config app_type=clients)."""
     from src.primary.utils.database import get_database

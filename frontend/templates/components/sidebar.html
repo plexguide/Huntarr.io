@@ -155,6 +155,12 @@
                     </div>
                     <span>Profiles</span>
                 </a>
+                <a href="./#settings-custom-formats" class="nav-item nav-item-sub" id="movieHuntSettingsCustomFormatsNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <span>Custom Formats</span>
+                </a>
                 <a href="./#settings-indexers" class="nav-item nav-item-sub" id="movieHuntSettingsIndexersNav">
                     <div class="nav-icon-wrapper">
                         <i class="fas fa-server"></i>
@@ -1116,6 +1122,8 @@
             selector = '#settingsMainNav';
         } else if (currentHash === '#settings-profiles') {
             selector = '#movieHuntSettingsProfilesNav';
+        } else if (currentHash === '#settings-custom-formats') {
+            selector = '#movieHuntSettingsCustomFormatsNav';
         } else if (currentHash === '#settings-indexers') {
             selector = '#movieHuntSettingsIndexersNav';
         } else if (currentHash === '#settings-clients') {
