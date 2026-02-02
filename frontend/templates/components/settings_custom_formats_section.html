@@ -2,7 +2,7 @@
     <div id="customFormatsManagementContainer" class="app-content-panel">
         <div class="settings-group custom-formats-settings-group">
             <h3>Custom Formats</h3>
-            <p class="custom-formats-help">Radarr-style custom format JSONs. Use Pre-Formatted to pick a built-in format or Import to paste your own JSON.</p>
+            <p class="custom-formats-help">Radarr-style custom format JSONs from TRaSH Guides. Add Custom Format → choose Pre-Formatted, pick categories and check the formats you want, then Add. Already-added formats stay checked (disabled). Or use Import to paste your own JSON.</p>
             <div class="instance-card-grid" id="custom-formats-grid">
                 <div class="add-instance-card" id="custom-formats-add-card" data-app-type="custom-format">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
@@ -19,7 +19,7 @@
             <div class="custom-format-modal-header">
                 <button type="button" class="custom-format-modal-close" id="custom-format-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
                 <h2 class="custom-format-modal-title" id="custom-format-modal-title">Add Custom Format</h2>
-                <p class="custom-format-modal-subtitle">Choose Pre-Formatted (built-in) or Import your own JSON.</p>
+                <p class="custom-format-modal-subtitle">Pre-Formatted: pick TRaSH Guides formats by category. Import: paste your own JSON.</p>
             </div>
             <div class="custom-format-modal-body">
                 <div class="custom-format-source-row">
@@ -33,10 +33,8 @@
                     </label>
                 </div>
                 <div id="custom-format-preformat-area" class="custom-format-area">
-                    <label for="custom-format-preformat-select">Pre-made format</label>
-                    <select id="custom-format-preformat-select" class="custom-format-select">
-                        <option value="">Select a format...</option>
-                    </select>
+                    <p class="custom-format-preformat-hint">Select categories below, then check the formats you want to add. Already-added formats are checked and disabled.</p>
+                    <div id="custom-format-preformat-tree" class="custom-format-preformat-tree"></div>
                 </div>
                 <div class="custom-format-field-row">
                     <label for="custom-format-title-input">Title</label>
@@ -104,4 +102,20 @@
     .custom-format-field-row label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: #cbd5e1; }
     .custom-format-title-input { width: 100%; padding: 10px 12px; font-size: 1rem; color: #f8fafc; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.3); border-radius: 8px; box-sizing: border-box; }
     .custom-format-modal-actions { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px 20px; border-top: 1px solid rgba(148,163,184,0.1); }
+    .custom-format-preformat-hint { margin: 0 0 12px 0; font-size: 0.85rem; color: #94a3b8; }
+    .custom-format-preformat-tree { max-height: 320px; overflow-y: auto; border: 1px solid rgba(148,163,184,0.2); border-radius: 8px; padding: 10px; background: rgba(15,23,42,0.6); margin-bottom: 12px; }
+    .custom-format-cat { margin-bottom: 8px; }
+    .custom-format-cat-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; border-radius: 6px; background: rgba(30,41,59,0.6); color: #e2e8f0; font-weight: 600; font-size: 0.95rem; user-select: none; }
+    .custom-format-cat-header:hover { background: rgba(51,65,85,0.8); }
+    .custom-format-cat-header i.fa-chevron-down { transition: transform 0.2s ease; }
+    .custom-format-cat-header.collapsed i.fa-chevron-down { transform: rotate(-90deg); }
+    .custom-format-cat-body { padding: 8px 10px 8px 24px; }
+    .custom-format-cat-body.collapsed { display: none; }
+    .custom-format-subcat { margin-bottom: 6px; }
+    .custom-format-subcat-name { font-size: 0.85rem; color: #94a3b8; margin-bottom: 4px; padding-left: 4px; }
+    .custom-format-format-list { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+    .custom-format-format-item { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: #cbd5e1; cursor: pointer; }
+    .custom-format-format-item input[type="checkbox"] { cursor: pointer; }
+    .custom-format-format-item input[type="checkbox"]:disabled + span { color: #64748b; }
+    .custom-format-loading { color: #94a3b8; font-size: 0.9rem; }
 </style>

@@ -72,11 +72,10 @@
             document.getElementById('custom-format-modal-title').textContent = 'Add Custom Format';
             document.getElementById('custom-format-modal-save').innerHTML = '<i class="fas fa-plus"></i> Add';
             document.getElementById('custom-format-source-preformat').checked = true;
-            document.getElementById('custom-format-preformat-select').value = '';
             document.getElementById('custom-format-json-textarea').value = '';
             document.getElementById('custom-format-title-input').value = '';
             document.getElementById('custom-format-preformat-area').style.display = 'block';
-            window.CustomFormats._loadPreformatsDropdown();
+            window.CustomFormats._loadPreformatTree();
             document.getElementById('custom-format-modal').style.display = 'flex';
             document.body.classList.add('custom-format-modal-open');
         },
@@ -101,20 +100,96 @@
             document.body.classList.remove('custom-format-modal-open');
         },
 
-        _loadPreformatsDropdown: function() {
-            var sel = document.getElementById('custom-format-preformat-select');
-            if (!sel) return;
-            sel.innerHTML = '<option value="">Select a format...</option>';
+        _buildPreformatId: function(catId, subId, fmtId) {
+            if (subId) return catId + '.' + subId + '.' + fmtId;
+            return catId + '.' + fmtId;
+        },
+
+        _loadPreformatTree: function() {
+            var treeEl = document.getElementById('custom-format-preformat-tree');
+            if (!treeEl) return;
+            treeEl.innerHTML = '<span class="custom-format-loading">Loading…</span>';
+            var existingIds = {};
+            (window.CustomFormats._list || []).forEach(function(item) {
+                if (item.preformat_id) existingIds[item.preformat_id] = true;
+            });
             fetch('./api/custom-formats/preformats')
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    var pre = (data && data.preformats) ? data.preformats : [];
-                    pre.forEach(function(p) {
-                        var opt = document.createElement('option');
-                        opt.value = p.id;
-                        opt.textContent = p.name || p.id;
-                        sel.appendChild(opt);
+                    var categories = (data && data.categories) ? data.categories : [];
+                    treeEl.innerHTML = '';
+                    categories.forEach(function(cat) {
+                        var catId = cat.id || '';
+                        var catName = cat.name || catId;
+                        var catDiv = document.createElement('div');
+                        catDiv.className = 'custom-format-cat';
+                        var header = document.createElement('div');
+                        header.className = 'custom-format-cat-header';
+                        header.innerHTML = '<i class="fas fa-chevron-down"></i><span>' + (catName.replace(/</g, '&lt;').replace(/>/g, '&gt;')) + '</span>';
+                        var body = document.createElement('div');
+                        body.className = 'custom-format-cat-body';
+                        var subcats = cat.subcategories || [];
+                        if (subcats.length > 0) {
+                            subcats.forEach(function(sub) {
+                                var subId = sub.id || '';
+                                var subName = sub.name || subId;
+                                var subDiv = document.createElement('div');
+                                subDiv.className = 'custom-format-subcat';
+                                var subLabel = document.createElement('div');
+                                subLabel.className = 'custom-format-subcat-name';
+                                subLabel.textContent = subName;
+                                subDiv.appendChild(subLabel);
+                                var fmtList = document.createElement('div');
+                                fmtList.className = 'custom-format-format-list';
+                                (sub.formats || []).forEach(function(fmt) {
+                                    var fid = window.CustomFormats._buildPreformatId(catId, subId, fmt.id || '');
+                                    var name = fmt.name || fid;
+                                    var already = existingIds[fid];
+                                    var label = document.createElement('label');
+                                    label.className = 'custom-format-format-item';
+                                    var cb = document.createElement('input');
+                                    cb.type = 'checkbox';
+                                    cb.setAttribute('data-preformat-id', fid);
+                                    cb.setAttribute('data-format-name', name);
+                                    if (already) { cb.checked = true; cb.disabled = true; }
+                                    label.appendChild(cb);
+                                    label.appendChild(document.createElement('span')).textContent = name;
+                                    fmtList.appendChild(label);
+                                });
+                                subDiv.appendChild(fmtList);
+                                body.appendChild(subDiv);
+                            });
+                        } else {
+                            var fmtList = document.createElement('div');
+                            fmtList.className = 'custom-format-format-list';
+                            (cat.formats || []).forEach(function(fmt) {
+                                var fid = window.CustomFormats._buildPreformatId(catId, null, fmt.id || '');
+                                var name = fmt.name || fid;
+                                var already = existingIds[fid];
+                                var label = document.createElement('label');
+                                label.className = 'custom-format-format-item';
+                                var cb = document.createElement('input');
+                                cb.type = 'checkbox';
+                                cb.setAttribute('data-preformat-id', fid);
+                                cb.setAttribute('data-format-name', name);
+                                if (already) { cb.checked = true; cb.disabled = true; }
+                                label.appendChild(cb);
+                                label.appendChild(document.createElement('span')).textContent = name;
+                                fmtList.appendChild(label);
+                            });
+                            body.appendChild(fmtList);
+                        }
+                        header.onclick = function() {
+                            header.classList.toggle('collapsed');
+                            body.classList.toggle('collapsed');
+                        };
+                        catDiv.appendChild(header);
+                        catDiv.appendChild(body);
+                        treeEl.appendChild(catDiv);
                     });
+                })
+                .catch(function() {
+                    treeEl.innerHTML = '<span class="custom-format-loading" style="color:#f87171;">Failed to load formats.</span>';
                 });
         },
 
@@ -133,10 +208,9 @@
             var jsonTa = document.getElementById('custom-format-json-textarea');
             if (preformatArea) preformatArea.style.display = isPre ? 'block' : 'none';
             if (isPre) {
-                var sel = document.getElementById('custom-format-preformat-select');
-                if (sel) sel.value = '';
                 if (titleInput) titleInput.value = '';
                 if (jsonTa) jsonTa.value = '';
+                window.CustomFormats._loadPreformatTree();
             } else {
                 if (window.CustomFormats._editingIndex != null) {
                     var list = window.CustomFormats._list;
@@ -151,24 +225,6 @@
                     if (jsonTa) jsonTa.value = '';
                 }
             }
-        },
-
-        _onPreformatSelect: function() {
-            var id = document.getElementById('custom-format-preformat-select').value;
-            if (!id) {
-                document.getElementById('custom-format-title-input').value = '';
-                document.getElementById('custom-format-json-textarea').value = '';
-                return;
-            }
-            fetch('./api/custom-formats/preformats/' + encodeURIComponent(id))
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        var name = data.name || '—';
-                        document.getElementById('custom-format-title-input').value = name;
-                        document.getElementById('custom-format-json-textarea').value = (data.custom_format_json || '').trim() || '';
-                    }
-                });
         },
 
         _onJsonInput: function() {
@@ -226,18 +282,57 @@
             }
 
             var isPre = document.getElementById('custom-format-source-preformat').checked;
-            var body = { title: title };
             if (isPre) {
-                var preformatId = document.getElementById('custom-format-preformat-select').value;
-                if (!preformatId) {
+                var tree = document.getElementById('custom-format-preformat-tree');
+                var checkboxes = tree ? tree.querySelectorAll('input[type="checkbox"][data-preformat-id]:checked:not(:disabled)') : [];
+                var toAdd = [];
+                checkboxes.forEach(function(cb) {
+                    toAdd.push({ id: cb.getAttribute('data-preformat-id'), name: cb.getAttribute('data-format-name') || cb.getAttribute('data-preformat-id') });
+                });
+                if (toAdd.length === 0) {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Select a pre-made format.', 'error');
+                        window.huntarrUI.showNotification('Check at least one format to add.', 'error');
                     }
                     return;
                 }
-                body.source = 'preformat';
-                body.preformat_id = preformatId;
-            } else {
+                var done = 0;
+                var failed = 0;
+                toAdd.forEach(function(item) {
+                    fetch('./api/custom-formats', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ source: 'preformat', preformat_id: item.id, title: item.name })
+                    })
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data.success) done++; else failed++;
+                            if (done + failed === toAdd.length) {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    if (failed === 0) {
+                                        window.huntarrUI.showNotification('Added ' + done + ' format(s).', 'success');
+                                    } else {
+                                        window.huntarrUI.showNotification('Added ' + done + ', failed ' + failed + '.', failed ? 'error' : 'success');
+                                    }
+                                }
+                                window.CustomFormats.closeModal();
+                                window.CustomFormats.refreshList();
+                            }
+                        })
+                        .catch(function() {
+                            failed++;
+                            if (done + failed === toAdd.length) {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    window.huntarrUI.showNotification('Added ' + done + ', failed ' + failed + '.', 'error');
+                                }
+                                window.CustomFormats.closeModal();
+                                window.CustomFormats.refreshList();
+                            }
+                        });
+                });
+                return;
+            }
+            var body = { title: title };
+            {
                 var jsonRaw = document.getElementById('custom-format-json-textarea').value.trim();
                 if (!jsonRaw) {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -318,8 +413,6 @@
             document.querySelectorAll('input[name="custom-format-source"]').forEach(function(radio) {
                 radio.onchange = function() { self._onSourceChange(); };
             });
-            var preformatSel = document.getElementById('custom-format-preformat-select');
-            if (preformatSel) preformatSel.onchange = function() { self._onPreformatSelect(); };
             var jsonTa = document.getElementById('custom-format-json-textarea');
             if (jsonTa) {
                 jsonTa.addEventListener('input', function() { self._onJsonInput(); });

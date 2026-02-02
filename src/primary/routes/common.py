@@ -674,15 +674,8 @@ def api_profiles_delete(index):
 
 
 # --- Movie Hunt Custom Formats (Radarr-style JSON; Pre-Format + Import) ---
-# Pre-made Radarr-compatible custom format JSONs (id, name, json). Name is used for dropdown and initial title.
-# Minimal valid structure: name, includeCustomFormatWhenRenaming, specifications (array).
-PREMADE_CUSTOM_FORMATS = [
-    {'id': 'br-disk', 'name': 'BR-DISK', 'json': json.dumps({'name': 'BR-DISK', 'includeCustomFormatWhenRenaming': False, 'specifications': []})},
-    {'id': 'hdr', 'name': 'HDR', 'json': json.dumps({'name': 'HDR', 'includeCustomFormatWhenRenaming': False, 'specifications': []})},
-    {'id': 'hdr10', 'name': 'HDR10', 'json': json.dumps({'name': 'HDR10', 'includeCustomFormatWhenRenaming': False, 'specifications': []})},
-    {'id': 'dv', 'name': 'Dolby Vision', 'json': json.dumps({'name': 'Dolby Vision', 'includeCustomFormatWhenRenaming': False, 'specifications': []})},
-    {'id': 'remux', 'name': 'Remux', 'json': json.dumps({'name': 'Remux', 'includeCustomFormatWhenRenaming': False, 'specifications': []})},
-]
+# TRaSH Guides categories and format JSONs from src/primary/trash_custom_formats.py
+from .. import trash_custom_formats
 
 
 def _custom_format_name_from_json(obj):
@@ -719,13 +712,16 @@ def api_custom_formats_list():
             src = (f.get('source') or 'import').strip().lower()
             if src not in ('import', 'preformat'):
                 src = 'import'
-            out.append({
+            item = {
                 'index': i,
                 'title': (f.get('title') or f.get('name') or 'Unnamed').strip() or 'Unnamed',
                 'name': (f.get('name') or 'Unnamed').strip() or 'Unnamed',
                 'custom_format_json': f.get('custom_format_json') or '{}',
                 'source': src,
-            })
+            }
+            if src == 'preformat' and f.get('preformat_id'):
+                item['preformat_id'] = f.get('preformat_id')
+            out.append(item)
         return jsonify({'custom_formats': out}), 200
     except Exception as e:
         logger.exception('Custom formats list error')
@@ -734,13 +730,15 @@ def api_custom_formats_list():
 
 @common_bp.route('/api/custom-formats/preformats', methods=['GET'])
 def api_custom_formats_preformats():
-    """List pre-made custom formats for dropdown (id, name)."""
+    """List TRaSH categories (with subcategories and formats) and flat preformats for backward compat."""
     try:
-        out = [{'id': p['id'], 'name': p['name']} for p in PREMADE_CUSTOM_FORMATS]
-        return jsonify({'preformats': out}), 200
+        categories = trash_custom_formats.get_trash_categories()
+        all_ids = trash_custom_formats.get_all_preformat_ids()
+        preformats = [{'id': pid, 'name': trash_custom_formats.get_trash_format_name(pid) or pid} for pid in all_ids]
+        return jsonify({'categories': categories, 'preformats': preformats}), 200
     except Exception as e:
         logger.exception('Preformats list error')
-        return jsonify({'preformats': [], 'error': str(e)}), 200
+        return jsonify({'categories': [], 'preformats': [], 'error': str(e)}), 200
 
 
 @common_bp.route('/api/custom-formats', methods=['POST'])
@@ -769,20 +767,24 @@ def api_custom_formats_add():
             preformat_id = (data.get('preformat_id') or '').strip()
             if not preformat_id:
                 return jsonify({'success': False, 'message': 'preformat_id is required for preformat'}), 400
-            match = next((p for p in PREMADE_CUSTOM_FORMATS if p.get('id') == preformat_id), None)
-            if not match:
+            custom_format_json = trash_custom_formats.get_trash_format_json(preformat_id)
+            name = trash_custom_formats.get_trash_format_name(preformat_id)
+            if not custom_format_json or not name:
                 return jsonify({'success': False, 'message': 'Unknown preformat_id'}), 400
-            name = match.get('name') or 'Unnamed'
-            custom_format_json = match.get('json') or '{}'
+            if isinstance(custom_format_json, dict):
+                custom_format_json = json.dumps(custom_format_json)
 
         title = (data.get('title') or '').strip() or name
         formats = _get_custom_formats_config()
-        formats.append({
+        new_item = {
             'title': title,
             'name': name,
             'custom_format_json': custom_format_json,
             'source': source,
-        })
+        }
+        if source == 'preformat' and preformat_id:
+            new_item['preformat_id'] = preformat_id
+        formats.append(new_item)
         _save_custom_formats_config(formats)
         return jsonify({'success': True, 'index': len(formats) - 1}), 200
     except Exception as e:
@@ -836,12 +838,15 @@ def api_custom_formats_delete(index):
 
 @common_bp.route('/api/custom-formats/preformats/<preformat_id>', methods=['GET'])
 def api_custom_formats_preformat_json(preformat_id):
-    """Get full JSON for a pre-made format by id."""
+    """Get full JSON for a TRaSH pre-made format by id."""
     try:
-        match = next((p for p in PREMADE_CUSTOM_FORMATS if p.get('id') == preformat_id), None)
-        if not match:
+        custom_format_json = trash_custom_formats.get_trash_format_json(preformat_id)
+        name = trash_custom_formats.get_trash_format_name(preformat_id)
+        if not custom_format_json:
             return jsonify({'success': False, 'message': 'Not found'}), 404
-        return jsonify({'success': True, 'name': match.get('name'), 'custom_format_json': match.get('json')}), 200
+        if isinstance(custom_format_json, dict):
+            custom_format_json = json.dumps(custom_format_json)
+        return jsonify({'success': True, 'name': name or preformat_id, 'custom_format_json': custom_format_json}), 200
     except Exception as e:
         logger.exception('Preformat get error')
         return jsonify({'success': False, 'error': str(e)}), 500
