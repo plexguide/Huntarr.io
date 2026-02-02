@@ -107,13 +107,16 @@ def generate_item_hash(item):
     return hashlib.md5(hash_input.encode('utf-8')).hexdigest()
 
 def check_for_malicious_files(item, settings):
-    """Check if download contains malicious file types"""
+    """Check if download contains malicious file types.
+    Extension check uses only the actual file extension (part after the last dot)
+    to avoid false positives like 'today.is.an.exercise.day.mkv' matching .exe.
+    """
     if not settings.get('malicious_file_detection', False):
         return False, None
     
     # Use user-defined malicious extensions from settings
     malicious_extensions = settings.get('malicious_extensions', [
-        '.lnk', '.exe', '.bat', '.cmd', '.scr', '.pif', '.com', 
+        '.lnk', '.exe', '.bat', '.cmd', '.scr', '.pif', '.com',
         '.zipx', '.jar', '.vbs', '.js', '.jse', '.wsf', '.wsh'
     ])
     
@@ -125,16 +128,29 @@ def check_for_malicious_files(item, settings):
     
     item_name = item.get('name', '').lower()
     
-    # Check for malicious extensions in the title/name
-    for ext in malicious_extensions:
-        if ext.lower() in item_name:
-            swaparr_logger.warning(f"Malicious file detected in '{item_name}': contains {ext}")
-            return True, f"Contains malicious file type: {ext}"
+    # Extension check: only match the actual file extension (last dot), not substring.
+    # e.g. "today.is.an.exercise.day.mkv" -> extension is ".mkv", not ".exe".
+    if '.' in item_name:
+        actual_extension = '.' + item_name.rsplit('.', 1)[-1]
+    else:
+        actual_extension = ''
     
-    # Check for suspicious patterns
+    normalized_malicious = set()
+    for ext in malicious_extensions:
+        e = ext.lower().strip()
+        if e and not e.startswith('.'):
+            e = '.' + e
+        if e:
+            normalized_malicious.add(e)
+    
+    if actual_extension and actual_extension in normalized_malicious:
+        swaparr_logger.warning(f"Malicious file detected in '{item.get('name', '')}': extension {actual_extension}")
+        return True, f"Contains malicious file type: {actual_extension}"
+    
+    # Check for suspicious patterns (substring match; these are intentional names like "keygen")
     for pattern in suspicious_patterns:
         if pattern.lower() in item_name:
-            swaparr_logger.warning(f"Suspicious content detected in '{item_name}': contains {pattern}")
+            swaparr_logger.warning(f"Suspicious content detected in '{item.get('name', '')}': contains {pattern}")
             return True, f"Contains suspicious content: {pattern}"
     
     return False, None
