@@ -166,6 +166,8 @@
             var payload = { title: title, year: year, instance: instance };
             if (rootFolder) payload.root_folder = rootFolder;
             if (qualityProfile) payload.quality_profile = qualityProfile;
+            if (item.tmdb_id != null) payload.tmdb_id = item.tmdb_id;
+            if (item.poster_path) payload.poster_path = item.poster_path;
             fetch('./api/movie-hunt/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

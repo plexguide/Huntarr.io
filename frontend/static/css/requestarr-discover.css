@@ -3223,6 +3223,68 @@ input:disabled + .toggle-slider {
     }
 }
 
+/* Movie Hunt Media Collection - same layout as Hidden Media */
+.movie-hunt-collection-view {
+    padding: 0 30px 20px 30px;
+    width: 100%;
+    box-sizing: border-box;
+}
+#movie-hunt-collection-view .hidden-media-search {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+}
+#movie-hunt-collection-view .hidden-media-search i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 18px;
+}
+#movie-hunt-collection-view .hidden-media-search-input {
+    width: 100%;
+    padding: 16px 20px 16px 55px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+#movie-hunt-collection-view .hidden-media-search-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    background: rgba(255, 255, 255, 0.12);
+}
+#movie-hunt-collection-view .btn-mark-available,
+#movie-hunt-collection-view .btn-remove-from-collection {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+#movie-hunt-collection-view .btn-mark-available {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+#movie-hunt-collection-view .btn-mark-available:hover {
+    background: rgba(34, 197, 94, 0.3);
+}
+#movie-hunt-collection-view .btn-remove-from-collection {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+#movie-hunt-collection-view .btn-remove-from-collection:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
 /* Hidden Media Page Styles */
 
 /* Search Bar - Full Width */

@@ -872,6 +872,10 @@ def api_movie_hunt_request():
         ok, msg = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', None, verify_ssl)
         if not ok:
             return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
+        # Add to Media Collection for tracking
+        tmdb_id = data.get('tmdb_id')
+        poster_path = (data.get('poster_path') or '').strip() or None
+        _collection_append(title=title, year=year, tmdb_id=tmdb_id, poster_path=poster_path)
         return jsonify({
             'success': True,
             'message': f'"{nzb_title or title}" sent to {client.get("name") or "download client"}.',
@@ -881,6 +885,38 @@ def api_movie_hunt_request():
     except Exception as e:
         logger.exception('Movie Hunt request error')
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+def _get_collection_config():
+    """Get Movie Hunt collection (requested media) from database."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('movie_hunt_collection')
+    if not config or not isinstance(config.get('items'), list):
+        return []
+    return config['items']
+
+
+def _save_collection_config(items_list):
+    """Save Movie Hunt collection to database."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    db.save_app_config('movie_hunt_collection', {'items': items_list})
+
+
+def _collection_append(title, year, tmdb_id=None, poster_path=None):
+    """Append one entry to Media Collection after successful request."""
+    from datetime import datetime
+    items = _get_collection_config()
+    items.append({
+        'title': title,
+        'year': year or '',
+        'tmdb_id': tmdb_id,
+        'poster_path': poster_path or '',
+        'requested_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'status': 'requested'
+    })
+    _save_collection_config(items)
 
 
 def _get_root_folders_config():
@@ -1042,6 +1078,64 @@ def api_movie_hunt_root_folders_test():
         return jsonify({'success': True, 'message': 'Write and read test passed.'}), 200
     except Exception as e:
         logger.exception('Root folders test error')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@common_bp.route('/api/movie-hunt/collection', methods=['GET'])
+def api_movie_hunt_collection_list():
+    """List Media Collection (requested movies). ?q= search, ?page=1&page_size=20."""
+    try:
+        items = _get_collection_config()
+        q = (request.args.get('q') or '').strip().lower()
+        if q:
+            items = [x for x in items if q in ((x.get('title') or '') + ' ' + str(x.get('year') or '')).lower()]
+        total = len(items)
+        page = max(1, int(request.args.get('page', 1)))
+        page_size = max(1, min(100, int(request.args.get('page_size', 20))))
+        start = (page - 1) * page_size
+        page_items = items[start:start + page_size]
+        return jsonify({
+            'items': page_items,
+            'total': total,
+            'page': page,
+            'page_size': page_size
+        }), 200
+    except Exception as e:
+        logger.exception('Movie Hunt collection list error')
+        return jsonify({'items': [], 'total': 0, 'page': 1, 'page_size': 20, 'error': str(e)}), 200
+
+
+@common_bp.route('/api/movie-hunt/collection/<int:index>', methods=['PATCH'])
+def api_movie_hunt_collection_patch(index):
+    """Update collection item status. Body: { status } e.g. 'requested' or 'available'."""
+    try:
+        data = request.get_json() or {}
+        status = (data.get('status') or '').strip() or None
+        if not status:
+            return jsonify({'success': False, 'message': 'status is required'}), 400
+        items = _get_collection_config()
+        if index < 0 or index >= len(items):
+            return jsonify({'success': False, 'message': 'Not found'}), 404
+        items[index]['status'] = status
+        _save_collection_config(items)
+        return jsonify({'success': True, 'item': items[index]}), 200
+    except Exception as e:
+        logger.exception('Movie Hunt collection patch error')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@common_bp.route('/api/movie-hunt/collection/<int:index>', methods=['DELETE'])
+def api_movie_hunt_collection_delete(index):
+    """Remove item from Media Collection."""
+    try:
+        items = _get_collection_config()
+        if index < 0 or index >= len(items):
+            return jsonify({'success': False, 'message': 'Not found'}), 404
+        items.pop(index)
+        _save_collection_config(items)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Movie Hunt collection delete error')
         return jsonify({'success': False, 'message': str(e)}), 500
 
 

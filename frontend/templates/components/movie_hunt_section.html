@@ -19,11 +19,13 @@
         #movie-hunt-request-modal .modal-close-btn:hover { background: rgba(0,0,0,0.7); }
         /* Match Requestarr home: no extra grey around covers - cards fixed width, don't stretch */
         #movie-hunt-movies-grid,
-        #movie-hunt-search-results-grid {
+        #movie-hunt-search-results-grid,
+        #movie-hunt-collection-grid {
             justify-items: start;
         }
         #movie-hunt-movies-grid .media-card,
-        #movie-hunt-search-results-grid .media-card {
+        #movie-hunt-search-results-grid .media-card,
+        #movie-hunt-collection-grid .media-card {
             width: 150px;
         }
         @media (max-width: 768px) {
@@ -83,6 +85,29 @@
             <div class="load-more-container">
                 <div id="movie-hunt-scroll-sentinel" style="height: 1px; width: 100%;"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Media Collection View (requested movies, status tracking) -->
+    <div id="movie-hunt-collection-view" class="movie-hunt-collection-view" style="display: none;">
+        <div class="hidden-media-search">
+            <i class="fas fa-search"></i>
+            <input id="movie-hunt-collection-search" class="hidden-media-search-input" type="text" placeholder="Search requested media...">
+        </div>
+        <div id="movie-hunt-collection-grid" class="media-grid">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading media collection...</p>
+            </div>
+        </div>
+        <div id="movie-hunt-collection-pagination" class="pagination-container" style="display: none;">
+            <button id="movie-hunt-collection-prev" class="pagination-btn">
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span id="movie-hunt-collection-page-info" class="page-info">Page 1 of 1</span>
+            <button id="movie-hunt-collection-next" class="pagination-btn">
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
     </div>
 

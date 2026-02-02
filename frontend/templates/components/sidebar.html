@@ -136,6 +136,12 @@
                 </div>
                 <span>Movie Home</span>
             </a>
+            <a href="./#movie-hunt-collection" class="nav-item" id="movieHuntCollectionNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <span>Media Collection</span>
+            </a>
             <a href="./#movie-hunt-settings" class="nav-item" id="movieHuntSettingsNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-cog"></i>
@@ -1122,6 +1128,8 @@
         // Requestarr sidebar items
         else if (currentHash === '#movie-hunt-home') {
             selector = '#movieHuntHomeNav';
+        } else if (currentHash === '#movie-hunt-collection') {
+            selector = '#movieHuntCollectionNav';
         } else if (currentHash === '#movie-hunt-settings') {
             selector = '#movieHuntSettingsNav';
         } else if (currentHash === '#requestarr') {

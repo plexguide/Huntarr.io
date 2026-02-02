@@ -108,7 +108,7 @@ let huntarrUI = {
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user' || this.currentSection === 'settings-logs') {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
-        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-root-folders') {
+        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings') {
@@ -467,7 +467,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-settings', 'settings-indexers', 'settings-clients', 'settings-root-folders'];
+            const noRefreshSections = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-settings', 'settings-indexers', 'settings-clients', 'settings-root-folders'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -585,11 +585,31 @@ let huntarrUI = {
             document.getElementById('movie-hunt-section').classList.add('active');
             document.getElementById('movie-hunt-section').style.display = 'block';
             if (document.getElementById('movieHuntHomeNav')) document.getElementById('movieHuntHomeNav').classList.add('active');
+            if (document.getElementById('movieHuntCollectionNav')) document.getElementById('movieHuntCollectionNav').classList.remove('active');
+            var mainContent = document.querySelector('#movie-hunt-section .requestarr-content');
+            var collectionView = document.getElementById('movie-hunt-collection-view');
+            if (mainContent) { mainContent.style.display = ''; }
+            if (collectionView) { collectionView.style.display = 'none'; }
             newTitle = 'Movie Hunt';
             this.currentSection = 'movie-hunt-home';
             this.showMovieHuntSidebar();
             if (window.MovieHunt && typeof window.MovieHunt.init === 'function') {
                 window.MovieHunt.init();
+            }
+        } else if (section === 'movie-hunt-collection' && document.getElementById('movie-hunt-section')) {
+            document.getElementById('movie-hunt-section').classList.add('active');
+            document.getElementById('movie-hunt-section').style.display = 'block';
+            if (document.getElementById('movieHuntHomeNav')) document.getElementById('movieHuntHomeNav').classList.remove('active');
+            if (document.getElementById('movieHuntCollectionNav')) document.getElementById('movieHuntCollectionNav').classList.add('active');
+            var mainContent = document.querySelector('#movie-hunt-section .requestarr-content');
+            var collectionView = document.getElementById('movie-hunt-collection-view');
+            if (mainContent) { mainContent.style.display = 'none'; }
+            if (collectionView) { collectionView.style.display = 'block'; }
+            newTitle = 'Media Collection';
+            this.currentSection = 'movie-hunt-collection';
+            this.showMovieHuntSidebar();
+            if (window.MovieHuntCollection && typeof window.MovieHuntCollection.init === 'function') {
+                window.MovieHuntCollection.init();
             }
         } else if (section === 'movie-hunt-settings' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
@@ -1089,7 +1109,7 @@ let huntarrUI = {
         const mhNav = document.getElementById('movieHuntNav');
         if (mhNav) mhNav.style.display = devMode ? '' : 'none';
         const onMovieHuntSection = this.currentSection && (
-            ['movie-hunt-home', 'movie-hunt-settings', 'settings-indexers', 'settings-clients', 'settings-root-folders'].indexOf(this.currentSection) !== -1 ||
+            ['movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-settings', 'settings-indexers', 'settings-clients', 'settings-root-folders'].indexOf(this.currentSection) !== -1 ||
             (this.currentSection === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && (window.SettingsForms._currentEditing.appType === 'indexer' || window.SettingsForms._currentEditing.appType === 'client'))
         );
         if (!devMode && onMovieHuntSection) {
