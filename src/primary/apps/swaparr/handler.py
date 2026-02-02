@@ -308,7 +308,12 @@ def get_queue_items(app_name, api_url, api_key, api_timeout=120):
         
         try:
             SWAPARR_STATS['api_calls_made'] += 1
-            response = requests.get(queue_url, headers=headers, timeout=api_timeout)
+            
+            # Get SSL verification setting
+            from src.primary.settings_manager import get_ssl_verify_setting
+            verify_ssl = get_ssl_verify_setting()
+            
+            response = requests.get(queue_url, headers=headers, timeout=api_timeout, verify=verify_ssl)
             response.raise_for_status()
             queue_data = response.json()
             
@@ -487,7 +492,12 @@ def trigger_search_for_item(app_name, api_url, api_key, item, api_timeout=120):
         
         # Execute the search command
         SWAPARR_STATS['api_calls_made'] += 1
-        response = requests.post(search_url, headers=headers, json=payload, timeout=api_timeout)
+        
+        # Get SSL verification setting
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        response = requests.post(search_url, headers=headers, json=payload, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status()
         
         swaparr_logger.info(f"Successfully triggered search for {item.get('name', 'unknown')} in {app_name}")
@@ -515,7 +525,12 @@ def delete_download(app_name, api_url, api_key, download_id, remove_from_client=
     
     try:
         SWAPARR_STATS['api_calls_made'] += 1
-        response = requests.delete(delete_url, headers=headers, timeout=api_timeout)
+        
+        # Get SSL verification setting
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        response = requests.delete(delete_url, headers=headers, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status()
         swaparr_logger.info(f"Successfully removed download {download_id} from {app_name}")
         SWAPARR_STATS['downloads_removed'] += 1

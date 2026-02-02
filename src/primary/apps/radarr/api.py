@@ -416,7 +416,11 @@ def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
         base_url = api_url.rstrip('/')
         full_url = f"{base_url}/api/v3/system/status"
         
-        response = requests.get(full_url, headers={"X-Api-Key": api_key}, timeout=api_timeout)
+        # Get SSL verification setting
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        response = requests.get(full_url, headers={"X-Api-Key": api_key}, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
         radarr_logger.debug("Successfully connected to Radarr.")
         return True

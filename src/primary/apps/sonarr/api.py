@@ -296,13 +296,16 @@ def get_missing_episodes(api_url: str, api_key: str, api_timeout: int, monitored
             if series_id is not None:
                 params["seriesId"] = series_id
             
+            # Get SSL verification setting
+            verify_ssl = get_ssl_verify_setting()
+            
             # Ensure proper URL construction with scheme
             base_url = api_url.rstrip('/')
             url = f"{base_url}/api/v3/{endpoint.lstrip('/')}"
             sonarr_logger.debug(f"Requesting missing episodes page {page} (attempt {retry_count+1}/{retries_per_page+1})")
             
             try:
-                response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout)
+                response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout, verify=verify_ssl)
                 response.raise_for_status() # Check for HTTP errors (4xx or 5xx)
                 
                 if not response.content:
@@ -415,11 +418,15 @@ def get_cutoff_unmet_episodes(api_url: str, api_key: str, api_timeout: int, moni
                 "sortDir": "asc",
                 "monitored": monitored_only
             }
+            
+            # Get SSL verification setting
+            verify_ssl = get_ssl_verify_setting()
+            
             url = f"{api_url}/api/v3/{endpoint}"
             sonarr_logger.debug(f"Requesting cutoff unmet page {page} (attempt {retry_count+1}/{retries_per_page+1})")
 
             try:
-                response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout)
+                response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout, verify=verify_ssl)
                 sonarr_logger.debug(f"Sonarr API response status code for cutoff unmet page {page}: {response.status_code}")
                 response.raise_for_status() # Check for HTTP errors
                 
@@ -558,9 +565,12 @@ def get_cutoff_unmet_episodes_random_page(api_url: str, api_key: str, api_timeou
     }
     url = f"{api_url}/api/v3/{endpoint}"
     
+    # Get SSL verification setting
+    verify_ssl = get_ssl_verify_setting()
+    
     try:
         # Get total record count from a minimal query
-        response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout)
+        response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status()
         data = response.json()
         total_records = data.get('totalRecords', 0)
@@ -589,7 +599,7 @@ def get_cutoff_unmet_episodes_random_page(api_url: str, api_key: str, api_timeou
             "monitored": monitored_only
         }
         
-        response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout)
+        response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status()
         
         data = response.json()
@@ -656,11 +666,14 @@ def get_missing_episodes_random_page(api_url: str, api_key: str, api_timeout: in
     base_url = api_url.rstrip('/')
     url = f"{base_url}/api/v3/{endpoint.lstrip('/')}"
     
+    # Get SSL verification setting
+    verify_ssl = get_ssl_verify_setting()
+    
     for attempt in range(retries + 1):
         try:
             # Get total record count from a minimal query
             sonarr_logger.debug(f"Getting missing episodes count (attempt {attempt+1}/{retries+1})")
-            response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout)
+            response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout, verify=verify_ssl)
             response.raise_for_status()
             
             if not response.content:
@@ -704,7 +717,7 @@ def get_missing_episodes_random_page(api_url: str, api_key: str, api_timeout: in
                 if series_id is not None:
                     params["seriesId"] = series_id
                 
-                response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout)
+                response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout, verify=verify_ssl)
                 response.raise_for_status()
                 
                 if not response.content:
@@ -790,7 +803,11 @@ def search_episode(api_url: str, api_key: str, api_timeout: int, episode_ids: Li
             "name": "EpisodeSearch",
             "episodeIds": episode_ids
         }
-        response = requests.post(endpoint, headers={"X-Api-Key": api_key}, json=payload, timeout=api_timeout)
+        
+        # Get SSL verification setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        response = requests.post(endpoint, headers={"X-Api-Key": api_key}, json=payload, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status()
         command_id = response.json().get('id')
         sonarr_logger.info(f"Triggered Sonarr search for episode IDs: {episode_ids}. Command ID: {command_id}")
@@ -807,7 +824,11 @@ def get_command_status(api_url: str, api_key: str, api_timeout: int, command_id:
     """Get the status of a Sonarr command."""
     try:
         endpoint = f"{api_url}/api/v3/command/{command_id}"
-        response = requests.get(endpoint, headers={"X-Api-Key": api_key}, timeout=api_timeout)
+        
+        # Get SSL verification setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        response = requests.get(endpoint, headers={"X-Api-Key": api_key}, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status()
         status = response.json()
         sonarr_logger.debug(f"Checked Sonarr command status for ID {command_id}: {status.get('status')}")
@@ -827,7 +848,11 @@ def get_download_queue_size(api_url: str, api_key: str, api_timeout: int) -> int
     for attempt in range(retries + 1):
         try:
             endpoint = f"{api_url}/api/v3/queue?page=1&pageSize=1" # Just get total count, don't need records
-            response = requests.get(endpoint, headers={"X-Api-Key": api_key}, params={"includeSeries": "false"}, timeout=api_timeout)
+            
+            # Get SSL verification setting
+            verify_ssl = get_ssl_verify_setting()
+            
+            response = requests.get(endpoint, headers={"X-Api-Key": api_key}, params={"includeSeries": "false"}, timeout=api_timeout, verify=verify_ssl)
             response.raise_for_status()
             
             if not response.content:
@@ -879,7 +904,11 @@ def get_series_by_id(api_url: str, api_key: str, api_timeout: int, series_id: in
     """Get series details by ID from Sonarr."""
     try:
         endpoint = f"{api_url}/api/v3/series/{series_id}"
-        response = requests.get(endpoint, headers={"X-Api-Key": api_key}, timeout=api_timeout)
+        
+        # Get SSL verification setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        response = requests.get(endpoint, headers={"X-Api-Key": api_key}, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status()
         series_data = response.json()
         sonarr_logger.debug(f"Fetched details for Sonarr series ID: {series_id}")
@@ -912,7 +941,11 @@ def search_season(api_url: str, api_key: str, api_timeout: int, series_id: int, 
             "seriesId": series_id,
             "seasonNumber": season_number
         }
-        response = requests.post(endpoint, headers={"X-Api-Key": api_key}, json=payload, timeout=api_timeout)
+        
+        # Get SSL verification setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        response = requests.post(endpoint, headers={"X-Api-Key": api_key}, json=payload, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status()
         command_id = response.json().get('id')
         sonarr_logger.info(f"Triggered Sonarr season search for series ID: {series_id}, season: {season_number}. Command ID: {command_id}")
@@ -965,11 +998,15 @@ def get_cutoff_unmet_episodes_for_series(api_url: str, api_key: str, api_timeout
                 "seriesId": series_id,  # Filter by series ID - this limits results to only this series
                 "monitored": monitored_only
             }
+            
+            # Get SSL verification setting
+            verify_ssl = get_ssl_verify_setting()
+            
             url = f"{api_url}/api/v3/{endpoint}"
             sonarr_logger.debug(f"Requesting cutoff unmet page {page} for series {series_id} (attempt {retry_count+1}/{retries_per_page+1})")
             
             try:
-                response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout)
+                response = requests.get(url, headers={"X-Api-Key": api_key}, params=params, timeout=api_timeout, verify=verify_ssl)
                 sonarr_logger.debug(f"Sonarr API response status code for cutoff unmet page {page}: {response.status_code}")
                 response.raise_for_status() # Check for HTTP errors
                 
@@ -1117,7 +1154,11 @@ def get_series_with_missing_episodes(api_url: str, api_key: str, api_timeout: in
         # Get all episodes for this series
         try:
             endpoint = f"{api_url}/api/v3/episode?seriesId={series_id}"
-            response = requests.get(endpoint, headers={"X-Api-Key": api_key}, timeout=api_timeout)
+            
+            # Get SSL verification setting
+            verify_ssl = get_ssl_verify_setting()
+            
+            response = requests.get(endpoint, headers={"X-Api-Key": api_key}, timeout=api_timeout, verify=verify_ssl)
             response.raise_for_status()
             
             if not response.content:
@@ -1235,7 +1276,11 @@ def series_search(api_url: str, api_key: str, api_timeout: int, series_id: int) 
     try:
         endpoint = f"{api_url.rstrip('/')}/api/v3/command"
         payload = {"name": "SeriesSearch", "seriesId": series_id}
-        response = requests.post(endpoint, headers={"X-Api-Key": api_key}, json=payload, timeout=api_timeout)
+        
+        # Get SSL verification setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        response = requests.post(endpoint, headers={"X-Api-Key": api_key}, json=payload, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status()
         command_id = response.json().get('id')
         sonarr_logger.info(f"Triggered Sonarr SeriesSearch for series ID: {series_id}. Command ID: {command_id}")

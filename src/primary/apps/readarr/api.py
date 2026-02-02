@@ -48,7 +48,11 @@ def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
             "User-Agent": "Huntarr/1.0 (https://github.com/plexguide/Huntarr.io)"
         }
         
-        response = requests.get(full_url, headers=headers, timeout=api_timeout)
+        # Get SSL verification setting
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        response = requests.get(full_url, headers=headers, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
         logger.debug("Successfully connected to Readarr.")
         return True
@@ -316,8 +320,13 @@ def get_wanted_missing_books(api_url: str, api_key: str, api_timeout: int, monit
             # 'sortDirection': 'ascending',
             # 'monitored': monitored_only # Note: Check if Readarr API supports this directly for wanted/missing
         }
+        
+        # Get SSL verification setting
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        
         try:
-            response = requests.get(url, headers=headers, params=params, timeout=api_timeout)
+            response = requests.get(url, headers=headers, params=params, timeout=api_timeout, verify=verify_ssl)
             response.raise_for_status()
             data = response.json()
 
@@ -385,11 +394,15 @@ def get_wanted_missing_books_random_page(api_url: str, api_key: str, api_timeout
         'pageSize': 1
     }
     
+    # Get SSL verification setting
+    from src.primary.settings_manager import get_ssl_verify_setting
+    verify_ssl = get_ssl_verify_setting()
+    
     for attempt in range(retries + 1):
         try:
             # Get total record count from a minimal query
             logger.debug(f"Getting missing books count (attempt {attempt+1}/{retries+1})")
-            response = requests.get(url, headers=headers, params=params, timeout=api_timeout)
+            response = requests.get(url, headers=headers, params=params, timeout=api_timeout, verify=verify_ssl)
             response.raise_for_status()
             
             if not response.content:
@@ -424,7 +437,7 @@ def get_wanted_missing_books_random_page(api_url: str, api_key: str, api_timeout
                     'pageSize': page_size
                 }
                 
-                response = requests.get(url, headers=headers, params=params, timeout=api_timeout)
+                response = requests.get(url, headers=headers, params=params, timeout=api_timeout, verify=verify_ssl)
                 response.raise_for_status()
                 
                 if not response.content:
@@ -535,8 +548,13 @@ def get_author_details(api_url: str, api_key: str, author_id: int, api_timeout: 
     """Fetches details for a specific author from the Readarr API."""
     endpoint = f"{api_url}/api/v1/author/{author_id}"
     headers = {'X-Api-Key': api_key}
+    
+    # Get SSL verification setting
+    from src.primary.settings_manager import get_ssl_verify_setting
+    verify_ssl = get_ssl_verify_setting()
+    
     try:
-        response = requests.get(endpoint, headers=headers, timeout=api_timeout)
+        response = requests.get(endpoint, headers=headers, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
         author_data = response.json()
         logger.debug(f"Successfully fetched details for author ID {author_id}.")
@@ -567,9 +585,14 @@ def search_books(api_url: str, api_key: str, book_ids: List[int], api_timeout: i
         'name': 'BookSearch',
         'bookIds': book_ids
     }
+    
+    # Get SSL verification setting
+    from src.primary.settings_manager import get_ssl_verify_setting
+    verify_ssl = get_ssl_verify_setting()
+    
     try:
         # This uses requests.post directly, not arr_request. It's already correct.
-        response = requests.post(endpoint, headers=headers, json=payload, timeout=api_timeout)
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=api_timeout, verify=verify_ssl)
         response.raise_for_status()
         command_data = response.json()
         command_id = command_data.get('id')

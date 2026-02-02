@@ -85,13 +85,13 @@ def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, met
                 whisparr_logger.debug(f"Standard path returned 404, trying with V3 path: {v3_url}")
                 
                 if method == "GET":
-                    response = session.get(v3_url, headers=headers, timeout=api_timeout)
+                    response = session.get(v3_url, headers=headers, timeout=api_timeout, verify=verify_ssl)
                 elif method == "POST":
-                    response = session.post(v3_url, headers=headers, json=data, timeout=api_timeout)
+                    response = session.post(v3_url, headers=headers, json=data, timeout=api_timeout, verify=verify_ssl)
                 elif method == "PUT":
-                    response = session.put(v3_url, headers=headers, json=data, timeout=api_timeout)
+                    response = session.put(v3_url, headers=headers, json=data, timeout=api_timeout, verify=verify_ssl)
                 elif method == "DELETE":
-                    response = session.delete(v3_url, headers=headers, timeout=api_timeout)
+                    response = session.delete(v3_url, headers=headers, timeout=api_timeout, verify=verify_ssl)
                 
                 whisparr_logger.debug(f"V3 path request returned status code: {response.status_code}")
             
