@@ -57,6 +57,22 @@
             });
         }
 
+        // Add event listeners for real-time connection status checking
+        const hostEl = document.getElementById('editor-client-host');
+        const portEl = document.getElementById('editor-client-port');
+        const apiKeyEl = document.getElementById('editor-client-apikey');
+        const usernameEl = document.getElementById('editor-client-username');
+        const passwordEl = document.getElementById('editor-client-password');
+        
+        if (hostEl) hostEl.addEventListener('input', () => this.checkClientConnection());
+        if (portEl) portEl.addEventListener('input', () => this.checkClientConnection());
+        if (apiKeyEl) apiKeyEl.addEventListener('input', () => this.checkClientConnection());
+        if (usernameEl) usernameEl.addEventListener('input', () => this.checkClientConnection());
+        if (passwordEl) passwordEl.addEventListener('input', () => this.checkClientConnection());
+        
+        // Initial connection check
+        this.checkClientConnection();
+
         if (window.huntarrUI && window.huntarrUI.switchSection) {
             window.huntarrUI.switchSection('instance-editor');
         }
@@ -68,8 +84,13 @@
         const typeVal = CLIENT_TYPES.some(function(o) { return o.value === typeRaw; }) ? typeRaw : 'nzbget';
         const host = (instance.host || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const port = instance.port !== undefined && instance.port !== '' ? String(instance.port) : '8080';
+        const username = (instance.username || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const enabled = instance.enabled !== false;
         const isEdit = !!(instance.name && instance.name.trim());
+        
+        const apiKeyPlaceholder = isEdit && (instance.api_key_last4 || '')
+            ? ('Enter new key or leave blank to keep existing (••••' + (instance.api_key_last4 || '') + ')')
+            : 'Enter API key';
         const pwdPlaceholder = isEdit && (instance.password_last4 || '')
             ? ('Enter new password or leave blank to keep existing (••••' + (instance.password_last4 || '') + ')')
             : 'Password (if required)';
@@ -89,7 +110,10 @@
         return `
             <div class="editor-grid">
                 <div class="editor-section">
-                    <div class="editor-section-title">Connection Settings</div>
+                    <div class="editor-section-title" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>Connection Settings</span>
+                        <div id="client-connection-status-container" style="display: flex; justify-content: flex-end; flex: 1;"></div>
+                    </div>
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label style="display: flex; align-items: center;">
@@ -101,22 +125,46 @@
                                 <option value="false" ${!enabled ? 'selected' : ''}>Disabled</option>
                             </select>
                         </div>
+                        <p class="editor-help-text">Enable or disable this download client</p>
+                    </div>
+                    <div class="editor-field-group">
+                        <label for="editor-client-type">Client Type</label>
+                        <select id="editor-client-type">
+                            ${CLIENT_TYPES.map(function(o) {
+                                return '<option value="' + o.value + '"' + (typeVal === o.value ? ' selected' : '') + '>' + o.label + '</option>';
+                            }).join('')}
+                        </select>
+                        <p class="editor-help-text">Select your download client type</p>
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-client-name">Name</label>
-                        <input type="text" id="editor-client-name" value="${name}" placeholder="e.g. My NZBGet" />
+                        <input type="text" id="editor-client-name" value="${name}" placeholder="e.g. My ${typeVal === 'sabnzbd' ? 'SABnzbd' : 'NZBGet'}" />
+                        <p class="editor-help-text">A friendly name to identify this client</p>
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-client-host">Host</label>
                         <input type="text" id="editor-client-host" value="${host}" placeholder="localhost or 192.168.1.10" />
+                        <p class="editor-help-text">Hostname or IP address of your download client</p>
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-client-port">Port</label>
                         <input type="number" id="editor-client-port" value="${port}" placeholder="8080" min="1" max="65535" />
+                        <p class="editor-help-text">Port number for your download client (SABnzbd default: 8080, NZBGet default: 6789)</p>
+                    </div>
+                    <div class="editor-field-group">
+                        <label for="editor-client-apikey">API Key</label>
+                        <input type="password" id="editor-client-apikey" placeholder="${apiKeyPlaceholder.replace(/"/g, '&quot;')}" autocomplete="off" />
+                        <p class="editor-help-text">API key from your download client settings. ${isEdit ? 'Leave blank to keep existing.' : ''}</p>
+                    </div>
+                    <div class="editor-field-group">
+                        <label for="editor-client-username">Username</label>
+                        <input type="text" id="editor-client-username" value="${username}" placeholder="Username (if required)" autocomplete="off" />
+                        <p class="editor-help-text">Username for basic authentication (NZBGet typically requires this)</p>
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-client-password">Password</label>
                         <input type="password" id="editor-client-password" placeholder="${pwdPlaceholder.replace(/"/g, '&quot;')}" autocomplete="off" />
+                        <p class="editor-help-text">${isEdit ? 'Leave blank to keep existing password' : 'Password for authentication (if required)'}</p>
                     </div>
                 </div>
                 <div class="editor-section">
@@ -152,6 +200,8 @@
         const hostEl = document.getElementById('editor-client-host');
         const portEl = document.getElementById('editor-client-port');
         const enabledEl = document.getElementById('editor-client-enabled');
+        const apiKeyEl = document.getElementById('editor-client-apikey');
+        const usernameEl = document.getElementById('editor-client-username');
         const passwordEl = document.getElementById('editor-client-password');
         const categoryEl = document.getElementById('editor-client-category');
         const recentPriorityEl = document.getElementById('editor-client-recent-priority');
@@ -169,6 +219,8 @@
             if (!isNaN(p)) port = p;
         }
         const enabled = enabledEl ? enabledEl.value === 'true' : true;
+        const apiKey = apiKeyEl ? apiKeyEl.value.trim() : '';
+        const username = usernameEl ? usernameEl.value.trim() : '';
         const password = passwordEl ? passwordEl.value.trim() : '';
         const category = categoryEl ? categoryEl.value.trim() : 'movies';
         const recentPriority = recentPriorityEl ? (recentPriorityEl.value || 'default').toLowerCase() : 'default';
@@ -190,6 +242,8 @@
             older_priority: olderPriority,
             client_priority: clientPriority
         };
+        if (apiKey) body.api_key = apiKey;
+        if (username) body.username = username;
         if (password) body.password = password;
 
         const isAdd = this._currentEditing.isAdd;
@@ -220,5 +274,65 @@
                     window.huntarrUI.showNotification(err.message || 'Failed to save client', 'error');
                 }
             });
+    };
+
+    Forms.checkClientConnection = function() {
+        const container = document.getElementById('client-connection-status-container');
+        const hostEl = document.getElementById('editor-client-host');
+        const portEl = document.getElementById('editor-client-port');
+        const apiKeyEl = document.getElementById('editor-client-apikey');
+        const usernameEl = document.getElementById('editor-client-username');
+        const passwordEl = document.getElementById('editor-client-password');
+        
+        if (!container) return;
+        
+        container.style.display = 'flex';
+        container.style.justifyContent = 'flex-end';
+        
+        const host = hostEl ? hostEl.value.trim() : '';
+        const port = portEl ? portEl.value.trim() : '';
+        const apiKey = apiKeyEl ? apiKeyEl.value.trim() : '';
+        const username = usernameEl ? usernameEl.value.trim() : '';
+        const password = passwordEl ? passwordEl.value.trim() : '';
+        
+        // Get client type
+        const type = (this._currentEditing && this._currentEditing.originalInstance && this._currentEditing.originalInstance.type)
+            ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
+            : 'nzbget';
+        
+        // Check if minimum requirements are met
+        if (!host || !port) {
+            container.innerHTML = '<span class="connection-status" style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2);"><i class="fas fa-exclamation-triangle"></i><span>Enter host and port</span></span>';
+            return;
+        }
+        
+        // Show checking status
+        container.innerHTML = '<span class="connection-status checking"><i class="fas fa-spinner fa-spin"></i><span>Checking...</span></span>';
+        
+        // Test connection
+        fetch('./api/clients/test-connection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                type: type,
+                host: host,
+                port: parseInt(port, 10) || 8080,
+                api_key: apiKey,
+                username: username,
+                password: password
+            })
+        })
+        .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+        .then(function(result) {
+            const data = result.data || {};
+            if (data.success === true) {
+                container.innerHTML = '<span class="connection-status success"><i class="fas fa-check-circle"></i><span>Connected</span></span>';
+            } else {
+                container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i><span>' + (data.message || data.error || 'Connection failed') + '</span></span>';
+            }
+        })
+        .catch(function(err) {
+            container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i><span>' + (err.message || 'Connection failed') + '</span></span>';
+        });
     };
 })();

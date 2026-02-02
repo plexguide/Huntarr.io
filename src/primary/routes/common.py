@@ -441,13 +441,17 @@ def _clamp_priority(val, lo=1, hi=99, default=50):
 
 @common_bp.route('/api/clients', methods=['GET'])
 def api_clients_list():
-    """List saved download clients (password masked to last 4 chars)."""
+    """List saved download clients (sensitive fields masked to last 4 chars)."""
     try:
         clients = _get_clients_config()
         out = []
         for i, c in enumerate(clients):
+            api_key = (c.get('api_key') or '')
+            api_key_last4 = api_key[-4:] if len(api_key) >= 4 else '****'
+            
             pwd = (c.get('password') or '')
-            last4 = pwd[-4:] if len(pwd) >= 4 else '****'
+            password_last4 = pwd[-4:] if len(pwd) >= 4 else '****'
+            
             out.append({
                 'index': i,
                 'name': c.get('name') or 'Unnamed',
@@ -455,7 +459,9 @@ def api_clients_list():
                 'host': c.get('host') or '',
                 'port': c.get('port') or 8080,
                 'enabled': c.get('enabled', True),
-                'password_last4': last4,
+                'api_key_last4': api_key_last4,
+                'username': c.get('username') or '',
+                'password_last4': password_last4,
                 'category': c.get('category') or 'movies',
                 'recent_priority': c.get('recent_priority') or 'default',
                 'older_priority': c.get('older_priority') or 'default',
@@ -469,7 +475,7 @@ def api_clients_list():
 
 @common_bp.route('/api/clients', methods=['POST'])
 def api_clients_add():
-    """Add a new download client. Body: { name, type, host, port, enabled, password }."""
+    """Add a new download client. Body: { name, type, host, port, enabled, api_key, username, password }."""
     try:
         data = request.get_json() or {}
         name = (data.get('name') or '').strip() or 'Unnamed'
@@ -481,6 +487,8 @@ def api_clients_add():
         except (TypeError, ValueError):
             port = 8080
         enabled = data.get('enabled', True)
+        api_key = (data.get('api_key') or '').strip()
+        username = (data.get('username') or '').strip()
         password = (data.get('password') or '').strip()
         clients = _get_clients_config()
         clients.append({
@@ -489,6 +497,8 @@ def api_clients_add():
             'host': host,
             'port': port,
             'enabled': enabled,
+            'api_key': api_key,
+            'username': username,
             'password': password,
         })
         _save_clients_list(clients)
@@ -500,7 +510,7 @@ def api_clients_add():
 
 @common_bp.route('/api/clients/<int:index>', methods=['PUT'])
 def api_clients_update(index):
-    """Update download client at index. Body: { name, type, host, port, enabled, password? }. Omit password to keep existing."""
+    """Update download client at index. Body: { name, type, host, port, enabled, api_key?, username?, password? }. Omit credentials to keep existing."""
     try:
         clients = _get_clients_config()
         if index < 0 or index >= len(clients):
@@ -511,9 +521,20 @@ def api_clients_update(index):
         host = (data.get('host') or '').strip()
         port = int(data.get('port'), 10) if data.get('port') is not None else clients[index].get('port', 8080)
         enabled = data.get('enabled', True)
-        password_new = (data.get('password') or '').strip()
+        
+        # Handle API key
+        api_key_new = (data.get('api_key') or '').strip()
         existing = clients[index]
+        api_key = api_key_new if api_key_new else (existing.get('api_key') or '')
+        
+        # Handle username
+        username_new = (data.get('username') or '').strip()
+        username = username_new if username_new else (existing.get('username') or '')
+        
+        # Handle password
+        password_new = (data.get('password') or '').strip()
         password = password_new if password_new else (existing.get('password') or '')
+        
         category = (data.get('category') or existing.get('category') or 'movies').strip() or 'movies'
         recent_priority = (data.get('recent_priority') or existing.get('recent_priority') or 'default').strip().lower() or 'default'
         older_priority = (data.get('older_priority') or existing.get('older_priority') or 'default').strip().lower() or 'default'
@@ -524,6 +545,8 @@ def api_clients_update(index):
             'host': host,
             'port': port,
             'enabled': enabled,
+            'api_key': api_key,
+            'username': username,
             'password': password,
             'category': category,
             'recent_priority': recent_priority,
@@ -550,6 +573,112 @@ def api_clients_delete(index):
     except Exception as e:
         logger.exception('Clients delete error')
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@common_bp.route('/api/clients/test-connection', methods=['POST'])
+def api_clients_test_connection():
+    """Test connection to a download client (SABnzbd or NZBGet)."""
+    try:
+        data = request.get_json() or {}
+        client_type = (data.get('type') or 'nzbget').strip().lower()
+        host = (data.get('host') or '').strip()
+        port = data.get('port', 8080)
+        api_key = (data.get('api_key') or '').strip()
+        username = (data.get('username') or '').strip()
+        password = (data.get('password') or '').strip()
+        
+        if not host:
+            return jsonify({'success': False, 'message': 'Host is required'}), 400
+        
+        # Auto-correct URL if missing http(s) scheme
+        if not (host.startswith('http://') or host.startswith('https://')):
+            host = f"http://{host}"
+        
+        # Build the base URL
+        base_url = f"{host.rstrip('/')}:{port}"
+        
+        # Get SSL verification setting
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        # Test connection based on client type
+        if client_type == 'sabnzbd':
+            # SABnzbd uses /api?mode=version
+            test_url = f"{base_url}/api"
+            params = {'mode': 'version', 'output': 'json'}
+            if api_key:
+                params['apikey'] = api_key
+            
+            try:
+                response = requests.get(test_url, params=params, timeout=10, verify=verify_ssl)
+                response.raise_for_status()
+                data = response.json()
+                
+                # SABnzbd returns version in the 'version' key
+                if 'version' in data:
+                    version = data['version']
+                    return jsonify({'success': True, 'message': f'Connected to SABnzbd {version}'}), 200
+                else:
+                    return jsonify({'success': False, 'message': 'Connected but unexpected response format'}), 200
+                    
+            except requests.exceptions.HTTPError as e:
+                if response.status_code == 401 or response.status_code == 403:
+                    return jsonify({'success': False, 'message': 'Authentication failed: Invalid API key'}), 200
+                else:
+                    return jsonify({'success': False, 'message': f'HTTP Error {response.status_code}'}), 200
+            except requests.exceptions.Timeout:
+                return jsonify({'success': False, 'message': 'Connection timeout'}), 200
+            except requests.exceptions.ConnectionError:
+                return jsonify({'success': False, 'message': 'Connection refused - Check host and port'}), 200
+            except Exception as e:
+                return jsonify({'success': False, 'message': str(e)}), 200
+                
+        elif client_type == 'nzbget':
+            # NZBGet uses JSON-RPC API
+            test_url = f"{base_url}/jsonrpc"
+            
+            # Build JSON-RPC request for version
+            payload = {
+                'method': 'version',
+                'params': [],
+                'id': 1
+            }
+            
+            try:
+                # NZBGet uses HTTP basic auth
+                auth = (username, password) if username and password else None
+                
+                response = requests.post(test_url, json=payload, auth=auth, timeout=10, verify=verify_ssl)
+                response.raise_for_status()
+                data = response.json()
+                
+                # NZBGet returns version in the 'result' key
+                if 'result' in data:
+                    version = data['result']
+                    return jsonify({'success': True, 'message': f'Connected to NZBGet {version}'}), 200
+                elif 'error' in data:
+                    error_msg = data['error'].get('message', 'Unknown error')
+                    return jsonify({'success': False, 'message': f'NZBGet error: {error_msg}'}), 200
+                else:
+                    return jsonify({'success': False, 'message': 'Connected but unexpected response format'}), 200
+                    
+            except requests.exceptions.HTTPError as e:
+                if response.status_code == 401 or response.status_code == 403:
+                    return jsonify({'success': False, 'message': 'Authentication failed: Invalid username or password'}), 200
+                else:
+                    return jsonify({'success': False, 'message': f'HTTP Error {response.status_code}'}), 200
+            except requests.exceptions.Timeout:
+                return jsonify({'success': False, 'message': 'Connection timeout'}), 200
+            except requests.exceptions.ConnectionError:
+                return jsonify({'success': False, 'message': 'Connection refused - Check host and port'}), 200
+            except Exception as e:
+                return jsonify({'success': False, 'message': str(e)}), 200
+        else:
+            return jsonify({'success': False, 'message': f'Unknown client type: {client_type}'}), 400
+            
+    except Exception as e:
+        logger.exception('Client connection test error')
+        return jsonify({'success': False, 'message': 'Internal server error'}), 500
 
 
 @common_bp.route('/api/sleep.json', methods=['GET'])
