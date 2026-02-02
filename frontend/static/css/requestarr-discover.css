@@ -3192,7 +3192,14 @@ input:disabled + .toggle-slider {
         gap: 15px;
     }
     
-    /* Search results: full width, no extra grey space on mobile */
+    /* Search results: full width, minimal right padding to remove grey strip on mobile */
+    #search-results-view,
+    #home-search-results-view {
+        padding-left: 15px;
+        padding-right: 8px;
+        box-sizing: border-box;
+    }
+    
     .search-results-grid,
     #home-search-results-grid {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -3201,6 +3208,8 @@ input:disabled + .toggle-slider {
         max-width: 100%;
         justify-content: stretch;
         justify-items: stretch;
+        padding-right: 0;
+        box-sizing: border-box;
     }
     
     .search-results-grid .media-card,
