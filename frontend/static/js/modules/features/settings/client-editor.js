@@ -128,15 +128,6 @@
                         <p class="editor-help-text">Enable or disable this download client</p>
                     </div>
                     <div class="editor-field-group">
-                        <label for="editor-client-type">Client Type</label>
-                        <select id="editor-client-type">
-                            ${CLIENT_TYPES.map(function(o) {
-                                return '<option value="' + o.value + '"' + (typeVal === o.value ? ' selected' : '') + '>' + o.label + '</option>';
-                            }).join('')}
-                        </select>
-                        <p class="editor-help-text">Select your download client type</p>
-                    </div>
-                    <div class="editor-field-group">
                         <label for="editor-client-name">Name</label>
                         <input type="text" id="editor-client-name" value="${name}" placeholder="e.g. My ${typeVal === 'sabnzbd' ? 'SABnzbd' : 'NZBGet'}" />
                         <p class="editor-help-text">A friendly name to identify this client</p>
