@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
 """
 Build src/primary/data/trash_custom_formats.json from TRaSH categories and formats.
+Fetches full custom format JSON from TRaSH-Guides/Guides (GitHub) when available.
 Run from repo root: python scripts/build_trash_custom_formats.py
 """
 import json
-import os
+import time
 from pathlib import Path
+
+try:
+    import requests
+except ImportError:
+    requests = None
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_PATH = REPO_ROOT / "src" / "primary" / "data" / "trash_custom_formats.json"
+TRASH_CF_BASE = "https://raw.githubusercontent.com/TRaSH-Guides/Guides/master/docs/json/radarr/cf"
+FETCH_TIMEOUT = 15
+FETCH_DELAY_SEC = 0.25
 
 
 def minimal_cf_json(name):
@@ -18,6 +27,24 @@ def minimal_cf_json(name):
         "includeCustomFormatWhenRenaming": False,
         "specifications": []
     }
+
+
+def fetch_trash_format_json(filename):
+    """
+    Fetch Radarr custom format JSON from TRaSH Guides GitHub.
+    filename: e.g. 'truehd-atmos' (no .json).
+    Returns dict or None on failure.
+    """
+    if not requests:
+        return None
+    url = f"{TRASH_CF_BASE}/{filename}.json"
+    try:
+        r = requests.get(url, timeout=FETCH_TIMEOUT)
+        if r.status_code != 200:
+            return None
+        return r.json()
+    except Exception:
+        return None
 
 
 def main():
@@ -239,6 +266,21 @@ def main():
     ]
 
     format_json_by_id = {}
+    fetched = 0
+    skipped = 0
+
+    def add_format(preformat_id, fmt_name, filename):
+        nonlocal fetched, skipped
+        cf = fetch_trash_format_json(filename)
+        if cf and isinstance(cf, dict):
+            if "name" not in cf or not cf["name"]:
+                cf["name"] = fmt_name
+            format_json_by_id[preformat_id] = cf
+            fetched += 1
+        else:
+            format_json_by_id[preformat_id] = minimal_cf_json(fmt_name)
+            skipped += 1
+        time.sleep(FETCH_DELAY_SEC)
 
     for cat in categories:
         cat_id = cat["id"]
@@ -246,14 +288,14 @@ def main():
             for fmt in cat["formats"]:
                 fid = fmt["id"]
                 preformat_id = f"{cat_id}.{fid}"
-                format_json_by_id[preformat_id] = minimal_cf_json(fmt["name"])
+                add_format(preformat_id, fmt["name"], fid)
         if "subcategories" in cat:
             for sub in cat["subcategories"]:
                 sub_id = sub["id"]
                 for fmt in sub["formats"]:
                     fid = fmt["id"]
                     preformat_id = f"{cat_id}.{sub_id}.{fid}"
-                    format_json_by_id[preformat_id] = minimal_cf_json(fmt["name"])
+                    add_format(preformat_id, fmt["name"], fid)
 
     out = {
         "categories": categories,
@@ -264,6 +306,7 @@ def main():
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2, ensure_ascii=False)
     print("Wrote", OUT_PATH)
+    print("Fetched from TRaSH:", fetched, "| Fallback (minimal):", skipped)
 
 
 if __name__ == "__main__":

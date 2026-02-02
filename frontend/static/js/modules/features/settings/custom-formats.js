@@ -28,6 +28,7 @@
                             '</div>' +
                             '<div class="custom-format-card-body"><span class="custom-format-card-name">' + sourceLabel + '</span></div>' +
                             '<div class="custom-format-card-footer">' +
+                            '<button type="button" class="btn-card view" data-index="' + i + '"><i class="fas fa-eye"></i> View JSON</button>' +
                             '<button type="button" class="btn-card edit" data-index="' + i + '"><i class="fas fa-edit"></i> Edit</button>' +
                             '<button type="button" class="btn-card delete" data-index="' + i + '"><i class="fas fa-trash"></i> Delete</button>' +
                             '</div></div>';
@@ -45,6 +46,13 @@
         _bindCards: function() {
             var grid = document.getElementById('custom-formats-grid');
             if (!grid) return;
+            grid.querySelectorAll('.custom-format-card .btn-card.view').forEach(function(btn) {
+                btn.onclick = function(e) {
+                    e.stopPropagation();
+                    var idx = parseInt(btn.getAttribute('data-index'), 10);
+                    if (!isNaN(idx)) window.CustomFormats.openViewModal(idx);
+                };
+            });
             grid.querySelectorAll('.custom-format-card .btn-card.edit').forEach(function(btn) {
                 btn.onclick = function(e) {
                     e.stopPropagation();
@@ -67,14 +75,38 @@
             if (addCard) addCard.onclick = function() { window.CustomFormats.openAddModal(); };
         },
 
+        openViewModal: function(index) {
+            var list = window.CustomFormats._list;
+            if (index < 0 || index >= list.length) return;
+            var item = list[index];
+            var title = (item.title || item.name || 'Unnamed');
+            document.getElementById('custom-format-view-modal-title').textContent = 'View JSON: ' + title;
+            var jsonStr = item.custom_format_json || '{}';
+            try {
+                var parsed = JSON.parse(jsonStr);
+                jsonStr = JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                // If parse fails, show as-is
+            }
+            document.getElementById('custom-format-view-json').textContent = jsonStr;
+            document.getElementById('custom-format-view-modal').style.display = 'flex';
+            document.body.classList.add('custom-format-modal-open');
+        },
+
+        closeViewModal: function() {
+            document.getElementById('custom-format-view-modal').style.display = 'none';
+            document.body.classList.remove('custom-format-modal-open');
+        },
+
         openAddModal: function() {
             window.CustomFormats._editingIndex = null;
             document.getElementById('custom-format-modal-title').textContent = 'Add Custom Format';
             document.getElementById('custom-format-modal-save').innerHTML = '<i class="fas fa-plus"></i> Add';
             document.getElementById('custom-format-source-preformat').checked = true;
             document.getElementById('custom-format-json-textarea').value = '';
-            document.getElementById('custom-format-title-input').value = '';
             document.getElementById('custom-format-preformat-area').style.display = 'block';
+            var importArea = document.getElementById('custom-format-import-area');
+            if (importArea) importArea.style.display = 'none';
             window.CustomFormats._loadPreformatTree();
             document.getElementById('custom-format-modal').style.display = 'flex';
             document.body.classList.add('custom-format-modal-open');
@@ -89,8 +121,9 @@
             document.getElementById('custom-format-modal-save').innerHTML = '<i class="fas fa-save"></i> Save';
             document.getElementById('custom-format-source-import').checked = true;
             document.getElementById('custom-format-preformat-area').style.display = 'none';
+            var importArea = document.getElementById('custom-format-import-area');
+            if (importArea) importArea.style.display = 'block';
             document.getElementById('custom-format-json-textarea').value = item.custom_format_json || '{}';
-            document.getElementById('custom-format-title-input').value = (item.title || item.name || '').trim() || 'Unnamed';
             document.getElementById('custom-format-modal').style.display = 'flex';
             document.body.classList.add('custom-format-modal-open');
         },
@@ -204,41 +237,28 @@
         _onSourceChange: function() {
             var isPre = document.getElementById('custom-format-source-preformat').checked;
             var preformatArea = document.getElementById('custom-format-preformat-area');
-            var titleInput = document.getElementById('custom-format-title-input');
+            var importArea = document.getElementById('custom-format-import-area');
             var jsonTa = document.getElementById('custom-format-json-textarea');
             if (preformatArea) preformatArea.style.display = isPre ? 'block' : 'none';
+            if (importArea) importArea.style.display = isPre ? 'none' : 'block';
             if (isPre) {
-                if (titleInput) titleInput.value = '';
                 if (jsonTa) jsonTa.value = '';
                 window.CustomFormats._loadPreformatTree();
             } else {
                 if (window.CustomFormats._editingIndex != null) {
                     var list = window.CustomFormats._list;
                     var idx = window.CustomFormats._editingIndex;
-                    if (list && idx >= 0 && idx < list.length) {
-                        var item = list[idx];
-                        if (titleInput) titleInput.value = (item.title || item.name || '').trim() || 'Unnamed';
-                        if (jsonTa) jsonTa.value = item.custom_format_json || '{}';
+                    if (list && idx >= 0 && idx < list.length && jsonTa) {
+                        jsonTa.value = list[idx].custom_format_json || '{}';
                     }
-                } else {
-                    if (titleInput) titleInput.value = '';
-                    if (jsonTa) jsonTa.value = '';
+                } else if (jsonTa) {
+                    jsonTa.value = '';
                 }
-            }
-        },
-
-        _onJsonInput: function() {
-            var raw = document.getElementById('custom-format-json-textarea').value.trim();
-            var name = window.CustomFormats._nameFromJson(raw);
-            var titleEl = document.getElementById('custom-format-title-input');
-            if (window.CustomFormats._editingIndex == null && name !== '—' && !titleEl.value) {
-                titleEl.value = name;
             }
         },
 
         saveModal: function() {
             var editing = window.CustomFormats._editingIndex;
-            var title = (document.getElementById('custom-format-title-input').value || '').trim() || 'Unnamed';
 
             if (editing != null) {
                 var jsonRaw = document.getElementById('custom-format-json-textarea').value.trim();
@@ -254,6 +274,8 @@
                     }
                     return;
                 }
+                var title = window.CustomFormats._nameFromJson(jsonRaw);
+                if (title === '—') title = 'Unnamed';
                 fetch('./api/custom-formats/' + editing, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
@@ -331,24 +353,22 @@
                 });
                 return;
             }
-            var body = { title: title };
-            {
-                var jsonRaw = document.getElementById('custom-format-json-textarea').value.trim();
-                if (!jsonRaw) {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Paste Custom Format JSON.', 'error');
-                    }
-                    return;
+            var jsonRaw = document.getElementById('custom-format-json-textarea').value.trim();
+            if (!jsonRaw) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Paste Custom Format JSON.', 'error');
                 }
-                try { JSON.parse(jsonRaw); } catch (e) {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Invalid JSON.', 'error');
-                    }
-                    return;
-                }
-                body.source = 'import';
-                body.custom_format_json = jsonRaw;
+                return;
             }
+            try { JSON.parse(jsonRaw); } catch (e) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Invalid JSON.', 'error');
+                }
+                return;
+            }
+            var title = window.CustomFormats._nameFromJson(jsonRaw);
+            if (title === '—') title = 'Unnamed';
+            var body = { source: 'import', custom_format_json: jsonRaw, title: title };
 
             fetch('./api/custom-formats', {
                 method: 'POST',
@@ -410,17 +430,27 @@
             if (closeBtn) closeBtn.onclick = function() { self.closeModal(); };
             if (cancelBtn) cancelBtn.onclick = function() { self.closeModal(); };
             if (saveBtn) saveBtn.onclick = function() { self.saveModal(); };
+            
+            var viewModal = document.getElementById('custom-format-view-modal');
+            var viewBackdrop = document.getElementById('custom-format-view-modal-backdrop');
+            var viewCloseBtn = document.getElementById('custom-format-view-modal-close');
+            var viewCloseBtnFooter = document.getElementById('custom-format-view-modal-close-btn');
+            if (viewBackdrop) viewBackdrop.onclick = function() { self.closeViewModal(); };
+            if (viewCloseBtn) viewCloseBtn.onclick = function() { self.closeViewModal(); };
+            if (viewCloseBtnFooter) viewCloseBtnFooter.onclick = function() { self.closeViewModal(); };
+            
             document.querySelectorAll('input[name="custom-format-source"]').forEach(function(radio) {
                 radio.onchange = function() { self._onSourceChange(); };
             });
             var jsonTa = document.getElementById('custom-format-json-textarea');
-            if (jsonTa) {
-                jsonTa.addEventListener('input', function() { self._onJsonInput(); });
-                jsonTa.addEventListener('paste', function() { setTimeout(function() { self._onJsonInput(); }, 0); });
-            }
+            if (jsonTa) { /* title is derived from JSON on save */ }
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
-                    self.closeModal();
+                if (e.key === 'Escape') {
+                    if (viewModal && viewModal.style.display === 'flex') {
+                        self.closeViewModal();
+                    } else if (modal && modal.style.display === 'flex') {
+                        self.closeModal();
+                    }
                 }
             });
         }

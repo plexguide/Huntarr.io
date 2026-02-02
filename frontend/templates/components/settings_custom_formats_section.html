@@ -36,18 +36,32 @@
                     <p class="custom-format-preformat-hint">Select categories below, then check the formats you want to add. Already-added formats are checked and disabled.</p>
                     <div id="custom-format-preformat-tree" class="custom-format-preformat-tree"></div>
                 </div>
-                <div class="custom-format-field-row">
-                    <label for="custom-format-title-input">Title</label>
-                    <input type="text" id="custom-format-title-input" class="custom-format-title-input" placeholder="Display title" maxlength="128" autocomplete="off">
-                </div>
-                <div class="custom-format-area custom-format-json-row">
-                    <label for="custom-format-json-textarea">Custom Format JSON</label>
-                    <textarea id="custom-format-json-textarea" class="custom-format-json-textarea" placeholder='{"name": "My Format", ...}' rows="8"></textarea>
+                <div id="custom-format-import-area" class="custom-format-area" style="display: none;">
+                    <label for="custom-format-json-textarea">Paste custom format JSON</label>
+                    <textarea id="custom-format-json-textarea" class="custom-format-json-textarea" placeholder='{"name": "My Format", ...}' rows="10"></textarea>
                 </div>
             </div>
             <div class="custom-format-modal-actions">
                 <button type="button" class="btn-card custom-format-modal-cancel" id="custom-format-modal-cancel">Cancel</button>
                 <button type="button" class="btn-card custom-format-modal-save" id="custom-format-modal-save"><i class="fas fa-plus"></i> Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View JSON modal (read-only) -->
+    <div id="custom-format-view-modal" class="custom-format-modal" style="display: none;">
+        <div class="custom-format-modal-backdrop" id="custom-format-view-modal-backdrop"></div>
+        <div class="custom-format-modal-content">
+            <div class="custom-format-modal-header">
+                <button type="button" class="custom-format-modal-close" id="custom-format-view-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <h2 class="custom-format-modal-title" id="custom-format-view-modal-title">View Custom Format JSON</h2>
+                <p class="custom-format-modal-subtitle">Read-only view of the custom format JSON.</p>
+            </div>
+            <div class="custom-format-modal-body">
+                <pre id="custom-format-view-json" class="custom-format-view-json"></pre>
+            </div>
+            <div class="custom-format-modal-actions">
+                <button type="button" class="btn-card custom-format-modal-cancel" id="custom-format-view-modal-close-btn">Close</button>
             </div>
         </div>
     </div>
@@ -98,9 +112,6 @@
     .custom-format-area label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: #cbd5e1; }
     .custom-format-select { width: 100%; padding: 10px 12px; font-size: 1rem; color: #f8fafc; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.3); border-radius: 8px; box-sizing: border-box; }
     .custom-format-json-textarea { width: 100%; padding: 10px 12px; font-size: 0.85rem; font-family: monospace; color: #f8fafc; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.3); border-radius: 8px; resize: vertical; min-height: 120px; box-sizing: border-box; }
-    .custom-format-field-row { margin-bottom: 12px; }
-    .custom-format-field-row label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: #cbd5e1; }
-    .custom-format-title-input { width: 100%; padding: 10px 12px; font-size: 1rem; color: #f8fafc; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.3); border-radius: 8px; box-sizing: border-box; }
     .custom-format-modal-actions { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px 20px; border-top: 1px solid rgba(148,163,184,0.1); }
     .custom-format-preformat-hint { margin: 0 0 12px 0; font-size: 0.85rem; color: #94a3b8; }
     .custom-format-preformat-tree { max-height: 320px; overflow-y: auto; border: 1px solid rgba(148,163,184,0.2); border-radius: 8px; padding: 10px; background: rgba(15,23,42,0.6); margin-bottom: 12px; }
@@ -118,4 +129,18 @@
     .custom-format-format-item input[type="checkbox"] { cursor: pointer; }
     .custom-format-format-item input[type="checkbox"]:disabled + span { color: #64748b; }
     .custom-format-loading { color: #94a3b8; font-size: 0.9rem; }
+    .custom-format-view-json { 
+        font-size: 0.85rem; 
+        font-family: 'Courier New', Courier, monospace; 
+        color: #f8fafc; 
+        background: rgba(15,23,42,0.8); 
+        border: 1px solid rgba(148,163,184,0.3); 
+        border-radius: 8px; 
+        padding: 12px; 
+        overflow-x: auto; 
+        white-space: pre-wrap; 
+        word-break: break-all;
+        max-height: 500px;
+        margin: 0;
+    }
 </style>
