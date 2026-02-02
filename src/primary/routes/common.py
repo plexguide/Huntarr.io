@@ -475,7 +475,7 @@ def api_clients_list():
 
 @common_bp.route('/api/clients', methods=['POST'])
 def api_clients_add():
-    """Add a new download client. Body: { name, type, host, port, enabled, api_key, username, password }."""
+    """Add a new download client. Body: { name, type, host, port, enabled, api_key, username, password, category, recent_priority, older_priority, client_priority }."""
     try:
         data = request.get_json() or {}
         name = (data.get('name') or '').strip() or 'Unnamed'
@@ -490,6 +490,10 @@ def api_clients_add():
         api_key = (data.get('api_key') or '').strip()
         username = (data.get('username') or '').strip()
         password = (data.get('password') or '').strip()
+        category = (data.get('category') or 'movies').strip() or 'movies'
+        recent_priority = (data.get('recent_priority') or 'default').strip().lower() or 'default'
+        older_priority = (data.get('older_priority') or 'default').strip().lower() or 'default'
+        client_priority = _clamp_priority(data.get('client_priority'), 1, 99, 50)
         clients = _get_clients_config()
         clients.append({
             'name': name,
@@ -500,6 +504,10 @@ def api_clients_add():
             'api_key': api_key,
             'username': username,
             'password': password,
+            'category': category,
+            'recent_priority': recent_priority,
+            'older_priority': older_priority,
+            'client_priority': client_priority,
         })
         _save_clients_list(clients)
         return jsonify({'success': True, 'index': len(clients) - 1}), 200

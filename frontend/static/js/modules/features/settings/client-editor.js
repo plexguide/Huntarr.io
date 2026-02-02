@@ -243,8 +243,18 @@
         const method = isAdd ? 'POST' : 'PUT';
 
         fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function(r) {
+                return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+            })
+            .then(function(result) {
+                if (!result.ok) {
+                    var msg = (result.data && result.data.error) ? result.data.error : 'Save failed';
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(msg, 'error');
+                    }
+                    return;
+                }
+                var data = result.data;
                 if (window.SettingsForms && window.SettingsForms.refreshClientsList) {
                     window.SettingsForms.refreshClientsList();
                 }

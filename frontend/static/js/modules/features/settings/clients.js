@@ -11,7 +11,7 @@
 
     Forms.renderClientCard = function(client, index) {
         const name = (client.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const last4 = client.password_last4 || '****';
+        const last4 = client.api_key_last4 || client.password_last4 || '****';
         const type = (client.type || 'nzbget').replace(/"/g, '&quot;');
         const enabled = client.enabled !== false;
         const statusClass = enabled ? 'status-connected' : 'status-error';
