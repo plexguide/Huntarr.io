@@ -1,14 +1,16 @@
 /**
- * Root Folders (Movie Hunt) - list, add, delete, and test root folder paths.
+ * Root Folders (Movie Hunt) - card grid (Profiles-style), add via modal, delete, test, set default.
  * Attaches to window.RootFolders. Load after settings core.
  */
 (function() {
     'use strict';
 
     window.RootFolders = {
+        _browseTargetInput: null,
+
         refreshList: function() {
-            var listEl = document.getElementById('root-folders-list');
-            if (!listEl) return;
+            var gridEl = document.getElementById('root-folders-grid');
+            if (!gridEl) return;
             fetch('./api/movie-hunt/root-folders')
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
@@ -17,47 +19,88 @@
                     for (var i = 0; i < folders.length; i++) {
                         var path = (folders[i].path || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                         var freeSpace = folders[i].freeSpace;
-                        var spaceLabel = (freeSpace != null && !isNaN(freeSpace)) ? ' (' + Math.round(freeSpace / 1e9) + ' GB free)' : '';
-                        var pathDisplay = path + spaceLabel;
+                        var spaceLabel = (freeSpace != null && !isNaN(freeSpace)) ? Math.round(freeSpace / 1e9) + ' GB free' : '';
                         var idx = folders[i].index !== undefined ? folders[i].index : i;
                         var isDefault = !!folders[i].is_default;
                         var showSetDefault = folders.length > 1 && !isDefault;
-                        html += '<div class="root-folders-row" data-index="' + idx + '">' +
-                            '<span class="root-folders-row-path">' + pathDisplay + (isDefault ? ' <span class="root-folders-default-badge">Default</span>' : '') + '</span>' +
-                            (showSetDefault ? '<button type="button" class="btn-root-folders-set-default" data-index="' + idx + '"><i class="fas fa-star"></i> Mark as default</button>' : '') +
-                            '<button type="button" class="btn-row-test" data-index="' + idx + '" data-path="' + (folders[i].path || '').replace(/"/g, '&quot;') + '"><i class="fas fa-vial"></i> Test</button>' +
-                            '<button type="button" class="btn-root-folders-delete" data-index="' + idx + '"><i class="fas fa-trash"></i> Delete</button>' +
-                            '</div>';
+                        var defaultClass = isDefault ? ' default-root-folder' : '';
+                        html += '<div class="root-folder-card instance-card' + defaultClass + '" data-index="' + idx + '" data-app-type="root-folder">' +
+                            '<div class="root-folder-card-header">' +
+                            '<div class="root-folder-card-path">' +
+                            '<i class="fas fa-folder"></i>' +
+                            '<span>' + path + '</span>' +
+                            (isDefault ? '<span class="root-folder-default-badge">Default</span>' : '') +
+                            '</div></div>' +
+                            '<div class="root-folder-card-body">' +
+                            (spaceLabel ? '<span class="root-folder-free-space">' + spaceLabel + '</span>' : '') +
+                            '</div>' +
+                            '<div class="root-folder-card-footer">' +
+                            '<button type="button" class="btn-card" data-index="' + idx + '" data-path="' + (folders[i].path || '').replace(/"/g, '&quot;') + '" data-action="test"><i class="fas fa-vial"></i> Test</button>' +
+                            (showSetDefault ? '<button type="button" class="btn-card set-default" data-index="' + idx + '" data-action="set-default"><i class="fas fa-star"></i> Default</button>' : '') +
+                            '<button type="button" class="btn-card delete" data-index="' + idx + '" data-action="delete"><i class="fas fa-trash"></i> Delete</button>' +
+                            '</div></div>';
                     }
-                    listEl.innerHTML = html || '<p style="color: #64748b; margin: 0;">No root folders added yet.</p>';
-                    window.RootFolders._bindRowButtons();
+                    html += '<div class="add-instance-card add-root-folder-card" id="root-folders-add-card" data-app-type="root-folder">' +
+                        '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
+                        '<div class="add-text">Add Root Folder</div></div>';
+                    gridEl.innerHTML = html;
+                    window.RootFolders._bindCardButtons();
                 })
                 .catch(function() {
-                    listEl.innerHTML = '<p style="color: #ef4444; margin: 0;">Failed to load root folders.</p>';
+                    var addCard = '<div class="add-instance-card add-root-folder-card" id="root-folders-add-card" data-app-type="root-folder">' +
+                        '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
+                        '<div class="add-text">Add Root Folder</div></div>';
+                    gridEl.innerHTML = '<p style="color: #ef4444; margin: 0 0 12px 0;">Failed to load root folders.</p>' + addCard;
+                    window.RootFolders._bindAddCard();
                 });
         },
 
-        _bindRowButtons: function() {
-            var listEl = document.getElementById('root-folders-list');
-            if (!listEl) return;
-            listEl.querySelectorAll('.btn-row-test').forEach(function(btn) {
+        _bindCardButtons: function() {
+            var gridEl = document.getElementById('root-folders-grid');
+            if (!gridEl) return;
+            gridEl.querySelectorAll('.root-folder-card [data-action="test"]').forEach(function(btn) {
                 btn.onclick = function() {
                     var path = btn.getAttribute('data-path') || '';
                     if (path) window.RootFolders.testPath(path);
                 };
             });
-            listEl.querySelectorAll('.btn-root-folders-set-default').forEach(function(btn) {
+            gridEl.querySelectorAll('.root-folder-card [data-action="set-default"]').forEach(function(btn) {
                 btn.onclick = function() {
                     var idx = parseInt(btn.getAttribute('data-index'), 10);
                     if (!isNaN(idx)) window.RootFolders.setDefault(idx);
                 };
             });
-            listEl.querySelectorAll('.btn-root-folders-delete').forEach(function(btn) {
+            gridEl.querySelectorAll('.root-folder-card [data-action="delete"]').forEach(function(btn) {
                 btn.onclick = function() {
                     var idx = parseInt(btn.getAttribute('data-index'), 10);
                     if (!isNaN(idx)) window.RootFolders.deleteFolder(idx);
                 };
             });
+            window.RootFolders._bindAddCard();
+        },
+
+        _bindAddCard: function() {
+            var addCard = document.getElementById('root-folders-add-card');
+            if (addCard) {
+                addCard.onclick = function() { window.RootFolders.openAddModal(); };
+            }
+        },
+
+        openAddModal: function() {
+            var modal = document.getElementById('root-folder-add-modal');
+            var input = document.getElementById('root-folder-add-path');
+            if (modal) modal.style.display = 'flex';
+            if (input) {
+                input.value = '';
+                setTimeout(function() { input.focus(); }, 100);
+            }
+            document.body.classList.add('root-folder-add-modal-open');
+        },
+
+        closeAddModal: function() {
+            var modal = document.getElementById('root-folder-add-modal');
+            if (modal) modal.style.display = 'none';
+            document.body.classList.remove('root-folder-add-modal-open');
         },
 
         setDefault: function(index) {
@@ -84,15 +127,19 @@
         },
 
         testPath: function(path) {
-            if (!path || (typeof path !== 'string')) path = (document.getElementById('root-folder-path-input') || {}).value || '';
-            path = String(path).trim();
+            if (!path || (typeof path !== 'string')) {
+                var addInput = document.getElementById('root-folder-add-path');
+                path = addInput ? (addInput.value || '').trim() : '';
+            } else {
+                path = String(path).trim();
+            }
             if (!path) {
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification('Enter a path to test', 'error');
                 }
                 return;
             }
-            var testBtn = document.getElementById('root-folder-test-btn');
+            var testBtn = document.getElementById('root-folder-add-test-btn');
             if (testBtn) {
                 testBtn.disabled = true;
                 testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
@@ -130,7 +177,7 @@
         },
 
         addFolder: function() {
-            var input = document.getElementById('root-folder-path-input');
+            var input = document.getElementById('root-folder-add-path');
             var path = input ? (input.value || '').trim() : '';
             if (!path) {
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -138,10 +185,10 @@
                 }
                 return;
             }
-            var addBtn = document.getElementById('root-folder-add-btn');
-            if (addBtn) {
-                addBtn.disabled = true;
-                addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+            var saveBtn = document.getElementById('root-folder-add-modal-save');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
             }
             fetch('./api/movie-hunt/root-folders', {
                 method: 'POST',
@@ -150,12 +197,13 @@
             })
                 .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
                 .then(function(result) {
-                    if (addBtn) {
-                        addBtn.disabled = false;
-                        addBtn.innerHTML = '<i class="fas fa-plus"></i> Add';
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fas fa-plus"></i> Add';
                     }
                     if (result.ok && result.data && result.data.success) {
                         if (input) input.value = '';
+                        window.RootFolders.closeAddModal();
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification('Root folder added.', 'success');
                         }
@@ -168,9 +216,9 @@
                     }
                 })
                 .catch(function(err) {
-                    if (addBtn) {
-                        addBtn.disabled = false;
-                        addBtn.innerHTML = '<i class="fas fa-plus"></i> Add';
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fas fa-plus"></i> Add';
                     }
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification(err.message || 'Add failed', 'error');
@@ -202,12 +250,12 @@
                 });
         },
 
-        openBrowseModal: function() {
+        openBrowseModal: function(sourceInput) {
             var modal = document.getElementById('root-folders-browse-modal');
-            var input = document.getElementById('root-folder-path-input');
             var browsePathInput = document.getElementById('root-folders-browse-path-input');
+            window.RootFolders._browseTargetInput = sourceInput || document.getElementById('root-folder-add-path');
             if (!modal || !browsePathInput) return;
-            var startPath = (input && input.value) ? input.value.trim() : '/';
+            var startPath = (window.RootFolders._browseTargetInput && window.RootFolders._browseTargetInput.value) ? window.RootFolders._browseTargetInput.value.trim() : '/';
             if (!startPath) startPath = '/';
             browsePathInput.value = startPath;
             modal.style.display = 'flex';
@@ -221,6 +269,15 @@
                 modal.style.display = 'none';
                 document.body.classList.remove('root-folders-browse-modal-open');
             }
+        },
+
+        confirmBrowseSelection: function() {
+            var pathInput = document.getElementById('root-folders-browse-path-input');
+            var target = window.RootFolders._browseTargetInput || document.getElementById('root-folder-add-path');
+            if (pathInput && target) {
+                target.value = (pathInput.value || '').trim();
+            }
+            window.RootFolders.closeBrowseModal();
         },
 
         goToParent: function() {
@@ -250,7 +307,7 @@
                     var dirs = (data && data.directories) ? data.directories : [];
                     var err = data && data.error;
                     if (err) {
-                        listEl.innerHTML = '<div style="padding: 16px; color: #f87171;">' + (err.replace(/</g, '&lt;')) + '</div>';
+                        listEl.innerHTML = '<div style="padding: 16px; color: #f87171;">' + (String(err).replace(/</g, '&lt;')) + '</div>';
                         return;
                     }
                     if (pathInput) pathInput.value = data.path || path;
@@ -282,33 +339,47 @@
                 });
         },
 
-        confirmBrowseSelection: function() {
-            var pathInput = document.getElementById('root-folders-browse-path-input');
-            var mainInput = document.getElementById('root-folder-path-input');
-            if (pathInput && mainInput) {
-                mainInput.value = (pathInput.value || '').trim();
-            }
-            window.RootFolders.closeBrowseModal();
-        },
-
         init: function() {
             var self = window.RootFolders;
-            var testBtn = document.getElementById('root-folder-test-btn');
-            var addBtn = document.getElementById('root-folder-add-btn');
-            var browseBtn = document.getElementById('root-folder-browse-btn');
-            if (testBtn) testBtn.onclick = function() { self.testPath(); };
-            if (addBtn) addBtn.onclick = function() { self.addFolder(); };
-            if (browseBtn) browseBtn.onclick = function() { self.openBrowseModal(); };
-            var modal = document.getElementById('root-folders-browse-modal');
-            var backdrop = document.getElementById('root-folders-browse-backdrop');
-            var closeBtn = document.getElementById('root-folders-browse-close');
-            var cancelBtn = document.getElementById('root-folders-browse-cancel');
-            var okBtn = document.getElementById('root-folders-browse-ok');
+            // Add modal
+            var addBackdrop = document.getElementById('root-folder-add-modal-backdrop');
+            var addClose = document.getElementById('root-folder-add-modal-close');
+            var addCancel = document.getElementById('root-folder-add-modal-cancel');
+            var addSave = document.getElementById('root-folder-add-modal-save');
+            var addBrowseBtn = document.getElementById('root-folder-add-browse-btn');
+            var addTestBtn = document.getElementById('root-folder-add-test-btn');
+            var addPathInput = document.getElementById('root-folder-add-path');
+            if (addBackdrop) addBackdrop.onclick = function() { self.closeAddModal(); };
+            if (addClose) addClose.onclick = function() { self.closeAddModal(); };
+            if (addCancel) addCancel.onclick = function() { self.closeAddModal(); };
+            if (addSave) addSave.onclick = function() { self.addFolder(); };
+            if (addBrowseBtn && addPathInput) addBrowseBtn.onclick = function() { self.openBrowseModal(addPathInput); };
+            if (addTestBtn) addTestBtn.onclick = function() { self.testPath(); };
+            if (addPathInput) {
+                addPathInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); self.addFolder(); }
+                });
+            }
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (document.getElementById('root-folder-add-modal').style.display === 'flex') {
+                        self.closeAddModal();
+                    }
+                    if (document.getElementById('root-folders-browse-modal').style.display === 'flex') {
+                        self.closeBrowseModal();
+                    }
+                }
+            });
+            // Browse modal
+            var browseBackdrop = document.getElementById('root-folders-browse-backdrop');
+            var browseClose = document.getElementById('root-folders-browse-close');
+            var browseCancel = document.getElementById('root-folders-browse-cancel');
+            var browseOk = document.getElementById('root-folders-browse-ok');
             var browsePathInput = document.getElementById('root-folders-browse-path-input');
-            if (backdrop) backdrop.onclick = function() { self.closeBrowseModal(); };
-            if (closeBtn) closeBtn.onclick = function() { self.closeBrowseModal(); };
-            if (cancelBtn) cancelBtn.onclick = function() { self.closeBrowseModal(); };
-            if (okBtn) okBtn.onclick = function() { self.confirmBrowseSelection(); };
+            if (browseBackdrop) browseBackdrop.onclick = function() { self.closeBrowseModal(); };
+            if (browseClose) browseClose.onclick = function() { self.closeBrowseModal(); };
+            if (browseCancel) browseCancel.onclick = function() { self.closeBrowseModal(); };
+            if (browseOk) browseOk.onclick = function() { self.confirmBrowseSelection(); };
             if (browsePathInput) {
                 browsePathInput.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') {
