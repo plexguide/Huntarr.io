@@ -15,6 +15,12 @@
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var folders = (data && data.root_folders) ? data.root_folders : [];
+                    // Default root folder first (leftmost)
+                    folders = folders.slice().sort(function(a, b) {
+                        if (a.is_default) return -1;
+                        if (b.is_default) return 1;
+                        return 0;
+                    });
                     var html = '';
                     for (var i = 0; i < folders.length; i++) {
                         var path = (folders[i].path || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
