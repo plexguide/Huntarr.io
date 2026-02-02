@@ -20,8 +20,11 @@
                         var spaceLabel = (freeSpace != null && !isNaN(freeSpace)) ? ' (' + Math.round(freeSpace / 1e9) + ' GB free)' : '';
                         var pathDisplay = path + spaceLabel;
                         var idx = folders[i].index !== undefined ? folders[i].index : i;
+                        var isDefault = !!folders[i].is_default;
+                        var showSetDefault = folders.length > 1 && !isDefault;
                         html += '<div class="root-folders-row" data-index="' + idx + '">' +
-                            '<span class="root-folders-row-path">' + pathDisplay + '</span>' +
+                            '<span class="root-folders-row-path">' + pathDisplay + (isDefault ? ' <span class="root-folders-default-badge">Default</span>' : '') + '</span>' +
+                            (showSetDefault ? '<button type="button" class="btn-root-folders-set-default" data-index="' + idx + '"><i class="fas fa-star"></i> Mark as default</button>' : '') +
                             '<button type="button" class="btn-row-test" data-index="' + idx + '" data-path="' + (folders[i].path || '').replace(/"/g, '&quot;') + '"><i class="fas fa-vial"></i> Test</button>' +
                             '<button type="button" class="btn-root-folders-delete" data-index="' + idx + '"><i class="fas fa-trash"></i> Delete</button>' +
                             '</div>';
@@ -43,12 +46,41 @@
                     if (path) window.RootFolders.testPath(path);
                 };
             });
+            listEl.querySelectorAll('.btn-root-folders-set-default').forEach(function(btn) {
+                btn.onclick = function() {
+                    var idx = parseInt(btn.getAttribute('data-index'), 10);
+                    if (!isNaN(idx)) window.RootFolders.setDefault(idx);
+                };
+            });
             listEl.querySelectorAll('.btn-root-folders-delete').forEach(function(btn) {
                 btn.onclick = function() {
                     var idx = parseInt(btn.getAttribute('data-index'), 10);
                     if (!isNaN(idx)) window.RootFolders.deleteFolder(idx);
                 };
             });
+        },
+
+        setDefault: function(index) {
+            if (typeof index !== 'number' || index < 0) return;
+            fetch('./api/movie-hunt/root-folders/' + index + '/default', { method: 'PATCH' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Default root folder updated.', 'success');
+                        }
+                        window.RootFolders.refreshList();
+                    } else {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification(data.message || 'Failed to set default.', 'error');
+                        }
+                    }
+                })
+                .catch(function(err) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(err.message || 'Failed to set default.', 'error');
+                    }
+                });
         },
 
         testPath: function(path) {

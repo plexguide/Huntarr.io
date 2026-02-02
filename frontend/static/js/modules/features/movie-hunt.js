@@ -99,11 +99,44 @@
             if (rootFolderSelect) {
                 rootFolderSelect.innerHTML = '<option value="">Loading...</option>';
             }
+            var qualitySelect = document.getElementById('movie-hunt-request-quality-profile');
+            if (qualitySelect) {
+                qualitySelect.innerHTML = '<option value="">Loading...</option>';
+            }
             submitBtn.disabled = false;
             submitBtn.textContent = 'Request';
             modal.style.display = 'flex';
             document.body.classList.add('requestarr-modal-open');
             this.loadMovieHuntRequestRootFolders();
+            this.loadMovieHuntQualityProfiles();
+        },
+
+        loadMovieHuntQualityProfiles() {
+            var qualitySelect = document.getElementById('movie-hunt-request-quality-profile');
+            if (!qualitySelect) return;
+            fetch('./api/profiles')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var list = (data && data.profiles) ? data.profiles : [];
+                    qualitySelect.innerHTML = '';
+                    list.forEach(function(p) {
+                        var name = (p && p.name) ? String(p.name).trim() : '';
+                        if (!name) return;
+                        var opt = document.createElement('option');
+                        opt.value = name;
+                        opt.textContent = p.is_default ? name + ' (Default)' : name;
+                        qualitySelect.appendChild(opt);
+                    });
+                    if (list.length === 0) {
+                        var emptyOpt = document.createElement('option');
+                        emptyOpt.value = '';
+                        emptyOpt.textContent = 'No profiles';
+                        qualitySelect.appendChild(emptyOpt);
+                    }
+                })
+                .catch(function() {
+                    qualitySelect.innerHTML = '<option value="">No profiles</option>';
+                });
         },
 
         loadMovieHuntRequestRootFolders() {
@@ -116,14 +149,20 @@
                     var valid = folders.filter(function(f) { return (f.path || '').trim(); });
                     rootFolderSelect.innerHTML = '';
                     if (valid.length > 0) {
-                        valid.forEach(function(rf, idx) {
+                        var defaultPath = null;
+                        valid.forEach(function(rf) {
+                            if (rf.is_default) defaultPath = (rf.path || '').trim();
+                        });
+                        if (!defaultPath && valid[0]) defaultPath = (valid[0].path || '').trim();
+                        valid.forEach(function(rf) {
                             var path = (rf.path || '').trim();
                             var freeSpace = rf.freeSpace;
                             var label = path + (freeSpace != null ? ' (' + Math.round(freeSpace / 1e9) + ' GB free)' : '');
+                            if (rf.is_default) label += ' (Default)';
                             var opt = document.createElement('option');
                             opt.value = path;
                             opt.textContent = label;
-                            if (idx === 0) opt.selected = true;
+                            if (path === defaultPath) opt.selected = true;
                             rootFolderSelect.appendChild(opt);
                         });
                     } else {

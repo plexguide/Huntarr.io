@@ -1225,21 +1225,46 @@ def _detect_available_in_root_folder(root_path, title, year):
     return False
 
 
+def _normalize_root_folders(folders):
+    """Ensure list of { path, is_default }; exactly one default. Accepts legacy list of strings."""
+    if not folders:
+        return []
+    out = []
+    for i, f in enumerate(folders):
+        if isinstance(f, str):
+            path = (f or '').strip()
+        else:
+            path = (f.get('path') or '').strip()
+        out.append({'path': path, 'is_default': bool(f.get('is_default') if isinstance(f, dict) else False)})
+    # Ensure exactly one default: if none or multiple, set first as default
+    defaults = [j for j, o in enumerate(out) if o.get('is_default')]
+    if len(defaults) != 1:
+        for j in range(len(out)):
+            out[j]['is_default'] = (j == 0)
+    return out
+
+
 def _get_root_folders_config():
-    """Get Movie Hunt root folders list from database."""
+    """Get Movie Hunt root folders list from database. Returns list of { path, is_default }."""
     from src.primary.utils.database import get_database
     db = get_database()
     config = db.get_app_config('movie_hunt_root_folders')
     if not config or not isinstance(config.get('root_folders'), list):
         return []
-    return config['root_folders']
+    raw = config['root_folders']
+    normalized = _normalize_root_folders(raw)
+    # Migrate legacy format (list of strings) to list of { path, is_default }
+    if raw and isinstance(raw[0], str):
+        db.save_app_config('movie_hunt_root_folders', {'root_folders': normalized})
+    return normalized
 
 
 def _save_root_folders_config(root_folders_list):
     """Save Movie Hunt root folders list to database."""
     from src.primary.utils.database import get_database
     db = get_database()
-    db.save_app_config('movie_hunt_root_folders', {'root_folders': root_folders_list})
+    normalized = _normalize_root_folders(root_folders_list)
+    db.save_app_config('movie_hunt_root_folders', {'root_folders': normalized})
 
 
 TEST_FILENAME = 'movie-hunt.test'
@@ -1247,7 +1272,7 @@ TEST_FILENAME = 'movie-hunt.test'
 
 @common_bp.route('/api/movie-hunt/root-folders', methods=['GET'])
 def api_movie_hunt_root_folders_list():
-    """List Movie Hunt root folders with free space (like Requestarr)."""
+    """List Movie Hunt root folders with free space and is_default (like Requestarr)."""
     import shutil
     try:
         folders = _get_root_folders_config()
@@ -1261,7 +1286,12 @@ def api_movie_hunt_root_folders_list():
                     free_space = usage.free
                 except (OSError, FileNotFoundError):
                     pass
-            out.append({'index': i, 'path': path, 'freeSpace': free_space})
+            out.append({
+                'index': i,
+                'path': path,
+                'freeSpace': free_space,
+                'is_default': bool(f.get('is_default', False)),
+            })
         return jsonify({'root_folders': out}), 200
     except Exception as e:
         logger.exception('Root folders list error')
@@ -1270,7 +1300,7 @@ def api_movie_hunt_root_folders_list():
 
 @common_bp.route('/api/movie-hunt/root-folders', methods=['POST'])
 def api_movie_hunt_root_folders_add():
-    """Add a root folder. Body: { path }."""
+    """Add a root folder. Body: { path }. First folder is default; additional ones are not."""
     try:
         data = request.get_json() or {}
         path = (data.get('path') or '').strip()
@@ -1282,7 +1312,9 @@ def api_movie_hunt_root_folders_add():
         normalized = os.path.normpath(path)
         if any((f.get('path') or '').strip() == normalized for f in folders):
             return jsonify({'success': False, 'message': 'That path is already added'}), 400
-        folders.append({'path': normalized})
+        # First folder is default; additional ones are not
+        is_first = len(folders) == 0
+        folders.append({'path': normalized, 'is_default': is_first})
         _save_root_folders_config(folders)
         return jsonify({'success': True, 'index': len(folders) - 1}), 200
     except Exception as e:
@@ -1292,16 +1324,35 @@ def api_movie_hunt_root_folders_add():
 
 @common_bp.route('/api/movie-hunt/root-folders/<int:index>', methods=['DELETE'])
 def api_movie_hunt_root_folders_delete(index):
-    """Delete root folder at index."""
+    """Delete root folder at index. If default was removed, first remaining becomes default."""
     try:
         folders = _get_root_folders_config()
         if index < 0 or index >= len(folders):
             return jsonify({'success': False, 'message': 'Index out of range'}), 400
+        was_default = folders[index].get('is_default')
         folders.pop(index)
+        if was_default and folders:
+            folders[0]['is_default'] = True
         _save_root_folders_config(folders)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Root folders delete error')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@common_bp.route('/api/movie-hunt/root-folders/<int:index>/default', methods=['PATCH'])
+def api_movie_hunt_root_folders_set_default(index):
+    """Set root folder at index as default; others become non-default."""
+    try:
+        folders = _get_root_folders_config()
+        if index < 0 or index >= len(folders):
+            return jsonify({'success': False, 'message': 'Index out of range'}), 400
+        for i in range(len(folders)):
+            folders[i]['is_default'] = (i == index)
+        _save_root_folders_config(folders)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Root folders set-default error')
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
