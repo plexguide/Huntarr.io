@@ -1017,7 +1017,7 @@ def unlink_plex_from_user(username: str = None) -> bool:
             
         # Check if Plex data exists to unlink
         if not user_data.get('plex_token'):
-            logger.warning("No Plex account linked to unlink")
+            logger.debug("No Plex account linked to unlink - operation successful (no-op)")
             return True  # Not an error, just nothing to do
             
         # If auth_type is plex, we need to handle this carefully
