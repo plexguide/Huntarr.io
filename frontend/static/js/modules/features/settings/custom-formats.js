@@ -92,9 +92,6 @@
                             '</div></div>';
                     }
                     
-                    preformattedHtml += '<div class="add-instance-card" id="custom-formats-add-preformatted-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Pre-Formatted</div></div>';
-                    importedHtml += '<div class="add-instance-card" id="custom-formats-add-imported-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Imported</div></div>';
-                    
                     preformattedGrid.innerHTML = preformattedHtml;
                     importedGrid.innerHTML = importedHtml;
                     
@@ -106,9 +103,9 @@
                     window.CustomFormats._bindCards();
                 })
                 .catch(function() {
-                    preformattedGrid.innerHTML = '<div class="add-instance-card" id="custom-formats-add-preformatted-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Pre-Formatted</div></div>';
-                    importedGrid.innerHTML = '<div class="add-instance-card" id="custom-formats-add-imported-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Imported</div></div>';
-                    window.CustomFormats._bindAddCard();
+                    preformattedGrid.innerHTML = '';
+                    importedGrid.innerHTML = '';
+                    window.CustomFormats._bindAddButtons();
                 });
         },
 
@@ -166,19 +163,19 @@
                     };
                 }
             });
-            window.CustomFormats._bindAddCard();
+            window.CustomFormats._bindAddButtons();
         },
 
-        _bindAddCard: function() {
-            var addPreformattedCard = document.getElementById('custom-formats-add-preformatted-card');
-            var addImportedCard = document.getElementById('custom-formats-add-imported-card');
-            if (addPreformattedCard) {
-                addPreformattedCard.onclick = function() { 
+        _bindAddButtons: function() {
+            var addPreformattedBtn = document.getElementById('add-preformatted-btn');
+            var addImportedBtn = document.getElementById('add-imported-btn');
+            if (addPreformattedBtn) {
+                addPreformattedBtn.onclick = function() { 
                     window.CustomFormats.openAddModal('preformat'); 
                 };
             }
-            if (addImportedCard) {
-                addImportedCard.onclick = function() { 
+            if (addImportedBtn) {
+                addImportedBtn.onclick = function() { 
                     window.CustomFormats.openAddModal('import'); 
                 };
             }

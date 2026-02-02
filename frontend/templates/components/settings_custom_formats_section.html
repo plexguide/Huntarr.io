@@ -7,15 +7,17 @@
                     <h3>Pre-Formatted Custom Formats</h3>
                     <p class="custom-formats-help">TRaSH Guides formats. Click Add to select from categories.</p>
                 </div>
-                <button type="button" class="btn-delete-all" id="delete-all-preformatted" title="Delete all pre-formatted custom formats">
-                    <i class="fas fa-trash-alt"></i> Delete All
-                </button>
+                <div class="custom-formats-header-actions">
+                    <button type="button" class="btn-add-format" id="add-preformatted-btn" title="Add pre-formatted custom formats">
+                        <i class="fas fa-plus-circle"></i> Add Pre-Formatted
+                    </button>
+                    <button type="button" class="btn-delete-all" id="delete-all-preformatted" title="Delete all pre-formatted custom formats">
+                        <i class="fas fa-trash-alt"></i> Delete All
+                    </button>
+                </div>
             </div>
             <div class="instance-card-grid" id="custom-formats-preformatted-grid">
-                <div class="add-instance-card" id="custom-formats-add-preformatted-card" data-app-type="custom-format">
-                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
-                    <div class="add-text">Add Pre-Formatted</div>
-                </div>
+                <!-- Cards will be dynamically populated here -->
             </div>
         </div>
 
@@ -26,15 +28,17 @@
                     <h3>Imported Custom Formats</h3>
                     <p class="custom-formats-help">Your custom JSON imports. Click Add to paste your own JSON.</p>
                 </div>
-                <button type="button" class="btn-delete-all" id="delete-all-imported" title="Delete all imported custom formats">
-                    <i class="fas fa-trash-alt"></i> Delete All
-                </button>
+                <div class="custom-formats-header-actions">
+                    <button type="button" class="btn-add-format" id="add-imported-btn" title="Add imported custom format">
+                        <i class="fas fa-plus-circle"></i> Add Imported
+                    </button>
+                    <button type="button" class="btn-delete-all" id="delete-all-imported" title="Delete all imported custom formats">
+                        <i class="fas fa-trash-alt"></i> Delete All
+                    </button>
+                </div>
             </div>
             <div class="instance-card-grid" id="custom-formats-imported-grid">
-                <div class="add-instance-card" id="custom-formats-add-imported-card" data-app-type="custom-format">
-                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
-                    <div class="add-text">Add Imported</div>
-                </div>
+                <!-- Cards will be dynamically populated here -->
             </div>
         </div>
     </div>
@@ -114,6 +118,37 @@
         align-items: flex-start;
         margin-bottom: 20px;
         gap: 20px;
+    }
+    .custom-formats-header-actions {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+    .btn-add-format {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #f8fafc;
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        border: 1px solid rgba(5, 150, 105, 0.4);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+    }
+    .btn-add-format:hover {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+        transform: translateY(-1px);
+        border-color: rgba(5, 150, 105, 0.6);
+    }
+    .btn-add-format:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
     }
     .btn-delete-all {
         padding: 8px 16px;
