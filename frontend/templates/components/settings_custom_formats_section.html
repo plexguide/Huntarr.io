@@ -1,12 +1,25 @@
 <section id="settingsCustomFormatsSection" class="content-section" style="display: none;">
     <div id="customFormatsManagementContainer" class="app-content-panel">
+        <!-- Pre-Formatted Section -->
         <div class="settings-group custom-formats-settings-group">
-            <h3>Custom Formats</h3>
-            <p class="custom-formats-help">Radarr-style custom format JSONs from TRaSH Guides. Add Custom Format → choose Pre-Formatted, pick categories and check the formats you want, then Add. Already-added formats stay checked (disabled). Or use Import to paste your own JSON.</p>
-            <div class="instance-card-grid" id="custom-formats-grid">
-                <div class="add-instance-card" id="custom-formats-add-card" data-app-type="custom-format">
+            <h3>Pre-Formatted Custom Formats</h3>
+            <p class="custom-formats-help">TRaSH Guides formats. Click Add to select from categories.</p>
+            <div class="instance-card-grid" id="custom-formats-preformatted-grid">
+                <div class="add-instance-card" id="custom-formats-add-preformatted-card" data-app-type="custom-format">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
-                    <div class="add-text">Add Custom Format</div>
+                    <div class="add-text">Add Pre-Formatted</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imported Section -->
+        <div class="settings-group custom-formats-settings-group">
+            <h3>Imported Custom Formats</h3>
+            <p class="custom-formats-help">Your custom JSON imports. Click Add to paste your own JSON.</p>
+            <div class="instance-card-grid" id="custom-formats-imported-grid">
+                <div class="add-instance-card" id="custom-formats-add-imported-card" data-app-type="custom-format">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Add Imported</div>
                 </div>
             </div>
         </div>
@@ -81,19 +94,36 @@
     }
     .custom-formats-settings-group h3 { margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 600; color: #f8fafc; }
     .custom-formats-help { margin: 0 0 20px 0; color: #94a3b8; font-size: 0.95rem; }
-    #custom-formats-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    #custom-formats-preformatted-grid,
+    #custom-formats-imported-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    #custom-formats-preformatted-grid .custom-format-card,
+    #custom-formats-imported-grid .custom-format-card,
     #custom-formats-grid .custom-format-card {
         padding: 12px 14px; border-radius: 10px; display: flex; flex-direction: column; height: 100%; min-height: 100px;
         background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
         border: 1px solid rgba(148, 163, 184, 0.1);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+    #custom-formats-preformatted-grid .custom-format-card:hover,
+    #custom-formats-imported-grid .custom-format-card:hover,
     #custom-formats-grid .custom-format-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); border-color: rgba(99,102,241,0.3); }
+    #custom-formats-preformatted-grid .custom-format-card-header,
+    #custom-formats-imported-grid .custom-format-card-header,
     #custom-formats-grid .custom-format-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    #custom-formats-preformatted-grid .custom-format-card-title,
+    #custom-formats-imported-grid .custom-format-card-title,
     #custom-formats-grid .custom-format-card-title { font-size: 0.95rem; font-weight: 600; color: #f8fafc; display: flex; align-items: center; gap: 8px; word-break: break-all; }
+    #custom-formats-preformatted-grid .custom-format-card-body,
+    #custom-formats-imported-grid .custom-format-card-body,
     #custom-formats-grid .custom-format-card-body { flex: 1; min-height: 0; color: #94a3b8; font-size: 0.85rem; }
+    #custom-formats-preformatted-grid .custom-format-card-footer,
+    #custom-formats-imported-grid .custom-format-card-footer,
     #custom-formats-grid .custom-format-card-footer { display: flex; gap: 6px; margin-top: 0; }
+    #custom-formats-preformatted-grid .custom-format-card .btn-card,
+    #custom-formats-imported-grid .custom-format-card .btn-card,
     #custom-formats-grid .custom-format-card .btn-card { padding: 6px 10px; font-size: 0.8rem; }
+    #custom-formats-preformatted-grid .add-instance-card,
+    #custom-formats-imported-grid .add-instance-card,
     #custom-formats-grid .add-instance-card { min-height: 100px; }
     .custom-format-modal { position: fixed; top:0;left:0;right:0;bottom:0; z-index: 1000; display: none; align-items: center; justify-content: center; }
     .custom-format-modal[style*="display: flex"] { display: flex !important; }

@@ -10,69 +10,100 @@
         _editingIndex: null,
 
         refreshList: function() {
-            var grid = document.getElementById('custom-formats-grid');
-            if (!grid) return;
+            var preformattedGrid = document.getElementById('custom-formats-preformatted-grid');
+            var importedGrid = document.getElementById('custom-formats-imported-grid');
+            if (!preformattedGrid || !importedGrid) return;
+            
             fetch('./api/custom-formats')
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var list = (data && data.custom_formats) ? data.custom_formats : [];
                     window.CustomFormats._list = list;
-                    var html = '';
+                    
+                    var preformattedHtml = '';
+                    var importedHtml = '';
+                    
                     for (var i = 0; i < list.length; i++) {
                         var item = list[i];
                         var title = (item.title || item.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        var sourceLabel = (item.source || 'import').toLowerCase() === 'preformat' ? 'Pre-Formatted' : 'Imported';
-                        html += '<div class="custom-format-card instance-card" data-index="' + i + '" data-app-type="custom-format">' +
+                        var isPreformatted = (item.source || 'import').toLowerCase() === 'preformat';
+                        
+                        var cardHtml = '<div class="custom-format-card instance-card" data-index="' + i + '" data-app-type="custom-format">' +
                             '<div class="custom-format-card-header">' +
                             '<div class="custom-format-card-title"><i class="fas fa-code"></i><span>' + title + '</span></div>' +
                             '</div>' +
-                            '<div class="custom-format-card-body"><span class="custom-format-card-name">' + sourceLabel + '</span></div>' +
                             '<div class="custom-format-card-footer">' +
-                            '<button type="button" class="btn-card view" data-index="' + i + '"><i class="fas fa-eye"></i> View JSON</button>' +
+                            '<button type="button" class="btn-card view" data-index="' + i + '"><i class="fas fa-eye"></i> JSON</button>' +
                             '<button type="button" class="btn-card edit" data-index="' + i + '"><i class="fas fa-edit"></i> Edit</button>' +
                             '<button type="button" class="btn-card delete" data-index="' + i + '"><i class="fas fa-trash"></i> Delete</button>' +
                             '</div></div>';
+                        
+                        if (isPreformatted) {
+                            preformattedHtml += cardHtml;
+                        } else {
+                            importedHtml += cardHtml;
+                        }
                     }
-                    html += '<div class="add-instance-card" id="custom-formats-add-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Custom Format</div></div>';
-                    grid.innerHTML = html;
+                    
+                    preformattedHtml += '<div class="add-instance-card" id="custom-formats-add-preformatted-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Pre-Formatted</div></div>';
+                    importedHtml += '<div class="add-instance-card" id="custom-formats-add-imported-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Imported</div></div>';
+                    
+                    preformattedGrid.innerHTML = preformattedHtml;
+                    importedGrid.innerHTML = importedHtml;
                     window.CustomFormats._bindCards();
                 })
                 .catch(function() {
-                    grid.innerHTML = '<div class="add-instance-card" id="custom-formats-add-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Custom Format</div></div>';
+                    preformattedGrid.innerHTML = '<div class="add-instance-card" id="custom-formats-add-preformatted-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Pre-Formatted</div></div>';
+                    importedGrid.innerHTML = '<div class="add-instance-card" id="custom-formats-add-imported-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Imported</div></div>';
                     window.CustomFormats._bindAddCard();
                 });
         },
 
         _bindCards: function() {
-            var grid = document.getElementById('custom-formats-grid');
-            if (!grid) return;
-            grid.querySelectorAll('.custom-format-card .btn-card.view').forEach(function(btn) {
-                btn.onclick = function(e) {
-                    e.stopPropagation();
-                    var idx = parseInt(btn.getAttribute('data-index'), 10);
-                    if (!isNaN(idx)) window.CustomFormats.openViewModal(idx);
-                };
-            });
-            grid.querySelectorAll('.custom-format-card .btn-card.edit').forEach(function(btn) {
-                btn.onclick = function(e) {
-                    e.stopPropagation();
-                    var idx = parseInt(btn.getAttribute('data-index'), 10);
-                    if (!isNaN(idx)) window.CustomFormats.openEditModal(idx);
-                };
-            });
-            grid.querySelectorAll('.custom-format-card .btn-card.delete').forEach(function(btn) {
-                btn.onclick = function(e) {
-                    e.stopPropagation();
-                    var idx = parseInt(btn.getAttribute('data-index'), 10);
-                    if (!isNaN(idx)) window.CustomFormats.deleteFormat(idx);
-                };
+            var allCards = document.querySelectorAll('.custom-format-card');
+            allCards.forEach(function(card) {
+                var viewBtn = card.querySelector('.btn-card.view');
+                var editBtn = card.querySelector('.btn-card.edit');
+                var deleteBtn = card.querySelector('.btn-card.delete');
+                
+                if (viewBtn) {
+                    viewBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        var idx = parseInt(viewBtn.getAttribute('data-index'), 10);
+                        if (!isNaN(idx)) window.CustomFormats.openViewModal(idx);
+                    };
+                }
+                if (editBtn) {
+                    editBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        var idx = parseInt(editBtn.getAttribute('data-index'), 10);
+                        if (!isNaN(idx)) window.CustomFormats.openEditModal(idx);
+                    };
+                }
+                if (deleteBtn) {
+                    deleteBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        var idx = parseInt(deleteBtn.getAttribute('data-index'), 10);
+                        if (!isNaN(idx)) window.CustomFormats.deleteFormat(idx);
+                    };
+                }
             });
             window.CustomFormats._bindAddCard();
         },
 
         _bindAddCard: function() {
-            var addCard = document.getElementById('custom-formats-add-card');
-            if (addCard) addCard.onclick = function() { window.CustomFormats.openAddModal(); };
+            var addPreformattedCard = document.getElementById('custom-formats-add-preformatted-card');
+            var addImportedCard = document.getElementById('custom-formats-add-imported-card');
+            if (addPreformattedCard) {
+                addPreformattedCard.onclick = function() { 
+                    window.CustomFormats.openAddModal('preformat'); 
+                };
+            }
+            if (addImportedCard) {
+                addImportedCard.onclick = function() { 
+                    window.CustomFormats.openAddModal('import'); 
+                };
+            }
         },
 
         openViewModal: function(index) {
@@ -98,16 +129,51 @@
             document.body.classList.remove('custom-format-modal-open');
         },
 
-        openAddModal: function() {
+        _generateRandomSuffix: function() {
+            var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            var suffix = '';
+            for (var i = 0; i < 4; i++) {
+                suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return suffix;
+        },
+
+        _checkTitleCollision: function(title) {
+            var list = window.CustomFormats._list || [];
+            var preformattedTitles = {};
+            for (var i = 0; i < list.length; i++) {
+                if ((list[i].source || 'import').toLowerCase() === 'preformat') {
+                    var t = (list[i].title || list[i].name || '').toLowerCase();
+                    if (t) preformattedTitles[t] = true;
+                }
+            }
+            var lowerTitle = title.toLowerCase();
+            if (preformattedTitles[lowerTitle]) {
+                return title + '-' + window.CustomFormats._generateRandomSuffix();
+            }
+            return title;
+        },
+
+        openAddModal: function(source) {
             window.CustomFormats._editingIndex = null;
-            document.getElementById('custom-format-modal-title').textContent = 'Add Custom Format';
+            
+            if (source === 'preformat') {
+                document.getElementById('custom-format-modal-title').textContent = 'Add Pre-Formatted';
+                document.getElementById('custom-format-source-preformat').checked = true;
+                document.getElementById('custom-format-preformat-area').style.display = 'block';
+                var importArea = document.getElementById('custom-format-import-area');
+                if (importArea) importArea.style.display = 'none';
+                window.CustomFormats._loadPreformatTree();
+            } else {
+                document.getElementById('custom-format-modal-title').textContent = 'Add Imported';
+                document.getElementById('custom-format-source-import').checked = true;
+                document.getElementById('custom-format-preformat-area').style.display = 'none';
+                var importArea = document.getElementById('custom-format-import-area');
+                if (importArea) importArea.style.display = 'block';
+            }
+            
             document.getElementById('custom-format-modal-save').innerHTML = '<i class="fas fa-plus"></i> Add';
-            document.getElementById('custom-format-source-preformat').checked = true;
             document.getElementById('custom-format-json-textarea').value = '';
-            document.getElementById('custom-format-preformat-area').style.display = 'block';
-            var importArea = document.getElementById('custom-format-import-area');
-            if (importArea) importArea.style.display = 'none';
-            window.CustomFormats._loadPreformatTree();
             document.getElementById('custom-format-modal').style.display = 'flex';
             document.body.classList.add('custom-format-modal-open');
         },
@@ -368,6 +434,7 @@
             }
             var title = window.CustomFormats._nameFromJson(jsonRaw);
             if (title === '—') title = 'Unnamed';
+            title = window.CustomFormats._checkTitleCollision(title);
             var body = { source: 'import', custom_format_json: jsonRaw, title: title };
 
             fetch('./api/custom-formats', {
