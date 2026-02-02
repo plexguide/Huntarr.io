@@ -34,7 +34,6 @@
             '<div class="instance-name instance-name-with-priority"><i class="fas fa-id-card"></i><span>' + name + '</span>' + (isDefault ? '<span class="default-badge">Default</span>' : '') + '</div>' +
             '<div class="instance-card-header-actions">' +
             '<button type="button" class="btn-icon btn-clone-profile" data-app-type="profile" data-instance-index="' + index + '" title="Duplicate profile" aria-label="Duplicate profile"><i class="fas fa-clone"></i></button>' +
-            '<div class="instance-status-icon status-connected"><i class="fas fa-check-circle"></i></div>' +
             '</div></div>' +
             '<div class="instance-card-body">' +
             '<div class="profile-card-quality-tags">' + tagsHtml + '</div>' +

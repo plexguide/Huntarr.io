@@ -420,27 +420,28 @@ PROFILES_DEFAULT_NAME = 'Standard'
 # Matches Radarr quality list: Raw-HD, BR-DISK, Remux/WEB/Bluray/HDTV by resolution, SDTV, DVD, then scene/screener (DVDSCR, REGIONAL, TELECINE, TELESYNC, CAM, WORKPRINT, Unknown)
 PROFILES_DEFAULT_QUALITIES = [
     {'id': 'rawhd', 'name': 'Raw-HD', 'enabled': False, 'order': 0},
-    {'id': 'brdisk', 'name': 'BR-DISK', 'enabled': True, 'order': 1},
-    {'id': 'remux2160', 'name': 'Remux-2160p', 'enabled': True, 'order': 2},
+    {'id': 'brdisk', 'name': 'BR-DISK', 'enabled': False, 'order': 1},
+    {'id': 'remux2160', 'name': 'Remux-2160p', 'enabled': False, 'order': 2},
     {'id': 'web2160', 'name': 'WEB 2160p', 'enabled': True, 'order': 3},
     {'id': 'bluray2160', 'name': 'Bluray-2160p', 'enabled': True, 'order': 4},
     {'id': 'hdtv2160', 'name': 'HDTV-2160p', 'enabled': True, 'order': 5},
-    {'id': 'web1080', 'name': 'WEB 1080p', 'enabled': True, 'order': 6},
-    {'id': 'bluray1080', 'name': 'Bluray-1080p', 'enabled': True, 'order': 7},
-    {'id': 'hdtv1080', 'name': 'HDTV-1080p', 'enabled': True, 'order': 8},
-    {'id': 'web720', 'name': 'WEB 720p', 'enabled': True, 'order': 9},
-    {'id': 'bluray720', 'name': 'Bluray-720p', 'enabled': True, 'order': 10},
-    {'id': 'hdtv720', 'name': 'HDTV-720p', 'enabled': True, 'order': 11},
-    {'id': 'web480', 'name': 'WEB 480p', 'enabled': True, 'order': 12},
-    {'id': 'sdtv', 'name': 'SDTV', 'enabled': True, 'order': 13},
-    {'id': 'dvd', 'name': 'DVD', 'enabled': True, 'order': 14},
-    {'id': 'dvdscr', 'name': 'DVDSCR', 'enabled': False, 'order': 15},
-    {'id': 'regional', 'name': 'REGIONAL', 'enabled': False, 'order': 16},
-    {'id': 'telecine', 'name': 'TELECINE', 'enabled': False, 'order': 17},
-    {'id': 'telesync', 'name': 'TELESYNC', 'enabled': False, 'order': 18},
-    {'id': 'cam', 'name': 'CAM', 'enabled': False, 'order': 19},
-    {'id': 'workprint', 'name': 'WORKPRINT', 'enabled': False, 'order': 20},
-    {'id': 'unknown', 'name': 'Unknown', 'enabled': False, 'order': 21},
+    {'id': 'remux1080', 'name': 'Remux-1080p', 'enabled': False, 'order': 6},
+    {'id': 'web1080', 'name': 'WEB 1080p', 'enabled': True, 'order': 7},
+    {'id': 'bluray1080', 'name': 'Bluray-1080p', 'enabled': True, 'order': 8},
+    {'id': 'hdtv1080', 'name': 'HDTV-1080p', 'enabled': True, 'order': 9},
+    {'id': 'web720', 'name': 'WEB 720p', 'enabled': True, 'order': 10},
+    {'id': 'bluray720', 'name': 'Bluray-720p', 'enabled': True, 'order': 11},
+    {'id': 'hdtv720', 'name': 'HDTV-720p', 'enabled': True, 'order': 12},
+    {'id': 'web480', 'name': 'WEB 480p', 'enabled': True, 'order': 13},
+    {'id': 'sdtv', 'name': 'SDTV', 'enabled': True, 'order': 14},
+    {'id': 'dvd', 'name': 'DVD', 'enabled': False, 'order': 15},
+    {'id': 'dvdscr', 'name': 'DVDSCR', 'enabled': False, 'order': 16},
+    {'id': 'regional', 'name': 'REGIONAL', 'enabled': False, 'order': 17},
+    {'id': 'telecine', 'name': 'TELECINE', 'enabled': False, 'order': 18},
+    {'id': 'telesync', 'name': 'TELESYNC', 'enabled': False, 'order': 19},
+    {'id': 'cam', 'name': 'CAM', 'enabled': False, 'order': 20},
+    {'id': 'workprint', 'name': 'WORKPRINT', 'enabled': False, 'order': 21},
+    {'id': 'unknown', 'name': 'Unknown', 'enabled': False, 'order': 22},
 ]
 
 
@@ -451,8 +452,8 @@ def _profile_defaults():
         'is_default': True,
         'upgrades_allowed': True,
         'upgrade_until_quality': 'WEB 2160p',
-        'min_custom_format_score': -10000,
-        'upgrade_until_custom_format_score': 5500,
+        'min_custom_format_score': 0,
+        'upgrade_until_custom_format_score': 0,
         'upgrade_score_increment': 100,
         'language': 'English',
         'qualities': [dict(q) for q in PROFILES_DEFAULT_QUALITIES],
@@ -470,13 +471,25 @@ def _normalize_profile(p):
             out[k] = v
     if p and isinstance(p.get('qualities'), list) and len(p['qualities']) > 0:
         out['qualities'] = []
+        seen_ids = set()
         for q in p['qualities']:
             if isinstance(q, dict) and q.get('id') is not None:
+                qid = str(q.get('id', ''))
+                seen_ids.add(qid)
                 out['qualities'].append({
-                    'id': str(q.get('id', '')),
+                    'id': qid,
                     'name': str(q.get('name', q.get('id', ''))),
                     'enabled': bool(q.get('enabled', True)),
                     'order': int(q.get('order', 0)),
+                })
+        # Merge in any default qualities missing from this profile (e.g. new Remux-1080p)
+        for dq in PROFILES_DEFAULT_QUALITIES:
+            if dq.get('id') not in seen_ids:
+                out['qualities'].append({
+                    'id': str(dq.get('id', '')),
+                    'name': str(dq.get('name', '')),
+                    'enabled': bool(dq.get('enabled', False)),
+                    'order': int(dq.get('order', 0)),
                 })
         out['qualities'].sort(key=lambda x: (x.get('order', 0), x.get('id', '')))
     return out
