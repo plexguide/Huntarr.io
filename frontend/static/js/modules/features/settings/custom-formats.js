@@ -8,6 +8,7 @@
     window.CustomFormats = {
         _list: [],
         _editingIndex: null,
+        _modalMode: null,
 
         refreshList: function() {
             var preformattedGrid = document.getElementById('custom-formats-preformatted-grid');
@@ -156,17 +157,16 @@
 
         openAddModal: function(source) {
             window.CustomFormats._editingIndex = null;
+            window.CustomFormats._modalMode = source;
             
             if (source === 'preformat') {
                 document.getElementById('custom-format-modal-title').textContent = 'Add Pre-Formatted';
-                document.getElementById('custom-format-source-preformat').checked = true;
                 document.getElementById('custom-format-preformat-area').style.display = 'block';
                 var importArea = document.getElementById('custom-format-import-area');
                 if (importArea) importArea.style.display = 'none';
                 window.CustomFormats._loadPreformatTree();
             } else {
                 document.getElementById('custom-format-modal-title').textContent = 'Add Imported';
-                document.getElementById('custom-format-source-import').checked = true;
                 document.getElementById('custom-format-preformat-area').style.display = 'none';
                 var importArea = document.getElementById('custom-format-import-area');
                 if (importArea) importArea.style.display = 'block';
@@ -369,7 +369,7 @@
                 return;
             }
 
-            var isPre = document.getElementById('custom-format-source-preformat').checked;
+            var isPre = window.CustomFormats._modalMode === 'preformat';
             if (isPre) {
                 var tree = document.getElementById('custom-format-preformat-tree');
                 var checkboxes = tree ? tree.querySelectorAll('input[type="checkbox"][data-preformat-id]:checked:not(:disabled)') : [];
@@ -385,7 +385,25 @@
                 }
                 var done = 0;
                 var failed = 0;
-                toAdd.forEach(function(item) {
+                var currentIndex = 0;
+                
+                function addNext() {
+                    if (currentIndex >= toAdd.length) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            if (failed === 0) {
+                                window.huntarrUI.showNotification('Added ' + done + ' format(s).', 'success');
+                            } else {
+                                window.huntarrUI.showNotification('Added ' + done + ', failed ' + failed + '.', failed ? 'error' : 'success');
+                            }
+                        }
+                        window.CustomFormats.closeModal();
+                        window.CustomFormats.refreshList();
+                        return;
+                    }
+                    
+                    var item = toAdd[currentIndex];
+                    currentIndex++;
+                    
                     fetch('./api/custom-formats', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -394,29 +412,15 @@
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
                             if (data.success) done++; else failed++;
-                            if (done + failed === toAdd.length) {
-                                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                    if (failed === 0) {
-                                        window.huntarrUI.showNotification('Added ' + done + ' format(s).', 'success');
-                                    } else {
-                                        window.huntarrUI.showNotification('Added ' + done + ', failed ' + failed + '.', failed ? 'error' : 'success');
-                                    }
-                                }
-                                window.CustomFormats.closeModal();
-                                window.CustomFormats.refreshList();
-                            }
+                            addNext();
                         })
                         .catch(function() {
                             failed++;
-                            if (done + failed === toAdd.length) {
-                                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                    window.huntarrUI.showNotification('Added ' + done + ', failed ' + failed + '.', 'error');
-                                }
-                                window.CustomFormats.closeModal();
-                                window.CustomFormats.refreshList();
-                            }
+                            addNext();
                         });
-                });
+                }
+                
+                addNext();
                 return;
             }
             var jsonRaw = document.getElementById('custom-format-json-textarea').value.trim();
