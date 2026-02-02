@@ -154,6 +154,28 @@
     }
     #custom-formats-preformatted-grid,
     #custom-formats-imported-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .custom-formats-group-header {
+        grid-column: 1 / -1;
+        padding: 10px 14px;
+        margin-top: 12px;
+        margin-bottom: 8px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+        border-left: 3px solid rgba(99, 102, 241, 0.6);
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #c7d2fe;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .custom-formats-group-header:first-of-type {
+        margin-top: 0;
+    }
+    .custom-formats-group-header i {
+        color: rgba(99, 102, 241, 0.8);
+        font-size: 0.9rem;
+    }
     #custom-formats-preformatted-grid .custom-format-card,
     #custom-formats-imported-grid .custom-format-card,
     #custom-formats-grid .custom-format-card {

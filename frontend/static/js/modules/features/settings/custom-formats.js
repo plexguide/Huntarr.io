@@ -21,17 +21,67 @@
                     var list = (data && data.custom_formats) ? data.custom_formats : [];
                     window.CustomFormats._list = list;
                     
-                    var preformattedHtml = '';
-                    var importedHtml = '';
+                    var preformattedByGroup = {};
+                    var importedItems = [];
                     var preformattedCount = 0;
                     var importedCount = 0;
                     
                     for (var i = 0; i < list.length; i++) {
                         var item = list[i];
-                        var title = (item.title || item.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         var isPreformatted = (item.source || 'import').toLowerCase() === 'preformat';
                         
-                        var cardHtml = '<div class="custom-format-card instance-card" data-index="' + i + '" data-app-type="custom-format">' +
+                        if (isPreformatted) {
+                            var preformatId = item.preformat_id || '';
+                            var groupKey = window.CustomFormats._getGroupFromPreformatId(preformatId);
+                            if (!preformattedByGroup[groupKey]) {
+                                preformattedByGroup[groupKey] = [];
+                            }
+                            preformattedByGroup[groupKey].push({item: item, index: i});
+                            preformattedCount++;
+                        } else {
+                            importedItems.push({item: item, index: i});
+                            importedCount++;
+                        }
+                    }
+                    
+                    var preformattedHtml = '';
+                    var sortedGroups = Object.keys(preformattedByGroup).sort();
+                    
+                    for (var g = 0; g < sortedGroups.length; g++) {
+                        var groupKey = sortedGroups[g];
+                        var groupItems = preformattedByGroup[groupKey];
+                        var groupName = window.CustomFormats._formatGroupName(groupKey);
+                        
+                        preformattedHtml += '<div class="custom-formats-group-header">' +
+                            '<i class="fas fa-folder-open"></i> ' + groupName +
+                            '</div>';
+                        
+                        for (var j = 0; j < groupItems.length; j++) {
+                            var entry = groupItems[j];
+                            var item = entry.item;
+                            var i = entry.index;
+                            var title = (item.title || item.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            
+                            preformattedHtml += '<div class="custom-format-card instance-card" data-index="' + i + '" data-app-type="custom-format">' +
+                                '<div class="custom-format-card-header">' +
+                                '<div class="custom-format-card-title"><i class="fas fa-code"></i><span>' + title + '</span></div>' +
+                                '</div>' +
+                                '<div class="custom-format-card-footer">' +
+                                '<button type="button" class="btn-card view" data-index="' + i + '"><i class="fas fa-eye"></i> JSON</button>' +
+                                '<button type="button" class="btn-card edit" data-index="' + i + '"><i class="fas fa-edit"></i> Edit</button>' +
+                                '<button type="button" class="btn-card delete" data-index="' + i + '"><i class="fas fa-trash"></i> Delete</button>' +
+                                '</div></div>';
+                        }
+                    }
+                    
+                    var importedHtml = '';
+                    for (var k = 0; k < importedItems.length; k++) {
+                        var entry = importedItems[k];
+                        var item = entry.item;
+                        var i = entry.index;
+                        var title = (item.title || item.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        
+                        importedHtml += '<div class="custom-format-card instance-card" data-index="' + i + '" data-app-type="custom-format">' +
                             '<div class="custom-format-card-header">' +
                             '<div class="custom-format-card-title"><i class="fas fa-code"></i><span>' + title + '</span></div>' +
                             '</div>' +
@@ -40,14 +90,6 @@
                             '<button type="button" class="btn-card edit" data-index="' + i + '"><i class="fas fa-edit"></i> Edit</button>' +
                             '<button type="button" class="btn-card delete" data-index="' + i + '"><i class="fas fa-trash"></i> Delete</button>' +
                             '</div></div>';
-                        
-                        if (isPreformatted) {
-                            preformattedHtml += cardHtml;
-                            preformattedCount++;
-                        } else {
-                            importedHtml += cardHtml;
-                            importedCount++;
-                        }
                     }
                     
                     preformattedHtml += '<div class="add-instance-card" id="custom-formats-add-preformatted-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Pre-Formatted</div></div>';
@@ -68,6 +110,31 @@
                     importedGrid.innerHTML = '<div class="add-instance-card" id="custom-formats-add-imported-card" data-app-type="custom-format"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Imported</div></div>';
                     window.CustomFormats._bindAddCard();
                 });
+        },
+
+        _getGroupFromPreformatId: function(preformatId) {
+            if (!preformatId) return 'Other';
+            var parts = preformatId.split('.');
+            return parts[0] || 'Other';
+        },
+
+        _formatGroupName: function(groupKey) {
+            if (!groupKey || groupKey === 'Other') return 'Other';
+            var categoryNames = {
+                'movie-versions': 'Movie Versions',
+                'hdr-formats': 'HDR Formats',
+                'audio-formats': 'Audio Formats',
+                'audio-channels': 'Audio Channels',
+                'audio-advanced': 'Audio Advanced',
+                'movie-meta': 'Movie Metadata',
+                'streaming-services': 'Streaming Services',
+                'unwanted': 'Unwanted',
+                'misc': 'Miscellaneous',
+                'optional': 'Optional'
+            };
+            return categoryNames[groupKey] || groupKey.split('-').map(function(s) {
+                return s.charAt(0).toUpperCase() + s.slice(1);
+            }).join(' ');
         },
 
         _bindCards: function() {
