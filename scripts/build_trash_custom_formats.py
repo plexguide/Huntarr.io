@@ -2,11 +2,14 @@
 """
 Build src/primary/data/trash_custom_formats.json from TRaSH categories and formats.
 Fetches full custom format JSON from TRaSH-Guides/Guides (GitHub) when available.
+Falls back to local HTML file if available.
 Run from repo root: python scripts/build_trash_custom_formats.py
 """
 import json
 import time
+import re
 from pathlib import Path
+from html import unescape
 
 try:
     import requests
@@ -18,6 +21,7 @@ OUT_PATH = REPO_ROOT / "src" / "primary" / "data" / "trash_custom_formats.json"
 TRASH_CF_BASE = "https://raw.githubusercontent.com/TRaSH-Guides/Guides/master/docs/json/radarr/cf"
 FETCH_TIMEOUT = 15
 FETCH_DELAY_SEC = 0.25
+LOCAL_HTML_PATH = Path.home() / "Huntarr" / "trashinfo" / "Collection of Custom Formats - TRaSH Guides.html"
 
 
 def minimal_cf_json(name):
@@ -45,6 +49,44 @@ def fetch_trash_format_json(filename):
         return r.json()
     except Exception:
         return None
+
+
+def load_local_html_formats():
+    """Load all custom format JSONs from local HTML file if available."""
+    if not LOCAL_HTML_PATH.exists():
+        return {}
+    
+    try:
+        with open(LOCAL_HTML_PATH, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Find all JSON code blocks
+        code_pattern = r'<pre id="__code_\d+">(.*?)</pre>'
+        matches = re.findall(code_pattern, content, re.DOTALL)
+        
+        formats_by_name = {}
+        for match in matches:
+            clean = re.sub(r'<[^>]+>', '', match)
+            clean = unescape(clean)
+            clean = ' '.join(clean.split())
+            
+            if not clean.startswith('{'):
+                continue
+            
+            try:
+                obj = json.loads(clean)
+                name = obj.get('name', '')
+                if name:
+                    # Convert name to format_id style
+                    fmt_id = name.lower().replace('.', '-').replace(' ', '-')
+                    formats_by_name[fmt_id] = obj
+            except:
+                pass
+        
+        return formats_by_name
+    except Exception as e:
+        print(f"Warning: Failed to load local HTML: {e}")
+        return {}
 
 
 def main():
@@ -265,18 +307,30 @@ def main():
         },
     ]
 
+    # Load local HTML fallback if available
+    local_formats = load_local_html_formats()
+    if local_formats:
+        print(f"Loaded {len(local_formats)} formats from local HTML file")
+
     format_json_by_id = {}
     fetched = 0
     skipped = 0
+    from_local = 0
 
     def add_format(preformat_id, fmt_name, filename):
-        nonlocal fetched, skipped
+        nonlocal fetched, skipped, from_local
         cf = fetch_trash_format_json(filename)
         if cf and isinstance(cf, dict):
             if "name" not in cf or not cf["name"]:
                 cf["name"] = fmt_name
             format_json_by_id[preformat_id] = cf
             fetched += 1
+        elif filename in local_formats:
+            cf = local_formats[filename]
+            if "name" not in cf or not cf["name"]:
+                cf["name"] = fmt_name
+            format_json_by_id[preformat_id] = cf
+            from_local += 1
         else:
             format_json_by_id[preformat_id] = minimal_cf_json(fmt_name)
             skipped += 1
@@ -306,7 +360,7 @@ def main():
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2, ensure_ascii=False)
     print("Wrote", OUT_PATH)
-    print("Fetched from TRaSH:", fetched, "| Fallback (minimal):", skipped)
+    print(f"Fetched from GitHub: {fetched} | From local HTML: {from_local} | Fallback (minimal): {skipped}")
 
 
 if __name__ == "__main__":
