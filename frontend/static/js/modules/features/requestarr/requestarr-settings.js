@@ -104,10 +104,24 @@ export class RequestarrSettings {
             this.hiddenMediaState.page = page;
         }
 
-        // Sync state with dropdown value on initial load
+        // Ensure instance list is loaded before reading selection (fixes post-refresh race)
         const instanceSelect = document.getElementById('hidden-media-instance');
+        if (instanceSelect && (!instanceSelect.options || instanceSelect.options.length <= 1)) {
+            await this.loadHiddenMediaInstances();
+        }
+
+        // Sync state with dropdown value on initial load
         if (instanceSelect && !this.hiddenMediaState.instanceValue) {
             this.hiddenMediaState.instanceValue = instanceSelect.value || '';
+        }
+
+        // If still no instance selected but we have options, auto-select first instance so content can load
+        if (!this.hiddenMediaState.instanceValue && instanceSelect && instanceSelect.options && instanceSelect.options.length > 1) {
+            const firstRealOption = Array.from(instanceSelect.options).find(opt => opt.value && opt.value.includes('::'));
+            if (firstRealOption) {
+                firstRealOption.selected = true;
+                this.hiddenMediaState.instanceValue = firstRealOption.value;
+            }
         }
 
         // Show empty state if no instance selected
@@ -144,7 +158,7 @@ export class RequestarrSettings {
             this.renderHiddenMediaPage();
         } catch (error) {
             console.error('[RequestarrSettings] Error loading hidden media:', error);
-            container.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px;">Failed to load hidden media</p>';
+            container.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px;">Failed to load hidden media.</p>';
         }
     }
 
@@ -271,6 +285,9 @@ export class RequestarrSettings {
             }
 
             const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Hidden media API error: ${response.status}`);
+            }
             const data = await response.json();
 
             if (data.hidden_media && data.hidden_media.length > 0) {
@@ -377,7 +394,7 @@ export class RequestarrSettings {
         };
     }
 
-    async createHiddenMediaCard(item) {
+    createHiddenMediaCard(item) {
         const card = document.createElement('div');
         card.className = 'media-card';
         card.setAttribute('data-tmdb-id', item.tmdb_id);
@@ -394,16 +411,13 @@ export class RequestarrSettings {
             </div>
         `;
         
-        // Load and cache image asynchronously
+        // Update image from cache in background (non-blocking)
         if (posterUrl && !posterUrl.includes('./static/images/') && window.getCachedTMDBImage && window.tmdbImageCache) {
-            try {
-                const cachedUrl = await window.getCachedTMDBImage(posterUrl, window.tmdbImageCache);
-                if (cachedUrl && cachedUrl !== posterUrl) {
-                    const imgElement = card.querySelector('.media-card-poster img');
-                    if (imgElement) imgElement.src = cachedUrl;
-                }
-            } catch (err) {
-                console.error('[RequestarrSettings] Failed to cache hidden media image:', err);
+            const imgEl = card.querySelector('.media-card-poster img');
+            if (imgEl) {
+                window.getCachedTMDBImage(posterUrl, window.tmdbImageCache).then(cachedUrl => {
+                    if (cachedUrl && cachedUrl !== posterUrl) imgEl.src = cachedUrl;
+                }).catch(() => {});
             }
         }
         
