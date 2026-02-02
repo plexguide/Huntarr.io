@@ -227,11 +227,16 @@
         container.style.justifyContent = 'flex-end';
         const preset = (presetEl.value || '').trim().toLowerCase();
         const apiKey = (keyEl.value || '').trim();
+        const hasSavedKey = this._currentEditing && this._currentEditing.originalInstance && (this._currentEditing.originalInstance.api_key_last4 || '');
         if (preset === 'manual') {
             container.innerHTML = '<span class="connection-status" style="background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2);"><i class="fas fa-info-circle"></i><span>Manual configuration is not validated.</span></span>';
             return;
         }
         if (!apiKey || apiKey.length < 10) {
+            if (hasSavedKey) {
+                container.innerHTML = '<span class="connection-status" style="background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2);"><i class="fas fa-check-circle"></i><span>API key saved. Leave blank to keep existing.</span></span>';
+                return;
+            }
             container.innerHTML = '<span class="connection-status" style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2);"><i class="fas fa-exclamation-triangle"></i><span>Enter API key</span></span>';
             return;
         }
