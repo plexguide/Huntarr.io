@@ -225,6 +225,22 @@
                 </div>
                 
                 <div class="setting-item">
+                    <label for="swaparr_ignore_usenet_queued">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#ignore-usenet-queued" class="info-icon" title="Ignore queued usenet downloads with 0% progress" target="_blank" rel="noopener">
+                            <i class="fas fa-info-circle"></i>
+                        </a>
+                        Ignore Queued Usenet:
+                    </label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="swaparr_ignore_usenet_queued" ${
+                          settings.ignore_usenet_queued !== false ? "checked" : ""
+                        }>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help">Ignore usenet downloads with 0% progress to avoid false positives from sequential queue ETAs (recommended: enabled)</p>
+                </div>
+                
+                <div class="setting-item">
                     <label for="swaparr_sleep_duration">
                         <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#sleep-duration" class="info-icon" title="Time between Swaparr cycles" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
@@ -715,6 +731,9 @@
 
             const dryRun = document.getElementById("swaparr_dry_run");
             if (dryRun) settings.dry_run = dryRun.checked;
+
+            const ignoreUsenetQueued = document.getElementById("swaparr_ignore_usenet_queued");
+            if (ignoreUsenetQueued) settings.ignore_usenet_queued = ignoreUsenetQueued.checked;
 
             const sleepDuration = document.getElementById("swaparr_sleep_duration");
             if (sleepDuration) settings.sleep_duration = parseInt(sleepDuration.value) * 60;

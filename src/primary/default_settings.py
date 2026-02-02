@@ -152,6 +152,7 @@ SWAPARR_DEFAULTS = {
     "ignore_above_size": "25GB",
     "remove_from_client": True,
     "dry_run": False,
+    "ignore_usenet_queued": True,
     "sleep_duration": 900,
     "malicious_file_detection": False,
     "malicious_extensions": [

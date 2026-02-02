@@ -390,8 +390,10 @@ def parse_queue_items(records, item_type, app_name):
             "id": record.get("id"),
             "name": name,
             "size": record.get("size", 0),
+            "sizeleft": record.get("sizeleft", 0),
             "status": record.get("status", "unknown").lower(),
             "eta": eta_seconds,
+            "protocol": record.get("protocol", "unknown").lower(),
             "error_message": record.get("errorMessage", "")
         })
     
@@ -793,6 +795,23 @@ def process_stalled_downloads(app_name, instance_name, instance_data, settings):
             # Check if download should be striked
             should_strike = False
             strike_reason = ""
+            
+            # Calculate progress percentage for usenet downloads
+            progress_percent = 0
+            if item.get("protocol") == "usenet" and item.get("size", 0) > 0:
+                sizeleft = item.get("sizeleft", 0)
+                total_size = item.get("size", 0)
+                progress_percent = ((total_size - sizeleft) / total_size) * 100 if total_size > 0 else 0
+            
+            # For usenet downloads with 0% progress and long ETA, ignore them if the setting is enabled
+            # This solves issue #622: SABnzbd queues items sequentially, so queued items show compound ETAs
+            if settings.get("ignore_usenet_queued", True) and item.get("protocol") == "usenet" and progress_percent == 0 and item["eta"] > 0:
+                swaparr_logger.debug(f"Ignoring queued usenet download (0% progress): {item['name']} (ETA: {item['eta']}s)")
+                item_state = "Ignored (Usenet Queued)"
+                SWAPARR_STATS['items_ignored'] += 1
+                if not settings.get("dry_run", False):
+                    increment_swaparr_stat("ignored", 1)
+                continue
             
             # Strike if metadata issue, eta too long, or no progress (eta = 0 and not queued)
             if metadata_issue:
