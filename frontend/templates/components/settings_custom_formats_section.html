@@ -2,8 +2,15 @@
     <div id="customFormatsManagementContainer" class="app-content-panel">
         <!-- Pre-Formatted Section -->
         <div class="settings-group custom-formats-settings-group">
-            <h3>Pre-Formatted Custom Formats</h3>
-            <p class="custom-formats-help">TRaSH Guides formats. Click Add to select from categories.</p>
+            <div class="custom-formats-section-header">
+                <div>
+                    <h3>Pre-Formatted Custom Formats</h3>
+                    <p class="custom-formats-help">TRaSH Guides formats. Click Add to select from categories.</p>
+                </div>
+                <button type="button" class="btn-delete-all" id="delete-all-preformatted" title="Delete all pre-formatted custom formats">
+                    <i class="fas fa-trash-alt"></i> Delete All
+                </button>
+            </div>
             <div class="instance-card-grid" id="custom-formats-preformatted-grid">
                 <div class="add-instance-card" id="custom-formats-add-preformatted-card" data-app-type="custom-format">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
@@ -14,8 +21,15 @@
 
         <!-- Imported Section -->
         <div class="settings-group custom-formats-settings-group">
-            <h3>Imported Custom Formats</h3>
-            <p class="custom-formats-help">Your custom JSON imports. Click Add to paste your own JSON.</p>
+            <div class="custom-formats-section-header">
+                <div>
+                    <h3>Imported Custom Formats</h3>
+                    <p class="custom-formats-help">Your custom JSON imports. Click Add to paste your own JSON.</p>
+                </div>
+                <button type="button" class="btn-delete-all" id="delete-all-imported" title="Delete all imported custom formats">
+                    <i class="fas fa-trash-alt"></i> Delete All
+                </button>
+            </div>
             <div class="instance-card-grid" id="custom-formats-imported-grid">
                 <div class="add-instance-card" id="custom-formats-add-imported-card" data-app-type="custom-format">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
@@ -94,6 +108,50 @@
     }
     .custom-formats-settings-group h3 { margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 600; color: #f8fafc; }
     .custom-formats-help { margin: 0 0 20px 0; color: #94a3b8; font-size: 0.95rem; }
+    .custom-formats-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        gap: 20px;
+    }
+    .btn-delete-all {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #f8fafc;
+        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        border: 1px solid rgba(220, 38, 38, 0.4);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+    }
+    .btn-delete-all:hover {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+        transform: translateY(-1px);
+        border-color: rgba(220, 38, 38, 0.6);
+    }
+    .btn-delete-all:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+    }
+    .btn-delete-all:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+        border-color: rgba(75, 85, 99, 0.4);
+        box-shadow: none;
+    }
+    .btn-delete-all:disabled:hover {
+        transform: none;
+        box-shadow: none;
+    }
     #custom-formats-preformatted-grid,
     #custom-formats-imported-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-bottom: 20px; }
     #custom-formats-preformatted-grid .custom-format-card,

@@ -23,6 +23,8 @@
                     
                     var preformattedHtml = '';
                     var importedHtml = '';
+                    var preformattedCount = 0;
+                    var importedCount = 0;
                     
                     for (var i = 0; i < list.length; i++) {
                         var item = list[i];
@@ -41,8 +43,10 @@
                         
                         if (isPreformatted) {
                             preformattedHtml += cardHtml;
+                            preformattedCount++;
                         } else {
                             importedHtml += cardHtml;
+                            importedCount++;
                         }
                     }
                     
@@ -51,6 +55,12 @@
                     
                     preformattedGrid.innerHTML = preformattedHtml;
                     importedGrid.innerHTML = importedHtml;
+                    
+                    var deletePreBtn = document.getElementById('delete-all-preformatted');
+                    var deleteImpBtn = document.getElementById('delete-all-imported');
+                    if (deletePreBtn) deletePreBtn.disabled = preformattedCount === 0;
+                    if (deleteImpBtn) deleteImpBtn.disabled = importedCount === 0;
+                    
                     window.CustomFormats._bindCards();
                 })
                 .catch(function() {
@@ -490,6 +500,64 @@
                 });
         },
 
+        deleteAllByType: function(type) {
+            var list = window.CustomFormats._list || [];
+            var toDelete = [];
+            
+            for (var i = 0; i < list.length; i++) {
+                var item = list[i];
+                var isPreformatted = (item.source || 'import').toLowerCase() === 'preformat';
+                if ((type === 'preformat' && isPreformatted) || (type === 'import' && !isPreformatted)) {
+                    toDelete.push(i);
+                }
+            }
+            
+            if (toDelete.length === 0) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('No formats to delete.', 'info');
+                }
+                return;
+            }
+            
+            var typeName = type === 'preformat' ? 'pre-formatted' : 'imported';
+            var confirmMsg = 'Delete all ' + toDelete.length + ' ' + typeName + ' custom format(s)?\n\nThis action cannot be undone.';
+            if (!confirm(confirmMsg)) return;
+            
+            var deleted = 0;
+            var failed = 0;
+            var currentIndex = toDelete.length - 1;
+            
+            function deleteNext() {
+                if (currentIndex < 0) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        if (failed === 0) {
+                            window.huntarrUI.showNotification('Deleted ' + deleted + ' format(s).', 'success');
+                        } else {
+                            window.huntarrUI.showNotification('Deleted ' + deleted + ', failed ' + failed + '.', failed > 0 ? 'error' : 'success');
+                        }
+                    }
+                    window.CustomFormats.refreshList();
+                    return;
+                }
+                
+                var idx = toDelete[currentIndex];
+                currentIndex--;
+                
+                fetch('./api/custom-formats/' + idx, { method: 'DELETE' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) deleted++; else failed++;
+                        deleteNext();
+                    })
+                    .catch(function() {
+                        failed++;
+                        deleteNext();
+                    });
+            }
+            
+            deleteNext();
+        },
+
         init: function() {
             var self = window.CustomFormats;
             var modal = document.getElementById('custom-format-modal');
@@ -509,6 +577,15 @@
             if (viewBackdrop) viewBackdrop.onclick = function() { self.closeViewModal(); };
             if (viewCloseBtn) viewCloseBtn.onclick = function() { self.closeViewModal(); };
             if (viewCloseBtnFooter) viewCloseBtnFooter.onclick = function() { self.closeViewModal(); };
+            
+            var deleteAllPreBtn = document.getElementById('delete-all-preformatted');
+            var deleteAllImpBtn = document.getElementById('delete-all-imported');
+            if (deleteAllPreBtn) {
+                deleteAllPreBtn.onclick = function() { self.deleteAllByType('preformat'); };
+            }
+            if (deleteAllImpBtn) {
+                deleteAllImpBtn.onclick = function() { self.deleteAllByType('import'); };
+            }
             
             document.querySelectorAll('input[name="custom-format-source"]').forEach(function(radio) {
                 radio.onchange = function() { self._onSourceChange(); };
