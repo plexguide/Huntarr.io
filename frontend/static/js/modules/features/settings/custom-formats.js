@@ -76,7 +76,8 @@
             document.getElementById('custom-format-json-textarea').value = '';
             document.getElementById('custom-format-title-input').value = '';
             document.getElementById('custom-format-preformat-area').style.display = 'block';
-            document.getElementById('custom-format-import-area').style.display = 'none';
+            var importArea = document.getElementById('custom-format-import-area');
+            if (importArea) importArea.style.display = 'none';
             window.CustomFormats._loadPreformatsDropdown();
             document.getElementById('custom-format-modal').style.display = 'flex';
             document.body.classList.add('custom-format-modal-open');
@@ -91,7 +92,8 @@
             document.getElementById('custom-format-modal-save').innerHTML = '<i class="fas fa-save"></i> Save';
             document.getElementById('custom-format-source-import').checked = true;
             document.getElementById('custom-format-preformat-area').style.display = 'none';
-            document.getElementById('custom-format-import-area').style.display = 'block';
+            var importArea = document.getElementById('custom-format-import-area');
+            if (importArea) importArea.style.display = 'block';
             document.getElementById('custom-format-json-textarea').value = item.custom_format_json || '{}';
             document.getElementById('custom-format-title-input').value = (item.title || item.name || '').trim() || 'Unnamed';
             document.getElementById('custom-format-modal').style.display = 'flex';
@@ -130,13 +132,29 @@
 
         _onSourceChange: function() {
             var isPre = document.getElementById('custom-format-source-preformat').checked;
-            document.getElementById('custom-format-preformat-area').style.display = isPre ? 'block' : 'none';
-            document.getElementById('custom-format-import-area').style.display = isPre ? 'none' : 'block';
-            if (!isPre) {
-                var raw = document.getElementById('custom-format-json-textarea').value.trim();
-                var name = window.CustomFormats._nameFromJson(raw);
-                if (!document.getElementById('custom-format-title-input').value && name !== '—') {
-                    document.getElementById('custom-format-title-input').value = name;
+            var preformatArea = document.getElementById('custom-format-preformat-area');
+            var importArea = document.getElementById('custom-format-import-area');
+            var titleInput = document.getElementById('custom-format-title-input');
+            var jsonTa = document.getElementById('custom-format-json-textarea');
+            if (preformatArea) preformatArea.style.display = isPre ? 'block' : 'none';
+            if (importArea) importArea.style.display = isPre ? 'none' : 'block';
+            if (isPre) {
+                var sel = document.getElementById('custom-format-preformat-select');
+                if (sel) sel.value = '';
+                if (titleInput) titleInput.value = '';
+                if (jsonTa) jsonTa.value = '';
+            } else {
+                if (window.CustomFormats._editingIndex != null) {
+                    var list = window.CustomFormats._list;
+                    var idx = window.CustomFormats._editingIndex;
+                    if (list && idx >= 0 && idx < list.length) {
+                        var item = list[idx];
+                        if (titleInput) titleInput.value = (item.title || item.name || '').trim() || 'Unnamed';
+                        if (jsonTa) jsonTa.value = item.custom_format_json || '{}';
+                    }
+                } else {
+                    if (titleInput) titleInput.value = '';
+                    if (jsonTa) jsonTa.value = '';
                 }
             }
         },
