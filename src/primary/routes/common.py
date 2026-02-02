@@ -552,8 +552,13 @@ def api_profiles_patch(index):
             return jsonify({'success': False, 'error': 'Index out of range'}), 400
         data = request.get_json() or {}
         if data.get('is_default') is True:
+            # Move this profile to index 0 (leftmost) and set as default
+            profile = profiles.pop(index)
             for i in range(len(profiles)):
-                profiles[i]['is_default'] = (i == index)
+                profiles[i]['is_default'] = False
+            profile['is_default'] = True
+            profiles.insert(0, profile)
+            index = 0  # rest of PATCH applies to the moved profile (now at 0)
         name = (data.get('name') or '').strip()
         if name:
             profiles[index]['name'] = name

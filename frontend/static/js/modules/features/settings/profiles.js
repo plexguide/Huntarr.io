@@ -41,7 +41,7 @@
             '</div>' +
             '<div class="instance-card-footer">' +
             '<button type="button" class="btn-card edit" data-app-type="profile" data-instance-index="' + index + '"><i class="fas fa-edit"></i> Edit</button>' +
-            (isDefault ? '' : '<button type="button" class="btn-card set-default" data-app-type="profile" data-instance-index="' + index + '"><i class="fas fa-star"></i> Set as default</button>') +
+            (isDefault ? '' : '<button type="button" class="btn-card set-default" data-app-type="profile" data-instance-index="' + index + '"><i class="fas fa-star"></i> Default</button>') +
             '<button type="button" class="btn-card delete" data-app-type="profile" data-instance-index="' + index + '"><i class="fas fa-trash"></i> Delete</button>' +
             '</div></div>';
     };
