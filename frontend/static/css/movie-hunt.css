@@ -1,0 +1,114 @@
+/**
+ * Movie Hunt - standalone styles (no Requestarr dependency for layout).
+ * Shared card/grid classes (.media-card, .media-grid) still come from requestarr-discover.css
+ * when the Movie Hunt section is shown.
+ */
+
+/* Request modal: show close button (requestarr-discover hides .modal-close-btn) */
+#movie-hunt-request-modal .modal-close-btn {
+    display: flex !important;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: #fff;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+#movie-hunt-request-modal .modal-close-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+/* No extra grey around covers - cards fixed width, don't stretch */
+#movie-hunt-movies-grid,
+#movie-hunt-search-results-grid,
+#movie-hunt-collection-grid {
+    justify-items: start;
+}
+#movie-hunt-movies-grid .media-card,
+#movie-hunt-search-results-grid .media-card,
+#movie-hunt-collection-grid .media-card {
+    width: 150px;
+}
+
+@media (max-width: 768px) {
+    #movie-hunt-movies-grid .media-card,
+    #movie-hunt-search-results-grid .media-card,
+    #movie-hunt-collection-grid .media-card {
+        width: 120px;
+    }
+}
+
+/* Media Collection view - layout similar to Requestarr Hidden Media */
+.movie-hunt-collection-view {
+    padding: 0 30px 20px 30px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#movie-hunt-collection-view .hidden-media-search {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+#movie-hunt-collection-view .hidden-media-search i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 18px;
+}
+
+#movie-hunt-collection-view .hidden-media-search-input {
+    width: 100%;
+    padding: 16px 20px 16px 55px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+#movie-hunt-collection-view .hidden-media-search-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+#movie-hunt-collection-view .btn-mark-available,
+#movie-hunt-collection-view .btn-remove-from-collection {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#movie-hunt-collection-view .btn-mark-available {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+#movie-hunt-collection-view .btn-mark-available:hover {
+    background: rgba(34, 197, 94, 0.3);
+}
+
+#movie-hunt-collection-view .btn-remove-from-collection {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+#movie-hunt-collection-view .btn-remove-from-collection:hover {
+    background: rgba(239, 68, 68, 0.3);
+}

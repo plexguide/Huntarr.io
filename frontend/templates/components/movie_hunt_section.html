@@ -1,40 +1,7 @@
 <!-- Movie Hunt Section - Movies only, separate from Requestarr -->
 <div id="movie-hunt-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/requestarr-discover.css">
-    <style>
-        /* Match Requestarr modal: show close button (discover.css hides it) and position in header */
-        #movie-hunt-request-modal .modal-close-btn {
-            display: flex !important;
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            z-index: 10;
-            background: rgba(0,0,0,0.5);
-            border: none;
-            color: #fff;
-            padding: 8px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        #movie-hunt-request-modal .modal-close-btn:hover { background: rgba(0,0,0,0.7); }
-        /* Match Requestarr home: no extra grey around covers - cards fixed width, don't stretch */
-        #movie-hunt-movies-grid,
-        #movie-hunt-search-results-grid,
-        #movie-hunt-collection-grid {
-            justify-items: start;
-        }
-        #movie-hunt-movies-grid .media-card,
-        #movie-hunt-search-results-grid .media-card,
-        #movie-hunt-collection-grid .media-card {
-            width: 150px;
-        }
-        @media (max-width: 768px) {
-            #movie-hunt-movies-grid .media-card,
-            #movie-hunt-search-results-grid .media-card {
-                width: 120px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="./static/css/movie-hunt.css">
 
     <div class="requestarr-content movie-hunt-content">
         <!-- Search bar: movies only -->
