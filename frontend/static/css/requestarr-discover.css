@@ -3191,18 +3191,23 @@ input:disabled + .toggle-slider {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         gap: 15px;
     }
-}
-
-/* Fix Movies grid stretching columns */
-.media-grid {
-    grid-template-columns: repeat(auto-fill, 150px) !important;
-    justify-content: center;
-}
-
-@media (max-width: 768px) {
-    .media-grid {
-        grid-template-columns: repeat(auto-fill, 120px) !important;
-        justify-content: center;
+    
+    /* Search results: full width, no extra grey space on mobile */
+    .search-results-grid,
+    #home-search-results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 15px;
+        width: 100%;
+        max-width: 100%;
+        justify-content: stretch;
+        justify-items: stretch;
+    }
+    
+    .search-results-grid .media-card,
+    #home-search-results-grid .media-card {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
     }
 }
 
