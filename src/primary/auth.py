@@ -328,8 +328,8 @@ def authenticate_request():
             logger.debug(f"Allowing setup/user page access for path: {request.path}")
         return None
 
-    # Skip authentication for static files, API setup, health check path, ping, and github sponsors
-    if request.path.startswith('/static/') or request.path.startswith('/api/setup') or request.path.endswith('/favicon.ico') or request.path.startswith('/api/health') or request.path.endswith('/ping') or request.path.startswith('/api/github_sponsors') or request.path.startswith('/api/sponsors/init'):
+    # Skip authentication for static files, API setup, health check path, ping, github sponsors, and version endpoint
+    if request.path.startswith('/static/') or request.path.startswith('/api/setup') or request.path.endswith('/favicon.ico') or request.path.startswith('/api/health') or request.path.endswith('/ping') or request.path.startswith('/api/github_sponsors') or request.path.startswith('/api/sponsors/init') or request.path.endswith('/api/version'):
         return None
 
     # Skip authentication for login pages, Plex auth endpoints, recovery key endpoints, and setup-related user endpoints

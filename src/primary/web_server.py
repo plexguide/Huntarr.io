@@ -1057,6 +1057,19 @@ def version_txt():
         web_logger.error(f"Error serving version from database: {e}")
         return "N/A", 200, {'Content-Type': 'text/plain', 'Cache-Control': 'no-cache'}
 
+@app.route('/api/version')
+def api_version():
+    """Unauthenticated API endpoint to get current app version as JSON"""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        version = db.get_version()
+        return jsonify({"version": version.strip()}), 200
+    except Exception as e:
+        web_logger = get_logger("web_server")
+        web_logger.error(f"Error serving version from database: {e}")
+        return jsonify({"version": "N/A"}), 200
+
 @app.route('/api/cycle/status', methods=['GET'])
 def api_get_all_cycle_status():
     """API endpoint to get cycle status for all apps."""
