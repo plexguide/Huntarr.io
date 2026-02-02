@@ -689,6 +689,198 @@ def api_clients_test_connection():
         return jsonify({'success': False, 'message': 'Internal server error'}), 500
 
 
+def _search_newznab_movie(base_url, api_key, query, categories, timeout=15):
+    """
+    Search a Newznab indexer for movie NZBs. Returns list of {title, nzb_url}.
+    categories: list of category ids (e.g. 2000,2010) or comma string.
+    """
+    if not (base_url and api_key and query and query.strip()):
+        return []
+    base_url = base_url.rstrip('/')
+    api_key = api_key.strip()
+    query = query.strip()
+    if isinstance(categories, (list, tuple)):
+        cat_str = ','.join(str(c) for c in categories)
+    else:
+        cat_str = str(categories).strip() or '2000,2010,2020,2030,2040,2045,2050,2070'
+    url = f'{base_url}?t=search&apikey={requests.utils.quote(api_key)}&q={requests.utils.quote(query)}&cat={cat_str}&limit=10'
+    try:
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        r = requests.get(url, timeout=timeout, verify=verify_ssl)
+        if r.status_code != 200:
+            return []
+        text = (r.text or '').strip()
+        if not text:
+            return []
+        results = []
+        # Parse JSON (some indexers return JSON)
+        if text.lstrip().startswith('{'):
+            try:
+                data = json.loads(text)
+                channel = data.get('channel') or data.get('rss', {}).get('channel') or {}
+                items = channel.get('item') or channel.get('items') or []
+                if isinstance(items, dict):
+                    items = [items]
+                for it in items:
+                    nzb_url = None
+                    enc = it.get('enclosure') or (it.get('enclosures') or [{}])[0] if isinstance(it.get('enclosures'), list) else None
+                    if isinstance(enc, dict) and enc.get('@url'):
+                        nzb_url = enc.get('@url')
+                    elif isinstance(enc, dict) and enc.get('url'):
+                        nzb_url = enc.get('url')
+                    if not nzb_url and it.get('link'):
+                        nzb_url = it.get('link')
+                    if not nzb_url:
+                        continue
+                    title = (it.get('title') or '').strip() or 'Unknown'
+                    results.append({'title': title, 'nzb_url': nzb_url})
+                return results
+            except (ValueError, TypeError, KeyError):
+                pass
+        # Parse XML (default Newznab response)
+        root = ET.fromstring(text)
+        ns = {'nzb': 'http://www.newznab.com/DTD/2010/feeds/'}
+        items = root.findall('.//nzb:item', ns) or root.findall('.//item')
+        for item in items:
+            nzb_url = None
+            enc = item.find('nzb:enclosure', ns) or item.find('enclosure')
+            if enc is not None and enc.get('url'):
+                nzb_url = enc.get('url')
+            if not nzb_url:
+                link = item.find('nzb:link', ns) or item.find('link')
+                if link is not None and (link.text or '').strip():
+                    nzb_url = (link.text or '').strip()
+            if not nzb_url:
+                continue
+            title_el = item.find('nzb:title', ns) or item.find('title')
+            title = (title_el.text or '').strip() if title_el is not None else 'Unknown'
+            results.append({'title': title, 'nzb_url': nzb_url})
+        return results
+    except (ET.ParseError, requests.RequestException) as e:
+        logger.debug('Newznab search error: %s', e)
+        return []
+
+
+def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl):
+    """
+    Send NZB URL to SABnzbd or NZBGet. Returns (success: bool, message: str).
+    client: dict with type, host, port, api_key, username?, password?, category?.
+    """
+    client_type = (client.get('type') or 'nzbget').strip().lower()
+    host = (client.get('host') or '').strip()
+    if not host:
+        return False, 'Download client has no host'
+    if not (host.startswith('http://') or host.startswith('https://')):
+        host = f'http://{host}'
+    port = client.get('port', 8080)
+    base_url = f'{host.rstrip("/")}:{port}'
+    cat = (client.get('category') or category or 'movies').strip() or 'movies'
+    try:
+        if client_type == 'sabnzbd':
+            api_key = (client.get('api_key') or '').strip()
+            url = f'{base_url}/api'
+            params = {'mode': 'addurl', 'name': nzb_url, 'output': 'json'}
+            if api_key:
+                params['apikey'] = api_key
+            if cat:
+                params['cat'] = cat
+            r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
+            r.raise_for_status()
+            data = r.json()
+            if data.get('status') is True or data.get('nzo_ids'):
+                return True, 'Added to SABnzbd'
+            return False, data.get('error', 'SABnzbd returned an error')
+        elif client_type == 'nzbget':
+            jsonrpc_url = f'{base_url}/jsonrpc'
+            username = (client.get('username') or '').strip()
+            password = (client.get('password') or '').strip()
+            auth = (username, password) if (username or password) else None
+            payload = {
+                'method': 'append',
+                'params': ['', nzb_url, cat, 0, False, False, '', 0, 'SCORE', False, []],
+                'id': 1
+            }
+            r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)
+            r.raise_for_status()
+            data = r.json()
+            if data.get('result') and data.get('result') != 0:
+                return True, 'Added to NZBGet'
+            err = data.get('error', {})
+            return False, err.get('message', 'NZBGet returned an error')
+        return False, f'Unknown client type: {client_type}'
+    except requests.RequestException as e:
+        return False, str(e) or 'Connection failed'
+
+
+@common_bp.route('/api/movie-hunt/request', methods=['POST'])
+def api_movie_hunt_request():
+    """
+    Request a movie via Movie Hunt: search configured indexers, send first NZB to first enabled download client.
+    Body: { title, year?, instance? }. Instance defaults to "default" for now.
+    """
+    try:
+        data = request.get_json() or {}
+        title = (data.get('title') or '').strip()
+        if not title:
+            return jsonify({'success': False, 'message': 'Title is required'}), 400
+        year = data.get('year')
+        if year is not None:
+            year = str(year).strip()
+        else:
+            year = ''
+        instance = (data.get('instance') or 'default').strip() or 'default'
+
+        indexers = _get_indexers_config()
+        clients = _get_clients_config()
+        enabled_indexers = [i for i in indexers if i.get('enabled', True) and (i.get('preset') or '').strip().lower() != 'manual']
+        enabled_clients = [c for c in clients if c.get('enabled', True)]
+
+        if not enabled_indexers:
+            return jsonify({'success': False, 'message': 'No indexers configured or enabled. Add indexers in Movie Hunt Settings.'}), 400
+        if not enabled_clients:
+            return jsonify({'success': False, 'message': 'No download clients configured or enabled. Add a client in Movie Hunt Settings.'}), 400
+
+        query = f'{title}'
+        if year:
+            query = f'{title} {year}'
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        nzb_url = None
+        nzb_title = None
+        indexer_used = None
+        for idx in enabled_indexers:
+            preset = (idx.get('preset') or '').strip().lower()
+            base_url = INDEXER_PRESET_URLS.get(preset)
+            if not base_url:
+                continue
+            api_key = (idx.get('api_key') or '').strip()
+            if not api_key:
+                continue
+            categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
+            results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
+            if results:
+                nzb_url = results[0].get('nzb_url')
+                nzb_title = results[0].get('title', 'Unknown')
+                indexer_used = idx.get('name') or preset
+                break
+        if not nzb_url:
+            return jsonify({'success': False, 'message': f'No results found for "{title}" on any indexer. Try a different search or check indexer API keys.'}), 404
+        client = enabled_clients[0]
+        ok, msg = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', None, verify_ssl)
+        if not ok:
+            return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
+        return jsonify({
+            'success': True,
+            'message': f'"{nzb_title or title}" sent to {client.get("name") or "download client"}.',
+            'indexer': indexer_used,
+            'client': client.get('name') or 'download client'
+        }), 200
+    except Exception as e:
+        logger.exception('Movie Hunt request error')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @common_bp.route('/api/sleep.json', methods=['GET'])
 def api_get_sleep_json():
     """API endpoint to serve sleep/cycle data from the database for frontend access"""

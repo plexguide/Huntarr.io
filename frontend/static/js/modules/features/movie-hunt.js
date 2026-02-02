@@ -1,7 +1,7 @@
 /**
  * Movie Hunt - Standalone movie-only discovery (no TV).
- * Uses only #movie-hunt-* elements; does not depend on Requestarr DOM or state.
- * Reuses Requestarr modal when available for "Request" actions.
+ * Uses only #movie-hunt-* elements; 100% independent of Requestarr.
+ * Request flow: indexers -> download client via POST ./api/movie-hunt/request.
  */
 (function() {
     'use strict';
@@ -21,6 +21,7 @@
         instances: [],
 
         _scrollSetup: false,
+        _requestModalSetup: false,
 
         init() {
             const section = document.getElementById('movie-hunt-section');
@@ -30,6 +31,10 @@
             this.setupSearch();
             this.setupSort();
             this.setupFilterButton();
+            if (!this._requestModalSetup) {
+                this.setupRequestModal();
+                this._requestModalSetup = true;
+            }
             if (!this._instanceSelectReady) {
                 this.loadInstancesThenContent();
             } else {
@@ -44,6 +49,93 @@
                 this._scrollSetup = true;
             }
             console.log('[MovieHunt] Initialized (movies only)');
+        },
+
+        setupRequestModal() {
+            var self = this;
+            var modal = document.getElementById('movie-hunt-request-modal');
+            var backdrop = document.getElementById('movie-hunt-request-modal-backdrop');
+            var closeBtn = document.getElementById('movie-hunt-request-modal-close');
+            var cancelBtn = document.getElementById('movie-hunt-request-modal-cancel');
+            var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
+            if (!modal || !submitBtn) return;
+            function close() {
+                modal.style.display = 'none';
+                document.body.classList.remove('movie-hunt-request-modal-open');
+            }
+            if (backdrop) backdrop.addEventListener('click', close);
+            if (closeBtn) closeBtn.addEventListener('click', close);
+            if (cancelBtn) cancelBtn.addEventListener('click', close);
+            submitBtn.addEventListener('click', function() {
+                self.submitMovieHuntRequest();
+            });
+        },
+
+        openMovieHuntRequestModal(item) {
+            var modal = document.getElementById('movie-hunt-request-modal');
+            var titleEl = document.getElementById('movie-hunt-request-modal-title');
+            var yearEl = document.getElementById('movie-hunt-request-modal-year');
+            var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
+            if (!modal || !titleEl || !yearEl || !submitBtn) return;
+            this._pendingRequestItem = item;
+            var title = (item && item.title) ? String(item.title).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+            var year = (item && item.year) ? String(item.year) : '';
+            titleEl.textContent = item && item.title ? item.title : '';
+            yearEl.textContent = year ? 'Year: ' + year : '';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-download"></i> Request';
+            modal.style.display = 'flex';
+            document.body.classList.add('movie-hunt-request-modal-open');
+        },
+
+        closeMovieHuntRequestModal() {
+            var modal = document.getElementById('movie-hunt-request-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.classList.remove('movie-hunt-request-modal-open');
+            }
+            this._pendingRequestItem = null;
+        },
+
+        submitMovieHuntRequest() {
+            var item = this._pendingRequestItem;
+            var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
+            if (!item || !submitBtn) return;
+            var title = (item.title || '').trim();
+            if (!title) return;
+            var year = item.year != null ? item.year : '';
+            var instance = (this.selectedInstance || 'default').trim() || 'default';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting...';
+            var self = this;
+            fetch('./api/movie-hunt/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title, year: year, instance: instance })
+            })
+                .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+                .then(function(result) {
+                    if (result.ok && result.data && result.data.success) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification(result.data.message || 'Movie sent to download client.', 'success');
+                        }
+                        self.closeMovieHuntRequestModal();
+                    } else {
+                        var msg = (result.data && result.data.message) ? result.data.message : 'Request failed';
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification(msg, 'error');
+                        }
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-download"></i> Request';
+                    }
+                })
+                .catch(function(err) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(err.message || 'Request failed', 'error');
+                    }
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-download"></i> Request';
+                });
         },
 
         setupSearch() {
@@ -328,24 +420,20 @@
             const posterDiv = card.querySelector('.media-card-poster');
             const requestBtn = card.querySelector('.media-card-request-btn');
 
-            const openModal = () => {
-                if (window.RequestarrDiscover && window.RequestarrDiscover.modal && typeof window.RequestarrDiscover.modal.openModal === 'function') {
-                    window.RequestarrDiscover.modal.openModal(tmdbId, 'movie', this.selectedInstance);
-                } else {
-                    console.warn('[MovieHunt] Requestarr modal not available');
-                }
+            const openRequestModal = () => {
+                window.MovieHunt.openMovieHuntRequestModal(item);
             };
 
             if (posterDiv) {
                 posterDiv.addEventListener('click', (e) => {
                     if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) return;
-                    openModal();
+                    openRequestModal();
                 });
             }
             if (requestBtn) {
                 requestBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    openModal();
+                    openRequestModal();
                 });
             }
 
