@@ -16,10 +16,13 @@
                     var html = '';
                     for (var i = 0; i < folders.length; i++) {
                         var path = (folders[i].path || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                        var freeSpace = folders[i].freeSpace;
+                        var spaceLabel = (freeSpace != null && !isNaN(freeSpace)) ? ' (' + Math.round(freeSpace / 1e9) + ' GB free)' : '';
+                        var pathDisplay = path + spaceLabel;
                         var idx = folders[i].index !== undefined ? folders[i].index : i;
                         html += '<div class="root-folders-row" data-index="' + idx + '">' +
-                            '<span class="root-folders-row-path">' + path + '</span>' +
-                            '<button type="button" class="btn-row-test" data-index="' + idx + '" data-path="' + path.replace(/"/g, '&quot;') + '"><i class="fas fa-vial"></i> Test</button>' +
+                            '<span class="root-folders-row-path">' + pathDisplay + '</span>' +
+                            '<button type="button" class="btn-row-test" data-index="' + idx + '" data-path="' + (folders[i].path || '').replace(/"/g, '&quot;') + '"><i class="fas fa-vial"></i> Test</button>' +
                             '<button type="button" class="btn-root-folders-delete" data-index="' + idx + '"><i class="fas fa-trash"></i> Delete</button>' +
                             '</div>';
                     }
@@ -188,12 +191,26 @@
             }
         },
 
+        goToParent: function() {
+            var pathInput = document.getElementById('root-folders-browse-path-input');
+            if (!pathInput) return;
+            var path = (pathInput.value || '').trim() || '/';
+            var parent = path.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+            if (parent === path) return;
+            window.RootFolders.loadBrowsePath(parent);
+        },
+
         loadBrowsePath: function(path) {
             var listEl = document.getElementById('root-folders-browse-list');
             var pathInput = document.getElementById('root-folders-browse-path-input');
+            var upBtn = document.getElementById('root-folders-browse-up');
             if (!listEl || !pathInput) return;
             path = (path || pathInput.value || '/').trim() || '/';
             pathInput.value = path;
+            if (upBtn) {
+                var parent = path.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+                upBtn.disabled = (parent === path || path === '/' || path === '');
+            }
             listEl.innerHTML = '<div style="padding: 16px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
             fetch('./api/movie-hunt/root-folders/browse?path=' + encodeURIComponent(path))
                 .then(function(r) { return r.json(); })
@@ -205,6 +222,11 @@
                         return;
                     }
                     if (pathInput) pathInput.value = data.path || path;
+                    if (upBtn) {
+                        var currentPath = (pathInput.value || '').trim() || '/';
+                        var parent = currentPath.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+                        upBtn.disabled = (parent === currentPath || currentPath === '/' || currentPath === '');
+                    }
                     var html = '';
                     for (var i = 0; i < dirs.length; i++) {
                         var d = dirs[i];
@@ -263,6 +285,8 @@
                     }
                 });
             }
+            var upBtn = document.getElementById('root-folders-browse-up');
+            if (upBtn) upBtn.onclick = function() { self.goToParent(); };
         }
     };
 

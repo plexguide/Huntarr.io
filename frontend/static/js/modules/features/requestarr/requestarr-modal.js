@@ -129,7 +129,6 @@ export class RequestarrModal {
                     <select id="modal-root-folder" class="advanced-select">
                         <option value="">Loading...</option>
                     </select>
-                    <small style="color: #888; display: block; margin-top: 4px;">Where to store this ${isTVShow ? 'series' : 'movie'}</small>
                 </div>
             </div>
         `;

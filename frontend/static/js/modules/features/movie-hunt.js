@@ -61,7 +61,7 @@
             if (!modal || !submitBtn) return;
             function close() {
                 modal.style.display = 'none';
-                document.body.classList.remove('movie-hunt-request-modal-open');
+                document.body.classList.remove('requestarr-modal-open');
             }
             if (backdrop) backdrop.addEventListener('click', close);
             if (closeBtn) closeBtn.addEventListener('click', close);
@@ -74,25 +74,75 @@
         openMovieHuntRequestModal(item) {
             var modal = document.getElementById('movie-hunt-request-modal');
             var titleEl = document.getElementById('movie-hunt-request-modal-title');
-            var yearEl = document.getElementById('movie-hunt-request-modal-year');
+            var headerEl = document.getElementById('movie-hunt-request-modal-header');
             var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
-            if (!modal || !titleEl || !yearEl || !submitBtn) return;
+            var statusContainer = document.getElementById('movie-hunt-request-status-container');
+            var rootFolderSelect = document.getElementById('movie-hunt-request-root-folder');
+            if (!modal || !titleEl || !submitBtn) return;
+            /* Move modal to body so it sits outside .app-container and is not blurred */
+            if (modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+            }
             this._pendingRequestItem = item;
             var title = (item && item.title) ? String(item.title).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
-            var year = (item && item.year) ? String(item.year) : '';
             titleEl.textContent = item && item.title ? item.title : '';
-            yearEl.textContent = year ? 'Year: ' + year : '';
+            var backdropUrl = (item && (item.backdrop_path || item.poster_path)) ? (item.backdrop_path || item.poster_path) : '';
+            if (backdropUrl && backdropUrl.indexOf('http') !== 0) {
+                backdropUrl = 'https://image.tmdb.org/t/p/w500' + (backdropUrl.indexOf('/') === 0 ? backdropUrl : '/' + backdropUrl);
+            }
+            if (headerEl) {
+                headerEl.style.backgroundImage = backdropUrl ? 'url(' + backdropUrl + ')' : 'none';
+            }
+            if (statusContainer) {
+                statusContainer.innerHTML = '<div class="series-status-box status-requestable"><i class="fas fa-inbox"></i><div><div class="status-title">Available to request</div><div class="status-text">This movie will be sent to your download client.</div></div></div>';
+            }
+            if (rootFolderSelect) {
+                rootFolderSelect.innerHTML = '<option value="">Loading...</option>';
+            }
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-download"></i> Request';
+            submitBtn.textContent = 'Request';
             modal.style.display = 'flex';
-            document.body.classList.add('movie-hunt-request-modal-open');
+            document.body.classList.add('requestarr-modal-open');
+            this.loadMovieHuntRequestRootFolders();
+        },
+
+        loadMovieHuntRequestRootFolders() {
+            var rootFolderSelect = document.getElementById('movie-hunt-request-root-folder');
+            if (!rootFolderSelect) return;
+            fetch('./api/movie-hunt/root-folders')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var folders = (data && data.root_folders) ? data.root_folders : [];
+                    var valid = folders.filter(function(f) { return (f.path || '').trim(); });
+                    rootFolderSelect.innerHTML = '';
+                    if (valid.length > 0) {
+                        valid.forEach(function(rf, idx) {
+                            var path = (rf.path || '').trim();
+                            var freeSpace = rf.freeSpace;
+                            var label = path + (freeSpace != null ? ' (' + Math.round(freeSpace / 1e9) + ' GB free)' : '');
+                            var opt = document.createElement('option');
+                            opt.value = path;
+                            opt.textContent = label;
+                            if (idx === 0) opt.selected = true;
+                            rootFolderSelect.appendChild(opt);
+                        });
+                    } else {
+                        var defaultOpt = document.createElement('option');
+                        defaultOpt.value = '';
+                        defaultOpt.textContent = 'Use default (first root folder)';
+                        rootFolderSelect.appendChild(defaultOpt);
+                    }
+                })
+                .catch(function() {
+                    rootFolderSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
+                });
         },
 
         closeMovieHuntRequestModal() {
             var modal = document.getElementById('movie-hunt-request-modal');
             if (modal) {
                 modal.style.display = 'none';
-                document.body.classList.remove('movie-hunt-request-modal-open');
+                document.body.classList.remove('requestarr-modal-open');
             }
             this._pendingRequestItem = null;
         },
@@ -100,18 +150,26 @@
         submitMovieHuntRequest() {
             var item = this._pendingRequestItem;
             var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
+            var instanceSelect = document.getElementById('movie-hunt-request-instance');
+            var rootFolderSelect = document.getElementById('movie-hunt-request-root-folder');
+            var qualitySelect = document.getElementById('movie-hunt-request-quality-profile');
             if (!item || !submitBtn) return;
             var title = (item.title || '').trim();
             if (!title) return;
             var year = item.year != null ? item.year : '';
-            var instance = (this.selectedInstance || 'default').trim() || 'default';
+            var instance = (instanceSelect && instanceSelect.value) ? String(instanceSelect.value).trim() : (this.selectedInstance || 'default').trim() || 'default';
+            var rootFolder = (rootFolderSelect && rootFolderSelect.value) ? String(rootFolderSelect.value).trim() : '';
+            var qualityProfile = (qualitySelect && qualitySelect.value) ? String(qualitySelect.value).trim() : '';
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting...';
+            submitBtn.textContent = 'Requesting...';
             var self = this;
+            var payload = { title: title, year: year, instance: instance };
+            if (rootFolder) payload.root_folder = rootFolder;
+            if (qualityProfile) payload.quality_profile = qualityProfile;
             fetch('./api/movie-hunt/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: title, year: year, instance: instance })
+                body: JSON.stringify(payload)
             })
                 .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
                 .then(function(result) {
@@ -126,7 +184,7 @@
                             window.huntarrUI.showNotification(msg, 'error');
                         }
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="fas fa-download"></i> Request';
+                        submitBtn.textContent = 'Request';
                     }
                 })
                 .catch(function(err) {
@@ -134,7 +192,7 @@
                         window.huntarrUI.showNotification(err.message || 'Request failed', 'error');
                     }
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-download"></i> Request';
+                    submitBtn.textContent = 'Request';
                 });
         },
 

@@ -30,6 +30,11 @@
             <div class="root-folders-browse-body">
                 <label for="root-folders-browse-path-input">Start typing or select a path below</label>
                 <input type="text" id="root-folders-browse-path-input" class="root-folders-browse-path-input" placeholder="/" />
+                <div class="root-folders-browse-up-row">
+                    <button type="button" class="btn-root-folders-browse-up" id="root-folders-browse-up" title="Go to parent directory">
+                        <i class="fas fa-arrow-up"></i> Go Back
+                    </button>
+                </div>
                 <div id="root-folders-browse-list" class="root-folders-browse-list"></div>
             </div>
             <div class="root-folders-browse-actions">
@@ -226,6 +231,26 @@
         width: 100%; padding: 10px 12px; margin-bottom: 12px;
         background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3);
         border-radius: 8px; color: #f8fafc; font-family: monospace; box-sizing: border-box;
+    }
+    .root-folders-browse-up-row {
+        margin-bottom: 12px;
+    }
+    .btn-root-folders-browse-up {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 16px;
+        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        color: #0f172a;
+        border: 1px solid rgba(245, 158, 11, 0.5);
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-root-folders-browse-up:hover {
+        background: linear-gradient(135deg, #fbbf24 0%, #fcd34d 100%);
+        border-color: rgba(251, 191, 36, 0.6);
+    }
+    .btn-root-folders-browse-up:disabled {
+        opacity: 0.5; cursor: not-allowed;
     }
     .root-folders-browse-list {
         max-height: 280px; overflow-y: auto;

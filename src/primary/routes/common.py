@@ -817,7 +817,7 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl)
 def api_movie_hunt_request():
     """
     Request a movie via Movie Hunt: search configured indexers, send first NZB to first enabled download client.
-    Body: { title, year?, instance? }. Instance defaults to "default" for now.
+    Body: { title, year?, instance?, root_folder?, quality_profile? }. Instance defaults to "default".
     """
     try:
         data = request.get_json() or {}
@@ -830,6 +830,8 @@ def api_movie_hunt_request():
         else:
             year = ''
         instance = (data.get('instance') or 'default').strip() or 'default'
+        root_folder = (data.get('root_folder') or '').strip() or None
+        quality_profile = (data.get('quality_profile') or '').strip() or None
 
         indexers = _get_indexers_config()
         clients = _get_clients_config()
@@ -903,10 +905,21 @@ TEST_FILENAME = 'movie-hunt.test'
 
 @common_bp.route('/api/movie-hunt/root-folders', methods=['GET'])
 def api_movie_hunt_root_folders_list():
-    """List Movie Hunt root folders."""
+    """List Movie Hunt root folders with free space (like Requestarr)."""
+    import shutil
     try:
         folders = _get_root_folders_config()
-        out = [{'index': i, 'path': (f.get('path') or '').strip()} for i, f in enumerate(folders)]
+        out = []
+        for i, f in enumerate(folders):
+            path = (f.get('path') or '').strip()
+            free_space = None
+            if path:
+                try:
+                    usage = shutil.disk_usage(path)
+                    free_space = usage.free
+                except (OSError, FileNotFoundError):
+                    pass
+            out.append({'index': i, 'path': path, 'freeSpace': free_space})
         return jsonify({'root_folders': out}), 200
     except Exception as e:
         logger.exception('Root folders list error')
