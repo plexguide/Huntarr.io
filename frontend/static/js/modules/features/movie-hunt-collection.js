@@ -132,35 +132,11 @@
                 '<span class="media-card-rating" style="font-size: 12px; color: #94a3b8;">' + statusLabel + '</span>' +
                 '</div>' +
                 '<div class="movie-hunt-collection-actions" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">' +
-                (status !== 'available' ? '<button type="button" class="btn-mark-available" data-index="' + index + '"><i class="fas fa-check"></i> Mark available</button>' : '') +
                 '<button type="button" class="btn-remove-from-collection" data-index="' + index + '"><i class="fas fa-trash"></i> Remove</button>' +
                 '</div></div>';
-            var markBtn = card.querySelector('.btn-mark-available');
             var removeBtn = card.querySelector('.btn-remove-from-collection');
-            if (markBtn) markBtn.onclick = function(e) { e.stopPropagation(); self.markAvailable(parseInt(markBtn.getAttribute('data-index'), 10)); };
             if (removeBtn) removeBtn.onclick = function(e) { e.stopPropagation(); self.removeFromCollection(parseInt(removeBtn.getAttribute('data-index'), 10)); };
             return card;
-        },
-
-        markAvailable: function(index) {
-            var self = this;
-            fetch('./api/movie-hunt/collection/' + index, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'available' })
-            })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Marked as available.', 'success');
-                    }
-                    self.loadCollection();
-                })
-                .catch(function() {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to update.', 'error');
-                    }
-                });
         },
 
         removeFromCollection: function(index) {

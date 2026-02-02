@@ -1,0 +1,352 @@
+/**
+ * Profile editor (Movie Hunt) - full-page editor like instance editor.
+ * Open from Profiles list Edit; Back/Save; sections: Profile details, Upgrade & quality, Qualities.
+ * Attaches to window.SettingsForms.
+ */
+(function() {
+    'use strict';
+    if (typeof window.SettingsForms === 'undefined') return;
+
+    const Forms = window.SettingsForms;
+
+    function escapeHtml(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function generateProfileEditorHtml(profile) {
+        const p = profile || {};
+        const name = escapeHtml((p.name || '').trim() || 'Unnamed');
+        const isDefault = Boolean(p.is_default);
+        const upgradesAllowed = p.upgrades_allowed !== false;
+        const upgradeUntil = escapeHtml((p.upgrade_until_quality || 'WEB 2160p').trim());
+        const minScore = p.min_custom_format_score != null ? Number(p.min_custom_format_score) : -10000;
+        const untilScore = p.upgrade_until_custom_format_score != null ? Number(p.upgrade_until_custom_format_score) : 5500;
+        const increment = p.upgrade_score_increment != null ? Number(p.upgrade_score_increment) : 100;
+        const language = escapeHtml((p.language || 'English').trim());
+        const qualities = Array.isArray(p.qualities) ? p.qualities : [];
+        var checkedQualityNames = [];
+        qualities.forEach(function(q) {
+            if (q.enabled !== false) {
+                var n = (q.name || q.id || '').trim();
+                if (n) checkedQualityNames.push(n);
+            }
+        });
+        if (checkedQualityNames.length === 0) {
+            checkedQualityNames = ['WEB 2160p', 'WEB 1080p', 'WEB 720p'];
+        }
+        let qualitiesHtml = '';
+        qualities.forEach(function(q, i) {
+            const qName = escapeHtml((q.name || q.id || '').trim() || 'Quality');
+            const checked = q.enabled !== false ? ' checked' : '';
+            qualitiesHtml += '<div class="profile-quality-item" data-quality-id="' + escapeHtml(String(q.id || i)) + '" data-order="' + (q.order != null ? q.order : i) + '" draggable="true">' +
+                '<span class="quality-drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>' +
+                '<input type="checkbox" id="profile-quality-' + i + '" class="profile-quality-checkbox"' + checked + '>' +
+                '<label class="quality-name" for="profile-quality-' + i + '">' + qName + '</label></div>';
+        });
+        var upgradeSelectOptions = '';
+        checkedQualityNames.forEach(function(opt) {
+            var sel = opt === (p.upgrade_until_quality || 'WEB 2160p').trim() ? ' selected' : '';
+            upgradeSelectOptions += '<option value="' + escapeHtml(opt) + '"' + sel + '>' + escapeHtml(opt) + '</option>';
+        });
+        if (upgradeSelectOptions === '') {
+            upgradeSelectOptions = '<option value="WEB 2160p">WEB 2160p</option>';
+        }
+
+        return '<div class="editor-grid">' +
+            '<div class="editor-section">' +
+            '<div class="editor-section-title">Profile details</div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item"><label for="profile-editor-name">Name</label>' +
+            '<input type="text" id="profile-editor-name" value="' + name + '" placeholder="Profile name" maxlength="64">' +
+            '</div><p class="editor-help-text">A friendly name for this profile</p></div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item flex-row">' +
+            '<label for="profile-editor-default">Set as default profile</label>' +
+            '<label class="toggle-switch"><input type="checkbox" id="profile-editor-default"' + (isDefault ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+            '</div><p class="editor-help-text">The default profile is used when no other is selected</p></div>' +
+            '</div>' +
+            '<div class="editor-section">' +
+            '<div class="editor-section-title">Upgrade &amp; quality</div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item flex-row">' +
+            '<label for="profile-editor-upgrades">Upgrades allowed</label>' +
+            '<label class="toggle-switch"><input type="checkbox" id="profile-editor-upgrades"' + (upgradesAllowed ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+            '</div><p class="editor-help-text">If disabled, qualities will not be upgraded</p></div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item"><label for="profile-editor-upgrade-until">Upgrade until</label>' +
+            '<select id="profile-editor-upgrade-until">' + upgradeSelectOptions + '</select>' +
+            '</div><p class="editor-help-text">Once this quality is reached, no further upgrades will be grabbed</p></div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item"><label for="profile-editor-min-score">Minimum custom format score</label>' +
+            '<input type="number" id="profile-editor-min-score" value="' + minScore + '" min="-100000" max="100000">' +
+            '</div><p class="editor-help-text">Minimum custom format score allowed to download</p></div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item"><label for="profile-editor-until-score">Upgrade until custom format score</label>' +
+            '<input type="number" id="profile-editor-until-score" value="' + untilScore + '" min="0" max="100000">' +
+            '</div><p class="editor-help-text">Once quality cutoff is met, upgrades stop when this score is reached</p></div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item"><label for="profile-editor-increment">Minimum custom format score increment</label>' +
+            '<input type="number" id="profile-editor-increment" value="' + increment + '" min="0" max="10000">' +
+            '</div><p class="editor-help-text">Minimum improvement in score between existing and new release to consider an upgrade</p></div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item"><label for="profile-editor-language">Language</label>' +
+            '<input type="text" id="profile-editor-language" value="' + language + '" placeholder="English" maxlength="64">' +
+            '</div><p class="editor-help-text">Language for releases</p></div>' +
+            '</div>' +
+            '<div class="editor-section">' +
+            '<div class="editor-section-title">Qualities</div>' +
+            '<p class="editor-help-text" style="margin-bottom: 12px;">Only checked qualities are wanted. Higher in the list is more preferred.</p>' +
+            '<div class="profile-quality-list" id="profile-editor-qualities">' + (qualitiesHtml || '<p class="editor-help-text">No qualities defined.</p>') + '</div>' +
+            '</div></div>';
+    }
+
+    function markProfileEditorDirty() {
+        const saveBtn = document.getElementById('profile-editor-save');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.classList.add('enabled');
+        }
+    }
+
+    function getCheckedQualityNamesInOrder() {
+        const list = document.getElementById('profile-editor-qualities');
+        if (!list) return [];
+        const items = list.querySelectorAll('.profile-quality-item');
+        var names = [];
+        items.forEach(function(item) {
+            var cb = item.querySelector('.profile-quality-checkbox');
+            var label = item.querySelector('.quality-name');
+            if (cb && cb.checked && label) {
+                var n = (label.textContent || '').trim();
+                if (n) names.push(n);
+            }
+        });
+        return names;
+    }
+
+    function refreshProfileEditorUpgradeUntilOptions() {
+        const select = document.getElementById('profile-editor-upgrade-until');
+        if (!select) return;
+        const names = getCheckedQualityNamesInOrder();
+        const currentValue = (select.value || '').trim();
+        var optionsHtml = '';
+        names.forEach(function(n) {
+            var sel = n === currentValue ? ' selected' : '';
+            optionsHtml += '<option value="' + n.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') + '"' + sel + '>' + n.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</option>';
+        });
+        if (optionsHtml === '') {
+            optionsHtml = '<option value="">No qualities checked</option>';
+        }
+        select.innerHTML = optionsHtml;
+        if (names.length > 0 && (currentValue === '' || names.indexOf(currentValue) === -1)) {
+            select.value = names[0];
+        }
+    }
+
+    function setupProfileEditorChangeDetection() {
+        const content = document.getElementById('profile-editor-content');
+        const saveBtn = document.getElementById('profile-editor-save');
+        if (!content || !saveBtn) return;
+        content.querySelectorAll('input:not(.profile-quality-checkbox), select').forEach(function(el) {
+            el.addEventListener('input', markProfileEditorDirty);
+            el.addEventListener('change', markProfileEditorDirty);
+        });
+        var qualitiesList = document.getElementById('profile-editor-qualities');
+        if (qualitiesList) {
+            qualitiesList.addEventListener('change', function(e) {
+                if (e.target && e.target.classList.contains('profile-quality-checkbox')) {
+                    markProfileEditorDirty();
+                    refreshProfileEditorUpgradeUntilOptions();
+                }
+            });
+        }
+    }
+
+    function setupProfileQualitiesDragDrop() {
+        const list = document.getElementById('profile-editor-qualities');
+        if (!list) return;
+        const items = list.querySelectorAll('.profile-quality-item');
+        if (items.length === 0) return;
+        let draggedEl = null;
+        items.forEach(function(item) {
+            item.setAttribute('draggable', 'true');
+            item.addEventListener('dragstart', function(e) {
+                draggedEl = item;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', item.getAttribute('data-quality-id') || '');
+                e.dataTransfer.setData('text/html', item.outerHTML);
+                item.classList.add('profile-quality-dragging');
+                e.dataTransfer.setDragImage(item, 0, 0);
+            });
+            item.addEventListener('dragend', function() {
+                item.classList.remove('profile-quality-dragging');
+                list.querySelectorAll('.profile-quality-item').forEach(function(el) {
+                    el.classList.remove('profile-quality-drag-over');
+                });
+                draggedEl = null;
+            });
+            item.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (draggedEl && draggedEl !== item) {
+                    item.classList.add('profile-quality-drag-over');
+                }
+            });
+            item.addEventListener('dragleave', function() {
+                item.classList.remove('profile-quality-drag-over');
+            });
+            item.addEventListener('drop', function(e) {
+                e.preventDefault();
+                item.classList.remove('profile-quality-drag-over');
+                if (!draggedEl || draggedEl === item) return;
+                var parent = item.parentNode;
+                parent.insertBefore(draggedEl, item);
+                markProfileEditorDirty();
+                refreshProfileEditorUpgradeUntilOptions();
+            });
+        });
+        list.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+    }
+
+    Forms.openProfileEditor = function(index) {
+        const list = Forms._profilesList;
+        if (!list || !list[index]) {
+            fetch('./api/profiles')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    const profiles = (data && data.profiles) ? data.profiles : [];
+                    Forms._profilesList = profiles;
+                    if (profiles[index]) {
+                        Forms._openProfileEditorWithProfile(index, profiles[index]);
+                    } else {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Profile not found.', 'error');
+                        }
+                    }
+                })
+                .catch(function() {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to load profile.', 'error');
+                    }
+                });
+            return;
+        }
+        Forms._openProfileEditorWithProfile(index, list[index]);
+    };
+
+    Forms._openProfileEditorWithProfile = function(index, profile) {
+        Forms._currentProfileEditing = { index: index, originalProfile: JSON.parse(JSON.stringify(profile)) };
+        const contentEl = document.getElementById('profile-editor-content');
+        const saveBtn = document.getElementById('profile-editor-save');
+        const backBtn = document.getElementById('profile-editor-back');
+        if (!contentEl) return;
+        contentEl.innerHTML = generateProfileEditorHtml(profile);
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.classList.remove('enabled');
+            saveBtn.onclick = function() { Forms.saveProfileFromEditor(); };
+        }
+        if (backBtn) {
+            backBtn.onclick = function() { Forms.cancelProfileEditor(); };
+        }
+        setTimeout(function() {
+            setupProfileEditorChangeDetection();
+            setupProfileQualitiesDragDrop();
+            refreshProfileEditorUpgradeUntilOptions();
+        }, 100);
+        if (window.huntarrUI && window.huntarrUI.switchSection) {
+            window.huntarrUI.switchSection('profile-editor');
+        }
+    };
+
+    Forms.saveProfileFromEditor = function() {
+        const state = Forms._currentProfileEditing;
+        if (!state) return;
+        const index = state.index;
+        const nameEl = document.getElementById('profile-editor-name');
+        const defaultEl = document.getElementById('profile-editor-default');
+        const upgradesEl = document.getElementById('profile-editor-upgrades');
+        const upgradeUntilEl = document.getElementById('profile-editor-upgrade-until');
+        const minScoreEl = document.getElementById('profile-editor-min-score');
+        const untilScoreEl = document.getElementById('profile-editor-until-score');
+        const incrementEl = document.getElementById('profile-editor-increment');
+        const languageEl = document.getElementById('profile-editor-language');
+        const qualitiesContainer = document.getElementById('profile-editor-qualities');
+        const name = (nameEl && nameEl.value) ? nameEl.value.trim() : 'Unnamed';
+        const isDefault = defaultEl ? defaultEl.checked : false;
+        const upgradesAllowed = upgradesEl ? upgradesEl.checked : true;
+        const upgradeUntil = (upgradeUntilEl && upgradeUntilEl.value) ? upgradeUntilEl.value.trim() : 'WEB 2160p';
+        const minScore = minScoreEl ? parseInt(minScoreEl.value, 10) : -10000;
+        const untilScore = untilScoreEl ? parseInt(untilScoreEl.value, 10) : 5500;
+        const increment = incrementEl ? parseInt(incrementEl.value, 10) : 100;
+        const language = (languageEl && languageEl.value) ? languageEl.value.trim() : 'English';
+        const qualities = [];
+        if (qualitiesContainer) {
+            const items = qualitiesContainer.querySelectorAll('.profile-quality-item');
+            items.forEach(function(item, i) {
+                const cb = item.querySelector('input[type="checkbox"]');
+                const label = item.querySelector('.quality-name');
+                qualities.push({
+                    id: item.getAttribute('data-quality-id') || 'q' + i,
+                    name: label ? label.textContent.trim() : ('Quality ' + i),
+                    enabled: cb ? cb.checked : true,
+                    order: i
+                });
+            });
+        }
+        const body = {
+            name: name,
+            is_default: isDefault,
+            upgrades_allowed: upgradesAllowed,
+            upgrade_until_quality: upgradeUntil,
+            min_custom_format_score: isNaN(minScore) ? -10000 : minScore,
+            upgrade_until_custom_format_score: isNaN(untilScore) ? 5500 : untilScore,
+            upgrade_score_increment: isNaN(increment) ? 100 : increment,
+            language: language,
+            qualities: qualities
+        };
+        const saveBtn = document.getElementById('profile-editor-save');
+        if (saveBtn) saveBtn.disabled = true;
+        fetch('./api/profiles/' + index, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Profile saved.', 'success');
+                    }
+                    if (window.huntarrUI && window.huntarrUI.switchSection) {
+                        window.huntarrUI.switchSection('settings-profiles');
+                    }
+                    if (Forms.refreshProfilesList) Forms.refreshProfilesList();
+                } else {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(data.error || 'Failed to save.', 'error');
+                    }
+                    if (saveBtn) saveBtn.disabled = false;
+                    saveBtn.classList.add('enabled');
+                }
+            })
+            .catch(function() {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Failed to save profile.', 'error');
+                }
+                if (saveBtn) saveBtn.disabled = false;
+                saveBtn.classList.add('enabled');
+            });
+    };
+
+    Forms.cancelProfileEditor = function() {
+        Forms._currentProfileEditing = null;
+        if (window.huntarrUI && window.huntarrUI.switchSection) {
+            window.huntarrUI.switchSection('settings-profiles');
+        }
+    };
+})();

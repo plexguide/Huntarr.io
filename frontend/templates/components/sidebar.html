@@ -149,6 +149,12 @@
                 <span>Settings</span>
             </a>
             <div class="nav-sub-group" id="movie-hunt-settings-sub">
+                <a href="./#settings-profiles" class="nav-item nav-item-sub" id="movieHuntSettingsProfilesNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <span>Profiles</span>
+                </a>
                 <a href="./#settings-indexers" class="nav-item nav-item-sub" id="movieHuntSettingsIndexersNav">
                     <div class="nav-icon-wrapper">
                         <i class="fas fa-server"></i>
@@ -1108,6 +1114,8 @@
         // Settings sidebar items
         else if (currentHash === '#settings') {
             selector = '#settingsMainNav';
+        } else if (currentHash === '#settings-profiles') {
+            selector = '#movieHuntSettingsProfilesNav';
         } else if (currentHash === '#settings-indexers') {
             selector = '#movieHuntSettingsIndexersNav';
         } else if (currentHash === '#settings-clients') {

@@ -413,6 +413,215 @@ def api_indexers_delete(index):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# --- Movie Hunt Profiles (default "Standard" profile, app instances design) ---
+PROFILES_DEFAULT_NAME = 'Standard'
+
+# Default qualities for new profiles (Radarr-style; id, name, enabled, order)
+# Matches Radarr quality list: Raw-HD, BR-DISK, Remux/WEB/Bluray/HDTV by resolution, SDTV, DVD, then scene/screener (DVDSCR, REGIONAL, TELECINE, TELESYNC, CAM, WORKPRINT, Unknown)
+PROFILES_DEFAULT_QUALITIES = [
+    {'id': 'rawhd', 'name': 'Raw-HD', 'enabled': False, 'order': 0},
+    {'id': 'brdisk', 'name': 'BR-DISK', 'enabled': True, 'order': 1},
+    {'id': 'remux2160', 'name': 'Remux-2160p', 'enabled': True, 'order': 2},
+    {'id': 'web2160', 'name': 'WEB 2160p', 'enabled': True, 'order': 3},
+    {'id': 'bluray2160', 'name': 'Bluray-2160p', 'enabled': True, 'order': 4},
+    {'id': 'hdtv2160', 'name': 'HDTV-2160p', 'enabled': True, 'order': 5},
+    {'id': 'web1080', 'name': 'WEB 1080p', 'enabled': True, 'order': 6},
+    {'id': 'bluray1080', 'name': 'Bluray-1080p', 'enabled': True, 'order': 7},
+    {'id': 'hdtv1080', 'name': 'HDTV-1080p', 'enabled': True, 'order': 8},
+    {'id': 'web720', 'name': 'WEB 720p', 'enabled': True, 'order': 9},
+    {'id': 'bluray720', 'name': 'Bluray-720p', 'enabled': True, 'order': 10},
+    {'id': 'hdtv720', 'name': 'HDTV-720p', 'enabled': True, 'order': 11},
+    {'id': 'web480', 'name': 'WEB 480p', 'enabled': True, 'order': 12},
+    {'id': 'sdtv', 'name': 'SDTV', 'enabled': True, 'order': 13},
+    {'id': 'dvd', 'name': 'DVD', 'enabled': True, 'order': 14},
+    {'id': 'dvdscr', 'name': 'DVDSCR', 'enabled': False, 'order': 15},
+    {'id': 'regional', 'name': 'REGIONAL', 'enabled': False, 'order': 16},
+    {'id': 'telecine', 'name': 'TELECINE', 'enabled': False, 'order': 17},
+    {'id': 'telesync', 'name': 'TELESYNC', 'enabled': False, 'order': 18},
+    {'id': 'cam', 'name': 'CAM', 'enabled': False, 'order': 19},
+    {'id': 'workprint', 'name': 'WORKPRINT', 'enabled': False, 'order': 20},
+    {'id': 'unknown', 'name': 'Unknown', 'enabled': False, 'order': 21},
+]
+
+
+def _profile_defaults():
+    """Return a full default profile dict (for new profiles)."""
+    return {
+        'name': PROFILES_DEFAULT_NAME,
+        'is_default': True,
+        'upgrades_allowed': True,
+        'upgrade_until_quality': 'WEB 2160p',
+        'min_custom_format_score': -10000,
+        'upgrade_until_custom_format_score': 5500,
+        'upgrade_score_increment': 100,
+        'language': 'English',
+        'qualities': [dict(q) for q in PROFILES_DEFAULT_QUALITIES],
+    }
+
+
+def _normalize_profile(p):
+    """Ensure profile has all keys with defaults; qualities is list of {id, name, enabled, order}."""
+    defaults = _profile_defaults()
+    out = dict(defaults)
+    for k, v in (p or {}).items():
+        if k == 'qualities':
+            continue
+        if v is not None:
+            out[k] = v
+    if p and isinstance(p.get('qualities'), list) and len(p['qualities']) > 0:
+        out['qualities'] = []
+        for q in p['qualities']:
+            if isinstance(q, dict) and q.get('id') is not None:
+                out['qualities'].append({
+                    'id': str(q.get('id', '')),
+                    'name': str(q.get('name', q.get('id', ''))),
+                    'enabled': bool(q.get('enabled', True)),
+                    'order': int(q.get('order', 0)),
+                })
+        out['qualities'].sort(key=lambda x: (x.get('order', 0), x.get('id', '')))
+    return out
+
+
+def _get_profiles_config():
+    """Get Movie Hunt profiles list from database. Ensures at least default 'Standard' exists."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('movie_hunt_profiles')
+    if not config or not isinstance(config.get('profiles'), list):
+        profiles = []
+    else:
+        profiles = list(config['profiles'])
+    if not profiles:
+        first = _profile_defaults()
+        first['name'] = PROFILES_DEFAULT_NAME
+        first['is_default'] = True
+        profiles = [first]
+        db.save_app_config('movie_hunt_profiles', {'profiles': profiles})
+    return profiles
+
+
+def _save_profiles_config(profiles_list):
+    """Save Movie Hunt profiles to database."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    db.save_app_config('movie_hunt_profiles', {'profiles': profiles_list})
+
+
+@common_bp.route('/api/profiles', methods=['GET'])
+def api_profiles_list():
+    """List Movie Hunt profiles (default Standard ensured). Returns full profile objects."""
+    try:
+        profiles = _get_profiles_config()
+        out = []
+        for i, p in enumerate(profiles):
+            normalized = _normalize_profile(p)
+            normalized['index'] = i
+            out.append(normalized)
+        return jsonify({'profiles': out}), 200
+    except Exception as e:
+        logger.exception('Profiles list error')
+        return jsonify({'profiles': [], 'error': str(e)}), 200
+
+
+@common_bp.route('/api/profiles', methods=['POST'])
+def api_profiles_add():
+    """Add a profile. Body: { name }. New profile uses full defaults, is_default=False."""
+    try:
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip() or 'Unnamed'
+        profiles = _get_profiles_config()
+        new_profile = _profile_defaults()
+        new_profile['name'] = name
+        new_profile['is_default'] = False
+        profiles.append(new_profile)
+        _save_profiles_config(profiles)
+        return jsonify({'success': True, 'index': len(profiles) - 1}), 200
+    except Exception as e:
+        logger.exception('Profiles add error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@common_bp.route('/api/profiles/<int:index>', methods=['PATCH'])
+def api_profiles_patch(index):
+    """Update profile: body can include name, is_default, upgrades_allowed, upgrade_until_quality,
+    min_custom_format_score, upgrade_until_custom_format_score, upgrade_score_increment,
+    language, qualities. Only one default allowed."""
+    try:
+        profiles = _get_profiles_config()
+        if index < 0 or index >= len(profiles):
+            return jsonify({'success': False, 'error': 'Index out of range'}), 400
+        data = request.get_json() or {}
+        if data.get('is_default') is True:
+            for i in range(len(profiles)):
+                profiles[i]['is_default'] = (i == index)
+        name = (data.get('name') or '').strip()
+        if name:
+            profiles[index]['name'] = name
+        if 'upgrades_allowed' in data:
+            profiles[index]['upgrades_allowed'] = bool(data['upgrades_allowed'])
+        if 'upgrade_until_quality' in data:
+            profiles[index]['upgrade_until_quality'] = str(data.get('upgrade_until_quality') or 'WEB 2160p').strip()
+        if 'min_custom_format_score' in data:
+            try:
+                profiles[index]['min_custom_format_score'] = int(data['min_custom_format_score'])
+            except (TypeError, ValueError):
+                pass
+        if 'upgrade_until_custom_format_score' in data:
+            try:
+                profiles[index]['upgrade_until_custom_format_score'] = int(data['upgrade_until_custom_format_score'])
+            except (TypeError, ValueError):
+                pass
+        if 'upgrade_score_increment' in data:
+            try:
+                profiles[index]['upgrade_score_increment'] = int(data['upgrade_score_increment'])
+            except (TypeError, ValueError):
+                pass
+        if 'language' in data:
+            profiles[index]['language'] = str(data.get('language') or 'English').strip()
+        if 'qualities' in data and isinstance(data['qualities'], list):
+            qualities = []
+            for q in data['qualities']:
+                if isinstance(q, dict) and q.get('id') is not None:
+                    qualities.append({
+                        'id': str(q.get('id', '')),
+                        'name': str(q.get('name', q.get('id', ''))),
+                        'enabled': bool(q.get('enabled', True)),
+                        'order': int(q.get('order', 0)),
+                    })
+            qualities.sort(key=lambda x: (x.get('order', 0), x.get('id', '')))
+            profiles[index]['qualities'] = qualities
+        _save_profiles_config(profiles)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Profiles patch error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@common_bp.route('/api/profiles/<int:index>', methods=['DELETE'])
+def api_profiles_delete(index):
+    """Delete profile. Cannot delete profile named 'Standard' or the last profile."""
+    try:
+        profiles = _get_profiles_config()
+        if index < 0 or index >= len(profiles):
+            return jsonify({'success': False, 'error': 'Index out of range'}), 400
+        name = (profiles[index].get('name') or '').strip()
+        if name == PROFILES_DEFAULT_NAME:
+            return jsonify({'success': False, 'error': "Cannot delete the Standard profile."}), 400
+        if len(profiles) <= 1:
+            return jsonify({'success': False, 'error': 'Cannot delete the last profile.'}), 400
+        was_default = profiles[index].get('is_default')
+        profiles.pop(index)
+        if was_default and profiles:
+            profiles[0]['is_default'] = True
+            _save_profiles_config(profiles)
+        else:
+            _save_profiles_config(profiles)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Profiles delete error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 def _get_clients_config():
     """Get download clients list from database (app_config app_type=clients)."""
     from src.primary.utils.database import get_database
@@ -872,10 +1081,11 @@ def api_movie_hunt_request():
         ok, msg = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', None, verify_ssl)
         if not ok:
             return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
-        # Add to Media Collection for tracking
+        # Add to Media Collection for tracking (with root_folder for auto availability detection)
         tmdb_id = data.get('tmdb_id')
         poster_path = (data.get('poster_path') or '').strip() or None
-        _collection_append(title=title, year=year, tmdb_id=tmdb_id, poster_path=poster_path)
+        root_folder = (data.get('root_folder') or '').strip() or None
+        _collection_append(title=title, year=year, tmdb_id=tmdb_id, poster_path=poster_path, root_folder=root_folder)
         return jsonify({
             'success': True,
             'message': f'"{nzb_title or title}" sent to {client.get("name") or "download client"}.',
@@ -904,7 +1114,7 @@ def _save_collection_config(items_list):
     db.save_app_config('movie_hunt_collection', {'items': items_list})
 
 
-def _collection_append(title, year, tmdb_id=None, poster_path=None):
+def _collection_append(title, year, tmdb_id=None, poster_path=None, root_folder=None):
     """Append one entry to Media Collection after successful request."""
     from datetime import datetime
     items = _get_collection_config()
@@ -913,10 +1123,55 @@ def _collection_append(title, year, tmdb_id=None, poster_path=None):
         'year': year or '',
         'tmdb_id': tmdb_id,
         'poster_path': poster_path or '',
+        'root_folder': root_folder or '',
         'requested_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
         'status': 'requested'
     })
     _save_collection_config(items)
+
+
+# Video extensions for availability detection in root folder
+_VIDEO_EXTENSIONS = frozenset(('.mkv', '.mp4', '.avi', '.mov', '.wmv', '.m4v', '.mpg', '.mpeg', '.webm', '.flv', '.m2ts', '.ts'))
+
+
+def _detect_available_in_root_folder(root_path, title, year):
+    """
+    Check if a movie appears to be present in root_path (direct files or one level of subdirs).
+    Matches by video extension and title (or title+year) in filename or parent dir name.
+    """
+    if not root_path or not title:
+        return False
+    import re
+    title_lower = (title or '').lower().strip()
+    year_str = (year or '').strip()
+    # Normalize for matching: strip punctuation, collapse spaces
+    title_norm = re.sub(r'[^\w\s]', ' ', title_lower)
+    title_norm = ' '.join(title_norm.split())
+    if not title_norm:
+        return False
+    if not os.path.isdir(root_path):
+        return False
+    try:
+        for name in os.listdir(root_path):
+            full = os.path.join(root_path, name)
+            if os.path.isfile(full):
+                base, ext = os.path.splitext(name)
+                if ext.lower() in _VIDEO_EXTENSIONS and title_norm in base.lower().replace('.', ' ').replace('_', ' '):
+                    return True
+            elif os.path.isdir(full):
+                for subname in os.listdir(full):
+                    subfull = os.path.join(full, subname)
+                    if os.path.isfile(subfull):
+                        base, ext = os.path.splitext(subname)
+                        if ext.lower() in _VIDEO_EXTENSIONS:
+                            # Match by dir name or filename
+                            if title_norm in name.lower().replace('.', ' ').replace('_', ' ') or title_norm in base.lower().replace('.', ' ').replace('_', ' '):
+                                return True
+                            if year_str and year_str in name and title_norm in name.lower().replace('.', ' ').replace('_', ' '):
+                                return True
+    except OSError:
+        pass
+    return False
 
 
 def _get_root_folders_config():
@@ -1094,8 +1349,17 @@ def api_movie_hunt_collection_list():
         page_size = max(1, min(100, int(request.args.get('page_size', 20))))
         start = (page - 1) * page_size
         page_items = items[start:start + page_size]
+        # Enrich with auto-detected availability from root folder storage (response only, not persisted)
+        out_items = []
+        for it in page_items:
+            entry = dict(it)
+            root_path = (entry.get('root_folder') or '').strip()
+            if root_path and (entry.get('status') or '').lower() != 'available':
+                if _detect_available_in_root_folder(root_path, entry.get('title') or '', entry.get('year')):
+                    entry['status'] = 'available'
+            out_items.append(entry)
         return jsonify({
-            'items': page_items,
+            'items': out_items,
             'total': total,
             'page': page,
             'page_size': page_size

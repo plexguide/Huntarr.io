@@ -1,0 +1,313 @@
+<section id="settingsProfilesSection" class="content-section" style="display: none;">
+    <div id="profilesManagementContainer" class="app-content-panel">
+        <div class="settings-group profiles-settings-group">
+            <h3>Profiles</h3>
+            <div class="instance-card-grid" id="profile-instances-grid">
+                <div class="add-instance-card" data-app-type="profile">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Add Profile</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Profile modal -->
+    <div id="profile-add-modal" class="profile-add-modal" style="display: none;">
+        <div class="profile-add-modal-backdrop" id="profile-add-modal-backdrop"></div>
+        <div class="profile-add-modal-content">
+            <div class="profile-add-modal-header">
+                <button type="button" class="profile-add-modal-close" id="profile-add-modal-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h2 class="profile-add-modal-title">Add Profile</h2>
+                <p class="profile-add-modal-subtitle">Enter a name for the new profile.</p>
+            </div>
+            <div class="profile-add-modal-body">
+                <label for="profile-add-name">Profile name</label>
+                <input type="text" id="profile-add-name" class="profile-add-name-input" placeholder="e.g. HD Only" maxlength="64" autocomplete="off">
+            </div>
+            <div class="profile-add-modal-actions">
+                <button type="button" class="btn-card profile-add-modal-cancel" id="profile-add-modal-cancel">Cancel</button>
+                <button type="button" class="btn-card profile-add-modal-save" id="profile-add-modal-save"><i class="fas fa-plus"></i> Add</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    #settingsProfilesSection {
+        width: 100%;
+        min-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+        margin: 0;
+    }
+    #settingsProfilesSection.active {
+        display: block !important;
+    }
+    #profilesManagementContainer {
+        width: 100%;
+        padding: 20px;
+        margin: 0;
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
+    }
+    .profiles-settings-group {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        border: 2px solid rgba(90, 109, 137, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0 25px 0;
+        box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    .profiles-settings-group h3 {
+        margin: 0 0 20px 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #f8fafc;
+    }
+    .profile-add-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .profile-add-modal[style*="display: flex"] {
+        display: flex !important;
+    }
+    body.profile-add-modal-open {
+        overflow: hidden;
+    }
+    body.profile-add-modal-open .app-container {
+        filter: blur(10px);
+    }
+    .profile-add-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+    }
+    .profile-add-modal-content {
+        position: relative;
+        z-index: 1001;
+        background: rgba(15, 23, 42, 0.98);
+        border: 2px solid rgba(99, 102, 241, 0.4);
+        border-radius: 12px;
+        max-width: 420px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+    }
+    .profile-add-modal-header {
+        position: relative;
+        padding: 20px 24px 12px;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
+    }
+    .profile-add-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 4px;
+    }
+    .profile-add-modal-close:hover {
+        color: #f8fafc;
+    }
+    .profile-add-modal-title {
+        margin: 0 0 4px 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #f8fafc;
+    }
+    .profile-add-modal-subtitle {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #94a3b8;
+    }
+    .profile-add-modal-body {
+        padding: 20px 24px;
+    }
+    .profile-add-modal-body label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        color: #cbd5e1;
+    }
+    .profile-add-name-input {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 1rem;
+        color: #f8fafc;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+    .profile-add-name-input:focus {
+        outline: none;
+        border-color: #6366f1;
+    }
+    .profile-add-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 16px 24px 20px;
+        border-top: 1px solid rgba(148, 163, 184, 0.1);
+    }
+</style>
+
+<script>
+(function() {
+    'use strict';
+    function openProfileAddModal() {
+        var modal = document.getElementById('profile-add-modal');
+        var input = document.getElementById('profile-add-name');
+        if (modal) modal.style.display = 'flex';
+        if (input) {
+            input.value = '';
+            setTimeout(function() { input.focus(); }, 100);
+        }
+        document.body.classList.add('profile-add-modal-open');
+    }
+    function closeProfileAddModal() {
+        var modal = document.getElementById('profile-add-modal');
+        if (modal) modal.style.display = 'none';
+        document.body.classList.remove('profile-add-modal-open');
+    }
+    function initProfileAddModal() {
+        var backdrop = document.getElementById('profile-add-modal-backdrop');
+        var closeBtn = document.getElementById('profile-add-modal-close');
+        var cancelBtn = document.getElementById('profile-add-modal-cancel');
+        var saveBtn = document.getElementById('profile-add-modal-save');
+        var input = document.getElementById('profile-add-name');
+        if (backdrop) backdrop.onclick = closeProfileAddModal;
+        if (closeBtn) closeBtn.onclick = closeProfileAddModal;
+        if (cancelBtn) cancelBtn.onclick = closeProfileAddModal;
+        if (saveBtn) {
+            saveBtn.onclick = function() {
+                var name = (input && input.value) ? input.value.trim() : '';
+                if (!name) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Enter a profile name.', 'error');
+                    }
+                    return;
+                }
+                saveBtn.disabled = true;
+                fetch('./api/profiles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && window.SettingsForms && window.SettingsForms.refreshProfilesList) {
+                            window.SettingsForms.refreshProfilesList();
+                        }
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Profile added.', 'success');
+                        }
+                        closeProfileAddModal();
+                    })
+                    .catch(function() {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Failed to add profile.', 'error');
+                        }
+                    })
+                    .finally(function() { saveBtn.disabled = false; });
+            };
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('profile-add-modal').style.display === 'flex') {
+                closeProfileAddModal();
+            }
+        });
+    }
+    function initProfileGrid() {
+        var grid = document.getElementById('profile-instances-grid');
+        if (!grid) return;
+        grid.addEventListener('click', function(e) {
+            var addCard = e.target.closest('.add-instance-card[data-app-type="profile"]');
+            var editBtn = e.target.closest('.btn-card.edit[data-app-type="profile"]');
+            var setDefaultBtn = e.target.closest('.btn-card.set-default[data-app-type="profile"]');
+            var deleteBtn = e.target.closest('.btn-card.delete[data-app-type="profile"]');
+            if (editBtn) {
+                e.preventDefault();
+                var index = parseInt(editBtn.dataset.instanceIndex, 10);
+                if (window.SettingsForms && window.SettingsForms.openProfileEditor) {
+                    window.SettingsForms.openProfileEditor(index);
+                }
+            } else if (addCard) {
+                e.preventDefault();
+                openProfileAddModal();
+            } else if (setDefaultBtn) {
+                e.preventDefault();
+                var index = parseInt(setDefaultBtn.dataset.instanceIndex, 10);
+                fetch('./api/profiles/' + index, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_default: true })
+                })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && window.SettingsForms && window.SettingsForms.refreshProfilesList) {
+                            window.SettingsForms.refreshProfilesList();
+                        }
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Default profile updated.', 'success');
+                        }
+                    })
+                    .catch(function() {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Failed to update.', 'error');
+                        }
+                    });
+            } else if (deleteBtn) {
+                e.preventDefault();
+                var index = parseInt(deleteBtn.dataset.instanceIndex, 10);
+                var list = window.SettingsForms && window.SettingsForms._profilesList ? window.SettingsForms._profilesList : [];
+                var profile = list[index];
+                var name = profile && profile.name ? profile.name : 'this profile';
+                if (!confirm('Delete "' + name + '"?')) return;
+                fetch('./api/profiles/' + index, { method: 'DELETE' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && window.SettingsForms && window.SettingsForms.refreshProfilesList) {
+                            window.SettingsForms.refreshProfilesList();
+                        }
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Profile deleted.', 'success');
+                        }
+                    })
+                    .catch(function() {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Failed to delete profile.', 'error');
+                        }
+                    });
+            }
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            initProfileAddModal();
+            initProfileGrid();
+        });
+    } else {
+        initProfileAddModal();
+        initProfileGrid();
+    }
+})();
+</script>
