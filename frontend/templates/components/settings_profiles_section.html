@@ -77,6 +77,9 @@
     #profile-instances-grid .instance-card {
         padding: 12px 14px;
         border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
     }
     #profile-instances-grid .instance-card-header {
         margin-bottom: 10px;
@@ -98,6 +101,8 @@
     }
     #profile-instances-grid .instance-card-body {
         margin-bottom: 12px;
+        flex: 1;
+        min-height: 0;
     }
     #profile-instances-grid .instance-card-footer {
         gap: 6px;

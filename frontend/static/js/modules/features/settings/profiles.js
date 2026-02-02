@@ -1,6 +1,6 @@
 /**
- * Profiles (Movie Hunt) - list and CRUD for profiles. Default "Standard" profile.
- * App instances design: cards with DEFAULT badge, Set as default, Delete (Standard cannot be deleted).
+ * Profiles (Movie Hunt) - list and CRUD for profiles. Default "Standard" profile is auto-created when empty.
+ * App instances design: cards with DEFAULT badge, Set as default, Delete (any profile including Standard can be deleted).
  * Attaches to window.SettingsForms.
  */
 (function() {

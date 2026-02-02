@@ -6,6 +6,8 @@ Common routes blueprint for Huntarr web interface
 import os
 import json
 import base64
+import secrets
+import string
 import io
 import xml.etree.ElementTree as ET
 import qrcode
@@ -536,19 +538,35 @@ def api_profiles_list():
         return jsonify({'profiles': [], 'error': str(e)}), 200
 
 
+def _unique_profile_name(base_name, existing_profiles):
+    """If base_name is already used, append -<random alphanumeric> until unique."""
+    existing_names = {(p.get('name') or '').strip() for p in existing_profiles}
+    base = (base_name or 'Unnamed').strip() or 'Unnamed'
+    if base not in existing_names:
+        return base
+    alphabet = string.ascii_lowercase + string.digits
+    name = base
+    while name in existing_names:
+        suffix = ''.join(secrets.choice(alphabet) for _ in range(4))
+        name = base + '-' + suffix
+    return name
+
+
 @common_bp.route('/api/profiles', methods=['POST'])
 def api_profiles_add():
-    """Add a profile. Body: { name }. New profile uses full defaults, is_default=False."""
+    """Add a profile. Body: { name }. New profile uses full defaults, is_default=False.
+    If name duplicates an existing profile, appends -<random alphanumeric> (e.g. -a3f2)."""
     try:
         data = request.get_json() or {}
-        name = (data.get('name') or '').strip() or 'Unnamed'
+        base_name = (data.get('name') or '').strip() or 'Unnamed'
         profiles = _get_profiles_config()
+        name = _unique_profile_name(base_name, profiles)
         new_profile = _profile_defaults()
         new_profile['name'] = name
         new_profile['is_default'] = False
         profiles.append(new_profile)
         _save_profiles_config(profiles)
-        return jsonify({'success': True, 'index': len(profiles) - 1}), 200
+        return jsonify({'success': True, 'index': len(profiles) - 1, 'name': name}), 200
     except Exception as e:
         logger.exception('Profiles add error')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -637,16 +655,11 @@ def api_profiles_clone(index):
 
 @common_bp.route('/api/profiles/<int:index>', methods=['DELETE'])
 def api_profiles_delete(index):
-    """Delete profile. Cannot delete profile named 'Standard' or the last profile."""
+    """Delete profile. Any profile can be deleted; empty list triggers auto-creation of default Standard on next read."""
     try:
         profiles = _get_profiles_config()
         if index < 0 or index >= len(profiles):
             return jsonify({'success': False, 'error': 'Index out of range'}), 400
-        name = (profiles[index].get('name') or '').strip()
-        if name == PROFILES_DEFAULT_NAME:
-            return jsonify({'success': False, 'error': "Cannot delete the Standard profile."}), 400
-        if len(profiles) <= 1:
-            return jsonify({'success': False, 'error': 'Cannot delete the last profile.'}), 400
         was_default = profiles[index].get('is_default')
         profiles.pop(index)
         if was_default and profiles:
