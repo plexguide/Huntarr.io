@@ -187,6 +187,25 @@
         transform: none;
         box-shadow: none;
     }
+    @media (max-width: 768px) {
+        .custom-formats-section-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+        .custom-formats-header-actions {
+            width: 100%;
+            justify-content: stretch;
+        }
+        .btn-add-format,
+        .btn-delete-all {
+            flex: 1;
+            justify-content: center;
+        }
+        .custom-formats-help {
+            margin-bottom: 12px;
+        }
+    }
     #custom-formats-preformatted-grid,
     #custom-formats-imported-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-bottom: 20px; }
     .custom-formats-group-header {
