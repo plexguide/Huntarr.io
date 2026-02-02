@@ -422,7 +422,13 @@ def unlink_plex_account():
         # Check if user is authenticated via session
         session_id = request.cookies.get(SESSION_COOKIE_NAME)
         if not session_id or not verify_session(session_id):
-            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+            # Return a helpful message explaining what to do
+            logger.warning("Unlink attempt failed: User session expired or invalid")
+            return jsonify({
+                'success': False, 
+                'error': 'Session expired. Please log out and log back in with your username and password, then try unlinking again.',
+                'session_expired': True
+            }), 401
         
         # Since user is authenticated, we can directly unlink without username validation
         if unlink_plex_from_user():

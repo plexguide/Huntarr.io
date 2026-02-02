@@ -574,7 +574,18 @@ class UserModule {
                     this.updatePlexStatus(null);
                 }, 1500);
             } else {
-                this.showStatus(statusElement, result.error || 'Failed to unlink Plex account', 'error');
+                // Check if session expired - provide actionable guidance
+                if (result.session_expired) {
+                    this.showStatus(statusElement, result.error || 'Session expired. Please refresh the page and log in again.', 'error');
+                    // Auto-prompt user to refresh after showing message
+                    setTimeout(() => {
+                        if (confirm('Your session has expired. Would you like to log in again now?')) {
+                            window.location.href = './logout'; // Redirect to logout which will clear session and redirect to login
+                        }
+                    }, 2000);
+                } else {
+                    this.showStatus(statusElement, result.error || 'Failed to unlink Plex account', 'error');
+                }
             }
         } catch (error) {
             this.showStatus(statusElement, 'Error unlinking Plex account', 'error');
