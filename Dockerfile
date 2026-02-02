@@ -18,9 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . /app/
 
-# Create necessary directories
-# Log files are now stored in database only
-RUN mkdir -p /config && chmod -R 755 /config
+# Create necessary directories (config for app data; /media for Docker media mount)
+RUN mkdir -p /config /media && chmod -R 755 /config /media
 
 # Set environment variables
 ENV PYTHONPATH=/app

@@ -108,7 +108,7 @@ let huntarrUI = {
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user' || this.currentSection === 'settings-logs') {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
-        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients') {
+        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings') {
@@ -467,7 +467,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-settings', 'settings-indexers', 'settings-clients'];
+            const noRefreshSections = ['instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-settings', 'settings-indexers', 'settings-clients', 'settings-root-folders'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -872,6 +872,16 @@ let huntarrUI = {
             if (window.SettingsForms && typeof window.SettingsForms.refreshClientsList === 'function') {
                 window.SettingsForms.refreshClientsList();
             }
+        } else if (section === 'settings-root-folders' && document.getElementById('settingsRootFoldersSection')) {
+            document.getElementById('settingsRootFoldersSection').classList.add('active');
+            document.getElementById('settingsRootFoldersSection').style.display = 'block';
+            if (document.getElementById('movieHuntSettingsRootFoldersNav')) document.getElementById('movieHuntSettingsRootFoldersNav').classList.add('active');
+            newTitle = 'Root Folders';
+            this.currentSection = 'settings-root-folders';
+            this.showMovieHuntSidebar();
+            if (window.RootFolders && typeof window.RootFolders.refreshList === 'function') {
+                window.RootFolders.refreshList();
+            }
         } else if (section === 'settings-logs' && document.getElementById('settingsLogsSection')) {
             document.getElementById('settingsLogsSection').classList.add('active');
             document.getElementById('settingsLogsSection').style.display = 'block';
@@ -1079,7 +1089,7 @@ let huntarrUI = {
         const mhNav = document.getElementById('movieHuntNav');
         if (mhNav) mhNav.style.display = devMode ? '' : 'none';
         const onMovieHuntSection = this.currentSection && (
-            ['movie-hunt-home', 'movie-hunt-settings', 'settings-indexers', 'settings-clients'].indexOf(this.currentSection) !== -1 ||
+            ['movie-hunt-home', 'movie-hunt-settings', 'settings-indexers', 'settings-clients', 'settings-root-folders'].indexOf(this.currentSection) !== -1 ||
             (this.currentSection === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && (window.SettingsForms._currentEditing.appType === 'indexer' || window.SettingsForms._currentEditing.appType === 'client'))
         );
         if (!devMode && onMovieHuntSection) {

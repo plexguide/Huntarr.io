@@ -155,6 +155,12 @@
                     </div>
                     <span>Clients</span>
                 </a>
+                <a href="./#settings-root-folders" class="nav-item nav-item-sub" id="movieHuntSettingsRootFoldersNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <span>Root Folders</span>
+                </a>
             </div>
         </div>
     </nav>
@@ -1100,6 +1106,8 @@
             selector = '#movieHuntSettingsIndexersNav';
         } else if (currentHash === '#settings-clients') {
             selector = '#movieHuntSettingsClientsNav';
+        } else if (currentHash === '#settings-root-folders') {
+            selector = '#movieHuntSettingsRootFoldersNav';
         } else if (currentHash === '#scheduling') {
             selector = '#settingsSchedulingNav';
         } else if (currentHash === '#notifications') {
