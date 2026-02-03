@@ -55,6 +55,11 @@
                 }
                 html += '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Adding Client</div></div>';
                 grid.innerHTML = html;
+                
+                // Also refresh remote mappings if available
+                if (window.RemoteMappings && typeof window.RemoteMappings.refreshList === 'function') {
+                    window.RemoteMappings.refreshList();
+                }
             })
             .catch(function() {
                 grid.innerHTML = '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Adding Client</div></div>';

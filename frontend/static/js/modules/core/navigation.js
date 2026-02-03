@@ -70,7 +70,7 @@ window.HuntarrNavigation = {
             if (['apps'].includes(ui.currentSection) && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             if (ui.currentSection === 'prowlarr' && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             
-            const noRefresh = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'settings-remote-mappings'];
+            const noRefresh = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders'];
             if (!noRefresh.includes(section) && !noRefresh.includes(ui.currentSection)) {
                 localStorage.setItem('huntarr-target-section', section);
                 location.reload();
@@ -119,7 +119,6 @@ window.HuntarrNavigation = {
             'settings-indexers': { title: 'Indexers', nav: document.getElementById('movieHuntSettingsIndexersNav'), section: document.getElementById('settingsIndexersSection'), sidebar: 'moviehunt' },
             'settings-clients': { title: 'Clients', nav: document.getElementById('movieHuntSettingsClientsNav'), section: document.getElementById('settingsClientsSection'), sidebar: 'moviehunt' },
             'settings-root-folders': { title: 'Root Folders', nav: document.getElementById('movieHuntSettingsRootFoldersNav'), section: document.getElementById('settingsRootFoldersSection'), sidebar: 'moviehunt' },
-            'settings-remote-mappings': { title: 'Remote Path Mappings', nav: document.getElementById('movieHuntSettingsRemoteMappingsNav'), section: document.getElementById('settingsRemoteMappingsSection'), sidebar: 'moviehunt' },
             'settings-logs': { title: 'Log Settings', nav: document.getElementById('settingsLogsNav'), section: document.getElementById('settingsLogsSection'), sidebar: 'settings', init: 'initializeLogsSettings' },
             'scheduling': { title: 'Scheduling', nav: document.getElementById('schedulingNav'), section: document.getElementById('schedulingSection'), sidebar: 'settings' },
             'notifications': { title: 'Notifications', nav: document.getElementById('settingsNotificationsNav'), section: document.getElementById('notificationsSection'), sidebar: 'settings', init: 'initializeNotifications' },
@@ -203,9 +202,6 @@ window.HuntarrNavigation = {
         }
         if (section === 'settings-root-folders' && window.RootFolders && typeof window.RootFolders.refreshList === 'function') {
             window.RootFolders.refreshList();
-        }
-        if (section === 'settings-remote-mappings' && window.RemoteMappings && typeof window.RemoteMappings.refreshList === 'function') {
-            window.RemoteMappings.refreshList();
         }
         if ((section === 'activity-queue' || section === 'activity-history' || section === 'activity-blocklist') && window.ActivityModule && typeof window.ActivityModule.init === 'function') {
             var view = section === 'activity-queue' ? 'queue' : section === 'activity-history' ? 'history' : 'blocklist';
@@ -334,7 +330,7 @@ window.HuntarrNavigation = {
         });
         var subGroup = document.getElementById('movie-hunt-settings-sub');
         if (subGroup) {
-            var showSub = ['movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-root-folders', 'settings-remote-mappings', 'instance-editor'].indexOf(currentSection) !== -1;
+            var showSub = ['movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-root-folders', 'instance-editor'].indexOf(currentSection) !== -1;
             subGroup.classList.toggle('expanded', showSub);
         }
         var activitySub = document.getElementById('movie-hunt-activity-sub');
