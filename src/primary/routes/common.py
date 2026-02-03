@@ -1079,8 +1079,130 @@ def _add_requested_queue_id(client_name, queue_id, title=None, year=None, score=
     db.save_app_config('movie_hunt_requested', config)
 
 
+def _get_sabnzbd_history_item(client, queue_id):
+    """
+    Get a specific item from SABnzbd history by nzo_id.
+    Returns dict with status, storage (path), name, category or None if not found.
+    """
+    try:
+        base_url = _download_client_base_url(client)
+        if not base_url:
+            return None
+        
+        api_key = (client.get('api_key') or '').strip()
+        
+        url = f"{base_url}/api"
+        params = {
+            'mode': 'history',
+            'output': 'json',
+            'limit': 100  # Check last 100 items
+        }
+        if api_key:
+            params['apikey'] = api_key
+        
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        
+        r = requests.get(url, params=params, timeout=10, verify=verify_ssl)
+        r.raise_for_status()
+        data = r.json()
+        
+        slots = data.get('history', {}).get('slots', [])
+        for slot in slots:
+            if slot.get('nzo_id') == queue_id:
+                return {
+                    'status': slot.get('status', ''),  # 'Completed', 'Failed', etc.
+                    'storage': slot.get('storage', ''),  # Full path to download folder
+                    'name': slot.get('name', ''),
+                    'category': slot.get('category', '')
+                }
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error fetching SABnzbd history for {queue_id}: {e}")
+        return None
+
+
+def _check_and_import_completed(client_name, queue_item):
+    """
+    Check if a removed queue item completed successfully and trigger import.
+    queue_item: { id, title, year, score, score_breakdown }
+    """
+    try:
+        # Get the download client config
+        clients = _get_clients_config()
+        client = next((c for c in clients if (c.get('name') or '').strip() == client_name), None)
+        
+        if not client:
+            logger.warning(f"Download client '{client_name}' not found in config")
+            return
+        
+        client_type = (client.get('type') or 'nzbget').strip().lower()
+        queue_id = queue_item.get('id')
+        title = queue_item.get('title', '').strip()
+        year = queue_item.get('year', '').strip()
+        
+        if not title:
+            logger.warning(f"Queue item {queue_id} has no title, skipping import")
+            return
+        
+        # Only support SABnzbd for now (NZBGet implementation can be added later)
+        if client_type != 'sabnzbd':
+            logger.debug(f"Import only supported for SABnzbd (client type: {client_type})")
+            return
+        
+        # Query SABnzbd history for this item
+        history_item = _get_sabnzbd_history_item(client, queue_id)
+        
+        if not history_item:
+            logger.info(f"Movie Hunt: Queue item {queue_id} ('{title}') removed but not in history (user cancelled?)")
+            return
+        
+        # Check if it completed successfully
+        status = history_item.get('status', '').lower()
+        if status != 'completed':
+            logger.warning(f"Movie Hunt: Download '{title}' ({year}) failed with status: {status}")
+            return
+        
+        # Get download path from history
+        download_path = history_item.get('storage', '').strip()
+        
+        if not download_path:
+            logger.error(f"Movie Hunt: No storage path in history for '{title}' ({year})")
+            return
+        
+        # Trigger import
+        logger.info(f"Movie Hunt: Import triggered for '{title}' ({year}) from {download_path}")
+        
+        # Import the file (using thread to avoid blocking queue polling)
+        import threading
+        from src.primary.apps.movie_hunt.importer import import_movie
+        
+        def _do_import():
+            try:
+                success = import_movie(
+                    client=client,
+                    title=title,
+                    year=year,
+                    download_path=download_path
+                )
+                if success:
+                    logger.info(f"✅ Movie Hunt: Successfully imported '{title}' ({year})")
+                else:
+                    logger.error(f"❌ Movie Hunt: Failed to import '{title}' ({year})")
+            except Exception as e:
+                logger.exception(f"Error in import thread for '{title}' ({year}): {e}")
+        
+        import_thread = threading.Thread(target=_do_import, daemon=True)
+        import_thread.start()
+        
+    except Exception as e:
+        logger.exception(f"Error checking/importing completed download: {e}")
+
+
 def _prune_requested_queue_ids(client_name, current_queue_ids):
-    """Remove from our requested list any id no longer in the client's queue (completed/removed)."""
+    """Remove from our requested list any id no longer in the client's queue (completed/removed). Trigger import for completed items."""
     if not current_queue_ids:
         return
     from src.primary.utils.database import get_database
@@ -1094,12 +1216,23 @@ def _prune_requested_queue_ids(client_name, current_queue_ids):
     current = set(str(i) for i in current_queue_ids)
     entries = config['by_client'][cname]
     kept = []
+    removed = []  # Track removed items for import detection
+    
     for e in entries:
         eid = e.get('id') if isinstance(e, dict) else str(e)
         if str(eid) in current:
             kept.append(e)
+        else:
+            # Item no longer in queue - it completed or was removed
+            removed.append(e)
+    
     config['by_client'][cname] = kept
     db.save_app_config('movie_hunt_requested', config)
+    
+    # Trigger import for completed items
+    for item in removed:
+        if isinstance(item, dict):
+            _check_and_import_completed(client_name, item)
 
 
 def _extract_year_from_filename(filename):
@@ -1497,7 +1630,7 @@ def _get_activity_queue():
 
 @common_bp.route('/api/activity/<view>', methods=['GET'])
 def api_activity_get(view):
-    """Get activity items (queue, history, or blocklist). Queue uses Movie Hunt API; history/blocklist stubbed."""
+    """Get activity items (queue, history, or blocklist). Queue uses Movie Hunt download clients; history uses Movie Hunt import history."""
     if view not in ('queue', 'history', 'blocklist'):
         return jsonify({'error': 'Invalid view'}), 400
     page = max(1, request.args.get('page', 1, type=int))
@@ -1521,7 +1654,48 @@ def api_activity_get(view):
             'total_pages': total_pages
         }), 200
 
-    # History and blocklist: stub for now
+    # History: Get Movie Hunt import history
+    if view == 'history':
+        try:
+            from src.primary.history_manager import get_history
+            result = get_history('movie_hunt', search_query=search if search else None, page=page, page_size=page_size)
+            
+            # Map history entries to activity format
+            history_items = []
+            for entry in result.get('entries', []):
+                # Extract title/year from processed_info (format: "Movie Title (2020) → FolderName")
+                processed_info = entry.get('processed_info', '')
+                title_part = processed_info.split(' → ')[0] if ' → ' in processed_info else processed_info
+                
+                history_items.append({
+                    'id': entry.get('id'),
+                    'movie': title_part,
+                    'title': title_part,
+                    'year': '',
+                    'languages': '-',
+                    'quality': '-',
+                    'formats': '-',
+                    'date': entry.get('date_time_readable', ''),
+                    'instance_name': entry.get('instance_name', 'Download client'),
+                })
+            
+            return jsonify({
+                'items': history_items,
+                'total': result.get('total_entries', 0),
+                'page': page,
+                'total_pages': result.get('total_pages', 1)
+            }), 200
+            
+        except Exception as e:
+            logger.error(f"Error getting Movie Hunt history: {e}")
+            return jsonify({
+                'items': [],
+                'total': 0,
+                'page': page,
+                'total_pages': 1
+            }), 200
+    
+    # Blocklist: stub for now
     return jsonify({
         'items': [],
         'total': 0,

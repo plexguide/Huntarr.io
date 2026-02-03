@@ -1,0 +1,339 @@
+"""
+Movie Hunt Import Handler
+Handles importing completed downloads to root folders with renaming and history tracking.
+"""
+
+import os
+import shutil
+import logging
+from pathlib import Path
+from typing import Dict, Any, Optional, List, Tuple
+
+logger = logging.getLogger(__name__)
+
+# Video file extensions (same as root folder detection)
+_VIDEO_EXTENSIONS = frozenset(('.mkv', '.mp4', '.avi', '.mov', '.wmv', '.m4v', '.mpg', '.mpeg', '.webm', '.flv', '.m2ts', '.ts'))
+
+# Sample file indicators (skip these)
+_SAMPLE_INDICATORS = frozenset(('sample', 'trailer', 'preview', 'extra', 'bonus'))
+
+# Minimum file size to be considered a movie (100 MB)
+_MIN_MOVIE_SIZE_MB = 100
+_MIN_MOVIE_SIZE_BYTES = _MIN_MOVIE_SIZE_MB * 1024 * 1024
+
+
+def _translate_remote_path(remote_path: str, client_host: str) -> str:
+    """
+    Translate a remote download client path to local path using remote path mappings.
+    
+    Args:
+        remote_path: Path from download client (e.g., /data/downloads/Movie/)
+        client_host: Download client host (e.g., "192.168.1.100:8080")
+    
+    Returns:
+        Translated local path (e.g., /mnt/user/downloads/Movie/)
+    """
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        config = db.get_app_config('movie_hunt_remote_mappings')
+        
+        if not config or not isinstance(config.get('mappings'), list):
+            logger.debug("No remote path mappings configured, using path as-is")
+            return remote_path
+        
+        mappings = config['mappings']
+        
+        # Match by host (strip protocol if present)
+        host_clean = client_host.replace('http://', '').replace('https://', '').strip()
+        
+        for mapping in mappings:
+            mapping_host = (mapping.get('host') or '').strip()
+            mapping_host_clean = mapping_host.replace('http://', '').replace('https://', '').strip()
+            
+            if mapping_host_clean == host_clean:
+                remote = (mapping.get('remote_path') or '').strip()
+                local = (mapping.get('local_path') or '').strip()
+                
+                if not remote or not local:
+                    continue
+                
+                # Normalize paths for comparison (handle trailing slashes)
+                remote_normalized = remote.rstrip('/') + '/'
+                remote_path_normalized = remote_path.rstrip('/') + '/'
+                
+                if remote_path_normalized.startswith(remote_normalized):
+                    # Replace remote prefix with local prefix
+                    translated = remote_path.replace(remote.rstrip('/'), local.rstrip('/'), 1)
+                    logger.info(f"Translated path: {remote_path} -> {translated}")
+                    return translated
+        
+        logger.debug(f"No matching remote path mapping for host {client_host}, using path as-is")
+        return remote_path
+        
+    except Exception as e:
+        logger.error(f"Error translating remote path: {e}")
+        return remote_path
+
+
+def _find_largest_video_file(download_path: str) -> Optional[str]:
+    """
+    Find the largest video file in the download path (handles both single file and directory).
+    Skips sample files and files below minimum size.
+    
+    Args:
+        download_path: Path where download client stored the file(s)
+    
+    Returns:
+        Full path to the largest video file, or None if not found
+    """
+    try:
+        path = Path(download_path)
+        
+        if not path.exists():
+            logger.error(f"Download path does not exist: {download_path}")
+            return None
+        
+        video_files = []
+        
+        # If it's a single file
+        if path.is_file():
+            if path.suffix.lower() in _VIDEO_EXTENSIONS:
+                file_size = path.stat().st_size
+                if file_size >= _MIN_MOVIE_SIZE_BYTES:
+                    return str(path)
+                else:
+                    logger.warning(f"Video file too small ({file_size / 1024 / 1024:.1f} MB): {path.name}")
+            return None
+        
+        # If it's a directory, search for video files
+        for item in path.rglob('*'):
+            if item.is_file() and item.suffix.lower() in _VIDEO_EXTENSIONS:
+                # Skip sample files
+                name_lower = item.name.lower()
+                if any(indicator in name_lower for indicator in _SAMPLE_INDICATORS):
+                    logger.debug(f"Skipping sample file: {item.name}")
+                    continue
+                
+                # Check file size
+                file_size = item.stat().st_size
+                if file_size < _MIN_MOVIE_SIZE_BYTES:
+                    logger.debug(f"Skipping small file ({file_size / 1024 / 1024:.1f} MB): {item.name}")
+                    continue
+                
+                video_files.append((str(item), file_size))
+        
+        if not video_files:
+            logger.error(f"No valid video files found in {download_path}")
+            return None
+        
+        # Return the largest file
+        largest_file = max(video_files, key=lambda x: x[1])
+        logger.info(f"Found largest video file: {Path(largest_file[0]).name} ({largest_file[1] / 1024 / 1024:.1f} MB)")
+        return largest_file[0]
+        
+    except Exception as e:
+        logger.error(f"Error finding video file in {download_path}: {e}")
+        return None
+
+
+def _get_collection_item(title: str, year: str) -> Optional[Dict[str, Any]]:
+    """Get collection item by title and year."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        config = db.get_app_config('movie_hunt_collection')
+        
+        if not config or not isinstance(config.get('items'), list):
+            return None
+        
+        items = config['items']
+        for item in items:
+            if item.get('title') == title and item.get('year') == year:
+                return item
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error getting collection item: {e}")
+        return None
+
+
+def _update_collection_status(title: str, year: str, status: str, file_path: Optional[str] = None):
+    """Update collection item status and file path."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        config = db.get_app_config('movie_hunt_collection')
+        
+        if not config or not isinstance(config.get('items'), list):
+            return
+        
+        items = config['items']
+        updated = False
+        
+        for item in items:
+            if item.get('title') == title and item.get('year') == year:
+                item['status'] = status
+                if file_path:
+                    item['file_path'] = file_path
+                updated = True
+                break
+        
+        if updated:
+            db.save_app_config('movie_hunt_collection', {'items': items})
+            logger.info(f"Updated collection status for '{title}' ({year}): {status}")
+        
+    except Exception as e:
+        logger.error(f"Error updating collection status: {e}")
+
+
+def _get_default_root_folder() -> Optional[str]:
+    """Get the default root folder path."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        config = db.get_app_config('movie_hunt_root_folders')
+        
+        if not config or not isinstance(config.get('root_folders'), list):
+            return None
+        
+        root_folders = config['root_folders']
+        
+        # Find default root folder
+        for rf in root_folders:
+            if rf.get('is_default'):
+                return rf.get('path')
+        
+        # If no default, return first one
+        if root_folders:
+            return root_folders[0].get('path')
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error getting default root folder: {e}")
+        return None
+
+
+def _add_import_history(title: str, year: str, client_name: str, dest_file: str, success: bool = True):
+    """Add import entry to Movie Hunt history."""
+    try:
+        from src.primary.history_manager import add_history_entry
+        
+        # Format display name
+        display_name = f"{title} ({year})" if year else title
+        if success:
+            display_name += f" → {Path(dest_file).parent.name}"
+        
+        entry_data = {
+            'id': f"{title}_{year}",  # Use title_year as media_id
+            'name': display_name,
+            'operation_type': 'import',
+            'instance_name': client_name,
+        }
+        
+        add_history_entry('movie_hunt', entry_data)
+        logger.info(f"Added import history for '{title}' ({year})")
+        
+    except Exception as e:
+        logger.error(f"Error adding import history: {e}")
+
+
+def import_movie(client: Dict[str, Any], title: str, year: str, download_path: str) -> bool:
+    """
+    Import a completed movie download to its root folder.
+    
+    Args:
+        client: Download client config dict
+        title: Movie title
+        year: Movie year
+        download_path: Path where download client stored the file
+    
+    Returns:
+        True if import succeeded, False otherwise
+    """
+    try:
+        logger.info(f"Starting import for '{title}' ({year}) from {download_path}")
+        
+        # 1. Get collection item to determine root folder
+        collection_item = _get_collection_item(title, year)
+        
+        if not collection_item:
+            logger.warning(f"Movie '{title}' ({year}) not in collection, skipping import")
+            return False
+        
+        # Get root folder (from collection or default)
+        root_folder = collection_item.get('root_folder')
+        if not root_folder:
+            root_folder = _get_default_root_folder()
+        
+        if not root_folder:
+            logger.error(f"No root folder configured for '{title}' ({year})")
+            return False
+        
+        # Verify root folder exists
+        if not os.path.exists(root_folder):
+            logger.error(f"Root folder does not exist: {root_folder}")
+            return False
+        
+        # 2. Translate path using remote mappings
+        client_host = f"{client.get('host', '')}:{client.get('port', 8080)}"
+        local_path = _translate_remote_path(download_path, client_host)
+        
+        # 3. Find video file
+        video_file = _find_largest_video_file(local_path)
+        if not video_file:
+            logger.error(f"No video file found in {local_path}")
+            return False
+        
+        # 4. Create movie folder
+        folder_name = f"{title} ({year})" if year else title
+        # Sanitize folder name (remove invalid characters)
+        folder_name = "".join(c for c in folder_name if c not in r'<>:"/\|?*')
+        dest_folder = os.path.join(root_folder, folder_name)
+        
+        try:
+            os.makedirs(dest_folder, exist_ok=True)
+        except Exception as e:
+            logger.error(f"Failed to create destination folder {dest_folder}: {e}")
+            return False
+        
+        # 5. Generate filename
+        ext = os.path.splitext(video_file)[1]
+        file_name = f"{title} ({year}){ext}" if year else f"{title}{ext}"
+        # Sanitize filename
+        file_name = "".join(c for c in file_name if c not in r'<>:"/\|?*')
+        dest_file = os.path.join(dest_folder, file_name)
+        
+        # 6. Check if file already exists
+        if os.path.exists(dest_file):
+            logger.warning(f"File already exists: {dest_file}")
+            # Update collection status anyway
+            _update_collection_status(title, year, 'available', dest_file)
+            client_name = client.get('name', 'Download client')
+            _add_import_history(title, year, client_name, dest_file, success=True)
+            return True
+        
+        # 7. Move file (use shutil.move which handles cross-filesystem moves)
+        logger.info(f"Moving: {video_file} -> {dest_file}")
+        
+        try:
+            shutil.move(video_file, dest_file)
+        except Exception as e:
+            logger.error(f"Failed to move file: {e}")
+            return False
+        
+        # 8. Update collection status
+        _update_collection_status(title, year, 'available', dest_file)
+        
+        # 9. Add to history
+        client_name = client.get('name', 'Download client')
+        _add_import_history(title, year, client_name, dest_file, success=True)
+        
+        logger.info(f"✅ Successfully imported '{title}' ({year}) to {dest_file}")
+        return True
+        
+    except Exception as e:
+        logger.exception(f"Error importing movie '{title}' ({year}): {e}")
+        return False

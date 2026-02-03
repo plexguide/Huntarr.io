@@ -24,7 +24,8 @@ history_locks = {
     "readarr": threading.Lock(),
     "whisparr": threading.Lock(),
     "eros": threading.Lock(),
-    "swaparr": threading.Lock()
+    "swaparr": threading.Lock(),
+    "movie_hunt": threading.Lock()
 }
 
 def add_history_entry(app_type, entry_data):
