@@ -591,6 +591,115 @@ def _release_matches_quality(release_title, quality_name):
     return True
 
 
+def _score_release(release_title, profile):
+    """
+    Score a release using (1) the profile's enabled qualities and (2) custom format scores.
+    (1) Profile qualities: which enabled quality (e.g. WEB 720p, WEB 1080p, WEB 2160p) the
+        release matches; score by preference order (first match wins, higher order = lower score).
+    (2) Custom formats: each matching custom format adds its configured score (regex match on title).
+    Returns (total_score, breakdown_str) for display in queue. Higher is better.
+    """
+    import re
+    if not release_title or not (release_title or '').strip():
+        return 0, '-'
+    parts = []
+    total = 0
+
+    # (1) Score from profile's enabled qualities (720p, 1080p, 2160p, etc.)
+    # Qualities are sorted by order (ascending); lower order = more preferred. Give points so
+    # preferred qualities score higher: e.g. 100 - order so order 3 -> 97, order 7 -> 93.
+    enabled_qualities = [(q.get('order', 99), q.get('name') or '') for q in (profile.get('qualities') or []) if q.get('enabled')]
+    enabled_qualities.sort(key=lambda x: (x[0], x[1]))
+    for qorder, qname in enabled_qualities:
+        if not qname:
+            continue
+        if _release_matches_quality(release_title, qname):
+            # Score: 100 - order so lower order = higher score (max 100, min ~78 for order 22)
+            quality_score = max(0, 100 - qorder)
+            total += quality_score
+            parts.append('%s +%d' % (qname.strip(), quality_score))
+            break  # only one quality match per release
+
+    # (2) Custom format scores (from profile editor "Custom format scores" list)
+    try:
+        custom_formats = _get_custom_formats_config()
+        for cf in custom_formats:
+            cf_json = cf.get('custom_format_json')
+            score_val = cf.get('score')
+            if score_val is None:
+                score_val = 0
+            try:
+                score_val = int(score_val)
+            except (TypeError, ValueError):
+                score_val = 0
+            name = (cf.get('title') or cf.get('name') or 'CF').strip() or 'CF'
+            if not cf_json:
+                continue
+            obj = json.loads(cf_json) if isinstance(cf_json, str) else cf_json
+            if not isinstance(obj, dict):
+                continue
+            # Radarr/TRaSH: "include" array with items that may have "match" or "pattern" (regex)
+            included = obj.get('include') or []
+            if not isinstance(included, list):
+                included = [included] if included else []
+            matched = False
+            for inc in included:
+                if not isinstance(inc, dict):
+                    continue
+                pattern = inc.get('match') or inc.get('regex') or inc.get('pattern')
+                if not pattern or not isinstance(pattern, str):
+                    continue
+                try:
+                    if re.search(pattern, release_title, re.IGNORECASE):
+                        matched = True
+                        break
+                except re.error:
+                    continue
+            if matched:
+                total += score_val
+                parts.append('%s +%d' % (name, score_val))
+    except Exception:
+        pass
+    if not parts:
+        return 0, '-'
+    return total, ', '.join(parts)
+
+
+def _best_result_matching_profile(results, profile):
+    """
+    From Newznab results list [{title, nzb_url}, ...], return the best result that matches
+    the profile (enabled qualities). Best = highest _score_release. Returns (result, score, breakdown_str).
+    If none match profile, returns (None, 0, '').
+    """
+    if not results:
+        return None, 0, ''
+    enabled_names = [q.get('name') or '' for q in (profile.get('qualities') or []) if q.get('enabled')]
+    if not enabled_names:
+        # No profile filter: score all and pick best
+        scored = []
+        for r in results:
+            title = (r.get('title') or '').strip()
+            sc, br = _score_release(title, profile)
+            scored.append((sc, br, r))
+        scored.sort(key=lambda x: (-x[0], x[2].get('title') or ''))
+        best = scored[0]
+        return best[2], best[0], best[1]
+    # Filter to profile-matching only, then pick best by score
+    candidates = []
+    for r in results:
+        title = (r.get('title') or '').strip()
+        for qname in enabled_names:
+            if _release_matches_quality(title, qname):
+                sc, br = _score_release(title, profile)
+                candidates.append((sc, br, r))
+                break
+    if not candidates:
+        return None, 0, ''
+    candidates.sort(key=lambda x: (-x[0], x[2].get('title') or ''))
+    best = candidates[0]
+    return best[2], best[0], best[1]
+
+
 def _first_result_matching_profile(results, profile):
     """
     From Newznab results list [{title, nzb_url}, ...], return the first result whose title
@@ -864,23 +973,34 @@ def _get_requested_queue_ids():
 
 
 def _get_requested_display(client_name, queue_id):
-    """Return {title, year} for a requested queue item for display. Empty strings if not found."""
+    """Return {title, year, score, score_breakdown} for a requested queue item for display. Empty/0 if not found."""
     from src.primary.utils.database import get_database
     db = get_database()
     config = db.get_app_config('movie_hunt_requested')
     if not config or not isinstance(config.get('by_client'), dict):
-        return {'title': '', 'year': ''}
+        return {'title': '', 'year': '', 'score': None, 'score_breakdown': ''}
     cname = (client_name or 'Download client').strip() or 'Download client'
     entries = config.get('by_client', {}).get(cname) or []
     sid = str(queue_id)
     for e in entries:
         if isinstance(e, dict) and str(e.get('id', '')) == sid:
-            return {'title': (e.get('title') or '').strip(), 'year': (e.get('year') or '').strip()}
-    return {'title': '', 'year': ''}
+            score = e.get('score')
+            if score is not None:
+                try:
+                    score = int(score)
+                except (TypeError, ValueError):
+                    score = None
+            return {
+                'title': (e.get('title') or '').strip(),
+                'year': (e.get('year') or '').strip(),
+                'score': score,
+                'score_breakdown': (e.get('score_breakdown') or '').strip(),
+            }
+    return {'title': '', 'year': '', 'score': None, 'score_breakdown': ''}
 
 
-def _add_requested_queue_id(client_name, queue_id, title=None, year=None):
-    """Record that we requested this queue item (so we only show it in Activity queue). Store title/year for display."""
+def _add_requested_queue_id(client_name, queue_id, title=None, year=None, score=None, score_breakdown=None):
+    """Record that we requested this queue item (so we only show it in Activity queue). Store title/year and optional score for display."""
     from src.primary.utils.database import get_database
     db = get_database()
     config = db.get_app_config('movie_hunt_requested') or {}
@@ -896,8 +1016,19 @@ def _add_requested_queue_id(client_name, queue_id, title=None, year=None):
         else:
             normalized.append({'id': str(e), 'title': '', 'year': ''})
     existing_ids = {e.get('id') for e in normalized}
+    entry = {'id': sid, 'title': (title or '').strip(), 'year': (year or '').strip()}
+    if score is not None:
+        entry['score'] = int(score)
+    if score_breakdown is not None:
+        entry['score_breakdown'] = (score_breakdown or '').strip()
     if sid not in existing_ids:
-        normalized.append({'id': sid, 'title': (title or '').strip(), 'year': (year or '').strip()})
+        normalized.append(entry)
+    else:
+        # Update existing entry with new title/year/score if we're re-adding
+        for i, e in enumerate(normalized):
+            if e.get('id') == sid:
+                normalized[i] = {**e, **entry}
+                break
     by_client[cname] = normalized
     config['by_client'] = by_client
     db.save_app_config('movie_hunt_requested', config)
@@ -1011,6 +1142,20 @@ def _extract_formats_from_filename(filename):
     return ' / '.join(parts)
 
 
+def _format_queue_scoring(score, score_breakdown=None):
+    """Format scoring for queue column: '95 (1080p +30, WEB +20)' or '95' or '-'."""
+    if score is None:
+        return '-'
+    try:
+        s = int(score)
+    except (TypeError, ValueError):
+        return '-'
+    br = (score_breakdown or '').strip()
+    if br:
+        return '%d (%s)' % (s, br)
+    return str(s)
+
+
 def _format_queue_display_name(filename, title=None, year=None):
     """Format display as 'Title (Year)' or 'Title'. Uses stored title/year if present, else parses filename."""
     display_title = (title or '').strip()
@@ -1109,6 +1254,7 @@ def _get_download_client_queue(client):
                     filename = '-'
                 display = _get_requested_display(name, nzo_id)
                 display_name = _format_queue_display_name(filename, display.get('title'), display.get('year'))
+                scoring_str = _format_queue_scoring(display.get('score'), display.get('score_breakdown'))
                 # SABnzbd slot: mb (total MB), mbleft (remaining MB), timeleft, percentage, cat
                 size_mb = slot.get('mb') or slot.get('size') or 0
                 try:
@@ -1150,6 +1296,7 @@ def _get_download_client_queue(client):
                     'languages': '-',
                     'quality': quality_str,
                     'formats': formats_str,
+                    'scoring': scoring_str,
                     'time_left': time_left,
                     'progress': progress,
                     'instance_name': name,
@@ -1184,6 +1331,7 @@ def _get_download_client_queue(client):
                     nzb_name = '-'
                 display = _get_requested_display(name, nzb_id)
                 display_name = _format_queue_display_name(nzb_name, display.get('title'), display.get('year'))
+                scoring_str = _format_queue_scoring(display.get('score'), display.get('score_breakdown'))
                 size_mb = grp.get('FileSizeMB') or 0
                 try:
                     size_mb = float(size_mb)
@@ -1212,6 +1360,7 @@ def _get_download_client_queue(client):
                     'languages': '-',
                     'quality': quality_str,
                     'formats': formats_str,
+                    'scoring': scoring_str,
                     'time_left': '-',
                     'progress': progress,
                     'instance_name': name,
@@ -2067,6 +2216,8 @@ def api_movie_hunt_request():
         nzb_url = None
         nzb_title = None
         indexer_used = None
+        request_score = 0
+        request_score_breakdown = ''
         for idx in enabled_indexers:
             preset = (idx.get('preset') or '').strip().lower()
             base_url = INDEXER_PRESET_URLS.get(preset)
@@ -2078,12 +2229,14 @@ def api_movie_hunt_request():
             categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
             results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
             if results:
-                # Only use a release that matches the selected profile's enabled qualities
-                chosen = _first_result_matching_profile(results, profile)
+                # Pick best release by score among those matching the profile (not just first)
+                chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(results, profile)
                 if chosen:
                     nzb_url = chosen.get('nzb_url')
                     nzb_title = chosen.get('title', 'Unknown')
                     indexer_used = idx.get('name') or preset
+                    request_score = chosen_score
+                    request_score_breakdown = chosen_breakdown or ''
                     break
         if not nzb_url:
             profile_name = (profile.get('name') or 'Standard').strip()
@@ -2098,10 +2251,10 @@ def api_movie_hunt_request():
         ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl)
         if not ok:
             return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
-        # Track this request so Activity queue only shows items we requested (with title/year for display)
+        # Track this request so Activity queue only shows items we requested (with title/year and score for display)
         if queue_id:
             client_name = (client.get('name') or 'Download client').strip() or 'Download client'
-            _add_requested_queue_id(client_name, queue_id, title=title, year=year or '')
+            _add_requested_queue_id(client_name, queue_id, title=title, year=year or '', score=request_score, score_breakdown=request_score_breakdown)
         # Add to Media Collection for tracking (with root_folder for auto availability detection)
         tmdb_id = data.get('tmdb_id')
         poster_path = (data.get('poster_path') or '').strip() or None

@@ -131,6 +131,7 @@
                 '<td class="col-languages">' + escapeHtml(item.languages || '-') + '</td>' +
                 '<td class="col-quality">' + escapeHtml(item.quality || '-') + '</td>' +
                 '<td class="col-formats">' + escapeHtml(item.formats || '-') + '</td>' +
+                '<td class="col-scoring">' + escapeHtml(item.scoring != null ? item.scoring : '-') + '</td>' +
                 '<td class="col-time-left">' + escapeHtml(item.time_left != null ? item.time_left : '-') + '</td>' +
                 '<td class="col-progress">' + escapeHtml(item.progress != null ? item.progress : '-') + '</td>';
         } else if (currentView === 'history') {
