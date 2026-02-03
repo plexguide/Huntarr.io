@@ -94,7 +94,7 @@ def update_sleep_json(app_type: str, next_cycle_time: datetime.datetime, cyclelo
                 last_cycle_start=current_data.get('last_cycle_start'),
                 last_cycle_end=current_data.get('last_cycle_end')
             )
-        logger.info(f"Updated sleep data for {label}: next_cycle={next_cycle_time.isoformat()}, cyclelock={cyclelock}")
+        logger.debug(f"Updated sleep data for {label}: next_cycle={next_cycle_time.isoformat()}, cyclelock={cyclelock}")
     except Exception as e:
         logger.error(f"Error updating sleep data for {app_type}: {e}")
 
@@ -289,7 +289,7 @@ def end_cycle(app_type: str, next_cycle_time: datetime.datetime,
     """Mark that a cycle has ended for an app or (app, instance). instance_name=None for swaparr."""
     try:
         label = f"{app_type}" + (f" instance {instance_name}" if instance_name else "")
-        logger.info(f"Ending cycle for {label}, next cycle at {next_cycle_time.isoformat()}")
+        logger.debug(f"Ending cycle for {label}, next cycle at {next_cycle_time.isoformat()}")
         db = get_database()
         user_tz = _get_user_timezone()
         now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
@@ -318,10 +318,7 @@ def end_cycle(app_type: str, next_cycle_time: datetime.datetime,
                     last_cycle_start=current_data.get('last_cycle_start'),
                     last_cycle_end=now_user_tz.isoformat()
                 )
-        if app_type == "swaparr":
-            logger.debug(f"Ended cycle for {label} (cyclelock = False)")
-        else:
-            logger.info(f"Ended cycle for {label} (cyclelock = False)")
+        logger.debug(f"Ended cycle for {label} (cyclelock = False)")
     except Exception as e:
         logger.error(f"Error ending cycle for {app_type}: {e}")
 

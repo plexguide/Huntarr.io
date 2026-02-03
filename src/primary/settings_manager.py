@@ -16,7 +16,6 @@ from typing import Dict, Any, Optional, List
 _DEV_KEY_HASH = "81fc4fcfa6ec4a7a19c9aafe60eea0022ef2c5d05f78484b77cf6578d983f6d3"
 
 # Create a simple logger for settings_manager
-logging.basicConfig(level=logging.INFO)
 settings_logger = logging.getLogger("settings_manager")
 
 # Database integration
