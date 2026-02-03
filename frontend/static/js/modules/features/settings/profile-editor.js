@@ -209,25 +209,24 @@
     }
 
     function saveProfileEditorScores() {
+        if (!_profileEditorScoresList || _profileEditorScoresList.length === 0) return Promise.resolve();
         const tbody = document.getElementById('profile-editor-scores-tbody');
         if (!tbody) return Promise.resolve();
         const rows = tbody.querySelectorAll('tr[data-index]');
-        const promises = [];
+        var scores = _profileEditorScoresList.slice().map(function(o) { return o.score; });
         rows.forEach(function(row) {
             const idx = parseInt(row.getAttribute('data-index'), 10);
             const input = row.querySelector('.profile-editor-score-input');
-            if (isNaN(idx) || !input) return;
+            if (isNaN(idx) || idx < 0 || idx >= scores.length || !input) return;
             let val = parseInt(input.value, 10);
             if (isNaN(val)) val = 0;
-            promises.push(
-                fetch('./api/custom-formats/' + idx, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ score: val })
-                }).then(function(r) { return r.json(); })
-            );
+            scores[idx] = val;
         });
-        return Promise.all(promises);
+        return fetch('./api/custom-formats/scores', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scores: scores })
+        }).then(function(r) { return r.json(); });
     }
 
     function markProfileEditorDirty() {

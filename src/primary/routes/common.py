@@ -1732,6 +1732,30 @@ def api_custom_formats_add():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@common_bp.route('/api/custom-formats/scores', methods=['PUT'])
+def api_custom_formats_scores_batch():
+    """Update all custom format scores in one request. Body: { scores: [ ... ] } (array by index). Avoids race when saving many."""
+    try:
+        data = request.get_json() or {}
+        scores = data.get('scores')
+        if not isinstance(scores, list):
+            return jsonify({'success': False, 'message': 'scores array required'}), 400
+        formats = _get_custom_formats_config()
+        if len(scores) != len(formats):
+            return jsonify({'success': False, 'message': 'scores length must match custom formats count'}), 400
+        for i in range(len(formats)):
+            try:
+                val = int(scores[i])
+            except (TypeError, ValueError, IndexError):
+                val = 0
+            formats[i]['score'] = val
+        _save_custom_formats_config(formats)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Custom formats scores batch error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @common_bp.route('/api/custom-formats/<int:index>', methods=['PATCH'])
 def api_custom_formats_patch(index):
     """Update custom format. Body: title?, custom_format_json?, score?."""
