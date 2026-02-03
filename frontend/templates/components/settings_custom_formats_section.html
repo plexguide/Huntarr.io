@@ -3,9 +3,8 @@
         <!-- Pre-Formatted Section -->
         <div class="settings-group custom-formats-settings-group">
             <div class="custom-formats-section-header">
-                <div>
+                <div class="custom-formats-header-text">
                     <h3>Pre-Formatted Custom Formats</h3>
-                    <p class="custom-formats-help">TRaSH Guides formats. Click Add to select from categories.</p>
                 </div>
                 <div class="custom-formats-header-actions">
                     <button type="button" class="btn-add-format" id="add-preformatted-btn" title="Add pre-formatted custom formats">
@@ -16,6 +15,7 @@
                     </button>
                 </div>
             </div>
+            <p class="custom-formats-description">To learn more about Pre-Formatted Custom Formats, please visit <a href="https://trash-guides.info/Radarr/Radarr-collection-of-custom-formats/" target="_blank" rel="noopener">TRaSH Guides</a>.</p>
             <div class="instance-card-grid" id="custom-formats-preformatted-grid">
                 <!-- Cards will be dynamically populated here -->
             </div>
@@ -24,9 +24,8 @@
         <!-- Imported Section -->
         <div class="settings-group custom-formats-settings-group">
             <div class="custom-formats-section-header">
-                <div>
+                <div class="custom-formats-header-text">
                     <h3>Imported Custom Formats</h3>
-                    <p class="custom-formats-help">Your custom JSON imports. Click Add to paste your own JSON.</p>
                 </div>
                 <div class="custom-formats-header-actions">
                     <button type="button" class="btn-add-format" id="add-imported-btn" title="Add imported custom format">
@@ -37,6 +36,7 @@
                     </button>
                 </div>
             </div>
+            <p class="custom-formats-description">To learn how to use imported formats, please visit <a href="https://trash-guides.info/Radarr/Radarr-import-custom-formats/" target="_blank" rel="noopener">TRaSH Guides</a>.</p>
             <div class="instance-card-grid" id="custom-formats-imported-grid">
                 <!-- Cards will be dynamically populated here -->
             </div>
@@ -112,6 +112,22 @@
     }
     .custom-formats-settings-group h3 { margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 600; color: #f8fafc; }
     .custom-formats-help { margin: 0 0 20px 0; color: #94a3b8; font-size: 0.95rem; }
+    .custom-formats-header-text { flex: 1; min-width: 0; }
+    .custom-formats-description {
+        margin: 0 0 20px 0;
+        padding: 0;
+        width: 100%;
+        color: #94a3b8;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    .custom-formats-description a {
+        color: #38bdf8;
+        text-decoration: underline;
+    }
+    .custom-formats-description a:hover {
+        color: #7dd3fc;
+    }
     .custom-formats-section-header {
         display: flex;
         justify-content: space-between;
@@ -203,6 +219,9 @@
             justify-content: center;
         }
         .custom-formats-help {
+            margin-bottom: 12px;
+        }
+        .custom-formats-description {
             margin-bottom: 12px;
         }
     }
