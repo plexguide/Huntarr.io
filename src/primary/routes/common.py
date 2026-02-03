@@ -632,12 +632,18 @@ def _score_release(release_title, profile):
             if not isinstance(specifications, list):
                 continue
             
-            matched = True  # assume match until a required spec fails
-            has_checked_spec = False  # track if we actually checked any spec
+            # TRaSH formats have positive specs (identify the feature) and negative specs (exclude false positives)
+            # A format matches if: (1) at least one positive required spec matches, (2) all negative required specs pass
+            has_positive_match = False
+            all_negative_pass = True
+            has_any_spec = False
+            
             for spec in specifications:
                 if not isinstance(spec, dict):
                     continue
                 required = spec.get('required', False)
+                if not required:
+                    continue
                 negate = spec.get('negate', False)
                 fields = spec.get('fields') or {}
                 
@@ -647,17 +653,19 @@ def _score_release(release_title, profile):
                 if 'resolution' in implementation.lower():
                     resolution_value = fields.get('value') if isinstance(fields, dict) else None
                     if resolution_value is not None:
-                        has_checked_spec = True
+                        has_any_spec = True
                         try:
                             res_int = int(resolution_value)
                             # Look for e.g. "1080p", "1080", "720p", "2160p" in title
                             res_pattern = r'\b' + str(res_int) + r'p?\b'
                             found = bool(re.search(res_pattern, release_title, re.IGNORECASE))
                             if negate:
-                                found = not found
-                            if required and not found:
-                                matched = False
-                                break
+                                if found:
+                                    all_negative_pass = False
+                                    break
+                            else:
+                                if found:
+                                    has_positive_match = True
                         except (TypeError, ValueError):
                             pass
                     continue
@@ -666,21 +674,29 @@ def _score_release(release_title, profile):
                 if not pattern or not isinstance(pattern, str):
                     continue
                 
-                has_checked_spec = True
+                has_any_spec = True
                 try:
                     found = bool(re.search(pattern, release_title, re.IGNORECASE))
                     if negate:
-                        found = not found
-                    if required and not found:
-                        matched = False
-                        break
+                        # Negative spec: pattern must NOT match
+                        if found:
+                            all_negative_pass = False
+                            break
+                    else:
+                        # Positive spec: pattern must match
+                        if found:
+                            has_positive_match = True
                 except re.error:
                     continue
             
-            # Only consider matched if we actually checked at least one spec
-            if matched and has_checked_spec:
+            # Format matches if we checked specs, found at least one positive match, and all negatives passed
+            if has_any_spec and has_positive_match and all_negative_pass:
                 total += score_val
-                parts.append('%s +%d' % (name, score_val))
+                # Format: show +N for positive, -N for negative (no + prefix on negative)
+                if score_val >= 0:
+                    parts.append('%s +%d' % (name, score_val))
+                else:
+                    parts.append('%s %d' % (name, score_val))
     except Exception:
         pass
     if not parts:
