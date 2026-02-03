@@ -113,6 +113,19 @@
             .trim();
     }
 
+    function formatScoringCell(scoring) {
+        if (scoring == null || scoring === '') return escapeHtml('-');
+        var s = String(scoring).trim();
+        if (s === '') return escapeHtml('-');
+        var paren = s.indexOf(' (');
+        if (paren > 0) {
+            var main = s.substring(0, paren).trim();
+            var breakdown = s.substring(paren + 2).replace(/\)\s*$/, '').trim();
+            return '<span class="activity-scoring-value" title="' + escapeAttr(breakdown) + '">' + escapeHtml(main) + '</span>';
+        }
+        return escapeHtml(s);
+    }
+
     function createRow(item) {
         var tr = document.createElement('tr');
         if (currentView === 'queue') {
@@ -131,7 +144,7 @@
                 '<td class="col-languages">' + escapeHtml(item.languages || '-') + '</td>' +
                 '<td class="col-quality">' + escapeHtml(item.quality || '-') + '</td>' +
                 '<td class="col-formats">' + escapeHtml(item.formats || '-') + '</td>' +
-                '<td class="col-scoring">' + escapeHtml(item.scoring != null ? item.scoring : '-') + '</td>' +
+                '<td class="col-scoring">' + formatScoringCell(item.scoring) + '</td>' +
                 '<td class="col-time-left">' + escapeHtml(item.time_left != null ? item.time_left : '-') + '</td>' +
                 '<td class="col-progress">' + escapeHtml(item.progress != null ? item.progress : '-') + '</td>';
         } else if (currentView === 'history') {
