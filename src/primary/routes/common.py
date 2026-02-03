@@ -478,12 +478,18 @@ def _normalize_profile(p):
             if isinstance(q, dict) and q.get('id') is not None:
                 qid = str(q.get('id', ''))
                 seen_ids.add(qid)
-                out['qualities'].append({
+                entry = {
                     'id': qid,
                     'name': str(q.get('name', q.get('id', ''))),
                     'enabled': bool(q.get('enabled', True)),
                     'order': int(q.get('order', 0)),
-                })
+                }
+                if q.get('score') is not None:
+                    try:
+                        entry['score'] = int(q['score'])
+                    except (TypeError, ValueError):
+                        pass
+                out['qualities'].append(entry)
         # Merge in any default qualities missing from this profile (e.g. new Remux-1080p)
         for dq in PROFILES_DEFAULT_QUALITIES:
             if dq.get('id') not in seen_ids:
@@ -593,34 +599,16 @@ def _release_matches_quality(release_title, quality_name):
 
 def _score_release(release_title, profile):
     """
-    Score a release using (1) the profile's enabled qualities and (2) custom format scores.
-    (1) Profile qualities: which enabled quality (e.g. WEB 720p, WEB 1080p, WEB 2160p) the
-        release matches; score by preference order (first match wins, higher order = lower score).
-    (2) Custom formats: each matching custom format adds its configured score (regex match on title).
-    Returns (total_score, breakdown_str) for display in queue. Higher is better.
+    Score a release using only custom format scores stored by the user (Settings -> Custom Formats).
+    Each custom format's regex (from its JSON specifications) is run against the release title;
+    if it matches, that format's configured score is added. Total = sum of all matching format scores.
+    No hardcoded values. Returns (total_score, breakdown_str) for display in queue. Higher is better.
     """
     import re
     if not release_title or not (release_title or '').strip():
         return 0, '-'
     parts = []
     total = 0
-
-    # (1) Score from profile's enabled qualities (720p, 1080p, 2160p, etc.)
-    # Qualities are sorted by order (ascending); lower order = more preferred. Give points so
-    # preferred qualities score higher: e.g. 100 - order so order 3 -> 97, order 7 -> 93.
-    enabled_qualities = [(q.get('order', 99), q.get('name') or '') for q in (profile.get('qualities') or []) if q.get('enabled')]
-    enabled_qualities.sort(key=lambda x: (x[0], x[1]))
-    for qorder, qname in enabled_qualities:
-        if not qname:
-            continue
-        if _release_matches_quality(release_title, qname):
-            # Score: 100 - order so lower order = higher score (max 100, min ~78 for order 22)
-            quality_score = max(0, 100 - qorder)
-            total += quality_score
-            parts.append('%s +%d' % (qname.strip(), quality_score))
-            break  # only one quality match per release
-
-    # (2) Custom format scores (from profile editor "Custom format scores" list)
     try:
         custom_formats = _get_custom_formats_config()
         for cf in custom_formats:
@@ -638,23 +626,39 @@ def _score_release(release_title, profile):
             obj = json.loads(cf_json) if isinstance(cf_json, str) else cf_json
             if not isinstance(obj, dict):
                 continue
-            # Radarr/TRaSH: "include" array with items that may have "match" or "pattern" (regex)
-            included = obj.get('include') or []
-            if not isinstance(included, list):
-                included = [included] if included else []
-            matched = False
-            for inc in included:
-                if not isinstance(inc, dict):
+            
+            # TRaSH/Radarr custom format: specifications array with required=true items that have regex in fields.value
+            specifications = obj.get('specifications') or []
+            if not isinstance(specifications, list):
+                continue
+            
+            matched = True  # assume match until a required spec fails
+            for spec in specifications:
+                if not isinstance(spec, dict):
                     continue
-                pattern = inc.get('match') or inc.get('regex') or inc.get('pattern')
+                required = spec.get('required', False)
+                negate = spec.get('negate', False)
+                fields = spec.get('fields') or {}
+                pattern = fields.get('value') if isinstance(fields, dict) else None
+                
+                # ResolutionSpecification: skip (we don't have resolution from title alone)
+                implementation = spec.get('implementation', '')
+                if 'resolution' in implementation.lower():
+                    continue
+                
                 if not pattern or not isinstance(pattern, str):
                     continue
+                
                 try:
-                    if re.search(pattern, release_title, re.IGNORECASE):
-                        matched = True
+                    found = bool(re.search(pattern, release_title, re.IGNORECASE))
+                    if negate:
+                        found = not found
+                    if required and not found:
+                        matched = False
                         break
                 except re.error:
                     continue
+            
             if matched:
                 total += score_val
                 parts.append('%s +%d' % (name, score_val))
@@ -815,12 +819,18 @@ def api_profiles_patch(index):
             qualities = []
             for q in data['qualities']:
                 if isinstance(q, dict) and q.get('id') is not None:
-                    qualities.append({
+                    entry = {
                         'id': str(q.get('id', '')),
                         'name': str(q.get('name', q.get('id', ''))),
                         'enabled': bool(q.get('enabled', True)),
                         'order': int(q.get('order', 0)),
-                    })
+                    }
+                    if q.get('score') is not None:
+                        try:
+                            entry['score'] = int(q['score'])
+                        except (TypeError, ValueError):
+                            pass
+                    qualities.append(entry)
             qualities.sort(key=lambda x: (x.get('order', 0), x.get('id', '')))
             profiles[index]['qualities'] = qualities
         _save_profiles_config(profiles)

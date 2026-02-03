@@ -39,10 +39,13 @@
         qualities.forEach(function(q, i) {
             const qName = escapeHtml((q.name || q.id || '').trim() || 'Quality');
             const checked = q.enabled !== false ? ' checked' : '';
+            const scoreVal = q.score != null && !isNaN(Number(q.score)) ? Number(q.score) : '';
             qualitiesHtml += '<div class="profile-quality-item" data-quality-id="' + escapeHtml(String(q.id || i)) + '" data-order="' + (q.order != null ? q.order : i) + '" draggable="true">' +
                 '<span class="quality-drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>' +
                 '<input type="checkbox" id="profile-quality-' + i + '" class="profile-quality-checkbox"' + checked + '>' +
-                '<label class="quality-name" for="profile-quality-' + i + '">' + qName + '</label></div>';
+                '<label class="quality-name" for="profile-quality-' + i + '">' + qName + '</label>' +
+                '<input type="number" class="profile-quality-score-input" data-quality-id="' + escapeHtml(String(q.id || i)) + '" min="-100000" max="100000" placeholder="Score" value="' + scoreVal + '" style="width: 5em;" title="Score for this quality (optional; used in release scoring)">' +
+                '</div>';
         });
         var upgradeSelectOptions = '';
         checkedQualityNames.forEach(function(opt) {
@@ -96,7 +99,7 @@
             '</div>' +
             '<div class="editor-section">' +
             '<div class="editor-section-title">Qualities</div>' +
-            '<p class="editor-help-text" style="margin-bottom: 12px;">Only checked qualities are wanted. Higher in the list is more preferred.</p>' +
+            '<p class="editor-help-text" style="margin-bottom: 12px;">Only checked qualities are wanted. Higher in the list is more preferred. Optional <strong>Score</strong> per quality is used when picking the best release (shown in Activity queue Scoring).</p>' +
             '<div class="profile-quality-list" id="profile-editor-qualities">' + (qualitiesHtml || '<p class="editor-help-text">No qualities defined.</p>') + '</div>' +
             '</div>' +
             '<div class="editor-section profile-editor-scores-section">' +
@@ -440,12 +443,19 @@
             items.forEach(function(item, i) {
                 const cb = item.querySelector('input[type="checkbox"]');
                 const label = item.querySelector('.quality-name');
-                qualities.push({
+                const scoreEl = item.querySelector('.profile-quality-score-input');
+                let score = undefined;
+                if (scoreEl && scoreEl.value !== '' && !isNaN(parseInt(scoreEl.value, 10))) {
+                    score = parseInt(scoreEl.value, 10);
+                }
+                const qual = {
                     id: item.getAttribute('data-quality-id') || 'q' + i,
                     name: label ? label.textContent.trim() : ('Quality ' + i),
                     enabled: cb ? cb.checked : true,
                     order: i
-                });
+                };
+                if (score !== undefined) qual.score = score;
+                qualities.push(qual);
             });
         }
         const body = {
