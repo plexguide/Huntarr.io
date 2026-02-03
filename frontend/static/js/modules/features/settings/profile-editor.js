@@ -483,7 +483,7 @@
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification('Profile saved.', 'success');
                         }
-                        if (window.huntarrUI && window.huntarrUI.switchSection) {
+                        if (optionalNextSection != null && window.huntarrUI && window.huntarrUI.switchSection) {
                             window.huntarrUI.switchSection(nextSection);
                         }
                         if (Forms.refreshProfilesList) Forms.refreshProfilesList();
@@ -491,7 +491,7 @@
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification('Profile saved; some scores may not have saved.', 'warning');
                         }
-                        if (window.huntarrUI && window.huntarrUI.switchSection) {
+                        if (optionalNextSection != null && window.huntarrUI && window.huntarrUI.switchSection) {
                             window.huntarrUI.switchSection(nextSection);
                         }
                         if (Forms.refreshProfilesList) Forms.refreshProfilesList();
