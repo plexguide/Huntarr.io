@@ -761,26 +761,56 @@ def _get_requested_queue_ids():
     if not config or not isinstance(config.get('by_client'), dict):
         return {}
     out = {}
-    for cname, ids in config['by_client'].items():
-        if isinstance(ids, list):
-            out[cname] = set(str(i) for i in ids)
-        else:
+    for cname, entries in config['by_client'].items():
+        if not isinstance(entries, list):
             out[cname] = set()
+            continue
+        ids = set()
+        for e in entries:
+            if isinstance(e, dict):
+                ids.add(str(e.get('id', '')))
+            else:
+                ids.add(str(e))
+        out[cname] = ids
     return out
 
 
-def _add_requested_queue_id(client_name, queue_id):
-    """Record that we requested this queue item (so we only show it in Activity queue)."""
+def _get_requested_display(client_name, queue_id):
+    """Return {title, year} for a requested queue item for display. Empty strings if not found."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('movie_hunt_requested')
+    if not config or not isinstance(config.get('by_client'), dict):
+        return {'title': '', 'year': ''}
+    cname = (client_name or 'Download client').strip() or 'Download client'
+    entries = config.get('by_client', {}).get(cname) or []
+    sid = str(queue_id)
+    for e in entries:
+        if isinstance(e, dict) and str(e.get('id', '')) == sid:
+            return {'title': (e.get('title') or '').strip(), 'year': (e.get('year') or '').strip()}
+    return {'title': '', 'year': ''}
+
+
+def _add_requested_queue_id(client_name, queue_id, title=None, year=None):
+    """Record that we requested this queue item (so we only show it in Activity queue). Store title/year for display."""
     from src.primary.utils.database import get_database
     db = get_database()
     config = db.get_app_config('movie_hunt_requested') or {}
     by_client = config.get('by_client') or {}
     cname = (client_name or 'Download client').strip() or 'Download client'
-    ids = list(by_client.get(cname) or [])
+    entries = list(by_client.get(cname) or [])
     sid = str(queue_id)
-    if sid not in ids:
-        ids.append(sid)
-    by_client[cname] = ids
+    # Normalize old format (list of strings) to list of dicts
+    normalized = []
+    for e in entries:
+        if isinstance(e, dict):
+            normalized.append(e)
+        else:
+            normalized.append({'id': str(e), 'title': '', 'year': ''})
+    existing_ids = {e.get('id') for e in normalized}
+    if sid not in existing_ids:
+        normalized.append({'id': sid, 'title': (title or '').strip(), 'year': (year or '').strip()})
+    by_client[cname] = normalized
     config['by_client'] = by_client
     db.save_app_config('movie_hunt_requested', config)
 
@@ -798,9 +828,42 @@ def _prune_requested_queue_ids(client_name, current_queue_ids):
     if cname not in config['by_client']:
         return
     current = set(str(i) for i in current_queue_ids)
-    kept = [i for i in config['by_client'][cname] if str(i) in current]
+    entries = config['by_client'][cname]
+    kept = []
+    for e in entries:
+        eid = e.get('id') if isinstance(e, dict) else str(e)
+        if str(eid) in current:
+            kept.append(e)
     config['by_client'][cname] = kept
     db.save_app_config('movie_hunt_requested', config)
+
+
+def _extract_year_from_filename(filename):
+    """Extract a 4-digit year (1900-2099) from a release filename. Returns None if not found."""
+    if not filename:
+        return None
+    import re
+    m = re.search(r'\b(19\d{2}|20\d{2})\b', filename)
+    return m.group(1) if m else None
+
+
+def _format_queue_display_name(filename, title=None, year=None):
+    """Format display as 'Title (Year)' or 'Title'. Uses stored title/year if present, else parses filename."""
+    display_title = (title or '').strip()
+    display_year = (year or '').strip()
+    if not display_year and filename:
+        display_year = _extract_year_from_filename(filename) or ''
+    if display_title:
+        if display_year:
+            return '%s (%s)' % (display_title, display_year)
+        return display_title
+    # Fallback: clean filename (dots to spaces, remove trailing group like -NTb) and add year if found
+    if not filename:
+        return '-'
+    clean = filename.replace('.', ' ').strip()
+    if display_year:
+        return '%s (%s)' % (clean, display_year)
+    return clean
 
 
 def _get_download_client_queue(client):
@@ -880,6 +943,8 @@ def _get_download_client_queue(client):
                 filename = (slot.get('filename') or slot.get('name') or '-').strip()
                 if not filename:
                     filename = '-'
+                display = _get_requested_display(name, nzo_id)
+                display_name = _format_queue_display_name(filename, display.get('title'), display.get('year'))
                 # SABnzbd slot: mb (total MB), mbleft (remaining MB), timeleft, percentage, cat
                 size_mb = slot.get('mb') or slot.get('size') or 0
                 try:
@@ -913,8 +978,8 @@ def _get_download_client_queue(client):
                 time_left = slot.get('time_left') or slot.get('timeleft') or '-'
                 items.append({
                     'id': nzo_id,
-                    'movie': filename,
-                    'title': filename,
+                    'movie': display_name,
+                    'title': display_name,
                     'year': None,
                     'languages': '-',
                     'quality': '-',
@@ -950,6 +1015,8 @@ def _get_download_client_queue(client):
                 nzb_name = (grp.get('NZBName') or grp.get('NZBFilename') or grp.get('Name') or '-').strip()
                 if not nzb_name:
                     nzb_name = '-'
+                display = _get_requested_display(name, nzb_id)
+                display_name = _format_queue_display_name(nzb_name, display.get('title'), display.get('year'))
                 size_mb = grp.get('FileSizeMB') or 0
                 try:
                     size_mb = float(size_mb)
@@ -970,8 +1037,8 @@ def _get_download_client_queue(client):
                     progress = '-'
                 items.append({
                     'id': nzb_id,
-                    'movie': nzb_name,
-                    'title': nzb_name,
+                    'movie': display_name,
+                    'title': display_name,
                     'year': None,
                     'languages': '-',
                     'quality': '-',
@@ -1847,10 +1914,10 @@ def api_movie_hunt_request():
         ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl)
         if not ok:
             return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
-        # Track this request so Activity queue only shows items we requested
+        # Track this request so Activity queue only shows items we requested (with title/year for display)
         if queue_id:
             client_name = (client.get('name') or 'Download client').strip() or 'Download client'
-            _add_requested_queue_id(client_name, queue_id)
+            _add_requested_queue_id(client_name, queue_id, title=title, year=year or '')
         # Add to Media Collection for tracking (with root_folder for auto availability detection)
         tmdb_id = data.get('tmdb_id')
         poster_path = (data.get('poster_path') or '').strip() or None

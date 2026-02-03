@@ -111,7 +111,6 @@
                 : '<td class="col-select"></td>';
             tr.innerHTML = cb +
                 '<td class="col-movie">' + escapeHtml(item.movie || item.title || '-') + '</td>' +
-                '<td class="col-year">' + escapeHtml(item.year != null ? item.year : '-') + '</td>' +
                 '<td class="col-languages">' + escapeHtml(item.languages || '-') + '</td>' +
                 '<td class="col-quality">' + escapeHtml(item.quality || '-') + '</td>' +
                 '<td class="col-formats">' + escapeHtml(item.formats || '-') + '</td>' +
