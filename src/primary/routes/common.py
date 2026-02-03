@@ -736,34 +736,256 @@ def api_movie_management_patch():
 
 
 # --- Movie Hunt Activity (Queue, History, Blocklist) ---
-# Uses Movie Hunt API only (src.primary.apps.movie_hunt); no direct apps/radarr usage here.
+# 100% independent: uses only Movie Hunt's download clients (SABnzbd/NZBGet). No Radarr.
+# Only track items this Huntarr requested: use a dedicated category so multiple Radarrs/Huntarrs don't mix.
+MOVIE_HUNT_QUEUE_CATEGORY = 'moviehunt'
+
+def _download_client_base_url(client):
+    """Build base URL for a download client (host:port)."""
+    host = (client.get('host') or '').strip()
+    if not host:
+        return None
+    if not (host.startswith('http://') or host.startswith('https://')):
+        host = 'http://' + host
+    port = client.get('port', 8080)
+    return '%s:%s' % (host.rstrip('/'), port)
+
+
+def _get_download_client_queue(client):
+    """
+    Fetch queue from one download client (SABnzbd or NZBGet). Returns list of activity-shaped dicts:
+    { id, movie, year, languages, quality, formats, time_left, progress, instance_name }.
+    """
+    base_url = _download_client_base_url(client)
+    if not base_url:
+        return []
+    client_type = (client.get('type') or 'nzbget').strip().lower()
+    name = (client.get('name') or 'Download client').strip() or 'Download client'
+    # Filter by category so we only show items this Huntarr requested (moviehunt/default/empty).
+    _skip_category_filter = True  # Set False to only show moviehunt/default/empty categories
+    client_cat = MOVIE_HUNT_QUEUE_CATEGORY.strip().lower()
+    allowed_cats = (client_cat, 'default', '')
+    try:
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+    except Exception:
+        verify_ssl = True
+    items = []
+    try:
+        if client_type == 'sabnzbd':
+            api_key = (client.get('api_key') or '').strip()
+            url = '%s/api' % base_url
+            params = {'mode': 'queue', 'output': 'json'}
+            if api_key:
+                params['apikey'] = api_key
+            logger.info("Movie Hunt queue: requesting SABnzbd queue from %s (%s)", name, base_url)
+            try:
+                r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
+                r.raise_for_status()
+            except requests.RequestException as e:
+                logger.warning("Movie Hunt queue: SABnzbd request failed for %s: %s", name, e)
+                return []
+            data = r.json()
+            if not isinstance(data, dict):
+                logger.warning("Movie Hunt queue: SABnzbd returned non-dict for %s", name)
+                return []
+            # SABnzbd may return {"error": "API Key Required"} or {"error": "API Key Incorrect"}
+            sab_error = data.get('error') or data.get('error_msg')
+            if sab_error:
+                logger.warning("Movie Hunt queue: SABnzbd %s returned error: %s", name, sab_error)
+                return []
+            # SABnzbd can put slots under queue.slots or at top-level slots; slots can be list or dict
+            slots_raw = (data.get('queue') or {}).get('slots') or data.get('slots') or []
+            if isinstance(slots_raw, dict):
+                slots = list(slots_raw.values())
+            elif isinstance(slots_raw, list):
+                slots = slots_raw
+            else:
+                slots = []
+            if not slots and (data.get('queue') or data):
+                logger.info("Movie Hunt queue: SABnzbd %s returned 0 slots (response keys: %s)", name, list(data.keys()))
+            for slot in slots:
+                if not isinstance(slot, dict):
+                    continue
+                slot_cat = (slot.get('category') or slot.get('cat') or '').strip().lower()
+                if not _skip_category_filter and slot_cat not in allowed_cats:
+                    continue
+                nzo_id = slot.get('nzo_id') or slot.get('id')
+                if nzo_id is None:
+                    continue
+                filename = (slot.get('filename') or slot.get('name') or '-').strip()
+                if not filename:
+                    filename = '-'
+                # SABnzbd slot: mb (total MB), mbleft (remaining MB), timeleft, percentage, cat
+                size_mb = slot.get('mb') or slot.get('size') or 0
+                try:
+                    size_mb = float(size_mb)
+                except (TypeError, ValueError):
+                    size_mb = 0
+                mbleft = slot.get('mbleft')
+                try:
+                    mbleft = float(mbleft) if mbleft is not None else None
+                except (TypeError, ValueError):
+                    mbleft = None
+                size_bytes = size_mb * (1024 * 1024) if size_mb else 0
+                # SABnzbd uses mbleft (MB remaining); some APIs also give sizeleft (bytes or string)
+                bytes_left = None
+                if mbleft is not None and size_mb and size_mb > 0:
+                    bytes_left = mbleft * (1024 * 1024)
+                else:
+                    raw_left = slot.get('bytes_left') or slot.get('sizeleft') or slot.get('size_left')
+                    try:
+                        bytes_left = float(raw_left) if raw_left is not None else None
+                    except (TypeError, ValueError):
+                        bytes_left = None
+                if size_bytes and size_bytes > 0 and bytes_left is not None:
+                    try:
+                        pct = round((float(size_bytes - bytes_left) / float(size_bytes)) * 100)
+                        progress = str(min(100, max(0, pct))) + '%'
+                    except (TypeError, ZeroDivisionError):
+                        progress = '-'
+                else:
+                    progress = slot.get('percentage') or '-'
+                time_left = slot.get('time_left') or slot.get('timeleft') or '-'
+                items.append({
+                    'id': nzo_id,
+                    'movie': filename,
+                    'title': filename,
+                    'year': None,
+                    'languages': '-',
+                    'quality': '-',
+                    'formats': '-',
+                    'time_left': time_left,
+                    'progress': progress,
+                    'instance_name': name,
+                })
+        elif client_type == 'nzbget':
+            jsonrpc_url = '%s/jsonrpc' % base_url
+            username = (client.get('username') or '').strip()
+            password = (client.get('password') or '').strip()
+            auth = (username, password) if (username or password) else None
+            payload = {'method': 'listgroups', 'params': [0], 'id': 1}
+            r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)
+            r.raise_for_status()
+            data = r.json()
+            result = data.get('result') if isinstance(data.get('result'), list) else []
+            for grp in result:
+                if not isinstance(grp, dict):
+                    continue
+                grp_cat = (grp.get('Category') or grp.get('category') or '').strip().lower()
+                if grp_cat not in allowed_cats:
+                    continue
+                nzb_id = grp.get('NZBID') or grp.get('ID')
+                if nzb_id is None:
+                    continue
+                nzb_name = (grp.get('NZBName') or grp.get('NZBFilename') or grp.get('Name') or '-').strip()
+                if not nzb_name:
+                    nzb_name = '-'
+                size_mb = grp.get('FileSizeMB') or 0
+                try:
+                    size_mb = float(size_mb)
+                except (TypeError, ValueError):
+                    size_mb = 0
+                remaining_mb = grp.get('RemainingSizeMB') or 0
+                try:
+                    remaining_mb = float(remaining_mb)
+                except (TypeError, ValueError):
+                    remaining_mb = 0
+                if size_mb and size_mb > 0 and remaining_mb is not None:
+                    try:
+                        pct = round((float(size_mb - remaining_mb) / float(size_mb)) * 100)
+                        progress = str(min(100, max(0, pct))) + '%'
+                    except (TypeError, ZeroDivisionError):
+                        progress = '-'
+                else:
+                    progress = '-'
+                items.append({
+                    'id': nzb_id,
+                    'movie': nzb_name,
+                    'title': nzb_name,
+                    'year': None,
+                    'languages': '-',
+                    'quality': '-',
+                    'formats': '-',
+                    'time_left': '-',
+                    'progress': progress,
+                    'instance_name': name,
+                })
+    except Exception as e:
+        logger.debug("Movie Hunt activity queue from download client %s: %s", name, e)
+    return items
+
+
+def _delete_from_download_client(client, item_ids):
+    """
+    Delete queue items from one download client by id(s). item_ids: list of str/int (nzo_id for SABnzbd, NZBID for NZBGet).
+    Returns (removed_count, error_message). error_message is None on full success.
+    """
+    if not item_ids:
+        return 0, None
+    base_url = _download_client_base_url(client)
+    if not base_url:
+        return 0, 'Invalid client'
+    client_type = (client.get('type') or 'nzbget').strip().lower()
+    name = (client.get('name') or 'Download client').strip() or 'Download client'
+    try:
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+    except Exception:
+        verify_ssl = True
+    removed = 0
+    try:
+        if client_type == 'sabnzbd':
+            api_key = (client.get('api_key') or '').strip()
+            url = '%s/api' % base_url
+            for iid in item_ids:
+                params = {'mode': 'queue.delete', 'nzo_id': str(iid), 'output': 'json'}
+                if api_key:
+                    params['apikey'] = api_key
+                r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
+                r.raise_for_status()
+                data = r.json()
+                if data.get('status') is True or not data.get('error'):
+                    removed += 1
+        elif client_type == 'nzbget':
+            jsonrpc_url = '%s/jsonrpc' % base_url
+            username = (client.get('username') or '').strip()
+            password = (client.get('password') or '').strip()
+            auth = (username, password) if (username or password) else None
+            ids_int = []
+            for iid in item_ids:
+                try:
+                    ids_int.append(int(iid))
+                except (TypeError, ValueError):
+                    pass
+            if ids_int:
+                payload = {'method': 'editqueue', 'params': ['GroupDelete', '', ids_int], 'id': 1}
+                r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)
+                r.raise_for_status()
+                data = r.json()
+                if data.get('result') is True:
+                    removed = len(ids_int)
+    except Exception as e:
+        return removed, str(e) or 'Delete failed'
+    failed = len(item_ids) - removed
+    err = ('Failed to remove %d item(s) from %s' % (failed, name)) if failed else None
+    return removed, err
+
 
 def _get_activity_queue():
-    """Fetch queue from all configured Movie Hunt instances and return items for Activity UI."""
-    try:
-        from src.primary.apps.movie_hunt import get_instances, get_queue, queue_record_to_activity_item
-    except ImportError:
+    """Fetch queue from Movie Hunt download clients only (SABnzbd/NZBGet). 100% independent of Radarr."""
+    clients = _get_clients_config()
+    enabled = [c for c in clients if c.get('enabled', True)]
+    if not enabled:
+        logger.info("Movie Hunt queue: no download clients configured or enabled. Add SABnzbd/NZBGet in Settings → Movie Hunt → Clients (total in config: %s).", len(clients))
         return [], 0
-    instances = get_instances(quiet=True)
-    if not instances:
-        return [], 0
+    logger.info("Movie Hunt queue: fetching from %s download client(s)", len(enabled))
     all_items = []
-    timeout = 30
-    for inst in instances:
-        api_url = (inst.get('api_url') or '').strip()
-        api_key = (inst.get('api_key') or '').strip()
-        name = inst.get('instance_name') or 'Default'
-        if not api_url or not api_key:
-            continue
-        try:
-            data = get_queue(api_url, api_key, timeout, page=1, page_size=500)
-            records = data.get('records') or []
-            for rec in records:
-                item = queue_record_to_activity_item(rec, instance_name=name)
-                if item:
-                    all_items.append(item)
-        except Exception as e:
-            logger.debug("Movie Hunt activity queue fetch for %s: %s", name, e)
+    for client in enabled:
+        items = _get_download_client_queue(client)
+        all_items.extend(items)
+    if all_items:
+        logger.info("Movie Hunt queue: returning %s item(s) from download client(s)", len(all_items))
     return all_items, len(all_items)
 
 
@@ -802,49 +1024,68 @@ def api_activity_get(view):
     }), 200
 
 
-def _clear_activity_queue():
-    """Remove all items from Movie Hunt queue (and from download client e.g. SABnzbd). Returns (success, error_message)."""
-    try:
-        from src.primary.apps.movie_hunt import get_instances, get_queue, delete_queue_bulk
-    except ImportError:
-        return False, 'Movie Hunt not available'
-    instances = get_instances(quiet=True)
-    if not instances:
-        return False, 'No Movie Hunt instances configured'
-    timeout = 30
-    cleared = 0
+def _remove_activity_queue_items(items):
+    """Remove selected items from Movie Hunt download client queue. items = [ {id, instance_name}, ... ]. Returns (success, error_message)."""
+    if not items or not isinstance(items, list):
+        return False, 'No items selected'
+    clients = _get_clients_config()
+    enabled = [c for c in clients if c.get('enabled', True)]
+    if not enabled:
+        return False, 'No download clients configured or enabled'
+    by_name = {}
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        iid = it.get('id')
+        name = (it.get('instance_name') or 'Default').strip()
+        if iid is None:
+            continue
+        by_name.setdefault(name, []).append(iid)
+    if not by_name:
+        return False, 'No valid items selected'
+    client_by_name = {(c.get('name') or 'Download client').strip() or 'Download client': c for c in enabled}
+    removed = 0
     errors = []
-    for inst in instances:
-        api_url = (inst.get('api_url') or '').strip()
-        api_key = (inst.get('api_key') or '').strip()
-        name = inst.get('instance_name') or 'Default'
-        if not api_url or not api_key:
+    for name, ids in by_name.items():
+        client = client_by_name.get(name)
+        if not client:
+            errors.append(name)
             continue
         try:
-            data = get_queue(api_url, api_key, timeout, page=1, page_size=500)
-            records = data.get('records') or []
-            ids = [r['id'] for r in records if isinstance(r, dict) and r.get('id') is not None]
-            if not ids:
-                continue
-            if delete_queue_bulk(api_url, api_key, timeout, ids, remove_from_client=True):
-                cleared += len(ids)
-            else:
+            n, err = _delete_from_download_client(client, ids)
+            removed += n
+            if err:
                 errors.append(name)
         except Exception as e:
-            logger.debug("Movie Hunt activity queue clear for %s: %s", name, e)
+            logger.debug("Movie Hunt remove selected for %s: %s", name, e)
             errors.append(name)
     if errors:
-        return cleared > 0, ('Cleared %d item(s). Failed for: %s' % (cleared, ', '.join(errors))) if cleared else ('Failed for: %s' % ', '.join(errors))
+        return removed > 0, ('Removed %d item(s). Failed for: %s' % (removed, ', '.join(errors))) if removed else ('Failed for: %s' % ', '.join(errors))
     return True, None
+
+
+def _clear_activity_queue():
+    """Remove all items from Movie Hunt download client queue. Returns (success, error_message)."""
+    all_items, _ = _get_activity_queue()
+    if not all_items:
+        return True, None
+    to_remove = [{'id': i.get('id'), 'instance_name': i.get('instance_name') or 'Download client'} for i in all_items if i.get('id') is not None]
+    if not to_remove:
+        return True, None
+    return _remove_activity_queue_items(to_remove)
 
 
 @common_bp.route('/api/activity/<view>', methods=['DELETE'])
 def api_activity_delete(view):
-    """Clear activity view. Queue: remove all items from Movie Hunt queue (and download client). History/blocklist: stub."""
+    """Remove selected queue items (body: { items: [{ id, instance_name }, ...] }) or clear all. History/blocklist: stub."""
     if view not in ('queue', 'history', 'blocklist'):
         return jsonify({'error': 'Invalid view'}), 400
     if view == 'queue':
-        success, err_msg = _clear_activity_queue()
+        body = request.get_json(silent=True) or {}
+        items = body.get('items') if isinstance(body, dict) else None
+        if not items or not isinstance(items, list) or len(items) == 0:
+            return jsonify({'success': False, 'error': 'No items selected'}), 200
+        success, err_msg = _remove_activity_queue_items(items)
         if not success and err_msg:
             return jsonify({'success': False, 'error': err_msg}), 200
         return jsonify({'success': True}), 200
@@ -1428,7 +1669,7 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl)
         host = f'http://{host}'
     port = client.get('port', 8080)
     base_url = f'{host.rstrip("/")}:{port}'
-    cat = (client.get('category') or category or 'movies').strip() or 'movies'
+    cat = (category or client.get('category') or MOVIE_HUNT_QUEUE_CATEGORY).strip() or MOVIE_HUNT_QUEUE_CATEGORY
     try:
         if client_type == 'sabnzbd':
             api_key = (client.get('api_key') or '').strip()
@@ -1522,7 +1763,7 @@ def api_movie_hunt_request():
         if not nzb_url:
             return jsonify({'success': False, 'message': f'No results found for "{title}" on any indexer. Try a different search or check indexer API keys.'}), 404
         client = enabled_clients[0]
-        ok, msg = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', None, verify_ssl)
+        ok, msg = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', MOVIE_HUNT_QUEUE_CATEGORY, verify_ssl)
         if not ok:
             return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
         # Add to Media Collection for tracking (with root_folder for auto availability detection)

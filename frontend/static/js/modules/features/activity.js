@@ -41,6 +41,8 @@
         var viewId = 'activity-' + view + '-view';
         var viewEl = el(viewId);
         if (viewEl) viewEl.style.display = 'block';
+        var removeBtn = el('activityRemoveSelectedButton');
+        if (removeBtn) removeBtn.style.display = view === 'queue' ? '' : 'none';
         currentPage = 1;
         loadData();
     }
@@ -53,9 +55,10 @@
 
         var params = new URLSearchParams({ page: currentPage, page_size: pageSize });
         if (searchQuery) params.append('search', searchQuery);
+        params.append('_t', Date.now()); // cache-bust so refresh always gets fresh stats
 
         var url = './api/activity/' + currentView + '?' + params.toString();
-        fetch(url)
+        fetch(url, { cache: 'no-store' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var items = data.items || [];
@@ -87,6 +90,8 @@
                         });
                     }
                 }
+                var selectAllCb = el('activityQueueSelectAll');
+                if (selectAllCb) selectAllCb.checked = false;
             })
             .catch(function() {
                 showEmptyState(true, 'Unable to load', 'Check connection and try again.');
@@ -100,7 +105,12 @@
     function createRow(item) {
         var tr = document.createElement('tr');
         if (currentView === 'queue') {
-            tr.innerHTML = '<td class="col-movie">' + escapeHtml(item.movie || item.title || '-') + '</td>' +
+            var canSelect = item.id != null && item.id !== '';
+            var cb = canSelect
+                ? '<td class="col-select"><input type="checkbox" class="activity-queue-row-cb" data-id="' + escapeHtml(String(item.id)) + '" data-instance="' + escapeHtml(item.instance_name || 'Default') + '"></td>'
+                : '<td class="col-select"></td>';
+            tr.innerHTML = cb +
+                '<td class="col-movie">' + escapeHtml(item.movie || item.title || '-') + '</td>' +
                 '<td class="col-year">' + escapeHtml(item.year != null ? item.year : '-') + '</td>' +
                 '<td class="col-languages">' + escapeHtml(item.languages || '-') + '</td>' +
                 '<td class="col-quality">' + escapeHtml(item.quality || '-') + '</td>' +
@@ -144,6 +154,42 @@
         }
     }
 
+    function removeSelected() {
+        var checkboxes = document.querySelectorAll('#activityQueueTableBody .activity-queue-row-cb:checked');
+        if (!checkboxes || checkboxes.length === 0) {
+            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                window.huntarrUI.showNotification('No items selected.', 'warning');
+            }
+            return;
+        }
+        var items = [];
+        for (var i = 0; i < checkboxes.length; i++) {
+            var cb = checkboxes[i];
+            items.push({ id: cb.getAttribute('data-id'), instance_name: cb.getAttribute('data-instance') || 'Default' });
+        }
+        fetch('./api/activity/queue', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: items })
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success !== false) {
+                    loadData();
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Selected items removed from queue.', 'success');
+                    }
+                } else if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.error || 'Failed to remove.', 'error');
+                }
+            })
+            .catch(function() {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Failed to remove selected.', 'error');
+                }
+            });
+    }
+
     function init(view) {
         currentView = view || 'queue';
         currentPage = 1;
@@ -168,6 +214,19 @@
         if (input) input.onkeypress = function(e) { if (e.key === 'Enter') performSearch(); };
         var refreshBtn = el('activityRefreshButton');
         if (refreshBtn) refreshBtn.onclick = refreshData;
+        var removeSelectedBtn = el('activityRemoveSelectedButton');
+        if (removeSelectedBtn) {
+            removeSelectedBtn.onclick = removeSelected;
+            removeSelectedBtn.style.display = currentView === 'queue' ? '' : 'none';
+        }
+        var selectAllCb = el('activityQueueSelectAll');
+        if (selectAllCb) {
+            selectAllCb.checked = false;
+            selectAllCb.onclick = function() {
+                var rowCbs = document.querySelectorAll('#activityQueueTableBody .activity-queue-row-cb');
+                for (var i = 0; i < rowCbs.length; i++) rowCbs[i].checked = selectAllCb.checked;
+            };
+        }
         var prevBtn = el('activityPrevPage');
         var nextBtn = el('activityNextPage');
         if (prevBtn) prevBtn.onclick = function() { if (currentPage > 1) { currentPage--; loadData(); } };

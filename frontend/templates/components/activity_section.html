@@ -12,6 +12,9 @@
                 <button id="activityRefreshButton" class="btn-primary-outline">
                     <i class="fas fa-sync-alt"></i> Refresh Data
                 </button>
+                <button id="activityRemoveSelectedButton" class="btn-danger-outline" style="display: none;">
+                    <i class="fas fa-trash-alt"></i> Remove Selected
+                </button>
             </div>
         </div>
 
@@ -41,6 +44,7 @@
             <table class="activity-data-table">
                 <thead>
                     <tr>
+                        <th class="col-select"><input type="checkbox" id="activityQueueSelectAll" title="Select all"></th>
                         <th class="col-movie">Movie</th>
                         <th class="col-year">Year</th>
                         <th class="col-languages">Languages</th>
@@ -295,6 +299,8 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     font-size: 0.9em;
 }
+#activitySection .col-select { width: 40px; text-align: center; padding-left: 12px; padding-right: 12px; }
+#activitySection .col-select input[type="checkbox"] { cursor: pointer; }
 .activity-data-table tbody tr:hover { background: rgba(59, 130, 246, 0.05); }
 #activitySection .empty-state-card {
     text-align: center;
