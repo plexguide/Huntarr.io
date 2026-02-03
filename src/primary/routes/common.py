@@ -522,6 +522,94 @@ def _save_profiles_config(profiles_list):
     db.save_app_config('movie_hunt_profiles', {'profiles': profiles_list})
 
 
+def _get_profile_by_name_or_default(quality_profile_name):
+    """
+    Resolve quality_profile (e.g. 'Standard (Default)' or '4K') to the actual profile from config.
+    Returns normalized profile dict, or the default profile if not found / empty.
+    """
+    profiles = _get_profiles_config()
+    if not quality_profile_name or not (quality_profile_name or '').strip():
+        for p in profiles:
+            if p.get('is_default'):
+                return _normalize_profile(p)
+        return _normalize_profile(profiles[0]) if profiles else _profile_defaults()
+    want = (quality_profile_name or '').strip()
+    want_base = want.replace(' (Default)', '').replace('(Default)', '').strip()
+    for p in profiles:
+        name = (p.get('name') or '').strip()
+        if name == want or name == want_base:
+            return _normalize_profile(p)
+        if name.replace(' (Default)', '').strip() == want_base:
+            return _normalize_profile(p)
+    for p in profiles:
+        if p.get('is_default'):
+            return _normalize_profile(p)
+    return _normalize_profile(profiles[0]) if profiles else _profile_defaults()
+
+
+def _release_matches_quality(release_title, quality_name):
+    """
+    Return True if release_title (indexer result) appears to match the quality (e.g. 'WEB 1080p', 'Bluray-2160p').
+    Uses simple keyword/resolution matching; release_title is the NZB release name.
+    """
+    if not release_title or not quality_name:
+        return False
+    t = (release_title or '').lower()
+    q = (quality_name or '').lower().replace('-', ' ')
+    # Resolution: 2160p -> 2160, 1080p -> 1080, 720p -> 720, 480p -> 480
+    if '2160' in q or '2160p' in q:
+        if '2160' not in t:
+            return False
+    elif '1080' in q or '1080p' in q:
+        if '1080' not in t:
+            return False
+    elif '720' in q or '720p' in q:
+        if '720' not in t:
+            return False
+    elif '480' in q or '480p' in q:
+        if '480' not in t:
+            return False
+    # Source keywords
+    if 'web' in q:
+        if 'web' not in t and 'web-dl' not in t and 'webdl' not in t and 'webrip' not in t:
+            return False
+    if 'bluray' in q or 'blu-ray' in q:
+        if 'bluray' not in t and 'blu-ray' not in t and 'brrip' not in t and 'bdrip' not in t:
+            return False
+    if 'hdtv' in q:
+        if 'hdtv' not in t:
+            return False
+    if 'remux' in q:
+        if 'remux' not in t:
+            return False
+    if 'sdtv' in q:
+        if 'sdtv' not in t and 'sd' not in t and '480' not in t:
+            return False
+    if 'dvd' in q and 'dvdscr' not in q:
+        if 'dvd' not in t:
+            return False
+    return True
+
+
+def _first_result_matching_profile(results, profile):
+    """
+    From Newznab results list [{title, nzb_url}, ...], return the first result whose title
+    matches any enabled quality in the profile. If none match, return None (do not use a
+    release that violates the profile).
+    """
+    if not results:
+        return None
+    enabled_names = [q.get('name') or '' for q in (profile.get('qualities') or []) if q.get('enabled')]
+    if not enabled_names:
+        return results[0]
+    for r in results:
+        title = (r.get('title') or '').strip()
+        for qname in enabled_names:
+            if _release_matches_quality(title, qname):
+                return r
+    return None
+
+
 @common_bp.route('/api/profiles', methods=['GET'])
 def api_profiles_list():
     """List Movie Hunt profiles (default Standard ensured). Returns full profile objects."""
@@ -1890,6 +1978,8 @@ def api_movie_hunt_request():
         query = f'{title}'
         if year:
             query = f'{title} {year}'
+        # Resolve selected quality profile so we only pick a release that matches its setup
+        profile = _get_profile_by_name_or_default(quality_profile)
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
         nzb_url = None
@@ -1906,12 +1996,19 @@ def api_movie_hunt_request():
             categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
             results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
             if results:
-                nzb_url = results[0].get('nzb_url')
-                nzb_title = results[0].get('title', 'Unknown')
-                indexer_used = idx.get('name') or preset
-                break
+                # Only use a release that matches the selected profile's enabled qualities
+                chosen = _first_result_matching_profile(results, profile)
+                if chosen:
+                    nzb_url = chosen.get('nzb_url')
+                    nzb_title = chosen.get('title', 'Unknown')
+                    indexer_used = idx.get('name') or preset
+                    break
         if not nzb_url:
-            return jsonify({'success': False, 'message': f'No results found for "{title}" on any indexer. Try a different search or check indexer API keys.'}), 404
+            profile_name = (profile.get('name') or 'Standard').strip()
+            return jsonify({
+                'success': False,
+                'message': f'No release found that matches your quality profile "{profile_name}". The indexer had results but none were in the allowed resolutions/sources (e.g. Standard allows 1080p/720p/480p, not 2160p). Try selecting a different profile (e.g. 4K) or search again later.'
+            }), 404
         client = enabled_clients[0]
         # Use client's category; empty/default → "movies" so we send and filter by "movies"
         raw_cat = (client.get('category') or '').strip()
