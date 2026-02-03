@@ -129,22 +129,54 @@ def save_user_data(user_data: Dict[str, Any]) -> bool:
         return False
 # --- End Helper functions ---
 
+
+def _password_is_hashed(stored: str) -> bool:
+    """True if stored value looks like a hash (not plaintext). Supports bcrypt and salt:hash."""
+    if not stored or len(stored) < 10:
+        return False
+    if stored.startswith("$2") and stored.count("$") >= 3:
+        return True  # bcrypt
+    if ":" in stored and len(stored) > 40:
+        return True  # salt:hash (e.g. our SHA-256 format)
+    return False
+
+
 def hash_password(password: str) -> str:
-    """Hash a password for storage"""
-    # Use SHA-256 with a salt
+    """Hash a password for storage (SHA-256 with salt). Use for all new and updated passwords."""
     salt = secrets.token_hex(16)
     pw_hash = hashlib.sha256((password + salt).encode()).hexdigest()
     return f"{salt}:{pw_hash}"
 
+
 def verify_password(stored_password: str, provided_password: str) -> bool:
-    """Verify a password against its hash"""
-    try:
-        salt, pw_hash = stored_password.split(':', 1)
-        verify_hash = hashlib.sha256((provided_password + salt).encode()).hexdigest()
-        return secrets.compare_digest(verify_hash, pw_hash)
-    except Exception as e:
-        logger.error(f"Error verifying password hash: {e}", exc_info=True)
+    """
+    Verify a password against stored value.
+    Supports: salt:hash (SHA-256), bcrypt, and legacy plaintext (for migration; rehash on next login).
+    """
+    if not stored_password or not provided_password:
         return False
+    # Bcrypt
+    if stored_password.startswith("$2") and stored_password.count("$") >= 3:
+        try:
+            import bcrypt
+            return bcrypt.checkpw(
+                provided_password.encode("utf-8"),
+                stored_password.encode("utf-8")
+            )
+        except Exception as e:
+            logger.debug("Bcrypt verify failed: %s", e)
+            return False
+    # Salt:hash (our SHA-256 format)
+    if ":" in stored_password and len(stored_password) > 40:
+        try:
+            salt, pw_hash = stored_password.split(":", 1)
+            verify_hash = hashlib.sha256((provided_password + salt).encode()).hexdigest()
+            return secrets.compare_digest(verify_hash, pw_hash)
+        except Exception as e:
+            logger.debug("Salt hash verify failed: %s", e)
+            return False
+    # Legacy plaintext (allow login then rehash on next save)
+    return secrets.compare_digest(stored_password, provided_password)
 
 def hash_username(username: str) -> str:
     """Create a normalized hash of the username"""
@@ -172,25 +204,24 @@ def user_exists() -> bool:
     return db.user_exists()
 
 def create_user(username: str, password: str) -> bool:
-    """Create a new user"""
+    """Create a new user. Password is hashed before storage (security)."""
     if not username or not password:
         logger.error("Attempted to create user with empty username or password")
         return False
-        
-    # Store credentials in database (no hashing as requested)
+
     db = get_database()
     success = db.create_user(
         username=username,
-        password=password,
+        password=hash_password(password),
         two_fa_enabled=False,
         two_fa_secret=None
     )
-    
+
     if success:
         logger.info("User creation successful")
     else:
         logger.error("User creation failed")
-    
+
     return success
 
 def verify_user(username: str, password: str, otp_code: str = None) -> Tuple[bool, bool]:
@@ -211,39 +242,47 @@ def verify_user(username: str, password: str, otp_code: str = None) -> Tuple[boo
         if not user_data:
             logger.warning(f"Login attempt failed: User '{username}' not found.")
             return False, False
-        
-        # Verify password (no hashing as requested)
-        if user_data.get("password") == password:
-            # Check if 2FA is enabled
-            two_fa_enabled = user_data.get("two_fa_enabled", False)
-            logger.debug(f"2FA enabled for user '{username}': {two_fa_enabled}")
-            logger.debug(f"2FA secret present: {bool(user_data.get('two_fa_secret'))}")
-            logger.debug(f"OTP code provided: {bool(otp_code)}")
-            
-            if two_fa_enabled:
-                # If 2FA code was provided, verify it
-                if otp_code:
-                    totp = pyotp.TOTP(user_data.get("two_fa_secret"))
-                    valid_code = totp.verify(otp_code)
-                    logger.debug(f"OTP code validation result: {valid_code}")
-                    if valid_code:
-                        logger.debug(f"User '{username}' authenticated successfully with 2FA.")
-                        return True, False
-                    else:
-                        logger.warning(f"Login attempt failed for user '{username}': Invalid 2FA code.")
-                        return False, True
-                else:
-                    # No OTP code provided but 2FA is enabled
-                    logger.warning(f"Login attempt failed for user '{username}': 2FA code required but not provided.")
-                    logger.debug("Returning needs_2fa=True to trigger 2FA input display")
-                    return False, True
-            else:
-                # 2FA not enabled, password is correct
-                logger.debug(f"User '{username}' authenticated successfully (no 2FA).")
-                return True, False
-        else:
+
+        stored_password = user_data.get("password") or ""
+        if not verify_password(stored_password, password):
             logger.warning(f"Login attempt failed for user '{username}': Invalid password.")
             return False, False
+
+        # If password was stored in plaintext, rehash and update so it is not stored plaintext (security)
+        if not _password_is_hashed(stored_password):
+            try:
+                db.update_user_password(username, hash_password(password))
+                logger.info("Rehashed plaintext password for user '%s' (security fix).", username)
+            except Exception as e:
+                logger.warning("Could not rehash plaintext password for '%s': %s", username, e)
+
+        # Check if 2FA is enabled
+        two_fa_enabled = user_data.get("two_fa_enabled", False)
+        logger.debug(f"2FA enabled for user '{username}': {two_fa_enabled}")
+        logger.debug(f"2FA secret present: {bool(user_data.get('two_fa_secret'))}")
+        logger.debug(f"OTP code provided: {bool(otp_code)}")
+
+        if two_fa_enabled:
+            # If 2FA code was provided, verify it
+            if otp_code:
+                totp = pyotp.TOTP(user_data.get("two_fa_secret"))
+                valid_code = totp.verify(otp_code)
+                logger.debug(f"OTP code validation result: {valid_code}")
+                if valid_code:
+                    logger.debug(f"User '{username}' authenticated successfully with 2FA.")
+                    return True, False
+                else:
+                    logger.warning(f"Login attempt failed for user '{username}': Invalid 2FA code.")
+                    return False, True
+            else:
+                # No OTP code provided but 2FA is enabled
+                logger.warning(f"Login attempt failed for user '{username}': 2FA code required but not provided.")
+                logger.debug("Returning needs_2fa=True to trigger 2FA input display")
+                return False, True
+        else:
+            # 2FA not enabled, password is correct
+            logger.debug(f"User '{username}' authenticated successfully (no 2FA).")
+            return True, False
     except Exception as e:
         logger.error(f"Error during user verification for '{username}': {e}", exc_info=True)
     

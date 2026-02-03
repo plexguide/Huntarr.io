@@ -1886,19 +1886,35 @@ class HuntarrDatabase:
                 return user_data
             return None
     
-    def create_user(self, username: str, password: str, two_fa_enabled: bool = False, 
-                   two_fa_secret: str = None, plex_token: str = None, 
+    def _password_looks_hashed(self, value: str) -> bool:
+        """True if value looks like a hash (bcrypt or salt:hash). Do not store plaintext."""
+        if not value or len(value) < 10:
+            return False
+        if value.startswith("$2") and value.count("$") >= 3:
+            return True
+        if ":" in value and len(value) > 40:
+            return True
+        return False
+
+    def create_user(self, username: str, password: str, two_fa_enabled: bool = False,
+                   two_fa_secret: str = None, plex_token: str = None,
                    plex_user_data: Dict[str, Any] = None) -> bool:
-        """Create a new user"""
+        """Create a new user. Passwords are stored hashed; plaintext is hashed before storage."""
         try:
+            from src.primary.auth import hash_password
+            store_password = password
+            if not self._password_looks_hashed(store_password):
+                store_password = hash_password(store_password)
+                logger.debug("Hashed password before create_user storage")
+
             plex_data_json = json.dumps(plex_user_data) if plex_user_data else None
-            
+
             with self.get_connection() as conn:
                 conn.execute('''
-                    INSERT INTO users (username, password, two_fa_enabled, two_fa_secret, 
+                    INSERT INTO users (username, password, two_fa_enabled, two_fa_secret,
                                      plex_token, plex_user_data, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                ''', (username, password, two_fa_enabled, two_fa_secret, plex_token, plex_data_json))
+                ''', (username, store_password, two_fa_enabled, two_fa_secret, plex_token, plex_data_json))
                 conn.commit()
                 logger.info(f"Created user: {username}")
                 return True
@@ -1907,13 +1923,19 @@ class HuntarrDatabase:
             return False
     
     def update_user_password(self, username: str, new_password: str) -> bool:
-        """Update user password"""
+        """Update user password. Plaintext is hashed before storage."""
         try:
+            from src.primary.auth import hash_password
+            store_password = new_password
+            if not self._password_looks_hashed(store_password):
+                store_password = hash_password(store_password)
+                logger.debug("Hashed password before update_user_password storage")
+
             with self.get_connection() as conn:
                 conn.execute('''
-                    UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP 
+                    UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE username = ?
-                ''', (new_password, username))
+                ''', (store_password, username))
                 conn.commit()
                 logger.info(f"Updated password for user: {username}")
                 return True
