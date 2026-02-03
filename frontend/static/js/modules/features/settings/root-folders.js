@@ -261,6 +261,10 @@
             var browsePathInput = document.getElementById('root-folders-browse-path-input');
             window.RootFolders._browseTargetInput = sourceInput || document.getElementById('root-folder-add-path');
             if (!modal || !browsePathInput) return;
+            // Move modal to body so it is visible when opened from other sections (e.g. Clients > Remote Mappings)
+            if (modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+            }
             var startPath = (window.RootFolders._browseTargetInput && window.RootFolders._browseTargetInput.value) ? window.RootFolders._browseTargetInput.value.trim() : '/';
             if (!startPath) startPath = '/';
             browsePathInput.value = startPath;
