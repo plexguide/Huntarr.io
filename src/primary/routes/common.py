@@ -2641,6 +2641,113 @@ def api_movie_hunt_root_folders_test():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+# --- Remote Path Mappings API --- #
+
+def _get_remote_mappings_config():
+    """Get remote path mappings list from database. Returns list of { host, remote_path, local_path }."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('movie_hunt_remote_mappings')
+    if not config or not isinstance(config.get('mappings'), list):
+        return []
+    return config['mappings']
+
+
+def _save_remote_mappings_config(mappings_list):
+    """Save remote path mappings list to database."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    db.save_app_config('movie_hunt_remote_mappings', {'mappings': mappings_list})
+
+
+@common_bp.route('/api/movie-hunt/remote-mappings', methods=['GET'])
+def api_movie_hunt_remote_mappings_list():
+    """List Movie Hunt remote path mappings."""
+    try:
+        mappings = _get_remote_mappings_config()
+        return jsonify({'success': True, 'mappings': mappings}), 200
+    except Exception as e:
+        logger.exception('Remote mappings list error')
+        return jsonify({'success': False, 'mappings': [], 'error': str(e)}), 500
+
+
+@common_bp.route('/api/movie-hunt/remote-mappings', methods=['POST'])
+def api_movie_hunt_remote_mappings_add():
+    """Add a remote path mapping. Body: { host, remote_path, local_path }."""
+    try:
+        data = request.get_json() or {}
+        host = (data.get('host') or '').strip()
+        remote_path = (data.get('remote_path') or '').strip()
+        local_path = (data.get('local_path') or '').strip()
+        
+        if not host:
+            return jsonify({'success': False, 'message': 'Host is required'}), 400
+        if not remote_path:
+            return jsonify({'success': False, 'message': 'Remote path is required'}), 400
+        if not local_path:
+            return jsonify({'success': False, 'message': 'Local path is required'}), 400
+        
+        mappings = _get_remote_mappings_config()
+        mappings.append({
+            'host': host,
+            'remote_path': remote_path,
+            'local_path': local_path
+        })
+        _save_remote_mappings_config(mappings)
+        return jsonify({'success': True, 'mapping': mappings[-1]}), 200
+    except Exception as e:
+        logger.exception('Remote mappings add error')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@common_bp.route('/api/movie-hunt/remote-mappings/<int:index>', methods=['PUT'])
+def api_movie_hunt_remote_mappings_update(index):
+    """Update a remote path mapping. Body: { host, remote_path, local_path }."""
+    try:
+        data = request.get_json() or {}
+        host = (data.get('host') or '').strip()
+        remote_path = (data.get('remote_path') or '').strip()
+        local_path = (data.get('local_path') or '').strip()
+        
+        if not host:
+            return jsonify({'success': False, 'message': 'Host is required'}), 400
+        if not remote_path:
+            return jsonify({'success': False, 'message': 'Remote path is required'}), 400
+        if not local_path:
+            return jsonify({'success': False, 'message': 'Local path is required'}), 400
+        
+        mappings = _get_remote_mappings_config()
+        if index < 0 or index >= len(mappings):
+            return jsonify({'success': False, 'message': 'Not found'}), 404
+        
+        mappings[index] = {
+            'host': host,
+            'remote_path': remote_path,
+            'local_path': local_path
+        }
+        _save_remote_mappings_config(mappings)
+        return jsonify({'success': True, 'mapping': mappings[index]}), 200
+    except Exception as e:
+        logger.exception('Remote mappings update error')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@common_bp.route('/api/movie-hunt/remote-mappings/<int:index>', methods=['DELETE'])
+def api_movie_hunt_remote_mappings_delete(index):
+    """Delete a remote path mapping at index."""
+    try:
+        mappings = _get_remote_mappings_config()
+        if index < 0 or index >= len(mappings):
+            return jsonify({'success': False, 'message': 'Not found'}), 404
+        
+        mappings.pop(index)
+        _save_remote_mappings_config(mappings)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Remote mappings delete error')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @common_bp.route('/api/movie-hunt/collection', methods=['GET'])
 def api_movie_hunt_collection_list():
     """List Media Collection (requested movies). ?q= search, ?page=1&page_size=20."""

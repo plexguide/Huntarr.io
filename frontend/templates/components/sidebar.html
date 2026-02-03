@@ -211,6 +211,12 @@
                     </div>
                     <span>Root Folders</span>
                 </a>
+                <a href="./#settings-remote-mappings" class="nav-item nav-item-sub" id="movieHuntSettingsRemoteMappingsNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <span>Remote Mappings</span>
+                </a>
             </div>
         </div>
     </nav>
@@ -1164,6 +1170,8 @@
             selector = '#movieHuntSettingsClientsNav';
         } else if (currentHash === '#settings-root-folders') {
             selector = '#movieHuntSettingsRootFoldersNav';
+        } else if (currentHash === '#settings-remote-mappings') {
+            selector = '#movieHuntSettingsRemoteMappingsNav';
         } else if (currentHash === '#scheduling') {
             selector = '#settingsSchedulingNav';
         } else if (currentHash === '#notifications') {
