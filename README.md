@@ -141,7 +141,7 @@ A big thank you to these amazing contributors who've helped build and maintain t
 
 **Huntarr** is the compulsive librarian who finds missing media and upgrades your existing content. It fills in the blanks and improves what you already have.
 
-**Cleanuparr** ([![GitHub stars](https://img.shields.io/github/stars/cleanuparr/cleanuparr?style=social)](https://github.com/cleanuparr/cleanuparr/stargazers)) is the janitor of your server; it keeps your download queue spotless, removes clutter, and blocks malicious files.
+**Cleanuparr** (formerly Cleanuperr) ([![GitHub stars](https://img.shields.io/github/stars/cleanuparr/cleanuparr?style=social)](https://github.com/cleanuparr/cleanuparr/stargazers)) is the janitor of your server; it keeps your download queue spotless, removes clutter, and blocks malicious files.
 
 When combined, these tools create a powerful, self-sufficient media automation stack:
 

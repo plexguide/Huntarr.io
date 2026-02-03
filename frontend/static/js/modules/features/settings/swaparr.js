@@ -83,8 +83,8 @@
                     <p style="color: #e0f7fa; margin: 0; font-size: 0.8em; line-height: 1.4;">
                         <i class="fas fa-rocket" style="margin-right: 6px; color: #22d3ee;"></i>
                         <strong>Need Advanced Options?</strong> For enhanced control and features, we recommend 
-                        <a href="https://github.com/flmorg/cleanuperr" target="_blank" rel="noopener" style="color: #fbbf24; text-decoration: none; font-weight: 600;">
-                            <strong>Cleanuperr</strong>
+                        <a href="https://github.com/cleanuparr/cleanuparr" target="_blank" rel="noopener" style="color: #fbbf24; text-decoration: none; font-weight: 600;">
+                            <strong>Cleanuparr</strong>
                         </a> which offers more comprehensive management capabilities.
                     </p>
                 </div>
