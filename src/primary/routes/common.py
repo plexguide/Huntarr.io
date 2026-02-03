@@ -1110,6 +1110,7 @@ def _get_download_client_queue(client):
                     'time_left': time_left,
                     'progress': progress,
                     'instance_name': name,
+                    'original_release': filename,
                 })
             _prune_requested_queue_ids(name, current_queue_ids)
         elif client_type == 'nzbget':
@@ -1170,6 +1171,7 @@ def _get_download_client_queue(client):
                     'time_left': '-',
                     'progress': progress,
                     'instance_name': name,
+                    'original_release': nzb_name,
                 })
             _prune_requested_queue_ids(name, current_queue_ids)
     except Exception as e:

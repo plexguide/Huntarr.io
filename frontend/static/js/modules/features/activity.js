@@ -102,6 +102,17 @@
             });
     }
 
+    function escapeAttr(s) {
+        if (s == null) return '';
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
     function createRow(item) {
         var tr = document.createElement('tr');
         if (currentView === 'queue') {
@@ -109,8 +120,14 @@
             var cb = canSelect
                 ? '<td class="col-select"><input type="checkbox" class="activity-queue-row-cb" data-id="' + escapeHtml(String(item.id)) + '" data-instance="' + escapeHtml(item.instance_name || 'Default') + '"></td>'
                 : '<td class="col-select"></td>';
+            var originalRelease = item.original_release || item.movie || '';
+            var tooltip = originalRelease ? ('Original release: ' + escapeAttr(originalRelease)) : '';
+            var movieText = escapeHtml(item.movie || item.title || '-');
+            var movieCell = tooltip
+                ? '<td class="col-movie"><span class="activity-queue-movie-title" title="' + tooltip + '">' + movieText + '</span></td>'
+                : '<td class="col-movie">' + movieText + '</td>';
             tr.innerHTML = cb +
-                '<td class="col-movie">' + escapeHtml(item.movie || item.title || '-') + '</td>' +
+                movieCell +
                 '<td class="col-languages">' + escapeHtml(item.languages || '-') + '</td>' +
                 '<td class="col-quality">' + escapeHtml(item.quality || '-') + '</td>' +
                 '<td class="col-formats">' + escapeHtml(item.formats || '-') + '</td>' +
