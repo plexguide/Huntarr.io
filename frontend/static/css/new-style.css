@@ -314,11 +314,6 @@ button {
     margin-bottom: 0;
 }
 
-/* Activity Queue: movie name shows original release on hover */
-.activity-queue-movie-title {
-    cursor: help;
-}
-
 /* Settings sub-pages (Indexers, Clients) */
 .settings-subpanel {
     padding: 24px;

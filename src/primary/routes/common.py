@@ -969,6 +969,48 @@ def _extract_quality_from_filename(filename):
     return ' '.join(parts)
 
 
+def _extract_formats_from_filename(filename):
+    """
+    Extract video/audio format (codec) string from a release filename for the queue FORMATS column.
+    e.g. "Movie.1080p.WEB.H.264-GROUP" -> "H.264", "Movie.2160p.HEVC.Atmos" -> "H.265 / Atmos"
+    """
+    if not filename or not (filename or '').strip():
+        return '-'
+    t = (filename or '').upper()
+    # Normalize separators for matching (dots, hyphens, underscores)
+    t_flat = t.replace('.', ' ').replace('-', ' ').replace('_', ' ')
+    parts = []
+    # Video codecs (order matters: prefer HEVC before H.264 to avoid partial match)
+    if 'HEVC' in t or 'X265' in t or 'H265' in t or 'H.265' in t:
+        parts.append('H.265')
+    elif 'AV1' in t:
+        parts.append('AV1')
+    elif 'VP9' in t:
+        parts.append('VP9')
+    elif 'X264' in t or 'H264' in t or 'H.264' in t:
+        parts.append('H.264')
+    elif 'XVID' in t or 'DIVX' in t:
+        parts.append('XviD')
+    # Audio
+    if 'ATMOS' in t:
+        parts.append('Atmos')
+    if 'DDP' in t or 'DOLBY' in t and 'DIGITAL' in t_flat:
+        if 'Atmos' not in parts:
+            parts.append('DDP')
+    elif 'DTS' in t:
+        parts.append('DTS')
+    if 'AAC' in t and 'AAC' not in ' '.join(parts):
+        parts.append('AAC')
+    if 'AC3' in t or 'DD 5' in t_flat or 'DD5' in t:
+        if 'DDP' not in parts and 'AAC' not in parts:
+            parts.append('AC3')
+    if 'FLAC' in t:
+        parts.append('FLAC')
+    if not parts:
+        return '-'
+    return ' / '.join(parts)
+
+
 def _format_queue_display_name(filename, title=None, year=None):
     """Format display as 'Title (Year)' or 'Title'. Uses stored title/year if present, else parses filename."""
     display_title = (title or '').strip()
@@ -1099,6 +1141,7 @@ def _get_download_client_queue(client):
                     progress = slot.get('percentage') or '-'
                 time_left = slot.get('time_left') or slot.get('timeleft') or '-'
                 quality_str = _extract_quality_from_filename(filename)
+                formats_str = _extract_formats_from_filename(filename)
                 items.append({
                     'id': nzo_id,
                     'movie': display_name,
@@ -1106,7 +1149,7 @@ def _get_download_client_queue(client):
                     'year': None,
                     'languages': '-',
                     'quality': quality_str,
-                    'formats': '-',
+                    'formats': formats_str,
                     'time_left': time_left,
                     'progress': progress,
                     'instance_name': name,
@@ -1160,6 +1203,7 @@ def _get_download_client_queue(client):
                 else:
                     progress = '-'
                 quality_str = _extract_quality_from_filename(nzb_name)
+                formats_str = _extract_formats_from_filename(nzb_name)
                 items.append({
                     'id': nzb_id,
                     'movie': display_name,
@@ -1167,7 +1211,7 @@ def _get_download_client_queue(client):
                     'year': None,
                     'languages': '-',
                     'quality': quality_str,
-                    'formats': '-',
+                    'formats': formats_str,
                     'time_left': '-',
                     'progress': progress,
                     'instance_name': name,
