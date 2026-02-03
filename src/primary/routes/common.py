@@ -633,22 +633,40 @@ def _score_release(release_title, profile):
                 continue
             
             matched = True  # assume match until a required spec fails
+            has_checked_spec = False  # track if we actually checked any spec
             for spec in specifications:
                 if not isinstance(spec, dict):
                     continue
                 required = spec.get('required', False)
                 negate = spec.get('negate', False)
                 fields = spec.get('fields') or {}
-                pattern = fields.get('value') if isinstance(fields, dict) else None
                 
-                # ResolutionSpecification: skip (we don't have resolution from title alone)
                 implementation = spec.get('implementation', '')
+                
+                # ResolutionSpecification: check if title contains the resolution (e.g. 720p, 1080p, 2160p)
                 if 'resolution' in implementation.lower():
+                    resolution_value = fields.get('value') if isinstance(fields, dict) else None
+                    if resolution_value is not None:
+                        has_checked_spec = True
+                        try:
+                            res_int = int(resolution_value)
+                            # Look for e.g. "1080p", "1080", "720p", "2160p" in title
+                            res_pattern = r'\b' + str(res_int) + r'p?\b'
+                            found = bool(re.search(res_pattern, release_title, re.IGNORECASE))
+                            if negate:
+                                found = not found
+                            if required and not found:
+                                matched = False
+                                break
+                        except (TypeError, ValueError):
+                            pass
                     continue
                 
+                pattern = fields.get('value') if isinstance(fields, dict) else None
                 if not pattern or not isinstance(pattern, str):
                     continue
                 
+                has_checked_spec = True
                 try:
                     found = bool(re.search(pattern, release_title, re.IGNORECASE))
                     if negate:
@@ -659,7 +677,8 @@ def _score_release(release_title, profile):
                 except re.error:
                     continue
             
-            if matched:
+            # Only consider matched if we actually checked at least one spec
+            if matched and has_checked_spec:
                 total += score_val
                 parts.append('%s +%d' % (name, score_val))
     except Exception:
