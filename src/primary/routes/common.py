@@ -1076,14 +1076,19 @@ def _delete_from_download_client(client, item_ids):
             api_key = (client.get('api_key') or '').strip()
             url = '%s/api' % base_url
             for iid in item_ids:
-                params = {'mode': 'queue.delete', 'nzo_id': str(iid), 'output': 'json'}
+                # SABnzbd API: mode=queue&name=delete&value=NZO_ID (not mode=queue.delete)
+                params = {'mode': 'queue', 'name': 'delete', 'value': str(iid), 'output': 'json'}
                 if api_key:
                     params['apikey'] = api_key
                 r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
                 r.raise_for_status()
                 data = r.json()
-                if data.get('status') is True or not data.get('error'):
+                if data.get('status') is True and not data.get('error'):
                     removed += 1
+                else:
+                    err = data.get('error') or data.get('error_msg')
+                    if err:
+                        logger.warning("Movie Hunt queue: SABnzbd delete failed for %s: %s", name, err)
         elif client_type == 'nzbget':
             jsonrpc_url = '%s/jsonrpc' % base_url
             username = (client.get('username') or '').strip()
