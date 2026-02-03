@@ -104,9 +104,9 @@
             '</div>' +
             '<div class="editor-section profile-editor-scores-section">' +
             '<div class="editor-section-title">Custom format scores</div>' +
-            '<p class="editor-help-text" style="margin-bottom: 12px;">Hunt Manager uses these scores to decide which release to grab. Higher total score means a better release. Start at 0; use the Recommended column (from TRaSH Guides) as a guide if you want.</p>' +
+            '<p class="editor-help-text" style="margin-bottom: 12px;">Hunt Manager uses these scores to decide which release to grab. Higher total score means a better release. Start at 0; use the Recommend column (from <a href="https://trash-guides.info/Radarr/Radarr-collection-of-custom-formats/" target="_blank" rel="noopener">TRaSH Guides</a>) as a guide if you want. To incorporate customized formats for your movies, <a href="./#settings-custom-formats" class="editor-inline-link">visit Custom Formats</a>.</p>' +
             '<div class="profile-editor-scores-container">' +
-            '<table class="profile-editor-scores-table"><thead><tr><th>Custom format</th><th class="th-score">Your score</th><th class="th-recommended">Recommended</th></tr></thead>' +
+            '<table class="profile-editor-scores-table"><thead><tr><th>Custom format</th><th class="th-score">Your score</th><th class="th-recommended">Recommend</th></tr></thead>' +
             '<tbody id="profile-editor-scores-tbody"></tbody></table>' +
             '<p id="profile-editor-scores-empty" class="profile-editor-scores-empty" style="display: none;">No custom formats added yet. Add them under Movie Hunt &rarr; Custom Formats, then set scores here.</p>' +
             '</div></div></div>';
