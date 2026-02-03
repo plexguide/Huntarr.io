@@ -324,20 +324,12 @@
                 });
             }
 
-            // Browse folder buttons (placeholder - can be enhanced later)
-            const browseFolderBtn = document.getElementById('remote-mapping-browse-folder-btn');
+            // Local path browse: use Root Folders file browser (same design and API)
             const browseLocalBtn = document.getElementById('remote-mapping-browse-local-btn');
-            
-            if (browseFolderBtn) {
-                browseFolderBtn.addEventListener('click', () => {
-                    // TODO: Implement folder browser if needed
-                    console.log('[RemoteMappings] Browse folder clicked');
-                });
-            }
-            if (browseLocalBtn) {
+            const localPathInput = document.getElementById('remote-mapping-local-path');
+            if (browseLocalBtn && localPathInput && window.RootFolders && typeof window.RootFolders.openBrowseModal === 'function') {
                 browseLocalBtn.addEventListener('click', () => {
-                    // TODO: Implement folder browser if needed
-                    console.log('[RemoteMappings] Browse local folder clicked');
+                    window.RootFolders.openBrowseModal(localPathInput);
                 });
             }
 

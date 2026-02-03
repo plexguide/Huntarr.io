@@ -58,25 +58,20 @@
                 </div>
                 
                 <div class="remote-mapping-form-group">
-                    <label for="remote-mapping-remote-path">Remote Path</label>
-                    <div class="remote-mapping-path-row">
-                        <input type="text" id="remote-mapping-remote-path" class="remote-mapping-path-input" placeholder="e.g. /sab1/movies/" autocomplete="off" />
-                        <button type="button" class="btn-remote-mapping-browse-folder" id="remote-mapping-browse-folder-btn" title="Browse for folder">
-                            <i class="fas fa-folder-open"></i>
-                        </button>
-                    </div>
-                    <p class="remote-mapping-help-text">Root path to the directory that the Download Client accesses</p>
-                </div>
-                
-                <div class="remote-mapping-form-group">
                     <label for="remote-mapping-local-path">Local Path</label>
                     <div class="remote-mapping-path-row">
                         <input type="text" id="remote-mapping-local-path" class="remote-mapping-path-input" placeholder="e.g. /downloads/" autocomplete="off" />
                         <button type="button" class="btn-remote-mapping-browse-folder" id="remote-mapping-browse-local-btn" title="Browse for folder">
-                            <i class="fas fa-folder-open"></i>
+                            <i class="fas fa-folder-open"></i> Browse
                         </button>
                     </div>
                     <p class="remote-mapping-help-text">Path that Movie Hunt should use to access the remote path locally</p>
+                </div>
+                
+                <div class="remote-mapping-form-group">
+                    <label for="remote-mapping-remote-path">Remote Path</label>
+                    <input type="text" id="remote-mapping-remote-path" class="remote-mapping-path-input remote-mapping-path-input-full" placeholder="e.g. /sab1/movies/" autocomplete="off" />
+                    <p class="remote-mapping-help-text">Root path to the directory that the Download Client accesses</p>
                 </div>
             </div>
             <div class="remote-mapping-edit-modal-footer">
@@ -554,6 +549,10 @@
     .remote-mapping-path-input:focus {
         border-color: #6366f1;
         outline: none;
+    }
+    .remote-mapping-path-input-full {
+        width: 100%;
+        display: block;
     }
     .btn-remote-mapping-browse-folder {
         padding: 10px 16px;
