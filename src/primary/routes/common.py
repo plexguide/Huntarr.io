@@ -739,6 +739,8 @@ def api_movie_management_patch():
 # 100% independent: uses only Movie Hunt's download clients (SABnzbd/NZBGet). No Radarr.
 # Only track items this Huntarr requested: use a dedicated category so multiple Radarrs/Huntarrs don't mix.
 MOVIE_HUNT_QUEUE_CATEGORY = 'moviehunt'
+# Category we send to SAB/NZBGet when client category is empty or "default" (so queue shows only our requests).
+MOVIE_HUNT_DEFAULT_CATEGORY = 'movies'
 
 def _download_client_base_url(client):
     """Build base URL for a download client (host:port)."""
@@ -761,10 +763,16 @@ def _get_download_client_queue(client):
         return []
     client_type = (client.get('type') or 'nzbget').strip().lower()
     name = (client.get('name') or 'Download client').strip() or 'Download client'
-    # Filter by category so we only show items this Huntarr requested (moviehunt/default/empty).
-    _skip_category_filter = True  # Set False to only show moviehunt/default/empty categories
-    client_cat = MOVIE_HUNT_QUEUE_CATEGORY.strip().lower()
-    allowed_cats = (client_cat, 'default', '')
+    # Filter by the category configured for this client (same category we use when sending NZBs).
+    # When client category is empty or "default", we use "movies" so we send/filter by "movies".
+    # Case-insensitive: SAB may return "Default", we compare in lowercase.
+    raw_cat = (client.get('category') or '').strip()
+    raw_cat_lower = raw_cat.lower()
+    if raw_cat_lower in ('default', '*', ''):
+        client_cat_lower = MOVIE_HUNT_DEFAULT_CATEGORY.lower()
+    else:
+        client_cat_lower = raw_cat_lower
+    allowed_cats = frozenset((client_cat_lower,))
     try:
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
@@ -808,7 +816,7 @@ def _get_download_client_queue(client):
                 if not isinstance(slot, dict):
                     continue
                 slot_cat = (slot.get('category') or slot.get('cat') or '').strip().lower()
-                if not _skip_category_filter and slot_cat not in allowed_cats:
+                if slot_cat not in allowed_cats:
                     continue
                 nzo_id = slot.get('nzo_id') or slot.get('id')
                 if nzo_id is None:
@@ -1669,7 +1677,12 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl)
         host = f'http://{host}'
     port = client.get('port', 8080)
     base_url = f'{host.rstrip("/")}:{port}'
-    cat = (category or client.get('category') or MOVIE_HUNT_QUEUE_CATEGORY).strip() or MOVIE_HUNT_QUEUE_CATEGORY
+    # When category is empty or "default", send "movies" so SAB gets a proper category.
+    raw = (category or client.get('category') or '').strip()
+    if raw.lower() in ('default', '*', ''):
+        cat = MOVIE_HUNT_DEFAULT_CATEGORY
+    else:
+        cat = raw or MOVIE_HUNT_DEFAULT_CATEGORY
     try:
         if client_type == 'sabnzbd':
             api_key = (client.get('api_key') or '').strip()
@@ -1763,7 +1776,10 @@ def api_movie_hunt_request():
         if not nzb_url:
             return jsonify({'success': False, 'message': f'No results found for "{title}" on any indexer. Try a different search or check indexer API keys.'}), 404
         client = enabled_clients[0]
-        ok, msg = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', MOVIE_HUNT_QUEUE_CATEGORY, verify_ssl)
+        # Use client's category; empty/default → "movies" so we send and filter by "movies"
+        raw_cat = (client.get('category') or '').strip()
+        request_category = MOVIE_HUNT_DEFAULT_CATEGORY if raw_cat.lower() in ('default', '*', '') else (raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY)
+        ok, msg = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl)
         if not ok:
             return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
         # Add to Media Collection for tracking (with root_folder for auto availability detection)
