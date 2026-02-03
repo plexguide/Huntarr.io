@@ -68,7 +68,6 @@
                                 '</div>' +
                                 '<div class="custom-format-card-footer">' +
                                 '<button type="button" class="btn-card view" data-index="' + i + '"><i class="fas fa-eye"></i> JSON</button>' +
-                                '<button type="button" class="btn-card edit" data-index="' + i + '"><i class="fas fa-edit"></i> Edit</button>' +
                                 '<button type="button" class="btn-card delete" data-index="' + i + '"><i class="fas fa-trash"></i> Delete</button>' +
                                 '</div></div>';
                         }

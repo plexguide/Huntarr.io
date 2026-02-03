@@ -685,6 +685,25 @@ def _custom_format_name_from_json(obj):
     return 'Unnamed'
 
 
+def _recommended_score_from_json(custom_format_json):
+    """Extract recommended score from Radarr/TRaSH custom format JSON (trash_scores.default). Returns None if not present."""
+    if not custom_format_json:
+        return None
+    try:
+        obj = json.loads(custom_format_json) if isinstance(custom_format_json, str) else custom_format_json
+    except (TypeError, json.JSONDecodeError):
+        return None
+    if not isinstance(obj, dict):
+        return None
+    trash_scores = obj.get('trash_scores')
+    if isinstance(trash_scores, dict) and 'default' in trash_scores:
+        try:
+            return int(trash_scores['default'])
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
 def _get_custom_formats_config():
     """Get Movie Hunt custom formats list from database. Default: empty list."""
     from src.primary.utils.database import get_database
@@ -704,7 +723,7 @@ def _save_custom_formats_config(formats_list):
 
 @common_bp.route('/api/custom-formats', methods=['GET'])
 def api_custom_formats_list():
-    """List Movie Hunt custom formats. Returns list of { index, title, name, custom_format_json }."""
+    """List Movie Hunt custom formats. Returns list of { index, title, name, custom_format_json, score, recommended_score }."""
     try:
         formats = _get_custom_formats_config()
         out = []
@@ -712,12 +731,23 @@ def api_custom_formats_list():
             src = (f.get('source') or 'import').strip().lower()
             if src not in ('import', 'preformat'):
                 src = 'import'
+            cf_json = f.get('custom_format_json') or '{}'
+            score = f.get('score')
+            if score is None:
+                score = 0
+            try:
+                score = int(score)
+            except (TypeError, ValueError):
+                score = 0
+            recommended = _recommended_score_from_json(cf_json)
             item = {
                 'index': i,
                 'title': (f.get('title') or f.get('name') or 'Unnamed').strip() or 'Unnamed',
                 'name': (f.get('name') or 'Unnamed').strip() or 'Unnamed',
-                'custom_format_json': f.get('custom_format_json') or '{}',
+                'custom_format_json': cf_json,
                 'source': src,
+                'score': score,
+                'recommended_score': recommended,
             }
             if src == 'preformat' and f.get('preformat_id'):
                 item['preformat_id'] = f.get('preformat_id')
@@ -781,6 +811,7 @@ def api_custom_formats_add():
             'name': name,
             'custom_format_json': custom_format_json,
             'source': source,
+            'score': 0,
         }
         if source == 'preformat' and preformat_id:
             new_item['preformat_id'] = preformat_id
@@ -794,7 +825,7 @@ def api_custom_formats_add():
 
 @common_bp.route('/api/custom-formats/<int:index>', methods=['PATCH'])
 def api_custom_formats_patch(index):
-    """Update custom format. Body: title?, custom_format_json?."""
+    """Update custom format. Body: title?, custom_format_json?, score?."""
     try:
         formats = _get_custom_formats_config()
         if index < 0 or index >= len(formats):
@@ -802,6 +833,11 @@ def api_custom_formats_patch(index):
         data = request.get_json() or {}
         if data.get('title') is not None:
             formats[index]['title'] = (data.get('title') or '').strip() or formats[index].get('name') or 'Unnamed'
+        if data.get('score') is not None:
+            try:
+                formats[index]['score'] = int(data['score'])
+            except (TypeError, ValueError):
+                formats[index]['score'] = 0
         if data.get('custom_format_json') is not None:
             raw = data['custom_format_json']
             if isinstance(raw, str) and raw.strip():

@@ -466,6 +466,18 @@ let huntarrUI = {
                 }
             }
             
+            // Check for unsaved Profile Editor changes if leaving Profile Editor
+            if (this.currentSection === 'profile-editor' && section !== 'profile-editor' && window.SettingsForms && typeof window.SettingsForms.isProfileEditorDirty === 'function' && window.SettingsForms.isProfileEditorDirty()) {
+                window.SettingsForms.confirmLeaveProfileEditor(function(result) {
+                    if (result === 'save') {
+                        window.SettingsForms.saveProfileFromEditor(section);
+                    } else if (result === 'discard') {
+                        window.SettingsForms.cancelProfileEditor(section);
+                    }
+                });
+                return;
+            }
+            
             // Don't refresh page when navigating to/from instance editor or between app sections
             const noRefreshSections = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-settings', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);

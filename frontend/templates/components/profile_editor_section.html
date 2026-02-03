@@ -27,17 +27,17 @@
         opacity: 0.7;
     }
     .profile-save-btn.enabled {
-        background: #6366f1 !important;
+        background: #dc2626 !important;
         color: white !important;
         cursor: pointer !important;
         opacity: 1 !important;
         border: none !important;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35) !important;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35) !important;
     }
     .profile-save-btn.enabled:hover {
-        background: #4f46e5 !important;
+        background: #b91c1c !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0 6px 15px rgba(99, 102, 241, 0.45) !important;
+        box-shadow: 0 6px 15px rgba(220, 38, 38, 0.45) !important;
     }
     #profile-editor-back {
         transition: all 0.3s ease;
@@ -186,6 +186,46 @@
         max-height: none;
         overflow-y: visible;
     }
+    .profile-editor-scores-container { overflow-x: auto; }
+    .profile-editor-scores-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+    }
+    .profile-editor-scores-table th,
+    .profile-editor-scores-table td {
+        padding: 10px 14px;
+        text-align: left;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    }
+    .profile-editor-scores-table th {
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        font-size: 0.8rem;
+    }
+    .profile-editor-scores-table td { color: #e2e8f0; }
+    .profile-editor-scores-table .th-score,
+    .profile-editor-scores-table .th-recommended { width: 120px; text-align: right; }
+    .profile-editor-scores-table td:nth-child(2),
+    .profile-editor-scores-table td:nth-child(3) { text-align: right; }
+    .profile-editor-scores-table input[type="number"] {
+        width: 90px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: rgba(15, 23, 42, 0.6);
+        color: #f8fafc;
+        font-size: 0.9rem;
+        text-align: left;
+    }
+    .profile-editor-scores-table input[type="number"]:focus {
+        border-color: #6366f1;
+        outline: none;
+    }
+    .profile-editor-scores-table .recommended-value { color: #94a3b8; font-size: 0.9rem; }
+    .profile-editor-scores-empty { color: #94a3b8; font-size: 0.95rem; margin: 20px 0 0 0; }
     @media (max-width: 768px) {
         #profileEditorContainer { padding: 20px 15px; padding-bottom: 100px; }
         #profile-editor-content .editor-grid {

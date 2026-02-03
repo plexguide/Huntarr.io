@@ -98,14 +98,156 @@
             '<div class="editor-section-title">Qualities</div>' +
             '<p class="editor-help-text" style="margin-bottom: 12px;">Only checked qualities are wanted. Higher in the list is more preferred.</p>' +
             '<div class="profile-quality-list" id="profile-editor-qualities">' + (qualitiesHtml || '<p class="editor-help-text">No qualities defined.</p>') + '</div>' +
-            '</div></div>';
+            '</div>' +
+            '<div class="editor-section profile-editor-scores-section">' +
+            '<div class="editor-section-title">Custom format scores</div>' +
+            '<p class="editor-help-text" style="margin-bottom: 12px;">Hunt Manager uses these scores to decide which release to grab. Higher total score means a better release. Start at 0; use the Recommended column (from TRaSH Guides) as a guide if you want.</p>' +
+            '<div class="profile-editor-scores-container">' +
+            '<table class="profile-editor-scores-table"><thead><tr><th>Custom format</th><th class="th-score">Your score</th><th class="th-recommended">Recommended</th></tr></thead>' +
+            '<tbody id="profile-editor-scores-tbody"></tbody></table>' +
+            '<p id="profile-editor-scores-empty" class="profile-editor-scores-empty" style="display: none;">No custom formats added yet. Add them under Movie Hunt &rarr; Custom Formats, then set scores here.</p>' +
+            '</div></div></div>';
+    }
+
+    let _profileEditorScoresList = [];
+    let _profileEditorScoresSortTimeout = null;
+    let _profileEditorDirty = false;
+
+    function renderProfileEditorScoresTable() {
+        const tbody = document.getElementById('profile-editor-scores-tbody');
+        const emptyEl = document.getElementById('profile-editor-scores-empty');
+        const table = document.querySelector('.profile-editor-scores-table');
+        if (!tbody || _profileEditorScoresList.length === 0) {
+            if (tbody) tbody.innerHTML = '';
+            if (emptyEl) emptyEl.style.display = 'block';
+            if (table) table.style.display = 'none';
+            return;
+        }
+        const sorted = _profileEditorScoresList.slice().sort(function(a, b) { return (b.score - a.score); });
+        let html = '';
+        for (let i = 0; i < sorted.length; i++) {
+            const item = sorted[i];
+            const title = (item.title || item.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const rec = item.recommended_score;
+            const recText = (rec != null && !isNaN(rec)) ? String(rec) : '—';
+            html += '<tr data-index="' + item.index + '"><td><span class="custom-format-score-name">' + title + '</span></td>' +
+                '<td><input type="number" class="profile-editor-score-input" data-index="' + item.index + '" value="' + item.score + '" min="-100000" max="100000" step="1"></td>' +
+                '<td><span class="recommended-value">' + recText + '</span></td></tr>';
+        }
+        tbody.innerHTML = html;
+        tbody.querySelectorAll('.profile-editor-score-input').forEach(function(input) {
+            function scheduleSort(idx) {
+                if (_profileEditorScoresSortTimeout) clearTimeout(_profileEditorScoresSortTimeout);
+                _profileEditorScoresSortTimeout = setTimeout(function() {
+                    _profileEditorScoresSortTimeout = null;
+                    renderProfileEditorScoresTable();
+                }, 2000);
+            }
+            input.addEventListener('input', function() {
+                const idx = parseInt(input.getAttribute('data-index'), 10);
+                if (isNaN(idx)) return;
+                let val = parseInt(input.value, 10);
+                if (isNaN(val)) val = 0;
+                const item = _profileEditorScoresList.find(function(o) { return o.index === idx; });
+                if (item) item.score = val;
+                markProfileEditorDirty();
+                scheduleSort(idx);
+            });
+            input.addEventListener('change', function() {
+                const idx = parseInt(input.getAttribute('data-index'), 10);
+                if (isNaN(idx)) return;
+                let val = parseInt(input.value, 10);
+                if (isNaN(val)) val = 0;
+                const item = _profileEditorScoresList.find(function(o) { return o.index === idx; });
+                if (item) item.score = val;
+                markProfileEditorDirty();
+                scheduleSort(idx);
+            });
+        });
+    }
+
+    function loadProfileEditorScoresTable() {
+        const tbody = document.getElementById('profile-editor-scores-tbody');
+        const emptyEl = document.getElementById('profile-editor-scores-empty');
+        const table = document.querySelector('.profile-editor-scores-table');
+        if (!tbody) return;
+        fetch('./api/custom-formats')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                const list = (data && data.custom_formats) ? data.custom_formats : [];
+                if (list.length === 0) {
+                    _profileEditorScoresList = [];
+                    tbody.innerHTML = '';
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    if (table) table.style.display = 'none';
+                    return;
+                }
+                if (emptyEl) emptyEl.style.display = 'none';
+                if (table) table.style.display = 'table';
+                _profileEditorScoresList = list.map(function(item, i) {
+                    let score = item.score != null ? Number(item.score) : 0;
+                    if (isNaN(score)) score = 0;
+                    return {
+                        index: i,
+                        title: item.title || item.name || 'Unnamed',
+                        name: item.name || 'Unnamed',
+                        recommended_score: item.recommended_score,
+                        score: score
+                    };
+                });
+                renderProfileEditorScoresTable();
+            })
+            .catch(function() {
+                _profileEditorScoresList = [];
+                tbody.innerHTML = '';
+                if (emptyEl) emptyEl.style.display = 'block';
+                if (table) table.style.display = 'none';
+            });
+    }
+
+    function saveProfileEditorScores() {
+        const tbody = document.getElementById('profile-editor-scores-tbody');
+        if (!tbody) return Promise.resolve();
+        const rows = tbody.querySelectorAll('tr[data-index]');
+        const promises = [];
+        rows.forEach(function(row) {
+            const idx = parseInt(row.getAttribute('data-index'), 10);
+            const input = row.querySelector('.profile-editor-score-input');
+            if (isNaN(idx) || !input) return;
+            let val = parseInt(input.value, 10);
+            if (isNaN(val)) val = 0;
+            promises.push(
+                fetch('./api/custom-formats/' + idx, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ score: val })
+                }).then(function(r) { return r.json(); })
+            );
+        });
+        return Promise.all(promises);
     }
 
     function markProfileEditorDirty() {
+        _profileEditorDirty = true;
         const saveBtn = document.getElementById('profile-editor-save');
         if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.classList.add('enabled');
+        }
+    }
+
+    function confirmLeaveProfileEditor(done) {
+        if (!_profileEditorDirty) {
+            if (typeof done === 'function') done('discard');
+            return true;
+        }
+        var saveFirst = window.confirm('You have unsaved changes. Save before leaving?');
+        if (saveFirst) {
+            if (typeof done === 'function') done('save');
+            return false;
+        } else {
+            if (typeof done === 'function') done('discard');
+            return true;
         }
     }
 
@@ -239,6 +381,7 @@
     };
 
     Forms._openProfileEditorWithProfile = function(index, profile) {
+        _profileEditorDirty = false;
         Forms._currentProfileEditing = { index: index, originalProfile: JSON.parse(JSON.stringify(profile)) };
         const contentEl = document.getElementById('profile-editor-content');
         const saveBtn = document.getElementById('profile-editor-save');
@@ -251,21 +394,28 @@
             saveBtn.onclick = function() { Forms.saveProfileFromEditor(); };
         }
         if (backBtn) {
-            backBtn.onclick = function() { Forms.cancelProfileEditor(); };
+            backBtn.onclick = function() {
+                confirmLeaveProfileEditor(function(result) {
+                    if (result === 'save') Forms.saveProfileFromEditor('settings-profiles');
+                    else if (result === 'discard') Forms.cancelProfileEditor();
+                });
+            };
         }
         setTimeout(function() {
             setupProfileEditorChangeDetection();
             setupProfileQualitiesDragDrop();
             refreshProfileEditorUpgradeUntilOptions();
+            loadProfileEditorScoresTable();
         }, 100);
         if (window.huntarrUI && window.huntarrUI.switchSection) {
             window.huntarrUI.switchSection('profile-editor');
         }
     };
 
-    Forms.saveProfileFromEditor = function() {
+    Forms.saveProfileFromEditor = function(optionalNextSection) {
         const state = Forms._currentProfileEditing;
         if (!state) return;
+        const nextSection = optionalNextSection || 'settings-profiles';
         const index = state.index;
         const nameEl = document.getElementById('profile-editor-name');
         const defaultEl = document.getElementById('profile-editor-default');
@@ -319,13 +469,24 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success) {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Profile saved.', 'success');
-                    }
-                    if (window.huntarrUI && window.huntarrUI.switchSection) {
-                        window.huntarrUI.switchSection('settings-profiles');
-                    }
-                    if (Forms.refreshProfilesList) Forms.refreshProfilesList();
+                    _profileEditorDirty = false;
+                    saveProfileEditorScores().then(function() {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Profile saved.', 'success');
+                        }
+                        if (window.huntarrUI && window.huntarrUI.switchSection) {
+                            window.huntarrUI.switchSection(nextSection);
+                        }
+                        if (Forms.refreshProfilesList) Forms.refreshProfilesList();
+                    }).catch(function() {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Profile saved; some scores may not have saved.', 'warning');
+                        }
+                        if (window.huntarrUI && window.huntarrUI.switchSection) {
+                            window.huntarrUI.switchSection(nextSection);
+                        }
+                        if (Forms.refreshProfilesList) Forms.refreshProfilesList();
+                    });
                 } else {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification(data.error || 'Failed to save.', 'error');
@@ -343,10 +504,19 @@
             });
     };
 
-    Forms.cancelProfileEditor = function() {
+    Forms.cancelProfileEditor = function(optionalNextSection) {
+        _profileEditorDirty = false;
         Forms._currentProfileEditing = null;
         if (window.huntarrUI && window.huntarrUI.switchSection) {
-            window.huntarrUI.switchSection('settings-profiles');
+            window.huntarrUI.switchSection(optionalNextSection || 'settings-profiles');
         }
+    };
+
+    Forms.isProfileEditorDirty = function() {
+        return !!_profileEditorDirty;
+    };
+
+    Forms.confirmLeaveProfileEditor = function(callback) {
+        confirmLeaveProfileEditor(callback);
     };
 })();
