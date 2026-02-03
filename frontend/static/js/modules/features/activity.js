@@ -136,24 +136,12 @@
         loadData();
     }
 
-    function clearData() {
-        var label = currentView === 'queue' ? 'Queue' : currentView === 'history' ? 'History' : 'Blocklist';
-        if (!confirm('Clear ' + label + '? This cannot be undone.')) return;
-        fetch('./api/activity/' + currentView, { method: 'DELETE' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.success !== false) {
-                    loadData();
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification(label + ' cleared.', 'success');
-                    }
-                }
-            })
-            .catch(function() {
-                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Failed to clear.', 'error');
-                }
-            });
+    function refreshData() {
+        currentPage = 1;
+        loadData();
+        if (window.huntarrUI && window.huntarrUI.showNotification) {
+            window.huntarrUI.showNotification('Data refreshed.', 'success');
+        }
     }
 
     function init(view) {
@@ -178,8 +166,8 @@
         var searchBtn = el('activitySearchButton');
         if (searchBtn) searchBtn.onclick = performSearch;
         if (input) input.onkeypress = function(e) { if (e.key === 'Enter') performSearch(); };
-        var clearBtn = el('activityClearButton');
-        if (clearBtn) clearBtn.onclick = clearData;
+        var refreshBtn = el('activityRefreshButton');
+        if (refreshBtn) refreshBtn.onclick = refreshData;
         var prevBtn = el('activityPrevPage');
         var nextBtn = el('activityNextPage');
         if (prevBtn) prevBtn.onclick = function() { if (currentPage > 1) { currentPage--; loadData(); } };

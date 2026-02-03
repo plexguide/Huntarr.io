@@ -418,8 +418,8 @@ def api_indexers_delete(index):
 # --- Movie Hunt Profiles (default "Standard" profile, app instances design) ---
 PROFILES_DEFAULT_NAME = 'Standard'
 
-# Default qualities for new profiles (Radarr-style; id, name, enabled, order)
-# Matches Radarr quality list: Raw-HD, BR-DISK, Remux/WEB/Bluray/HDTV by resolution, SDTV, DVD, then scene/screener (DVDSCR, REGIONAL, TELECINE, TELESYNC, CAM, WORKPRINT, Unknown)
+# Default qualities for new profiles (Movie Hunt; id, name, enabled, order)
+# Matches Movie Hunt quality list: Raw-HD, BR-DISK, Remux/WEB/Bluray/HDTV by resolution, SDTV, DVD, then scene/screener (DVDSCR, REGIONAL, TELECINE, TELESYNC, CAM, WORKPRINT, Unknown)
 PROFILES_DEFAULT_QUALITIES = [
     {'id': 'rawhd', 'name': 'Raw-HD', 'enabled': False, 'order': 0},
     {'id': 'brdisk', 'name': 'BR-DISK', 'enabled': False, 'order': 1},
@@ -735,15 +735,65 @@ def api_movie_management_patch():
         return jsonify({'error': str(e)}), 500
 
 
-# --- Movie Hunt Activity (Queue, History, Blocklist) - stub for UI ---
+# --- Movie Hunt Activity (Queue, History, Blocklist) ---
+# Uses Movie Hunt API only (src.primary.apps.movie_hunt); no direct apps/radarr usage here.
+
+def _get_activity_queue():
+    """Fetch queue from all configured Movie Hunt instances and return items for Activity UI."""
+    try:
+        from src.primary.apps.movie_hunt import get_instances, get_queue, queue_record_to_activity_item
+    except ImportError:
+        return [], 0
+    instances = get_instances(quiet=True)
+    if not instances:
+        return [], 0
+    all_items = []
+    timeout = 30
+    for inst in instances:
+        api_url = (inst.get('api_url') or '').strip()
+        api_key = (inst.get('api_key') or '').strip()
+        name = inst.get('instance_name') or 'Default'
+        if not api_url or not api_key:
+            continue
+        try:
+            data = get_queue(api_url, api_key, timeout, page=1, page_size=500)
+            records = data.get('records') or []
+            for rec in records:
+                item = queue_record_to_activity_item(rec, instance_name=name)
+                if item:
+                    all_items.append(item)
+        except Exception as e:
+            logger.debug("Movie Hunt activity queue fetch for %s: %s", name, e)
+    return all_items, len(all_items)
+
 
 @common_bp.route('/api/activity/<view>', methods=['GET'])
 def api_activity_get(view):
-    """Get activity items (queue, history, or blocklist). Stub: returns empty list; wire to Radarr later."""
+    """Get activity items (queue, history, or blocklist). Queue uses Movie Hunt API; history/blocklist stubbed."""
     if view not in ('queue', 'history', 'blocklist'):
         return jsonify({'error': 'Invalid view'}), 400
     page = max(1, request.args.get('page', 1, type=int))
     page_size = max(1, min(100, request.args.get('page_size', 20, type=int)))
+    search = (request.args.get('search') or '').strip().lower()
+
+    if view == 'queue':
+        all_items, total = _get_activity_queue()
+        if search:
+            all_items = [i for i in all_items if search in (i.get('movie') or '').lower() or search in str(i.get('year') or '').lower()]
+            total = len(all_items)
+        else:
+            total = len(all_items)
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        start = (page - 1) * page_size
+        page_items = all_items[start:start + page_size]
+        return jsonify({
+            'items': page_items,
+            'total': total,
+            'page': page,
+            'total_pages': total_pages
+        }), 200
+
+    # History and blocklist: stub for now
     return jsonify({
         'items': [],
         'total': 0,
@@ -752,28 +802,69 @@ def api_activity_get(view):
     }), 200
 
 
+def _clear_activity_queue():
+    """Remove all items from Movie Hunt queue (and from download client e.g. SABnzbd). Returns (success, error_message)."""
+    try:
+        from src.primary.apps.movie_hunt import get_instances, get_queue, delete_queue_bulk
+    except ImportError:
+        return False, 'Movie Hunt not available'
+    instances = get_instances(quiet=True)
+    if not instances:
+        return False, 'No Movie Hunt instances configured'
+    timeout = 30
+    cleared = 0
+    errors = []
+    for inst in instances:
+        api_url = (inst.get('api_url') or '').strip()
+        api_key = (inst.get('api_key') or '').strip()
+        name = inst.get('instance_name') or 'Default'
+        if not api_url or not api_key:
+            continue
+        try:
+            data = get_queue(api_url, api_key, timeout, page=1, page_size=500)
+            records = data.get('records') or []
+            ids = [r['id'] for r in records if isinstance(r, dict) and r.get('id') is not None]
+            if not ids:
+                continue
+            if delete_queue_bulk(api_url, api_key, timeout, ids, remove_from_client=True):
+                cleared += len(ids)
+            else:
+                errors.append(name)
+        except Exception as e:
+            logger.debug("Movie Hunt activity queue clear for %s: %s", name, e)
+            errors.append(name)
+    if errors:
+        return cleared > 0, ('Cleared %d item(s). Failed for: %s' % (cleared, ', '.join(errors))) if cleared else ('Failed for: %s' % ', '.join(errors))
+    return True, None
+
+
 @common_bp.route('/api/activity/<view>', methods=['DELETE'])
 def api_activity_delete(view):
-    """Clear activity view (queue, history, or blocklist). Stub: no-op; wire to Radarr later."""
+    """Clear activity view. Queue: remove all items from Movie Hunt queue (and download client). History/blocklist: stub."""
     if view not in ('queue', 'history', 'blocklist'):
         return jsonify({'error': 'Invalid view'}), 400
+    if view == 'queue':
+        success, err_msg = _clear_activity_queue()
+        if not success and err_msg:
+            return jsonify({'success': False, 'error': err_msg}), 200
+        return jsonify({'success': True}), 200
     return jsonify({'success': True}), 200
 
 
-# --- Movie Hunt Custom Formats (Radarr-style JSON; Pre-Format + Import) ---
+# --- Movie Hunt Custom Formats (JSON; Pre-Format + Import) ---
 # TRaSH Guides categories and format JSONs from src/primary/trash_custom_formats.py
 from .. import trash_custom_formats
 
 
 def _custom_format_name_from_json(obj):
-    """Extract display name from Radarr-style custom format JSON (top-level 'name' field)."""
+    """Extract display name from Movie Hunt custom format JSON (top-level 'name' field)."""
     if isinstance(obj, dict) and obj.get('name') is not None:
         return str(obj.get('name', '')).strip() or 'Unnamed'
     return 'Unnamed'
 
 
 def _recommended_score_from_json(custom_format_json):
-    """Extract recommended score from Radarr/TRaSH custom format JSON (trash_scores.default). Returns None if not present."""
+    """Extract recommended score from Movie Hunt/TRaSH custom format JSON (trash_scores.default). Returns None if not present."""
     if not custom_format_json:
         return None
     try:

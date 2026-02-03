@@ -9,8 +9,8 @@
                 </div>
             </div>
             <div class="control-group">
-                <button id="activityClearButton" class="btn-danger-outline">
-                    <i class="fas fa-trash-alt"></i> Clear
+                <button id="activityRefreshButton" class="btn-primary-outline">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
                 </button>
             </div>
         </div>
@@ -206,6 +206,25 @@
 
 #activitySection .btn-danger-outline:hover {
     background: #ef4444;
+    color: white;
+}
+
+#activitySection .btn-primary-outline {
+    background: transparent;
+    border: 1px solid #3b82f6;
+    color: #3b82f6;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+#activitySection .btn-primary-outline:hover {
+    background: #3b82f6;
     color: white;
 }
 

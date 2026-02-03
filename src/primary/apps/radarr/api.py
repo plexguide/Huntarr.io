@@ -42,9 +42,9 @@ def arr_request(api_url: str, api_key: str, api_timeout: int, endpoint: str, met
             radarr_logger.error("No URL or API key provided")
             return None
         
-        # Check API limit before making request
+        # Check API limit before making request (skip for read-only / count_api=False, e.g. Activity queue)
         from src.primary.stats_manager import check_hourly_cap_exceeded, increment_hourly_cap
-        if check_hourly_cap_exceeded("radarr"):
+        if count_api and check_hourly_cap_exceeded("radarr"):
             radarr_logger.warning("\U0001F6D1 Radarr API hourly limit reached - skipping request")
             return None
         
@@ -126,6 +126,76 @@ def get_download_queue_size(api_url: str, api_key: str, api_timeout: int) -> int
     except Exception as e:
         radarr_logger.error(f"An unexpected error occurred while getting Radarr queue size: {e}")
         return -1
+
+
+def get_queue(api_url: str, api_key: str, api_timeout: int, page: int = 1, page_size: int = 100) -> Dict[str, Any]:
+    """
+    Get the download queue from Radarr (for Movie Hunt Activity).
+
+    Args:
+        api_url: Base URL of the Radarr API
+        api_key: API key for authentication
+        api_timeout: Request timeout
+        page: Page number (1-based)
+        page_size: Number of records per page
+
+    Returns:
+        Dict with 'records' (list of queue items) and 'totalRecords' (int), or {'records': [], 'totalRecords': 0} on error.
+    """
+    if not api_url or not api_key:
+        return {'records': [], 'totalRecords': 0}
+    try:
+        params = {
+            'page': page,
+            'pageSize': min(page_size, 1000),
+            'includeUnknownMovieItems': True,  # include items just sent to download client (e.g. SABnzbd)
+            'includeMovie': True,
+        }
+        queue_data = arr_request(api_url, api_key, api_timeout, 'queue', params=params, count_api=False)
+        if not queue_data or not isinstance(queue_data, dict):
+            return {'records': [], 'totalRecords': 0}
+        records = queue_data.get('records') if isinstance(queue_data.get('records'), list) else []
+        total = queue_data.get('totalRecords', len(records))
+        return {'records': records, 'totalRecords': total}
+    except Exception as e:
+        radarr_logger.debug(f"Error getting Radarr queue: {e}")
+        return {'records': [], 'totalRecords': 0}
+
+
+def delete_queue_bulk(api_url: str, api_key: str, api_timeout: int, ids: List[int],
+                     remove_from_client: bool = True, blocklist: bool = False) -> bool:
+    """
+    Remove multiple items from Radarr queue (and optionally from download client e.g. SABnzbd).
+
+    Args:
+        api_url: Base URL of the Radarr API
+        api_key: API key for authentication
+        api_timeout: Request timeout
+        ids: List of queue record ids to remove
+        remove_from_client: If True, also remove from download client (default True)
+        blocklist: If True, add release to blocklist (default False)
+
+    Returns:
+        True if request succeeded, False otherwise.
+    """
+    if not api_url or not api_key or not ids:
+        return False
+    try:
+        full_url = f"{api_url.rstrip('/')}/api/v3/queue/bulk"
+        params = {'removeFromClient': str(remove_from_client).lower(), 'blocklist': str(blocklist).lower()}
+        headers = {
+            "X-Api-Key": api_key,
+            "Content-Type": "application/json",
+        }
+        verify_ssl = get_ssl_verify_setting()
+        response = session.delete(full_url, headers=headers, params=params, json={"ids": ids},
+                                  timeout=api_timeout, verify=verify_ssl)
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        radarr_logger.debug(f"Error deleting Radarr queue bulk: {e}")
+        return False
+
 
 def get_quality_profiles(api_url: str, api_key: str, api_timeout: int) -> Optional[List[Dict]]:
     """
