@@ -44,7 +44,7 @@
                 '<span class="quality-drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>' +
                 '<input type="checkbox" id="profile-quality-' + i + '" class="profile-quality-checkbox"' + checked + '>' +
                 '<label class="quality-name" for="profile-quality-' + i + '">' + qName + '</label>' +
-                '<input type="number" class="profile-quality-score-input" data-quality-id="' + escapeHtml(String(q.id || i)) + '" min="-100000" max="100000" placeholder="Score" value="' + scoreVal + '" style="width: 5em;" title="Score for this quality (optional; used in release scoring)">' +
+                '<input type="number" class="profile-quality-score-input" data-quality-id="' + escapeHtml(String(q.id || i)) + '" min="-100000" max="100000" placeholder="Score" value="' + scoreVal + '" style="width: 8em; min-width: 100px;" title="Score for this quality (optional; used in release scoring)">' +
                 '</div>';
         });
         var upgradeSelectOptions = '';

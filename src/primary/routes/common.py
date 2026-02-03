@@ -2300,7 +2300,13 @@ def api_movie_hunt_request():
             if results:
                 # Pick best release by score among those matching the profile (not just first)
                 chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(results, profile)
-                if chosen:
+                min_score = profile.get('min_custom_format_score', 0)
+                try:
+                    min_score = int(min_score)
+                except (TypeError, ValueError):
+                    min_score = 0
+                # Only request if the best matching release meets the profile's minimum custom format score
+                if chosen and chosen_score >= min_score:
                     nzb_url = chosen.get('nzb_url')
                     nzb_title = chosen.get('title', 'Unknown')
                     indexer_used = idx.get('name') or preset
@@ -2309,9 +2315,14 @@ def api_movie_hunt_request():
                     break
         if not nzb_url:
             profile_name = (profile.get('name') or 'Standard').strip()
+            min_score = profile.get('min_custom_format_score', 0)
+            try:
+                min_score = int(min_score)
+            except (TypeError, ValueError):
+                min_score = 0
             return jsonify({
                 'success': False,
-                'message': f'No release found that matches your quality profile "{profile_name}". The indexer had results but none were in the allowed resolutions/sources (e.g. Standard allows 1080p/720p/480p, not 2160p). Try selecting a different profile (e.g. 4K) or search again later.'
+                'message': f'No release found that matches your quality profile "{profile_name}" or meets the minimum custom format score ({min_score}). The indexer had results but none were in the allowed resolutions/sources or had a score at or above the minimum. Try a different profile, lower the minimum score, or search again later.'
             }), 404
         client = enabled_clients[0]
         # Use client's category; empty/default → "movies" so we send and filter by "movies"
