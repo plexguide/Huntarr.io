@@ -14,16 +14,18 @@
         <div class="settings-group remote-mappings-settings-group">
             <h3>Remote Path Mappings</h3>
             <p class="remote-mappings-help">
-                Remote Path Mappings are very rarely required, if Movie Hunt and your download client are on the same system it is better to match your paths. 
-                For more information see the <a href="https://wiki.servarr.com/radarr/settings#remote-path-mappings" target="_blank" rel="noopener" class="remote-mappings-wiki-link">wiki</a>.
+                When your download client and Movie Hunt don’t see the same folder paths, you need a mapping: tell Movie Hunt which <strong>local path</strong> on your system corresponds to the <strong>remote path</strong> the client uses.
+                <strong>If you run Movie Hunt in Docker</strong>, paths inside the container are usually different from the host, so remote path mappings are typically required.
+                If both run on the same machine with the same paths, you can leave this empty.
+                For more detail see the <a href="https://wiki.servarr.com/radarr/settings#remote-path-mappings" target="_blank" rel="noopener" class="remote-mappings-wiki-link">wiki</a>.
             </p>
             <div class="remote-mappings-table-wrapper">
                 <table class="remote-mappings-table" id="remote-mappings-table">
                     <thead>
                         <tr>
                             <th>Host</th>
-                            <th>Remote Path</th>
                             <th>Local Path</th>
+                            <th>Remote Path</th>
                             <th class="remote-mappings-actions-col"></th>
                         </tr>
                     </thead>

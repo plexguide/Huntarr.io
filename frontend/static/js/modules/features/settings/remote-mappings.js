@@ -32,8 +32,8 @@
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>${this.escapeHtml(mapping.host || '')}</td>
-                            <td>${this.escapeHtml(mapping.remote_path || '')}</td>
                             <td>${this.escapeHtml(mapping.local_path || '')}</td>
+                            <td>${this.escapeHtml(mapping.remote_path || '')}</td>
                             <td class="remote-mappings-actions-col">
                                 <button class="btn-edit-mapping" data-index="${idx}" title="Edit">
                                     <i class="fas fa-edit"></i>
