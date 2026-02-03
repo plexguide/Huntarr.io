@@ -97,6 +97,7 @@
         font-size: 1.2rem;
         font-weight: 600;
         color: #f8fafc;
+        font-family: inherit;
     }
     .root-folders-help {
         margin: 0 0 20px 0;
@@ -161,6 +162,7 @@
         font-weight: 700;
         letter-spacing: 0.5px;
         flex-shrink: 0;
+        font-family: inherit;
     }
     #root-folders-grid .root-folder-card-body {
         margin-bottom: 12px;
@@ -195,7 +197,9 @@
     .root-folder-add-modal-backdrop {
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 0, 0, 0.6);
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         z-index: 1000;
     }
     .root-folder-add-modal-content {
@@ -298,7 +302,11 @@
     }
     .root-folders-browse-modal[style*="display: flex"] { display: flex !important; }
     .root-folders-browse-backdrop {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1100;
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 1100;
     }
     .root-folders-browse-content {
         position: relative; z-index: 1101;

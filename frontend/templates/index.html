@@ -40,6 +40,8 @@
 
             <!-- Movie Hunt Section (movies only) -->
             {% include 'components/movie_hunt_section.html' %}
+            <!-- Activity (Queue, History, Blocklist) -->
+            {% include 'components/activity_section.html' %}
             
             <!-- Apps Section -->
             {% include 'components/apps_section.html' %}
@@ -64,7 +66,8 @@
             <!-- Settings Section -->
             {% include 'components/settings_section.html' %}
 
-            <!-- Settings sub-pages (Profiles, Indexers, Clients) -->
+            <!-- Settings sub-pages (Movie Management, Profiles, Indexers, Clients) -->
+            {% include 'components/settings_movie_management_section.html' %}
             {% include 'components/settings_profiles_section.html' %}
             {% include 'components/profile_editor_section.html' %}
             {% include 'components/settings_custom_formats_section.html' %}

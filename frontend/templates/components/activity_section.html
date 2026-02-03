@@ -1,0 +1,294 @@
+<section id="activitySection" class="content-section" style="display: none;">
+    <div class="activity-header">
+        <div class="activity-controls">
+            <div class="control-group main-search">
+                <div class="log-search">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="activitySearchInput" placeholder="Search...">
+                    <button id="activitySearchButton">Search</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <button id="activityClearButton" class="btn-danger-outline">
+                    <i class="fas fa-trash-alt"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <div class="activity-pagination">
+            <div class="pagination-info">
+                <span id="activityPageInfo">Page <span id="activityCurrentPage">1</span> of <span id="activityTotalPages">1</span></span>
+            </div>
+            <div class="pagination-actions">
+                <button id="activityPrevPage" class="pagination-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
+                <button id="activityNextPage" class="pagination-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="page-size-selector">
+                <span>Show:</span>
+                <select id="activityPageSize" class="mini-select">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue view -->
+    <div id="activity-queue-view" class="activity-view" style="display: none;">
+        <div class="activity-table-wrapper">
+            <table class="activity-data-table">
+                <thead>
+                    <tr>
+                        <th class="col-movie">Movie</th>
+                        <th class="col-year">Year</th>
+                        <th class="col-languages">Languages</th>
+                        <th class="col-quality">Quality</th>
+                        <th class="col-formats">Formats</th>
+                        <th class="col-time-left">Time Left</th>
+                        <th class="col-progress">Progress</th>
+                    </tr>
+                </thead>
+                <tbody id="activityQueueTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- History view -->
+    <div id="activity-history-view" class="activity-view" style="display: none;">
+        <div class="activity-table-wrapper">
+            <table class="activity-data-table">
+                <thead>
+                    <tr>
+                        <th class="col-movie">Movie</th>
+                        <th class="col-languages">Languages</th>
+                        <th class="col-quality">Quality</th>
+                        <th class="col-formats">Formats</th>
+                        <th class="col-date">Date</th>
+                    </tr>
+                </thead>
+                <tbody id="activityHistoryTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Blocklist view -->
+    <div id="activity-blocklist-view" class="activity-view" style="display: none;">
+        <div class="activity-table-wrapper">
+            <table class="activity-data-table">
+                <thead>
+                    <tr>
+                        <th class="col-movie">Movie</th>
+                        <th class="col-source">Source Title</th>
+                        <th class="col-languages">Languages</th>
+                        <th class="col-quality">Quality</th>
+                        <th class="col-formats">Formats</th>
+                        <th class="col-date">Date</th>
+                    </tr>
+                </thead>
+                <tbody id="activityBlocklistTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="activityEmptyState" class="empty-state-card" style="display: none;">
+        <div class="empty-state-icon">
+            <i class="fas fa-clock"></i>
+        </div>
+        <h3 id="activityEmptyTitle">No items found</h3>
+        <p id="activityEmptyMessage">Items will appear here when available.</p>
+    </div>
+
+    <div id="activityLoading" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner-container">
+            <i class="fas fa-circle-notch fa-spin fa-3x"></i>
+            <p>Loading...</p>
+        </div>
+    </div>
+</section>
+
+<style>
+#activitySection {
+    padding-bottom: 80px !important;
+}
+
+.activity-header {
+    padding: 10px 0 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.activity-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+#activitySection .control-group.main-search {
+    flex: 1;
+    min-width: 300px;
+}
+
+#activitySection .log-search {
+    position: relative;
+    width: 100%;
+    display: flex;
+    gap: 12px;
+    background: transparent !important;
+    border: none !important;
+}
+
+#activitySection .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+    z-index: 5;
+}
+
+#activitySection .log-search input {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 10px 12px 10px 38px;
+    border-radius: 8px;
+    width: 100%;
+    outline: none;
+    transition: all 0.2s;
+    height: 42px;
+}
+
+#activitySection .log-search input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+#activitySection .log-search button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#activitySection .log-search button:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+#activitySection .btn-danger-outline {
+    background: transparent;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+#activitySection .btn-danger-outline:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.activity-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 20px;
+    padding-top: 15px;
+}
+
+#activitySection .pagination-info { color: #94a3b8; font-size: 0.9em; }
+#activitySection .pagination-actions { display: flex; gap: 8px; }
+#activitySection .pagination-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+#activitySection .pagination-btn:hover:not(:disabled) { border-color: #3b82f6; color: #3b82f6; }
+#activitySection .pagination-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+#activitySection .page-size-selector { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 0.9em; }
+#activitySection .mini-select {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+    outline: none;
+}
+
+.activity-table-wrapper {
+    margin-top: 10px;
+    border-radius: 12px;
+    overflow: visible;
+}
+
+.activity-data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.activity-data-table thead { position: sticky; top: -20px; z-index: 10; }
+.activity-data-table th {
+    background: #1e293b;
+    color: #94a3b8;
+    text-align: left;
+    padding: 14px 20px;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    border-bottom: 2px solid #0f172a;
+}
+.activity-data-table th:first-child { border-radius: 8px 0 0 8px; }
+.activity-data-table th:last-child { border-radius: 0 8px 8px 0; }
+.activity-data-table td {
+    padding: 16px 20px;
+    color: #e2e8f0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    font-size: 0.9em;
+}
+.activity-data-table tbody tr:hover { background: rgba(59, 130, 246, 0.05); }
+#activitySection .empty-state-card {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(30, 41, 59, 0.3);
+    border-radius: 12px;
+    border: 1px dashed #334155;
+    margin-top: 20px;
+}
+#activitySection .empty-state-icon { color: #334155; font-size: 4rem; margin-bottom: 20px; }
+#activitySection .empty-state-card h3 { color: #f1f5f9; margin-bottom: 10px; }
+#activitySection .empty-state-card p { color: #64748b; }
+#activitySection .loading-overlay { text-align: center; padding: 60px 20px; }
+#activitySection .loading-spinner-container { color: #3b82f6; }
+#activitySection .loading-spinner-container p { margin-top: 15px; color: #94a3b8; }
+</style>

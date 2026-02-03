@@ -269,9 +269,14 @@ button {
     padding-left: 48px !important;
 }
 
+/* Sub-item icons same size as main nav (e.g. home icon) */
 .nav-item-sub .nav-icon-wrapper {
-    width: 20px;
-    font-size: 16px;
+    width: 30px;
+    height: 30px;
+}
+
+.nav-item-sub .nav-icon-wrapper i {
+    font-size: 13px;
 }
 
 .nav-item-sub.active {
@@ -281,10 +286,32 @@ button {
 /* Movie Hunt sidebar: sub-settings (Indexers, Clients) only visible when Settings is active */
 #movie-hunt-settings-sub {
     display: none;
+    margin-top: 0;
 }
 
 #movie-hunt-settings-sub.expanded {
     display: block;
+}
+
+/* Consistent spacing: no extra margin on sub-items so gap between Movie Management and Profiles matches the others */
+#movie-hunt-settings-sub .nav-item-sub {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Movie Hunt sidebar: Activity sub (Queue, History, Blocklist) */
+#movie-hunt-activity-sub {
+    display: none;
+    margin-top: 0;
+}
+
+#movie-hunt-activity-sub.expanded {
+    display: block;
+}
+
+#movie-hunt-activity-sub .nav-item-sub {
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 /* Settings sub-pages (Indexers, Clients) */

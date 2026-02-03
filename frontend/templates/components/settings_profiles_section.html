@@ -87,6 +87,7 @@
     #profile-instances-grid .instance-name {
         font-size: 0.95rem;
         gap: 6px;
+        font-family: inherit;
     }
     #profile-instances-grid .instance-name i {
         font-size: 0.85rem;
@@ -94,6 +95,7 @@
     #profile-instances-grid .default-badge {
         font-size: 0.6rem;
         padding: 2px 6px;
+        font-family: inherit;
     }
     #profile-instances-grid .instance-status-icon {
         font-size: 1rem;
@@ -187,14 +189,15 @@
     body.profile-add-modal-open {
         overflow: hidden;
     }
-    /* No blur so user can still see the profiles area behind the modal */
     .profile-add-modal-backdrop {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.6);
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         z-index: 1000;
     }
     .profile-add-modal-content {

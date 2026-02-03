@@ -142,6 +142,32 @@
                 </div>
                 <span>Media Collection</span>
             </a>
+            <a href="./#activity-queue" class="nav-item" id="movieHuntActivityNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <span>Activity</span>
+            </a>
+            <div class="nav-sub-group" id="movie-hunt-activity-sub">
+                <a href="./#activity-queue" class="nav-item nav-item-sub" id="movieHuntActivityQueueNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-list-ul"></i>
+                    </div>
+                    <span>Queue</span>
+                </a>
+                <a href="./#activity-history" class="nav-item nav-item-sub" id="movieHuntActivityHistoryNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <span>History</span>
+                </a>
+                <a href="./#activity-blocklist" class="nav-item nav-item-sub" id="movieHuntActivityBlocklistNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <span>Blocklist</span>
+                </a>
+            </div>
             <a href="./#movie-hunt-settings" class="nav-item" id="movieHuntSettingsNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-cog"></i>
@@ -149,6 +175,12 @@
                 <span>Settings</span>
             </a>
             <div class="nav-sub-group" id="movie-hunt-settings-sub">
+                <a href="./#settings-movie-management" class="nav-item nav-item-sub" id="movieHuntSettingsMovieManagementNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-film"></i>
+                    </div>
+                    <span>Movie Management</span>
+                </a>
                 <a href="./#settings-profiles" class="nav-item nav-item-sub" id="movieHuntSettingsProfilesNav">
                     <div class="nav-icon-wrapper">
                         <i class="fas fa-id-card"></i>
@@ -1120,6 +1152,8 @@
         // Settings sidebar items
         else if (currentHash === '#settings') {
             selector = '#settingsMainNav';
+        } else if (currentHash === '#settings-movie-management') {
+            selector = '#movieHuntSettingsMovieManagementNav';
         } else if (currentHash === '#settings-profiles') {
             selector = '#movieHuntSettingsProfilesNav';
         } else if (currentHash === '#settings-custom-formats') {
@@ -1146,6 +1180,12 @@
             selector = '#movieHuntHomeNav';
         } else if (currentHash === '#movie-hunt-collection') {
             selector = '#movieHuntCollectionNav';
+        } else if (currentHash === '#activity-queue') {
+            selector = '#movieHuntActivityQueueNav';
+        } else if (currentHash === '#activity-history') {
+            selector = '#movieHuntActivityHistoryNav';
+        } else if (currentHash === '#activity-blocklist') {
+            selector = '#movieHuntActivityBlocklistNav';
         } else if (currentHash === '#movie-hunt-settings') {
             selector = '#movieHuntSettingsNav';
         } else if (currentHash === '#requestarr') {

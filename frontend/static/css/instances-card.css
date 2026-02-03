@@ -42,6 +42,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    font-family: inherit;
 }
 
 .instance-name-with-priority {
@@ -63,6 +64,7 @@
     text-transform: uppercase;
     font-weight: 700;
     letter-spacing: 0.5px;
+    font-family: inherit;
 }
 
 .client-priority-badge {
@@ -179,8 +181,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     z-index: 1000;
     display: flex;
     align-items: center;

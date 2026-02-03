@@ -673,6 +673,93 @@ def api_profiles_delete(index):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# --- Movie Management Settings (Movie Naming + Importing) ---
+
+def _movie_management_defaults():
+    """Default values for movie management settings (Movie Naming first, then Importing; no skip free space check)."""
+    return {
+        'rename_movies': True,
+        'replace_illegal_characters': True,
+        'colon_replacement': 'Smart Replace',
+        'standard_movie_format': '{Movie Title} ({Release Year}) {Quality Full}',
+        'movie_folder_format': '{Movie Title} ({Release Year})',
+        'minimum_free_space_gb': 10,
+        'use_hardlinks_instead_of_copy': True,
+        'import_using_script': False,
+        'import_extra_files': False,
+    }
+
+
+def _get_movie_management_config():
+    """Get movie management config from database; merge with defaults."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('movie_management')
+    defaults = _movie_management_defaults()
+    if not config or not isinstance(config, dict):
+        return dict(defaults)
+    out = dict(defaults)
+    for k, v in config.items():
+        if k in out:
+            out[k] = v
+    return out
+
+
+@common_bp.route('/api/settings/movie-management', methods=['GET'])
+def api_movie_management_get():
+    """Get movie management settings (Movie Naming + Importing)."""
+    try:
+        data = _get_movie_management_config()
+        return jsonify(data), 200
+    except Exception as e:
+        logger.exception('Movie management get error')
+        return jsonify(_movie_management_defaults()), 200
+
+
+@common_bp.route('/api/settings/movie-management', methods=['PATCH'])
+def api_movie_management_patch():
+    """Update movie management settings. Body: same keys as GET (partial allowed)."""
+    try:
+        data = request.get_json() or {}
+        current = _get_movie_management_config()
+        allowed = set(_movie_management_defaults().keys())
+        for k, v in data.items():
+            if k in allowed:
+                current[k] = v
+        from src.primary.utils.database import get_database
+        db = get_database()
+        db.save_app_config('movie_management', current)
+        return jsonify(_get_movie_management_config()), 200
+    except Exception as e:
+        logger.exception('Movie management patch error')
+        return jsonify({'error': str(e)}), 500
+
+
+# --- Movie Hunt Activity (Queue, History, Blocklist) - stub for UI ---
+
+@common_bp.route('/api/activity/<view>', methods=['GET'])
+def api_activity_get(view):
+    """Get activity items (queue, history, or blocklist). Stub: returns empty list; wire to Radarr later."""
+    if view not in ('queue', 'history', 'blocklist'):
+        return jsonify({'error': 'Invalid view'}), 400
+    page = max(1, request.args.get('page', 1, type=int))
+    page_size = max(1, min(100, request.args.get('page_size', 20, type=int)))
+    return jsonify({
+        'items': [],
+        'total': 0,
+        'page': page,
+        'total_pages': 1
+    }), 200
+
+
+@common_bp.route('/api/activity/<view>', methods=['DELETE'])
+def api_activity_delete(view):
+    """Clear activity view (queue, history, or blocklist). Stub: no-op; wire to Radarr later."""
+    if view not in ('queue', 'history', 'blocklist'):
+        return jsonify({'error': 'Invalid view'}), 400
+    return jsonify({'success': True}), 200
+
+
 # --- Movie Hunt Custom Formats (Radarr-style JSON; Pre-Format + Import) ---
 # TRaSH Guides categories and format JSONs from src/primary/trash_custom_formats.py
 from .. import trash_custom_formats

@@ -5,6 +5,9 @@
 (function() {
     'use strict';
     if (typeof window.SettingsForms === 'undefined') return;
+
+    let _instanceEditorDirty = false;
+
     Object.assign(window.SettingsForms, {
     getAppIcon: function(appType) {
         const icons = {
@@ -85,6 +88,9 @@
     navigateToInstanceEditor: function(appType, index = null) {
         console.log(`[SettingsForms] navigateToInstanceEditor called for ${appType}, index: ${index}`);
         
+        // Reset next section tracking
+        this._instanceEditorNextSection = null;
+
         if (!window.huntarrUI || !window.huntarrUI.originalSettings) {
             console.error('[SettingsForms] window.huntarrUI.originalSettings is missing');
             alert('Error: Settings not loaded. Please refresh the page.');
@@ -126,6 +132,7 @@
 
         // Store current editing state
         this._currentEditing = { appType, index, originalInstance: JSON.parse(JSON.stringify(instance)) };
+        _instanceEditorDirty = false;
 
         const contentEl = document.getElementById('instance-editor-content');
         if (contentEl) {
@@ -150,7 +157,15 @@
             saveBtn.onclick = () => this.saveInstanceFromEditor();
         }
         if (backBtn) {
-            backBtn.onclick = () => this.cancelInstanceEditor();
+            backBtn.onclick = () => {
+                this.confirmLeaveInstanceEditor((result) => {
+                    if (result === 'save') {
+                        this.saveInstanceFromEditor(true); // true means navigate back after save
+                    } else if (result === 'discard') {
+                        this.cancelInstanceEditor();
+                    }
+                });
+            };
         }
         
         // Setup connection validation for URL and API Key inputs
@@ -217,6 +232,7 @@
             if (removeEl) {
                 const chip = removeEl.closest('.exempt-tag-chip');
                 if (chip) chip.remove();
+                _instanceEditorDirty = true;
                 const saveBtn = document.getElementById('instance-editor-save');
                 if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('enabled'); }
             }
@@ -244,6 +260,7 @@
         chip.innerHTML = '<span class="exempt-tag-remove" style="cursor: pointer; opacity: 0.9;" title="Remove" aria-label="Remove">×</span><span>' + String(tag).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
         listEl.appendChild(chip);
         inputEl.value = '';
+        _instanceEditorDirty = true;
         const saveBtn = document.getElementById('instance-editor-save');
         if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('enabled'); }
     },
@@ -259,6 +276,7 @@
         saveBtn.classList.remove('enabled');
 
         const handleInputChange = () => {
+            _instanceEditorDirty = true;
             saveBtn.disabled = false;
             saveBtn.classList.add('enabled');
         };
@@ -279,6 +297,25 @@
             capInput.addEventListener('input', updateHourlyCapWarning);
             capInput.addEventListener('change', updateHourlyCapWarning);
         }
+    },
+
+    confirmLeaveInstanceEditor: function(done) {
+        if (!_instanceEditorDirty) {
+            if (typeof done === 'function') done('discard');
+            return true;
+        }
+        var saveFirst = window.confirm('You have unsaved changes. Save before leaving?');
+        if (saveFirst) {
+            if (typeof done === 'function') done('save');
+            return false;
+        } else {
+            if (typeof done === 'function') done('discard');
+            return true;
+        }
+    },
+
+    isInstanceEditorDirty: function() {
+        return !!_instanceEditorDirty;
     },
     
     // Check connection status for editor
@@ -1027,7 +1064,7 @@
     },
 
     // Save instance from the full-page editor
-    saveInstanceFromEditor: function() {
+    saveInstanceFromEditor: function(navigateBack = false) {
         if (!this._currentEditing) return;
         const { appType, index } = this._currentEditing;
         const settings = window.huntarrUI.originalSettings[appType];
@@ -1069,7 +1106,7 @@
         if (showsMissingTagInput) {
             newData.custom_tags.shows_missing = showsMissingTagInput.value;
         }
-  
+        
         const swaparrInput = document.getElementById('editor-swaparr');
         if (swaparrInput) {
             newData.swaparr_enabled = swaparrInput.checked;
@@ -1139,6 +1176,7 @@
         
         // Update current editing state with new index (in case it was a new instance)
         this._currentEditing = { appType, index: finalIndex, originalInstance: JSON.parse(JSON.stringify(newData)) };
+        _instanceEditorDirty = false;
         
         // Refresh state status if state management is enabled
         if (newData.state_management_mode !== 'disabled') {
@@ -1164,7 +1202,14 @@
             setTimeout(() => {
                 saveBtn.innerHTML = originalText;
                 saveBtn.style.opacity = '1';
+                if (navigateBack) {
+                    this.cancelInstanceEditor(this._instanceEditorNextSection);
+                    this._instanceEditorNextSection = null;
+                }
             }, 2000);
+        } else if (navigateBack) {
+            this.cancelInstanceEditor(this._instanceEditorNextSection);
+            this._instanceEditorNextSection = null;
         }
         
         // Reset change detection by updating the original instance
@@ -1173,21 +1218,30 @@
             this._currentEditing.originalInstance = JSON.parse(JSON.stringify(newData));
         }
         
-        // Stay on the editor page - don't navigate away
+        // Stay on the editor page - don't navigate away unless navigateBack is true
     },
 
     // Cancel editing and return to app section (or settings-indexers for indexer)
-    cancelInstanceEditor: function() {
+    cancelInstanceEditor: function(optionalNextSection) {
         // Stop polling when leaving editor
         this.stopStateStatusPolling();
         
+        if (optionalNextSection) {
+            window.huntarrUI.switchSection(optionalNextSection);
+            this._currentEditing = null;
+            _instanceEditorDirty = false;
+            return;
+        }
+
         if (!this._currentEditing) {
             window.huntarrUI.switchSection('sonarr');
             this._currentEditing = null;
+            _instanceEditorDirty = false;
             return;
         }
         const appType = this._currentEditing.appType;
         this._currentEditing = null;
+        _instanceEditorDirty = false;
         if (appType === 'indexer') {
             window.huntarrUI.switchSection('settings-indexers');
         } else if (appType === 'client') {

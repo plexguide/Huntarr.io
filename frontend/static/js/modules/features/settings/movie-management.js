@@ -1,0 +1,266 @@
+/**
+ * Movie Management settings (Movie Hunt) - Movie Naming first, then Importing.
+ * Same format as Profile Editor: Back/Save, editor-grid panels, dirty tracking, unsaved prompt.
+ */
+(function() {
+    'use strict';
+
+    function escapeHtml(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    var _movieManagementDirty = false;
+    var _movieManagementData = null;
+
+    var COLON_DEMO_SAMPLE = 'Movie Title: The Subtitle';
+    var COLON_DEMO_RESULTS = {
+        'Smart Replace': 'Movie Title - The Subtitle',
+        'Delete': 'Movie Title The Subtitle',
+        'Replace with Dash': 'Movie Title- The Subtitle',
+        'Replace with Space Dash': 'Movie Title - The Subtitle',
+        'Replace with Space Dash Space': 'Movie Title - The Subtitle'
+    };
+
+    function defaults() {
+        return {
+            rename_movies: true,
+            replace_illegal_characters: true,
+            colon_replacement: 'Smart Replace',
+            standard_movie_format: '{Movie Title} ({Release Year}) {Quality Full}',
+            movie_folder_format: '{Movie Title} ({Release Year})',
+            minimum_free_space_gb: 10,
+            use_hardlinks_instead_of_copy: true,
+            import_using_script: false,
+            import_extra_files: false
+        };
+    }
+
+    function generateFormHtml(data) {
+        var d = data || defaults();
+        var renameMovies = d.rename_movies !== false;
+        var replaceIllegal = d.replace_illegal_characters !== false;
+        var colonRep = escapeHtml(String(d.colon_replacement || 'Smart Replace').trim());
+        var standardFormat = escapeHtml(String(d.standard_movie_format || '').trim() || '{Movie Title} ({Release Year}) {Quality Full}');
+        var folderFormat = escapeHtml(String(d.movie_folder_format || '').trim() || '{Movie Title} ({Release Year})');
+        var minSpace = typeof d.minimum_free_space_gb === 'number' ? d.minimum_free_space_gb : 10;
+        var useHardlinks = d.use_hardlinks_instead_of_copy !== false;
+
+        var colonOptionList = ['Smart Replace', 'Delete', 'Replace with Dash', 'Replace with Space Dash', 'Replace with Space Dash Space'];
+        var colonOptions = colonOptionList.map(function(opt) {
+            var v = escapeHtml(opt);
+            var sel = (opt === (d.colon_replacement || 'Smart Replace')) ? ' selected' : '';
+            return '<option value="' + v + '"' + sel + '>' + v + '</option>';
+        }).join('');
+
+        return '<div class="editor-grid">' +
+            '<div class="editor-section">' +
+            '<div class="editor-section-title">Movie Naming</div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item flex-row">' +
+            '<label for="movie-mgmt-rename">Rename Movies</label>' +
+            '<label class="toggle-switch"><input type="checkbox" id="movie-mgmt-rename"' + (renameMovies ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+            '</div><p class="editor-help-text">Movie Hunt will use the existing file name if renaming is disabled</p></div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item flex-row">' +
+            '<label for="movie-mgmt-replace-illegal">Replace Illegal Characters</label>' +
+            '<label class="toggle-switch"><input type="checkbox" id="movie-mgmt-replace-illegal"' + (replaceIllegal ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+            '</div><p class="editor-help-text">Replace illegal characters. If unchecked, Movie Hunt will remove them instead</p></div>' +
+            '<div class="editor-field-group">' +
+            '<label for="movie-mgmt-colon">Colon Replacement</label>' +
+            '<select id="movie-mgmt-colon">' + colonOptions + '</select>' +
+            '<p class="editor-help-text">Change how Movie Hunt handles colon replacement. Smart Replace uses a dash or space-dash depending on the name.</p>' +
+            '<p class="editor-help-text movie-mgmt-colon-demo" id="movie-mgmt-colon-demo"></p></div>' +
+            '<div class="editor-field-group">' +
+            '<span class="movie-mgmt-label-inline"><label for="movie-mgmt-standard-format">Standard Movie Format</label> <a href="https://trash-guides.info/Radarr/Radarr-recommended-naming-scheme/#standard-movie-format" target="_blank" rel="noopener noreferrer" class="movie-mgmt-doc-link" title="Recommended naming scheme (TRaSH Guides)"><i class="fas fa-question-circle"></i></a></span>' +
+            '<input type="text" id="movie-mgmt-standard-format" value="' + standardFormat + '" placeholder="{Movie Title} ({Release Year}) {Quality Full}">' +
+            '<p class="editor-help-text">Example: Movie: The Movie - Title (2010) Bluray-1080p Proper</p></div>' +
+            '<div class="editor-field-group">' +
+            '<span class="movie-mgmt-label-inline"><label for="movie-mgmt-folder-format">Movie Folder Format</label> <a href="https://trash-guides.info/Radarr/Radarr-recommended-naming-scheme/#movie-folder-format" target="_blank" rel="noopener noreferrer" class="movie-mgmt-doc-link" title="Recommended naming scheme – Movie Folder Format (TRaSH Guides)"><i class="fas fa-question-circle"></i></a></span>' +
+            '<input type="text" id="movie-mgmt-folder-format" value="' + folderFormat + '" placeholder="{Movie Title} ({Release Year})">' +
+            '<p class="editor-help-text">Used when adding a new movie or moving movies via the movie editor. Example: The Movie - Title (2010)</p></div>' +
+            '</div>' +
+            '<div class="editor-section">' +
+            '<div class="editor-section-title">Importing</div>' +
+            '<div class="editor-field-group">' +
+            '<label for="movie-mgmt-min-space">Minimum Free Space (GB)</label>' +
+            '<input type="number" id="movie-mgmt-min-space" value="' + minSpace + '" min="0" max="10000" step="1">' +
+            '<p class="editor-help-text">Prevent import if it would leave less than this amount of disk space available (in GB)</p></div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item flex-row">' +
+            '<label for="movie-mgmt-hardlinks">Use Hardlinks instead of Copy</label>' +
+            '<label class="toggle-switch"><input type="checkbox" id="movie-mgmt-hardlinks"' + (useHardlinks ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+            '</div><p class="editor-help-text">Hardlinks allow Movie Hunt to import seeding torrents to the movie folder without taking extra disk space or copying the entire contents of the file. Hardlinks will only work if the source and destination are on the same volume.</p></div>' +
+            '</div></div>';
+    }
+
+    function markDirty() {
+        _movieManagementDirty = true;
+        var saveBtn = document.getElementById('movie-management-save');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.classList.add('enabled');
+        }
+    }
+
+    function collectFormData() {
+        return {
+            rename_movies: document.getElementById('movie-mgmt-rename') ? document.getElementById('movie-mgmt-rename').checked : true,
+            replace_illegal_characters: document.getElementById('movie-mgmt-replace-illegal') ? document.getElementById('movie-mgmt-replace-illegal').checked : true,
+            colon_replacement: document.getElementById('movie-mgmt-colon') ? (document.getElementById('movie-mgmt-colon').value || 'Smart Replace').trim() : 'Smart Replace',
+            standard_movie_format: document.getElementById('movie-mgmt-standard-format') ? (document.getElementById('movie-mgmt-standard-format').value || '').trim() : '{Movie Title} ({Release Year}) {Quality Full}',
+            movie_folder_format: document.getElementById('movie-mgmt-folder-format') ? (document.getElementById('movie-mgmt-folder-format').value || '').trim() : '{Movie Title} ({Release Year})',
+            minimum_free_space_gb: (function() {
+                var el = document.getElementById('movie-mgmt-min-space');
+                if (!el) return 10;
+                var n = parseInt(el.value, 10);
+                return isNaN(n) || n < 0 ? 10 : Math.min(10000, n);
+            })(),
+            use_hardlinks_instead_of_copy: document.getElementById('movie-mgmt-hardlinks') ? document.getElementById('movie-mgmt-hardlinks').checked : true
+        };
+    }
+
+    function updateColonDemo() {
+        var selectEl = document.getElementById('movie-mgmt-colon');
+        var demoEl = document.getElementById('movie-mgmt-colon-demo');
+        if (!selectEl || !demoEl) return;
+        var value = (selectEl.value || 'Smart Replace').trim();
+        var result = COLON_DEMO_RESULTS[value];
+        if (result !== undefined) {
+            demoEl.textContent = 'Demo: "' + COLON_DEMO_SAMPLE + '" \u2192 "' + result + '"';
+            demoEl.style.display = '';
+        } else {
+            demoEl.style.display = 'none';
+        }
+    }
+
+    function setupChangeDetection() {
+        var ids = ['movie-mgmt-rename', 'movie-mgmt-replace-illegal', 'movie-mgmt-colon', 'movie-mgmt-standard-format', 'movie-mgmt-folder-format', 'movie-mgmt-min-space', 'movie-mgmt-hardlinks'];
+        ids.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', function() {
+                    markDirty();
+                    if (id === 'movie-mgmt-colon') updateColonDemo();
+                });
+                el.addEventListener('input', markDirty);
+            }
+        });
+        updateColonDemo();
+    }
+
+    function confirmLeaveMovieManagement(callback) {
+        if (!_movieManagementDirty) {
+            if (callback) callback('discard');
+            return;
+        }
+        if (typeof callback !== 'function') return;
+        if (confirm('You have unsaved changes. Save before leaving?')) {
+            callback('save');
+        } else {
+            if (confirm('Discard changes and leave without saving?')) {
+                callback('discard');
+            } else {
+                callback('stay');
+            }
+        }
+    }
+
+    function load() {
+        _movieManagementDirty = false;
+        _movieManagementData = null;
+        var contentEl = document.getElementById('movie-management-content');
+        var saveBtn = document.getElementById('movie-management-save');
+        var backBtn = document.getElementById('movie-management-back');
+        if (!contentEl) return;
+
+        contentEl.innerHTML = '<p class="editor-help-text">Loading…</p>';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.classList.remove('enabled');
+        }
+
+        fetch('./api/settings/movie-management')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                _movieManagementData = data;
+                contentEl.innerHTML = generateFormHtml(data);
+                setupChangeDetection();
+                if (saveBtn) {
+                    saveBtn.onclick = function() { window.MovieManagement.save(); };
+                }
+                if (backBtn) {
+                    backBtn.onclick = function() {
+                        confirmLeaveMovieManagement(function(result) {
+                            if (result === 'save') window.MovieManagement.save('movie-hunt-settings');
+                            else if (result === 'discard') window.MovieManagement.cancel('movie-hunt-settings');
+                        });
+                    };
+                }
+            })
+            .catch(function() {
+                _movieManagementData = defaults();
+                contentEl.innerHTML = generateFormHtml(_movieManagementData);
+                setupChangeDetection();
+                if (saveBtn) saveBtn.onclick = function() { window.MovieManagement.save(); };
+                if (backBtn) backBtn.onclick = function() {
+                    confirmLeaveMovieManagement(function(result) {
+                        if (result === 'save') window.MovieManagement.save('movie-hunt-settings');
+                        else if (result === 'discard') window.MovieManagement.cancel('movie-hunt-settings');
+                    });
+                };
+            });
+    }
+
+    function save(optionalNextSection) {
+        var nextSection = optionalNextSection || 'movie-hunt-settings';
+        var body = collectFormData();
+        var saveBtn = document.getElementById('movie-management-save');
+        if (saveBtn) saveBtn.disabled = true;
+
+        fetch('./api/settings/movie-management', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                _movieManagementDirty = false;
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.classList.remove('enabled');
+                }
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Movie Management saved.', 'success');
+                }
+                if (window.huntarrUI && window.huntarrUI.switchSection) {
+                    window.huntarrUI.switchSection(nextSection);
+                }
+            })
+            .catch(function() {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Failed to save Movie Management.', 'error');
+                }
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.classList.add('enabled');
+                }
+            });
+    }
+
+    function cancel(optionalNextSection) {
+        _movieManagementDirty = false;
+        _movieManagementData = null;
+        if (window.huntarrUI && window.huntarrUI.switchSection) {
+            window.huntarrUI.switchSection(optionalNextSection || 'movie-hunt-settings');
+        }
+    }
+
+    window.MovieManagement = {
+        load: load,
+        save: save,
+        cancel: cancel,
+        isDirty: function() { return _movieManagementDirty; },
+        confirmLeave: confirmLeaveMovieManagement
+    };
+})();
