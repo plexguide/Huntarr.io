@@ -935,6 +935,40 @@ def _extract_year_from_filename(filename):
     return m.group(1) if m else None
 
 
+def _extract_quality_from_filename(filename):
+    """
+    Extract a short quality/resolution string from a release filename for the queue QUALITY column.
+    e.g. "Movie.2024.1080p.WEB.H.264-GROUP" -> "1080p WEB", "Movie.2160p.BluRay.Remux..." -> "2160p BluRay Remux"
+    """
+    if not filename or not (filename or '').strip():
+        return '-'
+    t = (filename or '').lower()
+    parts = []
+    if '2160' in t:
+        parts.append('2160p')
+    elif '1080' in t:
+        parts.append('1080p')
+    elif '720' in t:
+        parts.append('720p')
+    elif '480' in t:
+        parts.append('480p')
+    elif 'sdtv' in t or ('sd' in t and '720' not in t and '1080' not in t):
+        parts.append('SDTV')
+    if 'remux' in t:
+        parts.append('Remux')
+    if 'bluray' in t or 'blu-ray' in t or 'brrip' in t or 'bdrip' in t:
+        parts.append('BluRay')
+    elif 'web' in t or 'web-dl' in t or 'webdl' in t or 'webrip' in t:
+        parts.append('WEB')
+    elif 'hdtv' in t:
+        parts.append('HDTV')
+    elif 'dvd' in t and 'dvdscr' not in t:
+        parts.append('DVD')
+    if not parts:
+        return '-'
+    return ' '.join(parts)
+
+
 def _format_queue_display_name(filename, title=None, year=None):
     """Format display as 'Title (Year)' or 'Title'. Uses stored title/year if present, else parses filename."""
     display_title = (title or '').strip()
@@ -1064,13 +1098,14 @@ def _get_download_client_queue(client):
                 else:
                     progress = slot.get('percentage') or '-'
                 time_left = slot.get('time_left') or slot.get('timeleft') or '-'
+                quality_str = _extract_quality_from_filename(filename)
                 items.append({
                     'id': nzo_id,
                     'movie': display_name,
                     'title': display_name,
                     'year': None,
                     'languages': '-',
-                    'quality': '-',
+                    'quality': quality_str,
                     'formats': '-',
                     'time_left': time_left,
                     'progress': progress,
@@ -1123,13 +1158,14 @@ def _get_download_client_queue(client):
                         progress = '-'
                 else:
                     progress = '-'
+                quality_str = _extract_quality_from_filename(nzb_name)
                 items.append({
                     'id': nzb_id,
                     'movie': display_name,
                     'title': display_name,
                     'year': None,
                     'languages': '-',
-                    'quality': '-',
+                    'quality': quality_str,
                     'formats': '-',
                     'time_left': '-',
                     'progress': progress,
