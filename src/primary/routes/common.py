@@ -753,6 +753,56 @@ def _download_client_base_url(client):
     return '%s:%s' % (host.rstrip('/'), port)
 
 
+def _get_requested_queue_ids():
+    """Return dict of client_name -> set of queue ids (nzo_id / NZBID) that we requested."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('movie_hunt_requested')
+    if not config or not isinstance(config.get('by_client'), dict):
+        return {}
+    out = {}
+    for cname, ids in config['by_client'].items():
+        if isinstance(ids, list):
+            out[cname] = set(str(i) for i in ids)
+        else:
+            out[cname] = set()
+    return out
+
+
+def _add_requested_queue_id(client_name, queue_id):
+    """Record that we requested this queue item (so we only show it in Activity queue)."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('movie_hunt_requested') or {}
+    by_client = config.get('by_client') or {}
+    cname = (client_name or 'Download client').strip() or 'Download client'
+    ids = list(by_client.get(cname) or [])
+    sid = str(queue_id)
+    if sid not in ids:
+        ids.append(sid)
+    by_client[cname] = ids
+    config['by_client'] = by_client
+    db.save_app_config('movie_hunt_requested', config)
+
+
+def _prune_requested_queue_ids(client_name, current_queue_ids):
+    """Remove from our requested list any id no longer in the client's queue (completed/removed)."""
+    if not current_queue_ids:
+        return
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config('movie_hunt_requested')
+    if not config or not isinstance(config.get('by_client'), dict):
+        return
+    cname = (client_name or 'Download client').strip() or 'Download client'
+    if cname not in config['by_client']:
+        return
+    current = set(str(i) for i in current_queue_ids)
+    kept = [i for i in config['by_client'][cname] if str(i) in current]
+    config['by_client'][cname] = kept
+    db.save_app_config('movie_hunt_requested', config)
+
+
 def _get_download_client_queue(client):
     """
     Fetch queue from one download client (SABnzbd or NZBGet). Returns list of activity-shaped dicts:
@@ -773,12 +823,14 @@ def _get_download_client_queue(client):
     else:
         client_cat_lower = raw_cat_lower
     allowed_cats = frozenset((client_cat_lower,))
+    requested_ids = _get_requested_queue_ids().get(name, set())
     try:
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
     except Exception:
         verify_ssl = True
     items = []
+    current_queue_ids = set()
     try:
         if client_type == 'sabnzbd':
             api_key = (client.get('api_key') or '').strip()
@@ -815,11 +867,15 @@ def _get_download_client_queue(client):
             for slot in slots:
                 if not isinstance(slot, dict):
                     continue
+                nzo_id = slot.get('nzo_id') or slot.get('id')
+                if nzo_id is not None:
+                    current_queue_ids.add(str(nzo_id))
                 slot_cat = (slot.get('category') or slot.get('cat') or '').strip().lower()
                 if slot_cat not in allowed_cats:
                     continue
-                nzo_id = slot.get('nzo_id') or slot.get('id')
                 if nzo_id is None:
+                    continue
+                if str(nzo_id) not in requested_ids:
                     continue
                 filename = (slot.get('filename') or slot.get('name') or '-').strip()
                 if not filename:
@@ -867,6 +923,7 @@ def _get_download_client_queue(client):
                     'progress': progress,
                     'instance_name': name,
                 })
+            _prune_requested_queue_ids(name, current_queue_ids)
         elif client_type == 'nzbget':
             jsonrpc_url = '%s/jsonrpc' % base_url
             username = (client.get('username') or '').strip()
@@ -880,11 +937,15 @@ def _get_download_client_queue(client):
             for grp in result:
                 if not isinstance(grp, dict):
                     continue
+                nzb_id = grp.get('NZBID') or grp.get('ID')
+                if nzb_id is not None:
+                    current_queue_ids.add(str(nzb_id))
                 grp_cat = (grp.get('Category') or grp.get('category') or '').strip().lower()
                 if grp_cat not in allowed_cats:
                     continue
-                nzb_id = grp.get('NZBID') or grp.get('ID')
                 if nzb_id is None:
+                    continue
+                if str(nzb_id) not in requested_ids:
                     continue
                 nzb_name = (grp.get('NZBName') or grp.get('NZBFilename') or grp.get('Name') or '-').strip()
                 if not nzb_name:
@@ -919,6 +980,7 @@ def _get_download_client_queue(client):
                     'progress': progress,
                     'instance_name': name,
                 })
+            _prune_requested_queue_ids(name, current_queue_ids)
     except Exception as e:
         logger.debug("Movie Hunt activity queue from download client %s: %s", name, e)
     return items
@@ -1666,13 +1728,13 @@ def _search_newznab_movie(base_url, api_key, query, categories, timeout=15):
 
 def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl):
     """
-    Send NZB URL to SABnzbd or NZBGet. Returns (success: bool, message: str).
-    client: dict with type, host, port, api_key, username?, password?, category?.
+    Send NZB URL to SABnzbd or NZBGet. Returns (success: bool, message: str, queue_id: str|int|None).
+    queue_id is the nzo_id (SAB) or NZBGet group id so we can track this as a requested item.
     """
     client_type = (client.get('type') or 'nzbget').strip().lower()
     host = (client.get('host') or '').strip()
     if not host:
-        return False, 'Download client has no host'
+        return False, 'Download client has no host', None
     if not (host.startswith('http://') or host.startswith('https://')):
         host = f'http://{host}'
     port = client.get('port', 8080)
@@ -1696,8 +1758,10 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl)
             r.raise_for_status()
             data = r.json()
             if data.get('status') is True or data.get('nzo_ids'):
-                return True, 'Added to SABnzbd'
-            return False, data.get('error', 'SABnzbd returned an error')
+                nzo_ids = data.get('nzo_ids') or []
+                queue_id = nzo_ids[0] if nzo_ids else None
+                return True, 'Added to SABnzbd', queue_id
+            return False, data.get('error', 'SABnzbd returned an error'), None
         elif client_type == 'nzbget':
             jsonrpc_url = f'{base_url}/jsonrpc'
             username = (client.get('username') or '').strip()
@@ -1712,12 +1776,13 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl)
             r.raise_for_status()
             data = r.json()
             if data.get('result') and data.get('result') != 0:
-                return True, 'Added to NZBGet'
+                # NZBGet append returns group id in result
+                return True, 'Added to NZBGet', data.get('result')
             err = data.get('error', {})
-            return False, err.get('message', 'NZBGet returned an error')
-        return False, f'Unknown client type: {client_type}'
+            return False, err.get('message', 'NZBGet returned an error'), None
+        return False, f'Unknown client type: {client_type}', None
     except requests.RequestException as e:
-        return False, str(e) or 'Connection failed'
+        return False, str(e) or 'Connection failed', None
 
 
 @common_bp.route('/api/movie-hunt/request', methods=['POST'])
@@ -1779,9 +1844,13 @@ def api_movie_hunt_request():
         # Use client's category; empty/default → "movies" so we send and filter by "movies"
         raw_cat = (client.get('category') or '').strip()
         request_category = MOVIE_HUNT_DEFAULT_CATEGORY if raw_cat.lower() in ('default', '*', '') else (raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY)
-        ok, msg = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl)
+        ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl)
         if not ok:
             return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
+        # Track this request so Activity queue only shows items we requested
+        if queue_id:
+            client_name = (client.get('name') or 'Download client').strip() or 'Download client'
+            _add_requested_queue_id(client_name, queue_id)
         # Add to Media Collection for tracking (with root_folder for auto availability detection)
         tmdb_id = data.get('tmdb_id')
         poster_path = (data.get('poster_path') or '').strip() or None
