@@ -261,3 +261,41 @@
     opacity: 0.8;
     cursor: help;
 }
+
+/* Instant custom tooltip for State Management Reset */
+.state-reset-countdown .custom-tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(15, 23, 42, 0.95);
+    color: #fff;
+    text-align: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 5px;
+    pointer-events: none;
+}
+
+.state-reset-countdown:hover .custom-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.state-reset-countdown .custom-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+}

@@ -176,15 +176,13 @@ window.HuntarrStats = {
                         }
                         
                         if (!stateEnabled) {
-                            resetCountdownEl.setAttribute('title', 'State management is disabled for this instance');
-                            resetCountdownEl.innerHTML = '<i class="fas fa-hourglass-half"></i> Disabled';
+                            resetCountdownEl.innerHTML = '<i class="fas fa-hourglass-half"></i> <span class="custom-tooltip">State Management Reset</span> Disabled';
                             resetCountdownEl.style.display = '';
                         } else if (hoursUntil != null && typeof hoursUntil === 'number' && hoursUntil > 0) {
                             const h = Math.floor(hoursUntil);
                             const hourWord = h === 1 ? 'Hour' : 'Hours';
                             const label = h >= 1 ? `${h} ${hourWord}` : '<1 Hour';
-                            resetCountdownEl.setAttribute('title', 'State Management Reset');
-                            resetCountdownEl.innerHTML = `<i class="fas fa-hourglass-half"></i> ${label}`;
+                            resetCountdownEl.innerHTML = `<i class="fas fa-hourglass-half"></i> <span class="custom-tooltip">State Management Reset</span> ${label}`;
                             resetCountdownEl.style.display = '';
                         } else {
                             // Enabled but no active lock/time yet (e.g. just initialized or nothing hunted)
