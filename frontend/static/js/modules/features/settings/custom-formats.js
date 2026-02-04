@@ -290,6 +290,13 @@
                 .then(function(data) {
                     var categories = (data && data.categories) ? data.categories : [];
                     treeEl.innerHTML = '';
+                    if (categories.length === 0) {
+                        var msg = document.createElement('div');
+                        msg.className = 'custom-format-preformat-empty';
+                        msg.innerHTML = 'Pre-formatted list is not available on this server. You can still add formats via <strong>Import</strong> by pasting JSON from <a href="https://trash-guides.info/Radarr/Radarr-collection-of-custom-formats/" target="_blank" rel="noopener">TRaSH Guides</a>.';
+                        treeEl.appendChild(msg);
+                        return;
+                    }
                     categories.forEach(function(cat) {
                         var catId = cat.id || '';
                         var catName = cat.name || catId;

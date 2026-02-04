@@ -231,6 +231,9 @@ cython_debug/
 
 # Huntarr local development data
 data/
+# Allow bundled TRaSH custom formats (used by Custom Formats UI)
+!src/primary/data/
+!src/primary/data/trash_custom_formats.json
 *.db
 *.sqlite
 *.sqlite3

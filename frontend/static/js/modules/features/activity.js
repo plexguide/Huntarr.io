@@ -146,7 +146,7 @@
                 '<td class="col-formats">' + escapeHtml(item.formats || '-') + '</td>' +
                 '<td class="col-scoring">' + formatScoringCell(item.scoring) + '</td>' +
                 '<td class="col-time-left">' + escapeHtml(item.time_left != null ? item.time_left : '-') + '</td>' +
-                '<td class="col-progress">' + escapeHtml(item.progress != null ? item.progress : '-') + '</td>';
+                '<td class="col-progress">' + escapeHtml((item.progress === '100%' ? 'Pending Import' : (item.progress != null ? item.progress : '-'))) + '</td>';
         } else if (currentView === 'history') {
             tr.innerHTML = '<td class="col-movie">' + escapeHtml(item.movie || item.title || '-') + '</td>' +
                 '<td class="col-languages">' + escapeHtml(item.languages || '-') + '</td>' +

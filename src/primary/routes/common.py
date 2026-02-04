@@ -1463,6 +1463,8 @@ def _get_download_client_queue(client):
                         progress = '-'
                 else:
                     progress = slot.get('percentage') or '-'
+                if progress == '100%':
+                    progress = 'Pending Import'
                 time_left = slot.get('time_left') or slot.get('timeleft') or '-'
                 quality_str = _extract_quality_from_filename(filename)
                 formats_str = _extract_formats_from_filename(filename)
@@ -1528,6 +1530,8 @@ def _get_download_client_queue(client):
                         progress = '-'
                 else:
                     progress = '-'
+                if progress == '100%':
+                    progress = 'Pending Import'
                 quality_str = _extract_quality_from_filename(nzb_name)
                 formats_str = _extract_formats_from_filename(nzb_name)
                 items.append({
