@@ -2094,7 +2094,7 @@ let huntarrUI = {
         const hoursInput = document.getElementById('stateful_management_hours');
         if (!hoursInput) return;
         
-        const hours = parseInt(hoursInput.value) || 168;
+        const hours = parseInt(hoursInput.value) || 72;
         
         // Show updating indicator
         const expiresDateEl = document.getElementById('stateful_expires_date');

@@ -125,7 +125,7 @@
                 hunt_missing_mode: 'seasons_packs',
                 upgrade_mode: 'seasons_packs',
                 state_management_mode: 'custom',
-                state_management_hours: 168,
+                state_management_hours: 72,
                 swaparr_enabled: false
             };
         }
@@ -436,7 +436,7 @@
             air_date_delay_days: instance.air_date_delay_days || 0,
             release_date_delay_days: instance.release_date_delay_days || 0,
             state_management_mode: instance.state_management_mode || 'custom',
-            state_management_hours: instance.state_management_hours || 168,
+            state_management_hours: instance.state_management_hours || 72,
             swaparr_enabled: instance.swaparr_enabled === true,
             // Additional Options (per-instance)
             monitored_only: instance.monitored_only !== false,
@@ -867,7 +867,7 @@
                             <label>Reset Interval (Hours)</label>
                             <input type="number" id="editor-state-hours" value="${safeInstance.state_management_hours}">
                         </div>
-                        <p class="editor-help-text">How long to wait before re-searching a previously processed item (default: 168 hours / 1 week)</p>
+                        <p class="editor-help-text">How long to wait before re-searching a previously processed item (default: 72 hours / 3 days)</p>
                     </div>
                     
                     ${isEdit && safeInstance.state_management_mode !== 'disabled' ? `
@@ -1076,7 +1076,7 @@
             api_url: document.getElementById('editor-url').value,
             api_key: document.getElementById('editor-key').value,
             state_management_mode: document.getElementById('editor-state-mode').value,
-            state_management_hours: parseInt(document.getElementById('editor-state-hours').value) || 168,
+            state_management_hours: parseInt(document.getElementById('editor-state-hours').value) || 72,
             // Additional Options
             monitored_only: document.getElementById('editor-monitored-only').checked,
             tag_processed_items: document.getElementById('editor-tag-processed').checked,

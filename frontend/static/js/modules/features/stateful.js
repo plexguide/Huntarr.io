@@ -174,7 +174,7 @@ window.HuntarrStateful = {
         const hoursInput = document.getElementById('stateful_management_hours');
         if (!hoursInput) return;
         
-        const hours = parseInt(hoursInput.value) || 168;
+        const hours = parseInt(hoursInput.value) || 72;
         const expiresDateEl = document.getElementById('stateful_expires_date');
         
         if (expiresDateEl) expiresDateEl.textContent = 'Updating...';
@@ -249,7 +249,7 @@ window.HuntarrStateful = {
         if (!instanceName) instanceName = instanceIndex === 0 ? 'Default' : `Instance ${instanceIndex + 1}`;
         
         const hoursInput = document.getElementById(`${appType}-state-management-hours-${instanceIndex}`);
-        const customHours = parseInt(hoursInput?.value) || 168;
+        const customHours = parseInt(hoursInput?.value) || 72;
         
         HuntarrUtils.fetchWithTimeout(`./api/stateful/summary?app_type=${appType}&instance_name=${encodeURIComponent(instanceName)}`, {
             method: 'GET'
