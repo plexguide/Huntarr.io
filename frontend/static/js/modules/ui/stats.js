@@ -163,23 +163,33 @@ window.HuntarrStats = {
                     }
                     // State Management reset: minimal at the bottom, centered (like 1st image)
                     const hoursUntil = inst.state_reset_hours_until;
+                    const stateEnabled = inst.state_reset_enabled !== false; // Default to true
                     let resetCountdownEl = targetCard.querySelector('.state-reset-countdown');
                     const resetRow = targetCard.querySelector('.reset-and-timer-container') || targetCard.querySelector('.reset-button-container');
                     const resetContainer = resetRow && resetRow.parentNode ? resetRow.parentNode : resetRow;
-                    if (hoursUntil != null && typeof hoursUntil === 'number' && hoursUntil > 0 && resetContainer) {
+                    
+                    if (resetContainer) {
                         if (!resetCountdownEl) {
                             resetCountdownEl = document.createElement('div');
                             resetCountdownEl.className = 'state-reset-countdown';
                             resetContainer.appendChild(resetCountdownEl);
                         }
-                        const h = Math.floor(hoursUntil);
-                        const hourWord = h === 1 ? 'Hour' : 'Hours';
-                        const label = h >= 1 ? `${h} ${hourWord}` : '<1 Hour';
-                        resetCountdownEl.setAttribute('title', 'Tracked state for this instance resets in ' + (h >= 1 ? h + ' hours' : 'under 1 hour'));
-                        resetCountdownEl.innerHTML = `<i class="fas fa-hourglass-half"></i> State Management Reset: ${label}`;
-                        resetCountdownEl.style.display = '';
-                    } else if (resetCountdownEl) {
-                        resetCountdownEl.style.display = 'none';
+                        
+                        if (!stateEnabled) {
+                            resetCountdownEl.setAttribute('title', 'State management is disabled for this instance');
+                            resetCountdownEl.innerHTML = '<i class="fas fa-hourglass-half"></i> State Management Reset: Disabled';
+                            resetCountdownEl.style.display = '';
+                        } else if (hoursUntil != null && typeof hoursUntil === 'number' && hoursUntil > 0) {
+                            const h = Math.floor(hoursUntil);
+                            const hourWord = h === 1 ? 'Hour' : 'Hours';
+                            const label = h >= 1 ? `${h} ${hourWord}` : '<1 Hour';
+                            resetCountdownEl.setAttribute('title', 'Tracked state for this instance resets in ' + (h >= 1 ? h + ' hours' : 'under 1 hour'));
+                            resetCountdownEl.innerHTML = `<i class="fas fa-hourglass-half"></i> State Management Reset: ${label}`;
+                            resetCountdownEl.style.display = '';
+                        } else {
+                            // Enabled but no active lock/time yet (e.g. just initialized or nothing hunted)
+                            resetCountdownEl.style.display = 'none';
+                        }
                     }
                 });
                 if (typeof window.CycleCountdown !== 'undefined' && window.CycleCountdown.refreshTimerElements) {

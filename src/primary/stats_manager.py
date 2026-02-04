@@ -459,20 +459,33 @@ def get_stats() -> Dict[str, Any]:
                 per_instance_caps = db.get_hourly_caps_per_instance(app_type) if hasattr(db, "get_hourly_caps_per_instance") else {}
                 if instance_names:
                     by_name = {p["instance_name"]: p for p in per_instance}
+                    # Map instance names to their config for easy lookup of stateful_management setting
+                    config_by_name = {}
+                    if app_settings and isinstance(app_settings.get("instances"), list):
+                        for inst_cfg in app_settings["instances"]:
+                            cfg_name = _normalize_instance_name(inst_cfg.get("name") or inst_cfg.get("instance_name"))
+                            config_by_name[cfg_name] = inst_cfg
+
                     stats[app_type]["instances"] = []
                     for name in instance_names:
                         inst_stats = by_name.get(name, {})
                         cap_data = per_instance_caps.get(name, {})
                         api_hits = cap_data.get("api_hits", 0)
                         api_limit = _get_instance_hourly_cap_limit(app_type, name)
+                        
+                        # Check if stateful management is enabled for this instance
+                        inst_cfg = config_by_name.get(name, {})
+                        stateful_enabled = inst_cfg.get("stateful_management", True)
+                        
                         # Hours until state reset (when per-instance state management has an active lock)
                         state_reset_hours_until = None
-                        if hasattr(db, "get_instance_lock_info"):
+                        if stateful_enabled and hasattr(db, "get_instance_lock_info"):
                             lock_info = db.get_instance_lock_info(app_type, name)
                             if lock_info:
                                 expires_at = lock_info.get("expires_at") or 0
                                 if expires_at > now_ts:
                                     state_reset_hours_until = round((expires_at - now_ts) / 3600.0, 1)
+                        
                         stats[app_type]["instances"].append({
                             "instance_name": name,
                             "hunted": inst_stats.get("hunted", 0),
@@ -480,6 +493,7 @@ def get_stats() -> Dict[str, Any]:
                             "api_hits": api_hits,
                             "api_limit": api_limit,
                             "state_reset_hours_until": state_reset_hours_until,
+                            "state_reset_enabled": stateful_enabled
                         })
                 else:
                     stats[app_type]["instances"] = per_instance if per_instance else []
