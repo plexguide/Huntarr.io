@@ -498,16 +498,22 @@
             .home-sponsor-banner {
                 display: none;
             }
+            .home-banners-row {
+                display: none !important;
+            }
         }
 
     </style>
     
     <!-- Add initially hidden class to prevent flickering before JS initializes -->  
     <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.15s ease;">
-        <!-- College Sponsor Banner - Above all content, right aligned -->
-        <div style="display: flex; justify-content: flex-end; margin: 0 0 8px 0;">
+        <!-- College Sponsor + Partner Projects - Above all content, right aligned -->
+        <div class="home-banners-row" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin: 0 0 8px 0; flex-wrap: wrap;">
             <a href="#" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="home-sponsor-banner" data-sponsor-url="">
                 <span class="sponsor-text">Daughter's College Sponsor: <span class="sponsor-name" id="home-sponsor-name">Loading...</span></span>
+            </a>
+            <a href="#" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="partner-projects-banner" data-partner-url="">
+                <span class="sponsor-text">Partner Projects: <span class="sponsor-name" id="partner-projects-name">Loading...</span></span>
             </a>
         </div>
         
@@ -3027,9 +3033,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (firstSponsor) {
                         displaySponsor(firstSponsor);
                         
-                        // Set up regular rotation every 17 seconds
+                        // Set up regular rotation every 1 minute (stays same across page changes)
                         if (intervalId) clearInterval(intervalId);
-                        intervalId = setInterval(rotateSponsor, 17000);
+                        intervalId = setInterval(rotateSponsor, 60000);
                     }
                 }, 100); // Very short delay to avoid visual glitches
             } else {
@@ -3045,95 +3051,68 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize sponsors on page load
     fetchSponsors();
     
-    // Home Sponsor Banner - Fetch and cache random sponsor
+    // Home college sponsor banner is driven by app-sponsor-rotation.js (same rotation as app pages)
+
+    // Partner Projects Banner - 1 minute cache, same as college sponsor (Cleanuparr, SeekandWatch)
     (function() {
-        const CACHE_KEY = 'home_sponsor_cache';
-        const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
-        
-        function updateSponsorBanner(sponsor) {
-            const sponsorName = document.getElementById('home-sponsor-name');
-            const sponsorBanner = document.getElementById('home-sponsor-banner');
-            
-            if (sponsorName) sponsorName.textContent = sponsor.name;
-            
-            // Update href to sponsor's GitHub URL
-            if (sponsorBanner && sponsor.url) {
-                sponsorBanner.href = sponsor.url;
+        const CACHE_KEY = 'home_partner_projects_cache';
+        const CACHE_DURATION = 60 * 1000; // 1 minute - stays same across page changes
+        const PARTNER_PROJECTS = [
+            { name: 'Cleanuparr', url: 'https://github.com/se1exin/Cleanarr' },
+            { name: 'SeekandWatch', url: 'https://github.com/softerfish/seekandwatch' }
+        ];
+
+        function updatePartnerBanner(project) {
+            const nameEl = document.getElementById('partner-projects-name');
+            const bannerEl = document.getElementById('partner-projects-banner');
+            if (nameEl) nameEl.textContent = project.name;
+            if (bannerEl && project.url) {
+                bannerEl.href = project.url;
+                bannerEl.setAttribute('data-partner-url', project.url);
             }
         }
-        
-        function getRandomSponsor(sponsors) {
-            if (!sponsors || sponsors.length === 0) return null;
-            const randomIndex = Math.floor(Math.random() * sponsors.length);
-            return sponsors[randomIndex];
+
+        function getRandomPartner() {
+            if (!PARTNER_PROJECTS.length) return null;
+            const i = Math.floor(Math.random() * PARTNER_PROJECTS.length);
+            return PARTNER_PROJECTS[i];
         }
-        
-        function getCachedSponsor() {
+
+        function getCachedPartner() {
             try {
                 const cached = localStorage.getItem(CACHE_KEY);
                 if (!cached) return null;
-                
-                const { sponsor, timestamp } = JSON.parse(cached);
-                const now = Date.now();
-                
-                // Check if cache is still valid (within 2 minutes)
-                if (now - timestamp < CACHE_DURATION) {
-                    return sponsor;
-                }
-                
-                // Cache expired, remove it
+                const { project, timestamp } = JSON.parse(cached);
+                if (Date.now() - timestamp < CACHE_DURATION) return project;
                 localStorage.removeItem(CACHE_KEY);
                 return null;
             } catch (e) {
-                console.error('Error reading home sponsor cache:', e);
                 return null;
             }
         }
-        
-        function cacheSponsor(sponsor) {
+
+        function cachePartner(project) {
             try {
-                const cacheData = {
-                    sponsor: sponsor,
-                    timestamp: Date.now()
-                };
-                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-            } catch (e) {
-                console.error('Error caching home sponsor:', e);
-            }
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ project, timestamp: Date.now() }));
+            } catch (e) {}
         }
-        
-        async function loadSponsor() {
-            // Check cache first
-            const cachedSponsor = getCachedSponsor();
-            if (cachedSponsor) {
-                updateSponsorBanner(cachedSponsor);
+
+        function loadPartnerProject() {
+            const cached = getCachedPartner();
+            if (cached) {
+                updatePartnerBanner(cached);
                 return;
             }
-            
-            // Fetch from API
-            try {
-                const response = await fetch('./api/github_sponsors');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const sponsors = await response.json();
-                
-                if (sponsors && sponsors.length > 0) {
-                    const randomSponsor = getRandomSponsor(sponsors);
-                    updateSponsorBanner(randomSponsor);
-                    cacheSponsor(randomSponsor);
-                } else {
-                    updateSponsorBanner({ name: 'Be the first!' });
-                }
-            } catch (error) {
-                console.error('Error fetching home sponsors:', error);
-                updateSponsorBanner({ name: 'Support us!' });
+            const project = getRandomPartner();
+            if (project) {
+                updatePartnerBanner(project);
+                cachePartner(project);
+            } else {
+                updatePartnerBanner({ name: '—', url: '#' });
             }
         }
-        
-        // Load sponsor when section is visible
-        loadSponsor();
+
+        loadPartnerProject();
     })();
 });
 </script>
