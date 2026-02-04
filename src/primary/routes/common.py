@@ -2038,7 +2038,7 @@ def _save_clients_list(clients_list):
 def _clamp_priority(val, lo=1, hi=99, default=50):
     """Clamp client_priority to [lo, hi]; return default if invalid."""
     try:
-        n = int(val, 10)
+        n = int(val)  # accept str or int (JSON may send number)
         return max(lo, min(hi, n))
     except (TypeError, ValueError):
         return default
@@ -2087,10 +2087,13 @@ def api_clients_add():
         client_type = (data.get('type') or 'nzbget').strip().lower()
         host = (data.get('host') or '').strip()
         raw_port = data.get('port')
-        try:
-            port = int(raw_port, 10) if raw_port is not None and str(raw_port).strip() != '' else 8080
-        except (TypeError, ValueError):
+        if raw_port is None or (isinstance(raw_port, str) and str(raw_port).strip() == ''):
             port = 8080
+        else:
+            try:
+                port = int(raw_port)  # accept str or int (JSON may send number)
+            except (TypeError, ValueError):
+                port = 8080
         enabled = data.get('enabled', True)
         api_key = (data.get('api_key') or '').strip()
         username = (data.get('username') or '').strip()
@@ -2132,7 +2135,14 @@ def api_clients_update(index):
         name = (data.get('name') or '').strip() or 'Unnamed'
         client_type = (data.get('type') or 'nzbget').strip().lower()
         host = (data.get('host') or '').strip()
-        port = int(data.get('port'), 10) if data.get('port') is not None else clients[index].get('port', 8080)
+        raw_port = data.get('port')
+        if raw_port is None or (isinstance(raw_port, str) and str(raw_port).strip() == ''):
+            port = clients[index].get('port', 8080)
+        else:
+            try:
+                port = int(raw_port)  # accept str or int (JSON may send number)
+            except (TypeError, ValueError):
+                port = clients[index].get('port', 8080)
         enabled = data.get('enabled', True)
         
         # Handle API key
