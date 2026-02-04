@@ -23,7 +23,7 @@ from src.primary.utils.config_paths import LOG_DIR
 # Default log file for general messages
 MAIN_LOG_FILE = LOG_DIR / "huntarr.log"
 
-# App-specific log files
+# App-specific log files (movie_hunt is independent - Activity → Logs only, no *arr)
 APP_LOG_FILES = {
     "sonarr": LOG_DIR / "sonarr.log",
     "radarr": LOG_DIR / "radarr.log",
@@ -32,6 +32,7 @@ APP_LOG_FILES = {
     "whisparr": LOG_DIR / "whisparr.log",
     "eros": LOG_DIR / "eros.log",
     "swaparr": LOG_DIR / "swaparr.log",
+    "movie_hunt": LOG_DIR / "movie_hunt.log",
 }
 
 # Global logger instances

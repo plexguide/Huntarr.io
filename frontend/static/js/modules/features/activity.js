@@ -11,6 +11,13 @@
     var pageSize = 20;
     var searchQuery = '';
     var isLoading = false;
+    // Movie Hunt Logs (independent of main Huntarr logs)
+    var logPage = 1;
+    var logTotalPages = 1;
+    var logTotalLogs = 0;
+    var logPageSize = 20;
+    var logLevel = 'info';
+    var logSearch = '';
 
     function el(id) { return document.getElementById(id); }
 
@@ -29,7 +36,7 @@
     }
 
     function hideAllViews() {
-        ['activity-queue-view', 'activity-history-view', 'activity-blocklist-view'].forEach(function(id) {
+        ['activity-queue-view', 'activity-history-view', 'activity-blocklist-view', 'activity-logs-view'].forEach(function(id) {
             var v = el(id);
             if (v) v.style.display = 'none';
         });
@@ -43,8 +50,89 @@
         if (viewEl) viewEl.style.display = 'block';
         var removeBtn = el('activityRemoveSelectedButton');
         if (removeBtn) removeBtn.style.display = view === 'queue' ? '' : 'none';
+        var header = document.querySelector('#activitySection .activity-header');
+        var pagination = document.querySelector('#activitySection .activity-pagination');
+        if (header) header.style.display = view === 'logs' ? 'none' : '';
+        if (pagination) pagination.style.display = view === 'logs' ? 'none' : '';
         currentPage = 1;
-        loadData();
+        if (view === 'logs') {
+            logPage = 1;
+            loadMovieHuntLogs();
+        } else {
+            loadData();
+        }
+    }
+
+    function loadMovieHuntLogs() {
+        var container = el('activityLogsContainer');
+        if (!container) return;
+        var params = new URLSearchParams({
+            limit: String(logPageSize),
+            offset: String((logPage - 1) * logPageSize)
+        });
+        if (logLevel && logLevel !== 'all') params.append('level', logLevel.toUpperCase());
+        if (logSearch) params.append('search', logSearch);
+        var statusEl = el('activityLogConnectionStatus');
+        if (statusEl) { statusEl.textContent = 'Loading...'; statusEl.className = 'status-disconnected'; }
+        container.innerHTML = '';
+        fetch('./api/logs/movie_hunt?' + params.toString(), { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (statusEl) {
+                    statusEl.textContent = data.success ? 'Connected' : (data.error || 'Error');
+                    statusEl.className = data.success ? 'status-connected' : 'status-error';
+                }
+                if (!data.success || !data.logs) {
+                    if (statusEl && !data.success) statusEl.className = 'status-error';
+                    return;
+                }
+                logTotalLogs = data.total != null ? data.total : 0;
+                logTotalPages = Math.max(1, Math.ceil(logTotalLogs / logPageSize));
+                var curEl = el('activityLogCurrentPage');
+                var totalEl = el('activityLogTotalPages');
+                if (curEl) curEl.textContent = logPage;
+                if (totalEl) totalEl.textContent = logTotalPages;
+                var prevBtn = el('activityLogPrevPage');
+                var nextBtn = el('activityLogNextPage');
+                if (prevBtn) prevBtn.disabled = logPage <= 1;
+                if (nextBtn) nextBtn.disabled = logPage >= logTotalPages;
+                var logRegex = /^([^|]+)\|([^|]+)\|([^|]+)\|(.*)$/;
+                data.logs.forEach(function(line) {
+                    var m = line.match(logRegex);
+                    if (!m) return;
+                    var timestamp = m[1].trim();
+                    var level = (m[2] || 'INFO').toLowerCase();
+                    var appType = (m[3] || 'movie_hunt').toUpperCase();
+                    var message = (m[4] || '').trim().replace(/^\s*-\s*/, '');
+                    var levelClass = level === 'error' ? 'log-level-error' : level === 'warning' || level === 'warn' ? 'log-level-warning' : level === 'debug' ? 'log-level-debug' : 'log-level-info';
+                    var levelLabel = level === 'error' ? 'Error' : level === 'warning' || level === 'warn' ? 'Warning' : level === 'debug' ? 'Debug' : 'Info';
+                    var row = document.createElement('tr');
+                    row.className = 'log-table-row';
+                    row.innerHTML = '<td class="col-time">' + escapeHtml(timestamp) + '</td><td class="col-level"><span class="log-level-badge ' + levelClass + '">' + escapeHtml(levelLabel) + '</span></td><td class="col-app">' + escapeHtml(appType) + '</td><td class="col-message">' + escapeHtml(message) + '</td>';
+                    container.appendChild(row);
+                });
+            })
+            .catch(function() {
+                if (statusEl) { statusEl.textContent = 'Connection error'; statusEl.className = 'status-error'; }
+            });
+    }
+
+    function clearMovieHuntLogs() {
+        if (!window.confirm('Clear all Movie Hunt logs? This cannot be undone.')) return;
+        fetch('./api/logs/movie_hunt/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    logPage = 1;
+                    logTotalLogs = 0;
+                    logTotalPages = 1;
+                    loadMovieHuntLogs();
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Movie Hunt logs cleared.', 'success');
+                } else if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.error || 'Failed to clear logs', 'error');
+            })
+            .catch(function() {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Connection error', 'error');
+            });
     }
 
     function loadData() {
@@ -233,9 +321,11 @@
         var queueNav = el('movieHuntActivityQueueNav');
         var historyNav = el('movieHuntActivityHistoryNav');
         var blocklistNav = el('movieHuntActivityBlocklistNav');
+        var logsNav = el('movieHuntActivityLogsNav');
         if (queueNav) queueNav.classList.toggle('active', currentView === 'queue');
         if (historyNav) historyNav.classList.toggle('active', currentView === 'history');
         if (blocklistNav) blocklistNav.classList.toggle('active', currentView === 'blocklist');
+        if (logsNav) logsNav.classList.toggle('active', currentView === 'logs');
 
         switchView(currentView);
 
@@ -262,11 +352,42 @@
         if (prevBtn) prevBtn.onclick = function() { if (currentPage > 1) { currentPage--; loadData(); } };
         if (nextBtn) nextBtn.onclick = function() { if (currentPage < totalPages) { currentPage++; loadData(); } };
         if (pageSizeEl) pageSizeEl.onchange = function() { pageSize = parseInt(pageSizeEl.value, 10); currentPage = 1; loadData(); };
+
+        // Movie Hunt Logs view bindings
+        var logLevelSelect = el('activityLogLevelSelect');
+        var logSearchInput = el('activityLogSearchInput');
+        var logSearchBtn = el('activityLogSearchButton');
+        var logClearBtn = el('activityLogClearButton');
+        var logPrevBtn = el('activityLogPrevPage');
+        var logNextBtn = el('activityLogNextPage');
+        var logPageSizeEl = el('activityLogPageSize');
+        if (logLevelSelect) {
+            logLevel = logLevelSelect.value || 'info';
+            logLevelSelect.onchange = function() { logLevel = logLevelSelect.value; logPage = 1; loadMovieHuntLogs(); };
+        }
+        if (logSearchInput) logSearchInput.value = logSearch;
+        if (logSearchBtn) logSearchBtn.onclick = function() { logSearch = (logSearchInput && logSearchInput.value) ? logSearchInput.value.trim() : ''; logPage = 1; loadMovieHuntLogs(); };
+        if (logSearchInput) logSearchInput.onkeypress = function(e) { if (e.key === 'Enter') { logSearch = logSearchInput.value.trim(); logPage = 1; loadMovieHuntLogs(); } };
+        if (logClearBtn) logClearBtn.onclick = clearMovieHuntLogs;
+        if (logPrevBtn) logPrevBtn.onclick = function() { if (logPage > 1) { logPage--; loadMovieHuntLogs(); } };
+        if (logNextBtn) logNextBtn.onclick = function() { if (logPage < logTotalPages) { logPage++; loadMovieHuntLogs(); } };
+        if (logPageSizeEl) {
+            logPageSize = parseInt(logPageSizeEl.value, 10) || 20;
+            logPageSizeEl.onchange = function() { logPageSize = parseInt(logPageSizeEl.value, 10) || 20; logPage = 1; loadMovieHuntLogs(); };
+        }
+    }
+
+    function refresh() {
+        if (currentView === 'logs') {
+            loadMovieHuntLogs();
+        } else {
+            loadData();
+        }
     }
 
     window.ActivityModule = {
         init: init,
         switchView: switchView,
-        refresh: loadData
+        refresh: refresh
     };
 })();

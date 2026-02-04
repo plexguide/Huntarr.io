@@ -96,6 +96,77 @@
         </div>
     </div>
 
+    <!-- Movie Hunt Logs view (independent of main Huntarr logs) -->
+    <div id="activity-logs-view" class="activity-view" style="display: none;">
+        <div class="logs-header">
+            <div class="logs-controls">
+                <div class="control-group">
+                    <div class="log-level-filter">
+                        <label for="activityLogLevelSelect">
+                            <i class="fas fa-filter"></i>
+                            <span>Level:</span>
+                        </label>
+                        <select id="activityLogLevelSelect" class="styled-select">
+                            <option value="all">All Levels</option>
+                            <option value="debug" id="activityLogLevelOptionDebug">DEBUG</option>
+                            <option value="info" selected>INFO</option>
+                            <option value="warning">WARNING</option>
+                            <option value="error">ERROR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="control-group main-search">
+                    <div class="log-search">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="activityLogSearchInput" placeholder="Search logs...">
+                        <button id="activityLogSearchButton">Search</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <button type="button" id="activityLogClearButton" class="btn-danger-outline">
+                        <i class="fas fa-trash-alt"></i> Clear
+                    </button>
+                </div>
+            </div>
+            <div class="logs-pagination-bar">
+                <div class="connection-status-wrapper">
+                    Status: <span id="activityLogConnectionStatus" class="status-disconnected">Disconnected</span>
+                </div>
+                <div class="pagination-info">
+                    <span id="activityLogPageInfo">Page <span id="activityLogCurrentPage">1</span> of <span id="activityLogTotalPages">1</span></span>
+                </div>
+                <div class="pagination-actions">
+                    <button id="activityLogPrevPage" class="pagination-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
+                    <button id="activityLogNextPage" class="pagination-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="page-size-selector">
+                    <span>Show:</span>
+                    <select id="activityLogPageSize" class="mini-select">
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="logs-table-wrapper">
+            <table class="logs-data-table">
+                <thead>
+                    <tr>
+                        <th class="col-time">TIME</th>
+                        <th class="col-level">LEVEL</th>
+                        <th class="col-app">APP</th>
+                        <th class="col-message">MESSAGE</th>
+                    </tr>
+                </thead>
+                <tbody id="activityLogsContainer">
+                    <!-- Movie Hunt log entries -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="activityEmptyState" class="empty-state-card" style="display: none;">
         <div class="empty-state-icon">
             <i class="fas fa-clock"></i>

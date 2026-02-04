@@ -11,6 +11,12 @@ from typing import Dict, Any, Optional, List, Tuple
 
 logger = logging.getLogger(__name__)
 
+
+def _mh_log():
+    """Return the Movie Hunt logger (writes to Activity → Logs)."""
+    from src.primary.utils.logger import get_logger
+    return get_logger('movie_hunt')
+
 # Video file extensions (same as root folder detection)
 _VIDEO_EXTENSIONS = frozenset(('.mkv', '.mp4', '.avi', '.mov', '.wmv', '.m4v', '.mpg', '.mpeg', '.webm', '.flv', '.m2ts', '.ts'))
 
@@ -65,10 +71,10 @@ def _translate_remote_path(remote_path: str, client_host: str) -> str:
                 if remote_path_normalized.startswith(remote_normalized):
                     # Replace remote prefix with local prefix
                     translated = remote_path.replace(remote.rstrip('/'), local.rstrip('/'), 1)
-                    logger.info(f"Translated path: {remote_path} -> {translated}")
+                    _mh_log().info("Import: path translated %s -> %s", remote_path, translated)
                     return translated
         
-        logger.debug(f"No matching remote path mapping for host {client_host}, using path as-is")
+        _mh_log().debug("Import: no remote path mapping for host %s, using path as-is", client_host)
         return remote_path
         
     except Exception as e:
@@ -91,7 +97,7 @@ def _find_largest_video_file(download_path: str) -> Optional[str]:
         path = Path(download_path)
         
         if not path.exists():
-            logger.error(f"Download path does not exist: {download_path}")
+            _mh_log().error("Import: download path does not exist: %s", download_path)
             return None
         
         video_files = []
@@ -103,7 +109,7 @@ def _find_largest_video_file(download_path: str) -> Optional[str]:
                 if file_size >= _MIN_MOVIE_SIZE_BYTES:
                     return str(path)
                 else:
-                    logger.warning(f"Video file too small ({file_size / 1024 / 1024:.1f} MB): {path.name}")
+                    _mh_log().warning("Import: video file too small (%.1f MB): %s", file_size / 1024 / 1024, path.name)
             return None
         
         # If it's a directory, search for video files
@@ -124,16 +130,16 @@ def _find_largest_video_file(download_path: str) -> Optional[str]:
                 video_files.append((str(item), file_size))
         
         if not video_files:
-            logger.error(f"No valid video files found in {download_path}")
+            _mh_log().error("Import: no valid video files in %s", download_path)
             return None
         
         # Return the largest file
         largest_file = max(video_files, key=lambda x: x[1])
-        logger.info(f"Found largest video file: {Path(largest_file[0]).name} ({largest_file[1] / 1024 / 1024:.1f} MB)")
+        _mh_log().info("Import: using video %s (%.1f MB)", Path(largest_file[0]).name, largest_file[1] / 1024 / 1024)
         return largest_file[0]
         
     except Exception as e:
-        logger.error(f"Error finding video file in {download_path}: {e}")
+        _mh_log().error("Import: error finding video in %s: %s", download_path, e)
         return None
 
 
@@ -234,7 +240,7 @@ def _add_import_history(title: str, year: str, client_name: str, dest_file: str,
         }
         
         add_history_entry('movie_hunt', entry_data)
-        logger.info(f"Added import history for '{title}' ({year})")
+        _mh_log().info("Import: added history for '%s' (%s)", title, year)
         
     except Exception as e:
         logger.error(f"Error adding import history: {e}")
@@ -254,13 +260,13 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         True if import succeeded, False otherwise
     """
     try:
-        logger.info(f"Starting import for '{title}' ({year}) from {download_path}")
+        _mh_log().info("Import: starting for '%s' (%s) from %s", title, year, download_path)
         
         # 1. Get collection item to determine root folder
         collection_item = _get_collection_item(title, year)
         
         if not collection_item:
-            logger.warning(f"Movie '{title}' ({year}) not in collection, skipping import")
+            _mh_log().warning("Import: '%s' (%s) not in collection, skipping", title, year)
             return False
         
         # Get root folder (from collection or default)
@@ -269,12 +275,12 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
             root_folder = _get_default_root_folder()
         
         if not root_folder:
-            logger.error(f"No root folder configured for '{title}' ({year})")
+            _mh_log().error("Import: no root folder for '%s' (%s)", title, year)
             return False
         
         # Verify root folder exists
         if not os.path.exists(root_folder):
-            logger.error(f"Root folder does not exist: {root_folder}")
+            _mh_log().error("Import: root folder does not exist: %s", root_folder)
             return False
         
         # 2. Translate path using remote mappings
@@ -284,7 +290,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         # 3. Find video file
         video_file = _find_largest_video_file(local_path)
         if not video_file:
-            logger.error(f"No video file found in {local_path}")
+            _mh_log().error("Import: no video file found in %s", local_path)
             return False
         
         # 4. Create movie folder
@@ -296,7 +302,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         try:
             os.makedirs(dest_folder, exist_ok=True)
         except Exception as e:
-            logger.error(f"Failed to create destination folder {dest_folder}: {e}")
+            _mh_log().error("Import: failed to create folder %s: %s", dest_folder, e)
             return False
         
         # 5. Generate filename
@@ -308,7 +314,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         
         # 6. Check if file already exists
         if os.path.exists(dest_file):
-            logger.warning(f"File already exists: {dest_file}")
+            _mh_log().warning("Import: file already exists, updating collection: %s", dest_file)
             # Update collection status anyway
             _update_collection_status(title, year, 'available', dest_file)
             client_name = client.get('name', 'Download client')
@@ -316,12 +322,12 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
             return True
         
         # 7. Move file (use shutil.move which handles cross-filesystem moves)
-        logger.info(f"Moving: {video_file} -> {dest_file}")
+        _mh_log().info("Import: moving %s -> %s", video_file, dest_file)
         
         try:
             shutil.move(video_file, dest_file)
         except Exception as e:
-            logger.error(f"Failed to move file: {e}")
+            _mh_log().error("Import: failed to move file: %s", e)
             return False
         
         # 8. Update collection status
@@ -331,9 +337,9 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         client_name = client.get('name', 'Download client')
         _add_import_history(title, year, client_name, dest_file, success=True)
         
-        logger.info(f"✅ Successfully imported '{title}' ({year}) to {dest_file}")
+        _mh_log().info("Import: completed '%s' (%s) -> %s", title, year, dest_file)
         return True
         
     except Exception as e:
-        logger.exception(f"Error importing movie '{title}' ({year}): {e}")
+        _mh_log().exception("Import: error for '%s' (%s): %s", title, year, e)
         return False

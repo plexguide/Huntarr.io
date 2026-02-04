@@ -167,6 +167,12 @@
                     </div>
                     <span>Blocklist</span>
                 </a>
+                <a href="./#activity-logs" class="nav-item nav-item-sub" id="movieHuntActivityLogsNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <span>Logs</span>
+                </a>
             </div>
             <a href="./#movie-hunt-settings" class="nav-item" id="movieHuntSettingsNav">
                 <div class="nav-icon-wrapper">
@@ -1186,6 +1192,8 @@
             selector = '#movieHuntActivityHistoryNav';
         } else if (currentHash === '#activity-blocklist') {
             selector = '#movieHuntActivityBlocklistNav';
+        } else if (currentHash === '#activity-logs') {
+            selector = '#movieHuntActivityLogsNav';
         } else if (currentHash === '#movie-hunt-settings') {
             selector = '#movieHuntSettingsNav';
         } else if (currentHash === '#requestarr') {

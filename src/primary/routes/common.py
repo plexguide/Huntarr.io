@@ -24,7 +24,8 @@ from ..auth import (
     user_exists, create_user, generate_2fa_secret, verify_2fa_code, is_2fa_enabled, # Add missing auth imports
     hash_password # Add hash_password import for recovery key reset
 )
-from ..utils.logger import logger # Ensure logger is imported
+from ..utils.logger import logger, get_logger
+movie_hunt_logger = get_logger('movie_hunt')  # Writes to Activity → Logs (app_type=movie_hunt)
 from .. import settings_manager # Import settings_manager
 from ..utils.tmdb_cache import tmdb_cache # Import TMDB cache
 from datetime import datetime
@@ -1156,24 +1157,24 @@ def _check_and_import_completed(client_name, queue_item):
         history_item = _get_sabnzbd_history_item(client, queue_id)
         
         if not history_item:
-            logger.info(f"Movie Hunt: Queue item {queue_id} ('{title}') removed but not in history (user cancelled?)")
+            movie_hunt_logger.info("Queue: item %s ('%s') removed but not in history (user cancelled?)", queue_id, title)
             return
         
         # Check if it completed successfully
         status = history_item.get('status', '').lower()
         if status != 'completed':
-            logger.warning(f"Movie Hunt: Download '{title}' ({year}) failed with status: {status}")
+            movie_hunt_logger.warning("Import: download '%s' (%s) failed with status: %s", title, year, status)
             return
         
         # Get download path from history
         download_path = history_item.get('storage', '').strip()
         
         if not download_path:
-            logger.error(f"Movie Hunt: No storage path in history for '{title}' ({year})")
+            movie_hunt_logger.error("Import: no storage path in history for '%s' (%s)", title, year)
             return
         
         # Trigger import
-        logger.info(f"Movie Hunt: Import triggered for '{title}' ({year}) from {download_path}")
+        movie_hunt_logger.info("Import: triggered for '%s' (%s) from %s", title, year, download_path)
         
         # Import the file (using thread to avoid blocking queue polling)
         import threading
@@ -1188,17 +1189,17 @@ def _check_and_import_completed(client_name, queue_item):
                     download_path=download_path
                 )
                 if success:
-                    logger.info(f"✅ Movie Hunt: Successfully imported '{title}' ({year})")
+                    movie_hunt_logger.info("Import: successfully imported '%s' (%s)", title, year)
                 else:
-                    logger.error(f"❌ Movie Hunt: Failed to import '{title}' ({year})")
+                    movie_hunt_logger.error("Import: failed to import '%s' (%s)", title, year)
             except Exception as e:
-                logger.exception(f"Error in import thread for '{title}' ({year}): {e}")
+                movie_hunt_logger.exception("Import: error for '%s' (%s): %s", title, year, e)
         
         import_thread = threading.Thread(target=_do_import, daemon=True)
         import_thread.start()
         
     except Exception as e:
-        logger.exception(f"Error checking/importing completed download: {e}")
+        movie_hunt_logger.exception("Import: error checking completed download: %s", e)
 
 
 def _prune_requested_queue_ids(client_name, current_queue_ids):
@@ -1388,21 +1389,21 @@ def _get_download_client_queue(client):
             params = {'mode': 'queue', 'output': 'json'}
             if api_key:
                 params['apikey'] = api_key
-            logger.info("Movie Hunt queue: requesting SABnzbd queue from %s (%s)", name, base_url)
+            movie_hunt_logger.info("Queue: requesting SABnzbd queue from %s (%s)", name, base_url)
             try:
                 r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
                 r.raise_for_status()
             except requests.RequestException as e:
-                logger.warning("Movie Hunt queue: SABnzbd request failed for %s: %s", name, e)
+                movie_hunt_logger.warning("Queue: SABnzbd request failed for %s: %s", name, e)
                 return []
             data = r.json()
             if not isinstance(data, dict):
-                logger.warning("Movie Hunt queue: SABnzbd returned non-dict for %s", name)
+                movie_hunt_logger.warning("Queue: SABnzbd returned non-dict for %s", name)
                 return []
             # SABnzbd may return {"error": "API Key Required"} or {"error": "API Key Incorrect"}
             sab_error = data.get('error') or data.get('error_msg')
             if sab_error:
-                logger.warning("Movie Hunt queue: SABnzbd %s returned error: %s", name, sab_error)
+                movie_hunt_logger.warning("Queue: SABnzbd %s returned error: %s", name, sab_error)
                 return []
             # SABnzbd can put slots under queue.slots or at top-level slots; slots can be list or dict
             slots_raw = (data.get('queue') or {}).get('slots') or data.get('slots') or []
@@ -1413,7 +1414,7 @@ def _get_download_client_queue(client):
             else:
                 slots = []
             if not slots and (data.get('queue') or data):
-                logger.info("Movie Hunt queue: SABnzbd %s returned 0 slots (response keys: %s)", name, list(data.keys()))
+                movie_hunt_logger.info("Queue: SABnzbd %s returned 0 slots (response keys: %s)", name, list(data.keys()))
             for slot in slots:
                 if not isinstance(slot, dict):
                     continue
@@ -1589,7 +1590,7 @@ def _delete_from_download_client(client, item_ids):
                 else:
                     err = data.get('error') or data.get('error_msg')
                     if err:
-                        logger.warning("Movie Hunt queue: SABnzbd delete failed for %s: %s", name, err)
+                        movie_hunt_logger.warning("Queue: SABnzbd delete failed for %s: %s", name, err)
         elif client_type == 'nzbget':
             jsonrpc_url = '%s/jsonrpc' % base_url
             username = (client.get('username') or '').strip()
@@ -1620,15 +1621,17 @@ def _get_activity_queue():
     clients = _get_clients_config()
     enabled = [c for c in clients if c.get('enabled', True)]
     if not enabled:
-        logger.info("Movie Hunt queue: no download clients configured or enabled. Add SABnzbd/NZBGet in Settings → Movie Hunt → Clients (total in config: %s).", len(clients))
+        movie_hunt_logger.info("Queue: no download clients configured or enabled. Add SABnzbd/NZBGet in Settings → Movie Hunt → Clients (total in config: %s).", len(clients))
         return [], 0
-    logger.info("Movie Hunt queue: fetching from %s download client(s)", len(enabled))
+    movie_hunt_logger.info("Queue: fetching from %s download client(s)", len(enabled))
     all_items = []
     for client in enabled:
         items = _get_download_client_queue(client)
         all_items.extend(items)
     if all_items:
-        logger.info("Movie Hunt queue: returning %s item(s) from download client(s)", len(all_items))
+        movie_hunt_logger.info("Queue: returning %s item(s) from download client(s)", len(all_items))
+    else:
+        movie_hunt_logger.debug("Queue: no items in download client(s)")
     return all_items, len(all_items)
 
 
@@ -2443,14 +2446,18 @@ def api_movie_hunt_request():
         root_folder = (data.get('root_folder') or '').strip() or None
         quality_profile = (data.get('quality_profile') or '').strip() or None
 
+        movie_hunt_logger.info("Request: received for '%s' (%s)", title, year or 'no year')
+
         indexers = _get_indexers_config()
         clients = _get_clients_config()
         enabled_indexers = [i for i in indexers if i.get('enabled', True) and (i.get('preset') or '').strip().lower() != 'manual']
         enabled_clients = [c for c in clients if c.get('enabled', True)]
 
         if not enabled_indexers:
+            movie_hunt_logger.warning("Request: no indexers configured or enabled for '%s'", title)
             return jsonify({'success': False, 'message': 'No indexers configured or enabled. Add indexers in Movie Hunt Settings.'}), 400
         if not enabled_clients:
+            movie_hunt_logger.warning("Request: no download clients configured or enabled for '%s'", title)
             return jsonify({'success': False, 'message': 'No download clients configured or enabled. Add a client in Movie Hunt Settings.'}), 400
 
         query = f'{title}'
@@ -2498,6 +2505,7 @@ def api_movie_hunt_request():
                 min_score = int(min_score)
             except (TypeError, ValueError):
                 min_score = 0
+            movie_hunt_logger.warning("Request: no release found for '%s' (%s) matching profile '%s' (min score %s)", title, year or 'no year', profile_name, min_score)
             return jsonify({
                 'success': False,
                 'message': f'No release found that matches your quality profile "{profile_name}" or meets the minimum custom format score ({min_score}). The indexer had results but none were in the allowed resolutions/sources or had a score at or above the minimum. Try a different profile, lower the minimum score, or search again later.'
@@ -2508,7 +2516,9 @@ def api_movie_hunt_request():
         request_category = MOVIE_HUNT_DEFAULT_CATEGORY if raw_cat.lower() in ('default', '*', '') else (raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY)
         ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl)
         if not ok:
+            movie_hunt_logger.error("Request: send to download client failed for '%s': %s", title, msg)
             return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
+        movie_hunt_logger.info("Request: '%s' (%s) sent to %s (indexer: %s, score: %s)", title, year or 'no year', client.get('name') or 'download client', indexer_used or '-', request_score)
         # Track this request so Activity queue only shows items we requested (with title/year and score for display)
         if queue_id:
             client_name = (client.get('name') or 'Download client').strip() or 'Download client'

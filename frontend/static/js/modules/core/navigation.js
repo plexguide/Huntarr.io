@@ -70,7 +70,7 @@ window.HuntarrNavigation = {
             if (['apps'].includes(ui.currentSection) && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             if (ui.currentSection === 'prowlarr' && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             
-            const noRefresh = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders'];
+            const noRefresh = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders'];
             if (!noRefresh.includes(section) && !noRefresh.includes(ui.currentSection)) {
                 localStorage.setItem('huntarr-target-section', section);
                 location.reload();
@@ -97,6 +97,7 @@ window.HuntarrNavigation = {
             'activity-queue': { title: 'Activity – Queue', nav: document.getElementById('movieHuntActivityQueueNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'queue' },
             'activity-history': { title: 'Activity – History', nav: document.getElementById('movieHuntActivityHistoryNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'history' },
             'activity-blocklist': { title: 'Activity – Blocklist', nav: document.getElementById('movieHuntActivityBlocklistNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'blocklist' },
+            'activity-logs': { title: 'Activity – Logs', nav: document.getElementById('movieHuntActivityLogsNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'logs' },
             'movie-hunt-settings': { title: 'Movie Hunt Settings', nav: document.getElementById('movieHuntSettingsNav'), section: document.getElementById('requestarr-section'), sidebar: 'moviehunt', view: 'settings' },
             'requestarr': { title: 'Discover', nav: document.getElementById('requestarrNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'discover' },
             'requestarr-discover': { title: 'Discover', nav: document.getElementById('requestarrDiscoverNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'discover' },
@@ -203,8 +204,8 @@ window.HuntarrNavigation = {
         if (section === 'settings-root-folders' && window.RootFolders && typeof window.RootFolders.refreshList === 'function') {
             window.RootFolders.refreshList();
         }
-        if ((section === 'activity-queue' || section === 'activity-history' || section === 'activity-blocklist') && window.ActivityModule && typeof window.ActivityModule.init === 'function') {
-            var view = section === 'activity-queue' ? 'queue' : section === 'activity-history' ? 'history' : 'blocklist';
+        if ((section === 'activity-queue' || section === 'activity-history' || section === 'activity-blocklist' || section === 'activity-logs') && window.ActivityModule && typeof window.ActivityModule.init === 'function') {
+            var view = section === 'activity-queue' ? 'queue' : section === 'activity-history' ? 'history' : section === 'activity-blocklist' ? 'blocklist' : 'logs';
             window.ActivityModule.init(view);
         }
         
@@ -319,7 +320,7 @@ window.HuntarrNavigation = {
             else if (appType === 'client') sectionForNav = 'settings-clients';
         }
         const items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
-        const isActivitySub = ['activity-queue', 'activity-history', 'activity-blocklist'].indexOf(sectionForNav) !== -1;
+        const isActivitySub = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs'].indexOf(sectionForNav) !== -1;
         items.forEach(item => {
             item.classList.remove('active');
             if (isActivitySub && item.id === 'movieHuntActivityNav') return;
@@ -335,7 +336,7 @@ window.HuntarrNavigation = {
         }
         var activitySub = document.getElementById('movie-hunt-activity-sub');
         if (activitySub) {
-            var showActivitySub = ['activity-queue', 'activity-history', 'activity-blocklist'].indexOf(currentSection) !== -1;
+            var showActivitySub = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs'].indexOf(currentSection) !== -1;
             activitySub.classList.toggle('expanded', showActivitySub);
         }
     },
