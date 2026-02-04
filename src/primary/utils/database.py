@@ -3198,8 +3198,10 @@ class LogsDatabase:
             # Don't let log insertion failures crash the app
             print(f"Error inserting log: {e}")
     
-    def get_logs(self, app_type: str = None, level: str = None, limit: int = 100, offset: int = 0, search: str = None) -> List[Dict[str, Any]]:
-        """Get logs with filtering and pagination"""
+    def get_logs(self, app_type: str = None, level: str = None, limit: int = 100, offset: int = 0, search: str = None, exclude_app_types: List[str] = None) -> List[Dict[str, Any]]:
+        """Get logs with filtering and pagination.
+        exclude_app_types: when app_type is None (all), exclude these app types (e.g. ['movie_hunt'] for main logs).
+        """
         try:
             with self.get_logs_connection() as conn:
                 conn.row_factory = sqlite3.Row
@@ -3218,6 +3220,11 @@ class LogsDatabase:
                     else:
                         where_conditions.append("app_type = ?")
                         params.append(app_type)
+                elif exclude_app_types:
+                    # Main logs "all" view: exclude independent modules (e.g. movie_hunt has its own Activity → Logs)
+                    placeholders = ",".join("?" * len(exclude_app_types))
+                    where_conditions.append(f"app_type NOT IN ({placeholders})")
+                    params.extend(exclude_app_types)
                 
                 if level and level != "all":
                     # Use inclusive filtering: show selected level and above
@@ -3244,8 +3251,10 @@ class LogsDatabase:
             logger.error(f"Error getting logs: {e}")
             return []
     
-    def get_log_count(self, app_type: str = None, level: str = None, search: str = None) -> int:
-        """Get total count of logs matching filters"""
+    def get_log_count(self, app_type: str = None, level: str = None, search: str = None, exclude_app_types: List[str] = None) -> int:
+        """Get total count of logs matching filters.
+        exclude_app_types: when app_type is None (all), exclude these app types (e.g. ['movie_hunt'] for main logs).
+        """
         try:
             with self.get_logs_connection() as conn:
                 where_conditions = []
@@ -3262,6 +3271,11 @@ class LogsDatabase:
                     else:
                         where_conditions.append("app_type = ?")
                         params.append(app_type)
+                elif exclude_app_types:
+                    # Main logs "all" view: exclude independent modules (e.g. movie_hunt has its own Activity → Logs)
+                    placeholders = ",".join("?" * len(exclude_app_types))
+                    where_conditions.append(f"app_type NOT IN ({placeholders})")
+                    params.extend(exclude_app_types)
                 
                 if level and level != "all":
                     # Use inclusive filtering: show selected level and above
@@ -3364,8 +3378,10 @@ class LogsDatabase:
             logger.error(f"Error getting log levels: {e}")
             return []
     
-    def clear_logs(self, app_type: str = None):
-        """Clear logs for a specific app type or all logs. For cyclical apps, clears base and per-instance (e.g. sonarr, Sonarr-test)."""
+    def clear_logs(self, app_type: str = None, exclude_app_types: List[str] = None):
+        """Clear logs for a specific app type or all logs. For cyclical apps, clears base and per-instance (e.g. sonarr, Sonarr-test).
+        exclude_app_types: when clearing all (app_type None), do not delete these (e.g. ['movie_hunt'] for main logs clear).
+        """
         try:
             with self.get_logs_connection() as conn:
                 if app_type:
@@ -3377,12 +3393,16 @@ class LogsDatabase:
                     else:
                         cursor = conn.execute("DELETE FROM logs WHERE app_type = ?", (app_type,))
                 else:
-                    cursor = conn.execute("DELETE FROM logs")
-                
+                    if exclude_app_types:
+                        placeholders = ",".join("?" * len(exclude_app_types))
+                        cursor = conn.execute(f"DELETE FROM logs WHERE app_type NOT IN ({placeholders})", exclude_app_types)
+                    else:
+                        cursor = conn.execute("DELETE FROM logs")
+
                 deleted_count = cursor.rowcount
                 conn.commit()
-                
-                logger.info(f"Cleared {deleted_count} logs" + (f" for {app_type}" if app_type else ""))
+
+                logger.info(f"Cleared {deleted_count} logs" + (f" for {app_type}" if app_type else " (main apps only)" if exclude_app_types else ""))
                 return deleted_count
         except Exception as e:
             logger.error(f"Error clearing logs: {e}")

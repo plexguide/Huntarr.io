@@ -58,25 +58,34 @@ def _convert_timestamp_to_user_timezone(timestamp_val) -> str:
 
 @log_routes_bp.route('/api/logs/<app_type>')
 def get_logs(app_type):
-    """Get logs for a specific app type from database"""
+    """Get logs for a specific app type from database. Movie Hunt never appears here (use Activity → Logs)."""
     try:
+        # Reject movie_hunt on main logs API; it has its own logging under Activity → Logs
+        if (app_type or "").lower() == "movie_hunt":
+            return jsonify({
+                'success': False,
+                'error': 'Movie Hunt has its own logs. Use Activity → Logs in the Movie Hunt section.',
+                'logs': [],
+                'total': 0
+            }), 404
+
         logs_db = get_logs_database()
-        
+
         # Get query parameters
         level = request.args.get('level')
         limit = int(request.args.get('limit', 100))
         offset = int(request.args.get('offset', 0))
         search = request.args.get('search')
-        
-        # Handle 'all' app type by getting logs from all apps
+
+        # Handle 'all' app type by getting logs from all main apps (exclude movie_hunt - it has its own Activity → Logs)
         if app_type == 'all':
-            # Get logs from all app types
             logs = logs_db.get_logs(
-                app_type=None,  # None means all app types
+                app_type=None,
                 level=level,
                 limit=limit,
                 offset=offset,
-                search=search
+                search=search,
+                exclude_app_types=['movie_hunt']
             )
         else:
             # Map 'system' to actual app type in database
@@ -104,9 +113,10 @@ def get_logs(app_type):
         # Get total count for pagination
         if app_type == 'all':
             total_count = logs_db.get_log_count(
-                app_type=None,  # None means all app types
+                app_type=None,
                 level=level,
-                search=search
+                search=search,
+                exclude_app_types=['movie_hunt']
             )
         else:
             db_app_type = 'system' if app_type == 'system' else app_type
@@ -163,13 +173,20 @@ def get_log_usage():
 
 @log_routes_bp.route('/api/logs/<app_type>/clear', methods=['POST'])
 def clear_logs(app_type):
-    """Clear logs for a specific app type"""
+    """Clear logs for a specific app type. Movie Hunt is never cleared from here (use Activity → Logs)."""
     try:
+        if (app_type or "").lower() == "movie_hunt":
+            return jsonify({
+                'success': False,
+                'error': 'Clear Movie Hunt logs from Activity → Logs in the Movie Hunt section.',
+                'deleted_count': 0
+            }), 404
+
         logs_db = get_logs_database()
-        
-        # Handle 'all' app type by clearing all logs
+
+        # Handle 'all' app type: clear only main app logs (exclude movie_hunt)
         if app_type == 'all':
-            deleted_count = logs_db.clear_logs(app_type=None)
+            deleted_count = logs_db.clear_logs(app_type=None, exclude_app_types=['movie_hunt'])
         else:
             # Map 'system' to actual app type in database
             db_app_type = 'system' if app_type == 'system' else app_type
