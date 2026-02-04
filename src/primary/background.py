@@ -51,6 +51,10 @@ prowlarr_stats_thread = None
 # Define which apps have background processing cycles
 CYCLICAL_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
 
+# Apps that schedule each instance on its own interval (only run an instance when its next_cycle_time is due)
+# All cyclical *arr apps use per-instance scheduling for true independent timing.
+PER_INSTANCE_SCHEDULING_APP_TYPES = {"sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"}
+
 # Instance list generator has been removed
 
 def _get_user_timezone():
@@ -60,6 +64,125 @@ def _get_user_timezone():
         return get_user_timezone()
     except Exception:
         return pytz.UTC
+
+
+def _responsive_sleep(
+    app_type: str,
+    sleep_seconds: float,
+    app_logger: logging.Logger,
+    instances_for_reset: Optional[List[Dict]] = None,
+    wait_interval: int = 1,
+) -> None:
+    """
+    Sleep for up to sleep_seconds while checking stop_event and optional per-instance
+    reset requests every wait_interval seconds. Uses threading.Event.wait() so the
+    thread can be woken quickly on shutdown or manual "run now".
+    """
+    elapsed = 0
+    instances = instances_for_reset or []
+    while elapsed < sleep_seconds:
+        if stop_event.is_set():
+            app_logger.info("Stop event detected during sleep. Breaking out of sleep cycle.")
+            return
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            for inst in instances:
+                iname = inst.get("instance_name", "Default")
+                reset_ts = db.get_pending_reset_request(app_type, iname)
+                if reset_ts:
+                    app_logger.info(
+                        f"!!! RESET REQUEST DETECTED !!! Manual cycle reset triggered for {app_type} instance {iname}. Starting new cycle immediately."
+                    )
+                    db.mark_reset_request_processed(app_type, iname)
+                    return
+        except Exception as e:
+            app_logger.error(f"Error checking reset request during sleep for {app_type}: {e}", exc_info=True)
+        stop_event.wait(wait_interval)
+        elapsed += wait_interval
+
+
+def _parse_next_cycle_time(next_str: Optional[str], user_tz) -> Optional[datetime.datetime]:
+    """Parse next_cycle_time from DB (isoformat string) to datetime in user_tz. Returns None if missing/invalid."""
+    if not next_str or not isinstance(next_str, str):
+        return None
+    try:
+        dt = datetime.datetime.fromisoformat(next_str.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = user_tz.localize(dt)
+        elif dt.tzinfo != user_tz:
+            dt = dt.astimezone(user_tz)
+        return dt.replace(microsecond=0)
+    except (ValueError, TypeError):
+        return None
+
+
+def _get_instances_due_and_sleep(
+    app_type: str,
+    instances_to_process: List[Dict],
+    app_settings: Dict,
+    app_logger: logging.Logger,
+) -> Tuple[List[Dict], float]:
+    """
+    Per-instance scheduling: return (instances that are due now, seconds to sleep until next due).
+    Used when PER_INSTANCE_SCHEDULING_APP_TYPES contains app_type so each instance runs on its own interval.
+    """
+    from src.primary.utils.database import get_database
+    user_tz = _get_user_timezone()
+    now = datetime.datetime.now(user_tz).replace(microsecond=0)
+    default_sleep = app_settings.get("sleep_duration", 900)
+    sleep_data = get_database().get_sleep_data_per_instance(app_type)  # instance_name -> { next_cycle_time, ... }
+    instances_due = []
+    next_cycle_times = []  # list of datetime for instances not due (future)
+    for inst in instances_to_process:
+        iname = inst.get("instance_name", "Default")
+        next_str = (sleep_data.get(iname) or {}).get("next_cycle_time")
+        next_dt = _parse_next_cycle_time(next_str, user_tz)
+        inst["_next_cycle_dt"] = next_dt
+        if next_dt is None or now >= next_dt:
+            instances_due.append(inst)
+        else:
+            next_cycle_times.append(next_dt)
+    # Seconds until soonest next cycle (any instance)
+    if next_cycle_times:
+        soonest = min(next_cycle_times)
+        sleep_seconds = (soonest - now).total_seconds()
+        sleep_seconds = max(1, min(sleep_seconds, 24 * 3600))  # clamp 1s to 24h (avoid negative from clock skew)
+    else:
+        sleep_seconds = min(
+            (d.get("sleep_duration", default_sleep) for d in instances_to_process),
+            default=default_sleep
+        )
+    return (instances_due, float(sleep_seconds))
+
+
+def _get_sleep_seconds_until_next_cycle(
+    app_type: str,
+    instances_to_process: List[Dict],
+    app_settings: Dict,
+) -> float:
+    """After processing, return seconds to sleep until the soonest next_cycle_time across all instances."""
+    from src.primary.utils.database import get_database
+    user_tz = _get_user_timezone()
+    now = datetime.datetime.now(user_tz).replace(microsecond=0)
+    default_sleep = app_settings.get("sleep_duration", 900)
+    sleep_data = get_database().get_sleep_data_per_instance(app_type)
+    next_times = []
+    for inst in instances_to_process:
+        iname = inst.get("instance_name", "Default")
+        next_str = (sleep_data.get(iname) or {}).get("next_cycle_time")
+        next_dt = _parse_next_cycle_time(next_str, user_tz)
+        if next_dt is not None and next_dt > now:
+            next_times.append(next_dt)
+    if next_times:
+        soonest = min(next_times)
+        secs = (soonest - now).total_seconds()
+        return max(1, min(secs, 24 * 3600))  # clamp 1s to 24h (avoid negative from clock skew)
+    return min(
+        (d.get("sleep_duration", default_sleep) for d in instances_to_process),
+        default=default_sleep
+    )
+
 
 def app_specific_loop(app_type: str) -> None:
     """
@@ -211,7 +334,7 @@ def app_specific_loop(app_type: str) -> None:
                     except Exception as e:
                         app_logger.warning(f"Failed to update cycle tracking for {app_type}: {e}")
 
-                    stop_event.wait(sleep_duration)
+                    _responsive_sleep(app_type, sleep_duration, app_logger, [])
                     continue
             except Exception as e:
                 app_logger.error(f"Error calling get_configured_instances function: {e}", exc_info=True)
@@ -234,21 +357,38 @@ def app_specific_loop(app_type: str) -> None:
                 }]
             else:
                 app_logger.warning(f"No 'get_configured_instances' function found and no valid single instance config (URL/Key) for {app_type}. Skipping cycle.")
-                stop_event.wait(sleep_duration)
+                _responsive_sleep(app_type, sleep_duration, app_logger, [])
                 continue
             
         # If after all checks, instances_to_process is still empty
         if not instances_to_process:
             app_logger.warning(f"No valid {app_type} instances to process this cycle (unexpected state). Skipping.")
-            stop_event.wait(sleep_duration)
+            _responsive_sleep(app_type, sleep_duration, app_logger, [])
             continue
 
         # Use minimum sleep_duration across instances (wake for soonest instance)
         sleep_duration = min(
             (d.get("sleep_duration", app_settings.get("sleep_duration", 900)) for d in instances_to_process)
         )
+        all_instances = list(instances_to_process)  # full list for per-instance sleep calculation
+
+        # Per-instance scheduling: only run instances whose next_cycle_time is due; sleep until soonest next
+        if app_type in PER_INSTANCE_SCHEDULING_APP_TYPES:
+            instances_due, sleep_until_next = _get_instances_due_and_sleep(
+                app_type, instances_to_process, app_settings, app_logger
+            )
+            if not instances_due:
+                app_logger.info(
+                    f"No {app_type} instances due this cycle. Sleeping {sleep_until_next:.0f}s until next."
+                )
+                _responsive_sleep(app_type, sleep_until_next, app_logger, all_instances, wait_interval=1)
+                continue
+            instances_to_process = instances_due
+            app_logger.info(
+                f"Per-instance schedule: running {len(instances_to_process)} due instance(s) of {len(all_instances)} total."
+            )
             
-        # Process each instance dictionary returned by get_configured_instances
+        # Process each instance dictionary returned by get_configured_instances (or only due instances if per-instance scheduling)
         processed_any_items = False
         enabled_instances = []
         
@@ -660,8 +800,8 @@ def app_specific_loop(app_type: str) -> None:
                     instance_mode = "custom"
                     
                     try:
-                        # Look up the instance in instances we just processed
-                        for instance_details in instances_to_process:
+                        # Look up the instance in all_instances (not instances_to_process, which may be filtered to due-only)
+                        for instance_details in all_instances:
                             if instance_details.get("instance_name") == instance_name:
                                 instance_hours = instance_details.get("state_management_hours", 72)
                                 instance_mode = instance_details.get("state_management_mode", "custom")
@@ -730,52 +870,21 @@ def app_specific_loop(app_type: str) -> None:
             # Swaparr uses its own state management for strikes and removed downloads
             app_logger.debug(f"Swaparr uses its own strike/removal tracking, not the hunting state manager")
             
-        # Sleep: use minimum of instance sleep_durations (next cycle per instance already set in loop)
-        sleep_seconds = min(
-            (d.get("sleep_duration", app_settings.get("sleep_duration", 900)) for d in instances_to_process),
-            default=app_settings.get("sleep_duration", 900)
-        )
+        # Sleep: until soonest next cycle (per-instance scheduling) or min sleep_duration (legacy)
+        if app_type in PER_INSTANCE_SCHEDULING_APP_TYPES:
+            sleep_seconds = _get_sleep_seconds_until_next_cycle(app_type, all_instances, app_settings)
+        else:
+            sleep_seconds = min(
+                (d.get("sleep_duration", app_settings.get("sleep_duration", 900)) for d in instances_to_process),
+                default=app_settings.get("sleep_duration", 900)
+            )
         user_tz = _get_user_timezone()
         now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
         app_logger.debug(f"Current time ({user_tz}): {now_user_tz.strftime('%Y-%m-%d %H:%M:%S')}")
-        app_logger.info(f"Sleep duration: {sleep_seconds} seconds before next cycle")
-        app_logger.debug(f"Sleeping for {sleep_seconds} seconds before next cycle...")
-                
-        # Use shorter sleep intervals and check for reset file
-        wait_interval = 1  # Check every second to be more responsive
-        elapsed = 0
-        while elapsed < sleep_seconds:
-            # Check if stop event is set
-            if stop_event.is_set():
-                app_logger.info("Stop event detected during sleep. Breaking out of sleep cycle.")
-                break
-                        
-            # Check for database reset request (per-instance for *arr, app-level for swaparr)
-            try:
-                from src.primary.utils.database import get_database
-                db = get_database()
-                reset_found = False
-                for inst in instances_to_process:
-                    iname = inst.get("instance_name", "Default")
-                    reset_timestamp = db.get_pending_reset_request(app_type, iname)
-                    if reset_timestamp:
-                        app_logger.info(f"!!! RESET REQUEST DETECTED !!! Manual cycle reset triggered for {app_type} instance {iname}. Starting new cycle immediately.")
-                        db.mark_reset_request_processed(app_type, iname)
-                        app_logger.info(f"Reset request processed for {app_type} instance {iname}. Starting new cycle now.")
-                        reset_found = True
-                        break
-                if reset_found:
-                    break
-            except Exception as e:
-                app_logger.error(f"Error checking reset request for {app_type}: {e}", exc_info=True)
-                        
-            # Sleep for a short interval
-            stop_event.wait(wait_interval)
-            elapsed += wait_interval
-                    
-            # If we've slept for at least 30 seconds, update the logger message every 30 seconds
-            if elapsed > 0 and elapsed % 30 == 0:
-                app_logger.debug(f"Still sleeping, {sleep_seconds - elapsed} seconds remaining before next cycle...")
+        app_logger.info(f"Sleep duration: {sleep_seconds:.0f} seconds before next cycle")
+        app_logger.debug(f"Sleeping for {sleep_seconds:.0f} seconds before next cycle...")
+        # Responsive wait: wake every second to check stop_event and per-instance reset requests
+        _responsive_sleep(app_type, sleep_seconds, app_logger, all_instances, wait_interval=1)
                 
     app_logger.info(f"=== [{app_type.upper()}] Thread stopped ====")
 
