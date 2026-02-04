@@ -23,8 +23,10 @@
         const userNav = document.getElementById('userNav');
         if (userNav) userNav.classList.add('active');
         
+        // Only set page title when we're actually on the user section (don't overwrite Home, Requestarr, etc.)
+        const isUserSection = (window.location.hash === '#user' || (window.huntarrUI && window.huntarrUI.currentSection === 'user'));
         const pageTitleElement = document.getElementById('currentPageTitle');
-        if (pageTitleElement) pageTitleElement.textContent = 'User Settings';
+        if (pageTitleElement && isUserSection) pageTitleElement.textContent = 'User Settings';
         
         // Apply dark mode
         document.body.classList.add('dark-theme');
