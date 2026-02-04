@@ -58,17 +58,11 @@ def _convert_timestamp_to_user_timezone(timestamp_val) -> str:
 
 @log_routes_bp.route('/api/logs/<app_type>')
 def get_logs(app_type):
-    """Get logs for a specific app type from database. Movie Hunt never appears here (use Activity → Logs)."""
+    """Get logs for a specific app type from database.
+    - Main Huntarr Logs page uses app_type=all (we exclude movie_hunt so it never shows there).
+    - Movie Hunt → Activity → Logs page uses app_type=movie_hunt to show only Movie Hunt logs.
+    """
     try:
-        # Reject movie_hunt on main logs API; it has its own logging under Activity → Logs
-        if (app_type or "").lower() == "movie_hunt":
-            return jsonify({
-                'success': False,
-                'error': 'Movie Hunt has its own logs. Use Activity → Logs in the Movie Hunt section.',
-                'logs': [],
-                'total': 0
-            }), 404
-
         logs_db = get_logs_database()
 
         # Get query parameters
@@ -77,7 +71,7 @@ def get_logs(app_type):
         offset = int(request.args.get('offset', 0))
         search = request.args.get('search')
 
-        # Handle 'all' app type by getting logs from all main apps (exclude movie_hunt - it has its own Activity → Logs)
+        # When app_type is 'all' (main Logs page): exclude movie_hunt so it only shows on Movie Hunt → Logs
         if app_type == 'all':
             logs = logs_db.get_logs(
                 app_type=None,
@@ -173,18 +167,11 @@ def get_log_usage():
 
 @log_routes_bp.route('/api/logs/<app_type>/clear', methods=['POST'])
 def clear_logs(app_type):
-    """Clear logs for a specific app type. Movie Hunt is never cleared from here (use Activity → Logs)."""
+    """Clear logs for a specific app type. movie_hunt clear is used by Movie Hunt → Logs; 'all' clears only main apps."""
     try:
-        if (app_type or "").lower() == "movie_hunt":
-            return jsonify({
-                'success': False,
-                'error': 'Clear Movie Hunt logs from Activity → Logs in the Movie Hunt section.',
-                'deleted_count': 0
-            }), 404
-
         logs_db = get_logs_database()
 
-        # Handle 'all' app type: clear only main app logs (exclude movie_hunt)
+        # When clearing 'all' (main Logs page): clear only main app logs, never movie_hunt
         if app_type == 'all':
             deleted_count = logs_db.clear_logs(app_type=None, exclude_app_types=['movie_hunt'])
         else:
