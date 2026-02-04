@@ -2342,6 +2342,11 @@ def api_movie_hunt_request():
                     indexer_used = idx.get('name') or preset
                     request_score = chosen_score
                     request_score_breakdown = chosen_breakdown or ''
+                    movie_hunt_logger.info(
+                        "Request: chosen release for '%s' (%s) — score %s (min %s). %s",
+                        title, year or 'no year', request_score, min_score,
+                        request_score_breakdown if request_score_breakdown else 'No breakdown'
+                    )
                     break
         if not nzb_url:
             profile_name = (profile.get('name') or 'Standard').strip()
@@ -2363,7 +2368,12 @@ def api_movie_hunt_request():
         if not ok:
             movie_hunt_logger.error("Request: send to download client failed for '%s': %s", title, msg)
             return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
-        movie_hunt_logger.info("Request: '%s' (%s) sent to %s (indexer: %s, score: %s)", title, year or 'no year', client.get('name') or 'download client', indexer_used or '-', request_score)
+        movie_hunt_logger.info(
+            "Request: '%s' (%s) sent to %s. Indexer: %s. Score: %s — %s",
+            title, year or 'no year', client.get('name') or 'download client',
+            indexer_used or '-', request_score,
+            request_score_breakdown if request_score_breakdown else 'no breakdown'
+        )
         # Track this request so Activity queue only shows items we requested (with title/year and score for display)
         if queue_id:
             client_name = (client.get('name') or 'Download client').strip() or 'Download client'
@@ -2375,12 +2385,16 @@ def api_movie_hunt_request():
         _collection_append(title=title, year=year, tmdb_id=tmdb_id, poster_path=poster_path, root_folder=root_folder)
         return jsonify({
             'success': True,
-            'message': f'"{nzb_title or title}" sent to {client.get("name") or "download client"}.',
+            'message': f'"{title}" sent to {client.get("name") or "download client"}.',
             'indexer': indexer_used,
             'client': client.get('name') or 'download client'
         }), 200
     except Exception as e:
-        logger.exception('Movie Hunt request error')
+        try:
+            req_title = (request.get_json() or {}).get('title') or 'unknown'
+        except Exception:
+            req_title = 'unknown'
+        movie_hunt_logger.exception("Request: error for '%s': %s", req_title, e)
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
