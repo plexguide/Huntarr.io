@@ -43,9 +43,25 @@ def get_configured_instances(quiet=False):
 
             # Only include properly configured instances
             if is_enabled and api_url and api_key:
+                raw = instance.get("name", "Default") or "Default"
+                instance_name = (raw.strip() if isinstance(raw, str) else "Default") or "Default"
+                # Ensure stable instance_id so renaming does not break tracking
+                instance_id = instance.get("instance_id")
+                if not instance_id:
+                    from src.primary.utils.instance_id import generate_instance_id
+                    from src.primary.settings_manager import save_settings
+                    from src.primary.utils.database import get_database
+                    existing_ids = {inst.get("instance_id") for inst in settings["instances"] if isinstance(inst, dict) and inst.get("instance_id")}
+                    instance_id = generate_instance_id("readarr", existing_ids)
+                    settings["instances"][idx]["instance_id"] = instance_id
+                    save_settings("readarr", settings)
+                    get_database().migrate_instance_identifier("readarr", instance_name, instance_id)
+                    instance_id = settings["instances"][idx].get("instance_id")
+
                 # Return only essential instance details including per-instance hunt values
                 instance_data = {
-                    "instance_name": instance.get("name", "Default"),
+                    "instance_id": instance_id,
+                    "instance_name": instance_name,
                     "api_url": api_url,
                     "api_key": api_key,
                     "swaparr_enabled": instance.get("swaparr_enabled", False),

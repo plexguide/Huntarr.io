@@ -88,11 +88,11 @@ def _responsive_sleep(
             from src.primary.utils.database import get_database
             db = get_database()
             for inst in instances:
-                iname = inst.get("instance_name", "Default")
+                iname = inst.get("instance_id") or inst.get("instance_name", "Default")
                 reset_ts = db.get_pending_reset_request(app_type, iname)
                 if reset_ts:
                     app_logger.info(
-                        f"!!! RESET REQUEST DETECTED !!! Manual cycle reset triggered for {app_type} instance {iname}. Starting new cycle immediately."
+                        f"!!! RESET REQUEST DETECTED !!! Manual cycle reset triggered for {app_type} instance {inst.get('instance_name', iname)}. Starting new cycle immediately."
                     )
                     db.mark_reset_request_processed(app_type, iname)
                     return
@@ -131,11 +131,11 @@ def _get_instances_due_and_sleep(
     user_tz = _get_user_timezone()
     now = datetime.datetime.now(user_tz).replace(microsecond=0)
     default_sleep = app_settings.get("sleep_duration", 900)
-    sleep_data = get_database().get_sleep_data_per_instance(app_type)  # instance_name -> { next_cycle_time, ... }
+    sleep_data = get_database().get_sleep_data_per_instance(app_type)  # instance_id -> { next_cycle_time, ... }
     instances_due = []
     next_cycle_times = []  # list of datetime for instances not due (future)
     for inst in instances_to_process:
-        iname = inst.get("instance_name", "Default")
+        iname = inst.get("instance_id") or inst.get("instance_name", "Default")
         next_str = (sleep_data.get(iname) or {}).get("next_cycle_time")
         next_dt = _parse_next_cycle_time(next_str, user_tz)
         inst["_next_cycle_dt"] = next_dt
@@ -169,7 +169,7 @@ def _get_sleep_seconds_until_next_cycle(
     sleep_data = get_database().get_sleep_data_per_instance(app_type)
     next_times = []
     for inst in instances_to_process:
-        iname = inst.get("instance_name", "Default")
+        iname = inst.get("instance_id") or inst.get("instance_name", "Default")
         next_str = (sleep_data.get(iname) or {}).get("next_cycle_time")
         next_dt = _parse_next_cycle_time(next_str, user_tz)
         if next_dt is not None and next_dt > now:
@@ -378,14 +378,17 @@ def app_specific_loop(app_type: str) -> None:
                 app_type, instances_to_process, app_settings, app_logger
             )
             if not instances_due:
+                names = [inst.get("instance_name", "Default") for inst in all_instances]
                 app_logger.info(
-                    f"No {app_type} instances due this cycle. Sleeping {sleep_until_next:.0f}s until next."
+                    f"No {app_type} instances due this cycle (instances: {', '.join(names)}). Sleeping {sleep_until_next:.0f}s until next."
                 )
                 _responsive_sleep(app_type, sleep_until_next, app_logger, all_instances, wait_interval=1)
                 continue
             instances_to_process = instances_due
+            due_names = [inst.get("instance_name", "Default") for inst in instances_to_process]
+            all_names = [inst.get("instance_name", "Default") for inst in all_instances]
             app_logger.info(
-                f"Per-instance schedule: running {len(instances_to_process)} due instance(s) of {len(all_instances)} total."
+                f"Per-instance schedule: running due instances: {', '.join(due_names)} ({len(instances_to_process)} of {len(all_instances)} total: {', '.join(all_names)})"
             )
             
         # Process each instance dictionary returned by get_configured_instances (or only due instances if per-instance scheduling)
@@ -410,7 +413,8 @@ def app_specific_loop(app_type: str) -> None:
         def _process_one_instance(instance_details):
             """Process a single instance in parallel; returns (processed_any, instance_name, had_reset, should_append)."""
             processed_any_this = False
-            instance_name = instance_details.get("instance_name", "Default") # Use the dict from get_configured_instances
+            instance_name = instance_details.get("instance_name", "Default")  # Display name (can be renamed)
+            instance_key = instance_details.get("instance_id") or instance_details.get("instance_name", "Default")  # Stable key for DB
             instance_sleep = instance_details.get("sleep_duration", app_settings.get("sleep_duration", 900))
             user_tz = _get_user_timezone()
             now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
@@ -420,15 +424,15 @@ def app_specific_loop(app_type: str) -> None:
             try:
                 # Per-instance cycle and logs: start cycle for this instance, set log context so DB shows e.g. Sonarr-TestInstance
                 if start_cycle:
-                    start_cycle(app_type, instance_name=instance_name)
+                    start_cycle(app_type, instance_name=instance_key)
                 if set_instance_log_context:
                     set_instance_log_context(f"{app_type.capitalize()}-{instance_name}")
                 if set_instance_name_for_cap:
-                    set_instance_name_for_cap(instance_name)
-                if _has_pending_reset(app_type, instance_name):
+                    set_instance_name_for_cap(instance_key)
+                if _has_pending_reset(app_type, instance_key):
                     app_logger.info(f"Reset requested for {app_type} instance {instance_name}; ending cycle and restarting.")
                     if end_cycle:
-                        end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
+                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
                     if clear_instance_log_context:
                         clear_instance_log_context()
                     return (processed_any_this, instance_name, True, False)
@@ -454,12 +458,12 @@ def app_specific_loop(app_type: str) -> None:
                 instance_hours = instance_details.get("state_management_hours", 72)
                 
                 # Initialize if not already done (safe, only runs once per instance)
-                db.initialize_instance_state_management(app_type, instance_name, instance_hours)
+                db.initialize_instance_state_management(app_type, instance_key, instance_hours)
                 
                 # Check if THIS instance's state has expired
-                if db.check_instance_expiration(app_type, instance_name):
+                if db.check_instance_expiration(app_type, instance_key):
                     app_logger.info(f"State management expired for {app_type}/{instance_name}, resetting this instance only...")
-                    db.reset_instance_state_management(app_type, instance_name, instance_hours)
+                    db.reset_instance_state_management(app_type, instance_key, instance_hours)
             except Exception as e:
                 app_logger.warning(f"Error checking state expiration for {instance_name}: {e}")
                 # Continue processing even if state check fails
@@ -468,7 +472,7 @@ def app_specific_loop(app_type: str) -> None:
             if not api_url or not api_key:
                 app_logger.warning(f"Missing API URL or Key for instance '{instance_name}'. Skipping.")
                 if end_cycle:
-                    end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
+                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
                 if clear_instance_log_context:
                     clear_instance_log_context()
                 return (False, instance_name, False, False)
@@ -479,7 +483,7 @@ def app_specific_loop(app_type: str) -> None:
                 if not connected:
                     app_logger.warning(f"Failed to connect to {app_type} instance '{instance_name}' at {api_url}. Skipping.")
                     if end_cycle:
-                        end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
+                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
                     if clear_instance_log_context:
                         clear_instance_log_context()
                     return (False, instance_name, False, False)
@@ -487,7 +491,7 @@ def app_specific_loop(app_type: str) -> None:
             except Exception as e:
                 app_logger.error(f"Error connecting to {app_type} instance '{instance_name}': {e}", exc_info=True)
                 if end_cycle:
-                    end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
+                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
                 if clear_instance_log_context:
                     clear_instance_log_context()
                 return (False, instance_name, False, False) # Skip this instance if connection fails
@@ -495,16 +499,16 @@ def app_specific_loop(app_type: str) -> None:
             # --- API Cap Check --- #
             try:
                 # Check if this instance's hourly API cap is exceeded (per-instance when multiple instances)
-                if check_hourly_cap_exceeded(app_type, instance_name=instance_name):
+                if check_hourly_cap_exceeded(app_type, instance_name=instance_key):
                     # Get the current cap status for logging
                     from src.primary.stats_manager import get_hourly_cap_status
-                    cap_status = get_hourly_cap_status(app_type, instance_name=instance_name)
+                    cap_status = get_hourly_cap_status(app_type, instance_name=instance_key)
                     app_logger.info(f"{app_type.upper()} instance '{instance_name}' hourly cap reached {cap_status.get('current_usage', 0)} of {cap_status.get('limit', 0)}. Skipping cycle!")
                     if end_cycle:
-                        end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
+                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
                     if clear_instance_log_context:
                         clear_instance_log_context()
-                    return (False, instance_name, False, False) # Skip this instance if API cap is exceeded
+                    return (False, instance_name, False, False)  # Skip this instance if API cap is exceeded
             except Exception as e:
                 app_logger.error(f"Error checking hourly API cap for {app_type}: {e}", exc_info=True)
                 # Continue with the cycle even if cap check fails - safer than skipping
@@ -513,7 +517,7 @@ def app_specific_loop(app_type: str) -> None:
             api_usage_at_start = 0
             try:
                 from src.primary.stats_manager import get_hourly_cap_status
-                api_usage_at_start = get_hourly_cap_status(app_type, instance_name=instance_name).get("current_usage", 0)
+                api_usage_at_start = get_hourly_cap_status(app_type, instance_name=instance_key).get("current_usage", 0)
             except Exception:
                 pass
 
@@ -567,7 +571,7 @@ def app_specific_loop(app_type: str) -> None:
                     if current_queue_size >= max_queue_size:
                         app_logger.info(f"Download queue size ({current_queue_size}) meets or exceeds maximum ({max_queue_size}) for {instance_name}. Skipping cycle for this instance.")
                         if end_cycle:
-                            end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
+                            end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
                         if clear_instance_log_context:
                             clear_instance_log_context()
                         return (False, instance_name, False, False) # Skip processing for this instance
@@ -591,7 +595,7 @@ def app_specific_loop(app_type: str) -> None:
             def _stop_check():
                 if stop_event.is_set():
                     return True
-                if _has_pending_reset(app_type, instance_name):
+                if _has_pending_reset(app_type, instance_key):
                     return True
                 return False
             stop_check_func = _stop_check
@@ -600,7 +604,7 @@ def app_specific_loop(app_type: str) -> None:
             if hunt_missing_enabled and process_missing:
                 try:
                     if set_cycle_activity:
-                        set_cycle_activity(app_type, instance_name, "Processing missing")
+                        set_cycle_activity(app_type, instance_key, "Processing missing")
                     # Extract settings for direct function calls
                     api_url = combined_settings.get("api_url", "").strip()
                     api_key = combined_settings.get("api_key", "").strip()
@@ -626,7 +630,7 @@ def app_specific_loop(app_type: str) -> None:
                         processed_missing = process_missing(
                             api_url=api_url,
                             api_key=api_key,
-                            instance_name=instance_name,  # Added the required instance_name parameter
+                            instance_name=instance_key,  # Stable ID for DB/history keying
                             api_timeout=api_timeout,
                             monitored_only=monitored_only,
                             skip_future_episodes=skip_future_episodes,
@@ -652,11 +656,11 @@ def app_specific_loop(app_type: str) -> None:
                     app_logger.error(f"Error during missing processing for {instance_name}: {e}", exc_info=True)
                 finally:
                     if clear_cycle_activity:
-                        clear_cycle_activity(app_type, instance_name)
-                if _has_pending_reset(app_type, instance_name):
+                        clear_cycle_activity(app_type, instance_key)
+                if _has_pending_reset(app_type, instance_key):
                     app_logger.info(f"Reset requested for {app_type} instance {instance_name}; ending cycle after missing.")
                     if end_cycle:
-                        end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
+                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
                     if clear_instance_log_context:
                         clear_instance_log_context()
                     return (processed_any_this, instance_name, True, False)
@@ -665,7 +669,7 @@ def app_specific_loop(app_type: str) -> None:
             if hunt_upgrade_enabled and process_upgrades:
                 try:
                     if set_cycle_activity:
-                        set_cycle_activity(app_type, instance_name, "Processing upgrades")
+                        set_cycle_activity(app_type, instance_key, "Processing upgrades")
                     # Extract settings for direct function calls (only for Sonarr)
                     if app_type == "sonarr":
                         api_url = combined_settings.get("api_url", "").strip()
@@ -692,7 +696,7 @@ def app_specific_loop(app_type: str) -> None:
                         processed_upgrades = process_upgrades(
                             api_url=api_url,
                             api_key=api_key,
-                            instance_name=instance_name,  # Added the required instance_name parameter
+                            instance_name=instance_key,  # Stable ID for DB/history keying
                             api_timeout=api_timeout,
                             monitored_only=monitored_only,
                             hunt_upgrade_items=hunt_upgrade_items,
@@ -718,11 +722,11 @@ def app_specific_loop(app_type: str) -> None:
                     app_logger.error(f"Error during upgrade processing for {instance_name}: {e}", exc_info=True)
                 finally:
                     if clear_cycle_activity:
-                        clear_cycle_activity(app_type, instance_name)
-                if _has_pending_reset(app_type, instance_name):
+                        clear_cycle_activity(app_type, instance_key)
+                if _has_pending_reset(app_type, instance_key):
                     app_logger.info(f"Reset requested for {app_type} instance {instance_name}; ending cycle after upgrades.")
                     if end_cycle:
-                        end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
+                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
                     if clear_instance_log_context:
                         clear_instance_log_context()
                     return (processed_any_this, instance_name, True, False)
@@ -735,13 +739,13 @@ def app_specific_loop(app_type: str) -> None:
                     instance_sleep = instance_details.get("sleep_duration", app_settings.get("sleep_duration", 900))
                     next_cycle_time = now_user_tz + datetime.timedelta(seconds=instance_sleep)
                     next_cycle_naive = next_cycle_time.replace(tzinfo=None) if next_cycle_time.tzinfo else next_cycle_time
-                    end_cycle(app_type, next_cycle_naive, instance_name=instance_name)
+                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
             except Exception as e:
                 app_logger.warning(f"Failed to set cycle end for {instance_name}: {e}")
             # One HOURLY API summary for this instance (replaces per-increment log spam)
             try:
                 from src.primary.stats_manager import get_hourly_cap_status
-                status = get_hourly_cap_status(app_type, instance_name=instance_name)
+                status = get_hourly_cap_status(app_type, instance_name=instance_key)
                 end_usage = status.get("current_usage", 0)
                 limit = status.get("limit", 0)
                 delta = end_usage - api_usage_at_start
@@ -799,14 +803,18 @@ def app_specific_loop(app_type: str) -> None:
                     instance_enabled = True
                     instance_mode = "custom"
                     
+                    instance_key = None
                     try:
                         # Look up the instance in all_instances (not instances_to_process, which may be filtered to due-only)
                         for instance_details in all_instances:
                             if instance_details.get("instance_name") == instance_name:
+                                instance_key = instance_details.get("instance_id") or instance_details.get("instance_name", "Default")
                                 instance_hours = instance_details.get("state_management_hours", 72)
                                 instance_mode = instance_details.get("state_management_mode", "custom")
                                 instance_enabled = (instance_mode != "disabled")
                                 break
+                        if instance_key is None:
+                            instance_key = instance_name  # Fallback for legacy
                     except Exception as e:
                         from src.primary.utils.log_deduplication import should_log_message, format_suppressed_message
                         
@@ -817,9 +825,10 @@ def app_specific_loop(app_type: str) -> None:
                             app_logger.warning(formatted_msg)
                         
                         instance_hours = 72  # Default fallback
+                        instance_key = instance_name
                     
-                    # Get summary for this instance
-                    summary = get_state_management_summary(app_type, instance_name, instance_hours)
+                    # Get summary for this instance (use instance_key for DB lookup)
+                    summary = get_state_management_summary(app_type, instance_key, instance_hours)
                     
                     # Store instance-specific information
                     instance_summaries.append({

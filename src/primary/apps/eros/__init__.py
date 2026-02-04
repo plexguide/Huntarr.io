@@ -54,8 +54,21 @@ def get_configured_instances(quiet=False):
 
             # Only include properly configured instances
             if is_enabled and api_url and api_key:
-                instance_name = instance.get("name", "Default")
-                
+                raw = instance.get("name", "Default") or "Default"
+                instance_name = (raw.strip() if isinstance(raw, str) else "Default") or "Default"
+                # Ensure stable instance_id so renaming does not break tracking
+                instance_id = instance.get("instance_id")
+                if not instance_id:
+                    from src.primary.utils.instance_id import generate_instance_id
+                    from src.primary.settings_manager import save_settings
+                    from src.primary.utils.database import get_database
+                    existing_ids = {inst.get("instance_id") for inst in settings["instances"] if isinstance(inst, dict) and inst.get("instance_id")}
+                    instance_id = generate_instance_id("eros", existing_ids)
+                    settings["instances"][idx]["instance_id"] = instance_id
+                    save_settings("eros", settings)
+                    get_database().migrate_instance_identifier("eros", instance_name, instance_id)
+                    instance_id = settings["instances"][idx].get("instance_id")
+
                 # Create a settings object for this instance by combining global settings with instance-specific ones
                 instance_settings = settings.copy()
                 
@@ -67,6 +80,7 @@ def get_configured_instances(quiet=False):
                 instance_settings["api_url"] = api_url
                 instance_settings["api_key"] = api_key
                 instance_settings["instance_name"] = instance_name
+                instance_settings["instance_id"] = instance_id
                 instance_settings["swaparr_enabled"] = instance.get("swaparr_enabled", False)
                 
                 # Add timeout setting with default if not present
@@ -79,6 +93,7 @@ def get_configured_instances(quiet=False):
 
                 # Return only essential instance details including per-instance hunt values
                 instance_data = {
+                    "instance_id": instance_id,
                     "instance_name": instance_name,
                     "api_url": api_url,
                     "api_key": api_key,

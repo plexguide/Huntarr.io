@@ -25,7 +25,7 @@ def get_configured_instances(quiet=False):
         
     # Check if instances are configured
     if "instances" in settings and isinstance(settings["instances"], list) and settings["instances"]:
-        for instance in settings["instances"]:
+        for idx, instance in enumerate(settings["instances"]):
             if instance.get("enabled", True) and instance.get("api_url") and instance.get("api_key"):
                 # Get URL and key with auto-correction
                 api_url = instance.get("api_url", "").strip()
@@ -38,6 +38,21 @@ def get_configured_instances(quiet=False):
                         radarr_logger.debug(f"Auto-correcting URL to: {api_url}")
                     api_url = f"http://{api_url}"
 
+                instance_name = instance.get("name", "Default") or "Default"
+                instance_name = (instance_name.strip() if isinstance(instance_name, str) else "Default") or "Default"
+                # Ensure stable instance_id so renaming does not break tracking
+                instance_id = instance.get("instance_id")
+                if not instance_id:
+                    from src.primary.utils.instance_id import generate_instance_id
+                    from src.primary.settings_manager import save_settings
+                    from src.primary.utils.database import get_database
+                    existing_ids = {inst.get("instance_id") for inst in settings["instances"] if isinstance(inst, dict) and inst.get("instance_id")}
+                    instance_id = generate_instance_id("radarr", existing_ids)
+                    settings["instances"][idx]["instance_id"] = instance_id
+                    save_settings("radarr", settings)
+                    get_database().migrate_instance_identifier("radarr", instance_name, instance_id)
+                    instance = settings["instances"][idx]
+
                 # Create a settings object for this instance by combining global settings with instance-specific ones
                 instance_settings = settings.copy()
                 # Remove instances list to avoid confusion
@@ -47,7 +62,8 @@ def get_configured_instances(quiet=False):
                 # Override with instance-specific connection settings (using corrected URL)
                 instance_settings["api_url"] = api_url
                 instance_settings["api_key"] = api_key
-                instance_settings["instance_name"] = instance.get("name", "Default")
+                instance_settings["instance_name"] = instance_name
+                instance_settings["instance_id"] = instance.get("instance_id")
                 instance_settings["swaparr_enabled"] = instance.get("swaparr_enabled", False)
                 
                 # Add per-instance hunt values for missing/upgrade processing
@@ -82,6 +98,17 @@ def get_configured_instances(quiet=False):
             settings_copy = settings.copy()
             settings_copy["api_url"] = api_url  # Use corrected URL
             settings_copy["instance_name"] = "Default"
+            # Legacy: ensure stable instance_id for default instance
+            legacy_id = settings.get("instance_id")
+            if not legacy_id:
+                from src.primary.utils.instance_id import generate_instance_id
+                from src.primary.settings_manager import save_settings
+                from src.primary.utils.database import get_database
+                legacy_id = generate_instance_id("radarr", set())
+                settings["instance_id"] = legacy_id
+                save_settings("radarr", settings)
+                get_database().migrate_instance_identifier("radarr", "Default", legacy_id)
+            settings_copy["instance_id"] = legacy_id
             settings_copy["swaparr_enabled"] = settings.get("swaparr_enabled", False)
             # Add per-instance hunt values for legacy config
             settings_copy["hunt_missing_movies"] = settings.get("hunt_missing_movies", 1)

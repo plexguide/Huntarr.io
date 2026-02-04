@@ -43,12 +43,26 @@ def get_configured_instances(quiet=False):
 
             # Only include properly configured instances
             if is_enabled and api_url and api_key:
-                # Normalize instance name so DB keys match (hourly caps persist across refresh)
+                # Normalize instance name (display only; can be renamed by user)
                 raw = instance.get("name", "Default") or "Default"
                 instance_name = (raw.strip() if isinstance(raw, str) else "Default") or "Default"
 
-                # Return only essential instance details including per-instance hunt values
+                # Ensure stable instance_id so renaming does not break tracking
+                instance_id = instance.get("instance_id")
+                if not instance_id:
+                    from src.primary.utils.instance_id import generate_instance_id
+                    from src.primary.settings_manager import save_settings
+                    from src.primary.utils.database import get_database
+                    existing_ids = {inst.get("instance_id") for inst in settings["instances"] if isinstance(inst, dict) and inst.get("instance_id")}
+                    instance_id = generate_instance_id("sonarr", existing_ids)
+                    settings["instances"][idx]["instance_id"] = instance_id
+                    save_settings("sonarr", settings)
+                    get_database().migrate_instance_identifier("sonarr", instance_name, instance_id)
+                    instance["instance_id"] = instance_id
+
+                # Return essential instance details; instance_id for DB keying, instance_name for display
                 instance_data = {
+                    "instance_id": instance_id,
                     "instance_name": instance_name,
                     "api_url": api_url,
                     "api_key": api_key,

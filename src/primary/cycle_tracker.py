@@ -129,37 +129,39 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
                 # Return data for a specific app
                 if app_type in arr_apps:
                     instances = {}
-                    # Get configured instance names
-                    app_settings = load_settings(app_type)
-                    instance_names = []
-                    if app_settings and isinstance(app_settings.get("instances"), list):
-                        for inst in app_settings["instances"]:
-                            if inst.get("enabled", True) and inst.get("api_url") and inst.get("api_key"):
-                                from src.primary.stats_manager import _normalize_instance_name
-                                instance_names.append(_normalize_instance_name(inst.get("name") or inst.get("instance_name")))
-                    
-                    # Start with all configured instances (set default state)
-                    for name in instance_names:
+                    # Use get_configured_instances so we have instance_id for DB lookups; key response by display name
+                    try:
+                        app_module = __import__(f"src.primary.apps.{app_type}", fromlist=["get_configured_instances"])
+                        get_instances = getattr(app_module, "get_configured_instances", None)
+                        configured = list(get_instances(quiet=True)) if get_instances else []
+                    except Exception:
+                        configured = []
+                    id_to_name = {}
+                    for inst in configured:
+                        name = inst.get("instance_name", "Default")
+                        iid = inst.get("instance_id") or name
+                        id_to_name[iid] = name
                         instances[name] = {
                             "next_cycle": None,
                             "updated_at": None,
                             "cyclelock": False,
-                            "pending_reset": db.get_pending_reset_request(app_type, name) is not None
+                            "pending_reset": db.get_pending_reset_request(app_type, iid) is not None
                         }
-                    
-                    # Merge with actual data from DB and current activity (e.g. "Season Search (360/600)")
+                    # Merge with actual data from DB (keyed by instance_id) and current activity
                     if app_type in per_instance_all:
-                        for inst_name, data in per_instance_all[app_type].items():
-                            if inst_name in instances:
-                                instances[inst_name].update({
+                        for inst_id, data in per_instance_all[app_type].items():
+                            name = id_to_name.get(inst_id, inst_id)
+                            if name in instances:
+                                instances[name].update({
                                     "next_cycle": data.get("next_cycle_time"),
                                     "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
                                     "cyclelock": data.get("cycle_lock", False),
-                                    "cycle_activity": _cycle_activity.get(app_type, {}).get(inst_name)
+                                    "cycle_activity": _cycle_activity.get(app_type, {}).get(inst_id)
                                 })
                     for name in instances:
                         if "cycle_activity" not in instances[name]:
-                            instances[name]["cycle_activity"] = _cycle_activity.get(app_type, {}).get(name)
+                            iid = next((inst.get("instance_id") or inst.get("instance_name") for inst in configured if inst.get("instance_name") == name), name)
+                            instances[name]["cycle_activity"] = _cycle_activity.get(app_type, {}).get(iid)
                     return {"app": app_type, "instances": instances}
                 
                 # Single-app logic (e.g. swaparr)
@@ -184,26 +186,28 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
                 # Return data for all apps
                 result = {}
                 
-                # First, initialize all configured apps and instances
+                # First, initialize all configured apps and instances (use instance_id for DB lookups)
                 for app in arr_apps:
-                    app_settings = load_settings(app)
-                    instance_names = []
-                    if app_settings and isinstance(app_settings.get("instances"), list):
-                        for inst in app_settings["instances"]:
-                            if inst.get("enabled", True) and inst.get("api_url") and inst.get("api_key"):
-                                from src.primary.stats_manager import _normalize_instance_name
-                                instance_names.append(_normalize_instance_name(inst.get("name") or inst.get("instance_name")))
-                    
-                    if instance_names:
+                    try:
+                        app_module = __import__(f"src.primary.apps.{app}", fromlist=["get_configured_instances"])
+                        get_instances = getattr(app_module, "get_configured_instances", None)
+                        configured = list(get_instances(quiet=True)) if get_instances else []
+                    except Exception:
+                        configured = []
+                    if configured:
                         inst_dict = {}
-                        for name in instance_names:
+                        id_to_name = {}
+                        for inst in configured:
+                            name = inst.get("instance_name", "Default")
+                            iid = inst.get("instance_id") or name
+                            id_to_name[iid] = name
                             inst_dict[name] = {
                                 "next_cycle": None,
                                 "updated_at": None,
                                 "cyclelock": False,
-                                "pending_reset": db.get_pending_reset_request(app, name) is not None
+                                "pending_reset": db.get_pending_reset_request(app, iid) is not None
                             }
-                        result[app] = {"instances": inst_dict}
+                        result[app] = {"instances": inst_dict, "_id_to_name": id_to_name}
                     else:
                         # Fallback for single-app apps or legacy
                         result[app] = {
@@ -230,22 +234,28 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
                             "pending_reset": db.get_pending_reset_request(app, None) is not None
                         }
                 
-                # Merge per-instance actual data and current activity
-                for app, instances in per_instance_all.items():
+                # Merge per-instance actual data and current activity (DB keys are instance_id)
+                for app, instances_data in per_instance_all.items():
                     if app in result and "instances" in result[app]:
-                        for inst_name, data in instances.items():
-                            if inst_name in result[app]["instances"]:
-                                result[app]["instances"][inst_name].update({
+                        id_to_name = result[app].get("_id_to_name", {})
+                        for inst_id, data in instances_data.items():
+                            name = id_to_name.get(inst_id, inst_id)
+                            if name in result[app]["instances"]:
+                                result[app]["instances"][name].update({
                                     "next_cycle": data.get("next_cycle_time"),
                                     "updated_at": data.get("last_cycle_end") or data.get("last_cycle_start"),
                                     "cyclelock": data.get("cycle_lock", False),
-                                    "cycle_activity": _cycle_activity.get(app, {}).get(inst_name)
+                                    "cycle_activity": _cycle_activity.get(app, {}).get(inst_id)
                                 })
                 for app in result:
                     if "instances" in result[app]:
+                        id_to_name = result[app].get("_id_to_name", {})
                         for inst_name in result[app]["instances"]:
                             if "cycle_activity" not in result[app]["instances"][inst_name]:
-                                result[app]["instances"][inst_name]["cycle_activity"] = _cycle_activity.get(app, {}).get(inst_name)
+                                inst_id = next((i for i, n in id_to_name.items() if n == inst_name), inst_name)
+                                result[app]["instances"][inst_name]["cycle_activity"] = _cycle_activity.get(app, {}).get(inst_id)
+                        if "_id_to_name" in result[app]:
+                            del result[app]["_id_to_name"]
                 return result
         except Exception as e:
             logger.error(f"Error getting cycle status: {e}")

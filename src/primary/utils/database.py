@@ -1164,7 +1164,7 @@ class HuntarrDatabase:
                 if has_processed_data:
                     conn.execute('''
                         UPDATE stateful_processed_ids 
-                        SET instance_name = ?, updated_at = CURRENT_TIMESTAMP
+                        SET instance_name = ?
                         WHERE app_type = ? AND instance_name = ?
                     ''', (new_instance_name, app_type, old_instance_name))
                     
@@ -1205,6 +1205,40 @@ class HuntarrDatabase:
                 
         except Exception as e:
             logger.error(f"Error migrating state management data from {app_type}/{old_instance_name} to {app_type}/{new_instance_name}: {e}")
+            return False
+
+    def migrate_instance_identifier(self, app_type: str, old_instance_name: str, new_instance_id: str) -> bool:
+        """
+        Migrate all per-instance data from old identifier (name) to new stable instance_id.
+        Call when assigning instance_id to an instance for the first time (e.g. legacy instance).
+        Updates: sleep_data_per_instance, hourly_caps_per_instance, reset_requests_per_instance,
+                 media_stats_per_instance, plus stateful/hunt_history via migrate_instance_state_management.
+        """
+        if not old_instance_name or not new_instance_id or old_instance_name == new_instance_id:
+            return True
+        try:
+            with self.get_connection() as conn:
+                tables_keyed = [
+                    ("sleep_data_per_instance", "instance_name"),
+                    ("hourly_caps_per_instance", "instance_name"),
+                    ("reset_requests_per_instance", "instance_name"),
+                    ("media_stats_per_instance", "instance_name"),
+                ]
+                for table, col in tables_keyed:
+                    try:
+                        cursor = conn.execute(
+                            f"UPDATE {table} SET {col} = ? WHERE app_type = ? AND {col} = ?",
+                            (new_instance_id, app_type, old_instance_name)
+                        )
+                        if cursor.rowcount > 0:
+                            logger.info(f"Migrated {table} from {app_type}/{old_instance_name} to {new_instance_id} ({cursor.rowcount} rows)")
+                    except Exception as e:
+                        logger.warning(f"Migration {table} for {app_type}: {e}")
+                conn.commit()
+            self.migrate_instance_state_management(app_type, old_instance_name, new_instance_id)
+            return True
+        except Exception as e:
+            logger.error(f"Error migrating instance identifier {app_type}/{old_instance_name} to {new_instance_id}: {e}")
             return False
 
     # Tally Data Management Methods

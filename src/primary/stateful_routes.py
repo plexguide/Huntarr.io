@@ -20,6 +20,20 @@ stateful_logger = get_logger("stateful")
 # Create blueprint
 stateful_api = Blueprint('stateful_api', __name__)
 
+
+def _resolve_instance_id(app_type: str, instance_name: str):
+    """Resolve display name to stable instance_id for DB operations. Returns instance_id or instance_name."""
+    try:
+        app_module = __import__(f"src.primary.apps.{app_type}", fromlist=["get_configured_instances"])
+        get_instances = getattr(app_module, "get_configured_instances", None)
+        if get_instances:
+            for inst in get_instances(quiet=True):
+                if inst.get("instance_name") == instance_name:
+                    return inst.get("instance_id") or instance_name
+    except Exception:
+        pass
+    return instance_name
+
 @stateful_api.route('/info', methods=['GET'])
 def get_info():
     """Get stateful management information."""
@@ -76,9 +90,10 @@ def reset_stateful():
                     formatted_msg = format_suppressed_message(error_msg, suppressed_count)
                     stateful_logger.warning(formatted_msg)
             
-            # Reset per-instance state management
+            # Reset per-instance state management (use instance_id for DB)
             db = get_database()
-            success = db.reset_instance_state_management(app_type, instance_name, instance_hours)
+            instance_identifier = _resolve_instance_id(app_type, instance_name)
+            success = db.reset_instance_state_management(app_type, instance_identifier, instance_hours)
             
             if success:
                 stateful_logger.info(f"Successfully reset state management for {app_type}/{instance_name}")
@@ -210,8 +225,9 @@ def get_summary():
             # Fall back to default hours if settings can't be loaded
             instance_hours = 72
         
-        # Get summary for the specific instance with custom hours
-        summary = get_state_management_summary(app_type, instance_name, instance_hours)
+        # Get summary for the specific instance with custom hours (use instance_id for DB lookup)
+        instance_identifier = _resolve_instance_id(app_type, instance_name)
+        summary = get_state_management_summary(app_type, instance_identifier, instance_hours)
         
         response_data = {
             "success": True,

@@ -1139,7 +1139,7 @@ def reset_app_cycle(app_name):
         
     try:
         from src.primary.utils.database import get_database
-        # Per-instance reset for *arr apps (optional instance_name query param)
+        # Per-instance reset for *arr apps (optional instance_name query param; resolve to instance_id for DB)
         instance_name = request.args.get('instance_name')
         if instance_name is None and request.is_json:
             try:
@@ -1149,10 +1149,23 @@ def reset_app_cycle(app_name):
                 pass
         if app_name == 'swaparr':
             instance_name = None
+        instance_identifier = instance_name
+        # Resolve display name to stable instance_id so reset is keyed correctly
+        if instance_name and app_name != 'swaparr':
+            try:
+                app_module = __import__(f"src.primary.apps.{app_name}", fromlist=["get_configured_instances"])
+                get_instances = getattr(app_module, "get_configured_instances", None)
+                if get_instances:
+                    for inst in get_instances(quiet=True):
+                        if inst.get("instance_name") == instance_name:
+                            instance_identifier = inst.get("instance_id") or instance_name
+                            break
+            except Exception:
+                pass
         db = get_database()
-        success = db.create_reset_request(app_name, instance_name=instance_name)
+        success = db.create_reset_request(app_name, instance_name=instance_identifier)
         if success:
-            web_logger.info(f"Created reset request for {app_name}" + (f" instance {instance_name}" if instance_name else ""))
+            web_logger.info(f"Created reset request for {app_name}" + (f" instance {instance_name or instance_identifier}" if instance_identifier else ""))
         else:
             web_logger.error(f"Failed to create reset request for {app_name}")
     except Exception as e:
