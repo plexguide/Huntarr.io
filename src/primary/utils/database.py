@@ -788,6 +788,73 @@ class HuntarrDatabase:
             conn.commit()
             # Auto-save enabled - no need to log every successful save
     
+    def _migrate_general_settings_from_app_configs_if_needed(self):
+        """
+        Migrate general settings from app_configs to general_settings table if needed.
+        Only runs if general_settings table is empty (preserves config on upgrade from v8 to v9).
+        Issue #802, #815
+        """
+        try:
+            with self.get_connection() as conn:
+                # Check if general_settings is empty
+                cursor = conn.execute('SELECT COUNT(*) FROM general_settings')
+                count = cursor.fetchone()[0]
+                
+                if count > 0:
+                    # General settings already exist, no migration needed
+                    return
+                
+                # Check if old 'general' or 'advanced' configs exist in app_configs
+                cursor = conn.execute(
+                    "SELECT config_data FROM app_configs WHERE app_type IN ('general', 'advanced')"
+                )
+                rows = cursor.fetchall()
+                
+                if not rows:
+                    # No legacy config to migrate
+                    return
+                
+                # Merge all legacy general/advanced configs
+                merged_settings = {}
+                for row in rows:
+                    try:
+                        config_data = json.loads(row[0])
+                        if isinstance(config_data, dict):
+                            merged_settings.update(config_data)
+                    except (json.JSONDecodeError, TypeError):
+                        continue
+                
+                if merged_settings:
+                    # Save merged settings to general_settings table
+                    for key, value in merged_settings.items():
+                        if isinstance(value, bool):
+                            setting_type = 'boolean'
+                            setting_value = str(value).lower()
+                        elif isinstance(value, int):
+                            setting_type = 'integer'
+                            setting_value = str(value)
+                        elif isinstance(value, float):
+                            setting_type = 'float'
+                            setting_value = str(value)
+                        elif isinstance(value, (list, dict)):
+                            setting_type = 'json'
+                            setting_value = json.dumps(value)
+                        else:
+                            setting_type = 'string'
+                            setting_value = str(value)
+                        
+                        conn.execute('''
+                            INSERT OR REPLACE INTO general_settings 
+                            (setting_key, setting_value, setting_type, updated_at)
+                            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                        ''', (key, setting_value, setting_type))
+                    
+                    conn.commit()
+                    logger.info(f"Migrated {len(merged_settings)} general settings from app_configs to general_settings")
+        except Exception as e:
+            logger.error(f"Error during general settings migration: {e}")
+            # Don't raise - allow app to continue with defaults if migration fails
+    
     def get_general_setting(self, key: str, default: Any = None) -> Any:
         """Get a specific general setting"""
         with self.get_connection() as conn:

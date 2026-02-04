@@ -55,8 +55,14 @@ def _ensure_config_exists(app_name: str) -> None:
         db = get_database()
         
         if app_name == 'general':
-            # Preserve config on upgrade: migrate from app_configs if general_settings empty (issue #802)
-            db._migrate_general_settings_from_app_configs_if_needed()
+            # Preserve config on upgrade: migrate from app_configs if general_settings empty (issue #802, #815)
+            try:
+                migrate_func = getattr(db, '_migrate_general_settings_from_app_configs_if_needed', None)
+                if migrate_func and callable(migrate_func):
+                    migrate_func()
+            except Exception as e:
+                settings_logger.warning(f"Failed to migrate general settings (will use defaults): {e}")
+            
             # Check if general settings exist
             existing_settings = db.get_general_settings()
             if not existing_settings:
