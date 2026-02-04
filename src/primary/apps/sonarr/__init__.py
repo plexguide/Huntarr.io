@@ -57,10 +57,13 @@ def get_configured_instances(quiet=False):
                     "hunt_upgrade_items": instance.get("hunt_upgrade_items", 0),  # Per-instance upgrade hunt value
                     "hunt_missing_mode": instance.get("hunt_missing_mode", "seasons_packs"),  # Per-instance missing mode
                     "upgrade_mode": instance.get("upgrade_mode", "seasons_packs"),  # Per-instance upgrade mode
+                    "upgrade_selection_method": (instance.get("upgrade_selection_method") or "cutoff").strip().lower(),  # cutoff or tags (Upgradinatorr)
+                    "upgrade_tag": (instance.get("upgrade_tag") or "").strip(),  # Tag to add after processing when method=tags
                     "air_date_delay_days": instance.get("air_date_delay_days", 0),  # Per-instance air date delay
                     "sleep_duration": instance.get("sleep_duration", settings.get("sleep_duration", 900)),  # Per-instance cycle interval
                     "hourly_cap": instance.get("hourly_cap", settings.get("hourly_cap", 20)),  # Per-instance API cap
                     "exempt_tags": instance.get("exempt_tags") or [],
+                    "tag_processed_items": instance.get("tag_processed_items", True),  # Add huntarr-upgraded etc. when processing
                     "state_management_hours": instance.get("state_management_hours", 72),  # CRITICAL for Issue #717 fix
                     "state_management_mode": instance.get("state_management_mode", "custom"),  # CRITICAL for Issue #717 fix
                 }

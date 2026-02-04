@@ -115,10 +115,13 @@ def process_cutoff_upgrades(
                 tag_id = sonarr_api.get_or_create_tag(api_url, api_key, api_timeout, tag_label)
                 if tag_id:
                     try:
-                        sonarr_api.add_tag_to_series(api_url, api_key, api_timeout, series_id, tag_id)
-                        sonarr_logger.debug(f"Added upgrade tag '{tag_label}' to series {series_id} to mark as processed")
+                        ok = sonarr_api.add_tag_to_series(api_url, api_key, api_timeout, series_id, tag_id)
+                        if ok:
+                            sonarr_logger.debug(f"Added upgrade tag '{tag_label}' to series {series_id} ('{title}') to mark as processed")
+                        else:
+                            sonarr_logger.warning(f"Failed to add upgrade tag '{tag_label}' to series {series_id} ('{title}') - API returned failure")
                     except Exception as e:
-                        sonarr_logger.warning(f"Failed to add upgrade tag '{tag_label}' to series {series_id}: {e}")
+                        sonarr_logger.warning(f"Failed to add upgrade tag '{tag_label}' to series {series_id} ('{title}'): {e}")
                 
                 # Also tag with huntarr-upgraded if enabled (separate tracking feature)
                 if tag_processed_items and custom_tags:

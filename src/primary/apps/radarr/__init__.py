@@ -53,6 +53,8 @@ def get_configured_instances(quiet=False):
                 # Add per-instance hunt values for missing/upgrade processing
                 instance_settings["hunt_missing_movies"] = instance.get("hunt_missing_movies", 1)
                 instance_settings["hunt_upgrade_movies"] = instance.get("hunt_upgrade_movies", 0)
+                instance_settings["upgrade_selection_method"] = (instance.get("upgrade_selection_method") or "cutoff").strip().lower()
+                instance_settings["upgrade_tag"] = (instance.get("upgrade_tag") or "").strip()
                 instance_settings["release_date_delay_days"] = instance.get("release_date_delay_days", 0)
                 instance_settings["sleep_duration"] = instance.get("sleep_duration", settings.get("sleep_duration", 900))
                 instance_settings["hourly_cap"] = instance.get("hourly_cap", settings.get("hourly_cap", 20))
@@ -84,6 +86,8 @@ def get_configured_instances(quiet=False):
             # Add per-instance hunt values for legacy config
             settings_copy["hunt_missing_movies"] = settings.get("hunt_missing_movies", 1)
             settings_copy["hunt_upgrade_movies"] = settings.get("hunt_upgrade_movies", 0)
+            settings_copy["upgrade_selection_method"] = (settings.get("upgrade_selection_method") or "cutoff").strip().lower()
+            settings_copy["upgrade_tag"] = (settings.get("upgrade_tag") or "").strip()
             settings_copy["release_date_delay_days"] = settings.get("release_date_delay_days", 0)
             settings_copy["sleep_duration"] = settings.get("sleep_duration", 900)
             settings_copy["hourly_cap"] = settings.get("hourly_cap", 20)

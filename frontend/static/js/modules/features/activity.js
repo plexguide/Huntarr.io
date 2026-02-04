@@ -57,6 +57,7 @@
         currentPage = 1;
         if (view === 'logs') {
             logPage = 1;
+            showEmptyState(false);
             loadMovieHuntLogs();
         } else {
             loadData();
@@ -111,6 +112,7 @@
                     row.innerHTML = '<td class="col-time">' + escapeHtml(timestamp) + '</td><td class="col-level"><span class="log-level-badge ' + levelClass + '">' + escapeHtml(levelLabel) + '</span></td><td class="col-app">' + escapeHtml(appType) + '</td><td class="col-message">' + escapeHtml(message) + '</td>';
                     container.appendChild(row);
                 });
+                showEmptyState(data.logs.length === 0, 'No log entries', 'Log entries will appear here when available.');
             })
             .catch(function() {
                 if (statusEl) { statusEl.textContent = 'Connection error'; statusEl.className = 'status-error'; }
