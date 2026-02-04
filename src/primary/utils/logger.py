@@ -115,6 +115,25 @@ class LocalTimeFormatter(logging.Formatter):
                 
             return s
 
+
+class DebugLogsFilter(logging.Filter):
+    """
+    Filter that suppresses DEBUG records when "Enable Debug Logs" is off in settings.
+    Used on console and file handlers so Docker console and log files don't flood
+    when the user disables debug in the UI (GitHub #756, #813).
+    """
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.levelno != logging.DEBUG:
+            return True
+        try:
+            from src.primary.settings_manager import get_advanced_setting
+            if get_advanced_setting("enable_debug_logs", True):
+                return True
+            return False
+        except Exception:
+            return True  # Allow DEBUG if setting can't be read (e.g. during early startup)
+
+
 def setup_main_logger():
     """Set up the main Huntarr logger."""
     global logger
@@ -137,6 +156,7 @@ def setup_main_logger():
     # Create console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(use_log_level)
+    console_handler.addFilter(DebugLogsFilter())
 
     # Get rotation settings
     rotation_settings = get_rotation_settings()
@@ -152,6 +172,7 @@ def setup_main_logger():
         file_handler = logging.FileHandler(log_file)
         
     file_handler.setLevel(use_log_level)
+    file_handler.addFilter(DebugLogsFilter())
 
     # Set format for the main logger
     log_format = "%(asctime)s - huntarr - %(levelname)s - %(message)s"
@@ -212,7 +233,8 @@ def get_logger(app_type: str) -> logging.Logger:
     # Create console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.DEBUG)
-    
+    console_handler.addFilter(DebugLogsFilter())
+
     # Get rotation settings
     rotation_settings = get_rotation_settings()
     
@@ -229,6 +251,7 @@ def get_logger(app_type: str) -> logging.Logger:
         file_handler = logging.FileHandler(log_file)
         
     file_handler.setLevel(logging.DEBUG)
+    file_handler.addFilter(DebugLogsFilter())
     
     # Set a distinct format for this app log
     log_format = f"%(asctime)s - huntarr.{app_type} - %(levelname)s - %(message)s"
