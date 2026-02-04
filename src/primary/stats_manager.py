@@ -475,7 +475,7 @@ def get_stats() -> Dict[str, Any]:
                         
                         # Check if stateful management is enabled for this instance
                         inst_cfg = config_by_name.get(name, {})
-                        stateful_enabled = inst_cfg.get("stateful_management", True)
+                        stateful_enabled = inst_cfg.get("state_management_mode", "custom") != "disabled"
                         
                         # Hours until state reset (when per-instance state management has an active lock)
                         state_reset_hours_until = None

@@ -180,8 +180,7 @@ window.HuntarrStats = {
                             resetCountdownEl.style.display = '';
                         } else if (hoursUntil != null && typeof hoursUntil === 'number' && hoursUntil > 0) {
                             const h = Math.floor(hoursUntil);
-                            const hourWord = h === 1 ? 'Hour' : 'Hours';
-                            const label = h >= 1 ? `${h} ${hourWord}` : '<1 Hour';
+                            const label = h >= 1 ? `${h}` : '<1';
                             resetCountdownEl.innerHTML = `<i class="fas fa-hourglass-half"></i> <span class="custom-tooltip">State Management Reset</span> ${label}`;
                             resetCountdownEl.style.display = '';
                         } else {
