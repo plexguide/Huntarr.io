@@ -98,7 +98,7 @@ window.HuntarrNavigation = {
             'activity-history': { title: 'Activity – History', nav: document.getElementById('movieHuntActivityHistoryNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'history' },
             'activity-blocklist': { title: 'Activity – Blocklist', nav: document.getElementById('movieHuntActivityBlocklistNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'blocklist' },
             'activity-logs': { title: 'Activity – Logs', nav: document.getElementById('movieHuntActivityLogsNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'logs' },
-            'movie-hunt-settings': { title: 'Movie Hunt Settings', nav: document.getElementById('movieHuntSettingsNav'), section: document.getElementById('requestarr-section'), sidebar: 'moviehunt', view: 'settings' },
+            'movie-hunt-settings': { title: 'Movie Hunt Settings', nav: document.getElementById('movieHuntSettingsNav'), section: document.getElementById('movie-hunt-settings-default-section'), sidebar: 'moviehunt', view: 'settings' },
             'requestarr': { title: 'Discover', nav: document.getElementById('requestarrNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'discover' },
             'requestarr-discover': { title: 'Discover', nav: document.getElementById('requestarrDiscoverNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'discover' },
             'requestarr-movies': { title: 'Movies', nav: document.getElementById('requestarrMoviesNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'movies' },

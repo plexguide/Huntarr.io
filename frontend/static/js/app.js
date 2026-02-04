@@ -671,32 +671,13 @@ let huntarrUI = {
             if (window.ActivityModule && typeof window.ActivityModule.init === 'function') {
                 window.ActivityModule.init(view);
             }
-        } else if (section === 'movie-hunt-settings' && document.getElementById('requestarr-section')) {
-            document.getElementById('requestarr-section').classList.add('active');
-            document.getElementById('requestarr-section').style.display = 'block';
+        } else if (section === 'movie-hunt-settings' && document.getElementById('movie-hunt-settings-default-section')) {
+            document.getElementById('movie-hunt-settings-default-section').classList.add('active');
+            document.getElementById('movie-hunt-settings-default-section').style.display = 'block';
             if (document.getElementById('movieHuntSettingsNav')) document.getElementById('movieHuntSettingsNav').classList.add('active');
             newTitle = 'Movie Hunt Settings';
             this.currentSection = 'movie-hunt-settings';
             this.showMovieHuntSidebar();
-            const viewIds = [
-                'requestarr-discover-view',
-                'requestarr-movies-view',
-                'requestarr-tv-view',
-                'requestarr-hidden-view',
-                'requestarr-settings-view'
-            ];
-            viewIds.forEach((viewId) => {
-                const v = document.getElementById(viewId);
-                if (v) { v.classList.remove('active'); v.style.display = 'none'; }
-            });
-            const settingsView = document.getElementById('requestarr-settings-view');
-            if (settingsView) {
-                settingsView.classList.add('active');
-                settingsView.style.display = 'block';
-            }
-            this.runWhenRequestarrReady('settings', () => {
-                window.RequestarrDiscover.switchView('settings');
-            });
         } else if (section === 'requestarr' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
