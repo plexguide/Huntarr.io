@@ -442,6 +442,10 @@
             monitored_only: instance.monitored_only !== false,
             skip_future_episodes: instance.skip_future_episodes !== false,
             tag_processed_items: instance.tag_processed_items !== false,
+            tag_enable_missing: instance.tag_enable_missing !== false,
+            tag_enable_upgrade: instance.tag_enable_upgrade !== false,
+            tag_enable_upgraded: instance.tag_enable_upgraded !== false,
+            tag_enable_shows_missing: instance.tag_enable_shows_missing !== false,
             // Custom Tags (per-instance)
             custom_tags: instance.custom_tags || {},
             // Exempt Tags (per-instance) - items with these tags are skipped for missing/upgrade
@@ -1005,11 +1009,18 @@
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-                        <p class="editor-help-text">Enable custom tagging for processed items</p>
+                        <p class="editor-help-text">Master switch: enable custom tagging for processed items. Use the toggles below to enable each tag type per instance.</p>
                     </div>
                     
                     <div class="editor-field-group">
-                        <div class="editor-setting-item">
+                        <div class="editor-setting-item flex-row">
+                            <label>Tag missing items</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="editor-tag-enable-missing" ${safeInstance.tag_enable_missing ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="editor-setting-item" style="margin-top: 6px;">
                             <label>Missing Items Tag</label>
                             <input type="text" id="editor-tag-missing" value="${safeInstance.custom_tags.missing || 'huntarr-missing'}" placeholder="huntarr-missing">
                         </div>
@@ -1017,16 +1028,41 @@
                     </div>
                     
                     <div class="editor-field-group">
-                        <div class="editor-setting-item">
+                        <div class="editor-setting-item flex-row">
+                            <label>Tag upgrade items</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="editor-tag-enable-upgrade" ${safeInstance.tag_enable_upgrade ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="editor-setting-item" style="margin-top: 6px;">
                             <label>Upgrade Items Tag</label>
                             <input type="text" id="editor-tag-upgrade" value="${safeInstance.custom_tags.upgrade || 'huntarr-upgrade'}" placeholder="huntarr-upgrade">
                         </div>
                         <p class="editor-help-text">Custom tag for upgraded items (max 25 characters)</p>
                     </div>
                     
+                    <div class="editor-field-group">
+                        <div class="editor-setting-item flex-row">
+                            <label>Tag upgraded (Upgradinatorr)</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="editor-tag-enable-upgraded" ${safeInstance.tag_enable_upgraded ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p class="editor-help-text">Add huntarr-upgraded (or your upgrade tag) when processing upgrades. Can be turned off if you only want the upgrade-tag method.</p>
+                    </div>
+                    
                     ${appType === 'sonarr' ? `
                     <div class="editor-field-group">
-                        <div class="editor-setting-item">
+                        <div class="editor-setting-item flex-row">
+                            <label>Tag shows missing</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="editor-tag-enable-shows-missing" ${safeInstance.tag_enable_shows_missing ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="editor-setting-item" style="margin-top: 6px;">
                             <label>Shows Missing Tag</label>
                             <input type="text" id="editor-tag-shows-missing" value="${safeInstance.custom_tags.shows_missing || 'huntarr-shows-missing'}" placeholder="huntarr-shows-missing">
                         </div>
@@ -1080,6 +1116,10 @@
             // Additional Options
             monitored_only: document.getElementById('editor-monitored-only').checked,
             tag_processed_items: document.getElementById('editor-tag-processed').checked,
+            tag_enable_missing: document.getElementById('editor-tag-enable-missing').checked,
+            tag_enable_upgrade: document.getElementById('editor-tag-enable-upgrade').checked,
+            tag_enable_upgraded: document.getElementById('editor-tag-enable-upgraded').checked,
+            tag_enable_shows_missing: document.getElementById('editor-tag-enable-shows-missing') ? document.getElementById('editor-tag-enable-shows-missing').checked : true,
             // Custom Tags
             custom_tags: {
                 missing: document.getElementById('editor-tag-missing').value,

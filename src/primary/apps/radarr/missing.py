@@ -96,9 +96,9 @@ def process_missing_movies(
     # Get instance name - check for instance_name first, fall back to legacy "name" key if needed
     instance_name = app_settings.get("instance_name", app_settings.get("name", "Radarr Default"))
     
-    # Load settings to check if tagging is enabled
-    radarr_settings = load_settings("radarr")
-    tag_processed_items = radarr_settings.get("tag_processed_items", True)
+    # Per-instance tagging (from instance settings)
+    tag_processed_items = app_settings.get("tag_processed_items", True)
+    tag_enable_missing = app_settings.get("tag_enable_missing", True)
     
     # Log important settings
     radarr_logger.info("=== Radarr Missing Movies Settings ===")
@@ -311,10 +311,9 @@ def process_missing_movies(
         if search_success:
             radarr_logger.info(f"Successfully triggered search for movie '{movie_title}'")
             
-            # Tag the movie if enabled
-            if tag_processed_items:
-                from src.primary.settings_manager import get_custom_tag
-                custom_tag = get_custom_tag("radarr", "missing", "huntarr-missing")
+            # Tag the movie if enabled (per-tag toggle)
+            if tag_processed_items and tag_enable_missing:
+                custom_tag = app_settings.get("custom_tags", {}).get("missing", "huntarr-missing")
                 try:
                     radarr_api.tag_processed_movie(api_url, api_key, api_timeout, movie_id, custom_tag)
                     radarr_logger.debug(f"Tagged movie {movie_id} with '{custom_tag}'")

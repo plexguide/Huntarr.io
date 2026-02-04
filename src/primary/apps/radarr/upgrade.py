@@ -71,9 +71,9 @@ def process_cutoff_upgrades(
     radarr_logger.info("Starting quality cutoff upgrades processing cycle for Radarr.")
     processed_any = False
     
-    # Load settings to check if tagging is enabled
-    radarr_settings = load_settings("radarr")
-    tag_processed_items = radarr_settings.get("tag_processed_items", True)
+    # Per-instance tagging (from instance settings)
+    tag_processed_items = app_settings.get("tag_processed_items", True)
+    tag_enable_upgraded = app_settings.get("tag_enable_upgraded", True)
     
     # Extract necessary settings
     api_url = app_settings.get("api_url", "").strip()
@@ -330,10 +330,9 @@ def process_cutoff_upgrades(
                 except Exception as e:
                     radarr_logger.warning(f"Failed to add upgrade tag '{upgrade_tag}' to movie {movie_id}: {e}")
             
-            # Also tag with huntarr-upgraded if enabled (separate tracking feature)
-            if tag_processed_items:
-                from src.primary.settings_manager import get_custom_tag
-                custom_tag = get_custom_tag("radarr", "upgrade", "huntarr-upgraded")
+            # Also tag with huntarr-upgraded if enabled (per-tag toggle)
+            if tag_processed_items and tag_enable_upgraded:
+                custom_tag = app_settings.get("custom_tags", {}).get("upgraded", "huntarr-upgraded") or "huntarr-upgraded"
                 try:
                     radarr_api.tag_processed_movie(api_url, api_key, api_timeout, movie_id, custom_tag)
                     radarr_logger.debug(f"Tagged movie {movie_id} with '{custom_tag}'")

@@ -43,9 +43,9 @@ def process_cutoff_upgrades(
     # Load general settings to get centralized timeout
     general_settings = load_settings('general')
     
-    # Load settings to check if tagging is enabled
-    readarr_settings = load_settings("readarr")
-    tag_processed_items = readarr_settings.get("tag_processed_items", True)
+    # Per-instance tagging (from instance settings)
+    tag_processed_items = app_settings.get("tag_processed_items", True)
+    tag_enable_upgraded = app_settings.get("tag_enable_upgraded", True)
     
     # Get the API credentials for this instance
     api_url = app_settings.get('api_url', '')
@@ -221,9 +221,8 @@ def process_cutoff_upgrades(
                         readarr_logger.warning(f"Failed to add upgrade tag '{upgrade_tag}' to author {author_id}: {e}")
         
         # Also tag authors with huntarr-upgraded if enabled (separate tracking feature)
-        if tag_processed_items:
-            from src.primary.settings_manager import get_custom_tag
-            custom_tag = get_custom_tag("readarr", "upgrade", "huntarr-upgraded")
+        if tag_processed_items and tag_enable_upgraded:
+            custom_tag = app_settings.get("custom_tags", {}).get("upgraded", "huntarr-upgraded") or "huntarr-upgraded"
             tagged_authors = set()  # Track which authors we've already tagged
             for book in books_to_process:
                 author_id = book.get('authorId')

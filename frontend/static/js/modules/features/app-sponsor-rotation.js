@@ -12,7 +12,7 @@
 
     const PARTNER_PROJECTS_CACHE_KEY = 'home_partner_projects_cache';
     const PARTNER_PROJECTS = [
-        { name: 'Cleanuparr', url: 'https://github.com/se1exin/Cleanarr' },
+        { name: 'Cleanuparr', url: 'https://github.com/Cleanuparr/Cleanuparr' },
         { name: 'SeekandWatch', url: 'https://github.com/softerfish/seekandwatch' }
     ];
     const APP_TYPES = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'requestarr'];

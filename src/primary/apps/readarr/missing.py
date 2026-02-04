@@ -38,9 +38,9 @@ def process_missing_books(
     # Reset state files if enough time has passed
     check_state_reset("readarr")
     
-    # Load settings to check if tagging is enabled
-    readarr_settings = load_settings("readarr")
-    tag_processed_items = readarr_settings.get("tag_processed_items", True)
+    # Per-instance tagging (from instance settings)
+    tag_processed_items = app_settings.get("tag_processed_items", True)
+    tag_enable_missing = app_settings.get("tag_enable_missing", True)
     
     # Get the settings for the instance
     general_settings = readarr_api.load_settings('general')
@@ -195,9 +195,8 @@ def process_missing_books(
             increment_stat("readarr", "hunted", 1, instance_name)
             
             # Tag the book's author if enabled (keep author tagging as it's still useful)
-            if tag_processed_items and author_id:
-                from src.primary.settings_manager import get_custom_tag
-                custom_tag = get_custom_tag("readarr", "missing", "huntarr-missing")
+            if tag_processed_items and tag_enable_missing and author_id:
+                custom_tag = app_settings.get("custom_tags", {}).get("missing", "huntarr-missing")
                 try:
                     readarr_api.tag_processed_author(api_url, api_key, api_timeout, author_id, custom_tag)
                     readarr_logger.debug(f"Tagged author {author_id} with '{custom_tag}'")

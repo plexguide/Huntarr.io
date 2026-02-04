@@ -93,6 +93,8 @@ def process_missing_episodes(
     command_wait_attempts: int = get_advanced_setting("command_wait_attempts", 600),
     stop_check: Callable[[], bool] = lambda: False,
     tag_processed_items: bool = True,
+    tag_enable_missing: bool = True,
+    tag_enable_shows_missing: bool = True,
     custom_tags: dict = None,
     exempt_tags: list = None
 ) -> bool:
@@ -126,7 +128,7 @@ def process_missing_episodes(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, custom_tags, exempt_tags=exempt_tags,
+            tag_processed_items, tag_enable_missing, tag_enable_shows_missing, custom_tags, exempt_tags=exempt_tags,
             hunt_missing_mode=hunt_missing_mode
         )
     elif hunt_missing_mode == "shows":
@@ -136,7 +138,7 @@ def process_missing_episodes(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, custom_tags, exempt_tags=exempt_tags
+            tag_processed_items, tag_enable_missing, tag_enable_shows_missing, custom_tags, exempt_tags=exempt_tags
         )
     elif hunt_missing_mode == "episodes":
         # Handle individual episode processing (reinstated with warnings)
@@ -145,7 +147,7 @@ def process_missing_episodes(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, custom_tags, exempt_tags=exempt_tags
+            tag_processed_items, tag_enable_missing, tag_enable_shows_missing, custom_tags, exempt_tags=exempt_tags
         )
     else:
         sonarr_logger.error(f"Invalid hunt_missing_mode: {hunt_missing_mode}. Valid options are 'seasons_packs', 'shows', or 'episodes'.")
@@ -164,6 +166,8 @@ def process_missing_seasons_packs_mode(
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
     tag_processed_items: bool = True,
+    tag_enable_missing: bool = True,
+    tag_enable_shows_missing: bool = True,
     custom_tags: dict = None,
     exempt_tags: list = None,
     hunt_missing_mode: str = "seasons_packs"
@@ -352,7 +356,7 @@ def process_missing_seasons_packs_mode(
             sonarr_logger.debug(f"Added season ID {season_id} to processed list for {instance_name}, success: {success}")
             
                     # Tag the series if enabled
-        if tag_processed_items:
+        if tag_processed_items and tag_enable_missing:
             custom_tag = custom_tags.get("missing", "huntarr-missing")
             try:
                 sonarr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
@@ -398,6 +402,8 @@ def process_missing_shows_mode(
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
     tag_processed_items: bool = True,
+    tag_enable_missing: bool = True,
+    tag_enable_shows_missing: bool = True,
     custom_tags: dict = None,
     exempt_tags: list = None
 ) -> bool:
@@ -552,7 +558,7 @@ def process_missing_shows_mode(
             sonarr_logger.info(f"Successfully processed {len(episode_ids)} missing episodes in {show_title}")
             
                     # Tag the series if enabled
-        if tag_processed_items:
+        if tag_processed_items and tag_enable_shows_missing:
             custom_tag = custom_tags.get("shows_missing", "huntarr-shows-missing")
             try:
                 sonarr_api.tag_processed_series(api_url, api_key, api_timeout, show_id, custom_tag)
@@ -615,6 +621,8 @@ def process_missing_episodes_mode(
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
     tag_processed_items: bool = True,
+    tag_enable_missing: bool = True,
+    tag_enable_shows_missing: bool = True,
     custom_tags: dict = None,
     exempt_tags: list = None
 ) -> bool:

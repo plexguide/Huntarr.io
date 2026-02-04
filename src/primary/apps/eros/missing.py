@@ -41,9 +41,9 @@ def process_missing_items(
     # Reset state files if enough time has passed
     check_state_reset("eros")
     
-    # Load settings to check if tagging is enabled
-    eros_settings = load_settings("eros")
-    tag_processed_items = eros_settings.get("tag_processed_items", True)
+    # Per-instance tagging (from instance settings)
+    tag_processed_items = app_settings.get("tag_processed_items", True)
+    tag_enable_missing = app_settings.get("tag_enable_missing", True)
     
     # Extract necessary settings
     api_url = app_settings.get("api_url", "").strip()
@@ -225,9 +225,8 @@ def process_missing_items(
             eros_logger.info(f"Triggered search command {search_command_id}. Assuming success for now.")
             
             # Tag the movie if enabled
-            if tag_processed_items:
-                from src.primary.settings_manager import get_custom_tag
-                custom_tag = get_custom_tag("eros", "missing", "huntarr-missing")
+            if tag_processed_items and tag_enable_missing:
+                custom_tag = app_settings.get("custom_tags", {}).get("missing", "huntarr-missing")
                 try:
                     eros_api.tag_processed_movie(api_url, api_key, api_timeout, item_id, custom_tag)
                     eros_logger.debug(f"Tagged movie {item_id} with '{custom_tag}'")

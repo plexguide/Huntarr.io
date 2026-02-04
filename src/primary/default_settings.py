@@ -27,6 +27,9 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
         "state_management_hours": 72,
         "monitored_only": True,
         "tag_processed_items": True,
+        "tag_enable_missing": True,
+        "tag_enable_upgrade": True,
+        "tag_enable_upgraded": True,
         "custom_tags": {
             "missing": "huntarr-missing",
             "upgrade": "huntarr-upgrade"
@@ -52,6 +55,7 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
             "upgrade_selection_method": "cutoff",
             "upgrade_tag": "upgradinatorr",
             "skip_future_episodes": True,
+            "tag_enable_shows_missing": True,
             "custom_tags": {
                 "missing": "huntarr-missing",
                 "upgrade": "huntarr-upgrade",

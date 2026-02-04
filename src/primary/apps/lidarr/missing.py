@@ -73,9 +73,9 @@ def process_missing_albums(
     processed_artists_or_albums = set()
     total_items_to_process = hunt_missing_items
     
-    # Load settings to check if tagging is enabled
-    lidarr_settings = load_settings("lidarr")
-    tag_processed_items = lidarr_settings.get("tag_processed_items", True)
+    # Per-instance tagging (from instance settings)
+    tag_processed_items = app_settings.get("tag_processed_items", True)
+    tag_enable_missing = app_settings.get("tag_enable_missing", True)
 
     try:
         # Get missing albums or artists data based on the hunt_missing_mode
@@ -283,10 +283,9 @@ def process_missing_albums(
                     processed_count += 1  # Count successful searches
                     processed_artists_or_albums.add(artist_id)
                 
-                    # Tag the artist if enabled
-                    if tag_processed_items:
-                        from src.primary.settings_manager import get_custom_tag
-                        custom_tag = get_custom_tag("lidarr", "missing", "huntarr-missing")
+                    # Tag the artist if enabled (per-tag toggle)
+                    if tag_processed_items and tag_enable_missing:
+                        custom_tag = app_settings.get("custom_tags", {}).get("missing", "huntarr-missing")
                         try:
                             lidarr_api.tag_processed_artist(api_url, api_key, api_timeout, artist_id, custom_tag)
                             lidarr_logger.debug(f"Tagged artist {artist_id} with '{custom_tag}'")
@@ -369,10 +368,9 @@ def process_missing_albums(
                 processed_count += len(album_ids_to_search) # Count albums searched
                 processed_artists_or_albums.update(album_ids_to_search)
                 
-                # Tag artists if enabled (from albums)
-                if tag_processed_items:
-                    from src.primary.settings_manager import get_custom_tag
-                    custom_tag = get_custom_tag("lidarr", "missing", "huntarr-missing")
+                # Tag artists if enabled (per-tag toggle)
+                if tag_processed_items and tag_enable_missing:
+                    custom_tag = app_settings.get("custom_tags", {}).get("missing", "huntarr-missing")
                     tagged_artists = set()  # Track which artists we've already tagged
                     for album_id in album_ids_to_search:
                         album_info = missing_items_dict.get(album_id)

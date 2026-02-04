@@ -41,9 +41,9 @@ def process_cutoff_upgrades(
     # Reset state files if enough time has passed
     check_state_reset("whisparr")
     
-    # Load settings to check if tagging is enabled
-    whisparr_settings = load_settings("whisparr")
-    tag_processed_items = whisparr_settings.get("tag_processed_items", True)
+    # Per-instance tagging (from instance settings)
+    tag_processed_items = app_settings.get("tag_processed_items", True)
+    tag_enable_upgraded = app_settings.get("tag_enable_upgraded", True)
     
     # Extract necessary settings
     api_url = app_settings.get("api_url", "").strip()
@@ -185,9 +185,8 @@ def process_cutoff_upgrades(
             whisparr_logger.info(f"Triggered search command {search_command_id}. Assuming success for now.")
             
             # Tag the series if enabled
-            if tag_processed_items:
-                from src.primary.settings_manager import get_custom_tag
-                custom_tag = get_custom_tag("whisparr", "upgrade", "huntarr-upgraded")
+            if tag_processed_items and tag_enable_upgraded:
+                custom_tag = app_settings.get("custom_tags", {}).get("upgraded", "huntarr-upgraded") or "huntarr-upgraded"
                 series_id = item.get('seriesId')
                 if series_id:
                     try:

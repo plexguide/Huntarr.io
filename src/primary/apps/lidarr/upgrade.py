@@ -81,9 +81,9 @@ def process_cutoff_upgrades(
     processed_count = 0
     processed_any = False
 
-    # Load settings to check if tagging is enabled
-    lidarr_settings = load_settings("lidarr")
-    tag_processed_items = lidarr_settings.get("tag_processed_items", True)
+    # Per-instance tagging (from instance settings)
+    tag_processed_items = app_settings.get("tag_processed_items", True)
+    tag_enable_upgraded = app_settings.get("tag_enable_upgraded", True)
 
     try:
         if upgrade_selection_method == "tags":
@@ -222,10 +222,9 @@ def process_cutoff_upgrades(
                         except Exception as e:
                             lidarr_logger.warning(f"Failed to add upgrade tag '{upgrade_tag}' to artist {artist_id}: {e}")
             
-            # Also tag artists with huntarr-upgraded if enabled (separate tracking feature)
-            if tag_processed_items:
-                from src.primary.settings_manager import get_custom_tag
-                custom_tag = get_custom_tag("lidarr", "upgrade", "huntarr-upgraded")
+            # Also tag artists with huntarr-upgraded if enabled (per-tag toggle)
+            if tag_processed_items and tag_enable_upgraded:
+                custom_tag = app_settings.get("custom_tags", {}).get("upgraded", "huntarr-upgraded") or "huntarr-upgraded"
                 tagged_artists = set()  # Track which artists we've already tagged
                 for album in albums_to_search:
                     artist_id = album.get('artistId')
