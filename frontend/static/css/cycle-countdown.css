@@ -34,6 +34,8 @@
 .reset-button-container {
     flex-direction: column;
     align-items: center;
+    position: relative; /* For absolute positioning of state reset countdown */
+    padding-bottom: 18px !important; /* Make room for the reset line at the bottom */
 }
 
 /* Styling for the container that holds both reset button and timer */
@@ -236,12 +238,15 @@
 
 /* State Management reset: minimal at the bottom, centered (like 1st image) */
 .state-reset-countdown {
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     white-space: nowrap;
     font-size: 0.65rem;
-    margin-top: 6px;
     color: rgba(148, 163, 184, 0.5);
     gap: 4px;
     user-select: none;
@@ -254,4 +259,5 @@
 .state-reset-countdown i {
     font-size: 0.6rem;
     opacity: 0.8;
+    cursor: help;
 }
