@@ -1878,12 +1878,22 @@ input:disabled + .toggle-slider {
     gap: 20px;
     padding: 0 20px 40px 20px;
     min-height: 400px;
+    justify-items: start;
+}
+
+/* Force media cards in grid to stay 150px (no stretching) */
+.media-grid .media-card {
+    width: 150px;
 }
 
 @media (max-width: 768px) {
     .media-grid {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         gap: 15px;
+    }
+    
+    .media-grid .media-card {
+        width: 120px;
     }
 }
 
@@ -3123,6 +3133,7 @@ input:disabled + .toggle-slider {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    justify-items: start;
 }
 
 /* Fix Movies view padding to match Discover view */
@@ -3173,6 +3184,13 @@ input:disabled + .toggle-slider {
     min-height: 400px;
     width: 100%;
     box-sizing: border-box;
+    justify-items: start;
+}
+
+/* Force cards in this grid to stay 150px */
+#requestarr-movies-view .media-grid .media-card,
+#requestarr-tv-view .media-grid .media-card {
+    width: 150px;
 }
 
 /* Ensure proper alignment */
@@ -3187,7 +3205,7 @@ input:disabled + .toggle-slider {
         padding: 0 15px 20px 15px;
     }
     
-    /* No extra grey: cards fixed width, don't stretch (poster fills card) */
+    /* No extra grey: cards fixed width at 120px */
     .media-grid {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         gap: 15px;
