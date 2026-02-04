@@ -1589,6 +1589,34 @@
         -webkit-text-fill-color: transparent;
     }
     
+    .app-stats-card h4 .instance-name-link {
+        color: inherit;
+        text-decoration: none;
+        background: inherit;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+    }
+    .app-stats-card h4 .instance-name-link:hover {
+        opacity: 0.9;
+        text-decoration: underline;
+    }
+    .app-stats-card .instance-icon-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        text-decoration: none;
+        cursor: pointer;
+        border-radius: 50%;
+    }
+    .app-stats-card .instance-icon-link:hover {
+        opacity: 0.9;
+    }
+    
     /* Glowing ring animations */
     @keyframes pulse {
         0% { opacity: 0.6; }

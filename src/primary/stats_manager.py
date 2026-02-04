@@ -486,8 +486,10 @@ def get_stats() -> Dict[str, Any]:
                                 if expires_at > now_ts:
                                     state_reset_hours_until = round((expires_at - now_ts) / 3600.0, 1)
                         
+                        api_url = (inst_cfg.get("api_url") or "").strip().rstrip("/") or None
                         stats[app_type]["instances"].append({
                             "instance_name": name,
+                            "api_url": api_url,
                             "hunted": inst_stats.get("hunted", 0),
                             "upgraded": inst_stats.get("upgraded", 0),
                             "api_hits": api_hits,

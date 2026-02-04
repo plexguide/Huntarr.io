@@ -125,8 +125,40 @@ window.HuntarrStats = {
                     // Set instance name on the card itself for easier identification
                     targetCard.setAttribute('data-instance-name', name);
 
+                    const apiUrl = (inst.api_url || '').trim();
                     const h4 = targetCard.querySelector('.app-content h4');
-                    if (h4) h4.textContent = `${appLabel} – ${name}`;
+                    if (h4) {
+                        if (apiUrl) {
+                            const link = document.createElement('a');
+                            link.href = apiUrl;
+                            link.target = '_blank';
+                            link.rel = 'noopener noreferrer';
+                            link.textContent = `${appLabel} – ${name}`;
+                            link.className = 'instance-name-link';
+                            link.title = 'Open instance in new tab';
+                            h4.textContent = '';
+                            h4.appendChild(link);
+                        } else {
+                            h4.textContent = `${appLabel} – ${name}`;
+                        }
+                    }
+                    // Make app icon clickable to open instance in new tab (only wrap once)
+                    const iconWrapper = targetCard.querySelector('.app-content .app-icon-wrapper');
+                    if (iconWrapper && apiUrl && !iconWrapper.querySelector('.instance-icon-link')) {
+                        const iconLink = document.createElement('a');
+                        iconLink.href = apiUrl;
+                        iconLink.target = '_blank';
+                        iconLink.rel = 'noopener noreferrer';
+                        iconLink.className = 'instance-icon-link';
+                        iconLink.title = 'Open instance in new tab';
+                        while (iconWrapper.firstChild) {
+                            iconLink.appendChild(iconWrapper.firstChild);
+                        }
+                        iconWrapper.appendChild(iconLink);
+                    } else if (iconWrapper && iconWrapper.querySelector('.instance-icon-link')) {
+                        const iconLink = iconWrapper.querySelector('.instance-icon-link');
+                        if (apiUrl) iconLink.href = apiUrl;
+                    }
                     const numbers = targetCard.querySelectorAll('.stat-number');
                     if (numbers[0]) {
                         if (isLowUsageMode || isFromCache) numbers[0].textContent = this.formatLargeNumber(hunted);
