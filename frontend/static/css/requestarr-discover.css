@@ -1890,6 +1890,7 @@ input:disabled + .toggle-slider {
     .media-grid {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         gap: 15px;
+        justify-items: start;
     }
     
     .media-grid .media-card {
@@ -3212,7 +3213,9 @@ input:disabled + .toggle-slider {
         justify-items: start;
     }
     
-    .media-grid .media-card {
+    .media-grid .media-card,
+    #requestarr-movies-view .media-grid .media-card,
+    #requestarr-tv-view .media-grid .media-card {
         width: 120px;
     }
     
