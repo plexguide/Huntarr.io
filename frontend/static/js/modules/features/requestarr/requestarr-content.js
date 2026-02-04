@@ -26,6 +26,34 @@ export class RequestarrContent {
         
         // Hidden media tracking
         this.hiddenMediaSet = new Set();
+
+        // Shared discovery cache with home page (12h) - same keys so both pages benefit
+        this.DISCOVERY_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+        this.DISCOVERY_CACHE_KEYS = { trending: 'huntarr-home-discovery-trending', movies: 'huntarr-home-discovery-movies', tv: 'huntarr-home-discovery-tv' };
+    }
+
+    getDiscoveryCache(section) {
+        const key = this.DISCOVERY_CACHE_KEYS[section];
+        if (!key) return null;
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return null;
+            const { results, timestamp } = JSON.parse(raw);
+            if (Date.now() - (timestamp || 0) > this.DISCOVERY_CACHE_TTL_MS) return null;
+            return Array.isArray(results) ? results : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    setDiscoveryCache(section, results) {
+        const key = this.DISCOVERY_CACHE_KEYS[section];
+        if (!key || !Array.isArray(results)) return;
+        try {
+            localStorage.setItem(key, JSON.stringify({ results, timestamp: Date.now() }));
+        } catch (e) {
+            console.warn('[RequestarrContent] Discovery cache write failed:', e);
+        }
     }
 
     // ========================================
@@ -403,109 +431,164 @@ export class RequestarrContent {
         return this.hiddenMediaSet.has(key);
     }
 
+    renderTrendingResults(carousel, results) {
+        if (!carousel) return;
+        if (results && results.length > 0) {
+            carousel.innerHTML = '';
+            results.forEach(item => {
+                const suggestedInstance = item.media_type === 'movie' ? (this.defaultMovieInstance || null) : (this.defaultTVInstance || null);
+                const appType = item.media_type === 'movie' ? 'radarr' : 'sonarr';
+                const instanceName = item.media_type === 'movie' ? this.defaultMovieInstance : this.defaultTVInstance;
+                const tmdbId = item.tmdb_id || item.id;
+                if (tmdbId && instanceName && this.isMediaHidden(tmdbId, item.media_type, appType, instanceName)) return;
+                carousel.appendChild(this.createMediaCard(item, suggestedInstance));
+            });
+        } else {
+            carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No trending content available</p>';
+        }
+    }
+
     async loadTrending() {
         const carousel = document.getElementById('trending-carousel');
+        if (!carousel) return;
+        const cached = this.getDiscoveryCache('trending');
+        if (cached !== null) {
+            this.renderTrendingResults(carousel, cached);
+            this.fetchAndCacheTrending();
+            return;
+        }
         try {
             const response = await fetch('./api/requestarr/discover/trending');
             const data = await response.json();
-            
-            if (data.results && data.results.length > 0) {
-                carousel.innerHTML = '';
-                data.results.forEach(item => {
-                    // Use the appropriate default instance based on media type
-                    // Only pass as suggested if actually configured (not empty string)
-                    const suggestedInstance = item.media_type === 'movie' 
-                        ? (this.defaultMovieInstance || null)
-                        : (this.defaultTVInstance || null);
-                    
-                    // Filter out hidden media
-                    const appType = item.media_type === 'movie' ? 'radarr' : 'sonarr';
-                    const instanceName = item.media_type === 'movie' ? this.defaultMovieInstance : this.defaultTVInstance;
-                    const tmdbId = item.tmdb_id || item.id;
-                    if (tmdbId && instanceName && this.isMediaHidden(tmdbId, item.media_type, appType, instanceName)) {
-                        return; // Skip hidden items
-                    }
-                    
-                    carousel.appendChild(this.createMediaCard(item, suggestedInstance));
-                });
-            } else {
-                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No trending content available</p>';
-            }
+            const results = (data.results && data.results.length > 0) ? data.results : [];
+            this.setDiscoveryCache('trending', results);
+            this.renderTrendingResults(carousel, results);
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading trending:', error);
             carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load trending content</p>';
         }
     }
 
+    async fetchAndCacheTrending() {
+        try {
+            const response = await fetch('./api/requestarr/discover/trending');
+            const data = await response.json();
+            const results = (data.results && data.results.length > 0) ? data.results : [];
+            this.setDiscoveryCache('trending', results);
+            const carousel = document.getElementById('trending-carousel');
+            if (carousel) this.renderTrendingResults(carousel, results);
+        } catch (e) {
+            console.warn('[RequestarrContent] Background refresh trending failed:', e);
+        }
+    }
+
+    renderPopularMoviesResults(carousel, results) {
+        if (!carousel) return;
+        const instanceName = this.defaultMovieInstance;
+        if (results && results.length > 0) {
+            carousel.innerHTML = '';
+            results.forEach(item => {
+                const tmdbId = item.tmdb_id || item.id;
+                if (tmdbId && instanceName && this.isMediaHidden(tmdbId, 'movie', 'radarr', instanceName)) return;
+                carousel.appendChild(this.createMediaCard(item, this.defaultMovieInstance || null));
+            });
+        } else {
+            carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies available</p>';
+        }
+    }
+
     async loadPopularMovies() {
         const carousel = document.getElementById('popular-movies-carousel');
+        if (!carousel) return;
+        const cached = this.getDiscoveryCache('movies');
+        if (cached !== null) {
+            this.renderPopularMoviesResults(carousel, cached);
+            this.fetchAndCachePopularMovies();
+            return;
+        }
         try {
-            // Use the default movie instance we loaded in loadDiscoverContent
             const instanceName = this.defaultMovieInstance;
-            
-            // Build URL with instance info if available
             let url = './api/requestarr/discover/movies?page=1';
-            if (instanceName) {
-                url += `&app_type=radarr&instance_name=${encodeURIComponent(instanceName)}`;
-            }
-            
+            if (instanceName) url += `&app_type=radarr&instance_name=${encodeURIComponent(instanceName)}`;
             const response = await fetch(url);
             const data = await response.json();
-            
-            if (data.results && data.results.length > 0) {
-                carousel.innerHTML = '';
-                data.results.forEach(item => {
-                    // Filter out hidden media
-                    const tmdbId = item.tmdb_id || item.id;
-                    if (tmdbId && instanceName && this.isMediaHidden(tmdbId, 'movie', 'radarr', instanceName)) {
-                        return; // Skip hidden items
-                    }
-                    
-                    // Only pass as suggested if actually configured (not empty string)
-                    carousel.appendChild(this.createMediaCard(item, this.defaultMovieInstance || null));
-                });
-            } else {
-                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies available</p>';
-            }
+            const results = (data.results && data.results.length > 0) ? data.results : [];
+            this.setDiscoveryCache('movies', results);
+            this.renderPopularMoviesResults(carousel, results);
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading popular movies:', error);
             carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies</p>';
         }
     }
 
-    async loadPopularTV() {
-        const carousel = document.getElementById('popular-tv-carousel');
+    async fetchAndCachePopularMovies() {
         try {
-            // Use the default TV instance we loaded in loadDiscoverContent
-            const instanceName = this.defaultTVInstance;
-            
-            // Build URL with instance info if available
-            let url = './api/requestarr/discover/tv?page=1';
-            if (instanceName) {
-                url += `&app_type=sonarr&instance_name=${encodeURIComponent(instanceName)}`;
-            }
-            
+            const instanceName = this.defaultMovieInstance;
+            let url = './api/requestarr/discover/movies?page=1';
+            if (instanceName) url += `&app_type=radarr&instance_name=${encodeURIComponent(instanceName)}`;
             const response = await fetch(url);
             const data = await response.json();
-            
-            if (data.results && data.results.length > 0) {
-                carousel.innerHTML = '';
-                data.results.forEach(item => {
-                    // Filter out hidden media
-                    const tmdbId = item.tmdb_id || item.id;
-                    if (tmdbId && instanceName && this.isMediaHidden(tmdbId, 'tv', 'sonarr', instanceName)) {
-                        return; // Skip hidden items
-                    }
-                    
-                    // Only pass as suggested if actually configured (not empty string)
-                    carousel.appendChild(this.createMediaCard(item, this.defaultTVInstance || null));
-                });
-            } else {
-                carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows available</p>';
-            }
+            const results = (data.results && data.results.length > 0) ? data.results : [];
+            this.setDiscoveryCache('movies', results);
+            const carousel = document.getElementById('popular-movies-carousel');
+            if (carousel) this.renderPopularMoviesResults(carousel, results);
+        } catch (e) {
+            console.warn('[RequestarrContent] Background refresh popular movies failed:', e);
+        }
+    }
+
+    renderPopularTVResults(carousel, results) {
+        if (!carousel) return;
+        const instanceName = this.defaultTVInstance;
+        if (results && results.length > 0) {
+            carousel.innerHTML = '';
+            results.forEach(item => {
+                const tmdbId = item.tmdb_id || item.id;
+                if (tmdbId && instanceName && this.isMediaHidden(tmdbId, 'tv', 'sonarr', instanceName)) return;
+                carousel.appendChild(this.createMediaCard(item, this.defaultTVInstance || null));
+            });
+        } else {
+            carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows available</p>';
+        }
+    }
+
+    async loadPopularTV() {
+        const carousel = document.getElementById('popular-tv-carousel');
+        if (!carousel) return;
+        const cached = this.getDiscoveryCache('tv');
+        if (cached !== null) {
+            this.renderPopularTVResults(carousel, cached);
+            this.fetchAndCachePopularTV();
+            return;
+        }
+        try {
+            const instanceName = this.defaultTVInstance;
+            let url = './api/requestarr/discover/tv?page=1';
+            if (instanceName) url += `&app_type=sonarr&instance_name=${encodeURIComponent(instanceName)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const results = (data.results && data.results.length > 0) ? data.results : [];
+            this.setDiscoveryCache('tv', results);
+            this.renderPopularTVResults(carousel, results);
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading popular TV:', error);
             carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load TV shows</p>';
+        }
+    }
+
+    async fetchAndCachePopularTV() {
+        try {
+            const instanceName = this.defaultTVInstance;
+            let url = './api/requestarr/discover/tv?page=1';
+            if (instanceName) url += `&app_type=sonarr&instance_name=${encodeURIComponent(instanceName)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const results = (data.results && data.results.length > 0) ? data.results : [];
+            this.setDiscoveryCache('tv', results);
+            const carousel = document.getElementById('popular-tv-carousel');
+            if (carousel) this.renderPopularTVResults(carousel, results);
+        } catch (e) {
+            console.warn('[RequestarrContent] Background refresh popular TV failed:', e);
         }
     }
 
