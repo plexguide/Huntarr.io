@@ -27,8 +27,8 @@ export class RequestarrContent {
         // Hidden media tracking
         this.hiddenMediaSet = new Set();
 
-        // Shared discovery cache with home page (12h) - same keys so both pages benefit
-        this.DISCOVERY_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+        // Shared discovery cache with home page (24h) - same keys so both pages benefit
+        this.DISCOVERY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
         this.DISCOVERY_CACHE_KEYS = { trending: 'huntarr-home-discovery-trending', movies: 'huntarr-home-discovery-movies', tv: 'huntarr-home-discovery-tv' };
     }
 

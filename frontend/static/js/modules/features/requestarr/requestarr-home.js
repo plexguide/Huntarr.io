@@ -14,8 +14,8 @@ const HomeRequestarr = {
     // Delay before showing "Failed to load" so transient failures don't flash (ms)
     FAILED_MESSAGE_DELAY: 800,
 
-    // Discovery result cache: 12 hours so rotation and Requestarr page feel instant
-    DISCOVERY_CACHE_TTL_MS: 12 * 60 * 60 * 1000,
+    // Discovery result cache: 24 hours so rotation and Requestarr page feel instant
+    DISCOVERY_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
     DISCOVERY_CACHE_KEYS: { trending: 'huntarr-home-discovery-trending', movies: 'huntarr-home-discovery-movies', tv: 'huntarr-home-discovery-tv' },
 
     // Section rotation
