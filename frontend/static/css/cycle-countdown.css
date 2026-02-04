@@ -30,6 +30,12 @@
     border-radius: 4px;
 }
 
+/* Reset button container stacks its children so State Management is on its own row below */
+.reset-button-container {
+    flex-direction: column;
+    align-items: center;
+}
+
 /* Styling for the container that holds both reset button and timer */
 .reset-and-timer-container {
     display: flex;
@@ -226,4 +232,26 @@
     right: 0;
     color: white;
     text-align: center;
+}
+
+/* State Management reset: minimal at the bottom, centered (like 1st image) */
+.state-reset-countdown {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    font-size: 0.65rem;
+    margin-top: 4px;
+    color: rgba(148, 163, 184, 0.5);
+    gap: 4px;
+    user-select: none;
+    width: 100%;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.state-reset-countdown i {
+    font-size: 0.6rem;
+    opacity: 0.8;
 }

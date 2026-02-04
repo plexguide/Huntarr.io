@@ -431,14 +431,17 @@ def increment_stat_only(app_type: str, stat_type: str, count: int = 1, instance_
 def get_stats() -> Dict[str, Any]:
     """
     Get the current statistics (app-level + per-instance for Home dashboard).
-    Returns dict: app_type -> { hunted, upgraded, instances: [{ instance_name, hunted, upgraded, api_hits, api_limit }] }.
+    Returns dict: app_type -> { hunted, upgraded, instances: [{ instance_name, hunted, upgraded, api_hits, api_limit, state_reset_hours_until? }] }.
     Per-instance api_hits/api_limit are read directly from the database so all instance cards display correctly.
+    state_reset_hours_until is set when per-instance state reset is active (hours until next reset).
     """
+    import time
     with stats_lock:
         stats = load_stats()
         try:
             from src.primary.settings_manager import load_settings
             db = get_database()
+            now_ts = int(time.time())
             for app_type in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
                 if app_type not in stats:
                     stats[app_type] = {"hunted": 0, "upgraded": 0}
@@ -462,12 +465,21 @@ def get_stats() -> Dict[str, Any]:
                         cap_data = per_instance_caps.get(name, {})
                         api_hits = cap_data.get("api_hits", 0)
                         api_limit = _get_instance_hourly_cap_limit(app_type, name)
+                        # Hours until state reset (when per-instance state management has an active lock)
+                        state_reset_hours_until = None
+                        if hasattr(db, "get_instance_lock_info"):
+                            lock_info = db.get_instance_lock_info(app_type, name)
+                            if lock_info:
+                                expires_at = lock_info.get("expires_at") or 0
+                                if expires_at > now_ts:
+                                    state_reset_hours_until = round((expires_at - now_ts) / 3600.0, 1)
                         stats[app_type]["instances"].append({
                             "instance_name": name,
                             "hunted": inst_stats.get("hunted", 0),
                             "upgraded": inst_stats.get("upgraded", 0),
                             "api_hits": api_hits,
                             "api_limit": api_limit,
+                            "state_reset_hours_until": state_reset_hours_until,
                         })
                 else:
                     stats[app_type]["instances"] = per_instance if per_instance else []
