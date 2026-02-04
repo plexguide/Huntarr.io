@@ -14,7 +14,7 @@ from typing import Dict, Any, List, Optional, Set
 stateful_logger = logging.getLogger("stateful_manager")
 
 # Constants
-DEFAULT_HOURS = 168  # Default 7 days (168 hours)
+DEFAULT_HOURS = 72  # Default 3 days (72 hours)
 
 # App types
 APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
@@ -202,8 +202,8 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
     
     try:
         # First check if state management is enabled for this instance
-        instance_hours = 168  # Default
-        instance_mode = "custom"
+        # OPTIMIZATION: Only load settings if we need to check mode, not on every call
+        instance_mode = "custom"  # Default to enabled
         
         try:
             from src.primary.settings_manager import load_settings
@@ -214,7 +214,6 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
                 for instance in settings['instances']:
                     if instance.get('name') == instance_name:
                         instance_mode = instance.get('state_management_mode', 'custom')
-                        instance_hours = instance.get('state_management_hours', 168)
                         
                         # If state management is disabled for this instance, don't add to processed list
                         if instance_mode == 'disabled':
@@ -227,13 +226,10 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
         
         db = get_database()
         
-        # Initialize per-instance state management if not already done
-        db.initialize_instance_state_management(app_type, instance_name, instance_hours)
-        
-        # Check if this instance's state has expired
-        if db.check_instance_expiration(app_type, instance_name):
-            stateful_logger.info(f"State management expired for {app_type}/{instance_name}, resetting before adding new ID...")
-            db.reset_instance_state_management(app_type, instance_name, instance_hours)
+        # REMOVED: Redundant initialization and expiration checks
+        # These are now handled ONCE per cycle in background.py _process_one_instance()
+        # db.initialize_instance_state_management(app_type, instance_name, instance_hours)
+        # if db.check_instance_expiration(app_type, instance_name):
         
         # Check if already processed
         if db.is_processed(app_type, instance_name, media_id):
@@ -264,8 +260,8 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
     """
     try:
         # First check if state management is enabled for this instance
-        instance_hours = 168  # Default
-        instance_mode = "custom"
+        # OPTIMIZATION: Only load settings if we need to check mode, not on every call
+        instance_mode = "custom"  # Default to enabled
         
         try:
             from src.primary.settings_manager import load_settings
@@ -276,7 +272,6 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
                 for instance in settings['instances']:
                     if instance.get('name') == instance_name:
                         instance_mode = instance.get('state_management_mode', 'custom')
-                        instance_hours = instance.get('state_management_hours', 168)
                         
                         # If state management is disabled for this instance, always return False (not processed)
                         if instance_mode == 'disabled':
@@ -289,15 +284,10 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
         
         db = get_database()
         
-        # Initialize per-instance state management if not already done
-        db.initialize_instance_state_management(app_type, instance_name, instance_hours)
-        
-        # Check if this instance's state has expired
-        if db.check_instance_expiration(app_type, instance_name):
-            stateful_logger.info(f"State management expired for {app_type}/{instance_name}, resetting...")
-            db.reset_instance_state_management(app_type, instance_name, instance_hours)
-            # After reset, item is not processed
-            return False
+        # REMOVED: Redundant initialization and expiration checks
+        # These are now handled ONCE per cycle in background.py _process_one_instance()
+        # db.initialize_instance_state_management(app_type, instance_name, instance_hours)
+        # if db.check_instance_expiration(app_type, instance_name):
         
         # Converting media_id to string since some callers might pass an integer
         media_id_str = str(media_id)

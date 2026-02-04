@@ -66,7 +66,7 @@ def process_cutoff_upgrades(
     # Use advanced settings from database for command operations
     command_wait_delay = get_advanced_setting("command_wait_delay", 1)
     command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
-    state_reset_interval_hours = get_advanced_setting("stateful_management_hours", 168)  
+    state_reset_interval_hours = get_advanced_setting("stateful_management_hours", 72)  
     
     # Log that we're using Eros API v3
     eros_logger.debug(f"Using Eros API v3 for instance: {instance_name}")

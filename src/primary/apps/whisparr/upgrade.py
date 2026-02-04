@@ -61,7 +61,7 @@ def process_cutoff_upgrades(
     # Use the new hunt_upgrade_items parameter name, falling back to hunt_upgrade_scenes for backwards compatibility
     hunt_upgrade_items = app_settings.get("hunt_upgrade_items", app_settings.get("hunt_upgrade_scenes", 0))
     
-    state_reset_interval_hours = get_advanced_setting("stateful_management_hours", 168)  
+    state_reset_interval_hours = get_advanced_setting("stateful_management_hours", 72)  
     
     # Log that we're using Whisparr V2 API
     whisparr_logger.debug(f"Using Whisparr V2 API for instance: {instance_name}")

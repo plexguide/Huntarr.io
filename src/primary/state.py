@@ -80,8 +80,8 @@ def check_state_reset(app_type: str) -> bool:
         logger.error("check_state_reset called without app_type.")
         return False
         
-    # Use a much longer default interval (1 week = 168 hours) to prevent frequent resets
-    reset_interval = settings_manager.get_advanced_setting("stateful_management_hours", 168)
+    # Use a longer default interval (3 days = 72 hours) to prevent too frequent resets
+    reset_interval = settings_manager.get_advanced_setting("stateful_management_hours", 72)
     
     last_reset = get_last_reset_time(app_type)
     now = datetime.datetime.now()
@@ -153,7 +153,7 @@ def calculate_reset_time(app_type: str) -> str:
         logger.error("calculate_reset_time called without app_type.")
         return "Next reset: Unknown (app type not provided)"
         
-    reset_interval = settings_manager.get_advanced_setting("stateful_management_hours", 168)
+    reset_interval = settings_manager.get_advanced_setting("stateful_management_hours", 72)
     
     last_reset = get_last_reset_time(app_type)
     

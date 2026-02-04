@@ -52,7 +52,7 @@ def process_missing_items(
     instance_name = app_settings.get("instance_name", "Whisparr Default")
     
     # Use the centralized advanced setting for stateful management hours
-    stateful_management_hours = get_advanced_setting("stateful_management_hours", 168)
+    stateful_management_hours = get_advanced_setting("stateful_management_hours", 72)
     
     monitored_only = app_settings.get("monitored_only", True)
     skip_future_releases = app_settings.get("skip_future_releases", True)

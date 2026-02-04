@@ -179,7 +179,8 @@ def app_specific_loop(app_type: str) -> None:
             continue
 
         # --- State Reset Check --- #
-        check_state_reset(app_type)
+        # REMOVED: Global check_state_reset(app_type) - this was resetting ALL instances at once!
+        # Per-instance state reset now happens inside _process_one_instance() for each instance individually
 
         app_logger.info(f"=== Starting {app_type.upper()} cycle ===")
 
@@ -302,6 +303,26 @@ def app_specific_loop(app_type: str) -> None:
 
             # Get global/shared settings from app_settings loaded at the start of the loop
             # Example: monitored_only = app_settings.get("monitored_only", True)
+
+            # --- Per-Instance State Reset Check --- #
+            # Check if THIS INSTANCE's state has expired (not global, per instance!)
+            try:
+                from src.primary.utils.database import get_database
+                db = get_database()
+                
+                # Get instance-specific state management hours
+                instance_hours = instance_details.get("state_management_hours", 72)
+                
+                # Initialize if not already done (safe, only runs once per instance)
+                db.initialize_instance_state_management(app_type, instance_name, instance_hours)
+                
+                # Check if THIS instance's state has expired
+                if db.check_instance_expiration(app_type, instance_name):
+                    app_logger.info(f"State management expired for {app_type}/{instance_name}, resetting this instance only...")
+                    db.reset_instance_state_management(app_type, instance_name, instance_hours)
+            except Exception as e:
+                app_logger.warning(f"Error checking state expiration for {instance_name}: {e}")
+                # Continue processing even if state check fails
 
             # --- Connection Check --- #
             if not api_url or not api_key:
@@ -634,7 +655,7 @@ def app_specific_loop(app_type: str) -> None:
                         # Look up the instance in instances we just processed
                         for instance_details in instances_to_process:
                             if instance_details.get("instance_name") == instance_name:
-                                instance_hours = instance_details.get("state_management_hours", 168)
+                                instance_hours = instance_details.get("state_management_hours", 72)
                                 instance_mode = instance_details.get("state_management_mode", "custom")
                                 instance_enabled = (instance_mode != "disabled")
                                 break
@@ -647,7 +668,7 @@ def app_specific_loop(app_type: str) -> None:
                             formatted_msg = format_suppressed_message(error_msg, suppressed_count)
                             app_logger.warning(formatted_msg)
                         
-                        instance_hours = 168  # Default fallback
+                        instance_hours = 72  # Default fallback
                     
                     # Get summary for this instance
                     summary = get_state_management_summary(app_type, instance_name, instance_hours)

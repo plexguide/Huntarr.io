@@ -57,6 +57,8 @@ def get_configured_instances(quiet=False):
                     "sleep_duration": instance.get("sleep_duration", settings.get("sleep_duration", 900)),
                     "hourly_cap": instance.get("hourly_cap", settings.get("hourly_cap", 20)),
                     "exempt_tags": instance.get("exempt_tags") or [],
+                    "state_management_hours": instance.get("state_management_hours", 72),  # CRITICAL for Issue #717 fix
+                    "state_management_mode": instance.get("state_management_mode", "custom"),  # CRITICAL for Issue #717 fix
                 }
                 instances.append(instance_data)
     
@@ -98,6 +100,8 @@ def get_configured_instances(quiet=False):
                 "hunt_upgrade_items": settings.get("hunt_upgrade_items", 0),  # Legacy upgrade hunt value
                 "sleep_duration": settings.get("sleep_duration", 900),
                 "hourly_cap": settings.get("hourly_cap", 20),
+                "state_management_hours": settings.get("state_management_hours", 72),  # CRITICAL for Issue #717 fix
+                "state_management_mode": settings.get("state_management_mode", "custom"),  # CRITICAL for Issue #717 fix
             }
             instances.append(instance_data)
 

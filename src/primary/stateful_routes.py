@@ -59,13 +59,13 @@ def reset_stateful():
             from src.primary.settings_manager import load_settings
             
             # Get instance settings for expiration hours
-            instance_hours = 168  # Default
+            instance_hours = 72  # Default
             try:
                 settings = load_settings(app_type)
                 if settings and 'instances' in settings:
                     for instance in settings['instances']:
                         if instance.get('name') == instance_name:
-                            instance_hours = instance.get('state_management_hours', 168)
+                            instance_hours = instance.get('state_management_hours', 72)
                             break
             except Exception as e:
                 from src.primary.utils.log_deduplication import should_log_message, format_suppressed_message
@@ -179,7 +179,7 @@ def get_summary():
                 for instance in settings['instances']:
                     if instance.get('name') == instance_name:
                         # Get per-instance state management hours
-                        instance_hours = instance.get('state_management_hours', 168)
+                        instance_hours = instance.get('state_management_hours', 72)
                         instance_mode = instance.get('state_management_mode', 'custom')
                         
                         # If state management is disabled for this instance, return disabled status
@@ -208,7 +208,7 @@ def get_summary():
                 stateful_logger.warning(formatted_msg)
             
             # Fall back to default hours if settings can't be loaded
-            instance_hours = 168
+            instance_hours = 72
         
         # Get summary for the specific instance with custom hours
         summary = get_state_management_summary(app_type, instance_name, instance_hours)
@@ -217,7 +217,7 @@ def get_summary():
             "success": True,
             "processed_count": summary.get("processed_count", 0),
             "next_reset_time": summary.get("next_reset_time"),
-            "expiration_hours": summary.get("expiration_hours", instance_hours or 168),
+            "expiration_hours": summary.get("expiration_hours", instance_hours or 72),
             "has_processed_items": summary.get("has_processed_items", False),
             "state_management_enabled": True
         }

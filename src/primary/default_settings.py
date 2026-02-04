@@ -24,7 +24,7 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
         "api_key": "",
         "enabled": False,
         "state_management_mode": "custom",
-        "state_management_hours": 168,
+        "state_management_hours": 72,
         "monitored_only": True,
         "tag_processed_items": True,
         "custom_tags": {
@@ -193,7 +193,7 @@ GENERAL_DEFAULTS = {
     "notification_include_app": True,
     "local_access_bypass": False,
     "proxy_auth_bypass": False,
-    "stateful_management_hours": 168,
+    "stateful_management_hours": 72,
     "command_wait_delay": 1,
     "command_wait_attempts": 600,
     "minimum_download_queue_size": -1,

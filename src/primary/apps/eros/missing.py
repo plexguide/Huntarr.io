@@ -69,7 +69,7 @@ def process_missing_items(
     command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
     
     # Use the centralized advanced setting for stateful management hours
-    stateful_management_hours = get_advanced_setting("stateful_management_hours", 168)
+    stateful_management_hours = get_advanced_setting("stateful_management_hours", 72)
     
     # Log that we're using Eros v3 API
     eros_logger.debug(f"Using Eros API v3 for instance: {instance_name}")

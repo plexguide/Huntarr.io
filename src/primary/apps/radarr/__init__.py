@@ -58,6 +58,10 @@ def get_configured_instances(quiet=False):
                 instance_settings["hourly_cap"] = instance.get("hourly_cap", settings.get("hourly_cap", 20))
                 instance_settings["exempt_tags"] = instance.get("exempt_tags") or []
                 
+                # Add state management settings (CRITICAL for Issue #717 fix)
+                instance_settings["state_management_hours"] = instance.get("state_management_hours", 72)
+                instance_settings["state_management_mode"] = instance.get("state_management_mode", "custom")
+                
                 instances.append(instance_settings)
     else:
         # Fallback to legacy single-instance config
@@ -83,6 +87,9 @@ def get_configured_instances(quiet=False):
             settings_copy["release_date_delay_days"] = settings.get("release_date_delay_days", 0)
             settings_copy["sleep_duration"] = settings.get("sleep_duration", 900)
             settings_copy["hourly_cap"] = settings.get("hourly_cap", 20)
+            # Add state management settings for legacy config (CRITICAL for Issue #717 fix)
+            settings_copy["state_management_hours"] = settings.get("state_management_hours", 72)
+            settings_copy["state_management_mode"] = settings.get("state_management_mode", "custom")
             instances.append(settings_copy)
     
     # Use debug level to avoid spamming logs, especially with 0 instances
