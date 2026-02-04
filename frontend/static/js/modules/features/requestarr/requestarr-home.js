@@ -10,11 +10,17 @@ const HomeRequestarr = {
     defaultTVInstance: null,
     showTrending: true,
     enableRequestarr: true,
-    
+
+    // Delay before showing "Failed to load" so transient failures don't flash (ms)
+    FAILED_MESSAGE_DELAY: 800,
+
     // Section rotation
     sections: ['trending', 'movies', 'tv'],
     currentSection: null,
     ROTATION_KEY: 'home_section_rotation',
+
+    // Pending error timeouts - cleared when a new load starts so we don't show error after success
+    _pendingErrorTimeout: null,
 
     init() {
         this.cacheElements();
@@ -25,6 +31,11 @@ const HomeRequestarr = {
 
         // Make this module globally accessible for auto-save visibility updates
         window.HomeRequestarr = this;
+
+        // Hide discovery sections until showSection() runs so we never flash initial or stale content
+        if (this.elements.trendingSection) this.elements.trendingSection.style.display = 'none';
+        if (this.elements.moviesSection) this.elements.moviesSection.style.display = 'none';
+        if (this.elements.tvSection) this.elements.tvSection.style.display = 'none';
 
         // Force hide initially if we can't determine setting yet
         if (this.elements.discoverView) {
@@ -60,7 +71,9 @@ const HomeRequestarr = {
                         });
                     })
                     .catch(() => {
-                        this.showTrendingError('Requestarr modules not ready');
+                        // Don't show error here - keep loading state so we don't flash "Failed" before real load.
+                        // showSection will have set loading spinner; if core never loads, user still sees loading.
+                        console.warn('[HomeRequestarr] Requestarr modules not ready within timeout');
                     });
             });
     },
@@ -95,11 +108,8 @@ const HomeRequestarr = {
             console.log('[HomeRequestarr] Applying visibility to discoverView:', this.showTrending);
             if (this.showTrending) {
                 discoverView.style.setProperty('display', 'block', 'important');
-                // Load trending if not already loaded
-                if (!this.elements.trendingCarousel.children.length || 
-                    this.elements.trendingCarousel.querySelector('.loading-spinner')) {
-                    this.loadTrending();
-                }
+                // Do not load here - wait for waitForCore() then showSection() will load.
+                // Loading before core is ready can show "Failed to load" briefly then succeed.
             } else {
                 discoverView.style.setProperty('display', 'none', 'important');
             }
@@ -167,26 +177,41 @@ const HomeRequestarr = {
         if (this.elements.moviesSection) this.elements.moviesSection.style.display = 'none';
         if (this.elements.tvSection) this.elements.tvSection.style.display = 'none';
         
-        // Show and load the selected section
+        // Show selected section and set loading state first so we never show stale "Failed to load"
         switch (section) {
             case 'trending':
                 if (this.elements.trendingSection) {
                     this.elements.trendingSection.style.display = 'block';
+                    this.setCarouselLoading('trending');
                     this.loadTrending();
                 }
                 break;
             case 'movies':
                 if (this.elements.moviesSection) {
                     this.elements.moviesSection.style.display = 'block';
+                    this.setCarouselLoading('movies');
                     this.loadPopularMovies();
                 }
                 break;
             case 'tv':
                 if (this.elements.tvSection) {
                     this.elements.tvSection.style.display = 'block';
+                    this.setCarouselLoading('tv');
                     this.loadPopularTV();
                 }
                 break;
+        }
+    },
+
+    /** Show loading spinner in the given carousel so we never flash stale "Failed to load" when entering section */
+    setCarouselLoading(section) {
+        const loadingHtml = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div>';
+        if (section === 'trending' && this.elements.trendingCarousel) {
+            this.elements.trendingCarousel.innerHTML = loadingHtml.replace('Loading...</p>', 'Loading trending content...</p>');
+        } else if (section === 'movies' && this.elements.moviesCarousel) {
+            this.elements.moviesCarousel.innerHTML = loadingHtml.replace('Loading...</p>', 'Loading movies...</p>');
+        } else if (section === 'tv' && this.elements.tvCarousel) {
+            this.elements.tvCarousel.innerHTML = loadingHtml.replace('Loading...</p>', 'Loading TV shows...</p>');
         }
     },
 
@@ -328,10 +353,18 @@ const HomeRequestarr = {
         }
     },
 
+    _clearPendingError() {
+        if (this._pendingErrorTimeout) {
+            clearTimeout(this._pendingErrorTimeout);
+            this._pendingErrorTimeout = null;
+        }
+    },
+
     async loadTrending() {
         if (!this.enableRequestarr || !this.elements.trendingCarousel) {
             return;
         }
+        this._clearPendingError();
 
         try {
             const response = await fetch('./api/requestarr/discover/trending');
@@ -354,7 +387,13 @@ const HomeRequestarr = {
             }
         } catch (error) {
             console.error('[HomeRequestarr] Error loading trending:', error);
-            this.showTrendingError('Failed to load trending content');
+            const section = 'trending';
+            this._pendingErrorTimeout = setTimeout(() => {
+                this._pendingErrorTimeout = null;
+                if (this.currentSection === section && this.elements.trendingCarousel) {
+                    this.showTrendingError('Failed to load trending content');
+                }
+            }, this.FAILED_MESSAGE_DELAY);
         }
     },
     
@@ -362,6 +401,7 @@ const HomeRequestarr = {
         if (!this.enableRequestarr || !this.elements.moviesCarousel) {
             return;
         }
+        this._clearPendingError();
 
         try {
             const response = await fetch('./api/requestarr/discover/movies?sort_by=popularity.desc');
@@ -380,7 +420,13 @@ const HomeRequestarr = {
             }
         } catch (error) {
             console.error('[HomeRequestarr] Error loading popular movies:', error);
-            this.elements.moviesCarousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load popular movies</p>';
+            const section = 'movies';
+            this._pendingErrorTimeout = setTimeout(() => {
+                this._pendingErrorTimeout = null;
+                if (this.currentSection === section && this.elements.moviesCarousel) {
+                    this.elements.moviesCarousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load popular movies</p>';
+                }
+            }, this.FAILED_MESSAGE_DELAY);
         }
     },
     
@@ -388,6 +434,7 @@ const HomeRequestarr = {
         if (!this.enableRequestarr || !this.elements.tvCarousel) {
             return;
         }
+        this._clearPendingError();
 
         try {
             const response = await fetch('./api/requestarr/discover/tv?sort_by=popularity.desc');
@@ -406,12 +453,18 @@ const HomeRequestarr = {
             }
         } catch (error) {
             console.error('[HomeRequestarr] Error loading popular TV:', error);
-            this.elements.tvCarousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load popular TV shows</p>';
+            const section = 'tv';
+            this._pendingErrorTimeout = setTimeout(() => {
+                this._pendingErrorTimeout = null;
+                if (this.currentSection === section && this.elements.tvCarousel) {
+                    this.elements.tvCarousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load popular TV shows</p>';
+                }
+            }, this.FAILED_MESSAGE_DELAY);
         }
     },
 
     showTrendingError(message) {
-        if (this.elements.trendingCarousel) {
+        if (this.currentSection === 'trending' && this.elements.trendingCarousel) {
             this.elements.trendingCarousel.innerHTML = `<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">${message}</p>`;
         }
     },
