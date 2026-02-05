@@ -258,7 +258,7 @@ def process_cutoff_upgrades(
             media_name = f"{author_name} - {book_title}"
             
             # Include full details in history entry
-            log_processed_media("readarr", media_name, book.get("id"), instance_key, "upgrade")
+            log_processed_media("readarr", media_name, book.get("id"), instance_key, "upgrade", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
             readarr_logger.debug(f"Logged quality upgrade to history for '{media_name}' (Book ID: {book.get('id')})")
 
             

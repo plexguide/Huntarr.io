@@ -96,7 +96,8 @@ def process_missing_episodes(
     tag_enable_missing: bool = True,
     tag_enable_shows_missing: bool = True,
     custom_tags: dict = None,
-    exempt_tags: list = None
+    exempt_tags: list = None,
+    instance_display_name: Optional[str] = None,
 ) -> bool:
     """
     Process missing episodes for Sonarr.
@@ -121,6 +122,7 @@ def process_missing_episodes(
     exempt_tags = _normalize_exempt_tags(exempt_tags or [])
 
     # Handle different modes
+    display_name = instance_display_name or instance_name
     if hunt_missing_mode == "seasons_packs":
         # Handle season pack searches (using SeasonSearch command)
         sonarr_logger.info("Season [Packs] mode selected - searching for complete season packs")
@@ -129,7 +131,7 @@ def process_missing_episodes(
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check,
             tag_processed_items, tag_enable_missing, tag_enable_shows_missing, custom_tags, exempt_tags=exempt_tags,
-            hunt_missing_mode=hunt_missing_mode
+            hunt_missing_mode=hunt_missing_mode, instance_display_name=display_name
         )
     elif hunt_missing_mode == "shows":
         # Handle show-based missing items (all episodes from a show)
@@ -138,7 +140,8 @@ def process_missing_episodes(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, tag_enable_missing, tag_enable_shows_missing, custom_tags, exempt_tags=exempt_tags
+            tag_processed_items, tag_enable_missing, tag_enable_shows_missing, custom_tags, exempt_tags=exempt_tags,
+            instance_display_name=display_name
         )
     elif hunt_missing_mode == "episodes":
         # Handle individual episode processing (reinstated with warnings)
@@ -147,7 +150,8 @@ def process_missing_episodes(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             skip_future_episodes, hunt_missing_items, air_date_delay_days,
             command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, tag_enable_missing, tag_enable_shows_missing, custom_tags, exempt_tags=exempt_tags
+            tag_processed_items, tag_enable_missing, tag_enable_shows_missing, custom_tags, exempt_tags=exempt_tags,
+            instance_display_name=display_name
         )
     else:
         sonarr_logger.error(f"Invalid hunt_missing_mode: {hunt_missing_mode}. Valid options are 'seasons_packs', 'shows', or 'episodes'.")
@@ -170,7 +174,8 @@ def process_missing_seasons_packs_mode(
     tag_enable_shows_missing: bool = True,
     custom_tags: dict = None,
     exempt_tags: list = None,
-    hunt_missing_mode: str = "seasons_packs"
+    hunt_missing_mode: str = "seasons_packs",
+    instance_display_name: Optional[str] = None,
 ) -> bool:
     """
     Process missing seasons using the SeasonSearch command
@@ -366,7 +371,7 @@ def process_missing_seasons_packs_mode(
             
             # Log to history system
             media_name = f"{series_title} - Season {season_number} (contains {episode_count} missing episodes)"
-            log_processed_media("sonarr", media_name, season_id, instance_name, "missing")
+            log_processed_media("sonarr", media_name, season_id, instance_name, "missing", display_name_for_log=instance_display_name or instance_name)
             sonarr_logger.debug(f"Logged history entry for season pack: {media_name}")
             
             # CRITICAL FIX: Use increment_stat_only to avoid double-counting API calls
@@ -405,7 +410,8 @@ def process_missing_shows_mode(
     tag_enable_missing: bool = True,
     tag_enable_shows_missing: bool = True,
     custom_tags: dict = None,
-    exempt_tags: list = None
+    exempt_tags: list = None,
+    instance_display_name: Optional[str] = None,
 ) -> bool:
     """Process missing episodes in show mode - gets all missing episodes for entire shows."""
     processed_any = False
@@ -586,7 +592,7 @@ def process_missing_shows_mode(
                             season_episode = f"S{season}E{ep_num}"
                             
                         media_name = f"{show_title} - {season_episode} - {title}"
-                        log_processed_media("sonarr", media_name, str(episode_id), instance_name, "missing")
+                        log_processed_media("sonarr", media_name, str(episode_id), instance_name, "missing", display_name_for_log=instance_display_name or instance_name)
                         sonarr_logger.debug(f"Logged history entry for episode: {media_name}")
                         break
             
@@ -596,7 +602,7 @@ def process_missing_shows_mode(
             
             # Also log the entire show to history
             media_name = f"{show_title} - Complete Series ({len(episode_ids)} episodes)"
-            log_processed_media("sonarr", media_name, str(show_id), instance_name, "missing")
+            log_processed_media("sonarr", media_name, str(show_id), instance_name, "missing", display_name_for_log=instance_display_name or instance_name)
             sonarr_logger.debug(f"Logged history entry for complete series: {media_name}")
             
             # Increment the hunted statistics
@@ -624,7 +630,8 @@ def process_missing_episodes_mode(
     tag_enable_missing: bool = True,
     tag_enable_shows_missing: bool = True,
     custom_tags: dict = None,
-    exempt_tags: list = None
+    exempt_tags: list = None,
+    instance_display_name: Optional[str] = None,
 ) -> bool:
     """
     Process missing episodes in individual episode mode.
@@ -783,7 +790,7 @@ def process_missing_episodes_mode(
             
             # Log to history system
             media_name = f"{series_title} - {season_episode} - {episode_title}"
-            log_processed_media("sonarr", media_name, str(episode_id), instance_name, "missing")
+            log_processed_media("sonarr", media_name, str(episode_id), instance_name, "missing", display_name_for_log=instance_display_name or instance_name)
             sonarr_logger.debug(f"Logged history entry for episode: {media_name}")
             
             # Increment statistics

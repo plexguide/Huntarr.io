@@ -424,7 +424,7 @@ def app_specific_loop(app_type: str) -> None:
             try:
                 # Per-instance cycle and logs: start cycle for this instance, set log context so DB shows e.g. Sonarr-TestInstance
                 if start_cycle:
-                    start_cycle(app_type, instance_name=instance_key)
+                    start_cycle(app_type, instance_name=instance_key, log_name=instance_name)
                 if set_instance_log_context:
                     set_instance_log_context(f"{app_type.capitalize()}-{instance_name}")
                 if set_instance_name_for_cap:
@@ -432,7 +432,7 @@ def app_specific_loop(app_type: str) -> None:
                 if _has_pending_reset(app_type, instance_key):
                     app_logger.info(f"Reset requested for {app_type} instance {instance_name}; ending cycle and restarting.")
                     if end_cycle:
-                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
+                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
                     return (processed_any_this, instance_name, True, False)
@@ -472,7 +472,7 @@ def app_specific_loop(app_type: str) -> None:
             if not api_url or not api_key:
                 app_logger.warning(f"Missing API URL or Key for instance '{instance_name}'. Skipping.")
                 if end_cycle:
-                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
+                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
                 if clear_instance_log_context:
                     clear_instance_log_context()
                 return (False, instance_name, False, False)
@@ -483,7 +483,7 @@ def app_specific_loop(app_type: str) -> None:
                 if not connected:
                     app_logger.warning(f"Failed to connect to {app_type} instance '{instance_name}' at {api_url}. Skipping.")
                     if end_cycle:
-                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
+                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
                     return (False, instance_name, False, False)
@@ -491,7 +491,7 @@ def app_specific_loop(app_type: str) -> None:
             except Exception as e:
                 app_logger.error(f"Error connecting to {app_type} instance '{instance_name}': {e}", exc_info=True)
                 if end_cycle:
-                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
+                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
                 if clear_instance_log_context:
                     clear_instance_log_context()
                 return (False, instance_name, False, False) # Skip this instance if connection fails
@@ -505,7 +505,7 @@ def app_specific_loop(app_type: str) -> None:
                     cap_status = get_hourly_cap_status(app_type, instance_name=instance_key)
                     app_logger.info(f"{app_type.upper()} instance '{instance_name}' hourly cap reached {cap_status.get('current_usage', 0)} of {cap_status.get('limit', 0)}. Skipping cycle!")
                     if end_cycle:
-                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
+                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
                     return (False, instance_name, False, False)  # Skip this instance if API cap is exceeded
@@ -571,7 +571,7 @@ def app_specific_loop(app_type: str) -> None:
                     if current_queue_size >= max_queue_size:
                         app_logger.info(f"Download queue size ({current_queue_size}) meets or exceeds maximum ({max_queue_size}) for {instance_name}. Skipping cycle for this instance.")
                         if end_cycle:
-                            end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
+                            end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
                         if clear_instance_log_context:
                             clear_instance_log_context()
                         return (False, instance_name, False, False) # Skip processing for this instance
@@ -590,7 +590,8 @@ def app_specific_loop(app_type: str) -> None:
             combined_settings["api_timeout"] = instance_details.get("api_timeout", 120)
             combined_settings["command_wait_delay"] = instance_details.get("command_wait_delay", settings_manager.get_advanced_setting("command_wait_delay", 1))
             combined_settings["command_wait_attempts"] = instance_details.get("command_wait_attempts", settings_manager.get_advanced_setting("command_wait_attempts", 600))
-            
+            combined_settings["instance_display_name"] = instance_name  # For log_processed_media display in logs
+
             # Define the stop check function (also abort when user hits Reset for this instance)
             def _stop_check():
                 if stop_event.is_set():
@@ -631,6 +632,7 @@ def app_specific_loop(app_type: str) -> None:
                             api_url=api_url,
                             api_key=api_key,
                             instance_name=instance_key,  # Stable ID for DB/history keying
+                            instance_display_name=instance_name,
                             api_timeout=api_timeout,
                             monitored_only=monitored_only,
                             skip_future_episodes=skip_future_episodes,
@@ -657,13 +659,13 @@ def app_specific_loop(app_type: str) -> None:
                 finally:
                     if clear_cycle_activity:
                         clear_cycle_activity(app_type, instance_key)
-                if _has_pending_reset(app_type, instance_key):
-                    app_logger.info(f"Reset requested for {app_type} instance {instance_name}; ending cycle after missing.")
-                    if end_cycle:
-                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
-                    if clear_instance_log_context:
-                        clear_instance_log_context()
-                    return (processed_any_this, instance_name, True, False)
+                    if _has_pending_reset(app_type, instance_key):
+                        app_logger.info(f"Reset requested for {app_type} instance {instance_name}; ending cycle after missing.")
+                        if end_cycle:
+                            end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
+                        if clear_instance_log_context:
+                            clear_instance_log_context()
+                        return (processed_any_this, instance_name, True, False)
 
             # --- Process Upgrades --- #
             if hunt_upgrade_enabled and process_upgrades:
@@ -697,6 +699,7 @@ def app_specific_loop(app_type: str) -> None:
                             api_url=api_url,
                             api_key=api_key,
                             instance_name=instance_key,  # Stable ID for DB/history keying
+                            instance_display_name=instance_name,
                             api_timeout=api_timeout,
                             monitored_only=monitored_only,
                             hunt_upgrade_items=hunt_upgrade_items,
@@ -726,7 +729,7 @@ def app_specific_loop(app_type: str) -> None:
                 if _has_pending_reset(app_type, instance_key):
                     app_logger.info(f"Reset requested for {app_type} instance {instance_name}; ending cycle after upgrades.")
                     if end_cycle:
-                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
+                        end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
                     return (processed_any_this, instance_name, True, False)
@@ -739,7 +742,7 @@ def app_specific_loop(app_type: str) -> None:
                     instance_sleep = instance_details.get("sleep_duration", app_settings.get("sleep_duration", 900))
                     next_cycle_time = now_user_tz + datetime.timedelta(seconds=instance_sleep)
                     next_cycle_naive = next_cycle_time.replace(tzinfo=None) if next_cycle_time.tzinfo else next_cycle_time
-                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key)
+                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
             except Exception as e:
                 app_logger.warning(f"Failed to set cycle end for {instance_name}: {e}")
             # One HOURLY API summary for this instance (replaces per-increment log spam)

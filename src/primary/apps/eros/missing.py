@@ -235,7 +235,7 @@ def process_missing_items(
                     eros_logger.warning(f"Failed to tag movie {item_id} with '{custom_tag}': {e}")
             
             # Log to history system
-            log_processed_media("eros", item_info, item_id, instance_key, "missing")
+            log_processed_media("eros", item_info, item_id, instance_key, "missing", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
             eros_logger.debug(f"Logged history entry for item: {item_info}")
             
             items_processed += 1

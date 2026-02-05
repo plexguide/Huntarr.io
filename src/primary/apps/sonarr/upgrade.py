@@ -36,6 +36,7 @@ def process_cutoff_upgrades(
     upgrade_selection_method: str = "cutoff",
     upgrade_tag: str = "",
     exempt_tags: list = None,
+    instance_display_name: Optional[str] = None,
 ) -> bool:
     """
     Process quality cutoff upgrades for Sonarr.
@@ -111,7 +112,7 @@ def process_cutoff_upgrades(
                 add_processed_id("sonarr", instance_name, f"series_{series_id}")
                 from src.primary.stats_manager import increment_stat_only
                 increment_stat_only("sonarr", "upgraded", 1, instance_name)
-                log_processed_media("sonarr", title, str(series_id), instance_name, "upgrade")
+                log_processed_media("sonarr", title, str(series_id), instance_name, "upgrade", display_name_for_log=instance_display_name or instance_name)
                 
                 # Add the upgrade tag to mark as processed (Upgradinatorr-style)
                 tag_id = sonarr_api.get_or_create_tag(api_url, api_key, api_timeout, tag_label)
@@ -140,12 +141,14 @@ def process_cutoff_upgrades(
     
     sonarr_logger.info(f"Using {upgrade_mode.upper()} mode for quality upgrades")
 
+    display_name = instance_display_name or instance_name
     # Use seasons_packs mode or episodes mode (exempt_tags already normalized above)
     if upgrade_mode == "seasons_packs":
         return process_upgrade_seasons_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             hunt_upgrade_items, command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, tag_enable_upgrade, tag_enable_upgraded, custom_tags, exempt_tags=exempt_tags
+            tag_processed_items, tag_enable_upgrade, tag_enable_upgraded, custom_tags, exempt_tags=exempt_tags,
+            instance_display_name=display_name
         )
     elif upgrade_mode == "episodes":
         # Handle individual episode upgrades (reinstated with warnings)
@@ -153,13 +156,14 @@ def process_cutoff_upgrades(
         return process_upgrade_episodes_mode(
             api_url, api_key, instance_name, api_timeout, monitored_only, 
             hunt_upgrade_items, command_wait_delay, command_wait_attempts, stop_check,
-            tag_processed_items, tag_enable_upgrade, tag_enable_upgraded, custom_tags, exempt_tags=exempt_tags
+            tag_processed_items, tag_enable_upgrade, tag_enable_upgraded, custom_tags, exempt_tags=exempt_tags,
+            instance_display_name=display_name
         )
     else:
         sonarr_logger.error(f"Invalid upgrade_mode: {upgrade_mode}. Valid options are 'seasons_packs' or 'episodes'.")
         return False
 
-def log_season_pack_upgrade(api_url: str, api_key: str, api_timeout: int, series_id: int, season_number: int, instance_name: str):
+def log_season_pack_upgrade(api_url: str, api_key: str, api_timeout: int, series_id: int, season_number: int, instance_name: str, instance_display_name: Optional[str] = None):
     """Log a season pack upgrade to the history."""
     try:
         # Get series details for better history logging
@@ -181,7 +185,7 @@ def log_season_pack_upgrade(api_url: str, api_key: str, api_timeout: int, series
             media_name = f"{series_title} - {season_id}"
             
             # Log the season pack upgrade to history with normal 'upgrade' operation type
-            log_processed_media("sonarr", media_name, season_id_num, instance_name, "upgrade")
+            log_processed_media("sonarr", media_name, season_id_num, instance_name, "upgrade", display_name_for_log=instance_display_name or instance_name)
             sonarr_logger.debug(f"Logged season pack upgrade to history for {series_title} Season {season_number}")
     except Exception as e:
         sonarr_logger.error(f"Failed to log season pack upgrade to history: {str(e)}")
@@ -201,6 +205,7 @@ def process_upgrade_seasons_mode(
     tag_enable_upgraded: bool = True,
     custom_tags: dict = None,
     exempt_tags: list = None,
+    instance_display_name: Optional[str] = None,
 ) -> bool:
     """Process upgrades in season mode - groups episodes by season."""
     processed_any = False
@@ -370,7 +375,7 @@ def process_upgrade_seasons_mode(
                         sonarr_logger.warning(f"Failed to tag series {series_id} with '{custom_tag}': {e}")
                 
                 # Log this as a season pack upgrade in the history
-                log_season_pack_upgrade(api_url, api_key, api_timeout, series_id, season_number, instance_name)
+                log_season_pack_upgrade(api_url, api_key, api_timeout, series_id, season_number, instance_name, instance_display_name)
                 
                 # CRITICAL FIX: Mark the season as processed at the season level to prevent reprocessing
                 season_id = f"{series_id}_{season_number}"
@@ -411,7 +416,7 @@ def process_upgrade_seasons_mode(
                             media_name = f"{series_title} - {season_episode} - {episode_title}"
                             # Skip logging individual episodes since we log the season pack
                             if not skip_episode_history:
-                                log_processed_media("sonarr", media_name, episode_id, instance_name, "upgrade")
+                                log_processed_media("sonarr", media_name, episode_id, instance_name, "upgrade", display_name_for_log=instance_display_name or instance_name)
                             sonarr_logger.debug(f"Logged quality upgrade to history for episode ID {episode_id}")
                     except Exception as e:
                         sonarr_logger.error(f"Failed to log history for episode ID {episode_id}: {str(e)}")
@@ -596,7 +601,7 @@ def process_upgrade_shows_mode(
                             media_name = f"{series_title} - {season_episode} - {episode_title}"
                             # Skip logging individual episodes since we log the season pack
                             if not skip_episode_history:
-                                log_processed_media("sonarr", media_name, episode_id, instance_name, "upgrade")
+                                log_processed_media("sonarr", media_name, episode_id, instance_name, "upgrade", display_name_for_log=instance_display_name or instance_name)
                             sonarr_logger.debug(f"Logged quality upgrade to history for episode ID {episode_id}")
                     except Exception as e:
                         sonarr_logger.error(f"Failed to log history for episode ID {episode_id}: {str(e)}")
@@ -623,6 +628,7 @@ def process_upgrade_episodes_mode(
     tag_enable_upgraded: bool = True,
     custom_tags: dict = None,
     exempt_tags: list = None,
+    instance_display_name: Optional[str] = None,
 ) -> bool:
     """
     Process upgrades in individual episode mode.
@@ -764,7 +770,7 @@ def process_upgrade_episodes_mode(
                     
                     # Log to history system
                     media_name = f"{series_title} - {season_episode} - {episode_title}"
-                    log_processed_media("sonarr", media_name, str(episode_id), instance_name, "upgrade")
+                    log_processed_media("sonarr", media_name, str(episode_id), instance_name, "upgrade", display_name_for_log=instance_display_name or instance_name)
                     sonarr_logger.debug(f"Logged upgrade to history for episode: {media_name}")
                     
                     # Increment statistics
@@ -786,7 +792,7 @@ def process_upgrade_episodes_mode(
                 
                 # Log to history system
                 media_name = f"{series_title} - {season_episode} - {episode_title}"
-                log_processed_media("sonarr", media_name, str(episode_id), instance_name, "upgrade")
+                log_processed_media("sonarr", media_name, str(episode_id), instance_name, "upgrade", display_name_for_log=instance_display_name or instance_name)
                 sonarr_logger.debug(f"Logged upgrade to history for episode: {media_name}")
                 
                 # Increment statistics

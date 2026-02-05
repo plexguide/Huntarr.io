@@ -221,7 +221,7 @@ def process_missing_items(
             
             # Log to history system
             media_name = f"{title} - {season_episode}"
-            log_processed_media("whisparr", media_name, item_id, instance_key, "missing")
+            log_processed_media("whisparr", media_name, item_id, instance_key, "missing", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
             whisparr_logger.debug(f"Logged history entry for item: {media_name}")
             
             items_processed += 1

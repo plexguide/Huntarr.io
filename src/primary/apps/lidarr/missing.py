@@ -302,7 +302,7 @@ def process_missing_albums(
                             lidarr_logger.debug(f"Added album ID {album_id} to processed list for {instance_name}, success: {album_success}")
                 
                 # Log to history system
-                log_processed_media("lidarr", f"{artist_name}", artist_id, instance_key, "missing")
+                log_processed_media("lidarr", f"{artist_name}", artist_id, instance_key, "missing", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
                 lidarr_logger.debug(f"Logged history entry for artist: {artist_name}")
                 
                 time.sleep(0.1) # Small delay between triggers
@@ -395,7 +395,7 @@ def process_missing_albums(
                         media_name = f"{artist_name} - {title}"
                         # Use foreignAlbumId for Lidarr URLs (falls back to internal ID if not available)
                         foreign_album_id = album_info.get('foreignAlbumId', album_id)
-                        log_processed_media("lidarr", media_name, foreign_album_id, instance_key, "missing")
+                        log_processed_media("lidarr", media_name, foreign_album_id, instance_key, "missing", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
                         lidarr_logger.debug(f"Logged history entry for album: {media_name}")
                 
                 time.sleep(command_wait_delay) # Basic delay after the single command

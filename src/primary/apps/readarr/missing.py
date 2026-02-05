@@ -206,7 +206,7 @@ def process_missing_books(
             
             # Log history entry for this specific book
             media_name = f"{author_name} - {book_title}"
-            log_processed_media("readarr", media_name, book_id, instance_key, "missing")
+            log_processed_media("readarr", media_name, book_id, instance_key, "missing", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
             readarr_logger.debug(f"Logged missing book history entry: {media_name} (ID: {book_id})")
             
             processed_count += 1

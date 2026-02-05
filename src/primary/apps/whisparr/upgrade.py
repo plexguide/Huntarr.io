@@ -199,7 +199,7 @@ def process_cutoff_upgrades(
             # Log to history so the upgrade appears in the history UI
             series_title = item.get("series", {}).get("title", "Unknown Series")
             media_name = f"{series_title} - {season_episode} - {title}"
-            log_processed_media("whisparr", media_name, item_id, instance_key, "upgrade")
+            log_processed_media("whisparr", media_name, item_id, instance_key, "upgrade", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
             whisparr_logger.debug(f"Logged quality upgrade to history for item ID {item_id}")
             
             items_processed += 1

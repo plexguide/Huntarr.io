@@ -43,10 +43,11 @@ def add_history_entry(app_type, entry_data):
         logger.error(f"Invalid app type: {app_type}")
         return None
     
-    # Extract instance name from entry data
+    # Extract instance key (for DB) and optional display name (for logs)
     instance_name = entry_data.get("instance_name", "Default")
-    
-    logger.debug(f"Adding history entry for {app_type} with instance_name: '{instance_name}'")
+    instance_display = entry_data.get("instance_display_name") or instance_name
+
+    logger.debug(f"Adding history entry for {app_type} with instance: '{instance_display}'")
     
     # Thread-safe database operation
     with history_locks[app_type]:
@@ -64,7 +65,7 @@ def add_history_entry(app_type, entry_data):
             # Add additional fields for compatibility
             entry["app_type"] = app_type  # Include app_type in the entry for display in UI
             
-            logger.info(f"Added history entry for {app_type}-{instance_name}: {entry_data['name']}")
+            logger.info(f"Added history entry for {app_type}-{instance_display}: {entry_data['name']}")
             
             # Send notification about this history entry
             try:

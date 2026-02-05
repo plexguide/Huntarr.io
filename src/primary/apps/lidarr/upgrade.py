@@ -247,7 +247,7 @@ def process_cutoff_upgrades(
                         media_name = f"{artist_name} - {album_title}"
                         # Use foreignAlbumId for Lidarr URLs (falls back to internal ID if not available)
                         foreign_album_id = album.get('foreignAlbumId', album_id)
-                        log_processed_media("lidarr", media_name, foreign_album_id, instance_key, "upgrade")
+                        log_processed_media("lidarr", media_name, foreign_album_id, instance_key, "upgrade", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
                         lidarr_logger.debug(f"Logged quality upgrade to history for album ID {album_id}")
                         break
                 

@@ -344,7 +344,7 @@ def process_cutoff_upgrades(
             media_name = f"{movie_title} ({movie_year})"
             # Use TMDb ID for Radarr URLs (falls back to internal ID if TMDb ID not available)
             tmdb_id = movie.get("tmdbId", movie_id)
-            log_processed_media("radarr", media_name, tmdb_id, instance_key, "upgrade")
+            log_processed_media("radarr", media_name, tmdb_id, instance_key, "upgrade", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
             radarr_logger.debug(f"Logged quality upgrade to history for movie ID {movie_id}")
             
             processed_count += 1

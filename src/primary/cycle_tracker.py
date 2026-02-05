@@ -54,13 +54,15 @@ def _get_user_timezone():
         return pytz.UTC
 
 def update_sleep_json(app_type: str, next_cycle_time: datetime.datetime, cyclelock: bool = None,
-                      instance_name: Optional[str] = None) -> None:
+                      instance_name: Optional[str] = None, log_name: Optional[str] = None) -> None:
     """
     Update the sleep/cycle data in the database.
     instance_name=None for single-app (e.g. swaparr); set for *arr per-instance.
+    log_name: when set, used in log messages instead of instance_name (e.g. display name for readability).
     """
     try:
-        label = f"{app_type}" + (f" instance {instance_name}" if instance_name else "")
+        display = log_name if log_name is not None else instance_name
+        label = f"{app_type}" + (f" instance {display}" if display else "")
         logger.debug(f"Updating sleep data for {label}, cyclelock: {cyclelock}")
         
         user_tz = _get_user_timezone()
@@ -99,8 +101,8 @@ def update_sleep_json(app_type: str, next_cycle_time: datetime.datetime, cyclelo
         logger.error(f"Error updating sleep data for {app_type}: {e}")
 
 def update_next_cycle(app_type: str, next_cycle_time: datetime.datetime,
-                     instance_name: Optional[str] = None) -> None:
-    """Update the next cycle time for an app or (app, instance)."""
+                     instance_name: Optional[str] = None, log_name: Optional[str] = None) -> None:
+    """Update the next cycle time for an app or (app, instance). log_name used in logs when set."""
     with _lock:
         user_tz = _get_user_timezone()
         if next_cycle_time.tzinfo is None:
@@ -108,7 +110,7 @@ def update_next_cycle(app_type: str, next_cycle_time: datetime.datetime,
         elif next_cycle_time.tzinfo != user_tz:
             next_cycle_time = next_cycle_time.astimezone(user_tz)
         next_cycle_time = next_cycle_time.replace(microsecond=0)
-        update_sleep_json(app_type, next_cycle_time, instance_name=instance_name)
+        update_sleep_json(app_type, next_cycle_time, instance_name=instance_name, log_name=log_name)
 
 def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -261,13 +263,14 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
             logger.error(f"Error getting cycle status: {e}")
             return {"error": str(e)}
 
-def start_cycle(app_type: str, instance_name: Optional[str] = None) -> None:
-    """Mark that a cycle has started for an app or (app, instance). instance_name=None for swaparr."""
+def start_cycle(app_type: str, instance_name: Optional[str] = None, log_name: Optional[str] = None) -> None:
+    """Mark that a cycle has started for an app or (app, instance). instance_name=None for swaparr. log_name used in logs when set (e.g. display name)."""
     try:
         db = get_database()
         user_tz = _get_user_timezone()
         now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
-        label = f"{app_type}" + (f" instance {instance_name}" if instance_name else "")
+        display = log_name if log_name is not None else instance_name
+        label = f"{app_type}" + (f" instance {display}" if display else "")
         if instance_name is not None:
             current_data = db.get_sleep_data_per_instance(app_type, instance_name)
             db.set_sleep_data_per_instance(
@@ -295,10 +298,11 @@ def start_cycle(app_type: str, instance_name: Optional[str] = None) -> None:
         logger.error(f"Error starting cycle for {app_type}: {e}")
 
 def end_cycle(app_type: str, next_cycle_time: datetime.datetime,
-              instance_name: Optional[str] = None) -> None:
-    """Mark that a cycle has ended for an app or (app, instance). instance_name=None for swaparr."""
+              instance_name: Optional[str] = None, log_name: Optional[str] = None) -> None:
+    """Mark that a cycle has ended for an app or (app, instance). instance_name=None for swaparr. log_name used in logs when set."""
     try:
-        label = f"{app_type}" + (f" instance {instance_name}" if instance_name else "")
+        display = log_name if log_name is not None else instance_name
+        label = f"{app_type}" + (f" instance {display}" if display else "")
         logger.info(f"Ending cycle for {label}, next cycle at {next_cycle_time.isoformat()}")
         db = get_database()
         user_tz = _get_user_timezone()
@@ -336,15 +340,16 @@ def end_cycle(app_type: str, next_cycle_time: datetime.datetime,
         logger.error(f"Error ending cycle for {app_type}: {e}")
 
 def reset_cycle(app_type: str, instance_name: Optional[str] = None,
-                sleep_minutes: int = 15) -> bool:
-    """Reset the cycle for an app or (app, instance). instance_name=None for swaparr."""
+                sleep_minutes: int = 15, log_name: Optional[str] = None) -> bool:
+    """Reset the cycle for an app or (app, instance). instance_name=None for swaparr. log_name used in logs when set."""
     with _lock:
         try:
             db = get_database()
             user_tz = _get_user_timezone()
             now = datetime.datetime.now(user_tz).replace(microsecond=0)
             future_time = now + datetime.timedelta(minutes=sleep_minutes)
-            label = f"{app_type}" + (f" instance {instance_name}" if instance_name else "")
+            display = log_name if log_name is not None else instance_name
+            label = f"{app_type}" + (f" instance {display}" if display else "")
             if instance_name is not None:
                 db.set_sleep_data_per_instance(
                     app_type=app_type,

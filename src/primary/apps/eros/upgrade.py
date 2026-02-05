@@ -215,7 +215,7 @@ def process_cutoff_upgrades(
                     eros_logger.warning(f"Failed to tag movie {item_id} with '{custom_tag}': {e}")
             
             # Log to history so the upgrade appears in the history UI
-            log_processed_media("eros", item_info, item_id, instance_key, "upgrade")
+            log_processed_media("eros", item_info, item_id, instance_key, "upgrade", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
             eros_logger.debug(f"Logged quality upgrade to history for item ID {item_id}")
             
             items_processed += 1
