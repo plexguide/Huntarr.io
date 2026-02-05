@@ -1106,11 +1106,12 @@
   
         const tagEnableUpgradeEl = document.getElementById('editor-tag-enable-upgrade');
         const upgradeMethodEl = document.getElementById('editor-upgrade-method');
+        const upgradeTagEl = document.getElementById('editor-upgrade-tag');
         const isTagsMode = upgradeMethodEl && upgradeMethodEl.value === 'tags';
         const tagEnableMissing = document.getElementById('editor-tag-enable-missing').checked;
         const tagEnableUpgrade = isTagsMode ? false : (tagEnableUpgradeEl ? tagEnableUpgradeEl.checked : false);
         const tagEnableShowsMissingEl = document.getElementById('editor-tag-enable-shows-missing');
-        const tagEnableShowsMissing = tagEnableShowsMissingEl ? tagEnableShowsMissingEl.checked : true;
+        const tagEnableShowsMissing = tagEnableShowsMissingEl ? tagEnableShowsMissingEl.checked : false;
         const newData = {
             enabled: document.getElementById('editor-enabled').value === 'true',
             name: document.getElementById('editor-name').value,
@@ -1163,8 +1164,6 @@
             newData.hunt_missing_mode = document.getElementById('editor-missing-mode').value;
             newData.upgrade_mode = document.getElementById('editor-upgrade-mode').value;
             newData.air_date_delay_days = parseInt(document.getElementById('editor-air-date-delay').value) || 0;
-            const upgradeMethodEl = document.getElementById('editor-upgrade-method');
-            const upgradeTagEl = document.getElementById('editor-upgrade-tag');
             newData.upgrade_selection_method = (upgradeMethodEl && upgradeMethodEl.value) ? upgradeMethodEl.value : 'cutoff';
             // Auto-fill "upgradinatorr" if tags mode is selected but no tag is provided
             let upgradeTagValue = (upgradeTagEl && upgradeTagEl.value) ? String(upgradeTagEl.value).trim() : '';
@@ -1186,8 +1185,6 @@
                  newData.release_date_delay_days = parseInt(document.getElementById('editor-release-date-delay').value) || 0;
              }
              if (appType === 'radarr' || appType === 'lidarr' || appType === 'readarr') {
-                 const upgradeMethodEl = document.getElementById('editor-upgrade-method');
-                 const upgradeTagEl = document.getElementById('editor-upgrade-tag');
                  newData.upgrade_selection_method = (upgradeMethodEl && upgradeMethodEl.value) ? upgradeMethodEl.value : 'cutoff';
                  // Auto-fill "upgradinatorr" if tags mode is selected but no tag is provided
                  let upgradeTagValue = (upgradeTagEl && upgradeTagEl.value) ? String(upgradeTagEl.value).trim() : '';
