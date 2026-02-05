@@ -427,6 +427,7 @@
         const safeInstance = {
             enabled: instance.enabled !== false,
             name: instance.name || '',
+            instance_id: instance.instance_id || '',
             api_url: instance.api_url || '',
             api_key: instance.api_key || '',
             hunt_missing_items: instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1,
@@ -611,6 +612,13 @@
                 .editor-field-disabled label {
                     opacity: 0.5;
                 }
+                .editor-field-readonly .editor-input-readonly,
+                input.editor-input-readonly {
+                    background: rgba(71, 85, 105, 0.4) !important;
+                    color: rgba(148, 163, 184, 0.9) !important;
+                    cursor: not-allowed !important;
+                    border-color: rgba(148, 163, 184, 0.15) !important;
+                }
             </style>
             <div class="editor-grid">
                 <div class="editor-section">
@@ -655,6 +663,14 @@
                             <input type="text" id="editor-key" value="${safeInstance.api_key}" placeholder="Your API Key">
                         </div>
                         <p class="editor-help-text">Found in Settings > General in your *arr application</p>
+                    </div>
+                    
+                    <div class="editor-field-group editor-field-readonly">
+                        <div class="editor-setting-item">
+                            <label>Instance Identifier</label>
+                            <input type="text" id="editor-instance-id" value="${(safeInstance.instance_id || '—').replace(/"/g, '&quot;')}" readonly disabled class="editor-input-readonly">
+                        </div>
+                        <p class="editor-help-text">Stable identifier for this instance (assigned automatically; cannot be changed)</p>
                     </div>
                 </div>
         `;
