@@ -80,6 +80,12 @@ def get_configured_instances(quiet=False):
                     "tag_processed_items": instance.get("tag_processed_items", True),  # Add huntarr-upgraded etc. when processing
                     "state_management_hours": instance.get("state_management_hours", 72),  # CRITICAL for Issue #717 fix
                     "state_management_mode": instance.get("state_management_mode", "custom"),  # CRITICAL for Issue #717 fix
+                    "api_timeout": instance.get("api_timeout", 120),
+                    "command_wait_delay": instance.get("command_wait_delay", 1),
+                    "command_wait_attempts": instance.get("command_wait_attempts", 600),
+                    "max_download_queue_size": instance.get("max_download_queue_size", -1),
+                    "max_seed_queue_size": instance.get("max_seed_queue_size", -1),
+                    "seed_check_torrent_client": instance.get("seed_check_torrent_client"),
                 }
                 instances.append(instance_data)
     

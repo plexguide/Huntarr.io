@@ -79,6 +79,13 @@ def get_configured_instances(quiet=False):
                 # Add state management settings (CRITICAL for Issue #717 fix)
                 instance_settings["state_management_hours"] = instance.get("state_management_hours", 72)
                 instance_settings["state_management_mode"] = instance.get("state_management_mode", "custom")
+                # Queue gating and seed queue (torrents only)
+                instance_settings["api_timeout"] = instance.get("api_timeout", 120)
+                instance_settings["command_wait_delay"] = instance.get("command_wait_delay", 1)
+                instance_settings["command_wait_attempts"] = instance.get("command_wait_attempts", 600)
+                instance_settings["max_download_queue_size"] = instance.get("max_download_queue_size", -1)
+                instance_settings["max_seed_queue_size"] = instance.get("max_seed_queue_size", -1)
+                instance_settings["seed_check_torrent_client"] = instance.get("seed_check_torrent_client")
                 
                 instances.append(instance_settings)
     else:
@@ -121,6 +128,10 @@ def get_configured_instances(quiet=False):
             # Add state management settings for legacy config (CRITICAL for Issue #717 fix)
             settings_copy["state_management_hours"] = settings.get("state_management_hours", 72)
             settings_copy["state_management_mode"] = settings.get("state_management_mode", "custom")
+            # Queue gating and seed queue (torrents only)
+            settings_copy["max_download_queue_size"] = settings.get("max_download_queue_size", -1)
+            settings_copy["max_seed_queue_size"] = settings.get("max_seed_queue_size", -1)
+            settings_copy["seed_check_torrent_client"] = settings.get("seed_check_torrent_client")
             instances.append(settings_copy)
     
     # Use debug level to avoid spamming logs, especially with 0 instances
