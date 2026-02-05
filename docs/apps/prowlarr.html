@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prowlarr - Huntarr.io Documentation</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../js/main.js" defer></script>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <img src="../images/huntarr-logo.png" alt="Huntarr Logo">
+            <h2>Huntarr.io</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Getting Started</h3>
+                <ul>
+                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63;"></i> Donate</a></li>
+                    <li><a href="../getting-started/installation.html">Installation</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Core</h3>
+                <ul>
+                    <li><a href="../index.html">Home</a></li>
+                    <li class="active"><a href="index.html">Apps</a></li>
+                    <li><a href="../settings/settings.html">Settings</a></li>
+                    <li><a href="../features/index.html">Features</a></li>
+                    <li><a href="../faq.html">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Resources</h3>
+                <ul>
+                    <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a></li>
+                    <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a></li>
+                    <li><a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+    <div class="main-content">
+        <div class="container">
+            <h1>Prowlarr in Huntarr</h1>
+            <p>Prowlarr is an indexer manager for the *arr stack. In Huntarr you add a single Prowlarr instance; your Sonarr, Radarr, Lidarr, Readarr, Whisparr, and Eros instances use Prowlarr’s indexers for searches, so you manage indexers in one place.</p>
+            <h2 id="adding-prowlarr">Adding Prowlarr</h2>
+            <p>Go to <strong>Apps</strong> in the sidebar and open <strong>Prowlarr</strong>. Add your Prowlarr URL and API key (from Prowlarr’s Settings → General). Huntarr does not run “missing” or “upgrade” cycles for Prowlarr; it only connects so that other apps can use your Prowlarr-configured indexers when Huntarr triggers searches.</p>
+            <h2>Single instance</h2>
+            <p>Huntarr supports one Prowlarr instance. Configure all your indexers in Prowlarr and sync them to your *arr apps; Huntarr will use those indexers when it triggers searches in Sonarr, Radarr, and the others.</p>
+            <div class="section-nav">
+                <a href="index.html">← Apps</a>
+                <a href="sonarr.html">Sonarr →</a>
+            </div>
+            <footer>Huntarr.io | Prowlarr | Thanks 4 Using Huntarr - Admin9705</footer>
+        </div>
+    </div>
+</body>
+</html>
