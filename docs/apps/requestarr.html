@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requestarr Documentation - Huntarr.io</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../js/main.js" defer></script>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <img src="../images/huntarr-logo.png" alt="Huntarr Logo">
+            <h2>Huntarr.io</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Getting Started</h3>
+                <ul>
+                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63;"></i> Donate</a></li>
+                    <li><a href="../getting-started/installation.html">Installation</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Core</h3>
+                <ul>
+                    <li><a href="../index.html">Home</a></li>
+                    <li class="active"><a href="index.html">Apps</a></li>
+                    <li><a href="../settings/settings.html">Settings</a></li>
+                    <li><a href="../features/index.html">Features</a></li>
+                    <li><a href="../faq.html">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Resources</h3>
+                <ul>
+                    <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a></li>
+                    <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a></li>
+                    <li><a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+    <div class="main-content">
+        <div class="container">
+            <h1>Requestarr Documentation</h1>
+            <div style="text-align: center; margin: 20px auto;">
+                <i class="fas fa-film" style="font-size: 80px; color: #6c5ce7;"></i>
+            </div>
+            <div class="alert alert-info" style="margin: 20px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
+                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Requestarr?</strong>
+                Requestarr is Huntarr’s built-in discovery and request feature. Users browse movies and TV shows (via TMDB), request items, and Huntarr adds them to your configured Radarr and Sonarr instances. It uses your existing *arr instances—no separate app to install.
+            </div>
+            <p>Requestarr uses <strong>true multi-instance</strong> support: you can have multiple Radarr and Sonarr instances in Huntarr. Requestarr lets you choose which instance to use when adding a movie or TV show, and you can set default instances and root folders in Requestarr Settings.</p>
+
+            <h2 id="overview">Overview</h2>
+            <h3><i class="fas fa-th-large" style="margin-right: 10px; color: #3498db;"></i>Views</h3>
+            <ul>
+                <li><strong>Discover (Home):</strong> Browse trending and popular movies and TV from TMDB. Pick a default movie instance (Radarr) and default TV instance (Sonarr) in Requestarr Settings so the home view loads the right library.</li>
+                <li><strong>Movies:</strong> Search and filter movies, then add them to a Radarr instance of your choice.</li>
+                <li><strong>TV:</strong> Search and filter TV shows, then add them to a Sonarr instance of your choice.</li>
+                <li><strong>Hidden Media:</strong> List of movies and TV shows you’ve hidden from discovery. You can unhide items here to make them requestable again.</li>
+                <li><strong>Settings:</strong> Default instances, default root folders, discovery filters (region, providers, languages), request cooldown, and blacklisted genres.</li>
+            </ul>
+
+            <h2 id="multi-instance">Multi-Instance Behavior</h2>
+            <p>Huntarr supports multiple Radarr and Sonarr instances. Requestarr works with all of them:</p>
+            <ul>
+                <li>When adding a movie, you select which <strong>Radarr</strong> instance (and optionally root folder) to use.</li>
+                <li>When adding a TV show, you select which <strong>Sonarr</strong> instance (and optionally root folder) to use.</li>
+                <li>In <strong>Requestarr → Settings</strong> you can set <strong>Default Discovery Instances</strong> (default movie instance, default TV instance) so the Discover home view uses the right instance.</li>
+                <li>You can set <strong>Default Root Folders</strong> per app (Radarr, Sonarr) so new requests go to the correct disk when your first root folder isn’t the one you want.</li>
+            </ul>
+
+            <h2 id="settings">Requestarr Settings</h2>
+            <p>Available under <strong>Requestarr → Settings</strong> in the UI:</p>
+            <table>
+                <tr>
+                    <th>Setting</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>Default Movie Instance</td>
+                    <td>Radarr instance used when loading the Discover home view. If unset, the first available instance is used.</td>
+                </tr>
+                <tr>
+                    <td>Default TV Instance</td>
+                    <td>Sonarr instance used when loading the Discover home view. If unset, the first available instance is used.</td>
+                </tr>
+                <tr>
+                    <td>Default Root Folder (Radarr)</td>
+                    <td>Root folder used when adding movies via Requestarr. If unset, the first root folder in the selected Radarr instance is used.</td>
+                </tr>
+                <tr>
+                    <td>Default Root Folder (Sonarr)</td>
+                    <td>Root folder used when adding TV shows via Requestarr. If unset, the first root folder in the selected Sonarr instance is used.</td>
+                </tr>
+                <tr>
+                    <td>Region</td>
+                    <td>Region used for streaming availability (e.g. United States). Affects which providers and titles appear in discovery.</td>
+                </tr>
+                <tr>
+                    <td>Providers</td>
+                    <td>Streaming providers to filter by (based on selected region).</td>
+                </tr>
+                <tr>
+                    <td>Language(s)</td>
+                    <td>Original language(s) to filter discovery results.</td>
+                </tr>
+                <tr>
+                    <td>Request Cooldown</td>
+                    <td>How long users must wait before requesting the same item again (e.g. 24 hours, 7 days). Optional “Reset All Cooldowns” for cooldowns over 25 hours.</td>
+                </tr>
+                <tr>
+                    <td>Blacklisted Genres (TV / Movies)</td>
+                    <td>Genres hidden from the Movies and TV filter dropdowns so users cannot request by those genres.</td>
+                </tr>
+            </table>
+
+            <h2 id="requirements">Requirements</h2>
+            <ul>
+                <li>At least one <strong>Radarr</strong> instance configured in Huntarr (for movies).</li>
+                <li>At least one <strong>Sonarr</strong> instance configured in Huntarr (for TV).</li>
+                <li>No separate “Requestarr” app; Requestarr is a feature inside Huntarr that uses your existing instances.</li>
+            </ul>
+
+            <div class="section-nav">
+                <a href="index.html">← Back to Apps</a>
+                <a href="sonarr.html">Sonarr Documentation →</a>
+            </div>
+            <footer>Huntarr.io | Requestarr Documentation | Thanks 4 Using Huntarr - Admin9705</footer>
+        </div>
+    </div>
+</body>
+</html>

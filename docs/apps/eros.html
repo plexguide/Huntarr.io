@@ -87,6 +87,11 @@
             
             <p>Configure your Eros instances to connect Huntarr with your Eros installation(s).</p>
             
+            <div class="alert alert-info" style="margin: 15px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
+                <strong><i class="fas fa-server" style="margin-right: 8px;"></i>True multi-instance</strong><br>
+                Huntarr supports multiple Eros instances. Each instance has its own connection (URL, API key), and its own per-instance settings: search mode, missing/upgrade search limits, and Swaparr. You can enable or disable each instance independently.
+            </div>
+            
             <h3 id="instance-name"><i class="fas fa-tag" style="margin-right: 8px; color: #9b59b6;"></i>Instance Name</h3>
             <p><strong>What it does:</strong> Friendly name to identify this Eros instance in logs and notifications.</p>
             <p><strong>Examples:</strong> "Main Eros", "4K Eros", "Private Tracker Eros"</p>
@@ -118,9 +123,9 @@
             <p><strong>What it does:</strong> Controls whether Huntarr actively monitors this Eros instance.</p>
             <p><strong>When to disable:</strong> Temporarily stop monitoring without losing your configuration, during maintenance, or for testing.</p>
             
-            <h2 id="search-settings">Search Settings</h2>
+            <h2 id="search-settings">Search Settings (Per Instance)</h2>
             
-            <p>Configure how Huntarr searches for content in your Eros instance.</p>
+            <p>Configure how Huntarr searches for content in your Eros instance. These settings are <strong>per instance</strong>—each Eros instance has its own search mode, limits, and options.</p>
             
             <h3 id="search-mode"><i class="fas fa-search" style="margin-right: 8px; color: #f39c12;"></i>Search Mode</h3>
             <p><strong>What it does:</strong> Determines what type of content Eros will search for.</p>

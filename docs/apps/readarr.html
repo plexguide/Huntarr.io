@@ -88,6 +88,11 @@
             
             <p>Configure your Readarr instances to connect Huntarr with your Readarr installation(s).</p>
             
+            <div class="alert alert-info" style="margin: 15px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
+                <strong><i class="fas fa-server" style="margin-right: 8px;"></i>True multi-instance</strong><br>
+                Huntarr supports multiple Readarr instances. Each instance has its own connection (URL, API key), and its own per-instance settings: missing/upgrade mode, upgrade selection method, tags, search limits, and Swaparr. You can enable or disable each instance independently.
+            </div>
+            
             <h3>Adding Your Readarr Instance</h3>
             <p>To connect your existing Readarr instance to Huntarr:</p>
             <ol>
@@ -133,9 +138,9 @@
                 </tr>
             </table>
             
-            <h2 id="search-settings">Search Settings</h2>
+            <h2 id="search-settings">Search Settings (Per Instance)</h2>
             
-            <p>Configure how Huntarr searches for missing books and upgrades in your Readarr instance. These settings control Huntarr's behavior when processing your book library.</p>
+            <p>Configure how Huntarr searches for missing books and upgrades in your Readarr instance. These settings are <strong>per instance</strong>—each Readarr instance has its own search mode, upgrade mode, limits, and options.</p>
             
             <h3 id="missing-search-mode"><i class="fas fa-search" style="margin-right: 10px; color: #8b4513;"></i>Missing Search Mode</h3>
             <p>Determines how Huntarr searches for missing books:</p>
