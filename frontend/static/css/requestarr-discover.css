@@ -31,7 +31,7 @@
     padding: 16px 20px 16px 55px;
     background: rgba(255, 255, 255, 0.08);
     border: 2px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
+    border-radius: 14px;
     color: #fff;
     font-size: 16px;
     transition: all 0.2s;
@@ -215,7 +215,7 @@
 .media-card {
     flex: 0 0 150px;
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
     transition: transform 0.2s, border 0.2s;
     background: rgba(255, 255, 255, 0.05);
@@ -233,7 +233,7 @@
     height: 225px;
     position: relative;
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: 12px;
     background: #000;
     /* Blackout background for missing posters */
     background-image: url('../images/blackout.jpg');

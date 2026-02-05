@@ -711,7 +711,7 @@ select.form-control {
 
 .card {
     background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
     padding: 20px;
     position: relative;
