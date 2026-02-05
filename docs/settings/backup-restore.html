@@ -1,0 +1,67 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup &amp; Restore - Huntarr.io Documentation</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../js/main.js" defer></script>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <img src="../images/huntarr-logo.png" alt="Huntarr Logo">
+            <h2>Huntarr.io</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Getting Started</h3>
+                <ul>
+                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
+                    <li><a href="../getting-started/installation.html">Installation</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Core</h3>
+                <ul>
+                    <li><a href="../index.html">Home</a></li>
+                    <li><a href="../apps/index.html">Apps</a></li>
+                    <li><a href="settings.html">Settings</a></li>
+                    <li class="active"><a href="backup-restore.html">Backup &amp; Restore</a></li>
+                    <li><a href="../features/index.html">Features</a></li>
+                    <li><a href="../faq.html">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Resources</h3>
+                <ul>
+                    <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a></li>
+                    <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a></li>
+                    <li><a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+    <div class="main-content">
+        <div class="container">
+            <h1>Backup &amp; Restore</h1>
+            <p>Huntarr can back up and restore its databases (main, logs, manager) from Settings.</p>
+
+            <h2 id="backup-frequency"><a href="#backup-frequency" class="info-icon"><i class="fas fa-info-circle"></i></a> Backup Frequency</h2>
+            <p>How often automatic backups are created (in days). Default: 3. Backups are stored in the same directory as the database.</p>
+
+            <h2 id="backup-retention"><a href="#backup-retention" class="info-icon"><i class="fas fa-info-circle"></i></a> Backup Retention</h2>
+            <p>Number of backup copies to keep. Older backups are deleted automatically. Default: 3.</p>
+
+            <h2 id="restore-database"><a href="#restore-database" class="info-icon"><i class="fas fa-info-circle"></i></a> Restore Database</h2>
+            <p>Select a backup from the list and confirm with "RESTORE" to overwrite the current database with the selected backup. This cannot be undone.</p>
+
+            <h2 id="download-backup"><a href="#download-backup" class="info-icon"><i class="fas fa-info-circle"></i></a> Download Backup</h2>
+            <p>Select a backup and download it as a ZIP file for safekeeping or moving to another instance.</p>
+
+            <h2 id="upload-backup"><a href="#upload-backup" class="info-icon"><i class="fas fa-info-circle"></i></a> Upload Backup</h2>
+            <p>Upload a ZIP file containing a valid Huntarr backup to restore from (e.g. after downloading from another instance).</p>
+        </div>
+    </div>
+</body>
+</html>
