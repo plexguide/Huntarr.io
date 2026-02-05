@@ -956,7 +956,7 @@ def _get_sabnzbd_history_item(client, queue_id):
         return None
         
     except Exception as e:
-        logger.error(f"Error fetching SABnzbd history for {queue_id}: {e}")
+        movie_hunt_logger.error("Import: error fetching SABnzbd history for queue id %s: %s", queue_id, e)
         return None
 
 
@@ -971,7 +971,7 @@ def _check_and_import_completed(client_name, queue_item):
         client = next((c for c in clients if (c.get('name') or '').strip() == client_name), None)
         
         if not client:
-            logger.warning(f"Download client '{client_name}' not found in config")
+            movie_hunt_logger.warning("Import: download client '%s' not found in config", client_name)
             return
         
         client_type = (client.get('type') or 'nzbget').strip().lower()
@@ -980,12 +980,12 @@ def _check_and_import_completed(client_name, queue_item):
         year = queue_item.get('year', '').strip()
         
         if not title:
-            logger.warning(f"Queue item {queue_id} has no title, skipping import")
+            movie_hunt_logger.warning("Import: queue item %s has no title, skipping import", queue_id)
             return
         
         # Only support SABnzbd for now (NZBGet implementation can be added later)
         if client_type != 'sabnzbd':
-            logger.debug(f"Import only supported for SABnzbd (client type: {client_type})")
+            movie_hunt_logger.debug("Import: only SABnzbd supported (client type: %s)", client_type)
             return
         
         # Query SABnzbd history for this item
@@ -995,21 +995,27 @@ def _check_and_import_completed(client_name, queue_item):
             movie_hunt_logger.info("Queue: item %s ('%s') removed but not in history (user cancelled?)", queue_id, title)
             return
         
+        status = history_item.get('status', '')
+        storage_path = (history_item.get('storage') or '').strip()
+        movie_hunt_logger.info(
+            "Import: download completed for '%s' (%s). SAB status=%s, SAB storage path=%s",
+            title, year or 'no year', status, storage_path or '(empty)'
+        )
+        
         # Check if it completed successfully
-        status = history_item.get('status', '').lower()
-        if status != 'completed':
-            movie_hunt_logger.warning("Import: download '%s' (%s) failed with status: %s", title, year, status)
+        if status.lower() != 'completed':
+            movie_hunt_logger.warning("Import: download '%s' (%s) did not complete successfully (status: %s), skipping import", title, year, status)
             return
         
         # Get download path from history
-        download_path = history_item.get('storage', '').strip()
+        download_path = storage_path
         
         if not download_path:
-            movie_hunt_logger.error("Import: no storage path in history for '%s' (%s)", title, year)
+            movie_hunt_logger.error("Import: no storage path in history for '%s' (%s). Cannot import.", title, year)
             return
         
         # Trigger import
-        movie_hunt_logger.info("Import: triggered for '%s' (%s) from %s", title, year, download_path)
+        movie_hunt_logger.info("Import: attempting import for '%s' (%s) from path: %s", title, year, download_path)
         
         # Import the file (using thread to avoid blocking queue polling)
         import threading

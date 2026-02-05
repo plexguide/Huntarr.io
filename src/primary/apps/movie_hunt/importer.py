@@ -71,10 +71,15 @@ def _translate_remote_path(remote_path: str, client_host: str) -> str:
                 if remote_path_normalized.startswith(remote_normalized):
                     # Replace remote prefix with local prefix
                     translated = remote_path.replace(remote.rstrip('/'), local.rstrip('/'), 1)
-                    _mh_log().info("Import: path translated %s -> %s", remote_path, translated)
+                    _mh_log().info("Import: path translated (remote -> local): %s -> %s", remote_path, translated)
                     return translated
         
-        _mh_log().debug("Import: no remote path mapping for host %s, using path as-is", client_host)
+        _mh_log().info(
+            "Import: no remote path mapping matched. Host=%s, path from SAB=%s. Using path as-is. "
+            "If import fails (path not found), set Remote Path in Movie Hunt → Settings → Clients to match "
+            "SAB's completed folder (e.g. /sab1/huntarr/movies if your SAB category uses folder 'huntarr/movies').",
+            client_host, remote_path
+        )
         return remote_path
         
     except Exception as e:
@@ -97,7 +102,12 @@ def _find_largest_video_file(download_path: str) -> Optional[str]:
         path = Path(download_path)
         
         if not path.exists():
-            _mh_log().error("Import: download path does not exist: %s", download_path)
+            _mh_log().error(
+                "Import: download path does not exist: %s. "
+                "Check Remote Path Mapping in Movie Hunt → Settings → Clients: Remote Path must match "
+                "the path SAB reports (e.g. /sab1/huntarr/movies) and Local Path must be where that folder is mounted in this container (e.g. /downloads).",
+                download_path
+            )
             return None
         
         video_files = []
@@ -130,7 +140,10 @@ def _find_largest_video_file(download_path: str) -> Optional[str]:
                 video_files.append((str(item), file_size))
         
         if not video_files:
-            _mh_log().error("Import: no valid video files in %s", download_path)
+            _mh_log().error(
+                "Import: no valid video files (min %d MB, excluding samples) in %s",
+                _MIN_MOVIE_SIZE_MB, download_path
+            )
             return None
         
         # Return the largest file
@@ -266,7 +279,11 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         collection_item = _get_collection_item(title, year)
         
         if not collection_item:
-            _mh_log().warning("Import: '%s' (%s) not in collection, skipping", title, year)
+            _mh_log().warning(
+                "Import: '%s' (%s) not in Movie Hunt collection, skipping. "
+                "Only movies requested via Movie Hunt are imported; add the movie from Movie Home first.",
+                title, year
+            )
             return False
         
         # Get root folder (from collection or default)
@@ -286,6 +303,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         # 2. Translate path using remote mappings
         client_host = f"{client.get('host', '')}:{client.get('port', 8080)}"
         local_path = _translate_remote_path(download_path, client_host)
+        _mh_log().info("Import: using local path for '%s': %s", title, local_path)
         
         # 3. Find video file
         video_file = _find_largest_video_file(local_path)
@@ -327,7 +345,10 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         try:
             shutil.move(video_file, dest_file)
         except Exception as e:
-            _mh_log().error("Import: failed to move file: %s", e)
+            _mh_log().error(
+                "Import: failed to move file: %s. Reason: %s. Check permissions and that destination is writable.",
+                video_file, e
+            )
             return False
         
         # 8. Update collection status
