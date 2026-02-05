@@ -20,6 +20,13 @@
                 <i class="fas fa-star version-icon star-icon"></i>
                 <span><a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener"><span id="github-stars-value" style="font-weight: bold;">764</span></a></span>
             </div>
+            <div class="version-divider"></div>
+            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" rel="noopener" class="version-item version-social-link" title="Join Huntarr on Discord" aria-label="Discord">
+                <i class="fab fa-discord version-social-icon discord-icon"></i>
+            </a>
+            <a href="https://www.reddit.com/r/huntarr/" target="_blank" rel="noopener" class="version-item version-social-link" title="Huntarr on Reddit" aria-label="Reddit">
+                <i class="fab fa-reddit version-social-icon reddit-icon"></i>
+            </a>
         </div>
     </div>
     <div class="topbar-section right">
@@ -208,6 +215,44 @@
     
     .version-bar a:hover::after {
         width: 100%;
+    }
+    
+    /* Social links (Discord, Reddit) - icon only, open in new tab */
+    .version-social-link {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 6px !important;
+        border-radius: 6px;
+        text-decoration: none !important;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+    .version-social-link::after {
+        display: none !important;
+    }
+    .version-social-icon {
+        font-size: 14px;
+    }
+    .version-social-link .discord-icon {
+        color: #5865f2;
+    }
+    .version-social-link:hover .discord-icon {
+        color: #7289da;
+    }
+    .version-social-link:has(.discord-icon):hover {
+        background: rgba(88, 101, 242, 0.15);
+        border-color: rgba(88, 101, 242, 0.35);
+    }
+    .version-social-link .reddit-icon {
+        color: #ff4500;
+    }
+    .version-social-link:hover .reddit-icon {
+        color: #ff5722;
+    }
+    .version-social-link:has(.reddit-icon):hover {
+        background: rgba(255, 69, 0, 0.15);
+        border-color: rgba(255, 69, 0, 0.35);
     }
     
     .developer-credit {
