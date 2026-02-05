@@ -267,6 +267,8 @@
             grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching movies...</p></div>';
 
             try {
+                // Use Requestarr search for TMDB search (Movie Hunt doesn't have its own search yet)
+                // But we'll check collection status in the results
                 const url = `./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=radarr&instance_name=search`;
                 const response = await fetch(url);
                 const data = await response.json();
@@ -371,8 +373,8 @@
             }
 
             try {
-                let url = `./api/requestarr/discover/movies?page=${page}&sort_by=${encodeURIComponent(this.getSortParam())}&_=${Date.now()}`;
-                if (instance) url += `&app_type=radarr&instance_name=${encodeURIComponent(instance)}`;
+                // Use Movie Hunt discover endpoint (100% independent of Radarr)
+                let url = `./api/movie-hunt/discover/movies?page=${page}&sort_by=${encodeURIComponent(this.getSortParam())}&_=${Date.now()}`;
 
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);

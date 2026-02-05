@@ -1,89 +1,59 @@
 """
 Movie Hunt API – unique API for Movie Hunt (Activity queue, etc.).
 Movie Hunt is its own thing and does not use Radarr app instances.
-Activity (Queue, History, Blocklist) uses only Movie Hunt's own instance config.
+Activity (Queue, History, Blocklist) uses only Movie Hunt's own download clients.
+100% decoupled from Radarr - Movie Hunt is completely independent.
 """
 
 from typing import Dict, Any, List, Optional
-
-from src.primary.apps.radarr.api import get_queue as _radarr_get_queue
-from src.primary.apps.radarr.api import delete_queue_bulk as _radarr_delete_queue_bulk
 
 
 def get_instances(quiet: bool = True) -> List[Dict[str, Any]]:
     """
     Get all configured Movie Hunt instances for Activity (queue, history, blocklist).
-    These are Movie Hunt's own instances, not Radarr app instances.
+    Movie Hunt is 100% independent and does not use Radarr instances.
+    This function returns empty list as Movie Hunt uses download clients directly.
 
     Returns:
-        List of instance dicts with api_url, api_key, instance_name.
-        Empty list if no Movie Hunt instances are configured.
+        Empty list - Movie Hunt does not use instances, only download clients.
     """
-    try:
-        from src.primary.utils.database import get_database
-        db = get_database()
-        config = db.get_app_config('movie_hunt_instances')
-        if not config or not isinstance(config.get('instances'), list):
-            return []
-        instances = []
-        for inst in config['instances']:
-            if not isinstance(inst, dict):
-                continue
-            api_url = (inst.get('api_url') or '').strip()
-            api_key = (inst.get('api_key') or '').strip()
-            if not api_url or not api_key:
-                continue
-            if not (api_url.startswith('http://') or api_url.startswith('https://')):
-                api_url = 'http://' + api_url
-            name = (inst.get('name') or inst.get('instance_name') or 'Default').strip() or 'Default'
-            instances.append({
-                'instance_name': name,
-                'api_url': api_url,
-                'api_key': api_key,
-            })
-        return instances
-    except Exception:
-        return []
+    # Movie Hunt is 100% independent - no instances needed
+    # Activity queue uses download clients directly (SABnzbd/NZBGet)
+    return []
 
 
 def get_queue(api_url: str, api_key: str, api_timeout: int,
               page: int = 1, page_size: int = 100) -> Dict[str, Any]:
     """
     Get the download queue for a Movie Hunt instance.
-
-    Args:
-        api_url: Instance API base URL
-        api_key: Instance API key
-        api_timeout: Request timeout
-        page: Page number (1-based)
-        page_size: Records per page
+    
+    NOTE: This function is not used by Movie Hunt. Movie Hunt uses download clients
+    directly (SABnzbd/NZBGet) via the routes in movie_hunt_routes.py.
+    This is a stub to maintain API compatibility.
 
     Returns:
-        Dict with 'records' (list of queue items) and 'totalRecords' (int).
+        Empty queue - Movie Hunt does not use this function.
     """
-    return _radarr_get_queue(api_url, api_key, api_timeout, page=page, page_size=page_size)
+    # Movie Hunt is 100% independent - uses download clients directly
+    # This function is not called by Movie Hunt routes
+    return {'records': [], 'totalRecords': 0}
 
 
 def delete_queue_bulk(api_url: str, api_key: str, api_timeout: int, ids: List[int],
                      remove_from_client: bool = True, blocklist: bool = False) -> bool:
     """
-    Remove multiple items from a Movie Hunt instance queue (and from download client if requested).
-
-    Args:
-        api_url: Instance API base URL
-        api_key: Instance API key
-        api_timeout: Request timeout
-        ids: Queue record ids to remove
-        remove_from_client: If True, also remove from download client (e.g. SABnzbd)
-        blocklist: If True, add release to blocklist
+    Remove multiple items from a Movie Hunt instance queue.
+    
+    NOTE: This function is not used by Movie Hunt. Movie Hunt uses download clients
+    directly (SABnzbd/NZBGet) via the routes in movie_hunt_routes.py.
+    This is a stub to maintain API compatibility.
 
     Returns:
-        True if the request succeeded, False otherwise.
+        False - Movie Hunt does not use this function.
     """
-    return _radarr_delete_queue_bulk(
-        api_url, api_key, api_timeout, ids,
-        remove_from_client=remove_from_client, blocklist=blocklist,
-    )
+    # Movie Hunt is 100% independent - uses download clients directly
+    # This function is not called by Movie Hunt routes
+    return False
 
 
 def queue_record_to_activity_item(record: Dict[str, Any],

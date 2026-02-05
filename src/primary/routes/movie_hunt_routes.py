@@ -1507,13 +1507,26 @@ def api_activity_get(view):
             for entry in result.get('entries', []):
                 # Extract title/year from processed_info (format: "Movie Title (2020) → FolderName")
                 processed_info = entry.get('processed_info', '')
+                name = entry.get('name', '')
+                
+                # Try to extract title and year from processed_info or name
                 title_part = processed_info.split(' → ')[0] if ' → ' in processed_info else processed_info
+                if not title_part and name:
+                    title_part = name.split(' → ')[0] if ' → ' in name else name
+                
+                # Extract year from title_part if present (format: "Title (2020)")
+                year = ''
+                import re
+                year_match = re.search(r'\((\d{4})\)', title_part)
+                if year_match:
+                    year = year_match.group(1)
+                    title_part = re.sub(r'\s*\(\d{4}\)\s*', '', title_part).strip()
                 
                 history_items.append({
                     'id': entry.get('id'),
                     'movie': title_part,
                     'title': title_part,
-                    'year': '',
+                    'year': year,
                     'languages': '-',
                     'quality': '-',
                     'formats': '-',
@@ -2860,4 +2873,70 @@ def api_movie_hunt_collection_delete(index):
     except Exception as e:
         logger.exception('Movie Hunt collection delete error')
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/discover/movies', methods=['GET'])
+def api_movie_hunt_discover_movies():
+    """
+    Get popular movies from TMDB with Movie Hunt collection status.
+    100% independent of Radarr - checks Movie Hunt collection only.
+    """
+    try:
+        # Import requestarr_api to use TMDB functionality (but we'll override status checking)
+        from src.primary.apps.requestarr import requestarr_api
+        
+        page = int(request.args.get('page', 1))
+        sort_by = request.args.get('sort_by', 'popularity.desc')
+        
+        # Get movies from TMDB (using Requestarr's TMDB API, but we'll override status)
+        filter_params = {'sort_by': sort_by}
+        results = requestarr_api.get_popular_movies(page, **filter_params)
+        
+        # Get Movie Hunt collection to check status
+        collection_items = _get_collection_config()
+        collection_by_tmdb = {}
+        for item in collection_items:
+            tmdb_id = item.get('tmdb_id')
+            if tmdb_id:
+                collection_by_tmdb[tmdb_id] = item
+        
+        # Enrich results with Movie Hunt collection status
+        for movie in results:
+            tmdb_id = movie.get('id') or movie.get('tmdb_id')
+            if tmdb_id and tmdb_id in collection_by_tmdb:
+                collection_item = collection_by_tmdb[tmdb_id]
+                status = (collection_item.get('status') or 'requested').lower()
+                
+                # Check if available in root folder (auto-detect)
+                if status != 'available':
+                    root_path = collection_item.get('root_folder', '').strip()
+                    if root_path:
+                        title = collection_item.get('title', '')
+                        year = collection_item.get('year', '')
+                        if _detect_available_in_root_folder(root_path, title, year):
+                            status = 'available'
+                
+                # Set status flags for frontend
+                movie['in_library'] = (status == 'available')
+                movie['in_cooldown'] = False  # Movie Hunt doesn't use cooldowns
+                movie['partial'] = False
+                movie['movie_hunt_status'] = status
+            else:
+                # Not in collection - available to request
+                movie['in_library'] = False
+                movie['in_cooldown'] = False
+                movie['partial'] = False
+                movie['movie_hunt_status'] = None
+        
+        has_more = len(results) > 0 or page < 100
+        
+        return jsonify({
+            'results': results,
+            'page': page,
+            'has_more': has_more
+        }), 200
+        
+    except Exception as e:
+        movie_hunt_logger.exception('Movie Hunt discover movies error')
+        return jsonify({'error': 'Failed to get movies', 'results': [], 'page': 1, 'has_more': False}), 500
 
