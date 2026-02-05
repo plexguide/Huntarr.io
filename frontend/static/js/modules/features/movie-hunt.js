@@ -371,8 +371,8 @@
             }
 
             try {
-                let url = `./api/requestarr/discover/movies?page=${page}&sort_by=${encodeURIComponent(this.getSortParam())}&_=${Date.now()}`;
-                if (instance) url += `&app_type=radarr&instance_name=${encodeURIComponent(instance)}`;
+                // Movie Hunt–only discover: no Radarr/Requestarr. Status from Movie Hunt collection.
+                let url = `./api/movie-hunt/discover/movies?page=${page}&sort_by=${encodeURIComponent(this.getSortParam())}&_=${Date.now()}`;
 
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);

@@ -815,10 +815,10 @@ def api_movie_management_patch():
 
 # --- Movie Hunt Activity (Queue, History, Blocklist) ---
 # 100% independent: uses only Movie Hunt's download clients (SABnzbd/NZBGet). No Radarr.
-# Only track items this Huntarr requested: use a dedicated category so multiple Radarrs/Huntarrs don't mix.
+# Use a dedicated category so Radarr (which typically watches "movies") never sees Movie Hunt's downloads.
 MOVIE_HUNT_QUEUE_CATEGORY = 'moviehunt'
-# Category we send to SAB/NZBGet when client category is empty or "default" (so queue shows only our requests).
-MOVIE_HUNT_DEFAULT_CATEGORY = 'movies'
+# Category we send to SAB/NZBGet and filter queue by. Must be moviehunt to keep Radarr fully decoupled.
+MOVIE_HUNT_DEFAULT_CATEGORY = 'moviehunt'
 
 def _download_client_base_url(client):
     """Build base URL for a download client (host:port)."""
@@ -1200,7 +1200,7 @@ def _get_download_client_queue(client):
     client_type = (client.get('type') or 'nzbget').strip().lower()
     name = (client.get('name') or 'Download client').strip() or 'Download client'
     # Filter by the category configured for this client (same category we use when sending NZBs).
-    # When client category is empty or "default", we use "movies" so we send/filter by "movies".
+    # When client category is empty or "default", we use "moviehunt" so Radarr never sees these items.
     # Case-insensitive: SAB may return "Default", we compare in lowercase.
     raw_cat = (client.get('category') or '').strip()
     raw_cat_lower = raw_cat.lower()
@@ -2431,6 +2431,127 @@ def _collection_append(title, year, tmdb_id=None, poster_path=None, root_folder=
     _save_collection_config(items)
 
 
+def _get_tmdb_api_key_movie_hunt():
+    """TMDB API key for Movie Hunt discover only (same key as Requestarr; do not mix with Radarr/Requestarr logic)."""
+    return "9265b0bd0cd1962f7f3225989fcd7192"
+
+
+def _movie_hunt_collection_lookups():
+    """
+    Build sets for in_library and in_cooldown from Movie Hunt collection.
+    Returns (available_tmdb_ids, available_title_year_set, cooldown_tmdb_ids, cooldown_title_year_set).
+    available_title_year_set and cooldown_title_year_set contain (title_lower, year_str) tuples.
+    Cooldown = requested within last 12 hours.
+    """
+    from datetime import datetime, timedelta
+    items = _get_collection_config()
+    available_tmdb_ids = set()
+    available_title_year = set()
+    cooldown_tmdb_ids = set()
+    cooldown_title_year = set()
+    now = datetime.utcnow()
+    cooldown_cutoff = now - timedelta(hours=12)
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        status = (it.get('status') or '').strip().lower()
+        title = (it.get('title') or '').strip()
+        year = str(it.get('year') or '').strip()
+        tmdb_id = it.get('tmdb_id')
+        if tmdb_id is not None:
+            try:
+                tmdb_id = int(tmdb_id)
+            except (TypeError, ValueError):
+                tmdb_id = None
+        key_title_year = (title.lower(), year) if title else None
+        if status == 'available':
+            if tmdb_id is not None:
+                available_tmdb_ids.add(tmdb_id)
+            if key_title_year:
+                available_title_year.add(key_title_year)
+        requested_at = it.get('requested_at') or ''
+        try:
+            if requested_at:
+                dt = datetime.strptime(requested_at.replace('Z', '+00:00')[:19], '%Y-%m-%dT%H:%M:%S')
+                if dt.tzinfo:
+                    dt = dt.replace(tzinfo=None)
+                if dt >= cooldown_cutoff:
+                    if tmdb_id is not None:
+                        cooldown_tmdb_ids.add(tmdb_id)
+                    if key_title_year:
+                        cooldown_title_year.add(key_title_year)
+        except (ValueError, TypeError):
+            pass
+    return available_tmdb_ids, available_title_year, cooldown_tmdb_ids, cooldown_title_year
+
+
+@movie_hunt_bp.route('/api/movie-hunt/discover/movies', methods=['GET'])
+def api_movie_hunt_discover_movies():
+    """
+    Movie Hunt–only discover: TMDB discover/movie with in_library and in_cooldown from Movie Hunt collection.
+    No Radarr or Requestarr. Same response shape as Requestarr discover for frontend compatibility.
+    """
+    try:
+        page = max(1, request.args.get('page', 1, type=int))
+        sort_by = (request.args.get('sort_by') or 'popularity.desc').strip()
+        api_key = _get_tmdb_api_key_movie_hunt()
+        url = 'https://api.themoviedb.org/3/discover/movie'
+        params = {'api_key': api_key, 'page': page, 'sort_by': sort_by}
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        available_tmdb_ids, available_title_year, cooldown_tmdb_ids, cooldown_title_year = _movie_hunt_collection_lookups()
+        results = []
+        for item in data.get('results', []):
+            release_date = item.get('release_date') or ''
+            year = None
+            if release_date:
+                try:
+                    year = int(release_date.split('-')[0])
+                except (ValueError, IndexError):
+                    pass
+            title = (item.get('title') or '').strip()
+            year_str = str(year) if year is not None else ''
+            poster_path = item.get('poster_path')
+            poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
+            backdrop_path = item.get('backdrop_path')
+            backdrop_url = f"https://image.tmdb.org/t/p/w500{backdrop_path}" if backdrop_path else None
+            tmdb_id = item.get('id')
+            in_library = (tmdb_id is not None and tmdb_id in available_tmdb_ids) or (
+                (title.lower(), year_str) in available_title_year
+            )
+            in_cooldown = (tmdb_id is not None and tmdb_id in cooldown_tmdb_ids) or (
+                (title.lower(), year_str) in cooldown_title_year
+            )
+            results.append({
+                'tmdb_id': tmdb_id,
+                'id': tmdb_id,
+                'media_type': 'movie',
+                'title': title,
+                'year': year,
+                'overview': item.get('overview', ''),
+                'poster_path': poster_url,
+                'backdrop_path': backdrop_url,
+                'vote_average': item.get('vote_average', 0),
+                'popularity': item.get('popularity', 0),
+                'in_library': in_library,
+                'in_cooldown': in_cooldown,
+                'partial': False,
+            })
+        has_more = (data.get('total_pages') or 0) >= page + 1
+        return jsonify({
+            'results': results,
+            'page': page,
+            'has_more': has_more,
+        }), 200
+    except requests.RequestException as e:
+        movie_hunt_logger.warning("Discover: TMDB request failed: %s", e)
+        return jsonify({'results': [], 'page': 1, 'has_more': False, 'error': str(e)}), 200
+    except Exception as e:
+        movie_hunt_logger.exception("Discover: error %s", e)
+        return jsonify({'results': [], 'page': 1, 'has_more': False, 'error': str(e)}), 200
+
+
 # Video extensions for availability detection in root folder
 _VIDEO_EXTENSIONS = frozenset(('.mkv', '.mp4', '.avi', '.mov', '.wmv', '.m4v', '.mpg', '.mpeg', '.webm', '.flv', '.m2ts', '.ts'))
 
@@ -2799,24 +2920,33 @@ def api_movie_hunt_remote_mappings_delete(index):
 def api_movie_hunt_collection_list():
     """List Media Collection (requested movies). ?q= search, ?page=1&page_size=20."""
     try:
-        items = _get_collection_config()
+        items_full = _get_collection_config()
         q = (request.args.get('q') or '').strip().lower()
-        if q:
-            items = [x for x in items if q in ((x.get('title') or '') + ' ' + str(x.get('year') or '')).lower()]
+        items = [x for x in items_full if not q or q in ((x.get('title') or '') + ' ' + str(x.get('year') or '')).lower()]
         total = len(items)
         page = max(1, int(request.args.get('page', 1)))
         page_size = max(1, min(100, int(request.args.get('page_size', 20))))
         start = (page - 1) * page_size
         page_items = items[start:start + page_size]
-        # Enrich with auto-detected availability from root folder storage (response only, not persisted)
+        # Enrich with auto-detected availability from root folder; persist so discover and UI stay in sync
         out_items = []
+        collection_updated = False
         for it in page_items:
             entry = dict(it)
             root_path = (entry.get('root_folder') or '').strip()
             if root_path and (entry.get('status') or '').lower() != 'available':
                 if _detect_available_in_root_folder(root_path, entry.get('title') or '', entry.get('year')):
                     entry['status'] = 'available'
+                    # Persist so Movie Hunt discover and Home show in_library
+                    for i, full_item in enumerate(items_full):
+                        if (full_item.get('title') == entry.get('title') and
+                                str(full_item.get('year') or '') == str(entry.get('year') or '')):
+                            items_full[i]['status'] = 'available'
+                            collection_updated = True
+                            break
             out_items.append(entry)
+        if collection_updated:
+            _save_collection_config(items_full)
         return jsonify({
             'items': out_items,
             'total': total,
