@@ -180,9 +180,10 @@
                 <li><strong>Tags (Upgradinatorr-style):</strong> Huntarr finds movies that <strong>DON'T</strong> have your specified tag (e.g. <code>upgradinatorr</code>), searches for upgrades, then <strong>ADDS</strong> the tag after processing to mark them as complete. This matches <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr's</a> behavior: the tag tracks which movies have already been processed, not which ones to search. The tag is automatically created in Radarr if it doesn't exist.</li>
             </ul>
             <p>In both cases, Huntarr triggers <strong>MoviesSearch</strong> for the selected movies; Radarr still decides what to grab based on your quality profile and custom format scores. When using <strong>Tags</strong>, the <strong>Upgrade Tag</strong> field sets the tag name in Radarr (e.g. <code>upgradinatorr</code>); Huntarr finds movies without this tag, runs upgrade searches, then adds the tag when done.</p>
+            <p><strong>Cutoff unmet mode</strong> uses Radarr's Wanted → Cutoff Unmet list every cycle; <strong>Tags (Upgradinatorr) mode</strong> finds movies without your chosen tag, runs upgrade searches, then adds that tag so they are not searched again. Custom formats and <a href="https://trash-guides.info/Radarr/radarr-setup-quality-profiles/" target="_blank" rel="noopener">Trash Guides</a> are essential in Radarr so it knows what counts as an upgrade when Huntarr triggers the search.</p>
             
             <div class="alert alert-success">
-                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides and best practices for quality upgrades.
+                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/Radarr/radarr-setup-quality-profiles/" target="_blank" rel="noopener">TrashGuides (Radarr)</a> for custom format scoring, HDR/DV/audio, and quality profiles. Set <strong>Upgrade Until Custom Format Score</strong> to at least 10000 in your quality profile so Radarr will grab better-scoring releases when Huntarr triggers upgrades.
             </div>
             
             <h3 id="release-date-delay"><i class="fas fa-calendar-alt" style="margin-right: 10px; color: #9b59b6;"></i>Release Date Delay (Days)</h3>
@@ -415,6 +416,29 @@
             <div class="alert alert-info">
                 <strong>💡 Pro Tip:</strong> If you need more granular control over release dates, consider using multiple Radarr instances with different configurations rather than relying on complex filtering rules.
             </div>
+            
+            <h2 id="advanced-settings">Advanced Settings</h2>
+            <p>These match the <strong>Advanced Settings</strong> section in the instance editor:</p>
+            <table>
+                <tr><th>Setting</th><th>Description</th></tr>
+                <tr><td><strong>API Timeout (seconds)</strong></td><td>Timeout for API requests to this instance (default: 120 seconds).</td></tr>
+                <tr><td><strong>Command Wait Delay (seconds)</strong></td><td>Delay between command status checks (default: 1 second).</td></tr>
+                <tr><td><strong>Command Wait Attempts</strong></td><td>Maximum attempts to wait for command completion (default: 600). Set to 0 for fire-and-forget.</td></tr>
+                <tr><td><strong>Max Download Queue Size</strong></td><td>Skip processing if queue size meets or exceeds this value (-1 = disabled, default).</td></tr>
+                <tr><td><strong>Swaparr Monitoring</strong></td><td>When Swaparr is enabled in Huntarr Settings, this toggle enables or disables Swaparr monitoring for this instance.</td></tr>
+            </table>
+            
+            <h2 id="custom-tags">Custom Tags</h2>
+            <p>These settings match the <strong>Custom Tags</strong> section. Huntarr can add tags in Radarr to mark items it has processed.</p>
+            <table>
+                <tr><th>Setting</th><th>Description</th></tr>
+                <tr><td><strong>Tag missing items</strong> / <strong>Missing Items Tag</strong></td><td>When enabled, Huntarr adds this tag (e.g. <code>huntarr-missing</code>) to movies when they're found by a missing search. Max 25 characters.</td></tr>
+                <tr><td><strong>Tag upgrade items</strong> / <strong>Upgrade Items Tag</strong></td><td>When enabled, Huntarr adds this tag (e.g. <code>huntarr-upgrade</code>) to movies when they're upgraded in <strong>cutoff unmet</strong> mode. Max 25 characters. <strong>Not used when Upgrade Selection Method is Tags (Upgradinatorr):</strong> in Tags mode this option is hidden; Huntarr uses the <strong>Upgrade Tag</strong> (e.g. <code>upgradinatorr</code>) from Search Settings to mark processed movies instead.</td></tr>
+            </table>
+            <p>Radarr does not have a "Tag shows missing" option (that is Sonarr-only for Shows mode).</p>
+            
+            <h2 id="exempt-tags">Exempt Tags</h2>
+            <p>Items with any of these tags are <strong>skipped</strong> for missing and upgrade searches. If you remove the tag in Radarr, Huntarr will process the item again. The tag <code>upgradinatorr</code> cannot be added as an exempt tag (reserved for Upgradinatorr-style upgrade mode). See <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener">#676</a>.</p>
             
             <h2 id="swaparr-integration">Swaparr Integration</h2>
             

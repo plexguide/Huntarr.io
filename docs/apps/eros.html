@@ -174,6 +174,20 @@
             </ul>
             <p><strong>Recommendation:</strong> Keep enabled for better tracking and troubleshooting.</p>
             
+            <h2 id="advanced-settings">Advanced Settings</h2>
+            <p>These match the <strong>Advanced Settings</strong> section: <strong>API Timeout (seconds)</strong>, <strong>Command Wait Delay (seconds)</strong>, <strong>Command Wait Attempts</strong>, <strong>Max Download Queue Size</strong>, and <strong>Swaparr Monitoring</strong> (when Swaparr is enabled in Huntarr Settings).</p>
+            
+            <h2 id="custom-tags">Custom Tags</h2>
+            <p>These match the <strong>Custom Tags</strong> section. Eros does not have an Upgrade Selection Method (cutoff vs tags); both tag options are always available.</p>
+            <ul>
+                <li><strong>Tag missing items</strong> / <strong>Missing Items Tag</strong> — Tag (e.g. <code>huntarr-missing</code>) added when items are found by a missing search. Max 25 characters.</li>
+                <li><strong>Tag upgrade items</strong> / <strong>Upgrade Items Tag</strong> — Tag (e.g. <code>huntarr-upgrade</code>) added when items are upgraded. Max 25 characters.</li>
+            </ul>
+            <p>Eros does not have "Tag shows missing" (Sonarr-only).</p>
+            
+            <h2 id="exempt-tags">Exempt Tags</h2>
+            <p>Items with any of these tags are skipped for missing and upgrade searches. If you remove the tag in Eros, Huntarr will process the item again. The tag <code>upgradinatorr</code> cannot be added as an exempt tag. See <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener">#676</a>.</p>
+            
             <h2 id="swaparr-integration">Swaparr Integration</h2>
             
             <p>Enable Swaparr monitoring for this Eros instance to automatically clean up stalled downloads.</p>

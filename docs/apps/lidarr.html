@@ -142,9 +142,10 @@
                 <li><strong>Tags (Upgradinatorr-style):</strong> Huntarr finds artists that <strong>DON'T</strong> have your specified tag (e.g. <code>upgradinatorr</code>), searches their albums for upgrades, then <strong>ADDS</strong> the tag to the artist after processing to mark them as complete. This matches <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr's</a> behavior: the tag tracks which artists have already been processed, not which ones to search. The tag is automatically created in Lidarr if it doesn't exist.</li>
             </ul>
             <p>In both cases, Huntarr triggers <strong>AlbumSearch</strong> for the selected albums; Lidarr still decides what to grab based on your quality profile and custom format scores. When using <strong>Tags</strong>, the <strong>Upgrade Tag</strong> field sets the tag name on artists in Lidarr (e.g. <code>upgradinatorr</code>); Huntarr finds artists without this tag, runs upgrade searches on their albums, then adds the tag when done.</p>
+            <p><strong>Cutoff unmet mode</strong> uses Lidarr's Wanted → Cutoff Unmet list every cycle; <strong>Tags (Upgradinatorr) mode</strong> finds artists without your chosen tag, runs upgrade searches on their albums, then adds that tag to the artist so they are not searched again. Custom formats and quality profiles in Lidarr (and <a href="https://trash-guides.info/Lidarr/" target="_blank" rel="noopener">Trash Guides for Lidarr</a> where available) determine what counts as an upgrade when Huntarr triggers the search.</p>
             
             <div class="alert alert-success">
-                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides and best practices for quality upgrades.
+                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/Lidarr/" target="_blank" rel="noopener">TrashGuides (Lidarr)</a> for quality profiles and custom format scoring where supported. Set <strong>Upgrade Until Custom Format Score</strong> in your quality profile so Lidarr will grab better-scoring releases when Huntarr triggers upgrades.
             </div>
             
             <h4 id="upgrade-mode-comparison"><i class="fas fa-balance-scale" style="margin-right: 10px; color: #9b59b6;"></i>Cutoff Unmet vs Tags: Which Should I Use?</h4>
@@ -271,6 +272,20 @@
             
             <h4><i class="fas fa-microphone" style="margin-right: 8px; color: #9b59b6;"></i>Artist Monitoring</h4>
             <p>When enabled, Huntarr will respect your artist monitoring settings in Lidarr, only searching for albums from artists you're actively monitoring.</p>
+            
+            <h2 id="advanced-settings">Advanced Settings</h2>
+            <p>These match the <strong>Advanced Settings</strong> section in the instance editor: <strong>API Timeout (seconds)</strong>, <strong>Command Wait Delay (seconds)</strong>, <strong>Command Wait Attempts</strong>, <strong>Max Download Queue Size</strong>, and <strong>Swaparr Monitoring</strong> (when Swaparr is enabled in Huntarr Settings).</p>
+            
+            <h2 id="custom-tags">Custom Tags</h2>
+            <p>These match the <strong>Custom Tags</strong> section. Huntarr can add tags in Lidarr to mark processed items.</p>
+            <ul>
+                <li><strong>Tag missing items</strong> / <strong>Missing Items Tag</strong> — Tag (e.g. <code>huntarr-missing</code>) added when items are found by a missing search. Max 25 characters.</li>
+                <li><strong>Tag upgrade items</strong> / <strong>Upgrade Items Tag</strong> — Used only in <strong>cutoff unmet</strong> mode. In <strong>Tags (Upgradinatorr)</strong> mode this option is hidden; Huntarr uses the <strong>Upgrade Tag</strong> (e.g. <code>upgradinatorr</code>) on artists to mark processed content instead.</li>
+            </ul>
+            <p>Lidarr does not have "Tag shows missing" (Sonarr-only).</p>
+            
+            <h2 id="exempt-tags">Exempt Tags</h2>
+            <p>Items with any of these tags are skipped for missing and upgrade searches. If you remove the tag in Lidarr, Huntarr will process the item again. The tag <code>upgradinatorr</code> cannot be added as an exempt tag. See <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener">#676</a>.</p>
             
             <h2 id="swaparr-integration">Swaparr Integration</h2>
             
