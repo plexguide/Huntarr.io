@@ -463,13 +463,19 @@ def main():
     This function is called by app_launcher.py in the packaged ARM application.
     """
     # Register signal handlers for graceful shutdown in the main process
-    signal.signal(signal.SIGINT, main_shutdown_handler)
-    signal.signal(signal.SIGTERM, main_shutdown_handler)
+    # Signal handlers can only be registered in the main thread
+    try:
+        signal.signal(signal.SIGINT, main_shutdown_handler)
+        signal.signal(signal.SIGTERM, main_shutdown_handler)
 
-    # Register SIGCHLD handler to prevent zombie processes (Docker healthchecks)
-    # SIGCHLD is not available on Windows, only register on Unix-like systems
-    if hasattr(signal, 'SIGCHLD'):
-        signal.signal(signal.SIGCHLD, sigchld_handler)
+        # Register SIGCHLD handler to prevent zombie processes (Docker healthchecks)
+        # SIGCHLD is not available on Windows, only register on Unix-like systems
+        if hasattr(signal, 'SIGCHLD'):
+            signal.signal(signal.SIGCHLD, sigchld_handler)
+    except ValueError as e:
+        # Signal handlers can only be registered in the main thread
+        # This is expected when running in macOS menu bar mode where main() is called from a background thread
+        huntarr_logger.info(f"Signal handlers not registered (running in background thread): {e}")
 
     # Register cleanup handler
     atexit.register(cleanup_handler)
