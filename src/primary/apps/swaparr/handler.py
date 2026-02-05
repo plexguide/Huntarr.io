@@ -828,14 +828,26 @@ def process_stalled_downloads(app_name, instance_name, instance_data, settings):
                     increment_swaparr_stat("ignored", 1)
                 continue
             
-            # Strike if metadata issue, eta too long, or no progress (eta = 0 and not queued)
+            # Strike if metadata issue, eta too long, or no progress (eta = 0 and not queued).
+            # Per docs/issue #687: "Has been downloading longer than your Max Download Time" must be true
+            # for ETA-too-long and No-progress strikes (wall-clock time, not ETA).
+            max_dl_seconds = parse_time_string_to_seconds(settings.get("max_download_time", "2h"))
+            first_seen_str = strike_data[item_id].get("first_strike_time")
+            exceeded_max_download_time = False
+            if first_seen_str:
+                try:
+                    first_seen = datetime.fromisoformat(first_seen_str.replace("Z", "+00:00"))
+                    time_downloading_seconds = (datetime.utcnow() - first_seen.replace(tzinfo=None)).total_seconds()
+                    exceeded_max_download_time = time_downloading_seconds >= max_dl_seconds
+                except (ValueError, TypeError):
+                    exceeded_max_download_time = False
             if metadata_issue:
                 should_strike = True
                 strike_reason = "Metadata"
-            elif item["eta"] >= parse_time_string_to_seconds(settings.get("max_download_time", "2h")):
+            elif item["eta"] >= max_dl_seconds and exceeded_max_download_time:
                 should_strike = True
                 strike_reason = "ETA too long"
-            elif item["eta"] == 0 and item["status"] not in ["queued", "delay"]:
+            elif item["eta"] == 0 and item["status"] not in ["queued", "delay"] and exceeded_max_download_time:
                 should_strike = True
                 strike_reason = "No progress"
             
