@@ -1265,7 +1265,24 @@
         // Update originalSettings to keep editor in sync
         window.huntarrUI.originalSettings[appType] = settings;
         
-        this.saveAppSettings(appType, settings);
+        const self = this;
+        const savePromise = this.saveAppSettings(appType, settings);
+        if (savePromise && typeof savePromise.then === 'function') {
+            savePromise.then(function(data) {
+                // Server may have generated instance_id for new instances; update the displayed field
+                if (data && data.settings && data.settings.instances && data.settings.instances[finalIndex]) {
+                    const savedInstance = data.settings.instances[finalIndex];
+                    const instanceId = (savedInstance.instance_id || '').trim();
+                    if (instanceId) {
+                        const idInput = document.getElementById('editor-instance-id');
+                        if (idInput) idInput.value = instanceId;
+                        if (self._currentEditing && self._currentEditing.originalInstance) {
+                            self._currentEditing.originalInstance.instance_id = instanceId;
+                        }
+                    }
+                }
+            }).catch(function() { /* saveAppSettings already shows error */ });
+        }
         
         // Update current editing state with new index (in case it was a new instance)
         this._currentEditing = { appType, index: finalIndex, originalInstance: JSON.parse(JSON.stringify(newData)) };

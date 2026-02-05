@@ -105,7 +105,7 @@ window.SettingsForms = {
         // Ensure change detection is suppressed during the entire save and refresh process
         window._appsSuppressChangeDetection = true;
         
-        HuntarrUtils.fetchWithTimeout(`./api/settings/${appType}`, {
+        return HuntarrUtils.fetchWithTimeout(`./api/settings/${appType}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settings)
@@ -118,13 +118,15 @@ window.SettingsForms = {
                 window.huntarrUI.showNotification(successMessage || 'Settings saved successfully', 'success');
             }
             
-            // Re-sync memory. For general, use API response so dev_mode is current (indicator updates).
+            // Re-sync memory. Use server-returned settings when present (e.g. server-generated instance_id).
             if (window.huntarrUI && window.huntarrUI.originalSettings) {
                 if (appType === 'general' && data && data.general) {
                     window.huntarrUI.originalSettings.general = JSON.parse(JSON.stringify(data.general));
                     if (typeof window.huntarrUI.updateMovieHuntNavVisibility === 'function') {
                         window.huntarrUI.updateMovieHuntNavVisibility();
                     }
+                } else if (data && data.settings) {
+                    window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(data.settings));
                 } else {
                     window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
                 }
@@ -184,6 +186,7 @@ window.SettingsForms = {
                 console.warn(`[huntarrUI] Container for ${appType} not found in DOM, skipping re-render`);
                 window._appsSuppressChangeDetection = false;
             }
+            return data;
         })
         .catch(error => {
             console.error(`[huntarrUI] Error saving settings for ${appType}:`, error);

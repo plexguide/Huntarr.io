@@ -807,8 +807,9 @@ def handle_app_settings(app_name):
         success = settings_manager.save_settings(app_name, data)
         
         if success:
-            # Auto-save enabled - no need to log every successful save
-            return jsonify({"success": True})
+            # Return updated settings so client can show server-generated fields (e.g. instance_id for new instances)
+            updated = settings_manager.load_settings(app_name)
+            return jsonify({"success": True, "settings": updated})
         else:
             web_logger.error(f"Failed to save {app_name} settings")
             return jsonify({"success": False, "error": f"Failed to save {app_name} settings"}), 500

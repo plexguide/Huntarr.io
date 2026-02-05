@@ -240,6 +240,31 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
                             instance[field] = 0
                             settings_logger.warning(f"{field} for {app_name} instance {i+1} was {original_value}, automatically set to minimum allowed value of 0")
     
+    # Ensure every instance has a stable instance_id (so new instances get one on save, not only when they have API key)
+    _apps_with_instances = ("sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros")
+    if app_name in _apps_with_instances and "instances" in settings_data and isinstance(settings_data["instances"], list):
+        try:
+            from src.primary.utils.instance_id import generate_instance_id
+        except ImportError:
+            pass
+        else:
+            existing_ids = set()
+            for inst in settings_data["instances"]:
+                if isinstance(inst, dict) and inst.get("instance_id"):
+                    existing_ids.add((inst.get("instance_id") or "").strip())
+            for inst in settings_data["instances"]:
+                if not isinstance(inst, dict):
+                    continue
+                current_id = (inst.get("instance_id") or "").strip()
+                if not current_id:
+                    new_id = generate_instance_id(app_name, existing_ids)
+                    inst["instance_id"] = new_id
+                    existing_ids.add(new_id)
+                    try:
+                        get_database().migrate_instance_identifier(app_name, inst.get("name") or "Default", new_id)
+                    except Exception as e:
+                        settings_logger.warning(f"Could not migrate instance identifier for {app_name}: {e}")
+    
     try:
         db = get_database()
         
