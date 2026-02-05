@@ -966,6 +966,82 @@
                 </div>
                 
                 <div class="editor-section">
+                    <div class="editor-section-title">Tags</div>
+                    
+                    <div class="editor-field-group">
+                        <div class="editor-setting-item flex-row">
+                            <label>Tag missing items</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="editor-tag-enable-missing" ${safeInstance.tag_enable_missing ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="editor-setting-item" style="margin-top: 6px;">
+                            <label>Missing Items Tag</label>
+                            <input type="text" id="editor-tag-missing" value="${safeInstance.custom_tags.missing || 'huntarr-missing'}" placeholder="huntarr-missing">
+                        </div>
+                        <p class="editor-help-text">Tag added to items when they're found by a missing search (max 25 characters)</p>
+                    </div>
+                    
+                    <div class="editor-upgrade-items-tag-section" style="display: ${(['sonarr','radarr','lidarr','readarr'].includes(appType) && (safeInstance.upgrade_selection_method || 'cutoff') === 'tags') ? 'none' : 'block'};">
+                        <div class="editor-field-group">
+                            <div class="editor-setting-item flex-row">
+                                <label>Tag upgrade items</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="editor-tag-enable-upgrade" ${safeInstance.tag_enable_upgrade ? 'checked' : ''}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="editor-setting-item" style="margin-top: 6px;">
+                                <label>Upgrade Items Tag</label>
+                                <input type="text" id="editor-tag-upgrade" value="${safeInstance.custom_tags.upgrade || 'huntarr-upgrade'}" placeholder="huntarr-upgrade">
+                            </div>
+                            <p class="editor-help-text">Tag added to items when they're upgraded in cutoff mode (max 25 characters). Not used when Upgrade Selection Method is Tags.</p>
+                        </div>
+                    </div>
+                    
+                    ${appType === 'sonarr' ? `
+                    <div class="editor-field-group">
+                        <div class="editor-setting-item flex-row">
+                            <label>Tag shows missing</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="editor-tag-enable-shows-missing" ${safeInstance.tag_enable_shows_missing ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="editor-setting-item" style="margin-top: 6px;">
+                            <label>Shows Missing Tag</label>
+                            <input type="text" id="editor-tag-shows-missing" value="${safeInstance.custom_tags.shows_missing || 'huntarr-shows-missing'}" placeholder="huntarr-shows-missing">
+                        </div>
+                        <p class="editor-help-text">Tag added to shows when missing items are found in shows mode (max 25 characters)</p>
+                    </div>
+                    ` : ''}
+                    
+                    <div class="editor-section" style="border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 10px; padding: 14px; background: rgba(231, 76, 60, 0.06); margin-top: 16px;">
+                        <div class="editor-section-title">Exempt Tags</div>
+                        <p class="editor-help-text" style="margin-bottom: 12px;">Items with any of these tags are skipped for missing and upgrade searches. If the tag is removed in the app, Huntarr will process the item again. <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener" style="color: #94a3b8;">#676</a></p>
+                        <div class="editor-field-group">
+                            <div class="editor-setting-item">
+                                <label>Add exempt tag</label>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="text" id="editor-exempt-tag-input" placeholder="Type a tag to exempt..." style="flex: 1;" maxlength="50">
+                                    <button type="button" class="btn-card" id="editor-exempt-tag-add" style="padding: 8px 14px; white-space: nowrap;">Add</button>
+                                </div>
+                            </div>
+                            <p class="editor-help-text" style="color: #94a3b8; font-size: 0.85rem;">Tag &quot;upgradinatorr&quot; cannot be added.</p>
+                            <div id="editor-exempt-tags-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; min-height: 24px;">
+                                ${(safeInstance.exempt_tags || []).map(tag => `
+                                    <span class="exempt-tag-chip" data-tag="${(tag || '').replace(/"/g, '&quot;')}" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: #dc2626; color: #fff; border-radius: 6px; font-size: 0.875rem;">
+                                        <span class="exempt-tag-remove" style="cursor: pointer; opacity: 0.9;" title="Remove" aria-label="Remove">×</span>
+                                        <span>${(tag || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="editor-section">
                     <div class="editor-section-title">Advanced Settings</div>
                     
                     <div class="editor-field-group">
@@ -1000,40 +1076,6 @@
                         <p class="editor-help-text">Skip processing if queue size meets or exceeds this value (-1 = disabled, default)</p>
                     </div>
                     
-                    <div class="editor-field-group" style="border: 1px solid rgba(148, 163, 184, 0.4); border-radius: 8px; padding: 12px; background: rgba(148, 163, 184, 0.06);">
-                        <div class="editor-section-title" style="margin-top: 0;">Max Seed Queue (torrents only)</div>
-                        <p class="editor-help-text" style="margin-bottom: 10px;">Skip hunts when this many torrents are actively seeding. Requires a torrent client below. For qBittorrent/Transmission only. <a href="https://github.com/plexguide/Huntarr.io/issues/713" target="_blank" rel="noopener">#713</a></p>
-                        <div class="editor-setting-item">
-                            <label>Max Seed Queue Size</label>
-                            <input type="number" id="editor-max-seed-queue-size" value="${safeInstance.max_seed_queue_size !== undefined ? safeInstance.max_seed_queue_size : -1}" min="-1" max="1000">
-                        </div>
-                        <p class="editor-help-text">-1 = disabled. When &ge; 0, configure the torrent client below so Huntarr can read the seeding count.</p>
-                        <div class="editor-setting-item" style="margin-top: 10px;">
-                            <label>Torrent client type</label>
-                            <select id="editor-seed-client-type">
-                                <option value="">None (don't check)</option>
-                                <option value="qbittorrent" ${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.type === 'qbittorrent') ? 'selected' : ''}>qBittorrent</option>
-                                <option value="transmission" ${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.type === 'transmission') ? 'selected' : ''}>Transmission</option>
-                            </select>
-                        </div>
-                        <div class="editor-setting-item">
-                            <label>Host</label>
-                            <input type="text" id="editor-seed-client-host" value="${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.host) ? String(safeInstance.seed_check_torrent_client.host).replace(/"/g, '&quot;') : ''}" placeholder="localhost or 192.168.1.100">
-                        </div>
-                        <div class="editor-setting-item">
-                            <label>Port</label>
-                            <input type="number" id="editor-seed-client-port" value="${(safeInstance.seed_check_torrent_client && (safeInstance.seed_check_torrent_client.port !== undefined && safeInstance.seed_check_torrent_client.port !== '')) ? safeInstance.seed_check_torrent_client.port : ''}" placeholder="8080 or 9091" min="1" max="65535">
-                        </div>
-                        <div class="editor-setting-item">
-                            <label>Username</label>
-                            <input type="text" id="editor-seed-client-username" value="${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.username) ? String(safeInstance.seed_check_torrent_client.username).replace(/"/g, '&quot;') : ''}" placeholder="Optional">
-                        </div>
-                        <div class="editor-setting-item">
-                            <label>Password</label>
-                            <input type="password" id="editor-seed-client-password" value="${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.password) ? String(safeInstance.seed_check_torrent_client.password).replace(/"/g, '&quot;') : ''}" placeholder="Optional" autocomplete="off">
-                        </div>
-                    </div>
-                    
                     ${swaparrEnabled ? `
                     <div class="editor-field-group">
                         <div class="editor-setting-item flex-row">
@@ -1053,77 +1095,36 @@
                 </div>
                 
                 <div class="editor-section">
-                    <div class="editor-section-title">Custom Tags</div>
-                    
-                    <div class="editor-field-group">
-                        <div class="editor-setting-item flex-row">
-                            <label>Tag missing items</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="editor-tag-enable-missing" ${safeInstance.tag_enable_missing ? 'checked' : ''}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="editor-setting-item" style="margin-top: 6px;">
-                            <label>Missing Items Tag</label>
-                            <input type="text" id="editor-tag-missing" value="${safeInstance.custom_tags.missing || 'huntarr-missing'}" placeholder="huntarr-missing">
-                        </div>
-                        <p class="editor-help-text">Tag added to items when they’re found by a missing search (max 25 characters)</p>
-                    </div>
-                    
-                    <div class="editor-upgrade-items-tag-section" style="display: ${(['sonarr','radarr','lidarr','readarr'].includes(appType) && (safeInstance.upgrade_selection_method || 'cutoff') === 'tags') ? 'none' : 'block'};">
-                        <div class="editor-field-group">
-                            <div class="editor-setting-item flex-row">
-                                <label>Tag upgrade items</label>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="editor-tag-enable-upgrade" ${safeInstance.tag_enable_upgrade ? 'checked' : ''}>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="editor-setting-item" style="margin-top: 6px;">
-                                <label>Upgrade Items Tag</label>
-                                <input type="text" id="editor-tag-upgrade" value="${safeInstance.custom_tags.upgrade || 'huntarr-upgrade'}" placeholder="huntarr-upgrade">
-                            </div>
-                            <p class="editor-help-text">Tag added to items when they’re upgraded in cutoff mode (max 25 characters). Not used when Upgrade Selection Method is Tags.</p>
-                        </div>
-                    </div>
-                    
-                    ${appType === 'sonarr' ? `
-                    <div class="editor-field-group">
-                        <div class="editor-setting-item flex-row">
-                            <label>Tag shows missing</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="editor-tag-enable-shows-missing" ${safeInstance.tag_enable_shows_missing ? 'checked' : ''}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="editor-setting-item" style="margin-top: 6px;">
-                            <label>Shows Missing Tag</label>
-                            <input type="text" id="editor-tag-shows-missing" value="${safeInstance.custom_tags.shows_missing || 'huntarr-shows-missing'}" placeholder="huntarr-shows-missing">
-                        </div>
-                        <p class="editor-help-text">Tag added to shows when missing items are found in shows mode (max 25 characters)</p>
-                    </div>
-                    ` : ''}
-                </div>
-                
-                <div class="editor-section" style="border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 10px; padding: 14px; background: rgba(231, 76, 60, 0.06);">
-                    <div class="editor-section-title">Exempt Tags</div>
-                    <p class="editor-help-text" style="margin-bottom: 12px;">Items with any of these tags are skipped for missing and upgrade searches. If the tag is removed in the app, Huntarr will process the item again. <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener" style="color: #94a3b8;">#676</a></p>
+                    <div class="editor-section-title">Max Seed Queue (torrents only)</div>
+                    <p class="editor-help-text" style="margin-bottom: 10px;">Skip hunts when this many torrents are actively seeding. Configure the torrent client below so Huntarr can read the seeding count.</p>
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
-                            <label>Add exempt tag</label>
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                <input type="text" id="editor-exempt-tag-input" placeholder="Type a tag to exempt..." style="flex: 1;" maxlength="50">
-                                <button type="button" class="btn-card" id="editor-exempt-tag-add" style="padding: 8px 14px; white-space: nowrap;">Add</button>
-                            </div>
+                            <label>Max Seed Queue Size</label>
+                            <input type="number" id="editor-max-seed-queue-size" value="${safeInstance.max_seed_queue_size !== undefined ? safeInstance.max_seed_queue_size : -1}" min="-1" max="1000">
                         </div>
-                        <p class="editor-help-text" style="color: #94a3b8; font-size: 0.85rem;">Tag &quot;upgradinatorr&quot; cannot be added.</p>
-                        <div id="editor-exempt-tags-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; min-height: 24px;">
-                            ${(safeInstance.exempt_tags || []).map(tag => `
-                                <span class="exempt-tag-chip" data-tag="${(tag || '').replace(/"/g, '&quot;')}" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: #dc2626; color: #fff; border-radius: 6px; font-size: 0.875rem;">
-                                    <span class="exempt-tag-remove" style="cursor: pointer; opacity: 0.9;" title="Remove" aria-label="Remove">×</span>
-                                    <span>${(tag || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
-                                </span>
-                            `).join('')}
+                        <p class="editor-help-text">-1 = disabled. When &ge; 0, hunts are skipped when active seeding count meets or exceeds this value.</p>
+                        <div class="editor-setting-item" style="margin-top: 10px;">
+                            <label>Torrent client type</label>
+                            <select id="editor-seed-client-type">
+                                <option value="qbittorrent" ${!(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.type === 'transmission') ? 'selected' : ''}>qBittorrent</option>
+                                <option value="transmission" ${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.type === 'transmission') ? 'selected' : ''}>Transmission</option>
+                            </select>
+                        </div>
+                        <div class="editor-setting-item">
+                            <label>Host</label>
+                            <input type="text" id="editor-seed-client-host" value="${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.host) ? String(safeInstance.seed_check_torrent_client.host).replace(/"/g, '&quot;') : ''}" placeholder="localhost or 192.168.1.100">
+                        </div>
+                        <div class="editor-setting-item">
+                            <label>Port</label>
+                            <input type="number" id="editor-seed-client-port" value="${(safeInstance.seed_check_torrent_client && (safeInstance.seed_check_torrent_client.port !== undefined && safeInstance.seed_check_torrent_client.port !== '')) ? safeInstance.seed_check_torrent_client.port : ''}" placeholder="8080 or 9091" min="1" max="65535">
+                        </div>
+                        <div class="editor-setting-item">
+                            <label>Username</label>
+                            <input type="text" id="editor-seed-client-username" value="${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.username) ? String(safeInstance.seed_check_torrent_client.username).replace(/"/g, '&quot;') : ''}" placeholder="Optional">
+                        </div>
+                        <div class="editor-setting-item">
+                            <label>Password</label>
+                            <input type="password" id="editor-seed-client-password" value="${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.password) ? String(safeInstance.seed_check_torrent_client.password).replace(/"/g, '&quot;') : ''}" placeholder="Optional" autocomplete="off">
                         </div>
                     </div>
                 </div>
@@ -1175,10 +1176,10 @@
             max_seed_queue_size: (function(){ const v = parseInt(document.getElementById('editor-max-seed-queue-size').value, 10); return (!isNaN(v) && v >= -1) ? v : -1; })(),
             seed_check_torrent_client: (function() {
                 const typeEl = document.getElementById('editor-seed-client-type');
-                const type = typeEl ? (typeEl.value || '').trim() : '';
+                const type = (typeEl ? (typeEl.value || '').trim() : '') || 'qbittorrent';
                 const hostEl = document.getElementById('editor-seed-client-host');
                 const host = hostEl ? (hostEl.value || '').trim() : '';
-                if (!type || !host) return null;
+                if (!host) return null;
                 const portEl = document.getElementById('editor-seed-client-port');
                 const portVal = portEl && portEl.value !== '' ? parseInt(portEl.value, 10) : (type === 'qbittorrent' ? 8080 : 9091);
                 const port = (!isNaN(portVal) && portVal >= 1 && portVal <= 65535) ? portVal : (type === 'qbittorrent' ? 8080 : 9091);
