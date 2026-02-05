@@ -103,45 +103,48 @@
                 <li>Test the connection to ensure Huntarr can communicate with Sonarr</li>
             </ol>
             
-            <h3 id="connection-settings">Connection Settings</h3>
-            <p>Configure these settings to connect Huntarr to your Sonarr instance:</p>
-            
+            <h3 id="connection-details">Connection Details</h3>
+            <p>These settings match the <strong>Connection Details</strong> section in the instance editor:</p>
             <table>
                 <tr>
                     <th>Setting</th>
                     <th>Description</th>
-                    <th>Example</th>
-                    <th>Notes</th>
                 </tr>
                 <tr>
-                    <td>Name</td>
-                    <td>Friendly name for this Sonarr instance</td>
-                    <td>Default, TV-4K, Anime</td>
-                    <td>Useful when running multiple Sonarr instances</td>
+                    <td><strong>Status</strong></td>
+                    <td>Shows connection status and Sonarr version (e.g. Connected 4.0.16.2944). Displayed at the top of the section.</td>
                 </tr>
                 <tr>
-                    <td>URL</td>
-                    <td>Base URL for your Sonarr instance</td>
-                    <td>http://10.0.0.10:8989</td>
-                    <td>Include protocol (http/https) and port</td>
+                    <td><strong>Enable Status</strong></td>
+                    <td>Enable or disable this instance. When disabled, Huntarr will not process this instance.</td>
                 </tr>
                 <tr>
-                    <td>API Key</td>
-                    <td>Sonarr API key for authentication</td>
-                    <td>a03c86b6292c4bd48cd5e3b84e5a470</td>
-                    <td>Found in Sonarr Settings > General > Security</td>
+                    <td><strong>Name</strong></td>
+                    <td>A friendly name to identify this instance (e.g. Main Sonarr, TV-4K, Anime). Useful when running multiple Sonarr instances.</td>
                 </tr>
                 <tr>
-                    <td>Enabled</td>
-                    <td>Whether Huntarr should process this instance</td>
-                    <td>On/Off toggle</td>
-                    <td>Disable to temporarily stop processing</td>
+                    <td><strong>URL</strong></td>
+                    <td>The full URL including port (e.g. <code>http://localhost:8989</code> or <code>http://10.0.0.10:8989</code>). Include protocol (http/https) and port.</td>
+                </tr>
+                <tr>
+                    <td><strong>API Key</strong></td>
+                    <td>Found in Settings &gt; General in your *arr application (Sonarr: Settings &gt; General &gt; Security).</td>
+                </tr>
+                <tr>
+                    <td><strong>Instance Identifier</strong></td>
+                    <td>Stable identifier for this instance (assigned automatically; cannot be changed). Used internally so Huntarr can track state per instance.</td>
                 </tr>
             </table>
             
             <h2 id="search-settings">Search Settings (Per Instance)</h2>
             
-            <p>Configure how Huntarr searches for missing content and upgrades in your Sonarr instance. These settings are <strong>per instance</strong>—each Sonarr instance has its own search mode, upgrade mode, limits, and options.</p>
+            <p>These settings match the <strong>Search Settings</strong> section in the instance editor. Each Sonarr instance has its own values.</p>
+            
+            <h3 id="search-counts">Search counts</h3>
+            <ul>
+                <li><strong>Missing Search Count</strong> — Number of missing items to search for in each cycle. Set to 0 to disable missing searches.</li>
+                <li><strong>Upgrade Search Count</strong> — Number of items to upgrade in each cycle. Set to 0 to disable upgrade searches.</li>
+            </ul>
             
             <h3 id="missing-search-mode"><i class="fas fa-search" style="margin-right: 10px; color: #3498db;"></i>Missing Search Mode</h3>
             <p>Determines how Huntarr searches for missing episodes:</p>
@@ -171,11 +174,14 @@
                 <li><strong>Cutoff unmet (default):</strong> Uses Sonarr's <strong>Wanted → Cutoff Unmet</strong> list. Only series/episodes that don't meet your quality/custom-format cutoff are eligible. Same behavior as before.</li>
                 <li><strong>Tags (Upgradinatorr-style):</strong> Huntarr finds series that <strong>DON'T</strong> have your specified tag (e.g. <code>upgradinatorr</code>), searches for upgrades, then <strong>ADDS</strong> the tag after processing to mark them as complete. This matches <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr's</a> behavior: the tag tracks which series have already been processed, not which ones to search. The tag is automatically created in Sonarr if it doesn't exist.</li>
             </ul>
-            <p>In both cases, Huntarr triggers <strong>SeriesSearch</strong> or <strong>SeasonSearch</strong> for the selected series; Sonarr still decides what to grab based on your quality profile and custom format scores (V4).</p>
+            <p>In both cases, Huntarr triggers <strong>SeriesSearch</strong> or <strong>SeasonSearch</strong> for the selected series; Sonarr still decides what to grab based on your quality profile and custom format scores (V4). When using <strong>Tags</strong>, the <strong>Upgrade Tag</strong> field sets the tag name in Sonarr (e.g. <code>upgradinatorr</code>); Huntarr finds series without this tag, runs upgrade searches, then adds the tag when done.</p>
             
             <div class="alert alert-success">
                 <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides and best practices for quality upgrades.
             </div>
+            
+            <h3 id="air-date-delay"><i class="fas fa-calendar-alt" style="margin-right: 10px; color: #9b59b6;"></i>Air Date Delay (Days)</h3>
+            <p>Only search for items that aired at least this many days ago. Use 0 to search regardless of air date. Helps avoid searching for episodes that just aired and may not be on indexers yet.</p>
             
             <h4 id="upgrade-mode-comparison"><i class="fas fa-balance-scale" style="margin-right: 10px; color: #9b59b6;"></i>Cutoff Unmet vs Tags: Which Should I Use?</h4>
             <p>Understanding the difference between these two modes will help you choose the right approach for your library:</p>
@@ -267,44 +273,49 @@
                 <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/Sonarr/sonarr-setup-quality-profiles/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides (Sonarr V4), recommended scores for HDR formats, DV, audio codecs, and best practices for quality upgrades in Sonarr.
             </div>
             
-            <h3 id="search-limits"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Search Limits</h3>
-            <p>Control how many items Huntarr processes per cycle to avoid overwhelming your indexers:</p>
+            <h2 id="stateful-management">Stateful Management</h2>
+            <p>These settings match the <strong>Stateful Management</strong> section in the instance editor. Huntarr can track which items it has already processed so it doesn’t re-search them every cycle.</p>
+            <table>
+                <tr>
+                    <th>Setting</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><strong>State Management</strong></td>
+                    <td>Enabled: track processed items to avoid redundant searches. Disabled: do not track; every cycle may consider the same items again.</td>
+                </tr>
+                <tr>
+                    <td><strong>Reset Interval (Hours)</strong></td>
+                    <td>How long to wait before re-searching a previously processed item (default: 72 hours / 3 days). After this time, items become eligible again.</td>
+                </tr>
+                <tr>
+                    <td><strong>Reset Processed State Now</strong></td>
+                    <td>Button that clears the history of processed items for this instance. Use if you want Huntarr to re-consider everything from scratch.</td>
+                </tr>
+            </table>
+            <p>When state management is enabled, the UI shows <strong>Active - Tracked Items: <em>N</em></strong> and <strong>Next Reset</strong> (when the next reset cycle runs).</p>
             
+            <h3 id="additional-settings"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Additional Settings</h3>
+            <p>These match the <strong>Additional Settings</strong> section. Do not overwhelm your indexers; contact them for advice if unsure.</p>
             <table>
                 <tr>
                     <th>Setting</th>
                     <th>Description</th>
                     <th>Recommended</th>
-                    <th>Notes</th>
                 </tr>
                 <tr>
-                    <td>Missing Search</td>
-                    <td>Number of missing items to search per cycle</td>
-                    <td>2-5</td>
-                    <td>Set to 0 to disable missing searches</td>
+                    <td><strong>Sleep Duration (Minutes)</strong></td>
+                    <td>Time in minutes between processing cycles for this instance.</td>
+                    <td>15 (900 sec) or more; longer intervals reduce indexer load.</td>
                 </tr>
                 <tr>
-                    <td>Upgrade Search</td>
-                    <td>Number of episodes to upgrade per cycle</td>
-                    <td>1-3</td>
-                    <td>Set to 0 to disable upgrade searches</td>
-                </tr>
-                <tr>
-                    <td>Sleep Duration</td>
-                    <td>Time in seconds between processing cycles</td>
-                    <td>900 (15 min)</td>
-                    <td>Longer intervals reduce indexer load</td>
-                </tr>
-                <tr>
-                    <td>API Cap - Hourly</td>
-                    <td>Maximum API requests per hour</td>
-                    <td>400 or less</td>
-                    <td>Prevents rate limiting from indexers</td>
+                    <td><strong>API Cap - Hourly</strong></td>
+                    <td>Maximum API requests per hour for this instance.</td>
+                    <td>10–20 recommended, max 400. Prevents rate limiting or bans from indexers.</td>
                 </tr>
             </table>
-            
             <div class="alert alert-warning">
-                <strong>Important:</strong> Setting API limits too high can result in your accounts being banned from indexers. Start with conservative values and adjust based on your indexer limits.
+                <strong>Important:</strong> Setting API limits too high can result in your accounts being banned from indexers. Start with conservative values (10–20 hourly) and adjust only if your indexer allows more.
             </div>
             
             <h3 id="additional-options"><i class="fas fa-cogs" style="margin-right: 10px; color: #9b59b6;"></i>Additional Options</h3>

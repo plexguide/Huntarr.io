@@ -102,45 +102,27 @@
                 <li>Test the connection to ensure Huntarr can communicate with Radarr</li>
             </ol>
             
-            <h3 id="connection-settings">Connection Settings</h3>
-            <p>Configure these settings to connect Huntarr to your Radarr instance:</p>
-            
+            <h3 id="connection-details">Connection Details</h3>
+            <p>These settings match the <strong>Connection Details</strong> section in the instance editor:</p>
             <table>
-                <tr>
-                    <th>Setting</th>
-                    <th>Description</th>
-                    <th>Example</th>
-                    <th>Notes</th>
-                </tr>
-                <tr>
-                    <td>Name</td>
-                    <td>Friendly name for this Radarr instance</td>
-                    <td>Default, Movies-4K, Foreign</td>
-                    <td>Useful when running multiple Radarr instances</td>
-                </tr>
-                <tr>
-                    <td>URL</td>
-                    <td>Base URL for your Radarr instance</td>
-                    <td>http://10.0.0.10:7878</td>
-                    <td>Include protocol (http/https) and port</td>
-                </tr>
-                <tr>
-                    <td>API Key</td>
-                    <td>Radarr API key for authentication</td>
-                    <td>b04d87c7392d5ce4f9a6b85f6c8e470</td>
-                    <td>Found in Radarr Settings > General > Security</td>
-                </tr>
-                <tr>
-                    <td>Enabled</td>
-                    <td>Whether Huntarr should process this instance</td>
-                    <td>On/Off toggle</td>
-                    <td>Disable to temporarily stop processing</td>
-                </tr>
+                <tr><th>Setting</th><th>Description</th></tr>
+                <tr><td><strong>Status</strong></td><td>Shows connection status and Radarr version. Displayed at the top of the section.</td></tr>
+                <tr><td><strong>Enable Status</strong></td><td>Enable or disable this instance. When disabled, Huntarr will not process this instance.</td></tr>
+                <tr><td><strong>Name</strong></td><td>A friendly name to identify this instance (e.g. Main Radarr, Movies-4K). Useful when running multiple Radarr instances.</td></tr>
+                <tr><td><strong>URL</strong></td><td>The full URL including port (e.g. <code>http://localhost:7878</code>). Include protocol (http/https) and port.</td></tr>
+                <tr><td><strong>API Key</strong></td><td>Found in Settings &gt; General in your *arr application (Radarr: Settings &gt; General &gt; Security).</td></tr>
+                <tr><td><strong>Instance Identifier</strong></td><td>Stable identifier for this instance (assigned automatically; cannot be changed). Used internally so Huntarr can track state per instance.</td></tr>
             </table>
             
             <h2 id="search-settings">Search Settings (Per Instance)</h2>
             
-            <p>Configure how Huntarr searches for missing movies and upgrades in your Radarr instance. These settings are <strong>per instance</strong>—each Radarr instance has its own search mode, upgrade mode, limits, and options.</p>
+            <p>These settings match the <strong>Search Settings</strong> section in the instance editor. Each Radarr instance has its own values.</p>
+            
+            <h3 id="search-counts">Search counts</h3>
+            <ul>
+                <li><strong>Missing Search Count</strong> — Number of missing items to search for in each cycle. Set to 0 to disable missing searches.</li>
+                <li><strong>Upgrade Search Count</strong> — Number of items to upgrade in each cycle. Set to 0 to disable upgrade searches.</li>
+            </ul>
             
             <h3 id="missing-search-mode"><i class="fas fa-search" style="margin-right: 10px; color: #f1c40f;"></i>Missing Search Mode</h3>
             <p>Determines how Huntarr searches for missing movies:</p>
@@ -197,11 +179,14 @@
                 <li><strong>Cutoff unmet (default):</strong> Uses Radarr's <strong>Wanted → Cutoff Unmet</strong> list. Only movies that don't meet your quality/custom-format cutoff are eligible. Same behavior as before.</li>
                 <li><strong>Tags (Upgradinatorr-style):</strong> Huntarr finds movies that <strong>DON'T</strong> have your specified tag (e.g. <code>upgradinatorr</code>), searches for upgrades, then <strong>ADDS</strong> the tag after processing to mark them as complete. This matches <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr's</a> behavior: the tag tracks which movies have already been processed, not which ones to search. The tag is automatically created in Radarr if it doesn't exist.</li>
             </ul>
-            <p>In both cases, Huntarr triggers <strong>MoviesSearch</strong> for the selected movies; Radarr still decides what to grab based on your quality profile and custom format scores.</p>
+            <p>In both cases, Huntarr triggers <strong>MoviesSearch</strong> for the selected movies; Radarr still decides what to grab based on your quality profile and custom format scores. When using <strong>Tags</strong>, the <strong>Upgrade Tag</strong> field sets the tag name in Radarr (e.g. <code>upgradinatorr</code>); Huntarr finds movies without this tag, runs upgrade searches, then adds the tag when done.</p>
             
             <div class="alert alert-success">
                 <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides and best practices for quality upgrades.
             </div>
+            
+            <h3 id="release-date-delay"><i class="fas fa-calendar-alt" style="margin-right: 10px; color: #9b59b6;"></i>Release Date Delay (Days)</h3>
+            <p>Only search for items released at least this many days ago. Use 0 to search regardless of release date. Helps avoid searching for movies that just released and may not be on indexers yet.</p>
             
             <h4 id="upgrade-mode-comparison"><i class="fas fa-balance-scale" style="margin-right: 10px; color: #9b59b6;"></i>Cutoff Unmet vs Tags: Which Should I Use?</h4>
             <p>Understanding the difference between these two modes will help you choose the right approach for your library:</p>
@@ -259,44 +244,25 @@
                 <strong>⚠️ Important:</strong> With <strong>Tags mode</strong>, movies are marked as "processed" even if no upgrade was found. If you want to re-process movies later (e.g., after adding new indexers), you must manually remove the tag in Radarr.
             </div>
             
-            <h3 id="search-limits"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Search Limits</h3>
-            <p>Control how many items Huntarr processes per cycle to avoid overwhelming your indexers:</p>
-            
+            <h2 id="stateful-management">Stateful Management</h2>
+            <p>These settings match the <strong>Stateful Management</strong> section in the instance editor. Huntarr can track which items it has already processed so it doesn’t re-search them every cycle.</p>
             <table>
-                <tr>
-                    <th>Setting</th>
-                    <th>Description</th>
-                    <th>Recommended</th>
-                    <th>Notes</th>
-                </tr>
-                <tr>
-                    <td>Missing Search</td>
-                    <td>Number of missing movies to search per cycle</td>
-                    <td>3-5</td>
-                    <td>Set to 0 to disable missing searches</td>
-                </tr>
-                <tr>
-                    <td>Upgrade Search</td>
-                    <td>Number of movies to upgrade per cycle</td>
-                    <td>1-2</td>
-                    <td>Set to 0 to disable upgrade searches</td>
-                </tr>
-                <tr>
-                    <td>Sleep Duration</td>
-                    <td>Time in seconds between processing cycles</td>
-                    <td>1200 (20 min)</td>
-                    <td>Longer intervals reduce indexer load</td>
-                </tr>
-                <tr>
-                    <td>API Cap - Hourly</td>
-                    <td>Maximum API requests per hour</td>
-                    <td>300 or less</td>
-                    <td>Prevents rate limiting from indexers</td>
-                </tr>
+                <tr><th>Setting</th><th>Description</th></tr>
+                <tr><td><strong>State Management</strong></td><td>Enabled: track processed items to avoid redundant searches. Disabled: do not track; every cycle may consider the same items again.</td></tr>
+                <tr><td><strong>Reset Interval (Hours)</strong></td><td>How long to wait before re-searching a previously processed item (default: 72 hours / 3 days). After this time, items become eligible again.</td></tr>
+                <tr><td><strong>Reset Processed State Now</strong></td><td>Button that clears the history of processed items for this instance. Use if you want Huntarr to re-consider everything from scratch.</td></tr>
             </table>
+            <p>When state management is enabled, the UI shows <strong>Active - Tracked Items: <em>N</em></strong> and <strong>Next Reset</strong> (when the next reset cycle runs).</p>
             
+            <h3 id="additional-settings"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Additional Settings</h3>
+            <p>These match the <strong>Additional Settings</strong> section. Do not overwhelm your indexers; contact them for advice if unsure.</p>
+            <table>
+                <tr><th>Setting</th><th>Description</th><th>Recommended</th></tr>
+                <tr><td><strong>Sleep Duration (Minutes)</strong></td><td>Time in minutes between processing cycles for this instance.</td><td>15–20 or more; longer intervals reduce indexer load.</td></tr>
+                <tr><td><strong>API Cap - Hourly</strong></td><td>Maximum API requests per hour for this instance.</td><td>10–20 recommended, max 400. Prevents rate limiting or bans from indexers.</td></tr>
+            </table>
             <div class="alert alert-warning">
-                <strong>Important:</strong> Movie files are typically larger than TV episodes, so consider lower search limits to avoid overwhelming your indexers and download clients.
+                <strong>Important:</strong> Movie files are typically larger than TV episodes. Use conservative API caps (10–20) and longer sleep intervals to avoid overwhelming indexers and download clients.
             </div>
             
             <h3 id="additional-options"><i class="fas fa-cogs" style="margin-right: 10px; color: #9b59b6;"></i>Additional Options</h3>

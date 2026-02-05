@@ -92,81 +92,64 @@
                 Huntarr supports multiple Eros instances. Each instance has its own connection (URL, API key), and its own per-instance settings: search mode, missing/upgrade search limits, and Swaparr. You can enable or disable each instance independently.
             </div>
             
-            <h3 id="instance-name"><i class="fas fa-tag" style="margin-right: 8px; color: #9b59b6;"></i>Instance Name</h3>
-            <p><strong>What it does:</strong> Friendly name to identify this Eros instance in logs and notifications.</p>
-            <p><strong>Examples:</strong> "Main Eros", "4K Eros", "Private Tracker Eros"</p>
-            <p><strong>Best practices:</strong> Use descriptive names that help you identify the purpose of each instance, especially if you have multiple setups.</p>
-            
-            <h3 id="instance-url"><i class="fas fa-link" style="margin-right: 8px; color: #3498db;"></i>Instance URL</h3>
-            <p><strong>What it does:</strong> The base URL where your Eros instance is accessible.</p>
-            <p><strong>Format examples:</strong></p>
-            <ul>
-                <li><strong>Local:</strong> <code>http://localhost:6969</code></li>
-                <li><strong>Docker:</strong> <code>http://eros:6969</code></li>
-                <li><strong>Remote:</strong> <code>http://192.168.1.100:6969</code></li>
-                <li><strong>Reverse Proxy:</strong> <code>https://eros.yourdomain.com</code></li>
-            </ul>
-            <p><strong>Important:</strong> Don't include <code>/api</code> at the end - Huntarr adds this automatically.</p>
-            
-            <h3 id="instance-api-key"><i class="fas fa-key" style="margin-right: 8px; color: #e74c3c;"></i>API Key</h3>
-            <p><strong>What it does:</strong> Authentication key that allows Huntarr to communicate with your Eros instance.</p>
-            <p><strong>How to find it:</strong></p>
+            <h3>Adding Your Eros Instance</h3>
+            <p>To connect your existing Eros (Whisparr V3) instance to Huntarr:</p>
             <ol>
-                <li>Open your Eros web interface</li>
-                <li>Go to <strong>Settings → General</strong></li>
-                <li>Look for <strong>API Key</strong> in the Security section</li>
-                <li>Copy the long alphanumeric string</li>
+                <li>Navigate to the Whisparr V3 / Eros section in Huntarr</li>
+                <li>Click "Add Eros Instance" if you don't have one configured</li>
+                <li>Fill in your Eros connection details</li>
+                <li>Test the connection to ensure Huntarr can communicate with Eros</li>
             </ol>
-            <p><strong>Security note:</strong> Keep your API key private - it provides full access to your Eros instance.</p>
             
-            <h3 id="instance-enabled"><i class="fas fa-power-off" style="margin-right: 8px; color: #2ecc71;"></i>Instance Enabled</h3>
-            <p><strong>What it does:</strong> Controls whether Huntarr actively monitors this Eros instance.</p>
-            <p><strong>When to disable:</strong> Temporarily stop monitoring without losing your configuration, during maintenance, or for testing.</p>
+            <h3 id="connection-details">Connection Details</h3>
+            <p>These settings match the <strong>Connection Details</strong> section in the instance editor:</p>
+            <table>
+                <tr><th>Setting</th><th>Description</th></tr>
+                <tr><td><strong>Status</strong></td><td>Shows connection status and Eros version. Displayed at the top of the section.</td></tr>
+                <tr><td><strong>Enable Status</strong></td><td>Enable or disable this instance. When disabled, Huntarr will not process this instance.</td></tr>
+                <tr><td><strong>Name</strong></td><td>A friendly name to identify this instance (e.g. Main Eros, 4K Eros). Useful when running multiple Eros instances.</td></tr>
+                <tr><td><strong>URL</strong></td><td>The full URL including port (e.g. <code>http://localhost:6969</code>, <code>http://eros:6969</code>). Don't include <code>/api</code>—Huntarr adds it automatically.</td></tr>
+                <tr><td><strong>API Key</strong></td><td>Found in Eros Settings &gt; General &gt; Security. Keep your API key private—it provides full access to your Eros instance.</td></tr>
+                <tr><td><strong>Instance Identifier</strong></td><td>Stable identifier for this instance (assigned automatically; cannot be changed). Used internally so Huntarr can track state per instance.</td></tr>
+            </table>
             
             <h2 id="search-settings">Search Settings (Per Instance)</h2>
             
-            <p>Configure how Huntarr searches for content in your Eros instance. These settings are <strong>per instance</strong>—each Eros instance has its own search mode, limits, and options.</p>
+            <p>These settings match the <strong>Search Settings</strong> section in the instance editor. Each Eros instance has its own values.</p>
+            
+            <h3 id="search-counts">Search counts</h3>
+            <ul>
+                <li><strong>Missing Search Count</strong> — Number of missing items to search for in each cycle. Set to 0 to disable missing searches.</li>
+                <li><strong>Upgrade Search Count</strong> — Number of items to upgrade in each cycle. Set to 0 to disable upgrade searches.</li>
+            </ul>
             
             <h3 id="search-mode"><i class="fas fa-search" style="margin-right: 8px; color: #f39c12;"></i>Search Mode</h3>
-            <p><strong>What it does:</strong> Determines what type of content Eros will search for.</p>
-            <p><strong>Options:</strong></p>
+            <p>How to search for missing and upgradable Whisparr V3 content:</p>
             <ul>
-                <li><strong>Movie:</strong> Search for individual movies/scenes</li>
-                <li><strong>Collection:</strong> Search for movie collections or series</li>
+                <li><strong>Movie:</strong> Search for individual movies/scenes. Use for most setups.</li>
+                <li><strong>Scene:</strong> Scene-based search. Choose if you specifically use scene naming.</li>
             </ul>
-            <p><strong>Recommendation:</strong> Use "Movie" for most setups unless you specifically focus on collections.</p>
             
-            <h3 id="missing-search"><i class="fas fa-search-plus" style="margin-right: 8px; color: #3498db;"></i>Missing Search</h3>
-            <p><strong>What it does:</strong> Enable (1) or disable (0) automatic searching for missing content.</p>
-            <p><strong>How it works:</strong> When enabled, Huntarr will automatically search for content that's monitored in Eros but not yet downloaded.</p>
-            <p><strong>Recommendation:</strong> Keep enabled (1) for automated content acquisition.</p>
+            <h2 id="stateful-management">Stateful Management</h2>
+            <p>These settings match the <strong>Stateful Management</strong> section in the instance editor. Huntarr can track which items it has already processed so it doesn’t re-search them every cycle.</p>
+            <table>
+                <tr><th>Setting</th><th>Description</th></tr>
+                <tr><td><strong>State Management</strong></td><td>Enabled: track processed items to avoid redundant searches. Disabled: do not track; every cycle may consider the same items again.</td></tr>
+                <tr><td><strong>Reset Interval (Hours)</strong></td><td>How long to wait before re-searching a previously processed item (default: 72 hours / 3 days). After this time, items become eligible again.</td></tr>
+                <tr><td><strong>Reset Processed State Now</strong></td><td>Button that clears the history of processed items for this instance. Use if you want Huntarr to re-consider everything from scratch.</td></tr>
+            </table>
+            <p>When state management is enabled, the UI shows <strong>Active - Tracked Items: <em>N</em></strong> and <strong>Next Reset</strong> (when the next reset cycle runs).</p>
             
-            <h3 id="upgrade-search"><i class="fas fa-arrow-up" style="margin-right: 8px; color: #9b59b6;"></i>Upgrade Search</h3>
-            <p><strong>What it does:</strong> Enable (1) or disable (0) automatic searching for quality upgrades.</p>
-            <p><strong>How it works:</strong> When enabled, Huntarr will search for higher quality versions of content you already have.</p>
-            <p><strong>Recommendation:</strong> Enable only if you want automatic quality upgrades and have sufficient storage space.</p>
-            
-            <h3 id="sleep-duration"><i class="fas fa-moon" style="margin-right: 8px; color: #6c5ce7;"></i>Sleep Duration</h3>
-            <p><strong>What it does:</strong> Time (in seconds) between Huntarr processing cycles for this app.</p>
-            <p><strong>How it affects performance:</strong></p>
-            <ul>
-                <li><strong>300-600 seconds (5-10 min):</strong> Faster response, more system load</li>
-                <li><strong>900-1800 seconds (15-30 min):</strong> Balanced approach (recommended)</li>
-                <li><strong>3600+ seconds (1+ hour):</strong> Less frequent checks, lower system load</li>
-            </ul>
-            <p><strong>Default:</strong> 900 seconds (15 minutes) provides a good balance for most users.</p>
-            
-            <h3 id="api-cap"><i class="fas fa-tachometer-alt" style="margin-right: 8px; color: #e67e22;"></i>API Cap - Hourly</h3>
-            <p><strong>What it does:</strong> Maximum API requests Huntarr will make to this Eros instance per hour.</p>
-            <p><strong>Safe recommendation:</strong> <strong>20 requests per hour</strong> is a conservative, safe limit that prevents overwhelming your Eros instance.</p>
-            <p><strong>Why this matters:</strong></p>
-            <ul>
-                <li>Prevents API abuse and potential bans</li>
-                <li>Keeps your Eros instance responsive</li>
-                <li>Avoids overwhelming indexers through Eros</li>
-                <li>Maintains good neighbor policies with private trackers</li>
-            </ul>
-            <p><strong>Adjustment guidelines:</strong> Only increase if you have specific performance needs and understand the implications.</p>
+            <h3 id="additional-settings"><i class="fas fa-sliders-h" style="margin-right: 8px; color: #e67e22;"></i>Additional Settings</h3>
+            <p>These match the <strong>Additional Settings</strong> section. Do not overwhelm your indexers; contact them for advice if unsure.</p>
+            <table>
+                <tr><th>Setting</th><th>Description</th><th>Recommended</th></tr>
+                <tr><td><strong>Sleep Duration (Minutes)</strong></td><td>Time in minutes between processing cycles for this instance.</td><td>15 or more (e.g. 15–30 min).</td></tr>
+                <tr><td><strong>API Cap - Hourly</strong></td><td>Maximum API requests per hour for this instance.</td><td>10–20 recommended, max 400. Prevents rate limiting or bans from indexers.</td></tr>
+            </table>
+            <div class="alert alert-warning">
+                <strong>Important:</strong> Use conservative API caps (10–20 hourly). Only increase if your indexer allows more and you understand the implications.
+            </div>
             
             <h2 id="filtering-options">Filtering Options</h2>
             

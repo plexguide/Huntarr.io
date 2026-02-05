@@ -102,53 +102,30 @@
                 <li>Test the connection to ensure Huntarr can communicate with Lidarr</li>
             </ol>
             
-            <h3 id="connection-settings">Connection Settings</h3>
-            <p>Configure these settings to connect Huntarr to your Lidarr instance:</p>
-            
+            <h3 id="connection-details">Connection Details</h3>
+            <p>These settings match the <strong>Connection Details</strong> section in the instance editor:</p>
             <table>
-                <tr>
-                    <th>Setting</th>
-                    <th>Description</th>
-                    <th>Example</th>
-                    <th>Notes</th>
-                </tr>
-                <tr>
-                    <td>Name</td>
-                    <td>Friendly name for this Lidarr instance</td>
-                    <td>Default, Music-FLAC, Podcasts</td>
-                    <td>Useful when running multiple Lidarr instances</td>
-                </tr>
-                <tr>
-                    <td>URL</td>
-                    <td>Base URL for your Lidarr instance</td>
-                    <td>http://10.0.0.10:8686</td>
-                    <td>Include protocol (http/https) and port</td>
-                </tr>
-                <tr>
-                    <td>API Key</td>
-                    <td>Lidarr API key for authentication</td>
-                    <td>c15f98d8403e6df5b7c9a86e4f2b580</td>
-                    <td>Found in Lidarr Settings > General > Security</td>
-                </tr>
-                <tr>
-                    <td>Enabled</td>
-                    <td>Whether Huntarr should process this instance</td>
-                    <td>On/Off toggle</td>
-                    <td>Disable to temporarily stop processing</td>
-                </tr>
+                <tr><th>Setting</th><th>Description</th></tr>
+                <tr><td><strong>Status</strong></td><td>Shows connection status and Lidarr version. Displayed at the top of the section.</td></tr>
+                <tr><td><strong>Enable Status</strong></td><td>Enable or disable this instance. When disabled, Huntarr will not process this instance.</td></tr>
+                <tr><td><strong>Name</strong></td><td>A friendly name to identify this instance (e.g. Main Lidarr, Music-FLAC). Useful when running multiple Lidarr instances.</td></tr>
+                <tr><td><strong>URL</strong></td><td>The full URL including port (e.g. <code>http://localhost:8686</code>). Include protocol (http/https) and port.</td></tr>
+                <tr><td><strong>API Key</strong></td><td>Found in Settings &gt; General in your *arr application (Lidarr: Settings &gt; General &gt; Security).</td></tr>
+                <tr><td><strong>Instance Identifier</strong></td><td>Stable identifier for this instance (assigned automatically; cannot be changed). Used internally so Huntarr can track state per instance.</td></tr>
             </table>
             
             <h2 id="search-settings">Search Settings (Per Instance)</h2>
             
-            <p>Configure how Huntarr searches for missing music and upgrades in your Lidarr instance. These settings are <strong>per instance</strong>—each Lidarr instance has its own missing/upgrade mode, limits, and options.</p>
+            <p>These settings match the <strong>Search Settings</strong> section in the instance editor. Each Lidarr instance has its own values.</p>
+            
+            <h3 id="search-counts">Search counts</h3>
+            <ul>
+                <li><strong>Missing Search Count</strong> — Number of missing items to search for in each cycle. Set to 0 to disable missing searches.</li>
+                <li><strong>Upgrade Search Count</strong> — Number of items to upgrade in each cycle. Set to 0 to disable upgrade searches.</li>
+            </ul>
             
             <h3 id="missing-search-mode"><i class="fas fa-search" style="margin-right: 10px; color: #2ecc71;"></i>Missing Search Mode</h3>
-            <p>Determines how Huntarr searches for missing music:</p>
-            <ul>
-                <li><strong>Albums:</strong> Searches for complete albums. Recommended for most music collections</li>
-                <li><strong>Tracks:</strong> Searches for individual tracks. Useful for compilation albums or singles</li>
-                <li><strong>Artists:</strong> Searches at the artist level for discographies</li>
-            </ul>
+            <p>Determines how Huntarr searches for missing music. In the UI this is typically <strong>Album</strong> (search for individual albums; Artist mode was deprecated in Huntarr 7.5.0+).</p>
             
             <h3 id="upgrade-mode"><i class="fas fa-arrow-up" style="margin-right: 10px; color: #2ecc71;"></i>Upgrade Mode</h3>
             <p>Controls how Huntarr handles quality upgrades:</p>
@@ -164,7 +141,7 @@
                 <li><strong>Cutoff unmet (default):</strong> Uses Lidarr's <strong>Wanted → Cutoff Unmet</strong> list. Only albums that don't meet your quality/custom-format cutoff are eligible. Same behavior as before.</li>
                 <li><strong>Tags (Upgradinatorr-style):</strong> Huntarr finds artists that <strong>DON'T</strong> have your specified tag (e.g. <code>upgradinatorr</code>), searches their albums for upgrades, then <strong>ADDS</strong> the tag to the artist after processing to mark them as complete. This matches <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr's</a> behavior: the tag tracks which artists have already been processed, not which ones to search. The tag is automatically created in Lidarr if it doesn't exist.</li>
             </ul>
-            <p>In both cases, Huntarr triggers <strong>AlbumSearch</strong> for the selected albums; Lidarr still decides what to grab based on your quality profile and custom format scores.</p>
+            <p>In both cases, Huntarr triggers <strong>AlbumSearch</strong> for the selected albums; Lidarr still decides what to grab based on your quality profile and custom format scores. When using <strong>Tags</strong>, the <strong>Upgrade Tag</strong> field sets the tag name on artists in Lidarr (e.g. <code>upgradinatorr</code>); Huntarr finds artists without this tag, runs upgrade searches on their albums, then adds the tag when done.</p>
             
             <div class="alert alert-success">
                 <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides and best practices for quality upgrades.
@@ -259,44 +236,25 @@
                 <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides, recommended release group scores, and best practices for quality upgrades in Lidarr.
             </div>
             
-            <h3 id="search-limits"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Search Limits</h3>
-            <p>Control how many items Huntarr processes per cycle to avoid overwhelming your indexers:</p>
-            
+            <h2 id="stateful-management">Stateful Management</h2>
+            <p>These settings match the <strong>Stateful Management</strong> section in the instance editor. Huntarr can track which items it has already processed so it doesn’t re-search them every cycle.</p>
             <table>
-                <tr>
-                    <th>Setting</th>
-                    <th>Description</th>
-                    <th>Recommended</th>
-                    <th>Notes</th>
-                </tr>
-                <tr>
-                    <td>Missing Search</td>
-                    <td>Number of missing albums/tracks to search per cycle</td>
-                    <td>2-4</td>
-                    <td>Set to 0 to disable missing searches</td>
-                </tr>
-                <tr>
-                    <td>Upgrade Search</td>
-                    <td>Number of items to upgrade per cycle</td>
-                    <td>1-2</td>
-                    <td>Set to 0 to disable upgrade searches</td>
-                </tr>
-                <tr>
-                    <td>Sleep Duration</td>
-                    <td>Time in seconds between processing cycles</td>
-                    <td>1800 (30 min)</td>
-                    <td>Music indexers often have stricter limits</td>
-                </tr>
-                <tr>
-                    <td>API Cap - Hourly</td>
-                    <td>Maximum API requests per hour</td>
-                    <td>200 or less</td>
-                    <td>Music indexers typically have lower limits</td>
-                </tr>
+                <tr><th>Setting</th><th>Description</th></tr>
+                <tr><td><strong>State Management</strong></td><td>Enabled: track processed items to avoid redundant searches. Disabled: do not track; every cycle may consider the same items again.</td></tr>
+                <tr><td><strong>Reset Interval (Hours)</strong></td><td>How long to wait before re-searching a previously processed item (default: 72 hours / 3 days). After this time, items become eligible again.</td></tr>
+                <tr><td><strong>Reset Processed State Now</strong></td><td>Button that clears the history of processed items for this instance. Use if you want Huntarr to re-consider everything from scratch.</td></tr>
             </table>
+            <p>When state management is enabled, the UI shows <strong>Active - Tracked Items: <em>N</em></strong> and <strong>Next Reset</strong> (when the next reset cycle runs).</p>
             
+            <h3 id="additional-settings"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Additional Settings</h3>
+            <p>These match the <strong>Additional Settings</strong> section. Music indexers often have stricter rate limits; do not overwhelm them.</p>
+            <table>
+                <tr><th>Setting</th><th>Description</th><th>Recommended</th></tr>
+                <tr><td><strong>Sleep Duration (Minutes)</strong></td><td>Time in minutes between processing cycles for this instance.</td><td>30 or more; longer intervals reduce indexer load.</td></tr>
+                <tr><td><strong>API Cap - Hourly</strong></td><td>Maximum API requests per hour for this instance.</td><td>10–20 recommended, max 400. Music indexers typically have lower limits.</td></tr>
+            </table>
             <div class="alert alert-warning">
-                <strong>Important:</strong> Music indexers often have stricter rate limits than movie/TV indexers. Use conservative settings to avoid being banned.
+                <strong>Important:</strong> Music indexers often have stricter rate limits than movie/TV indexers. Use conservative settings (10–20 hourly) to avoid being banned.
             </div>
             
             <h3 id="additional-options"><i class="fas fa-cogs" style="margin-right: 10px; color: #9b59b6;"></i>Additional Options</h3>
