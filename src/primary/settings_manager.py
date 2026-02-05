@@ -654,11 +654,16 @@ def _migrate_instance_state_management_if_needed(app_name: str, new_settings_dat
             current_name = current_instance.get('name', f'Instance {i+1}')
             new_name = new_instance.get('name', f'Instance {i+1}')
             
-            # If name has changed, migrate the state management data
+            # If name has changed, migrate the state management data (only for legacy instances keyed by name)
+            # Once an instance has instance_id, per-instance DB state is keyed by instance_id, not display name,
+            # so migrating by old_name -> new_name would be a no-op and we skip to avoid unnecessary DB work.
             if current_name != new_name and current_name and new_name:
+                if new_instance.get('instance_id') or current_instance.get('instance_id'):
+                    settings_logger.debug(f"Instance {i+1} has instance_id; state is keyed by ID, skipping name-change migration")
+                    continue
                 settings_logger.info(f"Detected instance name change for {app_name} instance {i+1}: '{current_name}' -> '{new_name}'")
                 
-                # Attempt to migrate state management data
+                # Attempt to migrate state management data (legacy instance keyed by display name)
                 migration_success = db.migrate_instance_state_management(app_name, current_name, new_name)
                 
                 if migration_success:
