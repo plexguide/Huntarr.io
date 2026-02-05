@@ -100,10 +100,19 @@ No breaking change for existing frontends.
 - [x] Sleep/reset/cap/state/cycle use `instance_key` everywhere in background and cycle_tracker.
 - [x] Stateful and reset APIs resolve display name → id where needed.
 - [x] No schema change; column names unchanged (value is now id).
+- [x] **stats_manager**: Hourly cap limit lookup supports `instance_id`; get_stats and load_hourly_caps_for_api use instance_id for DB lookups and display name for API keys.
 
 ---
 
-## 8. Files Touched (Reference)
+## 8. Final Review Fixes (stats_manager)
+
+- ** _get_instance_hourly_cap_limit**: When `get_hourly_cap_status` is called with `instance_key` (id), the limit lookup failed because it only matched `inst.get("name")` and `inst.get("instance_name")`. Added `inst.get("instance_id") == instance_key` so limit is resolved correctly when key is an id.
+- **get_stats**: Was building `instance_names` from display names and looking up `per_instance_caps.get(name)`, `by_name.get(name)` (DB is keyed by instance_id after migration). Fixed by using `get_configured_instances()` to get (display_name, instance_id), then looking up stats/caps/lock by `instance_id` and outputting with `instance_name: display_name`.
+- **load_hourly_caps_for_api**: Same mismatch (output keyed by display name but DB keyed by id). Fixed by iterating configured instances and mapping `instance_id` → DB data, `display_name` → output key.
+
+---
+
+## 9. Files Touched (Reference)
 
 - `src/primary/utils/instance_id.py` – ID generation.
 - `src/primary/utils/database.py` – Migration (identifier + state management); `stateful_processed_ids` UPDATE fixed.
@@ -113,3 +122,4 @@ No breaking change for existing frontends.
 - `src/primary/web_server.py` – resolve to id for reset request.
 - `src/primary/apps/{sonarr,radarr,lidarr,readarr,whisparr,eros}/__init__.py` – assign and persist instance_id; include in returned instance dict.
 - `src/primary/apps/readarr/upgrade.py`, `readarr/missing.py`, `whisparr/upgrade.py`, `lidarr/missing.py` – use instance_key for DB-related calls (fixes applied in this review).
+- `src/primary/stats_manager.py` – _get_instance_hourly_cap_limit matches instance_id; get_stats and load_hourly_caps_for_api use instance_id for DB lookups, display name for API keys.
