@@ -458,6 +458,8 @@
             command_wait_delay: instance.command_wait_delay || 1,
             command_wait_attempts: instance.command_wait_attempts || 600,
             max_download_queue_size: instance.max_download_queue_size !== undefined ? instance.max_download_queue_size : -1,
+            max_seed_queue_size: instance.max_seed_queue_size !== undefined ? instance.max_seed_queue_size : -1,
+            seed_check_torrent_client: instance.seed_check_torrent_client && typeof instance.seed_check_torrent_client === 'object' ? instance.seed_check_torrent_client : null,
             // Cycle settings (per-instance; were global in 9.0.x)
             sleep_duration: instance.sleep_duration !== undefined ? instance.sleep_duration : 900,
             hourly_cap: instance.hourly_cap !== undefined ? instance.hourly_cap : 20
@@ -998,6 +1000,40 @@
                         <p class="editor-help-text">Skip processing if queue size meets or exceeds this value (-1 = disabled, default)</p>
                     </div>
                     
+                    <div class="editor-field-group" style="border: 1px solid rgba(148, 163, 184, 0.4); border-radius: 8px; padding: 12px; background: rgba(148, 163, 184, 0.06);">
+                        <div class="editor-section-title" style="margin-top: 0;">Max Seed Queue (torrents only)</div>
+                        <p class="editor-help-text" style="margin-bottom: 10px;">Skip hunts when this many torrents are actively seeding. Requires a torrent client below. For qBittorrent/Transmission only. <a href="https://github.com/plexguide/Huntarr.io/issues/713" target="_blank" rel="noopener">#713</a></p>
+                        <div class="editor-setting-item">
+                            <label>Max Seed Queue Size</label>
+                            <input type="number" id="editor-max-seed-queue-size" value="${safeInstance.max_seed_queue_size !== undefined ? safeInstance.max_seed_queue_size : -1}" min="-1" max="1000">
+                        </div>
+                        <p class="editor-help-text">-1 = disabled. When &ge; 0, configure the torrent client below so Huntarr can read the seeding count.</p>
+                        <div class="editor-setting-item" style="margin-top: 10px;">
+                            <label>Torrent client type</label>
+                            <select id="editor-seed-client-type">
+                                <option value="">None (don't check)</option>
+                                <option value="qbittorrent" ${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.type === 'qbittorrent') ? 'selected' : ''}>qBittorrent</option>
+                                <option value="transmission" ${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.type === 'transmission') ? 'selected' : ''}>Transmission</option>
+                            </select>
+                        </div>
+                        <div class="editor-setting-item">
+                            <label>Host</label>
+                            <input type="text" id="editor-seed-client-host" value="${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.host) ? String(safeInstance.seed_check_torrent_client.host).replace(/"/g, '&quot;') : ''}" placeholder="localhost or 192.168.1.100">
+                        </div>
+                        <div class="editor-setting-item">
+                            <label>Port</label>
+                            <input type="number" id="editor-seed-client-port" value="${(safeInstance.seed_check_torrent_client && (safeInstance.seed_check_torrent_client.port !== undefined && safeInstance.seed_check_torrent_client.port !== '')) ? safeInstance.seed_check_torrent_client.port : ''}" placeholder="8080 or 9091" min="1" max="65535">
+                        </div>
+                        <div class="editor-setting-item">
+                            <label>Username</label>
+                            <input type="text" id="editor-seed-client-username" value="${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.username) ? String(safeInstance.seed_check_torrent_client.username).replace(/"/g, '&quot;') : ''}" placeholder="Optional">
+                        </div>
+                        <div class="editor-setting-item">
+                            <label>Password</label>
+                            <input type="password" id="editor-seed-client-password" value="${(safeInstance.seed_check_torrent_client && safeInstance.seed_check_torrent_client.password) ? String(safeInstance.seed_check_torrent_client.password).replace(/"/g, '&quot;') : ''}" placeholder="Optional" autocomplete="off">
+                        </div>
+                    </div>
+                    
                     ${swaparrEnabled ? `
                     <div class="editor-field-group">
                         <div class="editor-setting-item flex-row">
@@ -1136,6 +1172,20 @@
             command_wait_delay: parseInt(document.getElementById('editor-cmd-wait-delay').value) || 1,
             command_wait_attempts: (function(){ const el = document.getElementById('editor-cmd-wait-attempts'); if (!el) return 600; const v = parseInt(el.value, 10); return (!isNaN(v) && v >= 0) ? v : 600; })(),
             max_download_queue_size: parseInt(document.getElementById('editor-max-queue-size').value) || -1,
+            max_seed_queue_size: (function(){ const v = parseInt(document.getElementById('editor-max-seed-queue-size').value, 10); return (!isNaN(v) && v >= -1) ? v : -1; })(),
+            seed_check_torrent_client: (function() {
+                const typeEl = document.getElementById('editor-seed-client-type');
+                const type = typeEl ? (typeEl.value || '').trim() : '';
+                const hostEl = document.getElementById('editor-seed-client-host');
+                const host = hostEl ? (hostEl.value || '').trim() : '';
+                if (!type || !host) return null;
+                const portEl = document.getElementById('editor-seed-client-port');
+                const portVal = portEl && portEl.value !== '' ? parseInt(portEl.value, 10) : (type === 'qbittorrent' ? 8080 : 9091);
+                const port = (!isNaN(portVal) && portVal >= 1 && portVal <= 65535) ? portVal : (type === 'qbittorrent' ? 8080 : 9091);
+                const userEl = document.getElementById('editor-seed-client-username');
+                const passEl = document.getElementById('editor-seed-client-password');
+                return { type: type, host: host, port: port, username: userEl ? userEl.value : '', password: passEl ? passEl.value : '' };
+            })(),
             // Per-instance cycle settings
             sleep_duration: (parseInt(document.getElementById('editor-sleep-duration').value, 10) || 15) * 60,
             hourly_cap: parseInt(document.getElementById('editor-hourly-cap').value, 10) || 20

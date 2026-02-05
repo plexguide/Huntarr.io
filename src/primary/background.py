@@ -579,6 +579,33 @@ def app_specific_loop(app_type: str) -> None:
                         app_logger.info(f"Queue size ({current_queue_size}) is below maximum ({max_queue_size}). Proceeding.")
                 except Exception as e:
                     app_logger.warning(f"Could not get download queue size for {instance_name}. Proceeding anyway. Error: {e}", exc_info=False) # Log less verbosely
+
+            # --- Max Seed Queue Check (torrents only) --- # Issue #713: skip hunts when active seeding count >= limit
+            max_seed_queue_size = instance_details.get("max_seed_queue_size", -1)
+            if max_seed_queue_size >= 0:
+                seed_client = instance_details.get("seed_check_torrent_client")
+                if seed_client and isinstance(seed_client, dict) and (seed_client.get("host") or "").strip():
+                    try:
+                        from src.primary.utils.seed_queue_client import get_seeding_count
+                        timeout = instance_details.get("api_timeout", 120)
+                        if timeout <= 0 or timeout > 300:
+                            timeout = 15
+                        current_seed_count, err = get_seeding_count(seed_client, timeout=min(timeout, 30))
+                        if err:
+                            app_logger.warning(f"Could not get torrent seeding count for {instance_name}. Proceeding anyway. Error: {err}")
+                        elif current_seed_count >= max_seed_queue_size:
+                            app_logger.info(f"Torrent seed queue gating: active seeders ({current_seed_count}) meets or exceeds limit ({max_seed_queue_size}) for {instance_name}. Skipping cycle (torrents only).")
+                            if end_cycle:
+                                end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
+                            if clear_instance_log_context:
+                                clear_instance_log_context()
+                            return (False, instance_name, False, False)
+                        else:
+                            app_logger.info(f"Torrent seed count ({current_seed_count}) is below limit ({max_seed_queue_size}). Proceeding.")
+                    except Exception as e:
+                        app_logger.warning(f"Could not get torrent seeding count for {instance_name}. Proceeding anyway. Error: {e}", exc_info=False)
+                elif max_seed_queue_size >= 0:
+                    app_logger.debug(f"Max seed queue size set ({max_seed_queue_size}) but no torrent client configured for {instance_name}; skipping seed check.")
             
             # Prepare args dictionary for processing functions
             # Combine instance details with general app settings for the processing functions

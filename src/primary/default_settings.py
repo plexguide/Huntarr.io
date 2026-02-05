@@ -40,6 +40,9 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
         "command_wait_delay": 1,
         "command_wait_attempts": 600,
         "max_download_queue_size": -1,
+        # Max seed queue (torrents only): skip hunts when active seeding count >= this (-1 = disabled). Requires seed_check_torrent_client.
+        "max_seed_queue_size": -1,
+        "seed_check_torrent_client": None,  # Optional: {"type": "qbittorrent"|"transmission", "host", "port", "username", "password"}
         # Cycle settings (per-instance; were global in 9.0.x)
         "sleep_duration": 900,
         "hourly_cap": 20
