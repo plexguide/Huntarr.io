@@ -2626,6 +2626,17 @@ class HuntarrDatabase:
                 "current_page": page
             }
 
+    def handle_instance_rename(self, app_type: str, old_instance_name: str, new_instance_name: str) -> bool:
+        """
+        No-op for display-name renames: history is keyed by instance_id, so renaming in the UI
+        does not require updating hunt_history. Kept for API compatibility with history_manager.
+        """
+        if old_instance_name == new_instance_name:
+            return True
+        # Optional: if any rows were still keyed by old display name (pre-migration), could UPDATE here.
+        # With instance_id migration, no rows are keyed by display name, so nothing to do.
+        return True
+
     def clear_hunt_history(self, app_type: str = None):
         """Clear hunt history entries"""
         with self.get_connection() as conn:

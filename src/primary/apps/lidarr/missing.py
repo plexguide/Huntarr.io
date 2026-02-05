@@ -39,6 +39,7 @@ def process_missing_albums(
     
     # Copy instance-specific information
     instance_name = app_settings.get("instance_name", "Default")
+    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
     api_url = app_settings.get("api_url", "").strip()
     api_key = app_settings.get("api_key", "").strip()
     api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
@@ -122,7 +123,7 @@ def process_missing_albums(
             unprocessed_entities = []
             for album in missing_albums_data:
                 album_id = album.get("id")  # Keep as integer, don't convert to string
-                if album_id and not is_processed("lidarr", instance_name, str(album_id)):  # Convert to string only for processed check
+                if album_id and not is_processed("lidarr", instance_key, str(album_id)):  # Convert to string only for processed check
                     unprocessed_entities.append(album_id)
             
             search_entity_type = "album"
@@ -181,7 +182,7 @@ def process_missing_albums(
             # Filter out already processed artists
             lidarr_logger.info(f"Found {len(target_entities)} artists with missing albums before filtering")
             unprocessed_entities = [eid for eid in target_entities 
-                                   if not is_processed("lidarr", instance_name, str(eid))]
+                                   if not is_processed("lidarr", instance_key, str(eid))]
             
             lidarr_logger.info(f"Found {len(unprocessed_entities)} unprocessed artists out of {len(target_entities)} total")
             search_entity_type = "artist"
@@ -269,7 +270,7 @@ def process_missing_albums(
                          artist_name = artist_info.get('artistName', artist_name)
                 
                 # Mark the artist as processed right away - BEFORE triggering the search
-                success = add_processed_id("lidarr", instance_name, str(artist_id))
+                success = add_processed_id("lidarr", instance_key, str(artist_id))
                 lidarr_logger.debug(f"Added artist ID {artist_id} to processed list for {instance_name}, success: {success}")
                 
                 # Trigger the search AFTER marking as processed
@@ -279,7 +280,7 @@ def process_missing_albums(
                 
                 # Increment stats for UI tracking
                 if command_result:
-                    increment_stat("lidarr", "hunted", 1, instance_name)
+                    increment_stat("lidarr", "hunted", 1, instance_key)
                     processed_count += 1  # Count successful searches
                     processed_artists_or_albums.add(artist_id)
                 
@@ -297,11 +298,11 @@ def process_missing_albums(
                     for album in items_by_artist[artist_id]:
                         album_id = album.get('id')
                         if album_id:
-                            album_success = add_processed_id("lidarr", instance_name, str(album_id))
+                            album_success = add_processed_id("lidarr", instance_key, str(album_id))
                             lidarr_logger.debug(f"Added album ID {album_id} to processed list for {instance_name}, success: {album_success}")
                 
                 # Log to history system
-                log_processed_media("lidarr", f"{artist_name}", artist_id, instance_name, "missing")
+                log_processed_media("lidarr", f"{artist_name}", artist_id, instance_key, "missing")
                 lidarr_logger.debug(f"Logged history entry for artist: {artist_name}")
                 
                 time.sleep(0.1) # Small delay between triggers
@@ -356,7 +357,7 @@ def process_missing_albums(
 
             # Mark the albums as processed BEFORE triggering the search
             for album_id in album_ids_to_search:
-                success = add_processed_id("lidarr", instance_name, str(album_id))
+                success = add_processed_id("lidarr", instance_key, str(album_id))
                 lidarr_logger.debug(f"Added album ID {album_id} to processed list for {instance_name}, success: {success}")
             
             # Now trigger the search
@@ -364,7 +365,7 @@ def process_missing_albums(
             if command_id:
                 # Log after successful search
                 lidarr_logger.debug(f"Album search command triggered with ID: {command_id} for albums: [{', '.join(album_details_log)}]")
-                increment_stat("lidarr", "hunted", len(album_ids_to_search), instance_name) # Changed from "missing" to "hunted"
+                increment_stat("lidarr", "hunted", len(album_ids_to_search), instance_key) # Changed from "missing" to "hunted"
                 processed_count += len(album_ids_to_search) # Count albums searched
                 processed_artists_or_albums.update(album_ids_to_search)
                 
@@ -394,7 +395,7 @@ def process_missing_albums(
                         media_name = f"{artist_name} - {title}"
                         # Use foreignAlbumId for Lidarr URLs (falls back to internal ID if not available)
                         foreign_album_id = album_info.get('foreignAlbumId', album_id)
-                        log_processed_media("lidarr", media_name, foreign_album_id, instance_name, "missing")
+                        log_processed_media("lidarr", media_name, foreign_album_id, instance_key, "missing")
                         lidarr_logger.debug(f"Logged history entry for album: {media_name}")
                 
                 time.sleep(command_wait_delay) # Basic delay after the single command

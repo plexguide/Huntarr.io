@@ -93,9 +93,10 @@ def process_missing_movies(
     """
     processed_any = False
     
-    # Get instance name - check for instance_name first, fall back to legacy "name" key if needed
+    # Get instance name (display) and stable key for DB (survives renames)
     instance_name = app_settings.get("instance_name", app_settings.get("name", "Radarr Default"))
-    
+    instance_key = app_settings.get("instance_id") or instance_name
+
     # Per-instance tagging (from instance settings)
     tag_processed_items = app_settings.get("tag_processed_items", True)
     tag_enable_missing = app_settings.get("tag_enable_missing", True)
@@ -255,7 +256,7 @@ def process_missing_movies(
     unprocessed_movies = []
     for movie in missing_movies:
         movie_id = str(movie.get("id"))
-        if not is_processed("radarr", instance_name, movie_id):
+        if not is_processed("radarr", instance_key, movie_id):
             unprocessed_movies.append(movie)
         else:
             radarr_logger.debug(f"Skipping already processed movie ID: {movie_id}")
@@ -321,7 +322,7 @@ def process_missing_movies(
                     radarr_logger.warning(f"Failed to tag movie {movie_id} with '{custom_tag}': {e}")
             
             # Immediately add to processed IDs to prevent duplicate processing
-            success = add_processed_id("radarr", instance_name, str(movie_id))
+            success = add_processed_id("radarr", instance_key, str(movie_id))
             radarr_logger.debug(f"Added processed ID: {movie_id}, success: {success}")
             
             # Log to history system
@@ -329,10 +330,10 @@ def process_missing_movies(
             media_name = f"{movie_title} ({year})"
             # Use TMDb ID for Radarr URLs (falls back to internal ID if TMDb ID not available)
             tmdb_id = movie.get("tmdbId", movie_id)
-            log_processed_media("radarr", media_name, tmdb_id, instance_name, "missing")
+            log_processed_media("radarr", media_name, tmdb_id, instance_key, "missing")
             radarr_logger.debug(f"Logged history entry for movie: {media_name}")
             
-            increment_stat_only("radarr", "hunted", 1, instance_name)
+            increment_stat_only("radarr", "hunted", 1, instance_key)
             movies_processed += 1
             processed_any = True
         else:

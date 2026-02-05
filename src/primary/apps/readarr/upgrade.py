@@ -58,6 +58,7 @@ def process_cutoff_upgrades(
     
     # Extract necessary settings
     instance_name = app_settings.get("instance_name", "Readarr Default")
+    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
     monitored_only = app_settings.get("monitored_only", True)
     upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()
     if upgrade_selection_method not in ("cutoff", "tags"):
@@ -162,7 +163,7 @@ def process_cutoff_upgrades(
     unprocessed_books = []
     for book in upgrade_eligible_data:
         book_id = str(book.get("id"))
-        if not is_processed("readarr", instance_name, book_id):
+        if not is_processed("readarr", instance_key, book_id):
             unprocessed_books.append(book)
         else:
             readarr_logger.debug(f"Skipping already processed book ID: {book_id}")
@@ -194,7 +195,7 @@ def process_cutoff_upgrades(
 
     # Mark books as processed BEFORE triggering any searches
     for book_id in book_ids_to_search:
-        add_processed_id("readarr", instance_name, str(book_id))
+        add_processed_id("readarr", instance_key, str(book_id))
         readarr_logger.debug(f"Added book ID {book_id} to processed list for {instance_name}")
         
     # Now trigger the search
@@ -203,7 +204,7 @@ def process_cutoff_upgrades(
     if search_command_result:
         command_id = search_command_result
         readarr_logger.info(f"Triggered upgrade search command {command_id} for {len(book_ids_to_search)} books.")
-        increment_stat("readarr", "upgraded", 1, instance_name)
+        increment_stat("readarr", "upgraded", 1, instance_key)
         
         # For tag-based method: add the upgrade tag to authors to mark as processed (Upgradinatorr-style)
         if upgrade_selection_method == "tags" and upgrade_tag:
@@ -257,7 +258,7 @@ def process_cutoff_upgrades(
             media_name = f"{author_name} - {book_title}"
             
             # Include full details in history entry
-            log_processed_media("readarr", media_name, book.get("id"), instance_name, "upgrade")
+            log_processed_media("readarr", media_name, book.get("id"), instance_key, "upgrade")
             readarr_logger.debug(f"Logged quality upgrade to history for '{media_name}' (Book ID: {book.get('id')})")
 
             

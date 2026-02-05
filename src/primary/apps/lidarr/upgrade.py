@@ -38,6 +38,7 @@ def process_cutoff_upgrades(
     # --- Extract Settings --- #
     # Instance details are now part of app_settings passed from background loop
     instance_name = app_settings.get("instance_name", "Lidarr Default")
+    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
     upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()
     if upgrade_selection_method not in ("cutoff", "tags"):
         upgrade_selection_method = "cutoff"
@@ -140,7 +141,7 @@ def process_cutoff_upgrades(
         unprocessed_albums = []
         for album in cutoff_unmet_data:
             album_id = album.get('id')  # Keep as integer
-            if album_id and not is_processed("lidarr", instance_name, str(album_id)):  # Convert to string only for processed check
+            if album_id and not is_processed("lidarr", instance_key, str(album_id)):  # Convert to string only for processed check
                 unprocessed_albums.append(album)
             else:
                 lidarr_logger.debug(f"Skipping already processed album ID: {album_id}")
@@ -192,7 +193,7 @@ def process_cutoff_upgrades(
 
         # Mark the albums as processed BEFORE triggering the search
         for album_id in album_ids_to_search:
-            success = add_processed_id("lidarr", instance_name, str(album_id))
+            success = add_processed_id("lidarr", instance_key, str(album_id))
             lidarr_logger.debug(f"Added album ID {album_id} to processed list for {instance_name}, success: {success}")
 
         lidarr_logger.info(f"Triggering Album Search for {len(album_ids_to_search)} albums for upgrade on instance {instance_name}: {album_ids_to_search}")
@@ -205,7 +206,7 @@ def process_cutoff_upgrades(
         )
         if command_id:
             lidarr_logger.debug(f"Upgrade album search command triggered with ID: {command_id} for albums: {album_ids_to_search}")
-            increment_stat("lidarr", "upgraded", 1, instance_name) # Use appropriate stat key
+            increment_stat("lidarr", "upgraded", 1, instance_key)  # Use appropriate stat key
             
             # For tag-based method: add the upgrade tag to artists to mark as processed (Upgradinatorr-style)
             if upgrade_selection_method == "tags" and upgrade_tag:
@@ -246,7 +247,7 @@ def process_cutoff_upgrades(
                         media_name = f"{artist_name} - {album_title}"
                         # Use foreignAlbumId for Lidarr URLs (falls back to internal ID if not available)
                         foreign_album_id = album.get('foreignAlbumId', album_id)
-                        log_processed_media("lidarr", media_name, foreign_album_id, instance_name, "upgrade")
+                        log_processed_media("lidarr", media_name, foreign_album_id, instance_key, "upgrade")
                         lidarr_logger.debug(f"Logged quality upgrade to history for album ID {album_id}")
                         break
                 

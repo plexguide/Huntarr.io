@@ -50,6 +50,7 @@ def process_cutoff_upgrades(
     api_key = app_settings.get("api_key", "").strip()
     api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
     instance_name = app_settings.get("instance_name", "Eros Default")
+    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
     
     # Load general settings to get centralized timeout
     general_settings = load_settings('general')
@@ -120,7 +121,7 @@ def process_cutoff_upgrades(
     unprocessed_items = []
     for item in upgrade_eligible_data:
         item_id = str(item.get("id"))
-        if not is_processed("eros", instance_name, item_id):
+        if not is_processed("eros", instance_key, item_id):
             unprocessed_items.append(item)
         else:
             eros_logger.debug(f"Skipping already processed item ID: {item_id}")
@@ -214,14 +215,14 @@ def process_cutoff_upgrades(
                     eros_logger.warning(f"Failed to tag movie {item_id} with '{custom_tag}': {e}")
             
             # Log to history so the upgrade appears in the history UI
-            log_processed_media("eros", item_info, item_id, instance_name, "upgrade")
+            log_processed_media("eros", item_info, item_id, instance_key, "upgrade")
             eros_logger.debug(f"Logged quality upgrade to history for item ID {item_id}")
             
             items_processed += 1
             processing_done = True
             
             # Increment the upgraded statistics for Eros
-            increment_stat("eros", "upgraded", 1, instance_name)
+            increment_stat("eros", "upgraded", 1, instance_key)
             eros_logger.debug(f"Incremented eros upgraded statistics by 1")
             
             # Log progress

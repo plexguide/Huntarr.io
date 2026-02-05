@@ -50,6 +50,7 @@ def process_missing_items(
     api_key = app_settings.get("api_key", "").strip()
     api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
     instance_name = app_settings.get("instance_name", "Whisparr Default")
+    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
     
     # Use the centralized advanced setting for stateful management hours
     stateful_management_hours = get_advanced_setting("stateful_management_hours", 72)
@@ -142,7 +143,7 @@ def process_missing_items(
     unprocessed_items = []
     for item in missing_items:
         item_id = str(item.get("id"))
-        if not is_processed("whisparr", instance_name, item_id):
+        if not is_processed("whisparr", instance_key, item_id):
             unprocessed_items.append(item)
         else:
             whisparr_logger.debug(f"Skipping already processed item ID: {item_id}")
@@ -193,7 +194,7 @@ def process_missing_items(
         # Refresh functionality has been removed as it was identified as a performance bottleneck
         
         # Mark the item as processed BEFORE triggering any searches
-        add_processed_id("whisparr", instance_name, str(item_id))
+        add_processed_id("whisparr", instance_key, str(item_id))
         whisparr_logger.debug(f"Added item ID {item_id} to processed list for {instance_name}")
         
         # Check for stop signal before searching
@@ -220,14 +221,14 @@ def process_missing_items(
             
             # Log to history system
             media_name = f"{title} - {season_episode}"
-            log_processed_media("whisparr", media_name, item_id, instance_name, "missing")
+            log_processed_media("whisparr", media_name, item_id, instance_key, "missing")
             whisparr_logger.debug(f"Logged history entry for item: {media_name}")
             
             items_processed += 1
             processing_done = True
             
             # Increment the hunted statistics for Whisparr
-            increment_stat("whisparr", "hunted", 1, instance_name)
+            increment_stat("whisparr", "hunted", 1, instance_key)
             whisparr_logger.debug(f"Incremented whisparr hunted statistics by 1")
 
             # Log progress

@@ -50,6 +50,7 @@ def process_missing_items(
     api_key = app_settings.get("api_key", "").strip()
     api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
     instance_name = app_settings.get("instance_name", "Eros Default")
+    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
     
     # Load general settings to get centralized timeout
     general_settings = load_settings('general')
@@ -147,7 +148,7 @@ def process_missing_items(
     unprocessed_items = []
     for item in missing_items:
         item_id = str(item.get("id"))
-        if not is_processed("eros", instance_name, item_id):
+        if not is_processed("eros", instance_key, item_id):
             unprocessed_items.append(item)
         else:
             eros_logger.debug(f"Skipping already processed item ID: {item_id}")
@@ -208,7 +209,7 @@ def process_missing_items(
         eros_logger.info(f"Processing missing item: \"{item_info}\" (Item ID: {item_id})")
         
         # Mark the item as processed BEFORE triggering any searches
-        add_processed_id("eros", instance_name, str(item_id))
+        add_processed_id("eros", instance_key, str(item_id))
         eros_logger.debug(f"Added item ID {item_id} to processed list for {instance_name}")
         
         # Refresh functionality has been removed as it was identified as a performance bottleneck
@@ -234,14 +235,14 @@ def process_missing_items(
                     eros_logger.warning(f"Failed to tag movie {item_id} with '{custom_tag}': {e}")
             
             # Log to history system
-            log_processed_media("eros", item_info, item_id, instance_name, "missing")
+            log_processed_media("eros", item_info, item_id, instance_key, "missing")
             eros_logger.debug(f"Logged history entry for item: {item_info}")
             
             items_processed += 1
             processing_done = True
             
             # Increment the hunted statistics for Eros
-            increment_stat("eros", "hunted", 1, instance_name)
+            increment_stat("eros", "hunted", 1, instance_key)
             eros_logger.debug(f"Incremented eros hunted statistics by 1")
 
             # Log progress

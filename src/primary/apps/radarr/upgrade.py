@@ -89,6 +89,7 @@ def process_cutoff_upgrades(
     command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
     
     instance_name = app_settings.get("instance_name", app_settings.get("name", "Radarr Default"))
+    instance_key = app_settings.get("instance_id") or instance_name
     upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()
     if upgrade_selection_method not in ("cutoff", "tags"):
         upgrade_selection_method = "cutoff"
@@ -271,7 +272,7 @@ def process_cutoff_upgrades(
     unprocessed_movies = []
     for movie in upgrade_eligible_data:
         movie_id = str(movie.get("id"))
-        if not is_processed("radarr", instance_name, movie_id):
+        if not is_processed("radarr", instance_key, movie_id):
             unprocessed_movies.append(movie)
         else:
             radarr_logger.debug(f"Skipping already processed movie ID: {movie_id}")
@@ -317,8 +318,8 @@ def process_cutoff_upgrades(
         
         if search_result:
             radarr_logger.info(f"  - Successfully triggered search for quality upgrade.")
-            add_processed_id("radarr", instance_name, str(movie_id))
-            increment_stat_only("radarr", "upgraded", 1, instance_name)
+            add_processed_id("radarr", instance_key, str(movie_id))
+            increment_stat_only("radarr", "upgraded", 1, instance_key)
             
             # For tag-based method: add the upgrade tag to mark as processed (Upgradinatorr-style)
             if upgrade_selection_method == "tags" and upgrade_tag:
@@ -343,7 +344,7 @@ def process_cutoff_upgrades(
             media_name = f"{movie_title} ({movie_year})"
             # Use TMDb ID for Radarr URLs (falls back to internal ID if TMDb ID not available)
             tmdb_id = movie.get("tmdbId", movie_id)
-            log_processed_media("radarr", media_name, tmdb_id, instance_name, "upgrade")
+            log_processed_media("radarr", media_name, tmdb_id, instance_key, "upgrade")
             radarr_logger.debug(f"Logged quality upgrade to history for movie ID {movie_id}")
             
             processed_count += 1

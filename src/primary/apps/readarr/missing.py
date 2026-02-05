@@ -50,6 +50,7 @@ def process_missing_books(
     api_key = app_settings.get("api_key", "").strip()
     api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
     instance_name = app_settings.get("instance_name", "Readarr Default")
+    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
     
     readarr_logger.info(f"Using API timeout of {api_timeout} seconds for Readarr")
     
@@ -124,7 +125,7 @@ def process_missing_books(
     unprocessed_books = []
     for book in missing_books_data:
         book_id = str(book.get("id"))
-        if not is_processed("readarr", instance_name, book_id):
+        if not is_processed("readarr", instance_key, book_id):
             unprocessed_books.append(book)
         else:
             readarr_logger.debug(f"Skipping already processed book ID: {book_id}")
@@ -182,7 +183,7 @@ def process_missing_books(
         readarr_logger.info(f"  - Searching for individual book: '{book_title}'...")
         
         # Mark book as processed BEFORE triggering search to prevent duplicates
-        add_processed_id("readarr", instance_name, str(book_id))
+        add_processed_id("readarr", instance_key, str(book_id))
         readarr_logger.debug(f"Added book ID {book_id} to processed list for {instance_name}")
         
         # Search for the specific book (using book search instead of author search)
@@ -192,7 +193,7 @@ def process_missing_books(
             # Extract command ID if the result is a dictionary, otherwise use the result directly
             command_id = search_command_result.get('id') if isinstance(search_command_result, dict) else search_command_result
             readarr_logger.info(f"Triggered book search command {command_id} for '{book_title}' by {author_name}.")
-            increment_stat("readarr", "hunted", 1, instance_name)
+            increment_stat("readarr", "hunted", 1, instance_key)
             
             # Tag the book's author if enabled (keep author tagging as it's still useful)
             if tag_processed_items and tag_enable_missing and author_id:
@@ -205,7 +206,7 @@ def process_missing_books(
             
             # Log history entry for this specific book
             media_name = f"{author_name} - {book_title}"
-            log_processed_media("readarr", media_name, book_id, instance_name, "missing")
+            log_processed_media("readarr", media_name, book_id, instance_key, "missing")
             readarr_logger.debug(f"Logged missing book history entry: {media_name} (ID: {book_id})")
             
             processed_count += 1

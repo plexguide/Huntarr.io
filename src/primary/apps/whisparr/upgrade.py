@@ -50,6 +50,7 @@ def process_cutoff_upgrades(
     api_key = app_settings.get("api_key", "").strip()
     api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
     instance_name = app_settings.get("instance_name", "Whisparr Default")
+    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
     
     # Use advanced settings from database for command operations
     command_wait_delay = get_advanced_setting("command_wait_delay", 1)
@@ -116,7 +117,7 @@ def process_cutoff_upgrades(
     unprocessed_items = []
     for item in upgrade_eligible_data:
         item_id = str(item.get("id"))
-        if not is_processed("whisparr", instance_name, item_id):
+        if not is_processed("whisparr", instance_key, item_id):
             unprocessed_items.append(item)
         else:
             whisparr_logger.debug(f"Skipping already processed item ID: {item_id}")
@@ -175,7 +176,7 @@ def process_cutoff_upgrades(
             break
         
         # Mark the item as processed BEFORE triggering any searches
-        add_processed_id("whisparr", instance_name, str(item_id))
+        add_processed_id("whisparr", instance_key, str(item_id))
         whisparr_logger.debug(f"Added item ID {item_id} to processed list for {instance_name}")
         
         # Search for the item
@@ -198,14 +199,14 @@ def process_cutoff_upgrades(
             # Log to history so the upgrade appears in the history UI
             series_title = item.get("series", {}).get("title", "Unknown Series")
             media_name = f"{series_title} - {season_episode} - {title}"
-            log_processed_media("whisparr", media_name, item_id, instance_name, "upgrade")
+            log_processed_media("whisparr", media_name, item_id, instance_key, "upgrade")
             whisparr_logger.debug(f"Logged quality upgrade to history for item ID {item_id}")
             
             items_processed += 1
             processing_done = True
             
             # Increment the upgraded statistics for Whisparr
-            increment_stat("whisparr", "upgraded", 1, instance_name)
+            increment_stat("whisparr", "upgraded", 1, instance_key)
             whisparr_logger.debug(f"Incremented whisparr upgraded statistics by 1")
             
             # Log progress
