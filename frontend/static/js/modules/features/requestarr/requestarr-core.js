@@ -198,6 +198,8 @@ export class RequestarrDiscover {
     setupCarouselArrows() {
         const arrows = document.querySelectorAll('.carousel-arrow');
         const carousels = new Set();
+        /** Per-carousel: once user has scrolled right, left arrow stays visible (so they know they can scroll back). */
+        const hasScrolledRight = {};
         
         // Collect all unique carousels
         arrows.forEach(arrow => {
@@ -219,9 +221,16 @@ export class RequestarrDiscover {
                 
                 const scrollLeft = carousel.scrollLeft;
                 const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+                const atStart = scrollLeft <= 5;
+                const atEnd = maxScroll > 5 && scrollLeft >= maxScroll - 5;
                 
-                // Hide left arrow if at start
-                if (scrollLeft <= 5) {
+                // Once user scrolls right, left arrow stays visible so they know they can scroll back
+                if (!atStart) {
+                    hasScrolledRight[carouselId] = true;
+                }
+                
+                // Left arrow: hidden at start until user scrolls right; then always visible
+                if (atStart && !hasScrolledRight[carouselId]) {
                     leftArrow.style.opacity = '0';
                     leftArrow.style.pointerEvents = 'none';
                 } else {
@@ -229,8 +238,8 @@ export class RequestarrDiscover {
                     leftArrow.style.pointerEvents = 'auto';
                 }
                 
-                // Hide right arrow if at end
-                if (scrollLeft >= maxScroll - 5) {
+                // Right arrow: always visible when there's more content (or content still loading); hide only at end
+                if (atEnd) {
                     rightArrow.style.opacity = '0';
                     rightArrow.style.pointerEvents = 'none';
                 } else {
@@ -242,6 +251,11 @@ export class RequestarrDiscover {
             carousel.addEventListener('scroll', updateArrowVisibility);
             setTimeout(() => updateArrowVisibility(), 100);
             window.addEventListener('resize', updateArrowVisibility);
+            // When carousel content loads (e.g. async), update arrows so right arrow becomes visible
+            const observer = new MutationObserver(() => {
+                updateArrowVisibility();
+            });
+            observer.observe(carousel, { childList: true, subtree: true });
         });
         
         // Click handlers

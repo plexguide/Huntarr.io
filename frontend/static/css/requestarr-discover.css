@@ -181,12 +181,17 @@
     transform: translateY(-50%) scale(1.1);
 }
 
+/* Left arrow hidden at start; JS shows it after user scrolls right (then it stays visible) */
 .carousel-arrow.left {
     left: 10px;
+    opacity: 0;
+    pointer-events: none;
 }
 
+/* Right arrow always visible by default so users know the carousel scrolls (no trackpad/touch needed) */
 .carousel-arrow.right {
     right: 10px;
+    opacity: 0.8;
 }
 
 .carousel-arrow:disabled {
