@@ -878,6 +878,7 @@ class RequestarrAPI:
             # Get instance config
             app_config = self.db.get_app_config(app_type)
             if not app_config or not app_config.get('instances'):
+                logger.warning(f"No app config found for {app_type}")
                 return []
             
             target_instance = None
@@ -887,6 +888,7 @@ class RequestarrAPI:
                     break
             
             if not target_instance:
+                logger.warning(f"Instance {instance_name} not found in {app_type} config")
                 return []
             
             # Get URL and API key
@@ -894,32 +896,62 @@ class RequestarrAPI:
             api_key = target_instance.get('api_key', '')
             
             if not url or not api_key:
+                logger.warning(f"Missing URL or API key for {app_type}/{instance_name}")
                 return []
             
             url = url.rstrip('/')
             
-            # Fetch quality profiles
-            headers = {'X-Api-Key': api_key}
-            response = requests.get(
-                f"{url}/api/v3/qualityprofile",
-                headers=headers,
-                timeout=10
-            )
+            # Retry logic with exponential backoff for slow/busy instances
+            import time
+            max_retries = 3
+            timeout = 30  # Increased from 10s to 30s for slow Unraid environments
             
-            if response.status_code != 200:
-                logger.error(f"Failed to get quality profiles: {response.status_code}")
-                return []
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Fetching quality profiles from {app_type}/{instance_name} (attempt {attempt+1}/{max_retries})")
+                    headers = {'X-Api-Key': api_key}
+                    response = requests.get(
+                        f"{url}/api/v3/qualityprofile",
+                        headers=headers,
+                        timeout=timeout
+                    )
+                    
+                    if response.status_code != 200:
+                        logger.error(f"Failed to get quality profiles: {response.status_code}")
+                        if attempt < max_retries - 1:
+                            wait_time = 2 ** attempt
+                            logger.warning(f"Retrying in {wait_time}s...")
+                            time.sleep(wait_time)
+                            continue
+                        return []
+                    
+                    profiles = response.json()
+                    
+                    # Return simplified profile data
+                    return [
+                        {
+                            'id': profile.get('id'),
+                            'name': profile.get('name')
+                        }
+                        for profile in profiles
+                    ]
+                    
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                        logger.warning(f"Timeout/connection error fetching quality profiles from {app_type}/{instance_name} (attempt {attempt+1}): {e}. Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Failed to fetch quality profiles after {max_retries} attempts: {e}")
+                        return []
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"API error fetching quality profiles from {app_type}/{instance_name}: {e}")
+                    return []
             
-            profiles = response.json()
-            
-            # Return simplified profile data
-            return [
-                {
-                    'id': profile.get('id'),
-                    'name': profile.get('name')
-                }
-                for profile in profiles
-            ]
+            # If we get here, all retries failed
+            logger.error(f"All {max_retries} attempts failed to fetch quality profiles")
+            return []
             
         except Exception as e:
             logger.error(f"Error getting quality profiles from {app_type}: {e}")
@@ -1113,6 +1145,7 @@ class RequestarrAPI:
         try:
             app_config = self.db.get_app_config(app_type)
             if not app_config or not app_config.get('instances'):
+                logger.warning(f"No app config found for {app_type}")
                 return []
             instance = None
             for inst in app_config['instances']:
@@ -1120,18 +1153,46 @@ class RequestarrAPI:
                     instance = inst
                     break
             if not instance:
+                logger.warning(f"Instance {instance_name} not found in {app_type} config")
                 return []
             url = (instance.get('api_url') or instance.get('url') or '').rstrip('/')
             api_key = instance.get('api_key', '')
             if not url or not api_key:
+                logger.warning(f"Missing URL or API key for {app_type}/{instance_name}")
                 return []
-            resp = requests.get(
-                f"{url}/api/v3/rootfolder",
-                headers={'X-Api-Key': api_key},
-                timeout=10
-            )
-            resp.raise_for_status()
-            raw = resp.json()
+            
+            # Retry logic with exponential backoff for slow/busy instances
+            import time
+            max_retries = 3
+            timeout = 30  # Increased from 10s to 30s for slow Unraid environments
+            
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Fetching root folders from {app_type}/{instance_name} (attempt {attempt+1}/{max_retries})")
+                    resp = requests.get(
+                        f"{url}/api/v3/rootfolder",
+                        headers={'X-Api-Key': api_key},
+                        timeout=timeout
+                    )
+                    resp.raise_for_status()
+                    raw = resp.json()
+                    break  # Success, exit retry loop
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                        logger.warning(f"Timeout/connection error fetching root folders from {app_type}/{instance_name} (attempt {attempt+1}): {e}. Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Failed to fetch root folders after {max_retries} attempts: {e}")
+                        return []
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"API error fetching root folders from {app_type}/{instance_name}: {e}")
+                    return []
+            else:
+                # Loop completed without break (all retries failed)
+                logger.error(f"All {max_retries} attempts failed to fetch root folders")
+                return []
             
             # Dedupe by BOTH ID and path - *arr APIs can return duplicates (issue #806)
             if not isinstance(raw, list):
@@ -1964,14 +2025,41 @@ class RequestarrAPI:
             
             movie_data = lookup_results[0]
             
-            # Get root folders
-            root_folders_response = requests.get(
-                f"{url}/api/v3/rootfolder",
-                headers={'X-Api-Key': api_key},
-                timeout=10
-            )
-            root_folders_response.raise_for_status()
-            root_folders = root_folders_response.json()
+            # Get root folders with retry logic
+            import time
+            max_retries = 3
+            timeout = 30  # Increased for slow Unraid environments
+            
+            root_folders = None
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Fetching root folders from Radarr (attempt {attempt+1}/{max_retries})")
+                    root_folders_response = requests.get(
+                        f"{url}/api/v3/rootfolder",
+                        headers={'X-Api-Key': api_key},
+                        timeout=timeout
+                    )
+                    root_folders_response.raise_for_status()
+                    root_folders = root_folders_response.json()
+                    break  # Success
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt
+                        logger.warning(f"Timeout/connection error fetching root folders (attempt {attempt+1}): {e}. Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Failed to fetch root folders after {max_retries} attempts: {e}")
+                        return {
+                            'success': False,
+                            'message': 'Timeout connecting to Radarr. Please check your instance and try again.'
+                        }
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"API error fetching root folders: {e}")
+                    return {
+                        'success': False,
+                        'message': f'Error fetching root folders: {str(e)}'
+                    }
             
             if not root_folders:
                 return {
@@ -1989,14 +2077,37 @@ class RequestarrAPI:
                 if default_radarr and default_radarr in root_paths:
                     selected_root = default_radarr
             
-            # Get quality profiles
-            profiles_response = requests.get(
-                f"{url}/api/v3/qualityprofile",
-                headers={'X-Api-Key': api_key},
-                timeout=10
-            )
-            profiles_response.raise_for_status()
-            profiles = profiles_response.json()
+            # Get quality profiles with retry logic
+            profiles = None
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Fetching quality profiles from Radarr (attempt {attempt+1}/{max_retries})")
+                    profiles_response = requests.get(
+                        f"{url}/api/v3/qualityprofile",
+                        headers={'X-Api-Key': api_key},
+                        timeout=timeout
+                    )
+                    profiles_response.raise_for_status()
+                    profiles = profiles_response.json()
+                    break  # Success
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt
+                        logger.warning(f"Timeout/connection error fetching quality profiles (attempt {attempt+1}): {e}. Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Failed to fetch quality profiles after {max_retries} attempts: {e}")
+                        return {
+                            'success': False,
+                            'message': 'Timeout fetching quality profiles from Radarr. Please check your instance and try again.'
+                        }
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"API error fetching quality profiles: {e}")
+                    return {
+                        'success': False,
+                        'message': f'Error fetching quality profiles: {str(e)}'
+                    }
             
             if not profiles:
                 return {
@@ -2067,14 +2178,41 @@ class RequestarrAPI:
             
             series_data = lookup_results[0]
             
-            # Get root folders
-            root_folders_response = requests.get(
-                f"{url}/api/v3/rootfolder",
-                headers={'X-Api-Key': api_key},
-                timeout=10
-            )
-            root_folders_response.raise_for_status()
-            root_folders = root_folders_response.json()
+            # Get root folders with retry logic
+            import time
+            max_retries = 3
+            timeout = 30  # Increased for slow Unraid environments
+            
+            root_folders = None
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Fetching root folders from Sonarr (attempt {attempt+1}/{max_retries})")
+                    root_folders_response = requests.get(
+                        f"{url}/api/v3/rootfolder",
+                        headers={'X-Api-Key': api_key},
+                        timeout=timeout
+                    )
+                    root_folders_response.raise_for_status()
+                    root_folders = root_folders_response.json()
+                    break  # Success
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt
+                        logger.warning(f"Timeout/connection error fetching root folders (attempt {attempt+1}): {e}. Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Failed to fetch root folders after {max_retries} attempts: {e}")
+                        return {
+                            'success': False,
+                            'message': 'Timeout connecting to Sonarr. Please check your instance and try again.'
+                        }
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"API error fetching root folders: {e}")
+                    return {
+                        'success': False,
+                        'message': f'Error fetching root folders: {str(e)}'
+                    }
             
             if not root_folders:
                 return {
@@ -2092,14 +2230,37 @@ class RequestarrAPI:
                 if default_sonarr and default_sonarr in root_paths:
                     selected_root = default_sonarr
             
-            # Get quality profiles
-            profiles_response = requests.get(
-                f"{url}/api/v3/qualityprofile",
-                headers={'X-Api-Key': api_key},
-                timeout=10
-            )
-            profiles_response.raise_for_status()
-            profiles = profiles_response.json()
+            # Get quality profiles with retry logic
+            profiles = None
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Fetching quality profiles from Sonarr (attempt {attempt+1}/{max_retries})")
+                    profiles_response = requests.get(
+                        f"{url}/api/v3/qualityprofile",
+                        headers={'X-Api-Key': api_key},
+                        timeout=timeout
+                    )
+                    profiles_response.raise_for_status()
+                    profiles = profiles_response.json()
+                    break  # Success
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt
+                        logger.warning(f"Timeout/connection error fetching quality profiles (attempt {attempt+1}): {e}. Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Failed to fetch quality profiles after {max_retries} attempts: {e}")
+                        return {
+                            'success': False,
+                            'message': 'Timeout fetching quality profiles from Sonarr. Please check your instance and try again.'
+                        }
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"API error fetching quality profiles: {e}")
+                    return {
+                        'success': False,
+                        'message': f'Error fetching quality profiles: {str(e)}'
+                    }
             
             if not profiles:
                 return {
