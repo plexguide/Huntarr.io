@@ -476,12 +476,17 @@ window.SettingsForms = {
         }
     },
 
-    // Show/hide Upgrade Tag field when Radarr upgrade method is Tags
+    // Show/hide Upgrade Tag field when upgrade method is Tags; hide "Tag upgrade items" / "Tag upgraded (Upgradinatorr)" when tags mode (Upgradinatorr tag is used by default).
     toggleUpgradeTagVisibility: function() {
         const methodEl = document.getElementById('editor-upgrade-method');
         const tagGroup = document.querySelector('.editor-upgrade-tag-group');
-        if (!methodEl || !tagGroup) return;
-        tagGroup.style.display = (methodEl.value === 'tags') ? 'flex' : 'none';
+        const upgradeItemsTagSection = document.querySelector('.editor-upgrade-items-tag-section');
+        if (methodEl && tagGroup) {
+            tagGroup.style.display = (methodEl.value === 'tags') ? 'flex' : 'none';
+        }
+        if (methodEl && upgradeItemsTagSection) {
+            upgradeItemsTagSection.style.display = (methodEl.value === 'tags') ? 'none' : 'block';
+        }
     },
 
     // Toggle form fields based on enabled status

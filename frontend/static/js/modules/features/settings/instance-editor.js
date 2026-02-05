@@ -205,6 +205,8 @@
                 this.setupEditorChangeDetection();
                 // Initialize form field states based on enabled status
                 this.toggleFormFields();
+                // Sync upgrade tag group and upgrade-items-tag section visibility (tags vs cutoff mode)
+                this.toggleUpgradeTagVisibility();
                 // Start polling state status if state management is enabled
                 if (instance.state_management_mode !== 'disabled') {
                     this.startStateStatusPolling(appType, index);
@@ -728,7 +730,7 @@
                                 <option value="tags" ${(safeInstance.upgrade_selection_method || 'cutoff') === 'tags' ? 'selected' : ''}>Tags</option>
                             </select>
                         </div>
-                        <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
+                        <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). No Upgradinatorr tagging. Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
                             <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
                             <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
@@ -811,7 +813,7 @@
                                 <option value="tags" ${(safeInstance.upgrade_selection_method || 'cutoff') === 'tags' ? 'selected' : ''}>Tags</option>
                             </select>
                         </div>
-                        <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
+                        <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). No Upgradinatorr tagging. Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
                             <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
                             <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
@@ -848,7 +850,7 @@
                                 <option value="tags" ${(safeInstance.upgrade_selection_method || 'cutoff') === 'tags' ? 'selected' : ''}>Tags</option>
                             </select>
                         </div>
-                        <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
+                        <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). No Upgradinatorr tagging. Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
                             <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
                             <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
@@ -1019,17 +1021,6 @@
                     
                     <div class="editor-field-group">
                         <div class="editor-setting-item flex-row">
-                            <label>Tag Processed Items</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="editor-tag-processed" ${safeInstance.tag_processed_items ? 'checked' : ''}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <p class="editor-help-text">Master switch: enable custom tagging for processed items. Use the toggles below to enable each tag type per instance.</p>
-                    </div>
-                    
-                    <div class="editor-field-group">
-                        <div class="editor-setting-item flex-row">
                             <label>Tag missing items</label>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="editor-tag-enable-missing" ${safeInstance.tag_enable_missing ? 'checked' : ''}>
@@ -1043,30 +1034,21 @@
                         <p class="editor-help-text">Custom tag for missing items (max 25 characters)</p>
                     </div>
                     
-                    <div class="editor-field-group">
-                        <div class="editor-setting-item flex-row">
-                            <label>Tag upgrade items</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="editor-tag-enable-upgrade" ${safeInstance.tag_enable_upgrade ? 'checked' : ''}>
-                                <span class="toggle-slider"></span>
-                            </label>
+                    <div class="editor-upgrade-items-tag-section" style="display: ${(['sonarr','radarr','lidarr','readarr'].includes(appType) && (safeInstance.upgrade_selection_method || 'cutoff') === 'tags') ? 'none' : 'block'};">
+                        <div class="editor-field-group">
+                            <div class="editor-setting-item flex-row">
+                                <label>Tag upgrade items</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="editor-tag-enable-upgrade" ${safeInstance.tag_enable_upgrade ? 'checked' : ''}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="editor-setting-item" style="margin-top: 6px;">
+                                <label>Upgrade Items Tag</label>
+                                <input type="text" id="editor-tag-upgrade" value="${safeInstance.custom_tags.upgrade || 'huntarr-upgrade'}" placeholder="huntarr-upgrade">
+                            </div>
+                            <p class="editor-help-text">Custom tag for upgraded items (max 25 characters)</p>
                         </div>
-                        <div class="editor-setting-item" style="margin-top: 6px;">
-                            <label>Upgrade Items Tag</label>
-                            <input type="text" id="editor-tag-upgrade" value="${safeInstance.custom_tags.upgrade || 'huntarr-upgrade'}" placeholder="huntarr-upgrade">
-                        </div>
-                        <p class="editor-help-text">Custom tag for upgraded items (max 25 characters)</p>
-                    </div>
-                    
-                    <div class="editor-field-group">
-                        <div class="editor-setting-item flex-row">
-                            <label>Tag upgraded (Upgradinatorr)</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="editor-tag-enable-upgraded" ${safeInstance.tag_enable_upgraded ? 'checked' : ''}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <p class="editor-help-text">Add huntarr-upgraded (or your upgrade tag) when processing upgrades. Can be turned off if you only want the upgrade-tag method.</p>
                     </div>
                     
                     ${appType === 'sonarr' ? `
@@ -1122,6 +1104,13 @@
         const settings = window.huntarrUI.originalSettings[appType];
         if (!settings) return;
   
+        const tagEnableUpgradeEl = document.getElementById('editor-tag-enable-upgrade');
+        const upgradeMethodEl = document.getElementById('editor-upgrade-method');
+        const isTagsMode = upgradeMethodEl && upgradeMethodEl.value === 'tags';
+        const tagEnableMissing = document.getElementById('editor-tag-enable-missing').checked;
+        const tagEnableUpgrade = isTagsMode ? false : (tagEnableUpgradeEl ? tagEnableUpgradeEl.checked : false);
+        const tagEnableShowsMissingEl = document.getElementById('editor-tag-enable-shows-missing');
+        const tagEnableShowsMissing = tagEnableShowsMissingEl ? tagEnableShowsMissingEl.checked : true;
         const newData = {
             enabled: document.getElementById('editor-enabled').value === 'true',
             name: document.getElementById('editor-name').value,
@@ -1131,15 +1120,15 @@
             state_management_hours: parseInt(document.getElementById('editor-state-hours').value) || 72,
             // Additional Options
             monitored_only: document.getElementById('editor-monitored-only').checked,
-            tag_processed_items: document.getElementById('editor-tag-processed').checked,
-            tag_enable_missing: document.getElementById('editor-tag-enable-missing').checked,
-            tag_enable_upgrade: document.getElementById('editor-tag-enable-upgrade').checked,
-            tag_enable_upgraded: document.getElementById('editor-tag-enable-upgraded').checked,
-            tag_enable_shows_missing: document.getElementById('editor-tag-enable-shows-missing') ? document.getElementById('editor-tag-enable-shows-missing').checked : true,
+            tag_processed_items: tagEnableMissing || tagEnableUpgrade || tagEnableShowsMissing,
+            tag_enable_missing: tagEnableMissing,
+            tag_enable_upgrade: tagEnableUpgrade,
+            tag_enable_upgraded: false,
+            tag_enable_shows_missing: tagEnableShowsMissing,
             // Custom Tags
             custom_tags: {
                 missing: document.getElementById('editor-tag-missing').value,
-                upgrade: document.getElementById('editor-tag-upgrade').value
+                upgrade: (document.getElementById('editor-tag-upgrade') ? document.getElementById('editor-tag-upgrade').value : '') || 'huntarr-upgrade'
             },
             // Advanced Settings
             api_timeout: parseInt(document.getElementById('editor-api-timeout').value) || 120,
