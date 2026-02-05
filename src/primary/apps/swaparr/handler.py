@@ -831,6 +831,23 @@ def process_stalled_downloads(app_name, instance_name, instance_data, settings):
             # Strike if metadata issue, eta too long, or no progress (eta = 0 and not queued).
             # Per docs/issue #687: "Has been downloading longer than your Max Download Time" must be true
             # for ETA-too-long and No-progress strikes (wall-clock time, not ETA).
+            # Per issue #706: Do not strike/remove downloads that are 100% complete (sizeleft=0) unless
+            # remove_completed_stalled is True - they are often waiting for manual import (e.g. name/year mismatch).
+            raw_sizeleft = item.get("sizeleft")
+            try:
+                sizeleft = int(raw_sizeleft) if raw_sizeleft is not None else 0
+            except (TypeError, ValueError):
+                sizeleft = 0
+            is_completed = sizeleft == 0
+            remove_completed_stalled = settings.get("remove_completed_stalled", True)
+            if is_completed and not remove_completed_stalled:
+                swaparr_logger.debug(f"Ignoring completed download (100% - waiting for import): {item['name']}")
+                item_state = "Ignored (Completed - waiting for import)"
+                SWAPARR_STATS['items_ignored'] += 1
+                if not settings.get("dry_run", False):
+                    increment_swaparr_stat("ignored", 1)
+                continue
+
             max_dl_seconds = parse_time_string_to_seconds(settings.get("max_download_time", "2h"))
             first_seen_str = strike_data[item_id].get("first_strike_time")
             exceeded_max_download_time = False

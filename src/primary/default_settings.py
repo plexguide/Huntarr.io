@@ -160,6 +160,7 @@ SWAPARR_DEFAULTS = {
     "remove_from_client": True,
     "dry_run": False,
     "ignore_usenet_queued": True,
+    "remove_completed_stalled": True,
     "sleep_duration": 900,
     "malicious_file_detection": False,
     "malicious_extensions": [

@@ -241,6 +241,22 @@
                 </div>
                 
                 <div class="setting-item">
+                    <label for="swaparr_remove_completed_stalled">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#remove-completed-stalled" class="info-icon" title="Treat 100% complete downloads as stalled" target="_blank" rel="noopener">
+                            <i class="fas fa-info-circle"></i>
+                        </a>
+                        Remove Completed (100%) Stalled:
+                    </label>
+                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <input type="checkbox" id="swaparr_remove_completed_stalled" ${
+                          settings.remove_completed_stalled !== false ? "checked" : ""
+                        }>
+                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                    </label>
+                    <p class="setting-help">When enabled (default), Swaparr can remove 100% complete downloads after max strikes if they are stuck. When disabled, downloads that are 100% complete but waiting for manual import (e.g. name/year mismatch) are left alone.</p>
+                </div>
+                
+                <div class="setting-item">
                     <label for="swaparr_sleep_duration">
                         <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#sleep-duration" class="info-icon" title="Time between Swaparr cycles" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
@@ -734,6 +750,9 @@
 
             const ignoreUsenetQueued = document.getElementById("swaparr_ignore_usenet_queued");
             if (ignoreUsenetQueued) settings.ignore_usenet_queued = ignoreUsenetQueued.checked;
+
+            const removeCompletedStalled = document.getElementById("swaparr_remove_completed_stalled");
+            if (removeCompletedStalled) settings.remove_completed_stalled = removeCompletedStalled.checked;
 
             const sleepDuration = document.getElementById("swaparr_sleep_duration");
             if (sleepDuration) settings.sleep_duration = parseInt(sleepDuration.value) * 60;
