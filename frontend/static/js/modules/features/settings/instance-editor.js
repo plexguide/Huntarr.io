@@ -730,7 +730,7 @@
                                 <option value="tags" ${(safeInstance.upgrade_selection_method || 'cutoff') === 'tags' ? 'selected' : ''}>Tags</option>
                             </select>
                         </div>
-                        <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). No Upgradinatorr tagging. Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
+                        <p class="editor-help-text"><strong>Cutoff unmet:</strong> Items below quality cutoff (default). Huntarr does not add any upgrade tag. <strong>Tags (Upgradinatorr):</strong> Huntarr finds items WITHOUT the tag below, runs upgrade searches, then ADDS that tag when done. 
                             <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
                             <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
@@ -740,7 +740,7 @@
                             <label>Upgrade Tag</label>
                             <input type="text" id="editor-upgrade-tag" value="${(safeInstance.upgrade_tag || 'upgradinatorr').replace(/"/g, '&quot;')}" placeholder="e.g. upgradinatorr">
                         </div>
-                        <p class="editor-help-text">Tag name in Sonarr; Huntarr will search series WITHOUT this tag and ADD it after processing (Upgradinatorr-style tracking). 
+                        <p class="editor-help-text">Tag name in Sonarr. Huntarr finds series that don’t have this tag, runs upgrade searches, then adds the tag when done (tracks what’s been processed). 
                             <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
                             <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
@@ -813,7 +813,7 @@
                                 <option value="tags" ${(safeInstance.upgrade_selection_method || 'cutoff') === 'tags' ? 'selected' : ''}>Tags</option>
                             </select>
                         </div>
-                        <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). No Upgradinatorr tagging. Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
+                        <p class="editor-help-text"><strong>Cutoff unmet:</strong> Items below quality cutoff (default). Huntarr does not add any upgrade tag. <strong>Tags (Upgradinatorr):</strong> Huntarr finds items WITHOUT the tag below, runs upgrade searches, then ADDS that tag when done. 
                             <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
                             <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
@@ -823,7 +823,7 @@
                             <label>Upgrade Tag</label>
                             <input type="text" id="editor-upgrade-tag" value="${(safeInstance.upgrade_tag || 'upgradinatorr').replace(/"/g, '&quot;')}" placeholder="e.g. upgradinatorr">
                         </div>
-                        <p class="editor-help-text">Tag name in Radarr; Huntarr will search movies WITHOUT this tag and ADD it after processing (Upgradinatorr-style tracking). 
+                        <p class="editor-help-text">Tag name in Radarr. Huntarr finds movies that don’t have this tag, runs upgrade searches, then adds the tag when done (tracks what’s been processed). 
                             <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
                             <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
@@ -839,8 +839,8 @@
             }
             if (appType === 'lidarr' || appType === 'readarr') {
                  const tagHelp = appType === 'lidarr'
-                     ? 'Tag name on artists in Lidarr; Huntarr will search albums by artists WITHOUT this tag and ADD it after processing (Upgradinatorr-style tracking). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>'
-                     : 'Tag name on authors in Readarr; Huntarr will search books by authors WITHOUT this tag and ADD it after processing (Upgradinatorr-style tracking). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>';
+                     ? 'Tag name on artists in Lidarr. Huntarr finds artists that don’t have this tag, runs upgrade searches on their albums, then adds the tag when done (tracks what’s been processed). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>'
+                     : 'Tag name on authors in Readarr. Huntarr finds authors that don’t have this tag, runs upgrade searches on their books, then adds the tag when done (tracks what’s been processed). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>';
                  html += `
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
@@ -850,7 +850,7 @@
                                 <option value="tags" ${(safeInstance.upgrade_selection_method || 'cutoff') === 'tags' ? 'selected' : ''}>Tags</option>
                             </select>
                         </div>
-                        <p class="editor-help-text">Cutoff unmet: items below quality cutoff (default). No Upgradinatorr tagging. Tags: items WITHOUT the specified tag (Upgradinatorr-style: tag is ADDED after processing to mark as complete). 
+                        <p class="editor-help-text"><strong>Cutoff unmet:</strong> Items below quality cutoff (default). Huntarr does not add any upgrade tag. <strong>Tags (Upgradinatorr):</strong> Huntarr finds items WITHOUT the tag below, runs upgrade searches, then ADDS that tag when done. 
                             <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | 
                             <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>
                         </p>
@@ -1031,7 +1031,7 @@
                             <label>Missing Items Tag</label>
                             <input type="text" id="editor-tag-missing" value="${safeInstance.custom_tags.missing || 'huntarr-missing'}" placeholder="huntarr-missing">
                         </div>
-                        <p class="editor-help-text">Custom tag for missing items (max 25 characters)</p>
+                        <p class="editor-help-text">Tag added to items when they’re found by a missing search (max 25 characters)</p>
                     </div>
                     
                     <div class="editor-upgrade-items-tag-section" style="display: ${(['sonarr','radarr','lidarr','readarr'].includes(appType) && (safeInstance.upgrade_selection_method || 'cutoff') === 'tags') ? 'none' : 'block'};">
@@ -1047,7 +1047,7 @@
                                 <label>Upgrade Items Tag</label>
                                 <input type="text" id="editor-tag-upgrade" value="${safeInstance.custom_tags.upgrade || 'huntarr-upgrade'}" placeholder="huntarr-upgrade">
                             </div>
-                            <p class="editor-help-text">Custom tag for upgraded items (max 25 characters)</p>
+                            <p class="editor-help-text">Tag added to items when they’re upgraded in cutoff mode (max 25 characters). Not used when Upgrade Selection Method is Tags.</p>
                         </div>
                     </div>
                     
@@ -1064,7 +1064,7 @@
                             <label>Shows Missing Tag</label>
                             <input type="text" id="editor-tag-shows-missing" value="${safeInstance.custom_tags.shows_missing || 'huntarr-shows-missing'}" placeholder="huntarr-shows-missing">
                         </div>
-                        <p class="editor-help-text">Custom tag for missing items in shows mode (max 25 characters)</p>
+                        <p class="editor-help-text">Tag added to shows when missing items are found in shows mode (max 25 characters)</p>
                     </div>
                     ` : ''}
                 </div>
