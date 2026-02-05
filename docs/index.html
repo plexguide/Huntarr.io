@@ -132,27 +132,36 @@
 
             <section class="features-section">
                 <h2><i class="fas fa-crosshairs" style="margin-right: 10px; color: #e74c3c;"></i>What is Huntarr?</h2>
-                <p>Huntarr is a specialized utility that solves a critical limitation in your *arr setup that most people don't realize exists. While Sonarr, Radarr, and other *arr applications are excellent at grabbing new releases as they appear on RSS feeds, <strong>they don't go back and actively search for missing content in your existing library</strong>.</p>
-                
-                <p>Here's the key problem: Your *arr apps only monitor RSS feeds for new releases. They don't systematically search for older missing episodes, movies, or albums that you've added to your library but never downloaded. This is where Huntarr becomes essential - it continuously scans your *arr libraries, identifies missing content, and automatically triggers searches to fill those gaps.</p>
-                
-                <h3><i class="fas fa-exclamation-triangle" style="margin-right: 10px; color: #f39c12;"></i>The Real Problem: Why You Need Huntarr</h3>
-                
-                <p>Most people don't understand a fundamental limitation of *arr applications. Sonarr and Radarr are designed to watch RSS feeds and grab new releases as they're posted, but they don't go back and search for older content that's missing from your library. This means if you have shows or movies that you've added but never downloaded, or episodes that failed to download initially, your *arr apps will simply ignore them unless they appear again on RSS feeds.</p>
-                
-                <p>Manual searches are impractical when you're dealing with large libraries. You'd have to individually search every missing episode or movie, which could be hundreds or thousands of items. Bulk searches aren't viable either because they overwhelm indexers and can get you rate-limited or banned. There's simply no built-in way in *arr applications to gradually and safely complete your existing collection.</p>
-                
-                <h3><i class="fas fa-puzzle-piece" style="margin-right: 10px; color: #9b59b6;"></i>Understanding the Gap Problem</h3>
-                
-                <p>Many users discover they have significant gaps in their media libraries once they start paying attention. Missing episodes could be from shows you added after they finished airing, episodes that failed to download initially, content that was available but your indexers missed, episodes that became available on different indexers over time, or quality upgrades you want but Sonarr isn't actively seeking.</p>
-                
-                <p>The problem is that your *arr setup might "look" like it's working perfectly because it's successfully grabbing new releases, but you could be missing a substantial portion of your existing library without realizing it. This is especially common with older shows, completed series, or content from less popular indexers.</p>
-                
-                <h3><i class="fas fa-magic" style="margin-right: 10px; color: #2ecc71;"></i>How Huntarr Solves This</h3>
-                
-                <p>Huntarr systematically works through your missing content in a smart, indexer-friendly way. It identifies gaps by scanning your entire library to find missing content, then processes searches for missing items in small, manageable batches. This approach respects indexer limits to avoid bans while running continuously to gradually complete your collection. Huntarr also searches for better quality versions of existing content, ensuring you get upgrades when they become available.</p>
-                
-                <p>Without Huntarr, you're essentially running an incomplete media automation setup. You're only getting new content as it releases, but you're missing out on completing existing series, filling movie collections, getting quality improvements, and achieving true set-and-forget automation. Huntarr is the tool that actually completes your media automation by finding and downloading all the content your *arr apps aren't actively searching for.</p>
+                <p>Huntarr is a companion app that sits alongside your *arr stack (Sonarr, Radarr, Lidarr, Readarr, Whisparr, Eros). It does one thing your *arr apps don’t: <strong>it actively hunts for missing and upgradable content in your existing library</strong>, then triggers searches in a controlled way so your indexers aren’t overwhelmed and you don’t get banned.</p>
+
+                <h3><i class="fas fa-exclamation-triangle" style="margin-right: 10px; color: #f39c12;"></i>The Problem Huntarr Solves</h3>
+                <p>Your *arr apps are built to <strong>watch RSS feeds and grab new releases</strong> as they appear. They do not go back and search for content that’s already in your library but not yet downloaded. So:</p>
+                <ul>
+                    <li>Shows you added after they finished airing never get missing episodes searched.</li>
+                    <li>Episodes or movies that failed the first time just sit there unless they show up again on RSS.</li>
+                    <li>Content that became available on your indexers later is never re-searched.</li>
+                    <li>Items below your quality cutoff don’t get upgrade searches unless you do it yourself.</li>
+                </ul>
+                <p>Doing that manually is unrealistic for large libraries (hundreds or thousands of items), and firing off bulk searches would hammer your indexers and risk rate limits or bans. <strong>Huntarr exists to fill that gap</strong>: it finds what’s missing or below cutoff and triggers searches in small, configurable batches, continuously and safely.</p>
+
+                <h3><i class="fas fa-cogs" style="margin-right: 10px; color: #3498db;"></i>How Huntarr Works</h3>
+                <p>Huntarr connects to your *arr instances (you can run multiple of each—true multi-instance). For each instance you configure:</p>
+                <ol>
+                    <li><strong>Scan</strong> — Huntarr talks to the *arr API and gets your library: what’s missing, what’s below your quality/custom-format cutoff.</li>
+                    <li><strong>Queue</strong> — It builds a list of items to search (missing content and/or upgrade candidates), using your per-instance settings (e.g. season packs vs episodes, tags vs cutoff unmet).</li>
+                    <li><strong>Trigger searches</strong> — It runs commands (e.g. SeasonSearch, MovieSearch) on the *arr app in small batches. The *arr app does the actual indexer search and grab; Huntarr only tells it <em>what</em> to search.</li>
+                    <li><strong>Respect limits</strong> — You set caps (e.g. searches per cycle, sleep between cycles, hourly API cap). Huntarr stays within those so indexers aren’t overwhelmed and you avoid bans.</li>
+                </ol>
+                <p>So: <strong>Huntarr decides what to search and when; your *arr apps and indexers do the rest.</strong> Huntarr also includes <strong>Requestarr</strong> (discover and request movies/TV from TMDB, add to Radarr/Sonarr), <strong>Swaparr</strong> (monitor and clean stalled downloads), and optional <strong>Prowlarr</strong> integration so your indexers are shared across the stack.</p>
+
+                <h3><i class="fas fa-check-double" style="margin-right: 10px; color: #2ecc71;"></i>Why You Need It</h3>
+                <p>Without Huntarr, you only get <em>new</em> content as it hits RSS. Everything already in your library that’s missing or below cutoff is ignored unless you search by hand. With Huntarr:</p>
+                <ul>
+                    <li>Missing episodes, movies, albums, and books get searched automatically in the background.</li>
+                    <li>Upgrades (better quality / better custom format score) get searched when you use cutoff-unmet or tag-based upgrade modes.</li>
+                    <li>You keep control over how aggressive it is (limits, sleep, which instances are enabled).</li>
+                </ul>
+                <p>So Huntarr is what makes your automation <strong>complete</strong>: it fills gaps and pursues upgrades that the *arr apps alone never would.</p>
                 
                 <h3 id="reddit-explanation"><i class="fab fa-reddit-alien" style="margin-right: 10px; color: #FF4500;"></i>Perfect for Reddit Explanation <a href="#reddit-explanation" class="anchor-link"><i class="fas fa-info-circle"></i></a></h3>
                 
