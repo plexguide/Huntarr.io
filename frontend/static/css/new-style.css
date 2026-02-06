@@ -215,7 +215,7 @@ button {
 }
 
 .sidebar h1 {
-    font-size: 1.35rem;
+    font-size: 1.49rem; /* ~10% larger */
     font-weight: bold;
 }
 
@@ -236,7 +236,7 @@ button {
 
 .nav-item i {
     margin-right: 13px;
-    font-size: 20px;
+    font-size: 22px; /* ~10% larger */
     width: 26px;
     text-align: center;
 }
@@ -276,7 +276,7 @@ button {
 }
 
 .nav-item-sub .nav-icon-wrapper i {
-    font-size: 12px;
+    font-size: 13px; /* ~10% larger */
 }
 
 .nav-item-sub.active {
@@ -1712,7 +1712,7 @@ input:checked + .toggle-slider:before {
     
     .nav-item i {
         margin-right: 0;
-        font-size: 20px;
+        font-size: 22px; /* ~10% larger */
     }
     
     .logo-container {
