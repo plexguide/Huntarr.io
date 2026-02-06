@@ -928,7 +928,7 @@ def _get_sabnzbd_history_item(client, queue_id):
         
         api_key = (client.get('api_key') or '').strip()
         url = f"{base_url}/api"
-        params = {'mode': 'history', 'output': 'json', 'limit': 100}
+        params = {'mode': 'history', 'output': 'json', 'limit': 500}
         if api_key:
             params['apikey'] = api_key
         
@@ -947,14 +947,24 @@ def _get_sabnzbd_history_item(client, queue_id):
         else:
             slots = []
         
+        def _normalize_nzo_id(nzo_id):
+            """SAB may use 'SABnzbd_nzo_xxx' in queue and 'xxx' in history (or vice versa)."""
+            s = str(nzo_id).strip()
+            for prefix in ('SABnzbd_nzo_', 'sabnzbd_nzo_'):
+                if s.lower().startswith(prefix.lower()):
+                    return s[len(prefix):].strip()
+            return s
+
         queue_id_str = str(queue_id).strip()
+        queue_id_norm = _normalize_nzo_id(queue_id_str)
         for slot in slots:
             if not isinstance(slot, dict):
                 continue
             slot_id = slot.get('nzo_id') or slot.get('id')
             if slot_id is None:
                 continue
-            if str(slot_id).strip() == queue_id_str:
+            slot_id_str = str(slot_id).strip()
+            if slot_id_str == queue_id_str or _normalize_nzo_id(slot_id_str) == queue_id_norm:
                 return {
                     'status': slot.get('status', ''),
                     'storage': slot.get('storage', ''),
@@ -1066,8 +1076,8 @@ def _check_and_import_completed(client_name, queue_item):
 
 def _prune_requested_queue_ids(client_name, current_queue_ids):
     """Remove from our requested list any id no longer in the client's queue (completed/removed). Trigger import for completed items."""
-    if not current_queue_ids:
-        return
+    # When queue is empty (e.g. last item just completed), current_queue_ids is empty - we must still
+    # run so that all our requested items are treated as "removed" and we trigger import checks.
     from src.primary.utils.database import get_database
     db = get_database()
     config = db.get_app_config('movie_hunt_requested')
@@ -1092,7 +1102,12 @@ def _prune_requested_queue_ids(client_name, current_queue_ids):
     config['by_client'][cname] = kept
     db.save_app_config('movie_hunt_requested', config)
     
-    # Trigger import for completed items
+    # Trigger import for completed items (when queue is empty, all requested items are in removed)
+    if removed:
+        movie_hunt_logger.info(
+            "Import: %s item(s) left queue for client '%s', checking SAB history and running import.",
+            len(removed), client_name
+        )
     for item in removed:
         if isinstance(item, dict):
             _check_and_import_completed(client_name, item)
