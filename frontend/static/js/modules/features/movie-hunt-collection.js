@@ -149,14 +149,12 @@
             var status = (item.status || 'requested').toLowerCase();
             var posterUrl = (item.poster_path && item.poster_path.indexOf('http') === 0) ? item.poster_path : (item.poster_path ? 'https://image.tmdb.org/t/p/w500' + (item.poster_path.indexOf('/') === 0 ? item.poster_path : '/' + item.poster_path) : './static/images/blackout.jpg');
             if (!item.poster_path) posterUrl = './static/images/blackout.jpg';
-            var statusClass = status === 'available' ? 'complete' : 'available';
-            var statusLabel = status === 'available' ? 'Available' : 'Requested';
-            var showRemove = status === 'requested';
-            var removeHtml = showRemove
-                ? '<button type="button" class="btn-remove-from-collection" data-title="' + (item.title || '').replace(/"/g, '&quot;') + '" data-year="' + (item.year || '').replace(/"/g, '&quot;') + '"><i class="fas fa-trash"></i> Remove</button>'
-                : '';
+            // Check = have it (available), yellow exclamation = missing (requested)
+            var statusClass = status === 'available' ? 'complete' : 'missing';
+            var statusIcon = status === 'available' ? 'check' : 'exclamation';
+            var statusLabel = status === 'available' ? 'Available' : 'Missing';
             card.innerHTML = '<div class="media-card-poster">' +
-                '<div class="media-card-status-badge ' + statusClass + '"><i class="fas fa-' + (status === 'available' ? 'check' : 'download') + '"></i></div>' +
+                '<div class="media-card-status-badge ' + statusClass + '"><i class="fas fa-' + statusIcon + '"></i></div>' +
                 '<img src="' + posterUrl + '" alt="' + title + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
                 '</div>' +
                 '<div class="media-card-info">' +
@@ -164,23 +162,12 @@
                 '<div class="media-card-meta">' +
                 '<span class="media-card-year">' + year + '</span>' +
                 '<span class="media-card-rating" style="font-size: 12px; color: #94a3b8;">' + statusLabel + '</span>' +
-                '</div>' +
-                '<div class="movie-hunt-collection-actions" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">' + removeHtml + '</div></div>';
-            
-            // Remove button: stop propagation so card click doesn't fire
-            var removeBtn = card.querySelector('.btn-remove-from-collection');
-            if (removeBtn) removeBtn.onclick = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                self.removeFromCollection(removeBtn.getAttribute('data-title') || '', removeBtn.getAttribute('data-year') || '');
-            };
+                '</div></div>';
 
-            // Click anywhere on card opens detail page (except Remove button)
+            // Click anywhere on card opens detail page
             if (item.tmdb_id && window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
                 card.style.cursor = 'pointer';
-                card.onclick = function(e) {
-                    if (removeBtn && (e.target === removeBtn || removeBtn.contains(e.target))) return;
-                    e.preventDefault();
+                card.onclick = function() {
                     var movieData = {
                         tmdb_id: item.tmdb_id,
                         id: item.tmdb_id,

@@ -18,11 +18,11 @@ alwaysApply: true
 - Test both Docker and local environments (port 9705)
 
 ### UNRAID DEPLOYMENT (huntarr-moviehunt) — ALWAYS AFTER CODE CHANGES
+- **Always deploy our LOCAL build, never pull from Docker Hub.** Use `./unraid/deploy-with-build.exp`, which copies this repo’s source to Unraid, builds the image there, and runs it. Do **not** use `deploy-moviehunt-with-mounts.exp` or `deploy-moviehunt.exp` for normal deploys—those scripts run `huntarr/huntarr:latest` from Docker Hub, which is a published release and is not this repo’s current code.
 - **Deploy target: always Unraid unless the user explicitly says to do it locally.** When they ask to deploy, redeploy, or run the container, use Unraid. Only use local Docker when they say "local" or "run it locally". If Unraid deploy fails, then run local Docker.
 - **ALWAYS redeploy to Unraid after making code changes** (run `./unraid/deploy-with-build.exp`). Do not wait for the user to ask.
 - When the user asks to **deploy**, **redeploy**, or **deploy the Huntarr container to Unraid**, they mean the **huntarr-moviehunt** test container on Unraid (10.0.0.10).
-- Use the project’s Unraid scripts: `./unraid/deploy-with-build.exp` (default), `./unraid/deploy-moviehunt-with-mounts.exp` for full deploy with volume mounts, or `./unraid/deploy-moviehunt.exp` for appdata-only.
-- Default full deploy: `cd /Users/home/Huntarr/Huntarr.io && ./unraid/deploy-with-build.exp`
+- Unraid deploy command: `cd /Users/home/Huntarr/Huntarr.io && ./unraid/deploy-with-build.exp` (builds from source on Unraid; same volume mounts as the other scripts).
 - Connection/details live in `./unraid/` (README, DEPLOYMENT.md, STATUS.md, TESTING-GUIDE.md). The `./unraid/` directory is git-ignored.
 
 ### VERSION MANAGEMENT

@@ -1,7 +1,6 @@
 /**
- * Movie Hunt - standalone styles (no Requestarr dependency for layout).
- * Shared card/grid classes (.media-card, .media-grid) still come from requestarr-discover.css
- * when the Movie Hunt section is shown.
+ * Movie Hunt - standalone styles. Does not use requestarr-discover.css.
+ * All card, grid, filter, and control styles are defined here for the Movie Hunt section only.
  */
 
 /* Beta notice bubble */
@@ -152,4 +151,490 @@
 
 #movie-hunt-collection-view .btn-remove-from-collection:hover {
     background: rgba(239, 68, 68, 0.3);
+}
+
+/* ========== Movie Hunt standalone: cards, grid, controls (no requestarr-discover) ========== */
+#movie-hunt-section .requestarr-content {
+    padding: 0 30px 20px 30px;
+    width: 100%;
+    box-sizing: border-box;
+}
+#movie-hunt-section .requestarr-view { display: block; }
+#movie-hunt-section .requestarr-view[style*="none"] { display: none !important; }
+
+#movie-hunt-section .global-search-bar {
+    position: relative;
+    width: 100%;
+    margin-bottom: 8px;
+}
+#movie-hunt-section .global-search-bar i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 18px;
+}
+#movie-hunt-section .global-search-bar input {
+    width: 100%;
+    padding: 16px 20px 16px 55px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+#movie-hunt-section .global-search-bar input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    background: rgba(255, 255, 255, 0.12);
+}
+#movie-hunt-section .search-results-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: #e0e0e0;
+}
+#movie-hunt-section .search-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+    padding: 0;
+    width: 100%;
+    justify-items: start;
+}
+#movie-hunt-section .movies-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    margin: 20px 0;
+    padding: 0 20px;
+    gap: 15px;
+}
+#movie-hunt-section .instance-selector-container { flex-shrink: 0; }
+#movie-hunt-section .instance-select { min-width: 200px; }
+#movie-hunt-section .sort-dropdown { flex-shrink: 0; min-width: 250px; }
+#movie-hunt-section .control-select {
+    width: 100%;
+    padding: 10px 16px;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+}
+#movie-hunt-section .control-select:focus { outline: none; border-color: #f59e0b; }
+#movie-hunt-section .filter-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: auto;
+}
+#movie-hunt-section .filter-button:hover { background: #374151; border-color: #718096; }
+#movie-hunt-section .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+    padding: 0 20px 40px 20px;
+    min-height: 400px;
+    justify-items: start;
+}
+#movie-hunt-section .media-card {
+    flex: 0 0 150px;
+    cursor: pointer;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s, border 0.2s;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    position: relative;
+}
+#movie-hunt-section .media-card:hover {
+    transform: translateY(-5px) scale(1.05);
+    border-color: #f59e0b;
+}
+#movie-hunt-section .media-card-poster {
+    width: 150px;
+    height: 225px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
+}
+#movie-hunt-section .media-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.9) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 15px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 5;
+    pointer-events: none;
+}
+#movie-hunt-section .media-card:hover .media-card-overlay { opacity: 1; pointer-events: auto; }
+#movie-hunt-section .media-card-overlay-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+#movie-hunt-section .media-card-overlay-content { display: flex; flex-direction: column; gap: 8px; }
+#movie-hunt-section .media-card-overlay-year { font-size: 12px; color: rgba(255,255,255,0.7); }
+#movie-hunt-section .media-card-overlay-description {
+    font-size: 11px;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+#movie-hunt-section .media-card-request-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+#movie-hunt-section .media-card-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+#movie-hunt-section .media-card-status-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+#movie-hunt-section .media-card-status-badge i { color: #fff; font-size: 12px; }
+#movie-hunt-section .media-card-status-badge.complete {
+    background: #22c55e;
+    border: 2px solid #16a34a;
+}
+#movie-hunt-section .media-card-status-badge.available {
+    background: #3b82f6;
+    border: 2px solid #2563eb;
+}
+#movie-hunt-section .media-card-status-badge.partial {
+    background: #f97316;
+    border: 2px solid #ea580c;
+}
+#movie-hunt-section .media-card-status-badge.cooldown {
+    background: #ef4444;
+    border: 2px solid #dc2626;
+}
+#movie-hunt-section .media-card-status-badge.missing {
+    background: #eab308;
+    border: 2px solid #ca8a04;
+}
+#movie-hunt-section .media-card.in-cooldown .media-card-request-btn,
+#movie-hunt-section .media-card.in-library .media-card-request-btn { display: none; }
+#movie-hunt-section .media-card-info { padding: 10px; }
+#movie-hunt-section .media-card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#movie-hunt-section .media-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #888;
+    gap: 8px;
+}
+#movie-hunt-section .media-card-year { color: #888; flex-shrink: 0; }
+#movie-hunt-section .media-card-rating { display: flex; align-items: center; gap: 4px; color: #fbbf24; }
+#movie-hunt-section .loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #9ca3af;
+}
+#movie-hunt-section .load-more-container { display: flex; justify-content: center; padding: 20px; }
+@media (max-width: 768px) {
+    #movie-hunt-section .media-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 15px;
+    }
+    #movie-hunt-section .movies-controls { flex-direction: column; align-items: stretch; }
+    #movie-hunt-section .filter-button { margin-left: 0; }
+}
+
+/* Movie Hunt filter panel (id stays when moved to body) */
+#movie-hunt-filter-modal.filter-panel {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 10000;
+}
+#movie-hunt-filter-modal .filter-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+}
+#movie-hunt-filter-modal .filter-panel-content {
+    position: absolute;
+    right: 0; top: 0;
+    height: 100%;
+    width: 100%;
+    max-width: 440px;
+    background: #1a1d2e;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.15s cubic-bezier(0.4,0,0.2,1);
+}
+#movie-hunt-filter-modal[style*="flex"] .filter-panel-content,
+#movie-hunt-filter-modal.show .filter-panel-content { transform: translateX(0); }
+#movie-hunt-filter-modal .filter-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 20px 24px;
+    padding-top: 70px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+}
+#movie-hunt-filter-modal .filter-panel-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #e5e7eb;
+    margin: 0;
+}
+#movie-hunt-filter-modal .filter-close {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 6px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+#movie-hunt-filter-modal .filter-close:hover {
+    color: #f59e0b;
+    background: rgba(245,158,11,0.1);
+}
+#movie-hunt-filter-modal .filter-panel-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+#movie-hunt-filter-modal .filter-active-badge {
+    margin-bottom: 20px;
+    padding: 10px 14px;
+    background: rgba(245,158,11,0.15);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 6px;
+    text-align: center;
+}
+#movie-hunt-filter-modal .filter-active-badge span {
+    color: #fbbf24;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+#movie-hunt-filter-modal .filter-group { margin-bottom: 24px; }
+#movie-hunt-filter-modal .filter-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #e5e7eb;
+    margin-bottom: 10px;
+}
+#movie-hunt-filter-modal .filter-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 12px;
+    background: rgba(31,41,55,0.3);
+    border: 1px solid rgba(75,85,99,0.3);
+    border-radius: 8px;
+}
+#movie-hunt-filter-modal .filter-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #f59e0b;
+}
+#movie-hunt-filter-modal .filter-toggle-text { color: #e5e7eb; font-size: 0.9rem; }
+#movie-hunt-filter-modal .filter-range-text {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: rgba(31,41,55,0.3);
+    border-radius: 4px;
+    text-align: center;
+}
+#movie-hunt-filter-modal .dual-range-slider {
+    position: relative;
+    height: 30px;
+    display: flex;
+    align-items: center;
+}
+#movie-hunt-filter-modal .slider-track {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background: rgba(75,85,99,0.4);
+    border-radius: 3px;
+    z-index: 1;
+}
+#movie-hunt-filter-modal .slider-range {
+    position: absolute;
+    height: 6px;
+    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 3px;
+    z-index: 2;
+}
+#movie-hunt-filter-modal .dual-range-slider input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background: transparent;
+    pointer-events: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+#movie-hunt-filter-modal .dual-range-slider .range-max,
+#movie-hunt-filter-modal .dual-range-slider .range-min { background: transparent; }
+#movie-hunt-filter-modal .dual-range-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    border: 2px solid #1a1d2e;
+    box-shadow: 0 2px 8px rgba(245,158,11,0.4);
+    position: relative;
+    z-index: 3;
+}
+#movie-hunt-filter-modal .dual-range-slider input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+    border: 2px solid #1a1d2e;
+    position: relative;
+    z-index: 3;
+}
+#movie-hunt-filter-modal .selected-genres-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: rgba(31,41,55,0.3);
+    border-radius: 6px;
+    min-height: 38px;
+}
+#movie-hunt-filter-modal .selected-genre-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(245,158,11,0.2);
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    color: #fbbf24;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+#movie-hunt-filter-modal .selected-genre-pill .remove-genre {
+    cursor: pointer;
+    color: #fbbf24;
+    font-size: 14px;
+}
+#movie-hunt-filter-modal .genre-select-wrapper { position: relative; }
+#movie-hunt-filter-modal .genre-search-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(31,41,55,0.5);
+    border: 1px solid rgba(75,85,99,0.5);
+    border-radius: 6px;
+    color: #e5e7eb;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+#movie-hunt-filter-modal .genre-dropdown {
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    margin-top: 4px;
+    background: #1f2937;
+    border: 1px solid rgba(75,85,99,0.5);
+    border-radius: 6px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    z-index: 100;
+    max-height: 250px;
+    overflow-y: auto;
+}
+#movie-hunt-filter-modal .genre-list { padding: 6px; }
+#movie-hunt-filter-modal .genre-item {
+    padding: 10px 12px;
+    color: #9ca3af;
+    font-size: 0.875rem;
+    cursor: pointer;
+    border-radius: 4px;
+    user-select: none;
+}
+#movie-hunt-filter-modal .genre-item:hover {
+    background: rgba(245,158,11,0.1);
+    color: #e5e7eb;
+}
+#movie-hunt-filter-modal .genre-item.selected {
+    background: rgba(245,158,11,0.2);
+    color: #fbbf24;
+    font-weight: 600;
+}
+@media (max-width: 768px) {
+    #movie-hunt-filter-modal .filter-panel-content { max-width: 100%; }
 }

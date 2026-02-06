@@ -3260,6 +3260,45 @@ def api_movie_hunt_remote_mappings_delete(index):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+def _normalize_title_for_key(title):
+    """Normalize title for matching (e.g. 'Demon Slayer: X' and 'Demon Slayer X' -> same key)."""
+    if not title:
+        return ''
+    import re
+    s = (title or '').strip().lower()
+    s = re.sub(r'[^\w\s]', '', s)  # remove punctuation
+    s = ' '.join(s.split())
+    return s
+
+
+def _dedupe_collection_items(combined):
+    """Merge duplicates: one entry per (tmdb_id) or (normalized_title, year). Prefer available, merge poster/tmdb."""
+    by_key = {}
+    for item in combined:
+        title = (item.get('title') or '').strip()
+        year = str(item.get('year') or '').strip()
+        tmdb_id = item.get('tmdb_id')
+        try:
+            if tmdb_id is not None:
+                tmdb_id = int(tmdb_id)
+        except (TypeError, ValueError):
+            tmdb_id = None
+        key = (tmdb_id,) if tmdb_id is not None else (_normalize_title_for_key(title), year)
+        if key not in by_key:
+            by_key[key] = dict(item)
+        else:
+            existing = by_key[key]
+            if (item.get('status') or '').lower() == 'available':
+                existing['status'] = 'available'
+            if (item.get('poster_path') or '').strip():
+                existing['poster_path'] = item.get('poster_path') or existing.get('poster_path') or ''
+            if item.get('tmdb_id') is not None:
+                existing['tmdb_id'] = item.get('tmdb_id')
+            if (item.get('title') or '').strip() and len((item.get('title') or '').strip()) > len((existing.get('title') or '').strip()):
+                existing['title'] = item.get('title')
+    return list(by_key.values())
+
+
 def _sort_collection_items(items, sort_key):
     """Sort collection list by sort_key: title.asc, title.desc, year.asc, year.desc, status.asc, status.desc."""
     if not items or not sort_key:
@@ -3298,23 +3337,37 @@ def api_movie_hunt_collection_list():
                 'requested_at': '',
             })
         # 2) Merge requested list: enrich detected with poster/tmdb; add requested-only as 'requested'
+        # Use normalized (title, year) so "Demon Slayer: X" matches "Demon Slayer X" from disk
         requested_list = _get_collection_config()
-        combined_key_set = {((item.get('title') or '').strip().lower(), (item.get('year') or '').strip()) for item in combined}
+        combined_key_set = {(_normalize_title_for_key(item.get('title')), str(item.get('year') or '').strip()) for item in combined}
+        combined_tmdb_set = {item.get('tmdb_id') for item in combined if item.get('tmdb_id') is not None}
         for req in requested_list:
             if not isinstance(req, dict):
                 continue
             title = (req.get('title') or '').strip()
             year = str(req.get('year') or '').strip()
-            key_lower = title.lower()
-            if (key_lower, year) in combined_key_set:
-                # Already in combined (detected); enrich with poster/tmdb from requested
+            norm_key = (_normalize_title_for_key(title), year)
+            req_tmdb = req.get('tmdb_id')
+            try:
+                if req_tmdb is not None:
+                    req_tmdb = int(req_tmdb)
+            except (TypeError, ValueError):
+                req_tmdb = None
+            matched = False
+            if norm_key in combined_key_set:
                 for c in combined:
-                    if (c.get('title') or '').strip().lower() == key_lower and str(c.get('year') or '') == year:
+                    if (_normalize_title_for_key(c.get('title')), str(c.get('year') or '').strip()) == norm_key:
                         c['poster_path'] = req.get('poster_path') or c.get('poster_path') or ''
-                        c['tmdb_id'] = req.get('tmdb_id') if req.get('tmdb_id') is not None else c.get('tmdb_id')
+                        c['tmdb_id'] = req_tmdb if req_tmdb is not None else c.get('tmdb_id')
+                        matched = True
                         break
-            else:
-                # Requested but not on disk
+            if not matched and req_tmdb is not None and req_tmdb in combined_tmdb_set:
+                for c in combined:
+                    if c.get('tmdb_id') == req_tmdb:
+                        c['poster_path'] = req.get('poster_path') or c.get('poster_path') or ''
+                        matched = True
+                        break
+            if not matched:
                 combined.append({
                     'title': title,
                     'year': year,
@@ -3324,21 +3377,19 @@ def api_movie_hunt_collection_list():
                     'root_folder': req.get('root_folder') or '',
                     'requested_at': req.get('requested_at') or '',
                 })
+        # 2b) Deduplicate: one entry per movie (by tmdb_id or normalized title+year)
+        combined = _dedupe_collection_items(combined)
         # 3) Persist 'available' back to requested items that we detected (so discover/Home stay in sync)
         items_full = _get_collection_config()
         collection_updated = False
-        detected_key_set = set()
-        for d in detected_list:
-            t = (d.get('title') or '').strip().lower()
-            y = (d.get('year') or '').strip()
-            if t:
-                detected_key_set.add((t, y))
+        detected_key_set = {(_normalize_title_for_key(d.get('title')), str(d.get('year') or '').strip()) for d in detected_list}
         for i, full_item in enumerate(items_full):
             if not isinstance(full_item, dict):
                 continue
-            t = (full_item.get('title') or '').strip().lower()
+            t = (full_item.get('title') or '').strip()
             y = str(full_item.get('year') or '').strip()
-            if (t, y) in detected_key_set and (full_item.get('status') or '').lower() != 'available':
+            norm_key = (_normalize_title_for_key(t), y)
+            if norm_key in detected_key_set and (full_item.get('status') or '').lower() != 'available':
                 items_full[i]['status'] = 'available'
                 collection_updated = True
         if collection_updated:
