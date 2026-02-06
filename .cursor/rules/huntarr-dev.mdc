@@ -20,6 +20,12 @@ alwaysApply: true
 - Test in both Docker and local environments
 - Docker uses port 9705, local testing uses port 9706 to avoid conflicts
 
+### UNRAID DEPLOYMENT (huntarr-moviehunt)
+- When the user asks to **deploy**, **redeploy**, or **deploy the Huntarr container to Unraid**, they mean the **huntarr-moviehunt** test container on Unraid (10.0.0.10).
+- Use the project’s Unraid scripts: `./unraid/deploy-moviehunt-with-mounts.exp` for full deploy with volume mounts, or `./unraid/deploy-moviehunt.exp` for appdata-only.
+- Default full deploy: `cd /Users/home/Huntarr/Huntarr.io && ./unraid/deploy-moviehunt-with-mounts.exp`
+- Connection/details live in `./unraid/` (README, DEPLOYMENT.md, STATUS.md, TESTING-GUIDE.md). The `./unraid/` directory is git-ignored.
+
 ### VERSION MANAGEMENT
 - Version bumps should ONLY occur when merging to main branch
 - Work on feature branches without bumping version.txt
