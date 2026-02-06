@@ -2717,14 +2717,33 @@ def _movie_hunt_collection_lookups():
 def api_movie_hunt_discover_movies():
     """
     Movie Hunt–only discover: TMDB discover/movie with in_library and in_cooldown from Movie Hunt collection.
-    No Radarr or Requestarr. Same response shape as Requestarr discover for frontend compatibility.
+    Accepts same filter params as Requestarr discover (genres, year, runtime, rating, votes, hide_available).
     """
     try:
         page = max(1, request.args.get('page', 1, type=int))
         sort_by = (request.args.get('sort_by') or 'popularity.desc').strip()
+        hide_available = request.args.get('hide_available', 'false').lower() == 'true'
         api_key = _get_tmdb_api_key_movie_hunt()
         url = 'https://api.themoviedb.org/3/discover/movie'
         params = {'api_key': api_key, 'page': page, 'sort_by': sort_by}
+        if request.args.get('with_genres'):
+            params['with_genres'] = request.args.get('with_genres')
+        if request.args.get('release_date.gte'):
+            params['release_date.gte'] = request.args.get('release_date.gte')
+        if request.args.get('release_date.lte'):
+            params['release_date.lte'] = request.args.get('release_date.lte')
+        if request.args.get('with_runtime.gte'):
+            params['with_runtime.gte'] = request.args.get('with_runtime.gte')
+        if request.args.get('with_runtime.lte'):
+            params['with_runtime.lte'] = request.args.get('with_runtime.lte')
+        if request.args.get('vote_average.gte'):
+            params['vote_average.gte'] = request.args.get('vote_average.gte')
+        if request.args.get('vote_average.lte'):
+            params['vote_average.lte'] = request.args.get('vote_average.lte')
+        if request.args.get('vote_count.gte'):
+            params['vote_count.gte'] = request.args.get('vote_count.gte')
+        if request.args.get('vote_count.lte'):
+            params['vote_count.lte'] = request.args.get('vote_count.lte')
         r = requests.get(url, params=params, timeout=10)
         r.raise_for_status()
         data = r.json()
@@ -2766,6 +2785,8 @@ def api_movie_hunt_discover_movies():
                 'in_cooldown': in_cooldown,
                 'partial': False,
             })
+        if hide_available:
+            results = [r for r in results if not r.get('in_library')]
         has_more = (data.get('total_pages') or 0) >= page + 1
         return jsonify({
             'results': results,

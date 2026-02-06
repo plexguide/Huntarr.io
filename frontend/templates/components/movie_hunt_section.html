@@ -150,4 +150,78 @@
             </div>
         </div>
     </div>
+
+    <!-- Movie Hunt Filters Side Panel (same structure as Requestarr movies filters) -->
+    <div id="movie-hunt-filter-modal" class="filter-panel" style="display: none;">
+        <div class="filter-backdrop" id="movie-hunt-filter-backdrop"></div>
+        <div class="filter-panel-content">
+            <div class="filter-panel-header">
+                <h2>Filters</h2>
+                <button type="button" class="filter-close" id="movie-hunt-filter-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="filter-panel-body">
+                <div class="filter-active-badge">
+                    <span id="movie-hunt-filter-active-count">0 Active Filters</span>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-toggle-label">
+                        <input type="checkbox" id="movie-hunt-hide-available-movies" class="filter-checkbox">
+                        <span class="filter-toggle-text">Hide Available Movies</span>
+                    </label>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Genres</label>
+                    <div class="selected-genres-container" id="movie-hunt-selected-genres" style="display: none;"></div>
+                    <div class="genre-select-wrapper">
+                        <input type="text" id="movie-hunt-genre-search-input" class="genre-search-input" placeholder="Select genres..." readonly>
+                        <div id="movie-hunt-genre-dropdown" class="genre-dropdown" style="display: none;">
+                            <div id="movie-hunt-genre-list" class="genre-list"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Release Year</label>
+                    <div class="filter-range-text" id="movie-hunt-year-display">Movies from 1900 to 2029</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="movie-hunt-year-range"></div>
+                        <input type="range" id="movie-hunt-filter-year-min" class="range-min" value="1900" min="1900" max="2029" step="1">
+                        <input type="range" id="movie-hunt-filter-year-max" class="range-max" value="2029" min="1900" max="2029" step="1">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Runtime</label>
+                    <div class="filter-range-text" id="movie-hunt-runtime-display">0-400 minute runtime</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="movie-hunt-runtime-range"></div>
+                        <input type="range" id="movie-hunt-filter-runtime-min" class="range-min" value="0" min="0" max="400" step="1">
+                        <input type="range" id="movie-hunt-filter-runtime-max" class="range-max" value="400" min="0" max="400" step="1">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">TMDB User Score</label>
+                    <div class="filter-range-text" id="movie-hunt-rating-display">Ratings between 0 and 10</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="movie-hunt-rating-range"></div>
+                        <input type="range" id="movie-hunt-filter-rating-min" class="range-min" value="0" min="0" max="10" step="0.1">
+                        <input type="range" id="movie-hunt-filter-rating-max" class="range-max" value="10" min="0" max="10" step="0.1">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">TMDB User Vote Count</label>
+                    <div class="filter-range-text" id="movie-hunt-votes-display">Number of votes between 0 and 10000</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="movie-hunt-votes-range"></div>
+                        <input type="range" id="movie-hunt-filter-votes-min" class="range-min" value="0" min="0" max="10000" step="10">
+                        <input type="range" id="movie-hunt-filter-votes-max" class="range-max" value="10000" min="0" max="10000" step="10">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

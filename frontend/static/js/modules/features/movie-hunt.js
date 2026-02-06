@@ -31,6 +31,9 @@
             this.setupSearch();
             this.setupSort();
             this.setupFilterButton();
+            if (window.MovieHuntFilters && window.MovieHuntFilters.init) {
+                window.MovieHuntFilters.init();
+            }
             if (!this._requestModalSetup) {
                 this.setupRequestModal();
                 this._requestModalSetup = true;
@@ -388,10 +391,11 @@
 
         setupFilterButton() {
             const btn = document.getElementById('movie-hunt-filter-btn');
-            const countEl = document.getElementById('movie-hunt-filter-count');
-            if (btn && countEl) {
+            if (btn) {
                 btn.addEventListener('click', () => {
-                    if (countEl) countEl.textContent = '0 Active Filters';
+                    if (window.MovieHuntFilters && window.MovieHuntFilters.openFiltersModal) {
+                        window.MovieHuntFilters.openFiltersModal();
+                    }
                 });
             }
         },
@@ -416,7 +420,13 @@
 
             try {
                 // Movie Hunt–only discover: no Radarr/Requestarr. Status from Movie Hunt collection.
-                let url = `./api/movie-hunt/discover/movies?page=${page}&sort_by=${encodeURIComponent(this.getSortParam())}&_=${Date.now()}`;
+                let url = `./api/movie-hunt/discover/movies?page=${page}&_=${Date.now()}`;
+                const filterParams = (window.MovieHuntFilters && window.MovieHuntFilters.getFilterParams) ? window.MovieHuntFilters.getFilterParams() : '';
+                if (filterParams) {
+                    url += '&' + filterParams;
+                } else {
+                    url += '&sort_by=' + encodeURIComponent(this.getSortParam());
+                }
 
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
