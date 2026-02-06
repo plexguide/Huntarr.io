@@ -37,7 +37,7 @@ html, body {
 
 /* FORCE TOP BAR TO STAY VISIBLE AND FIXED HEIGHT */
 .top-bar {
-    height: 60px !important;
+    height: 48px !important;
     flex-shrink: 0 !important;
     display: flex !important;
     background-color: var(--topbar-bg) !important;
@@ -83,7 +83,7 @@ html, body {
     /* CRITICAL: Keep top-bar visible on mobile */
     .top-bar {
         display: flex !important;
-        height: 60px !important;
+        height: 48px !important;
         flex-shrink: 0 !important;
     }
     

@@ -127,7 +127,7 @@ button {
 
 /* Top Bar */
 .top-bar {
-    height: 60px;
+    height: 48px;
     background-color: var(--topbar-bg);
     display: flex;
     justify-content: space-between;

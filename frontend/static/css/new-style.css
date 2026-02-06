@@ -644,7 +644,7 @@ select.form-control {
 
 /* Top Bar */
 .top-bar {
-    height: 60px;
+    height: 48px;
     background: linear-gradient(135deg, #1e2738 0%, #0e1420 50%, #101824 75%, rgba(18, 25, 38, 0.95) 100%);
     background-size: 100% 100%;
     display: flex;
@@ -2124,7 +2124,7 @@ input:checked + .toggle-slider:before {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: calc(100% - 60px); /* Adjust based on header height */
+    height: calc(100% - 48px); /* Adjust based on header height */
 }
 
 .message-container {
