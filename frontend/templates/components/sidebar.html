@@ -1155,14 +1155,12 @@
             selector = '#huntManagerNav';
             var systemSub = document.getElementById('system-sub');
             if (systemSub) systemSub.classList.add('expanded');
-            var sysNav = document.getElementById('systemNav');
-            if (sysNav) sysNav.classList.add('active');
+            // Don't highlight System parent - sub-item (Hunt Manager) is enough
         } else if (currentHash === '#logs') {
             selector = '#logsNav';
             var systemSub = document.getElementById('system-sub');
             if (systemSub) systemSub.classList.add('expanded');
-            var sysNav = document.getElementById('systemNav');
-            if (sysNav) sysNav.classList.add('active');
+            // Don't highlight System parent - sub-item (Logs) is enough
         } else if (currentHash === '#apps' || currentHash === '#sonarr' || currentHash === '#instance-editor') {
             selector = '#appsNav';
         } else if (currentHash === '#swaparr') {
