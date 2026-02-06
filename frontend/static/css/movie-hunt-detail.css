@@ -6,7 +6,7 @@
 /* Detail View Container - Positioned within main content area */
 .movie-detail-view {
     position: fixed;
-    top: 0;
+    top: 60px; /* Top bar height */
     left: 250px; /* Sidebar width */
     right: 0;
     bottom: 0;
@@ -24,6 +24,7 @@
 @media (max-width: 768px) {
     .movie-detail-view {
         left: 0; /* Full width on mobile */
+        top: 60px; /* Keep top bar visible on mobile too */
     }
 }
 
