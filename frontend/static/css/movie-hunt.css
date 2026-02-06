@@ -4,6 +4,39 @@
  * when the Movie Hunt section is shown.
  */
 
+/* Beta notice bubble */
+.movie-hunt-beta-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 10px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.92);
+}
+.movie-hunt-beta-notice i.fa-flask {
+    color: #f59e0b;
+    font-size: 1.1em;
+    flex-shrink: 0;
+}
+.movie-hunt-beta-notice span {
+    flex: 1;
+    min-width: 0;
+}
+.movie-hunt-beta-notice a {
+    color: #fbbf24;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.movie-hunt-beta-notice a:hover {
+    text-decoration: underline;
+}
+
 /* Request modal: show close button (requestarr-discover hides .modal-close-btn) */
 #movie-hunt-request-modal .modal-close-btn {
     display: flex !important;
