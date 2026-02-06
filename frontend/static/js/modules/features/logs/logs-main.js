@@ -299,9 +299,10 @@ window.LogsModule = {
         if (logAppSelect) logAppSelect.value = app;
         
         // Update the current log app text with proper capitalization
-        let displayName = app.charAt(0).toUpperCase() + app.slice(1);
+        let displayName = app.charAt(0).toUpperCase() + app.slice(1).replace(/_/g, ' ');
         if (app === 'whisparr') displayName = 'Whisparr V2';
         else if (app === 'eros') displayName = 'Whisparr V3';
+        else if (app === 'movie_hunt') displayName = 'Movie Hunt';
 
         if (this.elements.currentLogApp) this.elements.currentLogApp.textContent = displayName;
         
@@ -325,9 +326,10 @@ window.LogsModule = {
         if (logAppSelect) logAppSelect.value = app;
         
         // Update the current log app text with proper capitalization
-        let displayName = app.charAt(0).toUpperCase() + app.slice(1);
+        let displayName = app.charAt(0).toUpperCase() + app.slice(1).replace(/_/g, ' ');
         if (app === 'whisparr') displayName = 'Whisparr V2';
         else if (app === 'eros') displayName = 'Whisparr V3';
+        else if (app === 'movie_hunt') displayName = 'Movie Hunt';
 
         if (this.elements.currentLogApp) this.elements.currentLogApp.textContent = displayName;
         

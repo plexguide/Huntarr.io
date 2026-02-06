@@ -1351,7 +1351,7 @@ def _get_download_client_queue(client):
             params = {'mode': 'queue', 'output': 'json'}
             if api_key:
                 params['apikey'] = api_key
-            movie_hunt_logger.info("Queue: requesting SABnzbd queue from %s (%s)", name, base_url)
+            movie_hunt_logger.debug("Queue: requesting SABnzbd queue from %s (%s)", name, base_url)
             try:
                 r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
                 r.raise_for_status()
@@ -1376,7 +1376,7 @@ def _get_download_client_queue(client):
             else:
                 slots = []
             if not slots and (data.get('queue') or data):
-                movie_hunt_logger.info("Queue: SABnzbd %s returned 0 slots (response keys: %s)", name, list(data.keys()))
+                movie_hunt_logger.debug("Queue: SABnzbd %s returned 0 slots (response keys: %s)", name, list(data.keys()))
             for slot in slots:
                 if not isinstance(slot, dict):
                     continue
@@ -1622,13 +1622,13 @@ def _get_activity_queue():
     if not enabled:
         movie_hunt_logger.info("Queue: no download clients configured or enabled. Add SABnzbd/NZBGet in Settings → Movie Hunt → Clients (total in config: %s).", len(clients))
         return [], 0
-    movie_hunt_logger.info("Queue: fetching from %s download client(s)", len(enabled))
+    movie_hunt_logger.debug("Queue: fetching from %s download client(s)", len(enabled))
     all_items = []
     for client in enabled:
         items = _get_download_client_queue(client)
         all_items.extend(items)
     if all_items:
-        movie_hunt_logger.info("Queue: returning %s item(s) from download client(s)", len(all_items))
+        movie_hunt_logger.debug("Queue: returning %s item(s) from download client(s)", len(all_items))
     else:
         movie_hunt_logger.debug("Queue: no items in download client(s)")
     return all_items, len(all_items)

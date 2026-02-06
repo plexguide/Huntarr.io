@@ -112,7 +112,7 @@ let huntarrUI = {
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user' || this.currentSection === 'settings-logs') {
             console.log('[huntarrUI] Initialization - showing settings sidebar');
             this.showSettingsSidebar();
-        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-root-folders') {
+        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings') {
@@ -509,7 +509,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs'];
+            const noRefreshSections = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -565,48 +565,41 @@ let huntarrUI = {
             this.loadSwaparrStatus();
             // Stats are already loaded, no need to reload unless data changed
             // this.loadMediaStats();
-        } else if (section === 'logs' && this.elements.logsSection) {
+        } else if ((section === 'logs' || section === 'logs-movie-hunt') && this.elements.logsSection) {
+            var activitySection = document.getElementById('activitySection');
+            if (activitySection) { activitySection.classList.remove('active'); activitySection.style.display = 'none'; }
             this.elements.logsSection.classList.add('active');
             this.elements.logsSection.style.display = 'block';
-            if (this.elements.logsNav) this.elements.logsNav.classList.add('active');
-            var systemSub = document.getElementById('system-sub');
-            if (systemSub) systemSub.classList.add('expanded');
+            if (section === 'logs') {
+                if (this.elements.logsNav) this.elements.logsNav.classList.add('active');
+                var systemSub = document.getElementById('system-sub');
+                if (systemSub) systemSub.classList.add('expanded');
+                localStorage.removeItem('huntarr-settings-sidebar');
+                this.showMainSidebar();
+            } else {
+                // logs-movie-hunt: keep Movie Hunt sidebar, set app filter to Movie Hunt
+                this.showMovieHuntSidebar();
+                var logAppSelect = document.getElementById('logAppSelect');
+                if (logAppSelect) logAppSelect.value = 'movie_hunt';
+                if (window.LogsModule) window.LogsModule.currentLogApp = 'movie_hunt';
+            }
             newTitle = 'Logs';
-            this.currentSection = 'logs';
+            this.currentSection = section;
             if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
                 window.LogsModule.updateDebugLevelVisibility();
             }
             
-            // Show main sidebar for main sections and clear settings sidebar preference
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
-            
-            // Comprehensive LogsModule debugging
-            console.log('[huntarrUI] === LOGS SECTION DEBUG START ===');
-            console.log('[huntarrUI] window object keys:', Object.keys(window).filter(k => k.includes('Log')));
-            console.log('[huntarrUI] window.LogsModule exists:', !!window.LogsModule);
-            console.log('[huntarrUI] window.LogsModule type:', typeof window.LogsModule);
-            
             if (window.LogsModule) {
-                console.log('[huntarrUI] LogsModule methods:', Object.keys(window.LogsModule));
-                console.log('[huntarrUI] LogsModule.init type:', typeof window.LogsModule.init);
-                console.log('[huntarrUI] LogsModule.connectToLogs type:', typeof window.LogsModule.connectToLogs);
-                
                 try {
-                    console.log('[huntarrUI] Calling LogsModule.init()...');
-                    window.LogsModule.init();
-                    console.log('[huntarrUI] LogsModule.init() completed successfully');
-                    
-                    // LogsModule will handle its own connection - don't interfere with pagination
-                    console.log('[huntarrUI] LogsModule initialized - letting it handle its own connections');
+                    if (window.LogsModule.initialized) {
+                        window.LogsModule.connectToLogs();
+                    } else {
+                        window.LogsModule.init();
+                    }
                 } catch (error) {
                     console.error('[huntarrUI] Error during LogsModule calls:', error);
                 }
-            } else {
-                console.error('[huntarrUI] LogsModule not found - logs functionality unavailable');
-                console.log('[huntarrUI] Available window properties:', Object.keys(window).slice(0, 20));
             }
-            console.log('[huntarrUI] === LOGS SECTION DEBUG END ===');
         } else if (section === 'hunt-manager' && document.getElementById('huntManagerSection')) {
             document.getElementById('huntManagerSection').classList.add('active');
             document.getElementById('huntManagerSection').style.display = 'block';
