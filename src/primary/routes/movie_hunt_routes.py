@@ -919,6 +919,7 @@ def _get_sabnzbd_history_item(client, queue_id):
     """
     Get a specific item from SABnzbd history by nzo_id.
     Returns dict with status, storage (path), name, category or None if not found.
+    SAB may return history.slots as list or dict keyed by nzo_id; we normalize and compare as string.
     """
     try:
         base_url = _download_client_base_url(client)
@@ -926,13 +927,8 @@ def _get_sabnzbd_history_item(client, queue_id):
             return None
         
         api_key = (client.get('api_key') or '').strip()
-        
         url = f"{base_url}/api"
-        params = {
-            'mode': 'history',
-            'output': 'json',
-            'limit': 100  # Check last 100 items
-        }
+        params = {'mode': 'history', 'output': 'json', 'limit': 100}
         if api_key:
             params['apikey'] = api_key
         
@@ -943,16 +939,34 @@ def _get_sabnzbd_history_item(client, queue_id):
         r.raise_for_status()
         data = r.json()
         
-        slots = data.get('history', {}).get('slots', [])
+        raw_slots = data.get('history', {}).get('slots', [])
+        if isinstance(raw_slots, dict):
+            slots = list(raw_slots.values())
+        elif isinstance(raw_slots, list):
+            slots = raw_slots
+        else:
+            slots = []
+        
+        queue_id_str = str(queue_id).strip()
         for slot in slots:
-            if slot.get('nzo_id') == queue_id:
+            if not isinstance(slot, dict):
+                continue
+            slot_id = slot.get('nzo_id') or slot.get('id')
+            if slot_id is None:
+                continue
+            if str(slot_id).strip() == queue_id_str:
                 return {
-                    'status': slot.get('status', ''),  # 'Completed', 'Failed', etc.
-                    'storage': slot.get('storage', ''),  # Full path to download folder
+                    'status': slot.get('status', ''),
+                    'storage': slot.get('storage', ''),
                     'name': slot.get('name', ''),
                     'category': slot.get('category', '')
                 }
         
+        sample_ids = [str(s.get('nzo_id') or s.get('id')) for s in slots[:5] if isinstance(s, dict)]
+        movie_hunt_logger.info(
+            "Import: nzo_id %s not found in SAB history (history has %s entries). Sample ids: %s",
+            queue_id_str, len(slots), sample_ids
+        )
         return None
         
     except Exception as e:
@@ -988,11 +1002,18 @@ def _check_and_import_completed(client_name, queue_item):
             movie_hunt_logger.debug("Import: only SABnzbd supported (client type: %s)", client_type)
             return
         
-        # Query SABnzbd history for this item
+        movie_hunt_logger.info(
+            "Import: item left queue (nzo_id=%s, title='%s'). Checking SAB history for completed download.",
+            queue_id, title
+        )
         history_item = _get_sabnzbd_history_item(client, queue_id)
         
         if not history_item:
-            movie_hunt_logger.info("Queue: item %s ('%s') removed but not in history (user cancelled?)", queue_id, title)
+            movie_hunt_logger.warning(
+                "Import: item left queue but not found in SAB history (nzo_id=%s, title='%s'). "
+                "If the download completed in SAB, refresh the Queue page to trigger another check, or SAB may use a different id in history.",
+                queue_id, title
+            )
             return
         
         status = history_item.get('status', '')
@@ -1457,8 +1478,45 @@ def _delete_from_download_client(client, item_ids):
     return removed, err
 
 
+# Background poller: detect completed downloads without requiring user to open Queue page
+_movie_hunt_poller_thread = None
+_movie_hunt_poller_started = False
+_MOVIE_HUNT_POLL_INTERVAL_SEC = 90
+
+
+def _movie_hunt_poll_completions():
+    """Fetch queue from all clients to trigger prune/import check. Runs in background thread."""
+    try:
+        _get_activity_queue()
+    except Exception as e:
+        movie_hunt_logger.debug("Movie Hunt background poll: %s", e)
+
+
+def _ensure_movie_hunt_poller_started():
+    """Start the Movie Hunt completion poller thread once, so we detect completed downloads even when Queue page is not open."""
+    global _movie_hunt_poller_thread, _movie_hunt_poller_started
+    if _movie_hunt_poller_started:
+        return
+    import threading
+    _movie_hunt_poller_started = True
+
+    def _run():
+        import time
+        while True:
+            time.sleep(_MOVIE_HUNT_POLL_INTERVAL_SEC)
+            try:
+                _movie_hunt_poll_completions()
+            except Exception:
+                pass
+
+    _movie_hunt_poller_thread = threading.Thread(target=_run, daemon=True)
+    _movie_hunt_poller_thread.start()
+    movie_hunt_logger.info("Import: background poll started (every %s s) to detect completed downloads.", _MOVIE_HUNT_POLL_INTERVAL_SEC)
+
+
 def _get_activity_queue():
     """Fetch queue from Movie Hunt download clients only (SABnzbd/NZBGet). 100% independent of Radarr."""
+    _ensure_movie_hunt_poller_started()
     clients = _get_clients_config()
     enabled = [c for c in clients if c.get('enabled', True)]
     if not enabled:
