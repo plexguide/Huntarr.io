@@ -565,6 +565,8 @@ let huntarrUI = {
             this.elements.logsSection.classList.add('active');
             this.elements.logsSection.style.display = 'block';
             if (this.elements.logsNav) this.elements.logsNav.classList.add('active');
+            var systemSub = document.getElementById('system-sub');
+            if (systemSub) systemSub.classList.add('expanded');
             newTitle = 'Logs';
             this.currentSection = 'logs';
             if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
@@ -605,6 +607,8 @@ let huntarrUI = {
             document.getElementById('huntManagerSection').classList.add('active');
             document.getElementById('huntManagerSection').style.display = 'block';
             if (document.getElementById('huntManagerNav')) document.getElementById('huntManagerNav').classList.add('active');
+            var systemSub = document.getElementById('system-sub');
+            if (systemSub) systemSub.classList.add('expanded');
             newTitle = 'Hunt Manager';
             this.currentSection = 'hunt-manager';
             

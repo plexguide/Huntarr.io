@@ -45,18 +45,26 @@
                 </div>
                 <span>Requestarr</span>
             </a>
-            <a href="./#hunt-manager" class="nav-item" id="huntManagerNav">
+            <a href="./#hunt-manager" class="nav-item" id="systemNav">
                 <div class="nav-icon-wrapper">
-                    <i class="fas fa-crosshairs"></i>
+                    <i class="fas fa-laptop"></i>
                 </div>
-                <span>Hunt Manager</span>
+                <span>System</span>
             </a>
-            <a href="./#logs" class="nav-item" id="logsNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-list-alt"></i>
-                </div>
-                <span>Logs</span>
-            </a>
+            <div class="nav-sub-group" id="system-sub">
+                <a href="./#hunt-manager" class="nav-item nav-item-sub" id="huntManagerNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-crosshairs"></i>
+                    </div>
+                    <span>Hunt Manager</span>
+                </a>
+                <a href="./#logs" class="nav-item nav-item-sub" id="logsNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-list-alt"></i>
+                    </div>
+                    <span>Logs</span>
+                </a>
+            </div>
             <a href="./#settings" class="nav-item" id="settingsNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-cog"></i>
@@ -1145,8 +1153,16 @@
             selector = '#homeNav';
         } else if (currentHash === '#hunt-manager') {
             selector = '#huntManagerNav';
+            var systemSub = document.getElementById('system-sub');
+            if (systemSub) systemSub.classList.add('expanded');
+            var sysNav = document.getElementById('systemNav');
+            if (sysNav) sysNav.classList.add('active');
         } else if (currentHash === '#logs') {
             selector = '#logsNav';
+            var systemSub = document.getElementById('system-sub');
+            if (systemSub) systemSub.classList.add('expanded');
+            var sysNav = document.getElementById('systemNav');
+            if (sysNav) sysNav.classList.add('active');
         } else if (currentHash === '#apps' || currentHash === '#sonarr' || currentHash === '#instance-editor') {
             selector = '#appsNav';
         } else if (currentHash === '#swaparr') {
@@ -1232,6 +1248,11 @@
         const activeItem = document.querySelector(selector);
         if (activeItem) {
             activeItem.classList.add('active');
+        }
+        // Collapse System sub when not on hunt-manager or logs
+        if (currentHash !== '#hunt-manager' && currentHash !== '#logs') {
+            var systemSub = document.getElementById('system-sub');
+            if (systemSub) systemSub.classList.remove('expanded');
         }
     }
 

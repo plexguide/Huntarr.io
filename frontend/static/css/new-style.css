@@ -314,6 +314,21 @@ button {
     margin-bottom: 0;
 }
 
+/* Main sidebar: System sub (Hunt Manager, Logs) - expand when on those sections */
+#system-sub {
+    display: none;
+    margin-top: 0;
+}
+
+#system-sub.expanded {
+    display: block;
+}
+
+#system-sub .nav-item-sub {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 /* Settings sub-pages (Indexers, Clients) */
 .settings-subpanel {
     padding: 24px;
