@@ -20,7 +20,7 @@ html, body {
 }
 
 .sidebar {
-    width: 250px !important;
+    width: 218px !important;
     height: 100vh !important;
     flex-shrink: 0 !important;
     overflow-y: auto !important;

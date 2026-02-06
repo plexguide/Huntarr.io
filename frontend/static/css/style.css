@@ -104,7 +104,7 @@ button {
 }
 
 .sidebar {
-    width: 250px;
+    width: 218px;
     height: 100vh;
     background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
     border-right: 1px solid rgba(90, 109, 137, 0.15);

@@ -173,9 +173,9 @@ button {
     overflow: auto;
 }
 
-/* Sidebar - ~10% smaller icons/text overall */
+/* Sidebar - ~10% smaller icons/text; desktop width slightly narrower than original */
 .sidebar {
-    width: 240px;
+    width: 218px;
     background-color: var(--sidebar-bg);
     color: var(--sidebar-text);
     display: flex;

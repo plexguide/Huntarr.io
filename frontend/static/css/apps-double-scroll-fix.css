@@ -18,10 +18,10 @@ html, body {
     height: 100vh !important;
     position: absolute !important;
     top: 0 !important;
-    left: 250px !important; /* Sidebar width */
+    left: 218px !important; /* Sidebar width */
     right: 0 !important;
     bottom: 0 !important;
-    width: calc(100% - 250px) !important;
+    width: calc(100% - 218px) !important;
 }
 
 /* Mobile adjustments */
