@@ -376,7 +376,7 @@
             const requestBtn = document.getElementById('movie-detail-request-btn');
             if (requestBtn && this.currentMovie) {
                 requestBtn.addEventListener('click', () => {
-                    this.closeDetail();
+                    // Don't close detail page - just open the modal on top of it
                     
                     // If called from Requestarr, use Requestarr modal
                     if (this.options.source === 'requestarr' && window.requestarrDiscover && window.requestarrDiscover.modal) {
