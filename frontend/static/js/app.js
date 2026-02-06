@@ -1260,18 +1260,10 @@ let huntarrUI = {
         if (nav) nav.classList.add('active');
     },
 
-    /** Show Movie Hunt nav item in main sidebar only when dev_mode is on (Settings > Main > Dev mode). */
+    /** Legacy: was used to show/hide Movie Hunt in Core by dev_mode. Movie Hunt is now in Beta and always visible. */
     updateMovieHuntNavVisibility: function() {
-        const devMode = !!(this.originalSettings && this.originalSettings.general && this.originalSettings.general.dev_mode === true);
         const mhNav = document.getElementById('movieHuntNav');
-        if (mhNav) mhNav.style.display = devMode ? '' : 'none';
-        const onMovieHuntSection = this.currentSection && (
-            ['movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-root-folders'].indexOf(this.currentSection) !== -1 ||
-            (this.currentSection === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing && (window.SettingsForms._currentEditing.appType === 'indexer' || window.SettingsForms._currentEditing.appType === 'client'))
-        );
-        if (!devMode && onMovieHuntSection) {
-            this.switchSection('home');
-        }
+        if (mhNav) mhNav.style.display = 'none'; // Core Movie Hunt removed; Beta Movie Hunt is always visible
     },
     
     // Simple event source disconnection for compatibility

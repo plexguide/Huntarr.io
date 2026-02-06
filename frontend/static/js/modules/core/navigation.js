@@ -154,10 +154,10 @@ window.HuntarrNavigation = {
         if (config.sidebar === 'main') {
             localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
-            // Expand/collapse System sub (Hunt Manager, Logs) so only one place controls it (no flicker)
+            // Expand/collapse System sub (Hunt Manager, Logs, About) so only one place controls it (no flicker)
             const systemSub = document.getElementById('system-sub');
             if (systemSub) {
-                if (section === 'hunt-manager' || section === 'logs') systemSub.classList.add('expanded');
+                if (section === 'hunt-manager' || section === 'logs' || section === 'about') systemSub.classList.add('expanded');
                 else systemSub.classList.remove('expanded');
             }
         } else if (config.sidebar === 'apps') {

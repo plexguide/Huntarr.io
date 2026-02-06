@@ -33,17 +33,17 @@
                 </div>
                 <span>Apps</span>
             </a>
-            <a href="./#movie-hunt-home" class="nav-item" id="movieHuntNav" style="display: none;">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-film"></i>
-                </div>
-                <span>Movie Hunt</span>
-            </a>
             <a href="./#requestarr" class="nav-item" id="requestarrNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-plus-circle"></i>
                 </div>
                 <span>Requestarr</span>
+            </a>
+            <a href="./#settings" class="nav-item" id="settingsNav">
+                <div class="nav-icon-wrapper">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <span>Settings</span>
             </a>
             <a href="./#hunt-manager" class="nav-item" id="systemNav">
                 <div class="nav-icon-wrapper">
@@ -64,30 +64,30 @@
                     </div>
                     <span>Logs</span>
                 </a>
+                <a href="./#about" class="nav-item nav-item-sub" id="aboutNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <span>About</span>
+                </a>
+                <a href="https://github.com/plexguide/Unraid_Intel-ARC_Deployment" class="nav-item nav-item-sub" target="_blank"
+                    rel="noopener noreferrer">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-film"></i>
+                    </div>
+                    <span>My AV1 Guide</span>
+                </a>
             </div>
-            <a href="./#settings" class="nav-item" id="settingsNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-cog"></i>
-                </div>
-                <span>Settings</span>
-            </a>
         </div>
 
-        <!-- Support Group -->
+        <!-- Beta Group -->
         <div class="nav-group">
-            <div class="nav-group-title">Support</div>
-            <a href="https://github.com/plexguide/Unraid_Intel-ARC_Deployment" class="nav-item" target="_blank"
-                rel="noopener noreferrer">
+            <div class="nav-group-title">Beta</div>
+            <a href="./#movie-hunt-home" class="nav-item" id="movieHuntSupportNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-film"></i>
                 </div>
-                <span>My AV1 Guide</span>
-            </a>
-            <a href="./#about" class="nav-item" id="aboutNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-info-circle"></i>
-                </div>
-                <span>About</span>
+                <span>Movie Hunt</span>
             </a>
         </div>
     </nav>
@@ -1161,12 +1161,15 @@
             var systemSub = document.getElementById('system-sub');
             if (systemSub) systemSub.classList.add('expanded');
             // Don't highlight System parent - sub-item (Logs) is enough
+        } else if (currentHash === '#about') {
+            selector = '#aboutNav';
+            var systemSub = document.getElementById('system-sub');
+            if (systemSub) systemSub.classList.add('expanded');
+            // Don't highlight System parent - sub-item (About) is enough
         } else if (currentHash === '#apps' || currentHash === '#sonarr' || currentHash === '#instance-editor') {
             selector = '#appsNav';
         } else if (currentHash === '#swaparr') {
             selector = '#appsSwaparrNav';
-        } else if (currentHash === '#about') {
-            selector = '#aboutNav';
         } else if (currentHash === '#requestarr') {
             selector = '#requestarrNav';
         }
@@ -1247,8 +1250,8 @@
         if (activeItem) {
             activeItem.classList.add('active');
         }
-        // Collapse System sub when not on hunt-manager or logs
-        if (currentHash !== '#hunt-manager' && currentHash !== '#logs') {
+        // Collapse System sub when not on hunt-manager, logs, or about
+        if (currentHash !== '#hunt-manager' && currentHash !== '#logs' && currentHash !== '#about') {
             var systemSub = document.getElementById('system-sub');
             if (systemSub) systemSub.classList.remove('expanded');
         }
