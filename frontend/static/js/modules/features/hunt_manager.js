@@ -444,7 +444,10 @@ const huntManagerModule = {
             
             // Check if this is a settings object with instances array
             if (settingsData && settingsData.instances && Array.isArray(settingsData.instances)) {
-                const instance = settingsData.instances.find(inst => inst.name === instanceName);
+                // Match by display name (inst.name) OR instance_id (for entries stored with instance_id)
+                const instance = settingsData.instances.find(inst => 
+                    inst.name === instanceName || inst.instance_id === instanceName
+                );
                 
                 if (instance) {
                     console.log('Found instance:', instance);
