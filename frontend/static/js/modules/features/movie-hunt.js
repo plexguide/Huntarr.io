@@ -78,11 +78,17 @@
             var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
             var statusContainer = document.getElementById('movie-hunt-request-status-container');
             var rootFolderSelect = document.getElementById('movie-hunt-request-root-folder');
+            var cancelBtn = document.getElementById('movie-hunt-request-modal-cancel');
+            var closeBtn = document.getElementById('movie-hunt-request-modal-close');
+            var backdrop = document.getElementById('movie-hunt-request-modal-backdrop');
+            
             if (!modal || !titleEl || !submitBtn) return;
+            
             /* Move modal to body so it sits outside .app-container and is not blurred */
             if (modal.parentNode !== document.body) {
                 document.body.appendChild(modal);
             }
+            
             this._pendingRequestItem = item;
             var title = (item && item.title) ? String(item.title).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
             titleEl.textContent = item && item.title ? item.title : '';
@@ -105,8 +111,46 @@
             }
             submitBtn.disabled = false;
             submitBtn.textContent = 'Request';
+            
+            // Show modal
             modal.style.display = 'flex';
             document.body.classList.add('requestarr-modal-open');
+            
+            // Re-attach close handlers every time modal opens (to ensure they work)
+            var self = this;
+            function closeModal() {
+                modal.style.display = 'none';
+                document.body.classList.remove('requestarr-modal-open');
+            }
+            
+            // Remove old listeners and add new ones for Cancel, Close, and Backdrop
+            if (cancelBtn) {
+                var newCancelBtn = cancelBtn.cloneNode(true);
+                cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+                newCancelBtn.addEventListener('click', closeModal);
+            }
+            
+            if (closeBtn) {
+                var newCloseBtn = closeBtn.cloneNode(true);
+                closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+                newCloseBtn.addEventListener('click', closeModal);
+            }
+            
+            if (backdrop) {
+                var newBackdrop = backdrop.cloneNode(true);
+                backdrop.parentNode.replaceChild(newBackdrop, backdrop);
+                newBackdrop.addEventListener('click', closeModal);
+            }
+            
+            // Re-attach submit button listener
+            if (submitBtn) {
+                var newSubmitBtn = submitBtn.cloneNode(true);
+                submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+                newSubmitBtn.addEventListener('click', function() {
+                    self.submitMovieHuntRequest();
+                });
+            }
+            
             this.loadMovieHuntRequestRootFolders();
             this.loadMovieHuntQualityProfiles();
         },

@@ -11,14 +11,67 @@
 
         init() {
             console.log('[MovieHuntDetail] Module initialized');
+            
+            // Listen for browser back/forward buttons
+            window.addEventListener('popstate', (e) => {
+                if (e.state && e.state.movieDetail) {
+                    // User navigated to a movie detail via back/forward
+                    this.openDetail(e.state.movieDetail, e.state.options || {}, true);
+                } else {
+                    // User navigated away from movie detail
+                    this.closeDetail(true);
+                }
+            });
+            
+            // Check if URL has movie detail on page load
+            this.checkUrlForMovieDetail();
+        },
+        
+        checkUrlForMovieDetail() {
+            // Check URL hash for movie detail pattern: #movie/12345
+            const hash = window.location.hash;
+            const movieMatch = hash.match(/#movie\/(\d+)/);
+            
+            if (movieMatch) {
+                const tmdbId = parseInt(movieMatch[1]);
+                console.log('[MovieHuntDetail] Found movie in URL, loading:', tmdbId);
+                
+                // Fetch basic movie info and open detail
+                this.openDetailFromTmdbId(tmdbId);
+            }
+        },
+        
+        async openDetailFromTmdbId(tmdbId) {
+            try {
+                // Fetch basic movie info first
+                const details = await this.fetchMovieDetails(tmdbId);
+                if (details) {
+                    const movieData = {
+                        tmdb_id: details.id,
+                        id: details.id,
+                        title: details.title,
+                        year: details.release_date ? new Date(details.release_date).getFullYear() : null,
+                        poster_path: details.poster_path,
+                        backdrop_path: details.backdrop_path,
+                        overview: details.overview,
+                        vote_average: details.vote_average,
+                        in_library: false,
+                        in_cooldown: false
+                    };
+                    this.openDetail(movieData, {}, true);
+                }
+            } catch (error) {
+                console.error('[MovieHuntDetail] Error loading movie from URL:', error);
+            }
         },
 
         /**
          * Open detail view for a movie
          * @param {Object} movie - Movie data with at least title, year, tmdb_id
          * @param {Object} options - Optional config: { source: 'movie-hunt' | 'requestarr', suggestedInstance: string }
+         * @param {Boolean} fromHistory - True if opened from browser history (don't push state again)
          */
-        async openDetail(movie, options = {}) {
+        async openDetail(movie, options = {}, fromHistory = false) {
             if (!movie) return;
 
             this.currentMovie = movie;
@@ -38,6 +91,17 @@
             detailView.innerHTML = this.getLoadingHTML();
             detailView.classList.add('active');
             // Don't hide body overflow - we want sidebar/topbar to remain accessible
+
+            // Add to browser history (so back button works)
+            if (!fromHistory) {
+                const tmdbId = movie.tmdb_id || movie.id;
+                const url = `${window.location.pathname}${window.location.search}#movie/${tmdbId}`;
+                history.pushState(
+                    { movieDetail: movie, options: this.options },
+                    movie.title,
+                    url
+                );
+            }
 
             // Setup close button
             setTimeout(() => {
@@ -64,11 +128,18 @@
             }
         },
 
-        closeDetail() {
+        closeDetail(fromHistory = false) {
             const detailView = document.getElementById('movie-hunt-detail-view');
             if (detailView) {
                 detailView.classList.remove('active');
                 // Body overflow stays normal - sidebar/topbar always visible
+            }
+            
+            // Remove from browser history if not already navigating
+            if (!fromHistory && detailView && detailView.classList.contains('active')) {
+                // Clear the hash from URL
+                const url = `${window.location.pathname}${window.location.search}`;
+                history.back(); // Use back to maintain proper history stack
             }
         },
 
@@ -328,7 +399,7 @@
                 card.addEventListener('click', async () => {
                     const tmdbId = card.getAttribute('data-tmdb-id');
                     if (tmdbId) {
-                        // Fetch basic movie data and open detail
+                        // Fetch basic movie data and open detail (this will update URL)
                         try {
                             const details = await this.fetchMovieDetails(tmdbId);
                             if (details) {
@@ -344,7 +415,8 @@
                                     in_library: false,
                                     in_cooldown: false
                                 };
-                                this.openDetail(movieData);
+                                // Open detail and update URL (fromHistory = false)
+                                this.openDetail(movieData, this.options || {}, false);
                             }
                         } catch (error) {
                             console.error('[MovieHuntDetail] Error opening similar movie:', error);
