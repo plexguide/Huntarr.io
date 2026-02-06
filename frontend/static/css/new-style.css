@@ -173,14 +173,14 @@ button {
     overflow: auto;
 }
 
-/* Sidebar */
+/* Sidebar - ~10% smaller icons/text overall */
 .sidebar {
     width: 240px;
     background-color: var(--sidebar-bg);
     color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
-    padding: 20px 0;
+    padding: 18px 0;
     height: 100%;
     overflow: auto;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
@@ -191,19 +191,19 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 20px 20px;
-    margin-bottom: 10px;
+    padding: 0 18px 18px;
+    margin-bottom: 9px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    min-height: 64px; /* Ensures container doesn't collapse while loading */
+    min-height: 58px;
 }
 
-/* Updated logo size */
+/* Logo ~10% smaller */
 .logo {
-    width: 64px;
-    height: 64px;
-    margin-right: 10px;
+    width: 58px;
+    height: 58px;
+    margin-right: 9px;
     object-fit: contain;
-    transition: none !important; /* Prevent transition animations */
+    transition: none !important;
 }
 
 .login-logo {
@@ -215,7 +215,7 @@ button {
 }
 
 .sidebar h1 {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     font-weight: bold;
 }
 
@@ -223,21 +223,21 @@ button {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    margin-top: 24px; /* Increased from 22px by another 10% */
+    margin-top: 22px;
 }
 
 .nav-item {
     display: flex;
     align-items: center;
-    padding: 14px 24px; /* Increased from 13px 22px by another 10% */
+    padding: 13px 22px;
     color: var(--sidebar-text);
     transition: all 0.3s;
 }
 
 .nav-item i {
-    margin-right: 14px; /* Increased from 13px by another 10% */
-    font-size: 22px; /* Increased from 20px by another 10% */
-    width: 29px; /* Increased from 26px by another 10% */
+    margin-right: 13px;
+    font-size: 20px;
+    width: 26px;
     text-align: center;
 }
 
@@ -253,11 +253,11 @@ button {
     outline: none;
     border-radius: 0 4px 4px 0;
     border-left: 4px solid var(--sidebar-item-active);
-    padding-left: 20px;
+    padding-left: 18px;
 }
 
 .nav-item.active .nav-icon-wrapper {
-    margin-right: 14px;
+    margin-right: 13px;
 }
 
 /* Indented sub-items under Settings (Radarr-style hierarchy) */
@@ -266,21 +266,21 @@ button {
 }
 
 .nav-item-sub {
-    padding-left: 48px !important;
+    padding-left: 43px !important;
 }
 
-/* Sub-item icons same size as main nav (e.g. home icon) */
+/* Sub-item icons ~10% smaller */
 .nav-item-sub .nav-icon-wrapper {
-    width: 30px;
-    height: 30px;
+    width: 27px;
+    height: 27px;
 }
 
 .nav-item-sub .nav-icon-wrapper i {
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .nav-item-sub.active {
-    padding-left: 44px !important;
+    padding-left: 40px !important;
 }
 
 /* Movie Hunt sidebar: sub-settings (Indexers, Clients) only visible when Settings is active */
@@ -1712,7 +1712,7 @@ input:checked + .toggle-slider:before {
     
     .nav-item i {
         margin-right: 0;
-        font-size: 22px;
+        font-size: 20px;
     }
     
     .logo-container {

@@ -14,16 +14,15 @@ alwaysApply: true
 
 ### MANDATORY TESTING WORKFLOW
 - Docker: ALWAYS rebuild and test changes using: `cd /Users/home/Huntarr/Huntarr.io && docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
-- **REDEPLOY AFTER CHANGES**: After making code changes to the project, ALWAYS redeploy the Docker container so the user can view and test the changes. Run the Docker rebuild command above without waiting for the user to ask. This allows the user to test changes immediately.
-- Local: ALWAYS use port 9706 for local testing: `HUNTARR_PORT=9706 python main.py`
-- ALWAYS check logs for errors: `docker logs huntarr` (Docker) or terminal output (local)
-- Test in both Docker and local environments
-- Docker uses port 9705, local testing uses port 9706 to avoid conflicts
+- ALWAYS check logs for errors: `docker logs huntarr`
+- Test both Docker and local environments (port 9705)
 
-### UNRAID DEPLOYMENT (huntarr-moviehunt)
+### UNRAID DEPLOYMENT (huntarr-moviehunt) — ALWAYS AFTER CODE CHANGES
+- **Deploy target: always Unraid unless the user explicitly says to do it locally.** When they ask to deploy, redeploy, or run the container, use Unraid. Only use local Docker when they say "local" or "run it locally". If Unraid deploy fails, then run local Docker.
+- **ALWAYS redeploy to Unraid after making code changes** (run `./unraid/deploy-with-build.exp`). Do not wait for the user to ask.
 - When the user asks to **deploy**, **redeploy**, or **deploy the Huntarr container to Unraid**, they mean the **huntarr-moviehunt** test container on Unraid (10.0.0.10).
-- Use the project’s Unraid scripts: `./unraid/deploy-moviehunt-with-mounts.exp` for full deploy with volume mounts, or `./unraid/deploy-moviehunt.exp` for appdata-only.
-- Default full deploy: `cd /Users/home/Huntarr/Huntarr.io && ./unraid/deploy-moviehunt-with-mounts.exp`
+- Use the project’s Unraid scripts: `./unraid/deploy-with-build.exp` (default), `./unraid/deploy-moviehunt-with-mounts.exp` for full deploy with volume mounts, or `./unraid/deploy-moviehunt.exp` for appdata-only.
+- Default full deploy: `cd /Users/home/Huntarr/Huntarr.io && ./unraid/deploy-with-build.exp`
 - Connection/details live in `./unraid/` (README, DEPLOYMENT.md, STATUS.md, TESTING-GUIDE.md). The `./unraid/` directory is git-ignored.
 
 ### VERSION MANAGEMENT
@@ -323,19 +322,17 @@ echo "5. Missing frontend injection: $(grep -q "window.HUNTARR_BASE_URL" fronten
 
 ### Making Changes
 1. Edit source code (never modify inside container)
-2. For local testing: `HUNTARR_PORT=9706 python main.py` (uses ./data/huntarr.db on port 9706)
-3. For Docker testing: `docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
-4. Check logs: `docker logs huntarr` (Docker) or terminal output (local)
-5. Test functionality in both environments
+2. For Docker testing: `docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
+3. Check logs: `docker logs huntarr`
+4. Test functionality in Docker
 
 ### Before Committing
 1. Test in Docker environment (port 9705)
-2. Test in local environment (port 9706)
-3. Test cross-platform compatibility
+2. Test cross-platform compatibility
 4. Test subpath scenarios
-5. Check browser console for errors
-6. Verify database persistence across container restarts
-7. Get user approval before committing
+4. Check browser console for errors
+5. Verify database persistence across container restarts
+6. Get user approval before committing
 
 ## ⚠️ ANTI-PATTERNS TO AVOID
 
@@ -367,8 +364,6 @@ echo "5. Missing frontend injection: $(grep -q "window.HUNTARR_BASE_URL" fronten
 - ❌ Frontend links without verifying documentation anchors exist
 - ❌ Organic feature growth without reality checks
 - ❌ Theoretical FAQ content (base on real user problems)
-- ❌ Using port 9705 for local testing (conflicts with Docker)
-
 ### State Management Anti-Patterns
 - ❌ Using global state locks instead of per-instance locks
 - ❌ Frontend calculating times with `Date.now()` instead of using database times
@@ -408,7 +403,7 @@ echo "5. Missing frontend injection: $(grep -q "window.HUNTARR_BASE_URL" fronten
 9. Inconsistent app styling: `grep -r "background.*linear-gradient.*rgba(15, 23, 42" frontend/ --include="*.js"`
 10. Logs pagination conflicts: `grep -r "updateLogsPagination\|updatePagination" frontend/ --include="*.html" --include="*.js" | grep -v "LogsModule"`
 11. Hunt Manager non-Sonarr clickable links: `grep -r "isClickable.*entry.app_type.*&&.*entry.instance_name" frontend/static/js/hunt_manager.js | grep -v "=== 'sonarr'" | wc -l`
-12. Port 9705 usage in local testing: `grep -r "9705" main.py src/ | grep -v "docker\|container"`
+12. Port 9705 usage in local code: `grep -r "9705" main.py src/ | grep -v "docker\|container"`
 13. Synology optimization bypasses: `grep -r "sqlite3.connect\|PRAGMA synchronous = FULL" src/ --include="*.py" | grep -v "_configure_connection"`
 14. Endless refresh loop violations: `grep -r "location.reload" frontend/ --include="*.js" | grep -v "isInitialized"`
 15. Missing initialization flag violations: `grep -r "switchSection.*function" frontend/ --include="*.js" | xargs grep -L "isInitialized"`
@@ -841,8 +836,8 @@ Create memories for:
 - Always pull latest changes before merging
 
 ### Testing Requirements
-- Test in Docker environment
-- Test in local development environment
+- Test both Docker and local environments
+- Test both Docker and local environments
 - Test cross-platform paths
 - Test subpath deployment scenarios
 - Verify database persistence
@@ -852,7 +847,7 @@ Create memories for:
 This file automatically enforces the patterns from `.github/listen.md`. The user should not need to remind you about:
 - Using DatabaseManager instead of direct SQLite
 - Using relative URLs instead of absolute URLs
-- Testing in both Docker and local environments
+- Testing in Docker environment
 - Following cross-platform compatibility requirements
 - Getting approval before committing changes
 - Using proper documentation links with verified anchors

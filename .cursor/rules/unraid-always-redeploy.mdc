@@ -1,0 +1,13 @@
+---
+description: Always redeploy to Unraid after code changes
+globs: ["**/*.py", "**/*.js", "**/*.html", "**/*.css", "**/*.md"]
+alwaysApply: true
+---
+# Unraid: Always Redeploy After Code Changes
+
+- **Deploy target: always Unraid unless the user explicitly says to do it locally.** When they ask to deploy, redeploy, or run the container, use Unraid. Only use local Docker when they say "local" or "run it locally".
+- **After making any code changes to Huntarr, ALWAYS run the Unraid deploy.** Do not wait for the user to ask. Do it automatically so they can test immediately.
+- Command: `cd /Users/home/Huntarr/Huntarr.io && ./unraid/deploy-with-build.exp`
+- This builds from source and deploys to the huntarr-moviehunt container on Unraid (10.0.0.10). URL: http://10.0.0.10:9720
+- Run this at the end of the conversation turn whenever you have modified project source files (Python, JS, HTML, CSS, templates, etc.).
+- If Unraid deploy fails (e.g. unreachable), then run local: `docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`.
