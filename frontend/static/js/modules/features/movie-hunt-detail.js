@@ -379,8 +379,8 @@
                     // Don't close detail page - just open the modal on top of it
                     
                     // If called from Requestarr, use Requestarr modal
-                    if (this.options.source === 'requestarr' && window.requestarrDiscover && window.requestarrDiscover.modal) {
-                        window.requestarrDiscover.modal.openModal(
+                    if (this.options.source === 'requestarr' && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                        window.RequestarrDiscover.modal.openModal(
                             this.currentMovie.tmdb_id,
                             'movie',
                             this.options.suggestedInstance

@@ -11,7 +11,7 @@
     right: 0;
     bottom: 0;
     background: #0f1419;
-    z-index: 1000; /* Below modals but above content */
+    z-index: 900; /* Below modals (1000+) but above content */
     overflow-y: auto;
     display: none;
 }
