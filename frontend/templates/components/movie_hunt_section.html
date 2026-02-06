@@ -61,6 +61,23 @@
             <i class="fas fa-search"></i>
             <input id="movie-hunt-collection-search" class="hidden-media-search-input" type="text" placeholder="Search requested media...">
         </div>
+        <div class="movies-controls movie-hunt-collection-controls">
+            <div class="instance-selector-container">
+                <select id="movie-hunt-collection-instance-select" class="control-select instance-select">
+                    <option value="">Loading instances...</option>
+                </select>
+            </div>
+            <div class="sort-dropdown">
+                <select id="movie-hunt-collection-sort" class="control-select">
+                    <option value="title.asc">Title (A-Z)</option>
+                    <option value="title.desc">Title (Z-A)</option>
+                    <option value="year.desc">Year (newest)</option>
+                    <option value="year.asc">Year (oldest)</option>
+                    <option value="status.asc">Status (Available first)</option>
+                    <option value="status.desc">Status (Requested first)</option>
+                </select>
+            </div>
+        </div>
         <div id="movie-hunt-collection-grid" class="media-grid">
             <div class="loading-spinner">
                 <i class="fas fa-spinner fa-spin"></i>

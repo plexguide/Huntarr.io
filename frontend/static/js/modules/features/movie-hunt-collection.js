@@ -10,14 +10,44 @@
         pageSize: 20,
         total: 0,
         searchQuery: '',
+        sortBy: 'title.asc',
         items: [],
 
         init: function() {
             var self = this;
             this.page = 1;
+            this.setupInstanceSelect();
+            this.setupSort();
             this.setupSearch();
             this.setupPagination();
             this.loadCollection();
+        },
+
+        setupInstanceSelect: function() {
+            var select = document.getElementById('movie-hunt-collection-instance-select');
+            if (!select) return;
+            select.innerHTML = '';
+            var opt = document.createElement('option');
+            opt.value = 'default';
+            opt.textContent = 'Default Instance';
+            select.appendChild(opt);
+        },
+
+        setupSort: function() {
+            var self = this;
+            var select = document.getElementById('movie-hunt-collection-sort');
+            if (!select) return;
+            var saved = (typeof localStorage !== 'undefined' && localStorage.getItem('movie-hunt-collection-sort')) || 'title.asc';
+            if (saved) {
+                self.sortBy = saved;
+                try { select.value = saved; } catch (e) {}
+            }
+            select.onchange = function() {
+                self.sortBy = (select.value || 'title.asc').trim();
+                if (typeof localStorage !== 'undefined') localStorage.setItem('movie-hunt-collection-sort', self.sortBy);
+                self.page = 1;
+                self.loadCollection();
+            };
         },
 
         setupSearch: function() {
@@ -61,7 +91,7 @@
             grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading media collection...</p></div>';
             grid.style.display = 'flex';
             if (paginationEl) paginationEl.style.display = 'none';
-            var url = './api/movie-hunt/collection?page=' + this.page + '&page_size=' + this.pageSize;
+            var url = './api/movie-hunt/collection?page=' + this.page + '&page_size=' + this.pageSize + '&sort=' + encodeURIComponent(this.sortBy || 'title.asc');
             if (this.searchQuery) url += '&q=' + encodeURIComponent(this.searchQuery);
             fetch(url)
                 .then(function(r) { return r.json(); })

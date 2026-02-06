@@ -55,6 +55,14 @@
     margin-bottom: 20px;
 }
 
+#movie-hunt-collection-view .movie-hunt-collection-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
 #movie-hunt-collection-view .hidden-media-search i {
     position: absolute;
     left: 20px;

@@ -3137,13 +3137,30 @@ def api_movie_hunt_remote_mappings_delete(index):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+def _sort_collection_items(items, sort_key):
+    """Sort collection list by sort_key: title.asc, title.desc, year.asc, year.desc, status.asc, status.desc."""
+    if not items or not sort_key:
+        return items
+    key = (sort_key or 'title.asc').strip().lower()
+    reverse = key.endswith('.desc')
+    if key.startswith('title.'):
+        return sorted(items, key=lambda x: ((x.get('title') or '').lower(), str(x.get('year') or '')), reverse=reverse)
+    if key.startswith('year.'):
+        return sorted(items, key=lambda x: (str(x.get('year') or '0'), (x.get('title') or '').lower()), reverse=reverse)
+    if key.startswith('status.'):
+        return sorted(items, key=lambda x: ((x.get('status') or 'requested').lower(), (x.get('title') or '').lower()), reverse=reverse)
+    return items
+
+
 @movie_hunt_bp.route('/api/movie-hunt/collection', methods=['GET'])
 def api_movie_hunt_collection_list():
-    """List Media Collection (requested movies). ?q= search, ?page=1&page_size=20."""
+    """List Media Collection (requested movies). ?q= search, ?page=1&page_size=20, ?sort=title.asc."""
     try:
         items_full = _get_collection_config()
         q = (request.args.get('q') or '').strip().lower()
         items = [x for x in items_full if not q or q in ((x.get('title') or '') + ' ' + str(x.get('year') or '')).lower()]
+        sort_key = (request.args.get('sort') or 'title.asc').strip()
+        items = _sort_collection_items(items, sort_key)
         total = len(items)
         page = max(1, int(request.args.get('page', 1)))
         page_size = max(1, min(100, int(request.args.get('page_size', 20))))
