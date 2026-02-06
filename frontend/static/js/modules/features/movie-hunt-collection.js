@@ -166,11 +166,34 @@
                 '<span class="media-card-rating" style="font-size: 12px; color: #94a3b8;">' + statusLabel + '</span>' +
                 '</div>' +
                 '<div class="movie-hunt-collection-actions" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">' + removeHtml + '</div></div>';
+            
+            // Remove button: stop propagation so card click doesn't fire
             var removeBtn = card.querySelector('.btn-remove-from-collection');
             if (removeBtn) removeBtn.onclick = function(e) {
+                e.preventDefault();
                 e.stopPropagation();
                 self.removeFromCollection(removeBtn.getAttribute('data-title') || '', removeBtn.getAttribute('data-year') || '');
             };
+
+            // Click anywhere on card opens detail page (except Remove button)
+            if (item.tmdb_id && window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
+                card.style.cursor = 'pointer';
+                card.onclick = function(e) {
+                    if (removeBtn && (e.target === removeBtn || removeBtn.contains(e.target))) return;
+                    e.preventDefault();
+                    var movieData = {
+                        tmdb_id: item.tmdb_id,
+                        id: item.tmdb_id,
+                        title: item.title,
+                        year: item.year,
+                        poster_path: item.poster_path,
+                        in_library: status === 'available',
+                        in_cooldown: false
+                    };
+                    window.MovieHuntDetail.openDetail(movieData);
+                };
+            }
+            
             return card;
         },
 

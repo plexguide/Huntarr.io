@@ -516,25 +516,32 @@
                 }
             }
 
-            const posterDiv = card.querySelector('.media-card-poster');
             const requestBtn = card.querySelector('.media-card-request-btn');
 
             const openRequestModal = () => {
                 window.MovieHunt.openMovieHuntRequestModal(item);
             };
 
-            if (posterDiv) {
-                posterDiv.addEventListener('click', (e) => {
-                    if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) return;
+            const openDetailPage = () => {
+                if (window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
+                    window.MovieHuntDetail.openDetail(item);
+                } else {
                     openRequestModal();
-                });
-            }
-            if (requestBtn) {
-                requestBtn.addEventListener('click', (e) => {
+                }
+            };
+
+            // Click anywhere on card opens detail page (whole card is clickable)
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', (e) => {
+                // Only exception: Request button opens request modal, not detail
+                if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) {
+                    e.preventDefault();
                     e.stopPropagation();
                     openRequestModal();
-                });
-            }
+                    return;
+                }
+                openDetailPage();
+            });
 
             return card;
         }

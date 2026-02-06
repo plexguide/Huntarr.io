@@ -2657,6 +2657,13 @@ def _get_tmdb_api_key_movie_hunt():
     return "9265b0bd0cd1962f7f3225989fcd7192"
 
 
+@movie_hunt_bp.route('/api/movie-hunt/tmdb-key', methods=['GET'])
+def api_movie_hunt_tmdb_key():
+    """Return TMDB API key for Movie Hunt detail page (frontend needs it to fetch movie details from TMDB)."""
+    key = _get_tmdb_api_key_movie_hunt()
+    return jsonify({'api_key': key or ''})
+
+
 def _movie_hunt_collection_lookups():
     """
     Build sets for in_library and in_cooldown from Movie Hunt collection.
