@@ -961,33 +961,50 @@ export class RequestarrContent {
             }
         }
         
-        const posterDiv = card.querySelector('.media-card-poster');
         const requestBtn = card.querySelector('.media-card-request-btn');
         const hideBtn = card.querySelector('.media-card-hide-btn');
         
-        posterDiv.addEventListener('click', (e) => {
+        // Click anywhere on card opens detail page (movies) or modal (TV)
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', (e) => {
+            // Request button opens modal only
             if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) {
-                return;
-            }
-            if (hideBtn && (e.target === hideBtn || hideBtn.contains(e.target))) {
-                return;
-            }
-            this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
-        });
-        
-        if (requestBtn) {
-            requestBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
-            });
-        }
-        
-        if (hideBtn) {
-            hideBtn.addEventListener('click', async (e) => {
+                return;
+            }
+            // Hide button only hides
+            if (hideBtn && (e.target === hideBtn || hideBtn.contains(e.target))) {
+                e.preventDefault();
                 e.stopPropagation();
-                await this.hideMedia(item.tmdb_id, item.media_type, item.title, card);
-            });
-        }
+                this.hideMedia(item.tmdb_id, item.media_type, item.title, card);
+                return;
+            }
+            
+            // For movies, open detail page if available
+            if (item.media_type === 'movie' && window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
+                const movieData = {
+                    tmdb_id: item.tmdb_id,
+                    id: item.tmdb_id,
+                    title: item.title,
+                    year: item.year,
+                    poster_path: item.poster_path,
+                    backdrop_path: item.backdrop_path,
+                    overview: item.overview,
+                    vote_average: item.vote_average,
+                    in_library: inLibrary,
+                    in_cooldown: inCooldown
+                };
+                window.MovieHuntDetail.openDetail(movieData, {
+                    source: 'requestarr',
+                    suggestedInstance: card.suggestedInstance
+                });
+            } else {
+                // For TV shows or if detail page not loaded, use modal
+                this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
+            }
+        });
         
         return card;
     }

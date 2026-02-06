@@ -16,12 +16,14 @@
         /**
          * Open detail view for a movie
          * @param {Object} movie - Movie data with at least title, year, tmdb_id
+         * @param {Object} options - Optional config: { source: 'movie-hunt' | 'requestarr', suggestedInstance: string }
          */
-        async openDetail(movie) {
+        async openDetail(movie, options = {}) {
             if (!movie) return;
 
             this.currentMovie = movie;
-            console.log('[MovieHuntDetail] Opening detail for:', movie.title);
+            this.options = options || {};
+            console.log('[MovieHuntDetail] Opening detail for:', movie.title, 'from', this.options.source || 'unknown');
 
             // Get or create detail view container
             let detailView = document.getElementById('movie-hunt-detail-view');
@@ -304,8 +306,17 @@
             if (requestBtn && this.currentMovie) {
                 requestBtn.addEventListener('click', () => {
                     this.closeDetail();
-                    // Open the request modal from MovieHunt
-                    if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal) {
+                    
+                    // If called from Requestarr, use Requestarr modal
+                    if (this.options.source === 'requestarr' && window.requestarrDiscover && window.requestarrDiscover.modal) {
+                        window.requestarrDiscover.modal.openModal(
+                            this.currentMovie.tmdb_id,
+                            'movie',
+                            this.options.suggestedInstance
+                        );
+                    }
+                    // Otherwise use Movie Hunt request modal
+                    else if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal) {
                         window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
                     }
                 });
