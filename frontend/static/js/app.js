@@ -90,6 +90,10 @@ let huntarrUI = {
         if (targetSection) {
             console.log(`[huntarrUI] Found target section after refresh: ${targetSection}`);
             localStorage.removeItem('huntarr-target-section');
+            // Keep URL in sync so hash-based logic and back button work (replaceState avoids firing hashchange)
+            if (window.location.hash !== '#' + targetSection) {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#' + targetSection);
+            }
             // Navigate to the target section
             this.switchSection(targetSection);
         } else {
@@ -505,7 +509,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders'];
+            const noRefreshSections = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {

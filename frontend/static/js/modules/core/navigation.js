@@ -70,7 +70,7 @@ window.HuntarrNavigation = {
             if (['apps'].includes(ui.currentSection) && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             if (ui.currentSection === 'prowlarr' && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             
-            const noRefresh = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders'];
+            const noRefresh = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs'];
             if (!noRefresh.includes(section) && !noRefresh.includes(ui.currentSection)) {
                 localStorage.setItem('huntarr-target-section', section);
                 location.reload();
@@ -154,6 +154,12 @@ window.HuntarrNavigation = {
         if (config.sidebar === 'main') {
             localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
+            // Expand/collapse System sub (Hunt Manager, Logs) so only one place controls it (no flicker)
+            const systemSub = document.getElementById('system-sub');
+            if (systemSub) {
+                if (section === 'hunt-manager' || section === 'logs') systemSub.classList.add('expanded');
+                else systemSub.classList.remove('expanded');
+            }
         } else if (config.sidebar === 'apps') {
             if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
                 const appType = window.SettingsForms._currentEditing.appType;

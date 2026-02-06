@@ -1254,9 +1254,7 @@
         }
     }
 
-    // Set active on page load
-    document.addEventListener('DOMContentLoaded', setActiveNavItem);
-
-    // Update active when hash changes
+    // Only run on hashchange so navigation module (switchSection) is the single source of truth on load.
+    // That prevents flicker: Hunt Manager -> System -> Hunt Manager from two code paths updating nav.
     window.addEventListener('hashchange', setActiveNavItem);
 </script>
