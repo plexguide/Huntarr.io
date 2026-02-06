@@ -111,7 +111,7 @@ window.HuntarrNavigation = {
             'readarr': { title: 'Readarr', nav: document.getElementById('appsReadarrNav'), section: document.getElementById('readarrSection'), sidebar: 'apps', app: 'readarr' },
             'whisparr': { title: 'Whisparr V2', nav: document.getElementById('appsWhisparrNav'), section: document.getElementById('whisparrSection'), sidebar: 'apps', app: 'whisparr' },
             'eros': { title: 'Whisparr V3', nav: document.getElementById('appsErosNav'), section: document.getElementById('erosSection'), sidebar: 'apps', app: 'eros' },
-            'swaparr': { title: 'Swaparr', nav: document.getElementById('swaparrNav'), section: document.getElementById('swaparrSection'), sidebar: 'main', init: 'initializeSwaparr' },
+            'swaparr': { title: 'Swaparr', nav: document.getElementById('appsSwaparrNav'), section: document.getElementById('swaparrSection'), sidebar: 'apps', init: 'initializeSwaparr' },
             'settings': { title: 'Settings', nav: document.getElementById('settingsNav'), section: document.getElementById('settingsSection'), sidebar: 'settings', init: 'initializeSettings' },
             'settings-movie-management': { title: 'Movie Management', nav: document.getElementById('movieHuntSettingsMovieManagementNav'), section: document.getElementById('movieManagementSection'), sidebar: 'moviehunt' },
             'settings-profiles': { title: 'Profiles', nav: document.getElementById('movieHuntSettingsProfilesNav'), section: document.getElementById('settingsProfilesSection'), sidebar: 'moviehunt' },
@@ -349,12 +349,9 @@ window.HuntarrNavigation = {
         
         appsSidebarItems.forEach(item => {
             item.classList.remove('active');
-            const link = item.querySelector('a');
-            if (link) {
-                const href = link.getAttribute('href');
-                if (href === `#${currentSection}`) {
-                    item.classList.add('active');
-                }
+            const href = (item.getAttribute && item.getAttribute('href')) || '';
+            if (href === `#${currentSection}` || (href && href.endsWith('#' + currentSection))) {
+                item.classList.add('active');
             }
         });
     },

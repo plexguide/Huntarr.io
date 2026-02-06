@@ -119,7 +119,7 @@ let huntarrUI = {
                 console.log('[huntarrUI] Initialization - showing requestarr sidebar');
                 this.showRequestarrSidebar();
             }
-        } else if (this.currentSection === 'apps' || this.currentSection === 'sonarr' || this.currentSection === 'radarr' || this.currentSection === 'lidarr' || this.currentSection === 'readarr' || this.currentSection === 'whisparr' || this.currentSection === 'eros' || this.currentSection === 'prowlarr') {
+        } else if (this.currentSection === 'apps' || this.currentSection === 'sonarr' || this.currentSection === 'radarr' || this.currentSection === 'lidarr' || this.currentSection === 'readarr' || this.currentSection === 'whisparr' || this.currentSection === 'eros' || this.currentSection === 'prowlarr' || this.currentSection === 'swaparr') {
             console.log('[huntarrUI] Initialization - showing apps sidebar');
             this.showAppsSidebar();
         } else {
@@ -875,13 +875,12 @@ let huntarrUI = {
         } else if (section === 'swaparr' && document.getElementById('swaparrSection')) {
             document.getElementById('swaparrSection').classList.add('active');
             document.getElementById('swaparrSection').style.display = 'block';
-            if (document.getElementById('swaparrNav')) document.getElementById('swaparrNav').classList.add('active');
+            if (document.getElementById('appsSwaparrNav')) document.getElementById('appsSwaparrNav').classList.add('active');
             newTitle = 'Swaparr';
             this.currentSection = 'swaparr';
             
-            // Show main sidebar for main sections and clear settings sidebar preference
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
+            // Show Apps sidebar (Swaparr lives under Apps)
+            this.showAppsSidebar();
             
             // Initialize Swaparr section
             this.initializeSwaparr();

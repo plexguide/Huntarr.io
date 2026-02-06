@@ -68,12 +68,6 @@
         <!-- Support Group -->
         <div class="nav-group">
             <div class="nav-group-title">Support</div>
-            <a href="./#swaparr" class="nav-item" id="swaparrNav">
-                <div class="nav-icon-wrapper">
-                    <i class="fas fa-exchange-alt"></i>
-                </div>
-                <span>Swaparr</span>
-            </a>
             <a href="https://github.com/plexguide/Unraid_Intel-ARC_Deployment" class="nav-item" target="_blank"
                 rel="noopener noreferrer">
                 <div class="nav-icon-wrapper">
@@ -380,6 +374,12 @@
                     <img src="./static/images/app-icons/prowlarr.png" alt="Prowlarr" class="app-icon-img">
                 </div>
                 <span>Prowlarr</span>
+            </a>
+            <a href="./#swaparr" class="nav-item swaparr-app" id="appsSwaparrNav">
+                <div class="nav-icon-wrapper swaparr-icon">
+                    <i class="fas fa-exchange-alt"></i>
+                </div>
+                <span>Swaparr</span>
             </a>
         </div>
     </nav>
@@ -1019,6 +1019,21 @@
         transform: scale(1.05);
     }
 
+    /* Swaparr - Teal/Cyan */
+    .swaparr-app:hover .swaparr-icon,
+    .swaparr-app.active .swaparr-icon {
+        background: rgba(0, 188, 212, 0.2);
+        border: 2px solid rgba(0, 188, 212, 0.6);
+        box-shadow: 0 0 15px rgba(0, 188, 212, 0.4), inset 0 0 10px rgba(0, 188, 212, 0.1);
+        transform: scale(1.1);
+    }
+
+    .swaparr-app:hover .swaparr-icon i,
+    .swaparr-app.active .swaparr-icon i {
+        color: #00bcd4;
+        filter: drop-shadow(0 0 8px rgba(0, 188, 212, 0.6));
+    }
+
     /* Mobile adjustments for app icons */
     @media (max-width: 768px) {
         .app-icon-img {
@@ -1135,7 +1150,7 @@
         } else if (currentHash === '#apps' || currentHash === '#sonarr' || currentHash === '#instance-editor') {
             selector = '#appsNav';
         } else if (currentHash === '#swaparr') {
-            selector = '#swaparrNav';
+            selector = '#appsSwaparrNav';
         } else if (currentHash === '#about') {
             selector = '#aboutNav';
         } else if (currentHash === '#requestarr') {
