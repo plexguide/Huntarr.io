@@ -6,6 +6,7 @@ on:
       - main
       - dev
       - 'docs*'
+      - 'win*'
     paths:
       - 'docs/**'
   workflow_dispatch:
@@ -24,7 +25,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/heads/docs')
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/heads/docs') || startsWith(github.ref, 'refs/heads/win')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
