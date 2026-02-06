@@ -151,6 +151,10 @@
             if (!item.poster_path) posterUrl = './static/images/blackout.jpg';
             var statusClass = status === 'available' ? 'complete' : 'available';
             var statusLabel = status === 'available' ? 'Available' : 'Requested';
+            var showRemove = status === 'requested';
+            var removeHtml = showRemove
+                ? '<button type="button" class="btn-remove-from-collection" data-title="' + (item.title || '').replace(/"/g, '&quot;') + '" data-year="' + (item.year || '').replace(/"/g, '&quot;') + '"><i class="fas fa-trash"></i> Remove</button>'
+                : '';
             card.innerHTML = '<div class="media-card-poster">' +
                 '<div class="media-card-status-badge ' + statusClass + '"><i class="fas fa-' + (status === 'available' ? 'check' : 'download') + '"></i></div>' +
                 '<img src="' + posterUrl + '" alt="' + title + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
@@ -161,18 +165,24 @@
                 '<span class="media-card-year">' + year + '</span>' +
                 '<span class="media-card-rating" style="font-size: 12px; color: #94a3b8;">' + statusLabel + '</span>' +
                 '</div>' +
-                '<div class="movie-hunt-collection-actions" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">' +
-                '<button type="button" class="btn-remove-from-collection" data-index="' + index + '"><i class="fas fa-trash"></i> Remove</button>' +
-                '</div></div>';
+                '<div class="movie-hunt-collection-actions" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">' + removeHtml + '</div></div>';
             var removeBtn = card.querySelector('.btn-remove-from-collection');
-            if (removeBtn) removeBtn.onclick = function(e) { e.stopPropagation(); self.removeFromCollection(parseInt(removeBtn.getAttribute('data-index'), 10)); };
+            if (removeBtn) removeBtn.onclick = function(e) {
+                e.stopPropagation();
+                self.removeFromCollection(removeBtn.getAttribute('data-title') || '', removeBtn.getAttribute('data-year') || '');
+            };
             return card;
         },
 
-        removeFromCollection: function(index) {
+        removeFromCollection: function(title, year) {
             var self = this;
-            if (!confirm('Remove this movie from Media Collection?')) return;
-            fetch('./api/movie-hunt/collection/' + index, { method: 'DELETE' })
+            if (!title) return;
+            if (!confirm('Remove this movie from your requested list?')) return;
+            fetch('./api/movie-hunt/collection/0', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title, year: year })
+            })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {

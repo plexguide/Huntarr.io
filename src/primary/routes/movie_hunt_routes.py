@@ -2777,6 +2777,101 @@ def api_movie_hunt_discover_movies():
 _VIDEO_EXTENSIONS = frozenset(('.mkv', '.mp4', '.avi', '.mov', '.wmv', '.m4v', '.mpg', '.mpeg', '.webm', '.flv', '.m2ts', '.ts'))
 
 
+def _parse_title_year_from_name(name):
+    """
+    Extract (title, year) from a folder or file name. Returns (title_str, year_str).
+    Handles: "Movie Title (2024)", "Movie.Title.2024.1080p.mkv", "Movie Title 2024".
+    """
+    import re
+    if not name:
+        return '', ''
+    name = name.strip()
+    # Strip extension if present
+    if '.' in name:
+        base = name
+        for ext in _VIDEO_EXTENSIONS:
+            if name.lower().endswith(ext):
+                base = name[:-len(ext)].strip()
+                break
+        name = base
+    year_match = re.search(r'\(?(19\d{2}|20\d{2})\)?', name)
+    year_str = year_match.group(1) if year_match else ''
+    if year_match:
+        title_part = name[:year_match.start()].strip()
+        title_part = re.sub(r'^[.\s\-_]+|[.\s\-_]+$', '', title_part)
+        title_part = title_part.replace('.', ' ').replace('_', ' ').replace('-', ' ')
+        title_part = ' '.join(title_part.split())
+    else:
+        title_part = name.replace('.', ' ').replace('_', ' ').replace('-', ' ')
+        title_part = ' '.join(title_part.split())
+    return title_part or name, year_str
+
+
+def _scan_root_folder_for_movies(root_path):
+    """
+    Scan one root folder and return list of { 'title': str, 'year': str } for each detected movie.
+    Looks at direct video files and one level of subdirs (folder name or video filename).
+    """
+    if not root_path or not os.path.isdir(root_path):
+        return []
+    found = []
+    seen = set()
+    try:
+        for name in os.listdir(root_path):
+            full = os.path.join(root_path, name)
+            if os.path.isfile(full):
+                base, ext = os.path.splitext(name)
+                if ext.lower() in _VIDEO_EXTENSIONS:
+                    title, year = _parse_title_year_from_name(name)
+                    key = (title.lower(), year)
+                    if key not in seen and title:
+                        seen.add(key)
+                        found.append({'title': title, 'year': year})
+            elif os.path.isdir(full):
+                # Prefer folder name for title/year (e.g. "Movie Title (2024)")
+                title, year = _parse_title_year_from_name(name)
+                if not title:
+                    for subname in os.listdir(full):
+                        subfull = os.path.join(full, subname)
+                        if os.path.isfile(subfull):
+                            base, ext = os.path.splitext(subname)
+                            if ext.lower() in _VIDEO_EXTENSIONS:
+                                title, year = _parse_title_year_from_name(subname)
+                                break
+                if title:
+                    key = (title.lower(), year)
+                    if key not in seen:
+                        seen.add(key)
+                        found.append({'title': title, 'year': year})
+    except OSError:
+        pass
+    return found
+
+
+def _get_detected_movies_from_all_roots():
+    """
+    Scan all configured Movie Hunt root folders and return list of { title, year } for every movie detected.
+    This is the source of truth for "what's in the library" / Media Collection.
+    """
+    folders = _get_root_folders_config()
+    all_detected = []
+    seen = set()
+    for f in folders:
+        path = (f.get('path') or '').strip()
+        if not path:
+            continue
+        for item in _scan_root_folder_for_movies(path):
+            title = (item.get('title') or '').strip()
+            year = (item.get('year') or '').strip()
+            if not title:
+                continue
+            key = (title.lower(), year)
+            if key not in seen:
+                seen.add(key)
+                all_detected.append({'title': title, 'year': year})
+    return all_detected
+
+
 def _detect_available_in_root_folder(root_path, title, year):
     """
     Check if a movie appears to be present in root_path (direct files or one level of subdirs).
@@ -3154,11 +3249,75 @@ def _sort_collection_items(items, sort_key):
 
 @movie_hunt_bp.route('/api/movie-hunt/collection', methods=['GET'])
 def api_movie_hunt_collection_list():
-    """List Media Collection (requested movies). ?q= search, ?page=1&page_size=20, ?sort=title.asc."""
+    """
+    List Media Collection based on root folder detection.
+    Collection = what we detect in all configured root folders (available) + what was requested but not yet on disk (requested).
+    ?q= search, ?page=1&page_size=20, ?sort=title.asc.
+    """
     try:
+        # 1) Source of truth: scan all root folders for movies on disk
+        detected_list = _get_detected_movies_from_all_roots()
+        # Build list: each detected item as { title, year, status: 'available', poster_path, tmdb_id }
+        combined = []
+        for d in detected_list:
+            combined.append({
+                'title': d.get('title') or '',
+                'year': d.get('year') or '',
+                'status': 'available',
+                'poster_path': '',
+                'tmdb_id': None,
+                'root_folder': '',
+                'requested_at': '',
+            })
+        # 2) Merge requested list: enrich detected with poster/tmdb; add requested-only as 'requested'
+        requested_list = _get_collection_config()
+        combined_key_set = {((item.get('title') or '').strip().lower(), (item.get('year') or '').strip()) for item in combined}
+        for req in requested_list:
+            if not isinstance(req, dict):
+                continue
+            title = (req.get('title') or '').strip()
+            year = str(req.get('year') or '').strip()
+            key_lower = title.lower()
+            if (key_lower, year) in combined_key_set:
+                # Already in combined (detected); enrich with poster/tmdb from requested
+                for c in combined:
+                    if (c.get('title') or '').strip().lower() == key_lower and str(c.get('year') or '') == year:
+                        c['poster_path'] = req.get('poster_path') or c.get('poster_path') or ''
+                        c['tmdb_id'] = req.get('tmdb_id') if req.get('tmdb_id') is not None else c.get('tmdb_id')
+                        break
+            else:
+                # Requested but not on disk
+                combined.append({
+                    'title': title,
+                    'year': year,
+                    'status': 'requested',
+                    'poster_path': req.get('poster_path') or '',
+                    'tmdb_id': req.get('tmdb_id'),
+                    'root_folder': req.get('root_folder') or '',
+                    'requested_at': req.get('requested_at') or '',
+                })
+        # 3) Persist 'available' back to requested items that we detected (so discover/Home stay in sync)
         items_full = _get_collection_config()
+        collection_updated = False
+        detected_key_set = set()
+        for d in detected_list:
+            t = (d.get('title') or '').strip().lower()
+            y = (d.get('year') or '').strip()
+            if t:
+                detected_key_set.add((t, y))
+        for i, full_item in enumerate(items_full):
+            if not isinstance(full_item, dict):
+                continue
+            t = (full_item.get('title') or '').strip().lower()
+            y = str(full_item.get('year') or '').strip()
+            if (t, y) in detected_key_set and (full_item.get('status') or '').lower() != 'available':
+                items_full[i]['status'] = 'available'
+                collection_updated = True
+        if collection_updated:
+            _save_collection_config(items_full)
+        # 4) Search, sort, paginate
         q = (request.args.get('q') or '').strip().lower()
-        items = [x for x in items_full if not q or q in ((x.get('title') or '') + ' ' + str(x.get('year') or '')).lower()]
+        items = [x for x in combined if not q or q in ((x.get('title') or '') + ' ' + str(x.get('year') or '')).lower()]
         sort_key = (request.args.get('sort') or 'title.asc').strip()
         items = _sort_collection_items(items, sort_key)
         total = len(items)
@@ -3166,27 +3325,8 @@ def api_movie_hunt_collection_list():
         page_size = max(1, min(100, int(request.args.get('page_size', 20))))
         start = (page - 1) * page_size
         page_items = items[start:start + page_size]
-        # Enrich with auto-detected availability from root folder; persist so discover and UI stay in sync
-        out_items = []
-        collection_updated = False
-        for it in page_items:
-            entry = dict(it)
-            root_path = (entry.get('root_folder') or '').strip()
-            if root_path and (entry.get('status') or '').lower() != 'available':
-                if _detect_available_in_root_folder(root_path, entry.get('title') or '', entry.get('year')):
-                    entry['status'] = 'available'
-                    # Persist so Movie Hunt discover and Home show in_library
-                    for i, full_item in enumerate(items_full):
-                        if (full_item.get('title') == entry.get('title') and
-                                str(full_item.get('year') or '') == str(entry.get('year') or '')):
-                            items_full[i]['status'] = 'available'
-                            collection_updated = True
-                            break
-            out_items.append(entry)
-        if collection_updated:
-            _save_collection_config(items_full)
         return jsonify({
-            'items': out_items,
+            'items': page_items,
             'total': total,
             'page': page,
             'page_size': page_size
@@ -3217,8 +3357,22 @@ def api_movie_hunt_collection_patch(index):
 
 @movie_hunt_bp.route('/api/movie-hunt/collection/<int:index>', methods=['DELETE'])
 def api_movie_hunt_collection_delete(index):
-    """Remove item from Media Collection."""
+    """Remove item from requested list by index (legacy) or by title+year in JSON body."""
     try:
+        body = request.get_json(silent=True) or {}
+        title = (body.get('title') or '').strip()
+        year = str(body.get('year') or '').strip()
+        if title:
+            # Remove by title+year (for dynamic collection list where index != config index)
+            items = _get_collection_config()
+            for i, it in enumerate(items):
+                if not isinstance(it, dict):
+                    continue
+                if (it.get('title') or '').strip() == title and str(it.get('year') or '') == year:
+                    items.pop(i)
+                    _save_collection_config(items)
+                    return jsonify({'success': True}), 200
+            return jsonify({'success': False, 'message': 'Not found in requested list'}), 404
         items = _get_collection_config()
         if index < 0 or index >= len(items):
             return jsonify({'success': False, 'message': 'Not found'}), 404
