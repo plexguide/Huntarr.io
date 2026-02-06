@@ -3,21 +3,28 @@
  * Inspired by modern streaming services with better UX than Radarr
  */
 
-/* Detail View Container */
+/* Detail View Container - Positioned within main content area */
 .movie-detail-view {
     position: fixed;
     top: 0;
-    left: 0;
+    left: 250px; /* Sidebar width */
     right: 0;
     bottom: 0;
     background: #0f1419;
-    z-index: 9999;
+    z-index: 1000; /* Below modals but above content */
     overflow-y: auto;
     display: none;
 }
 
 .movie-detail-view.active {
     display: block;
+}
+
+/* Adjust for when sidebar is collapsed/hidden */
+@media (max-width: 768px) {
+    .movie-detail-view {
+        left: 0; /* Full width on mobile */
+    }
 }
 
 /* Hero Section with Backdrop */
@@ -62,12 +69,12 @@
     );
 }
 
-/* Close Button */
+/* Close Button - Positioned within detail view area */
 .movie-detail-close {
-    position: fixed;
+    position: absolute;
     top: 20px;
     right: 20px;
-    z-index: 10001;
+    z-index: 10;
     background: rgba(0, 0, 0, 0.7);
     border: 2px solid rgba(255, 255, 255, 0.15);
     border-radius: 50%;

@@ -37,7 +37,7 @@
             // Show loading state
             detailView.innerHTML = this.getLoadingHTML();
             detailView.classList.add('active');
-            document.body.style.overflow = 'hidden';
+            // Don't hide body overflow - we want sidebar/topbar to remain accessible
 
             // Setup close button
             setTimeout(() => {
@@ -68,7 +68,7 @@
             const detailView = document.getElementById('movie-hunt-detail-view');
             if (detailView) {
                 detailView.classList.remove('active');
-                document.body.style.overflow = '';
+                // Body overflow stays normal - sidebar/topbar always visible
             }
         },
 
