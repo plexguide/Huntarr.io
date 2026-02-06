@@ -243,6 +243,26 @@
                 '<td class="col-quality">' + escapeHtml(item.quality || '-') + '</td>' +
                 '<td class="col-formats">' + escapeHtml(item.formats || '-') + '</td>' +
                 '<td class="col-date">' + escapeHtml(item.date || '-') + '</td>';
+        } else if (currentView === 'blocklist') {
+            var movieText = escapeHtml(item.movie || item.movie_title || '-');
+            var sourceTitle = (item.source_title || '').trim() || '-';
+            var reasonFailed = (item.reason_failed || '').trim() || 'Download failed';
+            var dateText = escapeHtml(item.date || '-');
+            var sourceTitleEsc = escapeAttr(sourceTitle);
+            var reasonEsc = escapeAttr(reasonFailed);
+            tr.innerHTML =
+                '<td class="col-movie">' + movieText + '</td>' +
+                '<td class="col-source">' + escapeHtml(sourceTitle) + '</td>' +
+                '<td class="col-reason">' + escapeHtml(reasonFailed) + '</td>' +
+                '<td class="col-date">' + dateText + '</td>' +
+                '<td class="col-actions">' +
+                '<button type="button" class="activity-blocklist-btn-info" title="Details" data-source-title="' + sourceTitleEsc + '" data-reason="' + reasonEsc + '" data-date="' + escapeAttr(item.date || '') + '" data-movie="' + escapeAttr(item.movie || '') + '" aria-label="Details"><i class="fas fa-info-circle"></i></button>' +
+                '<button type="button" class="activity-blocklist-btn-remove" title="Remove from blocklist" data-source-title="' + sourceTitleEsc + '" aria-label="Remove from blocklist"><i class="fas fa-times" style="color: #ef4444;"></i></button>' +
+                '</td>';
+            var infoBtn = tr.querySelector('.activity-blocklist-btn-info');
+            var removeBtn = tr.querySelector('.activity-blocklist-btn-remove');
+            if (infoBtn) infoBtn.addEventListener('click', function() { showBlocklistDetailsModal(this); });
+            if (removeBtn) removeBtn.addEventListener('click', function() { removeBlocklistEntry(this.getAttribute('data-source-title')); });
         } else {
             tr.innerHTML = '<td class="col-movie">' + escapeHtml(item.movie || item.title || '-') + '</td>' +
                 '<td class="col-source">' + escapeHtml(item.source_title || '-') + '</td>' +
@@ -257,6 +277,49 @@
     function escapeHtml(s) {
         if (s == null) return '';
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function showBlocklistDetailsModal(btn) {
+        var modal = el('activityBlocklistDetailsModal');
+        if (!modal) return;
+        var nameEl = el('activityBlocklistModalName');
+        var reasonEl = el('activityBlocklistModalReason');
+        var dateEl = el('activityBlocklistModalDate');
+        if (nameEl) nameEl.textContent = (btn.getAttribute('data-source-title') || '').trim() || '-';
+        if (reasonEl) reasonEl.textContent = (btn.getAttribute('data-reason') || '').trim() || 'Download failed';
+        if (dateEl) dateEl.textContent = (btn.getAttribute('data-date') || '').trim() || '-';
+        modal.style.display = 'flex';
+    }
+
+    function closeBlocklistDetailsModal() {
+        var modal = el('activityBlocklistDetailsModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function removeBlocklistEntry(sourceTitle) {
+        if (!sourceTitle || !sourceTitle.trim()) return;
+        if (!window.confirm('Remove this release from the blocklist? It may be selected again when requesting.')) return;
+        fetch('./api/activity/blocklist', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source_title: sourceTitle })
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success !== false) {
+                    loadData();
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Removed from blocklist.', 'success');
+                    }
+                } else if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.error || 'Failed to remove.', 'error');
+                }
+            })
+            .catch(function() {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Failed to remove from blocklist.', 'error');
+                }
+            });
     }
 
     function performSearch() {
@@ -348,6 +411,12 @@
                 var rowCbs = document.querySelectorAll('#activityQueueTableBody .activity-queue-row-cb');
                 for (var i = 0; i < rowCbs.length; i++) rowCbs[i].checked = selectAllCb.checked;
             };
+        }
+        var blocklistModal = el('activityBlocklistDetailsModal');
+        if (blocklistModal) {
+            var closeBtns = blocklistModal.querySelectorAll('.activity-blocklist-modal-close, .activity-blocklist-modal-close-btn');
+            for (var i = 0; i < closeBtns.length; i++) closeBtns[i].addEventListener('click', closeBlocklistDetailsModal);
+            blocklistModal.addEventListener('click', function(e) { if (e.target === blocklistModal) closeBlocklistDetailsModal(); });
         }
         var prevBtn = el('activityPrevPage');
         var nextBtn = el('activityNextPage');

@@ -83,16 +83,31 @@
             <table class="activity-data-table">
                 <thead>
                     <tr>
-                        <th class="col-movie">Movie</th>
+                        <th class="col-movie">Movie Title</th>
                         <th class="col-source">Source Title</th>
-                        <th class="col-languages">Languages</th>
-                        <th class="col-quality">Quality</th>
-                        <th class="col-formats">Formats</th>
+                        <th class="col-reason">Reason Failed</th>
                         <th class="col-date">Date</th>
+                        <th class="col-actions" style="width: 90px;"></th>
                     </tr>
                 </thead>
                 <tbody id="activityBlocklistTableBody"></tbody>
             </table>
+        </div>
+        <div id="activityBlocklistDetailsModal" class="activity-blocklist-modal" style="display: none;" role="dialog" aria-label="Blocklist entry details">
+            <div class="activity-blocklist-modal-content">
+                <div class="activity-blocklist-modal-header">
+                    <h3>Details</h3>
+                    <button type="button" class="activity-blocklist-modal-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="activity-blocklist-modal-body">
+                    <p><strong>Name</strong><br><span id="activityBlocklistModalName"></span></p>
+                    <p><strong>Reason Failed</strong><br><span id="activityBlocklistModalReason"></span></p>
+                    <p><strong>Date</strong><br><span id="activityBlocklistModalDate"></span></p>
+                </div>
+                <div class="activity-blocklist-modal-footer">
+                    <button type="button" class="btn-primary-outline activity-blocklist-modal-close-btn">Close</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -387,4 +402,61 @@
 #activitySection .loading-overlay { text-align: center; padding: 60px 20px; }
 #activitySection .loading-spinner-container { color: #3b82f6; }
 #activitySection .loading-spinner-container p { margin-top: 15px; color: #94a3b8; }
+
+.activity-blocklist-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.activity-blocklist-modal-content {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    max-width: 560px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: auto;
+}
+.activity-blocklist-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #334155;
+}
+.activity-blocklist-modal-header h3 { margin: 0; color: #f1f5f9; font-size: 1.1rem; }
+.activity-blocklist-modal-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+.activity-blocklist-modal-close:hover { color: #f1f5f9; }
+.activity-blocklist-modal-body { padding: 20px; }
+.activity-blocklist-modal-body p { margin: 0 0 16px; color: #e2e8f0; font-size: 0.9em; }
+.activity-blocklist-modal-body p:last-child { margin-bottom: 0; }
+.activity-blocklist-modal-body strong { color: #94a3b8; display: block; margin-bottom: 4px; }
+.activity-blocklist-modal-footer { padding: 12px 20px; border-top: 1px solid #334155; text-align: right; }
+.activity-blocklist-modal-footer .btn-primary-outline { margin: 0; }
+#activitySection .col-reason { max-width: 280px; }
+#activitySection .col-actions { text-align: right; }
+#activitySection .activity-blocklist-btn-info,
+#activitySection .activity-blocklist-btn-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 10px;
+    color: #94a3b8;
+    font-size: 1rem;
+}
+#activitySection .activity-blocklist-btn-info:hover { color: #3b82f6; }
+#activitySection .activity-blocklist-btn-remove:hover { color: #ef4444; }
 </style>

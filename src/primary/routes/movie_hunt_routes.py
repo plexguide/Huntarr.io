@@ -915,6 +915,81 @@ def _add_requested_queue_id(client_name, queue_id, title=None, year=None, score=
     db.save_app_config('movie_hunt_requested', config)
 
 
+# --- Blocklist (failed downloads: block by source/release title so we pick a different release next time) ---
+
+def _blocklist_normalize_source_title(s):
+    """Normalize release title for blocklist matching (case-insensitive, strip)."""
+    if not s:
+        return ''
+    return str(s).strip().lower()
+
+
+def _get_blocklist_raw():
+    """Return list of blocklist entries: { source_title, movie_title, year, reason_failed, date_added }."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        config = db.get_app_config('movie_hunt_blocklist')
+        if not config or not isinstance(config.get('entries'), list):
+            return []
+        return list(config['entries'])
+    except Exception as e:
+        logger.debug("Blocklist get error: %s", e)
+        return []
+
+
+def _get_blocklist_source_titles():
+    """Return set of normalized source titles for filtering search results."""
+    entries = _get_blocklist_raw()
+    return frozenset(_blocklist_normalize_source_title(e.get('source_title')) for e in entries if (e.get('source_title') or '').strip())
+
+
+def _blocklist_add(movie_title, year, source_title, reason_failed):
+    """Add a release to the blocklist (e.g. after SAB reports failed)."""
+    if not (source_title or '').strip():
+        return
+    try:
+        from src.primary.utils.database import get_database
+        import time
+        db = get_database()
+        config = db.get_app_config('movie_hunt_blocklist') or {}
+        entries = list(config.get('entries') or [])
+        norm = _blocklist_normalize_source_title(source_title)
+        if any(_blocklist_normalize_source_title(e.get('source_title')) == norm for e in entries):
+            return
+        entries.append({
+            'source_title': (source_title or '').strip(),
+            'movie_title': (movie_title or '').strip(),
+            'year': (year or '').strip(),
+            'reason_failed': (reason_failed or 'Download failed').strip()[:500],
+            'date_added': time.time()
+        })
+        config['entries'] = entries
+        db.save_app_config('movie_hunt_blocklist', config)
+    except Exception as e:
+        logger.error("Blocklist add error: %s", e)
+
+
+def _blocklist_remove(source_titles):
+    """Remove one or more entries by source_title. source_titles: list of str."""
+    if not source_titles or not isinstance(source_titles, list):
+        return
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        config = db.get_app_config('movie_hunt_blocklist')
+        if not config or not isinstance(config.get('entries'), list):
+            return
+        to_remove = frozenset(_blocklist_normalize_source_title(s) for s in source_titles if (s or '').strip())
+        if not to_remove:
+            return
+        entries = [e for e in config['entries'] if _blocklist_normalize_source_title(e.get('source_title')) not in to_remove]
+        config['entries'] = entries
+        db.save_app_config('movie_hunt_blocklist', config)
+    except Exception as e:
+        logger.error("Blocklist remove error: %s", e)
+
+
 def _get_sabnzbd_history_item(client, queue_id):
     """
     Get a specific item from SABnzbd history by nzo_id.
@@ -969,7 +1044,9 @@ def _get_sabnzbd_history_item(client, queue_id):
                     'status': slot.get('status', ''),
                     'storage': slot.get('storage', ''),
                     'name': slot.get('name', ''),
-                    'category': slot.get('category', '')
+                    'category': slot.get('category', ''),
+                    'fail_message': (slot.get('fail_message') or '').strip() or '',
+                    'nzb_name': (slot.get('nzb_name') or '').strip() or ''
                 }
         
         sample_ids = [str(s.get('nzo_id') or s.get('id')) for s in slots[:5] if isinstance(s, dict)]
@@ -1033,11 +1110,19 @@ def _check_and_import_completed(client_name, queue_item):
             title, year or 'no year', status, storage_path or '(empty)'
         )
         
-        # Check if it completed successfully
+        # If not completed, add to blocklist so we don't pick this release again
         if status.lower() != 'completed':
-            movie_hunt_logger.warning("Import: download '%s' (%s) did not complete successfully (status: %s), skipping import", title, year, status)
+            source_title = (history_item.get('name') or history_item.get('nzb_name') or '').strip()
+            if source_title and source_title.endswith('.nzb'):
+                source_title = source_title[:-4]
+            reason_failed = (history_item.get('fail_message') or '').strip() or status or 'Download failed'
+            _blocklist_add(movie_title=title, year=year, source_title=source_title, reason_failed=reason_failed)
+            movie_hunt_logger.warning(
+                "Import: download '%s' (%s) did not complete (status: %s). Added to blocklist: %s",
+                title, year, status, source_title or '(no name)'
+            )
             return
-        
+
         # Get download path from history
         download_path = storage_path
         
@@ -1616,7 +1701,46 @@ def api_activity_get(view):
                 'total_pages': 1
             }), 200
     
-    # Blocklist: stub for now
+    # Blocklist: list of failed releases (movie_title, source_title, reason_failed, date)
+    if view == 'blocklist':
+        all_entries = _get_blocklist_raw()
+        if search:
+            q = search
+            all_entries = [
+                e for e in all_entries
+                if q in (e.get('movie_title') or '').lower() or q in (e.get('source_title') or '').lower() or q in (e.get('reason_failed') or '').lower()
+            ]
+        total = len(all_entries)
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        start = (page - 1) * page_size
+        page_entries = all_entries[start:start + page_size]
+        # Format for frontend: movie, source_title, reason_failed, date (readable)
+        items = []
+        for e in page_entries:
+            ts = e.get('date_added')
+            if isinstance(ts, (int, float)):
+                try:
+                    from datetime import datetime
+                    dt = datetime.utcfromtimestamp(ts)
+                    date_str = dt.strftime('%b %d %Y')
+                except Exception:
+                    date_str = str(ts)
+            else:
+                date_str = str(ts) if ts else '-'
+            items.append({
+                'movie': (e.get('movie_title') or '').strip() or '-',
+                'movie_title': (e.get('movie_title') or '').strip(),
+                'source_title': (e.get('source_title') or '').strip(),
+                'reason_failed': (e.get('reason_failed') or '').strip() or 'Download failed',
+                'date': date_str,
+            })
+        return jsonify({
+            'items': items,
+            'total': total,
+            'page': page,
+            'total_pages': total_pages
+        }), 200
+
     return jsonify({
         'items': [],
         'total': 0,
@@ -1678,7 +1802,7 @@ def _clear_activity_queue():
 
 @movie_hunt_bp.route('/api/activity/<view>', methods=['DELETE'])
 def api_activity_delete(view):
-    """Remove selected queue items (body: { items: [{ id, instance_name }, ...] }) or clear all. History/blocklist: stub."""
+    """Remove selected queue items (body: { items: [{ id, instance_name }, ...] }). Blocklist: body { source_title } or { items: [{ source_title }] }."""
     if view not in ('queue', 'history', 'blocklist'):
         return jsonify({'error': 'Invalid view'}), 400
     if view == 'queue':
@@ -1689,6 +1813,18 @@ def api_activity_delete(view):
         success, err_msg = _remove_activity_queue_items(items)
         if not success and err_msg:
             return jsonify({'success': False, 'error': err_msg}), 200
+        return jsonify({'success': True}), 200
+    if view == 'blocklist':
+        body = request.get_json(silent=True) or {}
+        source_titles = []
+        if isinstance(body.get('source_title'), str):
+            source_titles.append(body['source_title'].strip())
+        for it in (body.get('items') or []):
+            if isinstance(it, dict) and (it.get('source_title') or '').strip():
+                source_titles.append(it['source_title'].strip())
+        if not source_titles:
+            return jsonify({'success': False, 'error': 'No blocklist entry specified (source_title)'}), 200
+        _blocklist_remove(source_titles)
         return jsonify({'success': True}), 200
     return jsonify({'success': True}), 200
 
@@ -2407,6 +2543,12 @@ def api_movie_hunt_request():
             categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
             results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
             if results:
+                # Exclude blocklisted releases so we pick a different one
+                blocklist_titles = _get_blocklist_source_titles()
+                if blocklist_titles:
+                    results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
+                    if not results:
+                        continue
                 # Pick best release by score among those matching the profile (not just first)
                 chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(results, profile)
                 min_score = profile.get('min_custom_format_score', 0)
