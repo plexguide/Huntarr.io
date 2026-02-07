@@ -1,0 +1,88 @@
+/* ═══════════════════════════════════════════════════════════════════
+   System Section — Horizontal Tab Navigation
+   Matches the NZB Hunt Settings tab pattern
+   ═══════════════════════════════════════════════════════════════════ */
+
+.system-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ── Tab bar ─────────────────────────────────────────────────────── */
+.system-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border-bottom: 2px solid rgba(90, 109, 137, 0.2);
+}
+
+.system-tab {
+    padding: 12px 24px;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: none;
+    position: relative;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.system-tab:hover {
+    color: #e2e8f0;
+}
+
+.system-tab.active {
+    color: #3b82f6;
+}
+
+.system-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #3b82f6;
+    border-radius: 1px;
+}
+
+.system-tab i {
+    font-size: 0.9rem;
+}
+
+/* ── Tab panel defaults ──────────────────────────────────────────── */
+.system-tab-panel {
+    display: none;
+}
+
+.system-tab-panel.active {
+    display: block;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .system-container {
+        padding: 0 12px;
+    }
+
+    .system-tab {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+    }
+
+    .system-tabs {
+        margin-bottom: 16px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .system-tabs::-webkit-scrollbar {
+        display: none;
+    }
+}

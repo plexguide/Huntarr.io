@@ -83,39 +83,12 @@
                     <span>User</span>
                 </a>
             </div>
-            <a href="./#hunt-manager" class="nav-item" id="systemNav">
+            <a href="./#system" class="nav-item" id="systemNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-laptop"></i>
                 </div>
                 <span>System</span>
             </a>
-            <div class="nav-sub-group" id="system-sub">
-                <a href="./#hunt-manager" class="nav-item nav-item-sub" id="huntManagerNav">
-                    <div class="nav-icon-wrapper">
-                        <i class="fas fa-crosshairs"></i>
-                    </div>
-                    <span>Hunt Manager</span>
-                </a>
-                <a href="./#logs" class="nav-item nav-item-sub" id="logsNav">
-                    <div class="nav-icon-wrapper">
-                        <i class="fas fa-list-alt"></i>
-                    </div>
-                    <span>Logs</span>
-                </a>
-                <a href="./#about" class="nav-item nav-item-sub" id="aboutNav">
-                    <div class="nav-icon-wrapper">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <span>About</span>
-                </a>
-                <a href="https://github.com/plexguide/Unraid_Intel-ARC_Deployment" class="nav-item nav-item-sub" target="_blank"
-                    rel="noopener noreferrer">
-                    <div class="nav-icon-wrapper">
-                        <i class="fas fa-film"></i>
-                    </div>
-                    <span>My AV1 Guide</span>
-                </a>
-            </div>
         </div>
 
         <!-- Beta Group -->
@@ -1261,21 +1234,8 @@
         // Main sidebar items
         if (currentHash === '#home') {
             selector = '#homeNav';
-        } else if (currentHash === '#hunt-manager') {
-            selector = '#huntManagerNav';
-            var systemSub = document.getElementById('system-sub');
-            if (systemSub) systemSub.classList.add('expanded');
-            // Don't highlight System parent - sub-item (Hunt Manager) is enough
-        } else if (currentHash === '#logs') {
-            selector = '#logsNav';
-            var systemSub = document.getElementById('system-sub');
-            if (systemSub) systemSub.classList.add('expanded');
-            // Don't highlight System parent - sub-item (Logs) is enough
-        } else if (currentHash === '#about') {
-            selector = '#aboutNav';
-            var systemSub = document.getElementById('system-sub');
-            if (systemSub) systemSub.classList.add('expanded');
-            // Don't highlight System parent - sub-item (About) is enough
+        } else if (currentHash === '#system' || currentHash === '#hunt-manager' || currentHash === '#logs' || currentHash === '#about') {
+            selector = '#systemNav';
         } else if (currentHash === '#apps' || currentHash === '#sonarr' || currentHash === '#instance-editor') {
             selector = '#appsNav';
         } else if (currentHash === '#swaparr') {
@@ -1373,11 +1333,6 @@
         const activeItem = document.querySelector(selector);
         if (activeItem) {
             activeItem.classList.add('active');
-        }
-        // Collapse System sub when not on hunt-manager, logs, or about
-        if (currentHash !== '#hunt-manager' && currentHash !== '#logs' && currentHash !== '#about') {
-            var systemSub = document.getElementById('system-sub');
-            if (systemSub) systemSub.classList.remove('expanded');
         }
         // Collapse Settings sub when not on settings section
         var settingsHashes = ['#settings', '#scheduling', '#notifications', '#backup-restore', '#settings-logs', '#user'];

@@ -58,7 +58,7 @@ let huntarrUI = {
                 this._enableRequestarr = en;
                 const nav = document.getElementById('requestarrNav');
                 if (nav) {
-                    var onSystem = this.currentSection === 'hunt-manager' || this.currentSection === 'logs' || this.currentSection === 'about';
+                    var onSystem = this.currentSection === 'system' || this.currentSection === 'hunt-manager' || this.currentSection === 'logs' || this.currentSection === 'about';
                     var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(this.currentSection) !== -1;
                     nav.style.display = (onSystem || onSettings) ? 'none' : (en ? '' : 'none');
                 }
@@ -195,6 +195,7 @@ let huntarrUI = {
         this.setupMovieHuntNavigation();
         this.setupAppsNavigation();
         this.setupSettingsNavigation();
+        this.setupSystemNavigation();
         
         // Auto-save enabled - no unsaved changes handler needed
         
@@ -529,7 +530,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -585,57 +586,67 @@ let huntarrUI = {
             this.loadSwaparrStatus();
             // Stats are already loaded, no need to reload unless data changed
             // this.loadMediaStats();
-        } else if ((section === 'logs' || section === 'logs-movie-hunt') && this.elements.logsSection) {
+        } else if (section === 'logs-movie-hunt' && this.elements.logsSection) {
+            // Movie Hunt logs - show logsSection under Movie Hunt sidebar (hide tab bar)
             var activitySection = document.getElementById('activitySection');
             if (activitySection) { activitySection.classList.remove('active'); activitySection.style.display = 'none'; }
-            this.elements.logsSection.classList.add('active');
-            this.elements.logsSection.style.display = 'block';
+            var systemSection = document.getElementById('systemSection');
+            if (systemSection) { systemSection.classList.add('active'); systemSection.style.display = 'block'; }
+            // Hide the system tab bar - this is shown under Movie Hunt sidebar
+            var systemContainer = systemSection ? systemSection.querySelector('.system-container') : null;
+            if (systemContainer) systemContainer.style.display = 'none';
+            if (window.HuntarrNavigation) window.HuntarrNavigation.switchSystemTab('logs');
             newTitle = 'Logs';
-            this.currentSection = section; // set before sidebar so Movie Hunt Logs gets highlighted
-            if (section === 'logs') {
-                if (this.elements.logsNav) this.elements.logsNav.classList.add('active');
-                var systemSub = document.getElementById('system-sub');
-                if (systemSub) systemSub.classList.add('expanded');
-                localStorage.removeItem('huntarr-settings-sidebar');
-                this.showMainSidebar();
-            } else {
-                // logs-movie-hunt: keep Movie Hunt sidebar, set app filter to Movie Hunt
-                this.showMovieHuntSidebar();
-                var logAppSelect = document.getElementById('logAppSelect');
-                if (logAppSelect) logAppSelect.value = 'movie_hunt';
-                if (window.LogsModule) window.LogsModule.currentLogApp = 'movie_hunt';
-            }
+            this.currentSection = section;
+            this.showMovieHuntSidebar();
+            var logAppSelect = document.getElementById('logAppSelect');
+            if (logAppSelect) logAppSelect.value = 'movie_hunt';
+            if (window.LogsModule) window.LogsModule.currentLogApp = 'movie_hunt';
             if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
                 window.LogsModule.updateDebugLevelVisibility();
             }
-            
             if (window.LogsModule) {
                 try {
-                    if (window.LogsModule.initialized) {
-                        window.LogsModule.connectToLogs();
-                    } else {
-                        window.LogsModule.init();
-                    }
-                } catch (error) {
-                    console.error('[huntarrUI] Error during LogsModule calls:', error);
-                }
+                    if (window.LogsModule.initialized) { window.LogsModule.connectToLogs(); }
+                    else { window.LogsModule.init(); }
+                } catch (error) { console.error('[huntarrUI] Error during LogsModule calls:', error); }
             }
-        } else if (section === 'hunt-manager' && document.getElementById('huntManagerSection')) {
-            document.getElementById('huntManagerSection').classList.add('active');
-            document.getElementById('huntManagerSection').style.display = 'block';
-            if (document.getElementById('huntManagerNav')) document.getElementById('huntManagerNav').classList.add('active');
-            var systemSub = document.getElementById('system-sub');
-            if (systemSub) systemSub.classList.add('expanded');
-            newTitle = 'Hunt Manager';
-            this.currentSection = 'hunt-manager';
+        } else if ((section === 'system' || section === 'hunt-manager' || section === 'logs' || section === 'about') && document.getElementById('systemSection')) {
+            // System section with tabbed navigation (Hunt Manager, Logs, About)
+            var systemSection = document.getElementById('systemSection');
+            systemSection.classList.add('active');
+            systemSection.style.display = 'block';
+            // Ensure tab bar is visible (may have been hidden by logs-movie-hunt)
+            var systemContainer = systemSection.querySelector('.system-container');
+            if (systemContainer) systemContainer.style.display = '';
+            var systemNav = document.getElementById('systemNav');
+            if (systemNav) systemNav.classList.add('active');
             
-            // Show main sidebar for main sections and clear settings sidebar preference
+            // Determine which tab to show
+            var activeTab = section === 'system' ? 'hunt-manager' : section;
+            if (window.HuntarrNavigation) window.HuntarrNavigation.switchSystemTab(activeTab);
+            
+            // Set title based on active tab
+            var tabTitles = { 'hunt-manager': 'Hunt Manager', 'logs': 'Logs', 'about': 'About' };
+            newTitle = tabTitles[activeTab] || 'System';
+            this.currentSection = section === 'system' ? 'hunt-manager' : section;
+            
             localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
             
-            // Load hunt manager data if the module exists
-            if (typeof huntManagerModule !== 'undefined') {
-                huntManagerModule.refresh();
+            // Initialize the active tab's module
+            if (activeTab === 'hunt-manager') {
+                if (typeof huntManagerModule !== 'undefined') huntManagerModule.refresh();
+            } else if (activeTab === 'logs') {
+                if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
+                    window.LogsModule.updateDebugLevelVisibility();
+                }
+                if (window.LogsModule) {
+                    try {
+                        if (window.LogsModule.initialized) { window.LogsModule.connectToLogs(); }
+                        else { window.LogsModule.init(); }
+                    } catch (error) { console.error('[huntarrUI] Error during LogsModule calls:', error); }
+                }
             }
         } else if (section === 'nzb-hunt-home' && document.getElementById('nzb-hunt-section')) {
             // NZB Hunt requires dev mode
@@ -937,16 +948,6 @@ let huntarrUI = {
             
             // Initialize Swaparr section
             this.initializeSwaparr();
-        } else if (section === 'about' && document.getElementById('aboutSection')) {
-            document.getElementById('aboutSection').classList.add('active');
-            document.getElementById('aboutSection').style.display = 'block';
-            if (document.getElementById('aboutNav')) document.getElementById('aboutNav').classList.add('active');
-            newTitle = 'About';
-            this.currentSection = 'about';
-            
-            // Show main sidebar and clear settings sidebar preference
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
         } else if (section === 'settings' && document.getElementById('settingsSection')) {
             document.getElementById('settingsSection').classList.add('active');
             document.getElementById('settingsSection').style.display = 'block';
@@ -1296,7 +1297,7 @@ let huntarrUI = {
         document.getElementById('sidebar').style.display = 'flex';
         // When on System (Hunt Manager, Logs, About), hide Settings, Requestarr, Apps in main sidebar
         var section = this.currentSection;
-        var onSystem = section === 'hunt-manager' || section === 'logs' || section === 'about';
+        var onSystem = section === 'system' || section === 'hunt-manager' || section === 'logs' || section === 'about';
         var settingsNav = document.getElementById('settingsNav');
         var requestarrNav = document.getElementById('requestarrNav');
         var appsNav = document.getElementById('appsNav');
@@ -1308,7 +1309,7 @@ let huntarrUI = {
 
     /** When on Settings (main, scheduling, notifications, backup-restore, logs, user) or System (hunt-manager, logs, about), hide Beta and Movie Hunt in main sidebar. */
     _updateMainSidebarBetaVisibility: function() {
-        var hideBetaSections = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'hunt-manager', 'logs', 'about'];
+        var hideBetaSections = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'system', 'hunt-manager', 'logs', 'about'];
         var hide = hideBetaSections.indexOf(this.currentSection) !== -1;
         var betaGroup = document.getElementById('main-sidebar-beta-group');
         if (betaGroup) betaGroup.style.display = hide ? 'none' : '';
@@ -2630,6 +2631,12 @@ let huntarrUI = {
     setupSettingsNavigation: function() {
         if (window.HuntarrNavigation) {
             window.HuntarrNavigation.setupSettingsNavigation();
+        }
+    },
+
+    setupSystemNavigation: function() {
+        if (window.HuntarrNavigation && window.HuntarrNavigation.setupSystemTabs) {
+            window.HuntarrNavigation.setupSystemTabs();
         }
     },
 
