@@ -894,8 +894,8 @@
                         <p class="editor-help-text">How long to wait before re-searching a previously processed item (default: 72 hours / 3 days)</p>
                     </div>
                     
-                    ${isEdit && safeInstance.state_management_mode !== 'disabled' ? `
-                    <div class="editor-field-group">
+                    ${isEdit ? `
+                    <div id="instance-editor-stateful-block" class="editor-field-group" style="display: ${safeInstance.state_management_mode === 'disabled' ? 'none' : 'block'};">
                         <button type="button" class="btn-card delete btn-reset-state" onclick="window.SettingsForms.resetInstanceState('${appType}', ${index})">
                             <i class="fas fa-undo"></i> Reset Processed State Now
                         </button>
@@ -1288,12 +1288,14 @@
         this._currentEditing = { appType, index: finalIndex, originalInstance: JSON.parse(JSON.stringify(newData)) };
         _instanceEditorDirty = false;
         
-        // Refresh state status if state management is enabled
+        // Show or hide the stateful block (green box + reset button) and refresh state
+        const statefulBlock = document.getElementById('instance-editor-stateful-block');
+        if (statefulBlock) {
+            statefulBlock.style.display = newData.state_management_mode === 'disabled' ? 'none' : 'block';
+        }
         if (newData.state_management_mode !== 'disabled') {
-            // Restart polling with updated index
             this.startStateStatusPolling(appType, finalIndex);
         } else {
-            // Stop polling if state management is disabled
             this.stopStateStatusPolling();
         }
         
