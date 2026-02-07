@@ -206,6 +206,61 @@
     flex-wrap: wrap;
 }
 
+/* Instance Selector */
+.movie-detail-instance-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+.movie-detail-instance-selector label {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.movie-detail-instance-selector label i {
+    color: #f59e0b;
+}
+
+.movie-detail-select {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.movie-detail-select:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #f59e0b;
+}
+
+.movie-detail-select:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.movie-detail-select option {
+    background: #1e293b;
+    color: #fff;
+}
+
 .movie-detail-btn {
     padding: 14px 32px;
     border-radius: 8px;
@@ -217,7 +272,6 @@
     align-items: center;
     gap: 10px;
     transition: all 0.3s ease;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
@@ -234,8 +288,9 @@
 }
 
 .movie-detail-btn-primary:disabled {
-    background: rgba(100, 116, 139, 0.3);
-    color: #64748b;
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border: 2px solid rgba(34, 197, 94, 0.4);
     cursor: not-allowed;
     box-shadow: none;
 }
@@ -464,6 +519,21 @@
     
     .movie-detail-actions {
         justify-content: center;
+    }
+    
+    .movie-detail-instance-selector {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .movie-detail-instance-selector label {
+        justify-content: center;
+    }
+    
+    .movie-detail-select {
+        width: 100%;
     }
     
     .movie-detail-close {

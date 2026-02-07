@@ -8,6 +8,8 @@
     window.MovieHuntDetail = {
         currentMovie: null,
         tmdbApiKey: null,
+        radarrInstances: [],
+        selectedInstance: null,
 
         init() {
             console.log('[MovieHuntDetail] Module initialized');
@@ -77,6 +79,11 @@
             this.currentMovie = movie;
             this.options = options || {};
             console.log('[MovieHuntDetail] Opening detail for:', movie.title, 'from', this.options.source || 'unknown');
+            
+            // Load Radarr instances if not already loaded
+            if (this.radarrInstances.length === 0) {
+                await this.loadRadarrInstances();
+            }
 
             // Get or create detail view container
             let detailView = document.getElementById('movie-hunt-detail-view');
@@ -239,6 +246,22 @@
                 }
             }
 
+            // Build instance selector HTML
+            let instanceSelectorHTML = '';
+            if (this.radarrInstances.length > 0) {
+                instanceSelectorHTML = `
+                    <div class="movie-detail-instance-selector">
+                        <label for="movie-detail-instance-select"><i class="fas fa-server"></i> Instance:</label>
+                        <select id="movie-detail-instance-select" class="movie-detail-select">
+                            ${this.radarrInstances.map(instance => {
+                                const selected = instance.name === this.selectedInstance ? 'selected' : '';
+                                return `<option value="${this.escapeHtml(instance.name)}" ${selected}>Radarr - ${this.escapeHtml(instance.name)}</option>`;
+                            }).join('')}
+                        </select>
+                    </div>
+                `;
+            }
+
             return `
                 <button class="movie-detail-close"><i class="fas fa-times"></i></button>
                 
@@ -249,6 +272,7 @@
                         </div>
                         <div class="movie-detail-info">
                             <h1 class="movie-detail-title">${this.escapeHtml(details.title)}</h1>
+                            ${instanceSelectorHTML}
                             <div class="movie-detail-meta">
                                 <div class="movie-detail-year"><i class="fas fa-calendar"></i> ${year}</div>
                                 <div class="movie-detail-runtime"><i class="fas fa-clock"></i> ${runtime}</div>
@@ -367,18 +391,33 @@
                 closeBtn.addEventListener('click', () => this.closeDetail());
             }
 
+            // Instance selector change handler
+            const instanceSelect = document.getElementById('movie-detail-instance-select');
+            if (instanceSelect) {
+                instanceSelect.addEventListener('change', async () => {
+                    this.selectedInstance = instanceSelect.value;
+                    console.log('[MovieHuntDetail] Instance changed to:', this.selectedInstance);
+                    
+                    // Update movie status for new instance
+                    await this.updateMovieStatus();
+                });
+                
+                // Initial status check for selected instance
+                this.updateMovieStatus();
+            }
+
             // Request button
             const requestBtn = document.getElementById('movie-detail-request-btn');
             if (requestBtn && this.currentMovie) {
                 requestBtn.addEventListener('click', () => {
                     // Don't close detail page - just open the modal on top of it
                     
-                    // If called from Requestarr, use Requestarr modal
+                    // If called from Requestarr, use Requestarr modal with selected instance
                     if (this.options.source === 'requestarr' && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
                         window.RequestarrDiscover.modal.openModal(
                             this.currentMovie.tmdb_id,
                             'movie',
-                            this.options.suggestedInstance
+                            this.selectedInstance
                         );
                     }
                     // Otherwise use Movie Hunt request modal
@@ -428,6 +467,89 @@
                 }
             };
             document.addEventListener('keydown', escHandler);
+        },
+
+        async loadRadarrInstances() {
+            try {
+                const response = await fetch('./api/requestarr/instances/radarr');
+                const data = await response.json();
+                
+                if (data.instances && data.instances.length > 0) {
+                    this.radarrInstances = data.instances;
+                    
+                    // Set initial selected instance (prioritize suggested instance from options)
+                    if (this.options.suggestedInstance) {
+                        this.selectedInstance = this.options.suggestedInstance;
+                    } else if (!this.selectedInstance) {
+                        this.selectedInstance = this.radarrInstances[0].name;
+                    }
+                    
+                    console.log('[MovieHuntDetail] Loaded', this.radarrInstances.length, 'Radarr instances, selected:', this.selectedInstance);
+                } else {
+                    this.radarrInstances = [];
+                    this.selectedInstance = null;
+                }
+            } catch (error) {
+                console.error('[MovieHuntDetail] Error loading Radarr instances:', error);
+                this.radarrInstances = [];
+                this.selectedInstance = null;
+            }
+        },
+
+        async checkMovieStatus(tmdbId, instanceName) {
+            if (!instanceName) return { in_library: false, in_cooldown: false };
+            
+            try {
+                const response = await fetch(`./api/requestarr/movie-status?tmdb_id=${tmdbId}&instance=${encodeURIComponent(instanceName)}`);
+                const data = await response.json();
+                
+                return {
+                    in_library: data.in_library || false,
+                    in_cooldown: (data.cooldown_status && data.cooldown_status.in_cooldown) || false
+                };
+            } catch (error) {
+                console.error('[MovieHuntDetail] Error checking movie status:', error);
+                return { in_library: false, in_cooldown: false };
+            }
+        },
+
+        async updateMovieStatus() {
+            if (!this.currentMovie || !this.selectedInstance) return;
+            
+            const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
+            const status = await this.checkMovieStatus(tmdbId, this.selectedInstance);
+            
+            // Update the action button based on new status
+            const actionsContainer = document.querySelector('.movie-detail-actions');
+            if (actionsContainer) {
+                let actionButton = '';
+                
+                if (status.in_library) {
+                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-check"></i> Already Available</button>';
+                } else if (status.in_cooldown) {
+                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-clock"></i> In Cooldown</button>';
+                } else {
+                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" id="movie-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
+                }
+                
+                actionsContainer.innerHTML = actionButton;
+                
+                // Re-setup request button if it exists
+                const requestBtn = document.getElementById('movie-detail-request-btn');
+                if (requestBtn) {
+                    requestBtn.addEventListener('click', () => {
+                        if (this.options.source === 'requestarr' && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                            window.RequestarrDiscover.modal.openModal(
+                                this.currentMovie.tmdb_id,
+                                'movie',
+                                this.selectedInstance
+                            );
+                        } else if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal) {
+                            window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+                        }
+                    });
+                }
+            }
         },
 
         getLoadingHTML() {
