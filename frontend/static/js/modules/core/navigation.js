@@ -274,6 +274,9 @@ window.HuntarrNavigation = {
         if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
         if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
         if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
+        if (window.huntarrUI && typeof window.huntarrUI._updateMainSidebarBetaVisibility === 'function') {
+            window.huntarrUI._updateMainSidebarBetaVisibility();
+        }
     },
 
     showAppsSidebar: function() {

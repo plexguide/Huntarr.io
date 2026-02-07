@@ -1255,6 +1255,15 @@ let huntarrUI = {
         if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
         if (requestarrNav) requestarrNav.style.display = onSystem ? 'none' : '';
         if (appsNav) appsNav.style.display = onSystem ? 'none' : '';
+        this._updateMainSidebarBetaVisibility();
+    },
+
+    /** When on Settings (main, scheduling, notifications, backup-restore, logs, user) or System (hunt-manager, logs, about), hide Beta and Movie Hunt in main sidebar. */
+    _updateMainSidebarBetaVisibility: function() {
+        var hideBetaSections = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'hunt-manager', 'logs', 'about'];
+        var hide = hideBetaSections.indexOf(this.currentSection) !== -1;
+        var betaGroup = document.getElementById('main-sidebar-beta-group');
+        if (betaGroup) betaGroup.style.display = hide ? 'none' : '';
     },
     
     showAppsSidebar: function() {
