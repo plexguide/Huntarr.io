@@ -227,8 +227,12 @@
     color: rgba(255, 255, 255, 0.85);
     margin: 0;
 }
+/* Match Movie Home dropdown: compact width, not full page */
 .movie-hunt-settings-instance-bar .control-select {
+    width: auto;
     min-width: 200px;
+    max-width: 280px;
+    flex-shrink: 0;
 }
 #movie-hunt-section .sort-dropdown { flex-shrink: 0; min-width: 250px; }
 #movie-hunt-section .control-select {
