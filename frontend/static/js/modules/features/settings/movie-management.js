@@ -30,7 +30,6 @@
             standard_movie_format: '{Movie Title} ({Release Year}) {Quality Full}',
             movie_folder_format: '{Movie Title} ({Release Year})',
             minimum_free_space_gb: 10,
-            use_hardlinks_instead_of_copy: true,
             import_using_script: false,
             import_extra_files: false
         };
@@ -44,7 +43,6 @@
         var standardFormat = escapeHtml(String(d.standard_movie_format || '').trim() || '{Movie Title} ({Release Year}) {Quality Full}');
         var folderFormat = escapeHtml(String(d.movie_folder_format || '').trim() || '{Movie Title} ({Release Year})');
         var minSpace = typeof d.minimum_free_space_gb === 'number' ? d.minimum_free_space_gb : 10;
-        var useHardlinks = d.use_hardlinks_instead_of_copy !== false;
 
         var colonOptionList = ['Smart Replace', 'Delete', 'Replace with Dash', 'Replace with Space Dash', 'Replace with Space Dash Space'];
         var colonOptions = colonOptionList.map(function(opt) {
@@ -86,11 +84,6 @@
             '<label for="movie-mgmt-min-space">Minimum Free Space (GB)</label>' +
             '<input type="number" id="movie-mgmt-min-space" value="' + minSpace + '" min="0" max="10000" step="1">' +
             '<p class="editor-help-text">Prevent import if it would leave less than this amount of disk space available (in GB)</p></div>' +
-            '<div class="editor-field-group">' +
-            '<div class="editor-setting-item flex-row">' +
-            '<label for="movie-mgmt-hardlinks">Use Hardlinks instead of Copy</label>' +
-            '<label class="toggle-switch"><input type="checkbox" id="movie-mgmt-hardlinks"' + (useHardlinks ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
-            '</div><p class="editor-help-text">Hardlinks allow Movie Hunt to import seeding torrents to the movie folder without taking extra disk space or copying the entire contents of the file. Hardlinks will only work if the source and destination are on the same volume.</p></div>' +
             '</div></div>';
     }
 
@@ -115,8 +108,7 @@
                 if (!el) return 10;
                 var n = parseInt(el.value, 10);
                 return isNaN(n) || n < 0 ? 10 : Math.min(10000, n);
-            })(),
-            use_hardlinks_instead_of_copy: document.getElementById('movie-mgmt-hardlinks') ? document.getElementById('movie-mgmt-hardlinks').checked : true
+            })()
         };
     }
 
@@ -135,7 +127,7 @@
     }
 
     function setupChangeDetection() {
-        var ids = ['movie-mgmt-rename', 'movie-mgmt-replace-illegal', 'movie-mgmt-colon', 'movie-mgmt-standard-format', 'movie-mgmt-folder-format', 'movie-mgmt-min-space', 'movie-mgmt-hardlinks'];
+        var ids = ['movie-mgmt-rename', 'movie-mgmt-replace-illegal', 'movie-mgmt-colon', 'movie-mgmt-standard-format', 'movie-mgmt-folder-format', 'movie-mgmt-min-space'];
         ids.forEach(function(id) {
             var el = document.getElementById(id);
             if (el) {

@@ -253,6 +253,16 @@ window.HuntarrNavigation = {
         if (appsSidebar) appsSidebar.style.display = 'none';
         if (settingsSidebar) settingsSidebar.style.display = 'none';
         if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+
+        // When on System (Hunt Manager, Logs, About), hide Apps, Requestarr, Settings in main sidebar
+        var section = window.huntarrUI && window.huntarrUI.currentSection;
+        var onSystem = section === 'hunt-manager' || section === 'logs' || section === 'about';
+        var settingsNav = document.getElementById('settingsNav');
+        var requestarrNav = document.getElementById('requestarrNav');
+        var appsNav = document.getElementById('appsNav');
+        if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
+        if (requestarrNav) requestarrNav.style.display = onSystem ? 'none' : '';
+        if (appsNav) appsNav.style.display = onSystem ? 'none' : '';
     },
 
     showAppsSidebar: function() {

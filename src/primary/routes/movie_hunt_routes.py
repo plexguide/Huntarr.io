@@ -762,7 +762,6 @@ def _movie_management_defaults():
         'standard_movie_format': '{Movie Title} ({Release Year}) {Quality Full}',
         'movie_folder_format': '{Movie Title} ({Release Year})',
         'minimum_free_space_gb': 10,
-        'use_hardlinks_instead_of_copy': True,
         'import_using_script': False,
         'import_extra_files': False,
     }

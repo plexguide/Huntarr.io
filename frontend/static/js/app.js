@@ -56,7 +56,10 @@ let huntarrUI = {
                 const en = !!(all.general && all.general.enable_requestarr !== false);
                 this._enableRequestarr = en;
                 const nav = document.getElementById('requestarrNav');
-                if (nav) nav.style.display = en ? '' : 'none';
+                if (nav) {
+                    var onSystem = this.currentSection === 'hunt-manager' || this.currentSection === 'logs' || this.currentSection === 'about';
+                    nav.style.display = onSystem ? 'none' : (en ? '' : 'none');
+                }
                 if (!en && /^#?requestarr/.test(window.location.hash)) {
                     window.location.hash = '#';
                     this.switchSection('home');
@@ -570,6 +573,8 @@ let huntarrUI = {
             if (activitySection) { activitySection.classList.remove('active'); activitySection.style.display = 'none'; }
             this.elements.logsSection.classList.add('active');
             this.elements.logsSection.style.display = 'block';
+            newTitle = 'Logs';
+            this.currentSection = section; // set before sidebar so Movie Hunt Logs gets highlighted
             if (section === 'logs') {
                 if (this.elements.logsNav) this.elements.logsNav.classList.add('active');
                 var systemSub = document.getElementById('system-sub');
@@ -583,8 +588,6 @@ let huntarrUI = {
                 if (logAppSelect) logAppSelect.value = 'movie_hunt';
                 if (window.LogsModule) window.LogsModule.currentLogApp = 'movie_hunt';
             }
-            newTitle = 'Logs';
-            this.currentSection = section;
             if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
                 window.LogsModule.updateDebugLevelVisibility();
             }
@@ -1202,6 +1205,15 @@ let huntarrUI = {
         document.getElementById('requestarr-sidebar').style.display = 'none';
         const mh = document.getElementById('movie-hunt-sidebar');
         if (mh) mh.style.display = 'none';
+        // When on System (Hunt Manager, Logs, About), hide Settings, Requestarr, Apps in main sidebar
+        var section = this.currentSection;
+        var onSystem = section === 'hunt-manager' || section === 'logs' || section === 'about';
+        var settingsNav = document.getElementById('settingsNav');
+        var requestarrNav = document.getElementById('requestarrNav');
+        var appsNav = document.getElementById('appsNav');
+        if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
+        if (requestarrNav) requestarrNav.style.display = onSystem ? 'none' : '';
+        if (appsNav) appsNav.style.display = onSystem ? 'none' : '';
     },
     
     showAppsSidebar: function() {
