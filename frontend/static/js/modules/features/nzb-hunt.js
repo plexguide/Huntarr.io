@@ -12,14 +12,325 @@
         _categories: [],
         _editIndex: null, // null = add, number = edit
         _catEditIndex: null, // null = add, number = edit
+        _pollTimer: null,
+        _paused: false,
 
         /* ──────────────────────────────────────────────
            Initialization
         ────────────────────────────────────────────── */
         init: function () {
+            var self = this;
             this.setupTabs();
             this.showTab('queue');
-            console.log('[NzbHunt] Home initialized');
+
+            // Wire up Refresh buttons
+            var queueRefresh = document.querySelector('#nzb-hunt-section [data-panel="queue"] .nzb-queue-actions .nzb-btn');
+            if (queueRefresh) queueRefresh.addEventListener('click', function () { self._fetchQueueAndStatus(); });
+
+            var historyRefresh = document.querySelector('#nzb-hunt-section [data-panel="history"] .nzb-queue-actions .nzb-btn[title="Refresh"]');
+            if (historyRefresh) historyRefresh.addEventListener('click', function () { self._fetchHistory(); });
+
+            var historyClear = document.querySelector('#nzb-hunt-section [data-panel="history"] .nzb-btn-danger');
+            if (historyClear) historyClear.addEventListener('click', function () { self._clearHistory(); });
+
+            // Wire up Pause / Resume button
+            var pauseBtn = document.getElementById('nzb-pause-btn');
+            if (pauseBtn) {
+                pauseBtn.addEventListener('click', function () {
+                    self._paused = !self._paused;
+                    var icon = pauseBtn.querySelector('i');
+                    var label = pauseBtn.querySelector('span');
+                    if (self._paused) {
+                        if (icon) icon.className = 'fas fa-play';
+                        if (label) label.textContent = 'Resume';
+                    } else {
+                        if (icon) icon.className = 'fas fa-pause';
+                        if (label) label.textContent = 'Pause';
+                    }
+                });
+            }
+
+            // Start polling queue & status
+            this._fetchQueueAndStatus();
+            this._fetchHistory();
+            this._pollTimer = setInterval(function () { self._fetchQueueAndStatus(); }, 3000);
+
+            console.log('[NzbHunt] Home initialized – polling started');
+        },
+
+        /* ──────────────────────────────────────────────
+           Queue & Status Polling
+        ────────────────────────────────────────────── */
+        _fetchQueueAndStatus: function () {
+            var self = this;
+            // Fetch both queue and status in parallel
+            Promise.all([
+                fetch('./api/nzb-hunt/queue?t=' + Date.now()).then(function (r) { return r.json(); }),
+                fetch('./api/nzb-hunt/status?t=' + Date.now()).then(function (r) { return r.json(); })
+            ]).then(function (results) {
+                var queueData = results[0];
+                var statusData = results[1];
+                self._renderQueue(queueData.queue || []);
+                self._updateStatusBar(statusData);
+                self._updateQueueBadge(queueData.queue || []);
+                // Update history count from status
+                var hBadge = document.getElementById('nzb-history-count');
+                if (hBadge) hBadge.textContent = statusData.history_count || 0;
+            }).catch(function (err) {
+                console.error('[NzbHunt] Poll error:', err);
+            });
+        },
+
+        _updateStatusBar: function (status) {
+            var speedEl = document.getElementById('nzb-speed');
+            var etaEl = document.getElementById('nzb-eta');
+            var remainEl = document.getElementById('nzb-remaining');
+            var freeEl = document.getElementById('nzb-free-space');
+
+            if (speedEl) speedEl.textContent = status.speed_human || '0 B/s';
+            if (etaEl) {
+                // Calculate ETA from queue items if available
+                etaEl.textContent = this._currentEta || '--:--';
+            }
+            if (remainEl) remainEl.textContent = this._currentRemaining || '0 B';
+            if (freeEl) freeEl.textContent = status.free_space_human || '--';
+        },
+
+        _updateQueueBadge: function (queue) {
+            var badge = document.getElementById('nzb-queue-count');
+            if (badge) badge.textContent = queue.length;
+        },
+
+        /* ──────────────────────────────────────────────
+           Queue Rendering
+        ────────────────────────────────────────────── */
+        _renderQueue: function (queue) {
+            var body = document.getElementById('nzb-queue-body');
+            if (!body) return;
+
+            if (!queue || queue.length === 0) {
+                body.innerHTML =
+                    '<div class="nzb-queue-empty">' +
+                        '<div class="nzb-queue-empty-icon"><i class="fas fa-inbox"></i></div>' +
+                        '<h3>Queue is empty</h3>' +
+                        '<p>Downloads will appear here once NZB Hunt is connected to your Usenet setup.</p>' +
+                    '</div>';
+                this._currentEta = '--:--';
+                this._currentRemaining = '0 B';
+                return;
+            }
+
+            // Calculate overall remaining and ETA
+            var totalRemaining = 0;
+            var totalSpeed = 0;
+            queue.forEach(function (item) {
+                totalRemaining += (item.total_bytes || 0) - (item.downloaded_bytes || 0);
+                if (item.state === 'downloading') totalSpeed += (item.speed_bps || 0);
+            });
+            this._currentRemaining = this._formatBytes(totalRemaining);
+            this._currentEta = totalSpeed > 0 ? this._formatEta(Math.round(totalRemaining / totalSpeed)) : '--:--';
+
+            var self = this;
+            var html = '';
+            queue.forEach(function (item, idx) {
+                var progress = item.progress_pct || 0;
+                var stateClass = 'nzb-item-' + (item.state || 'queued');
+                var stateIcon = self._stateIcon(item.state);
+                var stateLabel = self._stateLabel(item.state);
+                var speed = item.state === 'downloading' ? self._formatBytes(item.speed_bps || 0) + '/s' : '';
+                var timeLeft = item.time_left || '';
+                var downloaded = self._formatBytes(item.downloaded_bytes || 0);
+                var totalSize = self._formatBytes(item.total_bytes || 0);
+                var filesStr = (item.completed_files || 0) + '/' + (item.total_files || 0);
+                var name = self._escHtml(item.name || 'Unknown');
+                var category = item.category ? '<span class="nzb-item-category">' + self._escHtml(item.category) + '</span>' : '';
+
+                html +=
+                    '<div class="nzb-queue-item ' + stateClass + '" data-nzb-id="' + item.id + '">' +
+                        '<div class="nzb-item-row-top">' +
+                            '<div class="nzb-item-name" title="' + name + '">' + name + '</div>' +
+                            '<div class="nzb-item-controls">' +
+                                (item.state === 'downloading' || item.state === 'queued' ?
+                                    '<button class="nzb-item-btn" title="Pause" data-action="pause" data-id="' + item.id + '"><i class="fas fa-pause"></i></button>' : '') +
+                                (item.state === 'paused' ?
+                                    '<button class="nzb-item-btn" title="Resume" data-action="resume" data-id="' + item.id + '"><i class="fas fa-play"></i></button>' : '') +
+                                '<button class="nzb-item-btn nzb-item-btn-danger" title="Remove" data-action="remove" data-id="' + item.id + '"><i class="fas fa-trash-alt"></i></button>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="nzb-item-row-meta">' +
+                            '<span class="nzb-item-state"><i class="' + stateIcon + '"></i> ' + stateLabel + '</span>' +
+                            category +
+                            '<span class="nzb-item-size"><i class="fas fa-database"></i> ' + downloaded + ' / ' + totalSize + '</span>' +
+                            '<span class="nzb-item-files"><i class="fas fa-copy"></i> ' + filesStr + ' files</span>' +
+                            (speed ? '<span class="nzb-item-speed"><i class="fas fa-tachometer-alt"></i> ' + speed + '</span>' : '') +
+                            (timeLeft ? '<span class="nzb-item-eta"><i class="fas fa-clock"></i> ' + timeLeft + '</span>' : '') +
+                        '</div>' +
+                        '<div class="nzb-item-row-progress">' +
+                            '<div class="nzb-item-progress-bar">' +
+                                '<div class="nzb-item-progress-fill" style="width: ' + progress.toFixed(1) + '%;"></div>' +
+                            '</div>' +
+                            '<span class="nzb-item-pct">' + progress.toFixed(1) + '%</span>' +
+                        '</div>' +
+                    '</div>';
+            });
+
+            body.innerHTML = html;
+
+            // Wire up item control buttons
+            body.querySelectorAll('.nzb-item-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var action = btn.getAttribute('data-action');
+                    var id = btn.getAttribute('data-id');
+                    if (action && id) self._queueItemAction(action, id);
+                });
+            });
+        },
+
+        _queueItemAction: function (action, id) {
+            var self = this;
+            var url, method;
+            if (action === 'pause') {
+                url = './api/nzb-hunt/queue/' + id + '/pause';
+                method = 'POST';
+            } else if (action === 'resume') {
+                url = './api/nzb-hunt/queue/' + id + '/resume';
+                method = 'POST';
+            } else if (action === 'remove') {
+                url = './api/nzb-hunt/queue/' + id;
+                method = 'DELETE';
+            } else {
+                return;
+            }
+            fetch(url, { method: method })
+                .then(function (r) { return r.json(); })
+                .then(function () { self._fetchQueueAndStatus(); })
+                .catch(function (err) { console.error('[NzbHunt] Action error:', err); });
+        },
+
+        _stateIcon: function (state) {
+            switch (state) {
+                case 'downloading': return 'fas fa-arrow-down nzb-icon-downloading';
+                case 'queued': return 'fas fa-clock nzb-icon-queued';
+                case 'paused': return 'fas fa-pause-circle nzb-icon-paused';
+                case 'extracting': return 'fas fa-file-archive nzb-icon-extracting';
+                case 'completed': return 'fas fa-check-circle nzb-icon-completed';
+                case 'failed': return 'fas fa-exclamation-circle nzb-icon-failed';
+                default: return 'fas fa-circle';
+            }
+        },
+
+        _stateLabel: function (state) {
+            switch (state) {
+                case 'downloading': return 'Downloading';
+                case 'queued': return 'Queued';
+                case 'paused': return 'Paused';
+                case 'extracting': return 'Extracting';
+                case 'completed': return 'Completed';
+                case 'failed': return 'Failed';
+                default: return state || 'Unknown';
+            }
+        },
+
+        /* ──────────────────────────────────────────────
+           History Rendering
+        ────────────────────────────────────────────── */
+        _fetchHistory: function () {
+            var self = this;
+            fetch('./api/nzb-hunt/history?limit=50&t=' + Date.now())
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    self._renderHistory(data.history || []);
+                })
+                .catch(function (err) { console.error('[NzbHunt] History fetch error:', err); });
+        },
+
+        _renderHistory: function (history) {
+            var body = document.getElementById('nzb-history-body');
+            if (!body) return;
+
+            var badge = document.getElementById('nzb-history-count');
+            if (badge) badge.textContent = history.length;
+
+            if (!history || history.length === 0) {
+                body.innerHTML =
+                    '<div class="nzb-queue-empty">' +
+                        '<div class="nzb-queue-empty-icon"><i class="fas fa-history"></i></div>' +
+                        '<h3>No history yet</h3>' +
+                        '<p>Completed downloads will be logged here.</p>' +
+                    '</div>';
+                return;
+            }
+
+            var self = this;
+            var html = '';
+            history.forEach(function (item) {
+                var status = item.state === 'completed' ? 'success' : 'fail';
+                var icon = status === 'success' ? 'fas fa-check-circle nzb-icon-completed' : 'fas fa-exclamation-circle nzb-icon-failed';
+                var name = self._escHtml(item.name || 'Unknown');
+                var size = self._formatBytes(item.total_bytes || item.downloaded_bytes || 0);
+                var date = item.completed_at ? new Date(item.completed_at).toLocaleString() : '';
+                var category = item.category ? '<span class="nzb-item-category">' + self._escHtml(item.category) + '</span>' : '';
+
+                html +=
+                    '<div class="nzb-queue-item nzb-item-history nzb-item-' + status + '">' +
+                        '<div class="nzb-item-row-top">' +
+                            '<div class="nzb-item-name" title="' + name + '">' +
+                                '<i class="' + icon + '" style="margin-right: 6px;"></i>' + name +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="nzb-item-row-meta">' +
+                            category +
+                            '<span class="nzb-item-size"><i class="fas fa-database"></i> ' + size + '</span>' +
+                            (date ? '<span class="nzb-item-date"><i class="fas fa-calendar-alt"></i> ' + date + '</span>' : '') +
+                        '</div>' +
+                    '</div>';
+            });
+
+            body.innerHTML = html;
+        },
+
+        _clearHistory: function () {
+            var self = this;
+            fetch('./api/nzb-hunt/history', { method: 'DELETE' })
+                .then(function () { self._fetchHistory(); })
+                .catch(function (err) { console.error('[NzbHunt] Clear history error:', err); });
+        },
+
+        /* ──────────────────────────────────────────────
+           Utility helpers
+        ────────────────────────────────────────────── */
+        _formatBytes: function (bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            var i = 0;
+            var b = bytes;
+            while (b >= 1024 && i < units.length - 1) { b /= 1024; i++; }
+            return b.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+        },
+
+        _formatEta: function (seconds) {
+            if (!seconds || seconds <= 0) return '--:--';
+            var h = Math.floor(seconds / 3600);
+            var m = Math.floor((seconds % 3600) / 60);
+            var s = seconds % 60;
+            if (h > 0) return h + 'h ' + (m < 10 ? '0' : '') + m + 'm';
+            return m + 'm ' + (s < 10 ? '0' : '') + s + 's';
+        },
+
+        _escHtml: function (str) {
+            var d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        },
+
+        /* ──────────────────────────────────────────────
+           Stop polling (called when leaving NZB home)
+        ────────────────────────────────────────────── */
+        stopPolling: function () {
+            if (this._pollTimer) {
+                clearInterval(this._pollTimer);
+                this._pollTimer = null;
+            }
         },
 
         initSettings: function () {
