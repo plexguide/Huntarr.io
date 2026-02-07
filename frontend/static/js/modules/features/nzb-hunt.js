@@ -131,49 +131,51 @@
             this._currentEta = totalSpeed > 0 ? this._formatEta(Math.round(totalRemaining / totalSpeed)) : '--:--';
 
             var self = this;
-            var html = '';
-            queue.forEach(function (item, idx) {
+            var html =
+                '<table class="nzb-queue-table">' +
+                '<thead><tr>' +
+                '<th class="nzb-col-name">Name</th>' +
+                '<th class="nzb-col-cat">Category</th>' +
+                '<th class="nzb-col-pct">Progress</th>' +
+                '<th class="nzb-col-size">Size</th>' +
+                '<th class="nzb-col-speed">Speed</th>' +
+                '<th class="nzb-col-eta">ETA</th>' +
+                '<th class="nzb-col-status">Status</th>' +
+                '<th class="nzb-col-actions"></th>' +
+                '</tr></thead><tbody>';
+
+            queue.forEach(function (item) {
                 var progress = item.progress_pct || 0;
                 var stateClass = 'nzb-item-' + (item.state || 'queued');
                 var stateIcon = self._stateIcon(item.state);
                 var stateLabel = self._stateLabel(item.state);
-                var speed = item.state === 'downloading' ? self._formatBytes(item.speed_bps || 0) + '/s' : '';
-                var timeLeft = item.time_left || '';
+                var speed = item.state === 'downloading' ? self._formatBytes(item.speed_bps || 0) + '/s' : '—';
+                var timeLeft = item.time_left || '—';
                 var downloaded = self._formatBytes(item.downloaded_bytes || 0);
                 var totalSize = self._formatBytes(item.total_bytes || 0);
-                var filesStr = (item.completed_files || 0) + '/' + (item.total_files || 0);
                 var name = self._escHtml(item.name || 'Unknown');
-                var category = item.category ? '<span class="nzb-item-category">' + self._escHtml(item.category) + '</span>' : '';
+                var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
 
                 html +=
-                    '<div class="nzb-queue-item ' + stateClass + '" data-nzb-id="' + item.id + '">' +
-                        '<div class="nzb-item-row-top">' +
-                            '<div class="nzb-item-name" title="' + name + '">' + name + '</div>' +
-                            '<div class="nzb-item-controls">' +
-                                (item.state === 'downloading' || item.state === 'queued' ?
-                                    '<button class="nzb-item-btn" title="Pause" data-action="pause" data-id="' + item.id + '"><i class="fas fa-pause"></i></button>' : '') +
-                                (item.state === 'paused' ?
-                                    '<button class="nzb-item-btn" title="Resume" data-action="resume" data-id="' + item.id + '"><i class="fas fa-play"></i></button>' : '') +
-                                '<button class="nzb-item-btn nzb-item-btn-danger" title="Remove" data-action="remove" data-id="' + item.id + '"><i class="fas fa-trash-alt"></i></button>' +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="nzb-item-row-meta">' +
-                            '<span class="nzb-item-state"><i class="' + stateIcon + '"></i> ' + stateLabel + '</span>' +
-                            category +
-                            '<span class="nzb-item-size"><i class="fas fa-database"></i> ' + downloaded + ' / ' + totalSize + '</span>' +
-                            '<span class="nzb-item-files"><i class="fas fa-copy"></i> ' + filesStr + ' files</span>' +
-                            (speed ? '<span class="nzb-item-speed"><i class="fas fa-tachometer-alt"></i> ' + speed + '</span>' : '') +
-                            (timeLeft ? '<span class="nzb-item-eta"><i class="fas fa-clock"></i> ' + timeLeft + '</span>' : '') +
-                        '</div>' +
-                        '<div class="nzb-item-row-progress">' +
-                            '<div class="nzb-item-progress-bar">' +
-                                '<div class="nzb-item-progress-fill" style="width: ' + progress.toFixed(1) + '%;"></div>' +
-                            '</div>' +
-                            '<span class="nzb-item-pct">' + progress.toFixed(1) + '%</span>' +
-                        '</div>' +
-                    '</div>';
+                    '<tr class="nzb-queue-row ' + stateClass + '" data-nzb-id="' + item.id + '">' +
+                        '<td class="nzb-col-name" title="' + name + '"><span class="nzb-cell-name">' + name + '</span></td>' +
+                        '<td class="nzb-col-cat"><span class="nzb-cell-cat">' + catLabel + '</span></td>' +
+                        '<td class="nzb-col-pct">' + progress.toFixed(1) + '%</td>' +
+                        '<td class="nzb-col-size">' + downloaded + ' / ' + totalSize + '</td>' +
+                        '<td class="nzb-col-speed">' + speed + '</td>' +
+                        '<td class="nzb-col-eta">' + timeLeft + '</td>' +
+                        '<td class="nzb-col-status"><i class="' + stateIcon + '"></i> ' + stateLabel + '</td>' +
+                        '<td class="nzb-col-actions">' +
+                            (item.state === 'downloading' || item.state === 'queued' ?
+                                '<button class="nzb-item-btn" title="Pause" data-action="pause" data-id="' + item.id + '"><i class="fas fa-pause"></i></button>' : '') +
+                            (item.state === 'paused' ?
+                                '<button class="nzb-item-btn" title="Resume" data-action="resume" data-id="' + item.id + '"><i class="fas fa-play"></i></button>' : '') +
+                            '<button class="nzb-item-btn nzb-item-btn-danger" title="Remove" data-action="remove" data-id="' + item.id + '"><i class="fas fa-trash-alt"></i></button>' +
+                        '</td>' +
+                    '</tr>';
             });
 
+            html += '</tbody></table>';
             body.innerHTML = html;
 
             // Wire up item control buttons
