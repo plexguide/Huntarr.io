@@ -506,11 +506,12 @@
                 .then(function (data) {
                     if (data.success) {
                         // Auto-test the connection after saving
+                        var hostName = (document.getElementById('nzb-server-host') || {}).value || 'server';
                         self._testServerConnection(function (testSuccess, testMsg) {
                             if (testSuccess) {
-                                self._showTestStatus('success', 'Saved & connected successfully!');
+                                self._showTestStatus('success', 'Connected to ' + hostName);
                             } else {
-                                self._showTestStatus('fail', 'Saved, but connection failed: ' + testMsg);
+                                self._showTestStatus('fail', 'Saved, but connection to ' + hostName + ' failed: ' + testMsg);
                             }
                             self._loadServers();
                             // Auto-close modal after a brief delay on success
@@ -612,9 +613,9 @@
                         callback(data.success, data.message || '');
                     } else {
                         if (data.success) {
-                            self._showTestStatus('success', data.message || 'Connection successful!');
+                            self._showTestStatus('success', 'Connected to ' + host);
                         } else {
-                            self._showTestStatus('fail', data.message || 'Connection failed.');
+                            self._showTestStatus('fail', 'Connection to ' + host + ' failed: ' + (data.message || 'Unknown error'));
                         }
                     }
                 })
