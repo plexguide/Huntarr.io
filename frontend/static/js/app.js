@@ -1294,6 +1294,21 @@ let huntarrUI = {
         if (window.HuntarrNavigation && typeof window.HuntarrNavigation.updateMovieHuntSidebarActive === 'function') {
             window.HuntarrNavigation.updateMovieHuntSidebarActive();
         }
+        this._updateMovieHuntSidebarSettingsOnlyVisibility();
+    },
+
+    /** When on Settings or any settings subpage, hide Huntarr+Home, Media Collection, and Activity in the Movie Hunt sidebar. */
+    _updateMovieHuntSidebarSettingsOnlyVisibility: function() {
+        var hide = ['movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-root-folders'].indexOf(this.currentSection) !== -1;
+        var showDisplay = '';
+        var huntarrHome = document.getElementById('movie-hunt-sidebar-huntarr-home-group');
+        var collectionNav = document.getElementById('movieHuntCollectionNav');
+        var activityNav = document.getElementById('movieHuntActivityNav');
+        var activitySub = document.getElementById('movie-hunt-activity-sub');
+        if (huntarrHome) huntarrHome.style.display = hide ? 'none' : showDisplay;
+        if (collectionNav) collectionNav.style.display = hide ? 'none' : showDisplay;
+        if (activityNav) activityNav.style.display = hide ? 'none' : showDisplay;
+        if (activitySub) activitySub.style.display = hide ? 'none' : showDisplay;
     },
 
     /** When in instance-editor for indexer/client, keep Indexers or Clients nav item highlighted. */
