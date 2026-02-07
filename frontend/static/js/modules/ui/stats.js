@@ -349,28 +349,32 @@ window.HuntarrStats = {
             return;
         }
         
-        const endpoint = appType ? `./api/stats/reset/${appType}` : './api/stats/reset';
-        
+        const endpoint = './api/stats/reset';
+        const body = appType ? JSON.stringify({ app_type: appType }) : '{}';
+
         HuntarrUtils.fetchWithTimeout(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            body: body
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
+        .then(response => {
+            return response.json().then(data => ({ ok: response.ok, status: response.status, data: data }));
+        })
+        .then(({ ok, status, data }) => {
+            if (ok && data && data.success) {
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     const message = appType 
                         ? `${appType.charAt(0).toUpperCase() + appType.slice(1)} statistics reset successfully`
                         : 'All statistics reset successfully';
                     window.huntarrUI.showNotification(message, 'success');
                 }
-                // Reload stats to reflect the reset
                 this.loadMediaStats();
             } else {
+                const msg = (data && data.error) ? data.error : 'Failed to reset statistics';
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Failed to reset statistics', 'error');
+                    window.huntarrUI.showNotification(msg, 'error');
                 }
             }
         })

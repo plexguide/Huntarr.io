@@ -983,6 +983,21 @@ def get_stats_api():
         logger.error(f"Error retrieving stats: {e}", exc_info=True)
         return jsonify({"success": False, "error": str(e)}), 500
 
+def _allow_stats_reset():
+    """Return True if request is allowed to reset stats (session, bypass, or No Login Mode)."""
+    username = get_user_for_request()
+    if username:
+        return True
+    try:
+        from src.primary.settings_manager import load_settings
+        settings = load_settings("general")
+        if settings.get("proxy_auth_bypass") or settings.get("local_access_bypass"):
+            return True
+    except Exception as e:
+        logger.error(f"Error checking bypass for stats reset: {e}")
+    return False
+
+
 @common_bp.route('/api/stats/reset', methods=['POST'])
 def reset_stats_api():
     """API endpoint to reset media statistics"""
@@ -990,17 +1005,15 @@ def reset_stats_api():
         # Import here to avoid circular imports
         from ..stats_manager import reset_stats
         
-        # Check if authenticated
-        session_token = request.cookies.get(SESSION_COOKIE_NAME)
-        if not verify_session(session_token):
-            logger.warning("Stats reset attempt failed: Not authenticated.")
-            return jsonify({"error": "Unauthorized"}), 401
+        if not _allow_stats_reset():
+            logger.warning("Stats reset attempt failed: Not authenticated and not in bypass mode.")
+            return jsonify({"success": False, "error": "Unauthorized"}), 401
             
         # Get app type from request if provided
         data = request.json or {}
         app_type = data.get('app_type')  # None will reset all
         
-        if app_type is not None and app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr"]:
+        if app_type is not None and app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
             logger.warning(f"Invalid app_type for stats reset: {app_type}")
             return jsonify({"success": False, "error": "Invalid app_type"}), 400
             
