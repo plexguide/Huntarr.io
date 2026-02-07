@@ -94,6 +94,7 @@
             var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
             var statusContainer = document.getElementById('movie-hunt-request-status-container');
             var rootFolderSelect = document.getElementById('movie-hunt-request-root-folder');
+            var instanceSelect = document.getElementById('movie-hunt-request-instance');
             var cancelBtn = document.getElementById('movie-hunt-request-modal-cancel');
             var closeBtn = document.getElementById('movie-hunt-request-modal-close');
             var backdrop = document.getElementById('movie-hunt-request-modal-backdrop');
@@ -127,6 +128,41 @@
             }
             submitBtn.disabled = false;
             submitBtn.textContent = 'Request';
+            
+            // Populate instance dropdown
+            if (instanceSelect && window.MovieHuntInstanceDropdown) {
+                var self = this;
+                instanceSelect.innerHTML = '<option value="">Loading...</option>';
+                Promise.all([
+                    fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                    fetch('./api/movie-hunt/current-instance', { cache: 'no-store' }).then(function(r) { return r.json(); })
+                ]).then(function(results) {
+                    var list = (results[0].instances || []);
+                    var current = (results[1].instance_id != null ? results[1].instance_id : 1);
+                    instanceSelect.innerHTML = '';
+                    list.forEach(function(inst) {
+                        var opt = document.createElement('option');
+                        opt.value = String(inst.id);
+                        opt.textContent = (inst.name || 'Instance ' + inst.id);
+                        if (inst.id === current) opt.selected = true;
+                        instanceSelect.appendChild(opt);
+                    });
+                    // Check status for the currently selected instance
+                    self.checkMovieStatusForInstance(item, instanceSelect.value);
+                }).catch(function() {
+                    instanceSelect.innerHTML = '<option value="1">Default Instance</option>';
+                });
+                
+                // Add change handler to check status when instance changes
+                var newInstanceSelect = instanceSelect.cloneNode(true);
+                instanceSelect.parentNode.replaceChild(newInstanceSelect, instanceSelect);
+                instanceSelect = newInstanceSelect;
+                instanceSelect.addEventListener('change', function() {
+                    self.checkMovieStatusForInstance(item, instanceSelect.value);
+                    self.loadMovieHuntRequestRootFolders(instanceSelect.value);
+                    self.loadMovieHuntQualityProfiles(instanceSelect.value);
+                });
+            }
             
             // Show modal
             modal.style.display = 'flex';
@@ -167,14 +203,38 @@
                 });
             }
             
-            this.loadMovieHuntRequestRootFolders();
-            this.loadMovieHuntQualityProfiles();
+            this.loadMovieHuntRequestRootFolders(instanceSelect ? instanceSelect.value : null);
+            this.loadMovieHuntQualityProfiles(instanceSelect ? instanceSelect.value : null);
         },
 
-        loadMovieHuntQualityProfiles() {
+        checkMovieStatusForInstance(item, instanceId) {
+            var statusContainer = document.getElementById('movie-hunt-request-status-container');
+            if (!statusContainer || !item || !item.tmdb_id) return;
+            
+            statusContainer.innerHTML = '<div class="series-status-box"><i class="fas fa-spinner fa-spin"></i><div><div class="status-title">Checking status...</div></div></div>';
+            
+            fetch('./api/movie-hunt/collection?instance_id=' + instanceId, { cache: 'no-store' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var movies = (data && data.movies) ? data.movies : [];
+                    var found = movies.find(function(m) { return m.tmdb_id === item.tmdb_id; });
+                    
+                    if (found) {
+                        statusContainer.innerHTML = '<div class="series-status-box status-in-library"><i class="fas fa-check-circle"></i><div><div class="status-title">In Collection</div><div class="status-text">This movie is already in your collection for this instance.</div></div></div>';
+                    } else {
+                        statusContainer.innerHTML = '<div class="series-status-box status-requestable"><i class="fas fa-inbox"></i><div><div class="status-title">Available to request</div><div class="status-text">This movie will be sent to your download client.</div></div></div>';
+                    }
+                })
+                .catch(function() {
+                    statusContainer.innerHTML = '<div class="series-status-box status-requestable"><i class="fas fa-inbox"></i><div><div class="status-title">Available to request</div><div class="status-text">This movie will be sent to your download client.</div></div></div>';
+                });
+        },
+
+        loadMovieHuntQualityProfiles(instanceId) {
             var qualitySelect = document.getElementById('movie-hunt-request-quality-profile');
             if (!qualitySelect) return;
-            fetch('./api/profiles')
+            var url = './api/profiles' + (instanceId ? '?instance_id=' + instanceId : '');
+            fetch(url)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var list = (data && data.profiles) ? data.profiles : [];
@@ -199,10 +259,11 @@
                 });
         },
 
-        loadMovieHuntRequestRootFolders() {
+        loadMovieHuntRequestRootFolders(instanceId) {
             var rootFolderSelect = document.getElementById('movie-hunt-request-root-folder');
             if (!rootFolderSelect) return;
-            fetch('./api/movie-hunt/root-folders')
+            var url = './api/movie-hunt/root-folders' + (instanceId ? '?instance_id=' + instanceId : '');
+            fetch(url)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var folders = (data && data.root_folders) ? data.root_folders : [];
