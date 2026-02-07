@@ -156,12 +156,21 @@ def _find_largest_video_file(download_path: str) -> Optional[str]:
         return None
 
 
-def _get_collection_item(title: str, year: str) -> Optional[Dict[str, Any]]:
-    """Get collection item by title and year."""
+def _get_collection_item(title: str, year: str, instance_id: int = None) -> Optional[Dict[str, Any]]:
+    """Get collection item by title and year. Checks per-instance storage first, then global."""
     try:
         from src.primary.utils.database import get_database
         db = get_database()
-        config = db.get_app_config('movie_hunt_collection')
+        
+        # Try per-instance first (the actual storage format)
+        if instance_id is None:
+            instance_id = db.get_current_movie_hunt_instance_id()
+        
+        config = db.get_app_config_for_instance('movie_hunt_collection', instance_id)
+        
+        # Fall back to global config if per-instance is empty
+        if not config or not isinstance(config.get('items'), list):
+            config = db.get_app_config('movie_hunt_collection')
         
         if not config or not isinstance(config.get('items'), list):
             return None
@@ -178,12 +187,16 @@ def _get_collection_item(title: str, year: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def _update_collection_status(title: str, year: str, status: str, file_path: Optional[str] = None):
-    """Update collection item status and file path."""
+def _update_collection_status(title: str, year: str, status: str, file_path: Optional[str] = None, instance_id: int = None):
+    """Update collection item status and file path. Uses per-instance storage."""
     try:
         from src.primary.utils.database import get_database
         db = get_database()
-        config = db.get_app_config('movie_hunt_collection')
+        
+        if instance_id is None:
+            instance_id = db.get_current_movie_hunt_instance_id()
+        
+        config = db.get_app_config_for_instance('movie_hunt_collection', instance_id)
         
         if not config or not isinstance(config.get('items'), list):
             return
@@ -200,24 +213,39 @@ def _update_collection_status(title: str, year: str, status: str, file_path: Opt
                 break
         
         if updated:
-            db.save_app_config('movie_hunt_collection', {'items': items})
+            db.save_app_config_for_instance('movie_hunt_collection', instance_id, {'items': items})
             logger.info(f"Updated collection status for '{title}' ({year}): {status}")
         
     except Exception as e:
         logger.error(f"Error updating collection status: {e}")
 
 
-def _get_default_root_folder() -> Optional[str]:
-    """Get the default root folder path."""
+def _get_default_root_folder(instance_id: int = None) -> Optional[str]:
+    """Get the default root folder path. Checks per-instance storage first, then global."""
     try:
         from src.primary.utils.database import get_database
         db = get_database()
-        config = db.get_app_config('movie_hunt_root_folders')
         
-        if not config or not isinstance(config.get('root_folders'), list):
+        # Try per-instance first
+        if instance_id is None:
+            instance_id = db.get_current_movie_hunt_instance_id()
+        
+        config = db.get_app_config_for_instance('movie_hunt_root_folders', instance_id)
+        
+        # Per-instance stores root_folders inside instances.{id} wrapper
+        # But get_app_config_for_instance already unwraps it
+        root_folders = None
+        if config and isinstance(config.get('root_folders'), list):
+            root_folders = config['root_folders']
+        
+        # Fall back to global config
+        if not root_folders:
+            global_config = db.get_app_config('movie_hunt_root_folders')
+            if global_config and isinstance(global_config.get('root_folders'), list):
+                root_folders = global_config['root_folders']
+        
+        if not root_folders:
             return None
-        
-        root_folders = config['root_folders']
         
         # Find default root folder
         for rf in root_folders:
@@ -259,7 +287,7 @@ def _add_import_history(title: str, year: str, client_name: str, dest_file: str,
         logger.error(f"Error adding import history: {e}")
 
 
-def import_movie(client: Dict[str, Any], title: str, year: str, download_path: str) -> bool:
+def import_movie(client: Dict[str, Any], title: str, year: str, download_path: str, instance_id: int = None) -> bool:
     """
     Import a completed movie download to its root folder.
     
@@ -268,6 +296,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         title: Movie title
         year: Movie year
         download_path: Path where download client stored the file
+        instance_id: Movie Hunt instance ID (for per-instance collection/root folder lookup)
     
     Returns:
         True if import succeeded, False otherwise
@@ -276,7 +305,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         _mh_log().info("Import: starting for '%s' (%s) from %s", title, year, download_path)
         
         # 1. Get collection item to determine root folder
-        collection_item = _get_collection_item(title, year)
+        collection_item = _get_collection_item(title, year, instance_id)
         
         if not collection_item:
             _mh_log().warning(
@@ -289,7 +318,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         # Get root folder (from collection or default)
         root_folder = collection_item.get('root_folder')
         if not root_folder:
-            root_folder = _get_default_root_folder()
+            root_folder = _get_default_root_folder(instance_id)
         
         if not root_folder:
             _mh_log().error("Import: no root folder for '%s' (%s)", title, year)
@@ -334,7 +363,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         if os.path.exists(dest_file):
             _mh_log().warning("Import: file already exists, updating collection: %s", dest_file)
             # Update collection status anyway
-            _update_collection_status(title, year, 'available', dest_file)
+            _update_collection_status(title, year, 'available', dest_file, instance_id=instance_id)
             client_name = client.get('name', 'Download client')
             _add_import_history(title, year, client_name, dest_file, success=True)
             return True
@@ -352,7 +381,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
             return False
         
         # 8. Update collection status
-        _update_collection_status(title, year, 'available', dest_file)
+        _update_collection_status(title, year, 'available', dest_file, instance_id=instance_id)
         
         # 9. Add to history
         client_name = client.get('name', 'Download client')

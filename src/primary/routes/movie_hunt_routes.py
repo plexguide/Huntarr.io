@@ -1352,7 +1352,8 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
                     client=client,
                     title=title,
                     year=year,
-                    download_path=download_path
+                    download_path=download_path,
+                    instance_id=instance_id
                 )
                 if success:
                     movie_hunt_logger.info("Import: successfully imported '%s' (%s)", title, year)
@@ -1544,9 +1545,15 @@ def _get_nzb_hunt_queue(client, client_name, instance_id):
         requested_ids = _get_requested_queue_ids(instance_id).get(client_name, set())
         
         items = []
+        current_queue_ids = set()  # Track all IDs in NZB Hunt queue
+        
         for q in queue_items:
             q_cat = (q.get('category') or '').strip().lower()
             q_id = q.get('id', '')
+            
+            # Track ALL queue IDs for prune detection
+            if q_id:
+                current_queue_ids.add(str(q_id))
             
             # Filter by category (same logic as SABnzbd/NZBGet)
             if q_cat and q_cat != client_cat_lower:
@@ -1590,6 +1597,9 @@ def _get_nzb_hunt_queue(client, client_name, instance_id):
                 'instance_name': client_name,
                 'original_release': nzb_name,
             })
+        
+        # Prune completed items and trigger import (same as SABnzbd/NZBGet)
+        _prune_requested_queue_ids(client_name, current_queue_ids, instance_id)
         
         return items
     except Exception as e:
@@ -1901,6 +1911,21 @@ def _ensure_movie_hunt_poller_started():
     _movie_hunt_poller_thread = threading.Thread(target=_run, daemon=True)
     _movie_hunt_poller_thread.start()
     movie_hunt_logger.info("Import: background poll started (every %s s) to detect completed downloads.", _MOVIE_HUNT_POLL_INTERVAL_SEC)
+
+
+def _auto_start_poller():
+    """Auto-start the completion poller after a brief delay on app boot.
+    This ensures completed downloads are detected even if nobody visits the Activity page."""
+    import threading
+    def _delayed_start():
+        import time
+        time.sleep(30)  # Wait for app to fully initialize
+        _ensure_movie_hunt_poller_started()
+    t = threading.Thread(target=_delayed_start, daemon=True)
+    t.start()
+
+# Auto-start the poller when this module is imported (i.e., on app boot)
+_auto_start_poller()
 
 
 def _get_activity_queue(instance_id):
