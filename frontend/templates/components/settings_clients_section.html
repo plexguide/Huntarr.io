@@ -112,6 +112,7 @@
                     <label for="client-type-select">Client Type</label>
                     <select id="client-type-select" class="client-type-select">
                         <option value="">Select a client...</option>
+                        <option value="nzbhunt">NZB Hunt (Built-in)</option>
                         <option value="sabnzbd">SABnzbd</option>
                         <option value="nzbget">NZBGet</option>
                     </select>
@@ -683,8 +684,13 @@
     function selectClientType(type) {
         closeClientTypeModal();
         if (window.SettingsForms && window.SettingsForms.openClientEditor) {
-            var defaultName = type === 'sabnzbd' ? 'SABnzbd' : type === 'nzbget' ? 'NZBGet' : type;
-            var payload = { name: defaultName, type: type, host: '', port: 8080, enabled: true, category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 50 };
+            var defaultName = type === 'nzbhunt' ? 'NZB Hunt' : type === 'sabnzbd' ? 'SABnzbd' : type === 'nzbget' ? 'NZBGet' : type;
+            var payload = { name: defaultName, type: type, host: '', port: 8080, enabled: true, category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 1 };
+            if (type === 'nzbhunt') {
+                payload.host = 'internal';
+                payload.port = 0;
+                payload.client_priority = 1; // NZB Hunt is highest priority by default
+            }
             window.SettingsForms.openClientEditor(true, null, payload);
         }
     }
@@ -703,13 +709,13 @@
         if (continueBtn) {
             continueBtn.addEventListener('click', function() {
                 var type = selectEl ? (selectEl.value || '').trim().toLowerCase() : '';
-                if (type === 'sabnzbd' || type === 'nzbget') selectClientType(type);
+                if (type === 'nzbhunt' || type === 'sabnzbd' || type === 'nzbget') selectClientType(type);
             });
         }
         if (selectEl) {
             selectEl.addEventListener('change', function() {
                 var type = (selectEl.value || '').trim().toLowerCase();
-                if (continueBtn) continueBtn.disabled = type !== 'sabnzbd' && type !== 'nzbget';
+                if (continueBtn) continueBtn.disabled = type !== 'nzbhunt' && type !== 'sabnzbd' && type !== 'nzbget';
             });
             if (continueBtn) continueBtn.disabled = true;
         }

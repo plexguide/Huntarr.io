@@ -1240,7 +1240,7 @@ let huntarrUI = {
                 this._highlightMovieHuntNavForEditor('indexer');
             } else if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'client') {
                 var ct = (window.SettingsForms._currentEditing.originalInstance && window.SettingsForms._currentEditing.originalInstance.type) ? String(window.SettingsForms._currentEditing.originalInstance.type).toLowerCase() : 'nzbget';
-                newTitle = (ct === 'sabnzbd' ? 'SABnzbd' : ct === 'nzbget' ? 'NZBGet' : ct) + ' Connection Settings';
+                newTitle = (ct === 'nzbhunt' ? 'NZB Hunt (Built-in)' : ct === 'sabnzbd' ? 'SABnzbd' : ct === 'nzbget' ? 'NZBGet' : ct) + ' Connection Settings';
                 this.showMovieHuntSidebar();
                 this._highlightMovieHuntNavForEditor('client');
             } else {

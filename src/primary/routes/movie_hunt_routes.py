@@ -1453,16 +1453,93 @@ def _format_queue_display_name(filename, title=None, year=None):
     return clean
 
 
+def _get_nzb_hunt_queue(client, client_name, instance_id):
+    """Fetch queue from the built-in NZB Hunt download engine."""
+    try:
+        from src.primary.apps.nzb_hunt.download_manager import get_manager
+        mgr = get_manager()
+        queue_items = mgr.get_queue()
+        
+        # Filter by category
+        raw_cat = (client.get('category') or '').strip()
+        raw_cat_lower = raw_cat.lower()
+        if raw_cat_lower in ('default', '*', ''):
+            client_cat_lower = MOVIE_HUNT_DEFAULT_CATEGORY.lower()
+        else:
+            client_cat_lower = raw_cat_lower
+        
+        # Get requested IDs for this client
+        requested_ids = _get_requested_queue_ids(instance_id).get(client_name, set())
+        
+        items = []
+        for q in queue_items:
+            q_cat = (q.get('category') or '').strip().lower()
+            q_id = q.get('id', '')
+            
+            # Filter by category (same logic as SABnzbd/NZBGet)
+            if q_cat and q_cat != client_cat_lower:
+                continue
+            
+            # Filter by requested IDs (only show items Movie Hunt requested)
+            if requested_ids and str(q_id) not in requested_ids:
+                continue
+            
+            nzb_name = q.get('name', '-')
+            display = _get_requested_display(client_name, q_id, instance_id)
+            display_name = _format_queue_display_name(nzb_name, display.get('title'), display.get('year'))
+            scoring_str = _format_queue_scoring(display.get('score'), display.get('score_breakdown'))
+            
+            # Progress
+            progress_pct = q.get('progress_pct', 0)
+            if progress_pct >= 100:
+                progress = 'Pending Import'
+            elif progress_pct > 0:
+                progress = f'{progress_pct:.0f}%'
+            else:
+                progress = '-'
+            
+            # Time left
+            time_left = q.get('time_left', '') or '-'
+            
+            quality_str = _extract_quality_from_filename(nzb_name)
+            formats_str = _extract_formats_from_filename(nzb_name)
+            
+            items.append({
+                'id': q_id,
+                'movie': display_name,
+                'title': display_name,
+                'year': None,
+                'languages': '-',
+                'quality': quality_str,
+                'formats': formats_str,
+                'scoring': scoring_str,
+                'time_left': time_left,
+                'progress': progress,
+                'instance_name': client_name,
+                'original_release': nzb_name,
+            })
+        
+        return items
+    except Exception as e:
+        logger.debug("NZB Hunt queue error: %s", e)
+        return []
+
+
 def _get_download_client_queue(client, instance_id):
     """
-    Fetch queue from one download client (SABnzbd or NZBGet). Returns list of activity-shaped dicts:
+    Fetch queue from one download client (NZB Hunt, SABnzbd, or NZBGet). Returns list of activity-shaped dicts:
     { id, movie, year, languages, quality, formats, time_left, progress, instance_name }.
     """
+    client_type = (client.get('type') or 'nzbget').strip().lower()
+    name = (client.get('name') or 'Download client').strip() or 'Download client'
+    
+    # ── NZB Hunt (built-in) ── direct internal query, no HTTP needed ──
+    if client_type == 'nzbhunt':
+        return _get_nzb_hunt_queue(client, name, instance_id)
+    
     base_url = _download_client_base_url(client)
     if not base_url:
         return []
-    client_type = (client.get('type') or 'nzbget').strip().lower()
-    name = (client.get('name') or 'Download client').strip() or 'Download client'
     # Filter by the category configured for this client (same category we use when sending NZBs).
     # When client category is empty or "default", we use "moviehunt" so Radarr never sees these items.
     # Case-insensitive: SAB may return "Default", we compare in lowercase.
@@ -2285,7 +2362,8 @@ def api_clients_add():
         data = request.get_json() or {}
         name = (data.get('name') or '').strip() or 'Unnamed'
         client_type = (data.get('type') or 'nzbget').strip().lower()
-        host = (data.get('host') or '').strip()
+        # NZB Hunt (built-in) uses internal connection, no host needed
+        host = 'internal' if client_type == 'nzbhunt' else (data.get('host') or '').strip()
         raw_port = data.get('port')
         if raw_port is None or (isinstance(raw_port, str) and str(raw_port).strip() == ''):
             port = 8080
@@ -2403,10 +2481,39 @@ def api_clients_delete(index):
 
 @movie_hunt_bp.route('/api/clients/test-connection', methods=['POST'])
 def api_clients_test_connection():
-    """Test connection to a download client (SABnzbd or NZBGet)."""
+    """Test connection to a download client (NZB Hunt, SABnzbd, or NZBGet)."""
     try:
         data = request.get_json() or {}
         client_type = (data.get('type') or 'nzbget').strip().lower()
+        
+        # NZB Hunt (built-in) - test if usenet servers are configured
+        if client_type == 'nzbhunt':
+            try:
+                from src.primary.apps.nzb_hunt.download_manager import get_manager
+                mgr = get_manager()
+                if not mgr.has_servers():
+                    return jsonify({
+                        'success': False,
+                        'message': 'No usenet servers configured. Go to NZB Hunt → Settings to add servers.'
+                    }), 200
+                # Test server connections
+                results = mgr.test_servers()
+                connected = [r for r in results if r[1]]
+                if connected:
+                    names = ', '.join(r[0] for r in connected)
+                    return jsonify({
+                        'success': True,
+                        'message': f'NZB Hunt ready ({len(connected)} server(s): {names})'
+                    }), 200
+                else:
+                    failed = ', '.join(r[2] for r in results)
+                    return jsonify({
+                        'success': False,
+                        'message': f'Could not connect to any usenet servers: {failed}'
+                    }), 200
+            except Exception as e:
+                return jsonify({'success': False, 'message': f'NZB Hunt error: {e}'}), 200
+        
         host = (data.get('host') or '').strip()
         port = data.get('port', 8080)
         api_key = (data.get('api_key') or '').strip()
@@ -2582,24 +2689,42 @@ def _search_newznab_movie(base_url, api_key, query, categories, timeout=15):
 
 def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl):
     """
-    Send NZB URL to SABnzbd or NZBGet. Returns (success: bool, message: str, queue_id: str|int|None).
-    queue_id is the nzo_id (SAB) or NZBGet group id so we can track this as a requested item.
+    Send NZB URL to NZB Hunt (built-in), SABnzbd, or NZBGet.
+    Returns (success: bool, message: str, queue_id: str|int|None).
+    queue_id is the nzo_id (SAB), NZBGet group id, or NZB Hunt queue id.
     """
     client_type = (client.get('type') or 'nzbget').strip().lower()
-    host = (client.get('host') or '').strip()
-    if not host:
-        return False, 'Download client has no host', None
-    if not (host.startswith('http://') or host.startswith('https://')):
-        host = f'http://{host}'
-    port = client.get('port', 8080)
-    base_url = f'{host.rstrip("/")}:{port}'
-    # When category is empty or "default", send "movies" so SAB gets a proper category.
+    
+    # When category is empty or "default", send "movies" so downloads get proper category.
     raw = (category or client.get('category') or '').strip()
     if raw.lower() in ('default', '*', ''):
         cat = MOVIE_HUNT_DEFAULT_CATEGORY
     else:
         cat = raw or MOVIE_HUNT_DEFAULT_CATEGORY
+    
     try:
+        # ── NZB Hunt (built-in) ── no host/port/API key needed ──
+        if client_type == 'nzbhunt':
+            from src.primary.apps.nzb_hunt.download_manager import get_manager
+            mgr = get_manager()
+            success, message, queue_id = mgr.add_nzb(
+                nzb_url=nzb_url,
+                name=nzb_name or '',
+                category=cat,
+                priority=client.get('recent_priority', 'normal'),
+                added_by='movie_hunt',
+            )
+            return success, message, queue_id
+        
+        # ── External clients need host ──
+        host = (client.get('host') or '').strip()
+        if not host:
+            return False, 'Download client has no host', None
+        if not (host.startswith('http://') or host.startswith('https://')):
+            host = f'http://{host}'
+        port = client.get('port', 8080)
+        base_url = f'{host.rstrip("/")}:{port}'
+        
         if client_type == 'sabnzbd':
             api_key = (client.get('api_key') or '').strip()
             url = f'{base_url}/api'

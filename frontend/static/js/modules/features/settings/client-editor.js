@@ -10,6 +10,7 @@
     const Forms = window.SettingsForms;
 
     var CLIENT_TYPES = [
+        { value: 'nzbhunt', label: 'NZB Hunt (Built-in)' },
         { value: 'nzbget', label: 'NZBGet' },
         { value: 'sabnzbd', label: 'SABnzbd' }
     ];
@@ -58,17 +59,20 @@
         }
 
         // Add event listeners for real-time connection status checking
-        const hostEl = document.getElementById('editor-client-host');
-        const portEl = document.getElementById('editor-client-port');
-        const apiKeyEl = document.getElementById('editor-client-apikey');
-        const usernameEl = document.getElementById('editor-client-username');
-        const passwordEl = document.getElementById('editor-client-password');
-        
-        if (hostEl) hostEl.addEventListener('input', () => this.checkClientConnection());
-        if (portEl) portEl.addEventListener('input', () => this.checkClientConnection());
-        if (apiKeyEl) apiKeyEl.addEventListener('input', () => this.checkClientConnection());
-        if (usernameEl) usernameEl.addEventListener('input', () => this.checkClientConnection());
-        if (passwordEl) passwordEl.addEventListener('input', () => this.checkClientConnection());
+        // For NZB Hunt, only check on initial load (no host/port fields)
+        if (typeVal !== 'nzbhunt') {
+            const hostEl = document.getElementById('editor-client-host');
+            const portEl = document.getElementById('editor-client-port');
+            const apiKeyEl = document.getElementById('editor-client-apikey');
+            const usernameEl = document.getElementById('editor-client-username');
+            const passwordEl = document.getElementById('editor-client-password');
+            
+            if (hostEl) hostEl.addEventListener('input', () => this.checkClientConnection());
+            if (portEl) portEl.addEventListener('input', () => this.checkClientConnection());
+            if (apiKeyEl) apiKeyEl.addEventListener('input', () => this.checkClientConnection());
+            if (usernameEl) usernameEl.addEventListener('input', () => this.checkClientConnection());
+            if (passwordEl) passwordEl.addEventListener('input', () => this.checkClientConnection());
+        }
         
         // Initial connection check
         this.checkClientConnection();
@@ -107,13 +111,30 @@
             return '<option value="' + o.value + '"' + (olderPriority === o.value ? ' selected' : '') + '>' + o.label + '</option>';
         }).join('');
 
+        const isNzbHunt = typeVal === 'nzbhunt';
+        const hideForNzbHunt = isNzbHunt ? ' style="display: none;"' : '';
+
         return `
             <div class="editor-grid">
                 <div class="editor-section">
                     <div class="editor-section-title" style="display: flex; align-items: center; justify-content: space-between;">
-                        <span>Connection Settings</span>
+                        <span>${isNzbHunt ? 'NZB Hunt (Built-in)' : 'Connection Settings'}</span>
                         <div id="client-connection-status-container" style="display: flex; justify-content: flex-end; flex: 1;"></div>
                     </div>
+                    ${isNzbHunt ? `
+                    <div class="editor-field-group">
+                        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                <i class="fas fa-bolt" style="color: #10b981; font-size: 1.2rem;"></i>
+                                <strong style="color: #10b981;">Built-in Download Client</strong>
+                            </div>
+                            <p style="color: #94a3b8; margin: 0; font-size: 0.9rem; line-height: 1.5;">
+                                NZB Hunt is Huntarr's integrated usenet download client. No external host, port, or API keys needed &mdash; 
+                                it uses the usenet servers configured in <strong>NZB Hunt → Settings → Servers</strong>.
+                            </p>
+                        </div>
+                    </div>
+                    ` : ''}
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label style="display: flex; align-items: center;">
@@ -129,30 +150,30 @@
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-client-name">Name</label>
-                        <input type="text" id="editor-client-name" value="${name}" placeholder="e.g. My ${typeVal === 'sabnzbd' ? 'SABnzbd' : 'NZBGet'}" />
+                        <input type="text" id="editor-client-name" value="${name}" placeholder="${isNzbHunt ? 'NZB Hunt' : 'e.g. My ' + (typeVal === 'sabnzbd' ? 'SABnzbd' : 'NZBGet')}" />
                         <p class="editor-help-text">A friendly name to identify this client</p>
                     </div>
-                    <div class="editor-field-group">
+                    <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-host">Host</label>
                         <input type="text" id="editor-client-host" value="${host}" placeholder="localhost or 192.168.1.10" />
                         <p class="editor-help-text">Hostname or IP address of your download client</p>
                     </div>
-                    <div class="editor-field-group">
+                    <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-port">Port</label>
                         <input type="number" id="editor-client-port" value="${port}" placeholder="8080" min="1" max="65535" />
                         <p class="editor-help-text">Port number for your download client (SABnzbd default: 8080, NZBGet default: 6789)</p>
                     </div>
-                    <div class="editor-field-group">
+                    <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-apikey">API Key</label>
                         <input type="password" id="editor-client-apikey" placeholder="${apiKeyPlaceholder.replace(/"/g, '&quot;')}" autocomplete="off" />
                         <p class="editor-help-text">API key from your download client settings. ${isEdit ? 'Leave blank to keep existing.' : ''}</p>
                     </div>
-                    <div class="editor-field-group">
+                    <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-username">Username</label>
                         <input type="text" id="editor-client-username" value="${username}" placeholder="Username (if required)" autocomplete="off" />
                         <p class="editor-help-text">Username for basic authentication (NZBGet typically requires this)</p>
                     </div>
-                    <div class="editor-field-group">
+                    <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-password">Password</label>
                         <input type="password" id="editor-client-password" placeholder="${pwdPlaceholder.replace(/"/g, '&quot;')}" autocomplete="off" />
                         <p class="editor-help-text">${isEdit ? 'Leave blank to keep existing password' : 'Password for authentication (if required)'}</p>
@@ -163,7 +184,7 @@
                     <div class="editor-field-group">
                         <label for="editor-client-category">Category</label>
                         <input type="text" id="editor-client-category" value="${category}" placeholder="movies" />
-                        <p class="editor-help-text">Adding a category specific to Movie Hunt avoids conflicts with unrelated non–Movie Hunt downloads. Using a category is optional, but strongly recommended.</p>
+                        <p class="editor-help-text">${isNzbHunt ? 'Category for organizing downloads in NZB Hunt. Must match a category configured in NZB Hunt Settings.' : 'Adding a category specific to Movie Hunt avoids conflicts with unrelated non–Movie Hunt downloads. Using a category is optional, but strongly recommended.'}</p>
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-client-recent-priority">Recent Priority</label>
@@ -222,20 +243,23 @@
             if (!isNaN(p) && p >= 1 && p <= 99) clientPriority = p;
         }
 
+        const isNzbHuntType = type === 'nzbhunt';
         const body = {
             name: name || 'Unnamed',
             type: type,
-            host: host,
-            port: port,
+            host: isNzbHuntType ? 'internal' : host,
+            port: isNzbHuntType ? 0 : port,
             enabled: enabled,
             category: category || 'movies',
             recent_priority: recentPriority,
             older_priority: olderPriority,
             client_priority: clientPriority
         };
-        if (apiKey) body.api_key = apiKey;
-        if (username) body.username = username;
-        if (password) body.password = password;
+        if (!isNzbHuntType) {
+            if (apiKey) body.api_key = apiKey;
+            if (username) body.username = username;
+            if (password) body.password = password;
+        }
 
         const isAdd = this._currentEditing.isAdd;
         const index = this._currentEditing.index;
@@ -290,16 +314,39 @@
         container.style.display = 'flex';
         container.style.justifyContent = 'flex-end';
         
+        // Get client type
+        const type = (this._currentEditing && this._currentEditing.originalInstance && this._currentEditing.originalInstance.type)
+            ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
+            : 'nzbget';
+        
+        // NZB Hunt (built-in) - no host/port needed, test server config
+        if (type === 'nzbhunt') {
+            container.innerHTML = '<span class="connection-status checking"><i class="fas fa-spinner fa-spin"></i><span>Checking servers...</span></span>';
+            fetch('./api/clients/test-connection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'nzbhunt' })
+            })
+            .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+            .then(function(result) {
+                const data = result.data || {};
+                if (data.success === true) {
+                    container.innerHTML = '<span class="connection-status success"><i class="fas fa-check-circle"></i><span>' + (data.message || 'NZB Hunt ready') + '</span></span>';
+                } else {
+                    container.innerHTML = '<span class="connection-status error"><i class="fas fa-exclamation-triangle"></i><span>' + (data.message || 'Configure usenet servers in NZB Hunt Settings') + '</span></span>';
+                }
+            })
+            .catch(function(err) {
+                container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i><span>' + (err.message || 'Error checking NZB Hunt') + '</span></span>';
+            });
+            return;
+        }
+        
         const host = hostEl ? hostEl.value.trim() : '';
         const port = portEl ? portEl.value.trim() : '';
         const apiKey = apiKeyEl ? apiKeyEl.value.trim() : '';
         const username = usernameEl ? usernameEl.value.trim() : '';
         const password = passwordEl ? passwordEl.value.trim() : '';
-        
-        // Get client type
-        const type = (this._currentEditing && this._currentEditing.originalInstance && this._currentEditing.originalInstance.type)
-            ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
-            : 'nzbget';
         
         // Check if minimum requirements are met
         if (!host || !port) {

@@ -11,21 +11,29 @@
 
     Forms.renderClientCard = function(client, index) {
         const name = (client.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const last4 = client.api_key_last4 || client.password_last4 || '****';
         const type = (client.type || 'nzbget').replace(/"/g, '&quot;');
+        const isNzbHunt = type === 'nzbhunt';
         const enabled = client.enabled !== false;
         const statusClass = enabled ? 'status-connected' : 'status-error';
         const statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
         const priority = client.client_priority !== undefined && client.client_priority !== null ? Number(client.client_priority) : 50;
+        
+        var bodyHtml;
+        if (isNzbHunt) {
+            bodyHtml = '<div class="instance-detail"><i class="fas fa-bolt" style="color: #10b981;"></i><span style="color: #10b981; font-weight: 500;">Built-in Client</span></div>' +
+                '<div class="instance-detail"><i class="fas fa-server"></i><span>Uses NZB Hunt Servers</span></div>';
+        } else {
+            var last4 = client.api_key_last4 || client.password_last4 || '****';
+            bodyHtml = '<div class="instance-detail"><i class="fas fa-key"></i><span>••••••••' + last4 + '</span></div>' +
+                '<div class="instance-detail"><i class="fas fa-server"></i><span>' + (client.host || '').replace(/</g, '&lt;') + ':' + (client.port !== undefined ? client.port : '') + '</span></div>';
+        }
+        
         return '<div class="instance-card" data-instance-index="' + index + '" data-app-type="client" data-type="' + type + '" data-enabled="' + enabled + '">' +
             '<div class="instance-card-header">' +
-            '<div class="instance-name instance-name-with-priority"><i class="fas fa-download"></i><span>' + name + '</span><span class="client-priority-badge">Priority: ' + String(priority) + '</span></div>' +
+            '<div class="instance-name instance-name-with-priority"><i class="fas ' + (isNzbHunt ? 'fa-bolt' : 'fa-download') + '"></i><span>' + name + '</span><span class="client-priority-badge">Priority: ' + String(priority) + '</span></div>' +
             '<div class="instance-status-icon ' + statusClass + '"><i class="fas ' + statusIcon + '"></i></div>' +
             '</div>' +
-            '<div class="instance-card-body">' +
-            '<div class="instance-detail"><i class="fas fa-key"></i><span>••••••••' + last4 + '</span></div>' +
-            '<div class="instance-detail"><i class="fas fa-server"></i><span>' + (client.host || '').replace(/</g, '&lt;') + ':' + (client.port !== undefined ? client.port : '') + '</span></div>' +
-            '</div>' +
+            '<div class="instance-card-body">' + bodyHtml + '</div>' +
             '<div class="instance-card-footer">' +
             '<button type="button" class="btn-card edit" data-app-type="client" data-instance-index="' + index + '"><i class="fas fa-edit"></i> Edit</button>' +
             '<button type="button" class="btn-card delete" data-app-type="client" data-instance-index="' + index + '"><i class="fas fa-trash"></i> Delete</button>' +

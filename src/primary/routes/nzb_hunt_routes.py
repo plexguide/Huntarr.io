@@ -6,6 +6,11 @@ Provides:
   - /api/nzb-hunt/servers           GET / POST  - list / add servers
   - /api/nzb-hunt/servers/<idx>     PUT / DELETE - update / remove a server
   - /api/nzb-hunt/browse            GET         - file-system directory browser
+  - /api/nzb-hunt/queue             GET         - download queue
+  - /api/nzb-hunt/queue/add         POST        - add NZB to queue
+  - /api/nzb-hunt/queue/<id>/*      POST/DELETE - pause/resume/remove queue items
+  - /api/nzb-hunt/status            GET         - overall status
+  - /api/nzb-hunt/history           GET         - download history
 """
 
 import os
@@ -300,3 +305,129 @@ def browse_nzb_dirs():
         dirs.sort(key=lambda d: d["name"])
 
     return jsonify({"path": path, "directories": dirs})
+
+
+# ──────────────────────────────────────────────────────────────────
+# Download Queue & Status (used by NZB Hunt UI and Movie Hunt integration)
+# ──────────────────────────────────────────────────────────────────
+
+def _get_download_manager():
+    """Lazy import to avoid circular imports."""
+    from src.primary.apps.nzb_hunt.download_manager import get_manager
+    return get_manager()
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/status", methods=["GET"])
+def nzb_hunt_status():
+    """Get overall NZB Hunt download status."""
+    try:
+        mgr = _get_download_manager()
+        return jsonify(mgr.get_status())
+    except Exception as e:
+        logger.exception("NZB Hunt status error")
+        return jsonify({"error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/queue", methods=["GET"])
+def nzb_hunt_queue():
+    """Get current download queue."""
+    try:
+        mgr = _get_download_manager()
+        return jsonify({"queue": mgr.get_queue()})
+    except Exception as e:
+        logger.exception("NZB Hunt queue error")
+        return jsonify({"queue": [], "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/queue/add", methods=["POST"])
+def nzb_hunt_queue_add():
+    """Add an NZB to the download queue.
+    
+    Body: { nzb_url, nzb_content, name, category, priority, added_by }
+    At least one of nzb_url or nzb_content is required.
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        nzb_url = (data.get("nzb_url") or "").strip()
+        nzb_content = (data.get("nzb_content") or "").strip()
+        name = (data.get("name") or "").strip()
+        category = (data.get("category") or "").strip()
+        priority = (data.get("priority") or "normal").strip()
+        added_by = (data.get("added_by") or "manual").strip()
+
+        if not nzb_url and not nzb_content:
+            return jsonify({"success": False, "error": "nzb_url or nzb_content required"}), 400
+
+        mgr = _get_download_manager()
+        success, message, queue_id = mgr.add_nzb(
+            nzb_url=nzb_url,
+            nzb_content=nzb_content,
+            name=name,
+            category=category,
+            priority=priority,
+            added_by=added_by,
+        )
+        return jsonify({"success": success, "message": message, "queue_id": queue_id})
+    except Exception as e:
+        logger.exception("NZB Hunt queue add error")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/queue/<nzb_id>/pause", methods=["POST"])
+def nzb_hunt_queue_pause(nzb_id):
+    """Pause a download."""
+    try:
+        mgr = _get_download_manager()
+        return jsonify({"success": mgr.pause_item(nzb_id)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/queue/<nzb_id>/resume", methods=["POST"])
+def nzb_hunt_queue_resume(nzb_id):
+    """Resume a paused download."""
+    try:
+        mgr = _get_download_manager()
+        return jsonify({"success": mgr.resume_item(nzb_id)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/queue/<nzb_id>", methods=["DELETE"])
+def nzb_hunt_queue_remove(nzb_id):
+    """Remove a download from the queue."""
+    try:
+        mgr = _get_download_manager()
+        return jsonify({"success": mgr.remove_item(nzb_id)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/history", methods=["GET"])
+def nzb_hunt_history():
+    """Get download history."""
+    try:
+        limit = request.args.get("limit", 50, type=int)
+        mgr = _get_download_manager()
+        return jsonify({"history": mgr.get_history(limit=limit)})
+    except Exception as e:
+        logger.exception("NZB Hunt history error")
+        return jsonify({"history": [], "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/test-servers", methods=["POST"])
+def nzb_hunt_test_servers():
+    """Test all configured NNTP server connections."""
+    try:
+        mgr = _get_download_manager()
+        results = mgr.test_servers()
+        return jsonify({
+            "success": any(r[1] for r in results),
+            "results": [
+                {"name": r[0], "success": r[1], "message": r[2]}
+                for r in results
+            ]
+        })
+    except Exception as e:
+        logger.exception("NZB Hunt test servers error")
+        return jsonify({"success": False, "error": str(e)}), 500
