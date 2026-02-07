@@ -70,7 +70,7 @@ window.HuntarrNavigation = {
             if (['apps'].includes(ui.currentSection) && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             if (ui.currentSection === 'prowlarr' && window.SettingsForms?.checkUnsavedChanges && !window.SettingsForms.checkUnsavedChanges()) return;
             
-            const noRefresh = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs'];
+            const noRefresh = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'];
             if (!noRefresh.includes(section) && !noRefresh.includes(ui.currentSection)) {
                 localStorage.setItem('huntarr-target-section', section);
                 location.reload();
@@ -113,7 +113,7 @@ window.HuntarrNavigation = {
             'whisparr': { title: 'Whisparr V2', nav: document.getElementById('appsWhisparrNav'), section: document.getElementById('whisparrSection'), sidebar: 'apps', app: 'whisparr' },
             'eros': { title: 'Whisparr V3', nav: document.getElementById('appsErosNav'), section: document.getElementById('erosSection'), sidebar: 'apps', app: 'eros' },
             'swaparr': { title: 'Swaparr', nav: document.getElementById('appsSwaparrNav'), section: document.getElementById('swaparrSection'), sidebar: 'apps', init: 'initializeSwaparr' },
-            'settings': { title: 'Settings', nav: document.getElementById('settingsNav'), section: document.getElementById('settingsSection'), sidebar: 'settings', init: 'initializeSettings' },
+            'settings': { title: 'Settings', nav: document.getElementById('mainSettingsMainNav'), section: document.getElementById('settingsSection'), sidebar: 'main', init: 'initializeSettings' },
             'settings-movie-management': { title: 'Movie Management', nav: document.getElementById('movieHuntSettingsMovieManagementNav'), section: document.getElementById('movieManagementSection'), sidebar: 'moviehunt' },
             'settings-profiles': { title: 'Profiles', nav: document.getElementById('movieHuntSettingsProfilesNav'), section: document.getElementById('settingsProfilesSection'), sidebar: 'moviehunt' },
             'profile-editor': { title: 'Profile Editor', nav: document.getElementById('movieHuntSettingsProfilesNav'), section: document.getElementById('profileEditorSection'), sidebar: 'moviehunt' },
@@ -121,12 +121,12 @@ window.HuntarrNavigation = {
             'settings-indexers': { title: 'Indexers', nav: document.getElementById('movieHuntSettingsIndexersNav'), section: document.getElementById('settingsIndexersSection'), sidebar: 'moviehunt' },
             'settings-clients': { title: 'Clients', nav: document.getElementById('movieHuntSettingsClientsNav'), section: document.getElementById('settingsClientsSection'), sidebar: 'moviehunt' },
             'settings-root-folders': { title: 'Root Folders', nav: document.getElementById('movieHuntSettingsRootFoldersNav'), section: document.getElementById('settingsRootFoldersSection'), sidebar: 'moviehunt' },
-            'settings-logs': { title: 'Log Settings', nav: document.getElementById('settingsLogsNav'), section: document.getElementById('settingsLogsSection'), sidebar: 'settings', init: 'initializeLogsSettings' },
-            'scheduling': { title: 'Scheduling', nav: document.getElementById('schedulingNav'), section: document.getElementById('schedulingSection'), sidebar: 'settings' },
-            'notifications': { title: 'Notifications', nav: document.getElementById('settingsNotificationsNav'), section: document.getElementById('notificationsSection'), sidebar: 'settings', init: 'initializeNotifications' },
-            'backup-restore': { title: 'Backup / Restore', nav: document.getElementById('settingsBackupRestoreNav'), section: document.getElementById('backupRestoreSection'), sidebar: 'settings', init: 'initializeBackupRestore' },
+            'settings-logs': { title: 'Log Settings', nav: document.getElementById('mainSettingsLogsNav'), section: document.getElementById('settingsLogsSection'), sidebar: 'main', init: 'initializeLogsSettings' },
+            'scheduling': { title: 'Scheduling', nav: document.getElementById('mainSettingsSchedulingNav'), section: document.getElementById('schedulingSection'), sidebar: 'main' },
+            'notifications': { title: 'Notifications', nav: document.getElementById('mainSettingsNotificationsNav'), section: document.getElementById('notificationsSection'), sidebar: 'main', init: 'initializeNotifications' },
+            'backup-restore': { title: 'Backup / Restore', nav: document.getElementById('mainSettingsBackupRestoreNav'), section: document.getElementById('backupRestoreSection'), sidebar: 'main', init: 'initializeBackupRestore' },
             'prowlarr': { title: 'Prowlarr', nav: document.getElementById('appsProwlarrNav'), section: document.getElementById('prowlarrSection'), sidebar: 'apps', init: 'initializeProwlarr' },
-            'user': { title: 'User', nav: document.getElementById('userNav'), section: document.getElementById('userSection'), sidebar: 'settings', init: 'initializeUser' },
+            'user': { title: 'User', nav: document.getElementById('mainSettingsUserNav'), section: document.getElementById('userSection'), sidebar: 'main', init: 'initializeUser' },
             'instance-editor': { title: 'Instance Editor', section: document.getElementById('instanceEditorSection'), sidebar: 'apps' }
         };
 
@@ -155,11 +155,17 @@ window.HuntarrNavigation = {
         if (config.sidebar === 'main') {
             localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
-            // Expand/collapse System sub (Hunt Manager, Logs, About) so only one place controls it (no flicker)
+            // Expand/collapse System sub (Hunt Manager, Logs, About)
             const systemSub = document.getElementById('system-sub');
             if (systemSub) {
                 if (section === 'hunt-manager' || section === 'logs' || section === 'about') systemSub.classList.add('expanded');
                 else systemSub.classList.remove('expanded');
+            }
+            // Expand/collapse Settings sub (Main, Scheduling, Notifications, etc.)
+            const settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) {
+                if (['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(section) !== -1) settingsSub.classList.add('expanded');
+                else settingsSub.classList.remove('expanded');
             }
         } else if (config.sidebar === 'apps') {
             if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
@@ -255,14 +261,18 @@ window.HuntarrNavigation = {
         if (requestarrSidebar) requestarrSidebar.style.display = 'none';
 
         // When on System (Hunt Manager, Logs, About), hide Apps, Requestarr, Settings in main sidebar
+        // When on Settings (Main, Scheduling, etc.), hide Apps, Requestarr, System in main sidebar
         var section = window.huntarrUI && window.huntarrUI.currentSection;
         var onSystem = section === 'hunt-manager' || section === 'logs' || section === 'about';
+        var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(section) !== -1;
         var settingsNav = document.getElementById('settingsNav');
         var requestarrNav = document.getElementById('requestarrNav');
         var appsNav = document.getElementById('appsNav');
+        var systemNav = document.getElementById('systemNav');
         if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
-        if (requestarrNav) requestarrNav.style.display = onSystem ? 'none' : '';
-        if (appsNav) appsNav.style.display = onSystem ? 'none' : '';
+        if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
+        if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
+        if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
     },
 
     showAppsSidebar: function() {

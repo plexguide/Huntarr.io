@@ -45,6 +45,44 @@
                 </div>
                 <span>Settings</span>
             </a>
+            <div class="nav-sub-group" id="settings-sub">
+                <a href="./#settings" class="nav-item nav-item-sub" id="mainSettingsMainNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <span>Main</span>
+                </a>
+                <a href="./#scheduling" class="nav-item nav-item-sub" id="mainSettingsSchedulingNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <span>Scheduling</span>
+                </a>
+                <a href="./#notifications" class="nav-item nav-item-sub" id="mainSettingsNotificationsNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <span>Notifications</span>
+                </a>
+                <a href="./#backup-restore" class="nav-item nav-item-sub" id="mainSettingsBackupRestoreNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <span>Backup / Restore</span>
+                </a>
+                <a href="./#settings-logs" class="nav-item nav-item-sub" id="mainSettingsLogsNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <span>Logs</span>
+                </a>
+                <a href="./#user" class="nav-item nav-item-sub" id="mainSettingsUserNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span>User</span>
+                </a>
+            </div>
             <a href="./#hunt-manager" class="nav-item" id="systemNav">
                 <div class="nav-icon-wrapper">
                     <i class="fas fa-laptop"></i>
@@ -1187,9 +1225,31 @@
         } else if (currentHash === '#prowlarr') {
             selector = '#appsProwlarrNav';
         }
-        // Settings sidebar items
+        // Main sidebar Settings sub items (Main, Scheduling, etc.)
         else if (currentHash === '#settings') {
-            selector = '#settingsMainNav';
+            selector = '#mainSettingsMainNav';
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
+        } else if (currentHash === '#scheduling') {
+            selector = '#mainSettingsSchedulingNav';
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
+        } else if (currentHash === '#notifications') {
+            selector = '#mainSettingsNotificationsNav';
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
+        } else if (currentHash === '#backup-restore') {
+            selector = '#mainSettingsBackupRestoreNav';
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
+        } else if (currentHash === '#settings-logs') {
+            selector = '#mainSettingsLogsNav';
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
+        } else if (currentHash === '#user') {
+            selector = '#mainSettingsUserNav';
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
         } else if (currentHash === '#settings-movie-management') {
             selector = '#movieHuntSettingsMovieManagementNav';
         } else if (currentHash === '#settings-profiles') {
@@ -1202,16 +1262,6 @@
             selector = '#movieHuntSettingsClientsNav';
         } else if (currentHash === '#settings-root-folders') {
             selector = '#movieHuntSettingsRootFoldersNav';
-        } else if (currentHash === '#scheduling') {
-            selector = '#settingsSchedulingNav';
-        } else if (currentHash === '#notifications') {
-            selector = '#settingsNotificationsNav';
-        } else if (currentHash === '#backup-restore') {
-            selector = '#settingsBackupRestoreNav';
-        } else if (currentHash === '#settings-logs') {
-            selector = '#settingsLogsNav';
-        } else if (currentHash === '#user') {
-            selector = '#settingsUserNav';
         }
         // Requestarr sidebar items
         else if (currentHash === '#movie-hunt-home') {
@@ -1254,6 +1304,12 @@
         if (currentHash !== '#hunt-manager' && currentHash !== '#logs' && currentHash !== '#about') {
             var systemSub = document.getElementById('system-sub');
             if (systemSub) systemSub.classList.remove('expanded');
+        }
+        // Collapse Settings sub when not on settings section
+        var settingsHashes = ['#settings', '#scheduling', '#notifications', '#backup-restore', '#settings-logs', '#user'];
+        if (settingsHashes.indexOf(currentHash) === -1) {
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.remove('expanded');
         }
     }
 

@@ -58,7 +58,8 @@ let huntarrUI = {
                 const nav = document.getElementById('requestarrNav');
                 if (nav) {
                     var onSystem = this.currentSection === 'hunt-manager' || this.currentSection === 'logs' || this.currentSection === 'about';
-                    nav.style.display = onSystem ? 'none' : (en ? '' : 'none');
+                    var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(this.currentSection) !== -1;
+                    nav.style.display = (onSystem || onSettings) ? 'none' : (en ? '' : 'none');
                 }
                 if (!en && /^#?requestarr/.test(window.location.hash)) {
                     window.location.hash = '#';
@@ -113,8 +114,11 @@ let huntarrUI = {
         // Check which sidebar should be shown based on current section
         console.log(`[huntarrUI] Initialization - current section: ${this.currentSection}`);
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user' || this.currentSection === 'settings-logs') {
-            console.log('[huntarrUI] Initialization - showing settings sidebar');
-            this.showSettingsSidebar();
+            console.log('[huntarrUI] Initialization - showing main sidebar (settings sub-menu)');
+            localStorage.removeItem('huntarr-settings-sidebar');
+            this.showMainSidebar();
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
         } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
@@ -512,7 +516,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs'];
+            const noRefreshSections = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -899,22 +903,14 @@ let huntarrUI = {
             localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
         } else if (section === 'settings' && document.getElementById('settingsSection')) {
-            console.log('[huntarrUI] Switching to settings section');
             document.getElementById('settingsSection').classList.add('active');
             document.getElementById('settingsSection').style.display = 'block';
-            if (document.getElementById('settingsNav')) document.getElementById('settingsNav').classList.add('active');
             newTitle = 'Settings';
             this.currentSection = 'settings';
-            
-            // Switch to Settings sidebar
-            console.log('[huntarrUI] About to call showSettingsSidebar()');
-            this.showSettingsSidebar();
-            console.log('[huntarrUI] Called showSettingsSidebar()');
-            
-            // Set localStorage to maintain Settings sidebar preference
-            localStorage.setItem('huntarr-settings-sidebar', 'true');
-            
-            // Initialize settings if not already done
+            localStorage.removeItem('huntarr-settings-sidebar');
+            this.showMainSidebar();
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
             this.initializeSettings();
         } else if (section === 'settings-movie-management' && document.getElementById('movieManagementSection')) {
             document.getElementById('movieManagementSection').classList.add('active');
@@ -1058,64 +1054,44 @@ let huntarrUI = {
         } else if (section === 'settings-logs' && document.getElementById('settingsLogsSection')) {
             document.getElementById('settingsLogsSection').classList.add('active');
             document.getElementById('settingsLogsSection').style.display = 'block';
-            if (document.getElementById('settingsLogsNav')) document.getElementById('settingsLogsNav').classList.add('active');
             newTitle = 'Log Settings';
             this.currentSection = 'settings-logs';
-            
-            // Switch to Settings sidebar
-            this.showSettingsSidebar();
-            
-            // Set localStorage to maintain Settings sidebar preference
-            localStorage.setItem('huntarr-settings-sidebar', 'true');
-            
-            // Initialize logs settings if not already done
+            localStorage.removeItem('huntarr-settings-sidebar');
+            this.showMainSidebar();
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
             this.initializeLogsSettings();
         } else if (section === 'scheduling' && document.getElementById('schedulingSection')) {
             document.getElementById('schedulingSection').classList.add('active');
             document.getElementById('schedulingSection').style.display = 'block';
-            if (document.getElementById('schedulingNav')) document.getElementById('schedulingNav').classList.add('active');
             newTitle = 'Scheduling';
             this.currentSection = 'scheduling';
-            
-            // Switch to Settings sidebar for scheduling
-            this.showSettingsSidebar();
-            
-            // Set localStorage to maintain Settings sidebar preference
-            localStorage.setItem('huntarr-settings-sidebar', 'true');
-            
-            // Refresh instance dropdown from API (detected instances: Sonarr - Instance Name, etc.)
+            localStorage.removeItem('huntarr-settings-sidebar');
+            this.showMainSidebar();
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
             if (typeof window.refreshSchedulingInstances === 'function') {
                 window.refreshSchedulingInstances();
             }
         } else if (section === 'notifications' && document.getElementById('notificationsSection')) {
             document.getElementById('notificationsSection').classList.add('active');
             document.getElementById('notificationsSection').style.display = 'block';
-            if (document.getElementById('settingsNotificationsNav')) document.getElementById('settingsNotificationsNav').classList.add('active');
             newTitle = 'Notifications';
             this.currentSection = 'notifications';
-            
-            // Switch to Settings sidebar for notifications
-            this.showSettingsSidebar();
-            
-            // Set localStorage to maintain Settings sidebar preference
-            localStorage.setItem('huntarr-settings-sidebar', 'true');
-            
-            // Initialize notifications settings if not already done
+            localStorage.removeItem('huntarr-settings-sidebar');
+            this.showMainSidebar();
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
             this.initializeNotifications();
         } else if (section === 'backup-restore' && document.getElementById('backupRestoreSection')) {
             document.getElementById('backupRestoreSection').classList.add('active');
             document.getElementById('backupRestoreSection').style.display = 'block';
-            if (document.getElementById('settingsBackupRestoreNav')) document.getElementById('settingsBackupRestoreNav').classList.add('active');
             newTitle = 'Backup / Restore';
             this.currentSection = 'backup-restore';
-            
-            // Switch to Settings sidebar for backup/restore
-            this.showSettingsSidebar();
-            
-            // Set localStorage to maintain Settings sidebar preference
-            localStorage.setItem('huntarr-settings-sidebar', 'true');
-            
-            // Initialize backup/restore functionality if not already done
+            localStorage.removeItem('huntarr-settings-sidebar');
+            this.showMainSidebar();
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
             this.initializeBackupRestore();
         } else if (section === 'prowlarr' && document.getElementById('prowlarrSection')) {
             document.getElementById('prowlarrSection').classList.add('active');
@@ -1132,17 +1108,12 @@ let huntarrUI = {
         } else if (section === 'user' && document.getElementById('userSection')) {
             document.getElementById('userSection').classList.add('active');
             document.getElementById('userSection').style.display = 'block';
-            if (document.getElementById('userNav')) document.getElementById('userNav').classList.add('active');
             newTitle = 'User';
             this.currentSection = 'user';
-            
-            // Switch to Settings sidebar for user
-            this.showSettingsSidebar();
-            
-            // Set localStorage to maintain Settings sidebar preference
-            localStorage.setItem('huntarr-settings-sidebar', 'true');
-            
-            // Initialize user module if not already done
+            localStorage.removeItem('huntarr-settings-sidebar');
+            this.showMainSidebar();
+            var settingsSub = document.getElementById('settings-sub');
+            if (settingsSub) settingsSub.classList.add('expanded');
             this.initializeUser();
         } else if (section === 'instance-editor' && document.getElementById('instanceEditorSection')) {
             document.getElementById('instanceEditorSection').classList.add('active');

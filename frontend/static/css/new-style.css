@@ -329,6 +329,21 @@ button {
     margin-bottom: 0;
 }
 
+/* Main sidebar: Settings sub (Main, Scheduling, etc.) - expand when on those sections */
+#settings-sub {
+    display: none;
+    margin-top: 0;
+}
+
+#settings-sub.expanded {
+    display: block;
+}
+
+#settings-sub .nav-item-sub {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 /* Settings sub-pages (Indexers, Clients) */
 .settings-subpanel {
     padding: 24px;
