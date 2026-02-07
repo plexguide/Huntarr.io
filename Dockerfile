@@ -2,14 +2,24 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies including net-tools for health checks and tzdata for timezone support
+# Install system dependencies including net-tools for health checks, tzdata for timezone support,
+# par2 for Usenet file verification/repair, and p7zip for 7z/zip extraction
 RUN apt-get update && apt-get install -y --no-install-recommends \
     net-tools \
     curl \
     wget \
     nano \
     tzdata \
+    par2 \
+    p7zip-full \
     && rm -rf /var/lib/apt/lists/*
+
+# Install unrar from RARLAB (full RAR5 support, unrar-free doesn't handle RAR5)
+RUN wget -q https://www.rarlab.com/rar/rarlinux-x64-720.tar.gz -O /tmp/rar.tar.gz && \
+    tar xzf /tmp/rar.tar.gz -C /tmp && \
+    cp /tmp/rar/unrar /usr/local/bin/ && \
+    chmod 755 /usr/local/bin/unrar && \
+    rm -rf /tmp/rar /tmp/rar.tar.gz
 
 # Install required packages from the root requirements file
 COPY requirements.txt /app/

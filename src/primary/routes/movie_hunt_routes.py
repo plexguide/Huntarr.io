@@ -1198,6 +1198,67 @@ def _get_sabnzbd_history_item(client, queue_id):
         return None
 
 
+def _get_nzb_hunt_completed_path(queue_id, title, year, instance_id):
+    """Get the completed download path from NZB Hunt history.
+    
+    Returns:
+        The download path string if found and completed, None otherwise.
+    """
+    try:
+        from src.primary.apps.nzb_hunt.download_manager import get_manager
+        mgr = get_manager()
+        
+        # Check history for this item
+        history = mgr.get_history()
+        history_item = None
+        for h in history:
+            if h.get('id') == queue_id:
+                history_item = h
+                break
+        
+        if not history_item:
+            movie_hunt_logger.warning(
+                "Import: NZB Hunt item %s not found in history for '%s'", queue_id, title
+            )
+            return None
+        
+        state = history_item.get('state', '')
+        if state != 'completed':
+            movie_hunt_logger.warning(
+                "Import: NZB Hunt item %s for '%s' not completed (state: %s)", queue_id, title, state
+            )
+            return None
+        
+        # Determine the download path from NZB Hunt folders config
+        folders = mgr._get_folders()
+        download_dir = folders.get("download_folder", "/downloads")
+        
+        # Check category folder
+        category = history_item.get('category', '')
+        if category:
+            cat_folder = mgr._get_category_folder(category)
+            if cat_folder:
+                download_dir = cat_folder
+        
+        # Build the path the same way _process_download does
+        item_name = history_item.get('name', '')
+        safe_name = "".join(c for c in item_name if c.isalnum() or c in " ._-")[:100].strip()
+        if not safe_name:
+            safe_name = queue_id
+        
+        download_path = os.path.join(download_dir, safe_name)
+        
+        movie_hunt_logger.info(
+            "Import: NZB Hunt download '%s' completed, path: %s", title, download_path
+        )
+        
+        return download_path
+        
+    except Exception as e:
+        movie_hunt_logger.error("Import: error getting NZB Hunt path for '%s': %s", title, e)
+        return None
+
+
 def _check_and_import_completed(client_name, queue_item, instance_id):
     """
     Check if a removed queue item completed successfully and trigger import.
@@ -1221,50 +1282,61 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
             movie_hunt_logger.warning("Import: queue item %s has no title, skipping import", queue_id)
             return
         
-        # Only support SABnzbd for now (NZBGet implementation can be added later)
-        if client_type != 'sabnzbd':
-            movie_hunt_logger.debug("Import: only SABnzbd supported (client type: %s)", client_type)
-            return
-        
-        movie_hunt_logger.info(
-            "Import: item left queue (nzo_id=%s, title='%s'). Checking SAB history for completed download.",
-            queue_id, title
-        )
-        history_item = _get_sabnzbd_history_item(client, queue_id)
-        
-        if not history_item:
-            movie_hunt_logger.warning(
-                "Import: item left queue but not found in SAB history (nzo_id=%s, title='%s'). "
-                "If the download completed in SAB, refresh the Queue page to trigger another check, or SAB may use a different id in history.",
+        # ── NZB Hunt (built-in) ──
+        if client_type == 'nzbhunt':
+            movie_hunt_logger.info(
+                "Import: item left NZB Hunt queue (id=%s, title='%s'). Checking NZB Hunt history.",
                 queue_id, title
             )
-            return
+            download_path = _get_nzb_hunt_completed_path(queue_id, title, year, instance_id)
+            if not download_path:
+                return
         
-        status = history_item.get('status', '')
-        storage_path = (history_item.get('storage') or '').strip()
-        movie_hunt_logger.info(
-            "Import: download completed for '%s' (%s). SAB status=%s, SAB storage path=%s",
-            title, year or 'no year', status, storage_path or '(empty)'
-        )
-        
-        # If not completed, add to blocklist so we don't pick this release again
-        if status.lower() != 'completed':
-            source_title = (history_item.get('name') or history_item.get('nzb_name') or '').strip()
-            if source_title and source_title.endswith('.nzb'):
-                source_title = source_title[:-4]
-            reason_failed = (history_item.get('fail_message') or '').strip() or status or 'Download failed'
-            _blocklist_add(movie_title=title, year=year, source_title=source_title, reason_failed=reason_failed, instance_id=instance_id)
-            movie_hunt_logger.warning(
-                "Import: download '%s' (%s) did not complete (status: %s). Added to blocklist: %s",
-                title, year, status, source_title or '(no name)'
+        # ── SABnzbd ──
+        elif client_type == 'sabnzbd':
+            movie_hunt_logger.info(
+                "Import: item left queue (nzo_id=%s, title='%s'). Checking SAB history for completed download.",
+                queue_id, title
             )
-            return
+            history_item = _get_sabnzbd_history_item(client, queue_id)
+            
+            if not history_item:
+                movie_hunt_logger.warning(
+                    "Import: item left queue but not found in SAB history (nzo_id=%s, title='%s'). "
+                    "If the download completed in SAB, refresh the Queue page to trigger another check, or SAB may use a different id in history.",
+                    queue_id, title
+                )
+                return
+            
+            status = history_item.get('status', '')
+            storage_path = (history_item.get('storage') or '').strip()
+            movie_hunt_logger.info(
+                "Import: download completed for '%s' (%s). SAB status=%s, SAB storage path=%s",
+                title, year or 'no year', status, storage_path or '(empty)'
+            )
+            
+            # If not completed, add to blocklist so we don't pick this release again
+            if status.lower() != 'completed':
+                source_title = (history_item.get('name') or history_item.get('nzb_name') or '').strip()
+                if source_title and source_title.endswith('.nzb'):
+                    source_title = source_title[:-4]
+                reason_failed = (history_item.get('fail_message') or '').strip() or status or 'Download failed'
+                _blocklist_add(movie_title=title, year=year, source_title=source_title, reason_failed=reason_failed, instance_id=instance_id)
+                movie_hunt_logger.warning(
+                    "Import: download '%s' (%s) did not complete (status: %s). Added to blocklist: %s",
+                    title, year, status, source_title or '(no name)'
+                )
+                return
 
-        # Get download path from history
-        download_path = storage_path
+            download_path = storage_path
+            
+            if not download_path:
+                movie_hunt_logger.error("Import: no storage path in history for '%s' (%s). Cannot import.", title, year)
+                return
         
-        if not download_path:
-            movie_hunt_logger.error("Import: no storage path in history for '%s' (%s). Cannot import.", title, year)
+        # ── Unsupported client type ──
+        else:
+            movie_hunt_logger.debug("Import: unsupported client type: %s", client_type)
             return
         
         # Trigger import

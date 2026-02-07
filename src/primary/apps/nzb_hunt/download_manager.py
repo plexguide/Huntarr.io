@@ -16,7 +16,7 @@ import uuid
 import shutil
 import threading
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 import requests
 from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime, timezone
@@ -25,8 +25,24 @@ from src.primary.utils.logger import get_logger
 from src.primary.apps.nzb_hunt.nzb_parser import parse_nzb, NZB
 from src.primary.apps.nzb_hunt.yenc_decoder import decode_yenc
 from src.primary.apps.nzb_hunt.nntp_client import NNTPManager
+from src.primary.apps.nzb_hunt.post_processor import post_process
 
 logger = get_logger("nzb_hunt.manager")
+
+
+# ── Top-level function for ProcessPoolExecutor (must be picklable) ──────────
+def _decode_yenc_in_process(article_data: bytes) -> Optional[bytes]:
+    """Decode yEnc data in a worker process. Runs outside the main GIL.
+    
+    This function runs in a separate process to avoid GIL contention
+    from CPU-bound yEnc decoding, keeping the web server responsive.
+    """
+    try:
+        from src.primary.apps.nzb_hunt.yenc_decoder import decode_yenc
+        decoded, _ = decode_yenc(article_data)
+        return decoded
+    except Exception:
+        return None
 
 
 class _RateLimiter:
@@ -160,6 +176,7 @@ class DownloadItem:
             "speed_bps": self.speed_bps,
             "eta_seconds": self.eta_seconds,
             "time_left": self.time_left_str,
+            "nzb_url": self.nzb_url,
         }
     
     @classmethod
@@ -222,6 +239,16 @@ class NZBHuntDownloadManager:
         # Rate limiter (token-bucket, thread-safe)
         self._rate_limiter = _RateLimiter()
         
+        # Process pool for CPU-bound yEnc decoding.
+        # Runs in separate processes so decoding doesn't hold the main GIL,
+        # keeping the web server responsive during heavy downloads.
+        import multiprocessing
+        cpu_count = multiprocessing.cpu_count()
+        decode_workers = max(2, min(cpu_count, 8))
+        self._decode_pool = ProcessPoolExecutor(max_workers=decode_workers)
+        logger.info(f"yEnc decode process pool: {decode_workers} workers "
+                    f"(CPUs: {cpu_count})")
+        
         self._load_state()
         self._load_speed_limit()
         
@@ -251,29 +278,95 @@ class NZBHuntDownloadManager:
                 data = json.load(f)
             self._queue = [DownloadItem.from_dict(d) for d in data.get("queue", [])]
             self._history = [DownloadItem.from_dict(d) for d in data.get("history", [])]
+            
+            # Load NZB content: try separate file first, fall back to inline (migration)
+            migrated = 0
+            for item in self._queue:
+                content_from_file = self._load_nzb_content(item.id)
+                if content_from_file:
+                    item.nzb_content = content_from_file
+                elif item.nzb_content:
+                    # Migrate: save inline content to separate file for future loads
+                    self._save_nzb_content(item.id, item.nzb_content)
+                    migrated += 1
+                elif item.nzb_url:
+                    # Try re-fetching NZB from URL
+                    try:
+                        import requests
+                        resp = requests.get(item.nzb_url, timeout=30)
+                        if resp.status_code == 200:
+                            item.nzb_content = resp.text
+                            self._save_nzb_content(item.id, item.nzb_content)
+                            migrated += 1
+                            logger.info(f"Re-fetched NZB content for {item.name}")
+                    except Exception as e:
+                        logger.warning(f"Failed to re-fetch NZB for {item.name}: {e}")
+            
+            if migrated > 0:
+                logger.info(f"Migrated {migrated} NZB content files to separate storage")
+            
             # Reset any items that were downloading when we crashed
             for item in self._queue:
-                if item.state == STATE_DOWNLOADING:
+                if item.state in (STATE_DOWNLOADING, STATE_EXTRACTING):
                     item.state = STATE_QUEUED
             logger.info(f"Loaded NZB Hunt state: {len(self._queue)} queued, {len(self._history)} history")
         except Exception as e:
             logger.error(f"Failed to load NZB Hunt state: {e}")
     
+    def _nzb_content_dir(self) -> str:
+        """Directory for storing NZB content files separately from state."""
+        d = os.path.join(self._config_dir, "nzb_content")
+        os.makedirs(d, exist_ok=True)
+        return d
+
+    def _save_nzb_content(self, item_id: str, nzb_content: str):
+        """Save NZB content to a separate file (called once on add)."""
+        try:
+            path = os.path.join(self._nzb_content_dir(), f"{item_id}.nzb")
+            with open(path, "w") as f:
+                f.write(nzb_content)
+        except Exception as e:
+            logger.error(f"Failed to save NZB content for {item_id}: {e}")
+
+    def _load_nzb_content(self, item_id: str) -> str:
+        """Load NZB content from separate file."""
+        try:
+            path = os.path.join(self._nzb_content_dir(), f"{item_id}.nzb")
+            if os.path.exists(path):
+                with open(path, "r") as f:
+                    return f.read()
+        except Exception as e:
+            logger.debug(f"Failed to load NZB content for {item_id}: {e}")
+        return ""
+
+    def _delete_nzb_content(self, item_id: str):
+        """Delete NZB content file when item is removed from queue."""
+        try:
+            path = os.path.join(self._nzb_content_dir(), f"{item_id}.nzb")
+            if os.path.exists(path):
+                os.remove(path)
+        except Exception:
+            pass
+
     def _save_state(self):
-        """Persist queue state to disk."""
+        """Persist queue state to disk (atomic write to prevent corruption).
+        
+        NZB content is stored in separate files, so the main state file stays small
+        and all saves are fast (~1ms instead of seconds).
+        """
         try:
             data = {
                 "queue": [item.to_dict() for item in self._queue],
                 "history": [item.to_dict() for item in self._history[-100:]],  # Keep last 100
             }
-            # Add NZB content separately (not in to_dict to keep API responses clean)
-            for i, item in enumerate(self._queue):
-                data["queue"][i]["nzb_content"] = item.nzb_content
-                data["queue"][i]["nzb_url"] = item.nzb_url
             
             path = self._state_path()
-            with open(path, "w") as f:
-                json.dump(data, f, indent=2)
+            tmp_path = path + ".tmp"
+            with open(tmp_path, "w") as f:
+                json.dump(data, f)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, path)
         except Exception as e:
             logger.error(f"Failed to save NZB Hunt state: {e}")
     
@@ -460,6 +553,9 @@ class NZBHuntDownloadManager:
         item.total_segments = nzb.total_segments
         item.total_files = len(nzb.files)
         
+        # Save NZB content to separate file (large, only once)
+        self._save_nzb_content(nzb_id, nzb_content)
+        
         with self._queue_lock:
             self._queue.append(item)
             self._save_state()
@@ -520,6 +616,7 @@ class NZBHuntDownloadManager:
             for i, item in enumerate(self._queue):
                 if item.id == nzb_id:
                     self._queue.pop(i)
+                    self._delete_nzb_content(nzb_id)
                     self._save_state()
                     return True
         return False
@@ -656,16 +753,19 @@ class NZBHuntDownloadManager:
     
     def _download_segment(self, message_id: str, groups: List[str],
                            item: DownloadItem) -> Tuple[int, Optional[bytes], str]:
-        """Download and decode a single segment (runs in thread pool).
+        """Download and decode a single segment.
+        
+        NNTP download runs in the calling thread (I/O bound, releases GIL).
+        yEnc decode runs in a separate process (CPU bound, no GIL contention).
         
         Returns:
-            (segment_number_unused, decoded_bytes_or_None, server_name)
+            (decoded_length, decoded_bytes_or_None, server_name)
         """
         # Check if paused
         if item.state == STATE_PAUSED or self._paused_global:
             return 0, None, ""
         
-        # Download the article – tracked version returns server name
+        # Download the article – I/O bound, releases GIL during socket ops
         article_data, server_name = self._nntp.download_article_tracked(
             message_id, groups, conn_timeout=1.0
         )
@@ -673,13 +773,16 @@ class NZBHuntDownloadManager:
         if article_data is None:
             return 0, None, server_name
         
-        # Decode yEnc
+        # Decode yEnc in a separate process (CPU bound → avoids GIL contention)
         try:
-            decoded, _ = decode_yenc(article_data)
+            future = self._decode_pool.submit(_decode_yenc_in_process, article_data)
+            decoded = future.result(timeout=60)
+            if decoded is None:
+                return 0, None, server_name
         except Exception:
             return 0, None, server_name
         
-        # Apply rate limiting
+        # Apply rate limiting (lightweight, stays in main process)
         self._rate_limiter.consume(len(decoded))
         
         # Record for rolling speed
@@ -717,15 +820,24 @@ class NZBHuntDownloadManager:
             final_path = os.path.join(download_dir, safe_name)
             os.makedirs(temp_path, exist_ok=True)
             
-            # Determine thread pool size from total available connections
+            # Thread pool for NNTP I/O (releases GIL during socket ops).
+            # yEnc decoding runs in a separate ProcessPoolExecutor, so threads
+            # no longer cause GIL contention. Safe to use more workers.
             max_workers = self._nntp.get_total_max_connections()
-            max_workers = max(4, min(max_workers, 64))  # Clamp 4–64
+            max_workers = max(4, min(max_workers, 50))
+            
+            # Sort files: data files first, par2 files last (like SABnzbd)
+            # This ensures the actual content downloads before recovery data
+            sorted_files = sorted(nzb.files, key=lambda f: (
+                1 if f.filename.lower().endswith('.par2') else 0,
+                f.filename.lower()
+            ))
             
             logger.info(f"[{item.id}] Starting parallel download with {max_workers} workers")
             
             # Download each file in the NZB
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                for file_idx, nzb_file in enumerate(nzb.files):
+                for file_idx, nzb_file in enumerate(sorted_files):
                     if item.state == STATE_PAUSED or self._paused_global:
                         self._save_state()
                         return
@@ -734,7 +846,7 @@ class NZBHuntDownloadManager:
                     file_path = os.path.join(temp_path, filename)
                     
                     logger.info(f"[{item.id}] Downloading file {file_idx + 1}/"
-                                f"{len(nzb.files)}: {filename} "
+                                f"{len(sorted_files)}: {filename} "
                                 f"({len(nzb_file.segments)} segments)")
                     
                     # Submit all segments for this file in parallel
@@ -775,8 +887,8 @@ class NZBHuntDownloadManager:
                                 remaining = max(0, item.total_bytes - item.downloaded_bytes)
                                 item.eta_seconds = int(remaining / speed) if speed > 0 else 0
                                 
-                                # Save state periodically
-                                if item.completed_segments % 100 == 0:
+                                # Save state periodically (lightweight, no NZB content)
+                                if item.completed_segments % 200 == 0:
                                     self._save_state()
                             else:
                                 failed_segments += 1
@@ -808,6 +920,18 @@ class NZBHuntDownloadManager:
                     
                     item.completed_files += 1
                     self._save_state()
+            
+            # ── Post-processing (par2 repair + archive extraction) ──
+            item.state = STATE_EXTRACTING
+            self._save_state()
+            logger.info(f"[{item.id}] Starting post-processing for {item.name}")
+            
+            pp_ok, pp_msg = post_process(temp_path, item_name=item.id)
+            if pp_ok:
+                logger.info(f"[{item.id}] Post-processing success: {pp_msg}")
+            else:
+                logger.warning(f"[{item.id}] Post-processing issue: {pp_msg}")
+                # Don't fail the download - files may still be usable
             
             # Move from temp to final destination
             try:
@@ -844,15 +968,20 @@ class NZBHuntDownloadManager:
         with self._queue_lock:
             if item.state in (STATE_COMPLETED, STATE_FAILED):
                 self._queue = [i for i in self._queue if i.id != item.id]
+                self._delete_nzb_content(item.id)  # Clean up NZB file
                 self._history.append(item)
             self._save_state()
     
     def stop(self):
-        """Stop the download worker."""
+        """Stop the download worker and process pool."""
         self._running = False
         if self._worker_thread and self._worker_thread.is_alive():
             self._worker_thread.join(timeout=10)
         self._nntp.close_all()
+        try:
+            self._decode_pool.shutdown(wait=False)
+        except Exception:
+            pass
 
 
 def _format_speed(bps: int) -> str:
