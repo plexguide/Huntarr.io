@@ -11,6 +11,10 @@
         _modalMode: null,
 
         refreshList: function() {
+            if (window.MovieHuntInstanceDropdown && document.getElementById('settings-custom-formats-instance-select') && !window.CustomFormats._instanceDropdownAttached) {
+                window.MovieHuntInstanceDropdown.attach('settings-custom-formats-instance-select', function() { window.CustomFormats.refreshList(); });
+                window.CustomFormats._instanceDropdownAttached = true;
+            }
             var preformattedGrid = document.getElementById('custom-formats-preformatted-grid');
             var importedGrid = document.getElementById('custom-formats-imported-grid');
             if (!preformattedGrid || !importedGrid) return;

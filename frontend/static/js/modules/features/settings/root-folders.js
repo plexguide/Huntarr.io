@@ -9,6 +9,10 @@
         _browseTargetInput: null,
 
         refreshList: function() {
+            if (window.MovieHuntInstanceDropdown && document.getElementById('settings-root-folders-instance-select') && !window.RootFolders._instanceDropdownAttached) {
+                window.MovieHuntInstanceDropdown.attach('settings-root-folders-instance-select', function() { window.RootFolders.refreshList(); });
+                window.RootFolders._instanceDropdownAttached = true;
+            }
             var gridEl = document.getElementById('root-folders-grid');
             if (!gridEl) return;
             fetch('./api/movie-hunt/root-folders')

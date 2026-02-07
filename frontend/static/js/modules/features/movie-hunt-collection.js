@@ -26,11 +26,14 @@
         setupInstanceSelect: function() {
             var select = document.getElementById('movie-hunt-collection-instance-select');
             if (!select) return;
-            select.innerHTML = '';
-            var opt = document.createElement('option');
-            opt.value = 'default';
-            opt.textContent = 'Default Instance';
-            select.appendChild(opt);
+            if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.attach) {
+                window.MovieHuntInstanceDropdown.attach('movie-hunt-collection-instance-select', function() {
+                    window.MovieHuntCollection.page = 1;
+                    window.MovieHuntCollection.loadCollection();
+                });
+            } else {
+                select.innerHTML = '<option value="1">Default Instance</option>';
+            }
         },
 
         setupSort: function() {

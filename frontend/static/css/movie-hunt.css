@@ -215,6 +215,21 @@
 }
 #movie-hunt-section .instance-selector-container { flex-shrink: 0; }
 #movie-hunt-section .instance-select { min-width: 200px; }
+
+/* Instance bar above Movie Hunt settings sections (Profiles, Indexers, etc.) */
+.movie-hunt-settings-instance-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.movie-hunt-settings-instance-bar label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+}
+.movie-hunt-settings-instance-bar .control-select {
+    min-width: 200px;
+}
 #movie-hunt-section .sort-dropdown { flex-shrink: 0; min-width: 250px; }
 #movie-hunt-section .control-select {
     width: 100%;

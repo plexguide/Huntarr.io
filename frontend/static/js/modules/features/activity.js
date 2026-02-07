@@ -394,6 +394,16 @@
 
         switchView(currentView);
 
+        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.attach) {
+            var activitySelect = el('activity-instance-select');
+            if (activitySelect) {
+                window.MovieHuntInstanceDropdown.attach('activity-instance-select', function() {
+                    currentPage = 1;
+                    loadData();
+                });
+            }
+        }
+
         var searchBtn = el('activitySearchButton');
         if (searchBtn) searchBtn.onclick = performSearch;
         if (input) input.onkeypress = function(e) { if (e.key === 'Enter') performSearch(); };

@@ -172,6 +172,13 @@
             saveBtn.classList.remove('enabled');
         }
 
+        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.attach && document.getElementById('movie-management-instance-select') && !window.MovieManagement._instanceDropdownAttached) {
+            window.MovieHuntInstanceDropdown.attach('movie-management-instance-select', function() {
+                window.MovieManagement.load();
+            });
+            window.MovieManagement._instanceDropdownAttached = true;
+        }
+
         fetch('./api/settings/movie-management')
             .then(function(r) { return r.json(); })
             .then(function(data) {

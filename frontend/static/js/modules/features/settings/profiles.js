@@ -46,6 +46,10 @@
     };
 
     Forms.refreshProfilesList = function() {
+        if (window.MovieHuntInstanceDropdown && document.getElementById('settings-profiles-instance-select') && !Forms._profilesInstanceDropdownAttached) {
+            window.MovieHuntInstanceDropdown.attach('settings-profiles-instance-select', function() { Forms.refreshProfilesList(); });
+            Forms._profilesInstanceDropdownAttached = true;
+        }
         const grid = document.getElementById('profile-instances-grid');
         if (!grid) return;
         fetch('./api/profiles')

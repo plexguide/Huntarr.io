@@ -32,6 +32,10 @@
     };
 
     Forms.refreshIndexersList = function() {
+        if (window.MovieHuntInstanceDropdown && document.getElementById('settings-indexers-instance-select') && !Forms._indexersInstanceDropdownAttached) {
+            window.MovieHuntInstanceDropdown.attach('settings-indexers-instance-select', function() { Forms.refreshIndexersList(); });
+            Forms._indexersInstanceDropdownAttached = true;
+        }
         const grid = document.getElementById('indexer-instances-grid');
         if (!grid) return;
         fetch('./api/indexers')

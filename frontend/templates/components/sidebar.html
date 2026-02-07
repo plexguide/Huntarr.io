@@ -221,6 +221,12 @@
                 <span>Settings</span>
             </a>
             <div class="nav-sub-group" id="movie-hunt-settings-sub">
+                <a href="./#settings-instance-management" class="nav-item nav-item-sub" id="movieHuntSettingsInstanceManagementNav">
+                    <div class="nav-icon-wrapper">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <span>Instance Management</span>
+                </a>
                 <a href="./#settings-movie-management" class="nav-item nav-item-sub" id="movieHuntSettingsMovieManagementNav">
                     <div class="nav-icon-wrapper">
                         <i class="fas fa-film"></i>
@@ -1250,6 +1256,8 @@
             selector = '#mainSettingsUserNav';
             var settingsSub = document.getElementById('settings-sub');
             if (settingsSub) settingsSub.classList.add('expanded');
+        } else if (currentHash === '#settings-instance-management') {
+            selector = '#movieHuntSettingsInstanceManagementNav';
         } else if (currentHash === '#settings-movie-management') {
             selector = '#movieHuntSettingsMovieManagementNav';
         } else if (currentHash === '#settings-profiles') {

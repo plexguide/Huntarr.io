@@ -6,7 +6,6 @@
 (function() {
     'use strict';
 
-    const STORAGE_KEY = 'movie-hunt-selected-instance';
     const SEARCH_DEBOUNCE_MS = 500;
 
     window.MovieHunt = {
@@ -15,13 +14,11 @@
         hasMore: true,
         loading: false,
         requestToken: 0,
-        selectedInstance: null,
-        activeInstance: null,
         observer: null,
-        instances: [],
 
         _scrollSetup: false,
         _requestModalSetup: false,
+        _instanceSelectReady: false,
 
         init() {
             const section = document.getElementById('movie-hunt-section');
@@ -38,8 +35,24 @@
                 this.setupRequestModal();
                 this._requestModalSetup = true;
             }
-            if (!this._instanceSelectReady) {
-                this.loadInstancesThenContent();
+            if (window.MovieHuntInstanceDropdown && document.getElementById('movie-hunt-instance-select')) {
+                if (!this._instanceSelectReady) {
+                    window.MovieHuntInstanceDropdown.attach('movie-hunt-instance-select', () => {
+                        this.page = 1;
+                        this.hasMore = true;
+                        this.loading = false;
+                        this.requestToken++;
+                        const grid = document.getElementById('movie-hunt-movies-grid');
+                        if (grid) grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
+                        this.loadMovies(1);
+                    });
+                    this._instanceSelectReady = true;
+                }
+                this.page = 1;
+                this.hasMore = true;
+                this.loading = false;
+                this.requestToken++;
+                this.loadMovies(1);
             } else {
                 this.page = 1;
                 this.hasMore = true;
@@ -340,41 +353,6 @@
             if (mainView) mainView.style.display = 'block';
         },
 
-        async loadInstancesThenContent() {
-            const select = document.getElementById('movie-hunt-instance-select');
-            if (!select) return;
-
-            // Movie Hunt tracks its own media (future: scan hard drives). Not tied to Radarr.
-            // Instance dropdown kept for future multi-instance support; for now only "Default Instance".
-            this.instances = [{ name: 'default' }];
-            this.selectedInstance = 'default';
-            localStorage.setItem(STORAGE_KEY, this.selectedInstance);
-
-            select.innerHTML = '';
-            const opt = document.createElement('option');
-            opt.value = 'default';
-            opt.textContent = 'Default Instance';
-            opt.selected = true;
-            select.appendChild(opt);
-
-            this._instanceSelectReady = true;
-
-            select.addEventListener('change', () => {
-                this.selectedInstance = select.value;
-                localStorage.setItem(STORAGE_KEY, this.selectedInstance || '');
-                this.page = 1;
-                this.hasMore = true;
-                this.loading = false;
-                this.requestToken++;
-                const grid = document.getElementById('movie-hunt-movies-grid');
-                if (grid) grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
-                this.loadMovies(1);
-            });
-
-            this.page = 1;
-            this.hasMore = true;
-            this.loadMovies(1);
-        },
 
         setupSort() {
             const sortSelect = document.getElementById('movie-hunt-sort');
@@ -412,7 +390,6 @@
             if (this.loading) return;
             this.loading = true;
             const token = ++this.requestToken;
-            const instance = this.selectedInstance;
 
             if (page === 1) {
                 grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
