@@ -234,6 +234,45 @@
     max-width: 280px;
     flex-shrink: 0;
 }
+
+/* Movie Hunt instance selector - Indexers/Clients style (Activity, Movie Home, Collection, Settings) */
+#activitySection .activity-instance-group .control-select,
+#movie-hunt-section .instance-selector-container .control-select,
+.movie-hunt-settings-instance-bar .control-select {
+    min-width: 200px;
+    max-width: 280px;
+    width: auto;
+    padding: 10px 36px 10px 14px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%);
+    border: 1px solid rgba(90, 109, 137, 0.4);
+    border-radius: 8px;
+    color: #f1f5f9;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+#activitySection .activity-instance-group .control-select:hover,
+#movie-hunt-section .instance-selector-container .control-select:hover,
+.movie-hunt-settings-instance-bar .control-select:hover {
+    border-color: rgba(90, 109, 137, 0.6);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+#activitySection .activity-instance-group .control-select:focus,
+#movie-hunt-section .instance-selector-container .control-select:focus,
+.movie-hunt-settings-instance-bar .control-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+#activitySection .activity-instance-group {
+    flex-shrink: 0;
+}
 #movie-hunt-section .sort-dropdown { flex-shrink: 0; min-width: 250px; }
 #movie-hunt-section .control-select {
     width: 100%;

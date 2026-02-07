@@ -24,11 +24,7 @@
     window.MovieHuntInstanceManagement = {
         init: function() {
             var self = this;
-            var back = document.getElementById('instance-management-back');
             var addBtn = document.getElementById('instance-management-add');
-            if (back) back.addEventListener('click', function() {
-                if (window.huntarrUI && window.huntarrUI.switchSection) window.huntarrUI.switchSection('movie-hunt-settings');
-            });
             if (addBtn) addBtn.addEventListener('click', function() { self.promptAdd(); });
             this.loadList();
         },
