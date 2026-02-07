@@ -20,6 +20,133 @@ from .. import trash_custom_formats
 movie_hunt_logger = get_logger("movie_hunt")
 movie_hunt_bp = Blueprint("movie_hunt", __name__)
 
+
+def _get_movie_hunt_instance_id_from_request():
+    """Current Movie Hunt instance: query param instance_id or server-stored current. Never tied to Radarr."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    instance_id = request.args.get('instance_id', type=int)
+    if instance_id is not None:
+        return instance_id
+    return db.get_current_movie_hunt_instance_id()
+
+
+# --- Movie Hunt Instance Management (multi-instance) ---
+@movie_hunt_bp.route('/api/movie-hunt/instances', methods=['GET'])
+def api_movie_hunt_instances_list():
+    """List all Movie Hunt instances (id, name, created_at)."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instances = db.get_movie_hunt_instances()
+        return jsonify({'instances': instances}), 200
+    except Exception as e:
+        logger.exception('Movie Hunt instances list error')
+        return jsonify({'instances': [], 'error': str(e)}), 200
+
+
+@movie_hunt_bp.route('/api/movie-hunt/instances', methods=['POST'])
+def api_movie_hunt_instances_create():
+    """Create a new Movie Hunt instance. Body: { "name": "User-provided name" }. User must name it first; ID never reused."""
+    try:
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip() or 'Unnamed'
+        from src.primary.utils.database import get_database
+        db = get_database()
+        new_id = db.create_movie_hunt_instance(name)
+        instances = db.get_movie_hunt_instances()
+        new_instance = next((i for i in instances if i['id'] == new_id), None)
+        return jsonify({'instance_id': new_id, 'instance': new_instance}), 201
+    except Exception as e:
+        logger.exception('Movie Hunt instance create error')
+        return jsonify({'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/instances/<int:instance_id>', methods=['GET'])
+def api_movie_hunt_instance_get(instance_id):
+    """Get one Movie Hunt instance by id."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instances = db.get_movie_hunt_instances()
+        one = next((i for i in instances if i['id'] == instance_id), None)
+        if not one:
+            return jsonify({'error': 'Instance not found'}), 404
+        return jsonify(one), 200
+    except Exception as e:
+        logger.exception('Movie Hunt instance get error')
+        return jsonify({'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/instances/<int:instance_id>', methods=['PATCH'])
+def api_movie_hunt_instance_update(instance_id):
+    """Rename a Movie Hunt instance. Body: { "name": "New name" }. Unique name enforced (auto-append suffix)."""
+    try:
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip() or 'Unnamed'
+        from src.primary.utils.database import get_database
+        db = get_database()
+        if not db.update_movie_hunt_instance(instance_id, name):
+            return jsonify({'error': 'Instance not found'}), 404
+        instances = db.get_movie_hunt_instances()
+        one = next((i for i in instances if i['id'] == instance_id), None)
+        return jsonify(one), 200
+    except Exception as e:
+        logger.exception('Movie Hunt instance update error')
+        return jsonify({'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/instances/<int:instance_id>', methods=['DELETE'])
+def api_movie_hunt_instance_delete(instance_id):
+    """Delete a Movie Hunt instance. ID is never reused."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        if not db.delete_movie_hunt_instance(instance_id):
+            return jsonify({'error': 'Instance not found'}), 404
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Movie Hunt instance delete error')
+        return jsonify({'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/current-instance', methods=['GET'])
+def api_movie_hunt_current_instance_get():
+    """Get current Movie Hunt instance id (server-stored)."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instance_id = db.get_current_movie_hunt_instance_id()
+        return jsonify({'instance_id': instance_id}), 200
+    except Exception as e:
+        logger.exception('Movie Hunt current instance get error')
+        return jsonify({'instance_id': 1, 'error': str(e)}), 200
+
+
+@movie_hunt_bp.route('/api/movie-hunt/current-instance', methods=['POST'])
+def api_movie_hunt_current_instance_set():
+    """Set current Movie Hunt instance (server-stored). Body: { "instance_id": int }."""
+    try:
+        data = request.get_json() or {}
+        instance_id = data.get('instance_id')
+        if instance_id is None:
+            return jsonify({'error': 'instance_id required'}), 400
+        try:
+            instance_id = int(instance_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'instance_id must be an integer'}), 400
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instances = db.get_movie_hunt_instances()
+        if not any(i['id'] == instance_id for i in instances):
+            return jsonify({'error': 'Instance not found'}), 404
+        db.set_current_movie_hunt_instance_id(instance_id)
+        return jsonify({'instance_id': instance_id}), 200
+    except Exception as e:
+        logger.exception('Movie Hunt current instance set error')
+        return jsonify({'error': str(e)}), 500
+
+
 # Newznab indexer preset base URLs (used for API key validation)
 INDEXER_PRESET_URLS = {
     'nzbgeek': 'https://api.nzbgeek.info/api',
@@ -119,21 +246,21 @@ def api_indexers_validate():
         return jsonify({'valid': False, 'message': str(e)}), 200
 
 
-def _get_indexers_config():
-    """Get indexers list from database (app_config app_type=indexers)."""
+def _get_indexers_config(instance_id):
+    """Get indexers list for a Movie Hunt instance (app_config per instance). Not tied to Radarr."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('indexers')
+    config = db.get_app_config_for_instance('indexers', instance_id)
     if not config or not isinstance(config.get('indexers'), list):
         return []
     return config['indexers']
 
 
-def _save_indexers_list(indexers_list):
-    """Save indexers list to database."""
+def _save_indexers_list(indexers_list, instance_id):
+    """Save indexers list for a Movie Hunt instance."""
     from src.primary.utils.database import get_database
     db = get_database()
-    db.save_app_config('indexers', {'indexers': indexers_list})
+    db.save_app_config_for_instance('indexers', instance_id, {'indexers': indexers_list})
 
 
 # Indexer categories (Movies only). By default all selected except Movies/3D (2060).
@@ -155,7 +282,8 @@ INDEXER_CATEGORIES_DEFAULT_IDS = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070
 def api_indexers_list():
     """List saved indexers (API key masked to last 4 chars). Includes categories for editor."""
     try:
-        indexers = _get_indexers_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        indexers = _get_indexers_config(instance_id)
         out = []
         for i, idx in enumerate(indexers):
             key = (idx.get('api_key') or '')
@@ -189,7 +317,8 @@ def api_indexers_add():
         categories = data.get('categories')
         if not isinstance(categories, list):
             categories = list(INDEXER_CATEGORIES_DEFAULT_IDS)
-        indexers = _get_indexers_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        indexers = _get_indexers_config(instance_id)
         indexers.append({
             'name': name,
             'preset': preset,
@@ -197,7 +326,7 @@ def api_indexers_add():
             'enabled': enabled,
             'categories': categories,
         })
-        _save_indexers_list(indexers)
+        _save_indexers_list(indexers, instance_id)
         return jsonify({'success': True, 'index': len(indexers) - 1}), 200
     except Exception as e:
         logger.exception('Indexers add error')
@@ -208,7 +337,8 @@ def api_indexers_add():
 def api_indexers_update(index):
     """Update indexer at index. Body: { name, preset, api_key?, enabled, categories? }. Omit api_key to keep existing."""
     try:
-        indexers = _get_indexers_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        indexers = _get_indexers_config(instance_id)
         if index < 0 or index >= len(indexers):
             return jsonify({'success': False, 'error': 'Index out of range'}), 400
         data = request.get_json() or {}
@@ -229,7 +359,7 @@ def api_indexers_update(index):
             'enabled': enabled,
             'categories': categories,
         }
-        _save_indexers_list(indexers)
+        _save_indexers_list(indexers, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Indexers update error')
@@ -240,11 +370,12 @@ def api_indexers_update(index):
 def api_indexers_delete(index):
     """Delete indexer at index."""
     try:
-        indexers = _get_indexers_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        indexers = _get_indexers_config(instance_id)
         if index < 0 or index >= len(indexers):
             return jsonify({'success': False, 'error': 'Index out of range'}), 400
         indexers.pop(index)
-        _save_indexers_list(indexers)
+        _save_indexers_list(indexers, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Indexers delete error')
@@ -339,11 +470,11 @@ def _normalize_profile(p):
     return out
 
 
-def _get_profiles_config():
+def _get_profiles_config(instance_id):
     """Get Movie Hunt profiles list from database. Ensures at least default 'Standard' exists."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('movie_hunt_profiles')
+    config = db.get_app_config_for_instance('movie_hunt_profiles', instance_id)
     if not config or not isinstance(config.get('profiles'), list):
         profiles = []
     else:
@@ -353,23 +484,23 @@ def _get_profiles_config():
         first['name'] = PROFILES_DEFAULT_NAME
         first['is_default'] = True
         profiles = [first]
-        db.save_app_config('movie_hunt_profiles', {'profiles': profiles})
+        db.save_app_config_for_instance('movie_hunt_profiles', instance_id, {'profiles': profiles})
     return profiles
 
 
-def _save_profiles_config(profiles_list):
+def _save_profiles_config(profiles_list, instance_id):
     """Save Movie Hunt profiles to database."""
     from src.primary.utils.database import get_database
     db = get_database()
-    db.save_app_config('movie_hunt_profiles', {'profiles': profiles_list})
+    db.save_app_config_for_instance('movie_hunt_profiles', instance_id, {'profiles': profiles_list})
 
 
-def _get_profile_by_name_or_default(quality_profile_name):
+def _get_profile_by_name_or_default(quality_profile_name, instance_id):
     """
     Resolve quality_profile (e.g. 'Standard (Default)' or '4K') to the actual profile from config.
     Returns normalized profile dict, or the default profile if not found / empty.
     """
-    profiles = _get_profiles_config()
+    profiles = _get_profiles_config(instance_id)
     if not quality_profile_name or not (quality_profile_name or '').strip():
         for p in profiles:
             if p.get('is_default'):
@@ -433,7 +564,7 @@ def _release_matches_quality(release_title, quality_name):
     return True
 
 
-def _score_release(release_title, profile):
+def _score_release(release_title, profile, instance_id):
     """
     Score a release using only custom format scores stored by the user (Settings -> Custom Formats).
     Each custom format's regex (from its JSON specifications) is run against the release title;
@@ -446,7 +577,7 @@ def _score_release(release_title, profile):
     parts = []
     total = 0
     try:
-        custom_formats = _get_custom_formats_config()
+        custom_formats = _get_custom_formats_config(instance_id)
         for cf in custom_formats:
             cf_json = cf.get('custom_format_json')
             score_val = cf.get('score')
@@ -540,7 +671,7 @@ def _score_release(release_title, profile):
     return total, ', '.join(parts)
 
 
-def _best_result_matching_profile(results, profile):
+def _best_result_matching_profile(results, profile, instance_id):
     """
     From Newznab results list [{title, nzb_url}, ...], return the best result that matches
     the profile (enabled qualities). Best = highest _score_release. Returns (result, score, breakdown_str).
@@ -554,7 +685,7 @@ def _best_result_matching_profile(results, profile):
         scored = []
         for r in results:
             title = (r.get('title') or '').strip()
-            sc, br = _score_release(title, profile)
+            sc, br = _score_release(title, profile, instance_id)
             scored.append((sc, br, r))
         scored.sort(key=lambda x: (-x[0], x[2].get('title') or ''))
         best = scored[0]
@@ -565,7 +696,7 @@ def _best_result_matching_profile(results, profile):
         title = (r.get('title') or '').strip()
         for qname in enabled_names:
             if _release_matches_quality(title, qname):
-                sc, br = _score_release(title, profile)
+                sc, br = _score_release(title, profile, instance_id)
                 candidates.append((sc, br, r))
                 break
     if not candidates:
@@ -598,7 +729,8 @@ def _first_result_matching_profile(results, profile):
 def api_profiles_list():
     """List Movie Hunt profiles (default Standard ensured). Returns full profile objects."""
     try:
-        profiles = _get_profiles_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        profiles = _get_profiles_config(instance_id)
         out = []
         for i, p in enumerate(profiles):
             normalized = _normalize_profile(p)
@@ -629,15 +761,16 @@ def api_profiles_add():
     """Add a profile. Body: { name }. New profile uses full defaults, is_default=False.
     If name duplicates an existing profile, appends -<random alphanumeric> (e.g. -a3f2)."""
     try:
+        instance_id = _get_movie_hunt_instance_id_from_request()
         data = request.get_json() or {}
         base_name = (data.get('name') or '').strip() or 'Unnamed'
-        profiles = _get_profiles_config()
+        profiles = _get_profiles_config(instance_id)
         name = _unique_profile_name(base_name, profiles)
         new_profile = _profile_defaults()
         new_profile['name'] = name
         new_profile['is_default'] = False
         profiles.append(new_profile)
-        _save_profiles_config(profiles)
+        _save_profiles_config(profiles, instance_id)
         return jsonify({'success': True, 'index': len(profiles) - 1, 'name': name}), 200
     except Exception as e:
         logger.exception('Profiles add error')
@@ -650,7 +783,8 @@ def api_profiles_patch(index):
     min_custom_format_score, upgrade_until_custom_format_score, upgrade_score_increment,
     language, qualities. Only one default allowed."""
     try:
-        profiles = _get_profiles_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        profiles = _get_profiles_config(instance_id)
         if index < 0 or index >= len(profiles):
             return jsonify({'success': False, 'error': 'Index out of range'}), 400
         data = request.get_json() or {}
@@ -704,7 +838,7 @@ def api_profiles_patch(index):
                     qualities.append(entry)
             qualities.sort(key=lambda x: (x.get('order', 0), x.get('id', '')))
             profiles[index]['qualities'] = qualities
-        _save_profiles_config(profiles)
+        _save_profiles_config(profiles, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Profiles patch error')
@@ -715,7 +849,8 @@ def api_profiles_patch(index):
 def api_profiles_clone(index):
     """Duplicate profile at index. New profile has name + ' (Copy)' and is_default=False."""
     try:
-        profiles = _get_profiles_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        profiles = _get_profiles_config(instance_id)
         if index < 0 or index >= len(profiles):
             return jsonify({'success': False, 'error': 'Index out of range'}), 400
         source = profiles[index]
@@ -724,7 +859,7 @@ def api_profiles_clone(index):
         new_profile['name'] = ((source.get('name') or '').strip() or 'Unnamed') + ' (Copy)'
         new_profile['is_default'] = False
         profiles.append(new_profile)
-        _save_profiles_config(profiles)
+        _save_profiles_config(profiles, instance_id)
         return jsonify({'success': True, 'index': len(profiles) - 1}), 200
     except Exception as e:
         logger.exception('Profiles clone error')
@@ -735,16 +870,17 @@ def api_profiles_clone(index):
 def api_profiles_delete(index):
     """Delete profile. Any profile can be deleted; empty list triggers auto-creation of default Standard on next read."""
     try:
-        profiles = _get_profiles_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        profiles = _get_profiles_config(instance_id)
         if index < 0 or index >= len(profiles):
             return jsonify({'success': False, 'error': 'Index out of range'}), 400
         was_default = profiles[index].get('is_default')
         profiles.pop(index)
         if was_default and profiles:
             profiles[0]['is_default'] = True
-            _save_profiles_config(profiles)
+            _save_profiles_config(profiles, instance_id)
         else:
-            _save_profiles_config(profiles)
+            _save_profiles_config(profiles, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Profiles delete error')
@@ -767,11 +903,11 @@ def _movie_management_defaults():
     }
 
 
-def _get_movie_management_config():
+def _get_movie_management_config(instance_id):
     """Get movie management config from database; merge with defaults."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('movie_management')
+    config = db.get_app_config_for_instance('movie_management', instance_id)
     defaults = _movie_management_defaults()
     if not config or not isinstance(config, dict):
         return dict(defaults)
@@ -786,7 +922,8 @@ def _get_movie_management_config():
 def api_movie_management_get():
     """Get movie management settings (Movie Naming + Importing)."""
     try:
-        data = _get_movie_management_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        data = _get_movie_management_config(instance_id)
         return jsonify(data), 200
     except Exception as e:
         logger.exception('Movie management get error')
@@ -797,16 +934,17 @@ def api_movie_management_get():
 def api_movie_management_patch():
     """Update movie management settings. Body: same keys as GET (partial allowed)."""
     try:
+        instance_id = _get_movie_hunt_instance_id_from_request()
         data = request.get_json() or {}
-        current = _get_movie_management_config()
+        current = _get_movie_management_config(instance_id)
         allowed = set(_movie_management_defaults().keys())
         for k, v in data.items():
             if k in allowed:
                 current[k] = v
         from src.primary.utils.database import get_database
         db = get_database()
-        db.save_app_config('movie_management', current)
-        return jsonify(_get_movie_management_config()), 200
+        db.save_app_config_for_instance('movie_management', instance_id, current)
+        return jsonify(_get_movie_management_config(instance_id)), 200
     except Exception as e:
         logger.exception('Movie management patch error')
         return jsonify({'error': str(e)}), 500
@@ -830,11 +968,11 @@ def _download_client_base_url(client):
     return '%s:%s' % (host.rstrip('/'), port)
 
 
-def _get_requested_queue_ids():
-    """Return dict of client_name -> set of queue ids (nzo_id / NZBID) that we requested."""
+def _get_requested_queue_ids(instance_id):
+    """Return dict of client_name -> set of queue ids (nzo_id / NZBID) that we requested for this instance."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('movie_hunt_requested')
+    config = db.get_app_config_for_instance('movie_hunt_requested', instance_id)
     if not config or not isinstance(config.get('by_client'), dict):
         return {}
     out = {}
@@ -852,11 +990,11 @@ def _get_requested_queue_ids():
     return out
 
 
-def _get_requested_display(client_name, queue_id):
+def _get_requested_display(client_name, queue_id, instance_id):
     """Return {title, year, score, score_breakdown} for a requested queue item for display. Empty/0 if not found."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('movie_hunt_requested')
+    config = db.get_app_config_for_instance('movie_hunt_requested', instance_id)
     if not config or not isinstance(config.get('by_client'), dict):
         return {'title': '', 'year': '', 'score': None, 'score_breakdown': ''}
     cname = (client_name or 'Download client').strip() or 'Download client'
@@ -879,11 +1017,11 @@ def _get_requested_display(client_name, queue_id):
     return {'title': '', 'year': '', 'score': None, 'score_breakdown': ''}
 
 
-def _add_requested_queue_id(client_name, queue_id, title=None, year=None, score=None, score_breakdown=None):
+def _add_requested_queue_id(client_name, queue_id, instance_id, title=None, year=None, score=None, score_breakdown=None):
     """Record that we requested this queue item (so we only show it in Activity queue). Store title/year and optional score for display."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('movie_hunt_requested') or {}
+    config = db.get_app_config_for_instance('movie_hunt_requested', instance_id) or {}
     by_client = config.get('by_client') or {}
     cname = (client_name or 'Download client').strip() or 'Download client'
     entries = list(by_client.get(cname) or [])
@@ -911,7 +1049,7 @@ def _add_requested_queue_id(client_name, queue_id, title=None, year=None, score=
                 break
     by_client[cname] = normalized
     config['by_client'] = by_client
-    db.save_app_config('movie_hunt_requested', config)
+    db.save_app_config_for_instance('movie_hunt_requested', instance_id, config)
 
 
 # --- Blocklist (failed downloads: block by source/release title so we pick a different release next time) ---
@@ -923,12 +1061,12 @@ def _blocklist_normalize_source_title(s):
     return str(s).strip().lower()
 
 
-def _get_blocklist_raw():
+def _get_blocklist_raw(instance_id):
     """Return list of blocklist entries: { source_title, movie_title, year, reason_failed, date_added }."""
     try:
         from src.primary.utils.database import get_database
         db = get_database()
-        config = db.get_app_config('movie_hunt_blocklist')
+        config = db.get_app_config_for_instance('movie_hunt_blocklist', instance_id)
         if not config or not isinstance(config.get('entries'), list):
             return []
         return list(config['entries'])
@@ -937,13 +1075,13 @@ def _get_blocklist_raw():
         return []
 
 
-def _get_blocklist_source_titles():
+def _get_blocklist_source_titles(instance_id):
     """Return set of normalized source titles for filtering search results."""
-    entries = _get_blocklist_raw()
+    entries = _get_blocklist_raw(instance_id)
     return frozenset(_blocklist_normalize_source_title(e.get('source_title')) for e in entries if (e.get('source_title') or '').strip())
 
 
-def _blocklist_add(movie_title, year, source_title, reason_failed):
+def _blocklist_add(movie_title, year, source_title, reason_failed, instance_id):
     """Add a release to the blocklist (e.g. after SAB reports failed)."""
     if not (source_title or '').strip():
         return
@@ -951,7 +1089,7 @@ def _blocklist_add(movie_title, year, source_title, reason_failed):
         from src.primary.utils.database import get_database
         import time
         db = get_database()
-        config = db.get_app_config('movie_hunt_blocklist') or {}
+        config = db.get_app_config_for_instance('movie_hunt_blocklist', instance_id) or {}
         entries = list(config.get('entries') or [])
         norm = _blocklist_normalize_source_title(source_title)
         if any(_blocklist_normalize_source_title(e.get('source_title')) == norm for e in entries):
@@ -964,19 +1102,19 @@ def _blocklist_add(movie_title, year, source_title, reason_failed):
             'date_added': time.time()
         })
         config['entries'] = entries
-        db.save_app_config('movie_hunt_blocklist', config)
+        db.save_app_config_for_instance('movie_hunt_blocklist', instance_id, config)
     except Exception as e:
         logger.error("Blocklist add error: %s", e)
 
 
-def _blocklist_remove(source_titles):
+def _blocklist_remove(source_titles, instance_id):
     """Remove one or more entries by source_title. source_titles: list of str."""
     if not source_titles or not isinstance(source_titles, list):
         return
     try:
         from src.primary.utils.database import get_database
         db = get_database()
-        config = db.get_app_config('movie_hunt_blocklist')
+        config = db.get_app_config_for_instance('movie_hunt_blocklist', instance_id)
         if not config or not isinstance(config.get('entries'), list):
             return
         to_remove = frozenset(_blocklist_normalize_source_title(s) for s in source_titles if (s or '').strip())
@@ -984,7 +1122,7 @@ def _blocklist_remove(source_titles):
             return
         entries = [e for e in config['entries'] if _blocklist_normalize_source_title(e.get('source_title')) not in to_remove]
         config['entries'] = entries
-        db.save_app_config('movie_hunt_blocklist', config)
+        db.save_app_config_for_instance('movie_hunt_blocklist', instance_id, config)
     except Exception as e:
         logger.error("Blocklist remove error: %s", e)
 
@@ -1060,14 +1198,14 @@ def _get_sabnzbd_history_item(client, queue_id):
         return None
 
 
-def _check_and_import_completed(client_name, queue_item):
+def _check_and_import_completed(client_name, queue_item, instance_id):
     """
     Check if a removed queue item completed successfully and trigger import.
     queue_item: { id, title, year, score, score_breakdown }
     """
     try:
-        # Get the download client config
-        clients = _get_clients_config()
+        # Get the download client config for this instance
+        clients = _get_clients_config(instance_id)
         client = next((c for c in clients if (c.get('name') or '').strip() == client_name), None)
         
         if not client:
@@ -1115,7 +1253,7 @@ def _check_and_import_completed(client_name, queue_item):
             if source_title and source_title.endswith('.nzb'):
                 source_title = source_title[:-4]
             reason_failed = (history_item.get('fail_message') or '').strip() or status or 'Download failed'
-            _blocklist_add(movie_title=title, year=year, source_title=source_title, reason_failed=reason_failed)
+            _blocklist_add(movie_title=title, year=year, source_title=source_title, reason_failed=reason_failed, instance_id=instance_id)
             movie_hunt_logger.warning(
                 "Import: download '%s' (%s) did not complete (status: %s). Added to blocklist: %s",
                 title, year, status, source_title or '(no name)'
@@ -1158,13 +1296,13 @@ def _check_and_import_completed(client_name, queue_item):
         movie_hunt_logger.exception("Import: error checking completed download: %s", e)
 
 
-def _prune_requested_queue_ids(client_name, current_queue_ids):
+def _prune_requested_queue_ids(client_name, current_queue_ids, instance_id):
     """Remove from our requested list any id no longer in the client's queue (completed/removed). Trigger import for completed items."""
     # When queue is empty (e.g. last item just completed), current_queue_ids is empty - we must still
     # run so that all our requested items are treated as "removed" and we trigger import checks.
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('movie_hunt_requested')
+    config = db.get_app_config_for_instance('movie_hunt_requested', instance_id)
     if not config or not isinstance(config.get('by_client'), dict):
         return
     cname = (client_name or 'Download client').strip() or 'Download client'
@@ -1184,7 +1322,7 @@ def _prune_requested_queue_ids(client_name, current_queue_ids):
             removed.append(e)
     
     config['by_client'][cname] = kept
-    db.save_app_config('movie_hunt_requested', config)
+    db.save_app_config_for_instance('movie_hunt_requested', instance_id, config)
     
     # Trigger import for completed items (when queue is empty, all requested items are in removed)
     if removed:
@@ -1194,7 +1332,7 @@ def _prune_requested_queue_ids(client_name, current_queue_ids):
         )
     for item in removed:
         if isinstance(item, dict):
-            _check_and_import_completed(client_name, item)
+            _check_and_import_completed(client_name, item, instance_id)
 
 
 def _extract_year_from_filename(filename):
@@ -1315,7 +1453,7 @@ def _format_queue_display_name(filename, title=None, year=None):
     return clean
 
 
-def _get_download_client_queue(client):
+def _get_download_client_queue(client, instance_id):
     """
     Fetch queue from one download client (SABnzbd or NZBGet). Returns list of activity-shaped dicts:
     { id, movie, year, languages, quality, formats, time_left, progress, instance_name }.
@@ -1335,7 +1473,7 @@ def _get_download_client_queue(client):
     else:
         client_cat_lower = raw_cat_lower
     allowed_cats = frozenset((client_cat_lower,))
-    requested_ids = _get_requested_queue_ids().get(name, set())
+    requested_ids = _get_requested_queue_ids(instance_id).get(name, set())
     try:
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
@@ -1392,7 +1530,7 @@ def _get_download_client_queue(client):
                 filename = (slot.get('filename') or slot.get('name') or '-').strip()
                 if not filename:
                     filename = '-'
-                display = _get_requested_display(name, nzo_id)
+                display = _get_requested_display(name, nzo_id, instance_id)
                 display_name = _format_queue_display_name(filename, display.get('title'), display.get('year'))
                 scoring_str = _format_queue_scoring(display.get('score'), display.get('score_breakdown'))
                 # SABnzbd slot: mb (total MB), mbleft (remaining MB), timeleft, percentage, cat
@@ -1444,7 +1582,7 @@ def _get_download_client_queue(client):
                     'instance_name': name,
                     'original_release': filename,
                 })
-            _prune_requested_queue_ids(name, current_queue_ids)
+            _prune_requested_queue_ids(name, current_queue_ids, instance_id)
         elif client_type == 'nzbget':
             jsonrpc_url = '%s/jsonrpc' % base_url
             username = (client.get('username') or '').strip()
@@ -1471,7 +1609,7 @@ def _get_download_client_queue(client):
                 nzb_name = (grp.get('NZBName') or grp.get('NZBFilename') or grp.get('Name') or '-').strip()
                 if not nzb_name:
                     nzb_name = '-'
-                display = _get_requested_display(name, nzb_id)
+                display = _get_requested_display(name, nzb_id, instance_id)
                 display_name = _format_queue_display_name(nzb_name, display.get('title'), display.get('year'))
                 scoring_str = _format_queue_scoring(display.get('score'), display.get('score_breakdown'))
                 size_mb = grp.get('FileSizeMB') or 0
@@ -1510,7 +1648,7 @@ def _get_download_client_queue(client):
                     'instance_name': name,
                     'original_release': nzb_name,
                 })
-            _prune_requested_queue_ids(name, current_queue_ids)
+            _prune_requested_queue_ids(name, current_queue_ids, instance_id)
     except Exception as e:
         logger.debug("Movie Hunt activity queue from download client %s: %s", name, e)
     return items
@@ -1586,7 +1724,10 @@ _MOVIE_HUNT_POLL_INTERVAL_SEC = 90
 def _movie_hunt_poll_completions():
     """Fetch queue from all clients to trigger prune/import check. Runs in background thread."""
     try:
-        _get_activity_queue()
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instance_id = db.get_current_movie_hunt_instance_id()
+        _get_activity_queue(instance_id)
     except Exception as e:
         movie_hunt_logger.debug("Movie Hunt background poll: %s", e)
 
@@ -1613,10 +1754,10 @@ def _ensure_movie_hunt_poller_started():
     movie_hunt_logger.info("Import: background poll started (every %s s) to detect completed downloads.", _MOVIE_HUNT_POLL_INTERVAL_SEC)
 
 
-def _get_activity_queue():
+def _get_activity_queue(instance_id):
     """Fetch queue from Movie Hunt download clients only (SABnzbd/NZBGet). 100% independent of Radarr."""
     _ensure_movie_hunt_poller_started()
-    clients = _get_clients_config()
+    clients = _get_clients_config(instance_id)
     enabled = [c for c in clients if c.get('enabled', True)]
     if not enabled:
         movie_hunt_logger.info("Queue: no download clients configured or enabled. Add SABnzbd/NZBGet in Settings → Movie Hunt → Clients (total in config: %s).", len(clients))
@@ -1624,7 +1765,7 @@ def _get_activity_queue():
     movie_hunt_logger.debug("Queue: fetching from %s download client(s)", len(enabled))
     all_items = []
     for client in enabled:
-        items = _get_download_client_queue(client)
+        items = _get_download_client_queue(client, instance_id)
         all_items.extend(items)
     if all_items:
         movie_hunt_logger.debug("Queue: returning %s item(s) from download client(s)", len(all_items))
@@ -1643,7 +1784,8 @@ def api_activity_get(view):
     search = (request.args.get('search') or '').strip().lower()
 
     if view == 'queue':
-        all_items, total = _get_activity_queue()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        all_items, total = _get_activity_queue(instance_id)
         if search:
             all_items = [i for i in all_items if search in (i.get('movie') or '').lower() or search in str(i.get('year') or '').lower()]
             total = len(all_items)
@@ -1702,7 +1844,8 @@ def api_activity_get(view):
     
     # Blocklist: list of failed releases (movie_title, source_title, reason_failed, date)
     if view == 'blocklist':
-        all_entries = _get_blocklist_raw()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        all_entries = _get_blocklist_raw(instance_id)
         if search:
             q = search
             all_entries = [
@@ -1748,11 +1891,11 @@ def api_activity_get(view):
     }), 200
 
 
-def _remove_activity_queue_items(items):
+def _remove_activity_queue_items(items, instance_id):
     """Remove selected items from Movie Hunt download client queue. items = [ {id, instance_name}, ... ]. Returns (success, error_message)."""
     if not items or not isinstance(items, list):
         return False, 'No items selected'
-    clients = _get_clients_config()
+    clients = _get_clients_config(instance_id)
     enabled = [c for c in clients if c.get('enabled', True)]
     if not enabled:
         return False, 'No download clients configured or enabled'
@@ -1788,15 +1931,15 @@ def _remove_activity_queue_items(items):
     return True, None
 
 
-def _clear_activity_queue():
+def _clear_activity_queue(instance_id):
     """Remove all items from Movie Hunt download client queue. Returns (success, error_message)."""
-    all_items, _ = _get_activity_queue()
+    all_items, _ = _get_activity_queue(instance_id)
     if not all_items:
         return True, None
     to_remove = [{'id': i.get('id'), 'instance_name': i.get('instance_name') or 'Download client'} for i in all_items if i.get('id') is not None]
     if not to_remove:
         return True, None
-    return _remove_activity_queue_items(to_remove)
+    return _remove_activity_queue_items(to_remove, instance_id)
 
 
 @movie_hunt_bp.route('/api/activity/<view>', methods=['DELETE'])
@@ -1805,11 +1948,12 @@ def api_activity_delete(view):
     if view not in ('queue', 'history', 'blocklist'):
         return jsonify({'error': 'Invalid view'}), 400
     if view == 'queue':
+        instance_id = _get_movie_hunt_instance_id_from_request()
         body = request.get_json(silent=True) or {}
         items = body.get('items') if isinstance(body, dict) else None
         if not items or not isinstance(items, list) or len(items) == 0:
             return jsonify({'success': False, 'error': 'No items selected'}), 200
-        success, err_msg = _remove_activity_queue_items(items)
+        success, err_msg = _remove_activity_queue_items(items, instance_id)
         if not success and err_msg:
             return jsonify({'success': False, 'error': err_msg}), 200
         return jsonify({'success': True}), 200
@@ -1823,7 +1967,8 @@ def api_activity_delete(view):
                 source_titles.append(it['source_title'].strip())
         if not source_titles:
             return jsonify({'success': False, 'error': 'No blocklist entry specified (source_title)'}), 200
-        _blocklist_remove(source_titles)
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        _blocklist_remove(source_titles, instance_id)
         return jsonify({'success': True}), 200
     return jsonify({'success': True}), 200
 
@@ -1859,28 +2004,29 @@ def _recommended_score_from_json(custom_format_json):
     return None
 
 
-def _get_custom_formats_config():
+def _get_custom_formats_config(instance_id):
     """Get Movie Hunt custom formats list from database. Default: empty list."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('movie_hunt_custom_formats')
+    config = db.get_app_config_for_instance('movie_hunt_custom_formats', instance_id)
     if not config or not isinstance(config.get('custom_formats'), list):
         return []
     return list(config['custom_formats'])
 
 
-def _save_custom_formats_config(formats_list):
+def _save_custom_formats_config(formats_list, instance_id):
     """Save Movie Hunt custom formats list to database."""
     from src.primary.utils.database import get_database
     db = get_database()
-    db.save_app_config('movie_hunt_custom_formats', {'custom_formats': formats_list})
+    db.save_app_config_for_instance('movie_hunt_custom_formats', instance_id, {'custom_formats': formats_list})
 
 
 @movie_hunt_bp.route('/api/custom-formats', methods=['GET'])
 def api_custom_formats_list():
     """List Movie Hunt custom formats. Returns list of { index, title, name, custom_format_json, score, recommended_score }."""
     try:
-        formats = _get_custom_formats_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        formats = _get_custom_formats_config(instance_id)
         out = []
         for i, f in enumerate(formats):
             src = (f.get('source') or 'import').strip().lower()
@@ -1960,7 +2106,8 @@ def api_custom_formats_add():
                 custom_format_json = json.dumps(custom_format_json)
 
         title = (data.get('title') or '').strip() or name
-        formats = _get_custom_formats_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        formats = _get_custom_formats_config(instance_id)
         new_item = {
             'title': title,
             'name': name,
@@ -1971,7 +2118,7 @@ def api_custom_formats_add():
         if source == 'preformat' and preformat_id:
             new_item['preformat_id'] = preformat_id
         formats.append(new_item)
-        _save_custom_formats_config(formats)
+        _save_custom_formats_config(formats, instance_id)
         return jsonify({'success': True, 'index': len(formats) - 1}), 200
     except Exception as e:
         logger.exception('Custom formats add error')
@@ -1986,7 +2133,8 @@ def api_custom_formats_scores_batch():
         scores = data.get('scores')
         if not isinstance(scores, list):
             return jsonify({'success': False, 'message': 'scores array required'}), 400
-        formats = _get_custom_formats_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        formats = _get_custom_formats_config(instance_id)
         if len(scores) != len(formats):
             return jsonify({'success': False, 'message': 'scores length must match custom formats count'}), 400
         for i in range(len(formats)):
@@ -1995,7 +2143,7 @@ def api_custom_formats_scores_batch():
             except (TypeError, ValueError, IndexError):
                 val = 0
             formats[i]['score'] = val
-        _save_custom_formats_config(formats)
+        _save_custom_formats_config(formats, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Custom formats scores batch error')
@@ -2006,7 +2154,8 @@ def api_custom_formats_scores_batch():
 def api_custom_formats_patch(index):
     """Update custom format. Body: title?, custom_format_json?, score?."""
     try:
-        formats = _get_custom_formats_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        formats = _get_custom_formats_config(instance_id)
         if index < 0 or index >= len(formats):
             return jsonify({'success': False, 'message': 'Index out of range'}), 400
         data = request.get_json() or {}
@@ -2029,7 +2178,7 @@ def api_custom_formats_patch(index):
             elif isinstance(raw, dict):
                 formats[index]['custom_format_json'] = json.dumps(raw)
                 formats[index]['name'] = _custom_format_name_from_json(raw)
-        _save_custom_formats_config(formats)
+        _save_custom_formats_config(formats, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Custom formats patch error')
@@ -2040,11 +2189,12 @@ def api_custom_formats_patch(index):
 def api_custom_formats_delete(index):
     """Delete custom format at index."""
     try:
-        formats = _get_custom_formats_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        formats = _get_custom_formats_config(instance_id)
         if index < 0 or index >= len(formats):
             return jsonify({'success': False, 'message': 'Index out of range'}), 400
         formats.pop(index)
-        _save_custom_formats_config(formats)
+        _save_custom_formats_config(formats, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Custom formats delete error')
@@ -2067,21 +2217,21 @@ def api_custom_formats_preformat_json(preformat_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-def _get_clients_config():
-    """Get download clients list from database (app_config app_type=clients)."""
+def _get_clients_config(instance_id):
+    """Get download clients list for a Movie Hunt instance. 100% independent of Radarr."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('clients')
+    config = db.get_app_config_for_instance('clients', instance_id)
     if not config or not isinstance(config.get('clients'), list):
         return []
     return config['clients']
 
 
-def _save_clients_list(clients_list):
-    """Save download clients list to database."""
+def _save_clients_list(clients_list, instance_id):
+    """Save download clients list for a Movie Hunt instance."""
     from src.primary.utils.database import get_database
     db = get_database()
-    db.save_app_config('clients', {'clients': clients_list})
+    db.save_app_config_for_instance('clients', instance_id, {'clients': clients_list})
 
 
 def _clamp_priority(val, lo=1, hi=99, default=50):
@@ -2097,7 +2247,8 @@ def _clamp_priority(val, lo=1, hi=99, default=50):
 def api_clients_list():
     """List saved download clients (sensitive fields masked to last 4 chars)."""
     try:
-        clients = _get_clients_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        clients = _get_clients_config(instance_id)
         out = []
         for i, c in enumerate(clients):
             api_key = (c.get('api_key') or '')
@@ -2151,7 +2302,8 @@ def api_clients_add():
         recent_priority = (data.get('recent_priority') or 'default').strip().lower() or 'default'
         older_priority = (data.get('older_priority') or 'default').strip().lower() or 'default'
         client_priority = _clamp_priority(data.get('client_priority'), 1, 99, 50)
-        clients = _get_clients_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        clients = _get_clients_config(instance_id)
         clients.append({
             'name': name,
             'type': client_type,
@@ -2166,7 +2318,7 @@ def api_clients_add():
             'older_priority': older_priority,
             'client_priority': client_priority,
         })
-        _save_clients_list(clients)
+        _save_clients_list(clients, instance_id)
         return jsonify({'success': True, 'index': len(clients) - 1}), 200
     except Exception as e:
         logger.exception('Clients add error')
@@ -2177,7 +2329,8 @@ def api_clients_add():
 def api_clients_update(index):
     """Update download client at index. Body: { name, type, host, port, enabled, api_key?, username?, password? }. Omit credentials to keep existing."""
     try:
-        clients = _get_clients_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        clients = _get_clients_config(instance_id)
         if index < 0 or index >= len(clients):
             return jsonify({'success': False, 'error': 'Index out of range'}), 400
         data = request.get_json() or {}
@@ -2225,7 +2378,7 @@ def api_clients_update(index):
             'older_priority': older_priority,
             'client_priority': client_priority,
         }
-        _save_clients_list(clients)
+        _save_clients_list(clients, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Clients update error')
@@ -2236,11 +2389,12 @@ def api_clients_update(index):
 def api_clients_delete(index):
     """Delete download client at index."""
     try:
-        clients = _get_clients_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        clients = _get_clients_config(instance_id)
         if index < 0 or index >= len(clients):
             return jsonify({'success': False, 'error': 'Index out of range'}), 400
         clients.pop(index)
-        _save_clients_list(clients)
+        _save_clients_list(clients, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Clients delete error')
@@ -2507,8 +2661,9 @@ def api_movie_hunt_request():
 
         movie_hunt_logger.info("Request: received for '%s' (%s)", title, year or 'no year')
 
-        indexers = _get_indexers_config()
-        clients = _get_clients_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        indexers = _get_indexers_config(instance_id)
+        clients = _get_clients_config(instance_id)
         enabled_indexers = [i for i in indexers if i.get('enabled', True) and (i.get('preset') or '').strip().lower() != 'manual']
         enabled_clients = [c for c in clients if c.get('enabled', True)]
 
@@ -2523,7 +2678,7 @@ def api_movie_hunt_request():
         if year:
             query = f'{title} {year}'
         # Resolve selected quality profile so we only pick a release that matches its setup
-        profile = _get_profile_by_name_or_default(quality_profile)
+        profile = _get_profile_by_name_or_default(quality_profile, instance_id)
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
         nzb_url = None
@@ -2543,13 +2698,13 @@ def api_movie_hunt_request():
             results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
             if results:
                 # Exclude blocklisted releases so we pick a different one
-                blocklist_titles = _get_blocklist_source_titles()
+                blocklist_titles = _get_blocklist_source_titles(instance_id)
                 if blocklist_titles:
                     results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
                     if not results:
                         continue
                 # Pick best release by score among those matching the profile (not just first)
-                chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(results, profile)
+                chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(results, profile, instance_id)
                 min_score = profile.get('min_custom_format_score', 0)
                 try:
                     min_score = int(min_score)
@@ -2597,12 +2752,12 @@ def api_movie_hunt_request():
         # Track this request so Activity queue only shows items we requested (with title/year and score for display)
         if queue_id:
             client_name = (client.get('name') or 'Download client').strip() or 'Download client'
-            _add_requested_queue_id(client_name, queue_id, title=title, year=year or '', score=request_score, score_breakdown=request_score_breakdown)
+            _add_requested_queue_id(client_name, queue_id, instance_id, title=title, year=year or '', score=request_score, score_breakdown=request_score_breakdown)
         # Add to Media Collection for tracking (with root_folder for auto availability detection)
         tmdb_id = data.get('tmdb_id')
         poster_path = (data.get('poster_path') or '').strip() or None
         root_folder = (data.get('root_folder') or '').strip() or None
-        _collection_append(title=title, year=year, tmdb_id=tmdb_id, poster_path=poster_path, root_folder=root_folder)
+        _collection_append(title=title, year=year, instance_id=instance_id, tmdb_id=tmdb_id, poster_path=poster_path, root_folder=root_folder)
         return jsonify({
             'success': True,
             'message': f'"{title}" sent to {client.get("name") or "download client"}.',
@@ -2618,27 +2773,27 @@ def api_movie_hunt_request():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-def _get_collection_config():
+def _get_collection_config(instance_id):
     """Get Movie Hunt collection (requested media) from database."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('movie_hunt_collection')
+    config = db.get_app_config_for_instance('movie_hunt_collection', instance_id)
     if not config or not isinstance(config.get('items'), list):
         return []
     return config['items']
 
 
-def _save_collection_config(items_list):
+def _save_collection_config(items_list, instance_id):
     """Save Movie Hunt collection to database."""
     from src.primary.utils.database import get_database
     db = get_database()
-    db.save_app_config('movie_hunt_collection', {'items': items_list})
+    db.save_app_config_for_instance('movie_hunt_collection', instance_id, {'items': items_list})
 
 
-def _collection_append(title, year, tmdb_id=None, poster_path=None, root_folder=None):
+def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None, root_folder=None):
     """Append one entry to Media Collection after successful request."""
     from datetime import datetime
-    items = _get_collection_config()
+    items = _get_collection_config(instance_id)
     items.append({
         'title': title,
         'year': year or '',
@@ -2648,7 +2803,7 @@ def _collection_append(title, year, tmdb_id=None, poster_path=None, root_folder=
         'requested_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
         'status': 'requested'
     })
-    _save_collection_config(items)
+    _save_collection_config(items, instance_id)
 
 
 def _get_tmdb_api_key_movie_hunt():
@@ -2663,7 +2818,7 @@ def api_movie_hunt_tmdb_key():
     return jsonify({'api_key': key or ''})
 
 
-def _movie_hunt_collection_lookups():
+def _movie_hunt_collection_lookups(instance_id):
     """
     Build sets for in_library and in_cooldown from Movie Hunt collection.
     Returns (available_tmdb_ids, available_title_year_set, cooldown_tmdb_ids, cooldown_title_year_set).
@@ -2671,7 +2826,7 @@ def _movie_hunt_collection_lookups():
     Cooldown = requested within last 12 hours.
     """
     from datetime import datetime, timedelta
-    items = _get_collection_config()
+    items = _get_collection_config(instance_id)
     available_tmdb_ids = set()
     available_title_year = set()
     cooldown_tmdb_ids = set()
@@ -2719,6 +2874,7 @@ def api_movie_hunt_discover_movies():
     Accepts same filter params as Requestarr discover (genres, year, runtime, rating, votes, hide_available).
     """
     try:
+        instance_id = _get_movie_hunt_instance_id_from_request()
         page = max(1, request.args.get('page', 1, type=int))
         sort_by = (request.args.get('sort_by') or 'popularity.desc').strip()
         hide_available = request.args.get('hide_available', 'false').lower() == 'true'
@@ -2746,7 +2902,7 @@ def api_movie_hunt_discover_movies():
         r = requests.get(url, params=params, timeout=10)
         r.raise_for_status()
         data = r.json()
-        available_tmdb_ids, available_title_year, cooldown_tmdb_ids, cooldown_title_year = _movie_hunt_collection_lookups()
+        available_tmdb_ids, available_title_year, cooldown_tmdb_ids, cooldown_title_year = _movie_hunt_collection_lookups(instance_id)
         results = []
         for item in data.get('results', []):
             release_date = item.get('release_date') or ''
@@ -2875,12 +3031,12 @@ def _scan_root_folder_for_movies(root_path):
     return found
 
 
-def _get_detected_movies_from_all_roots():
+def _get_detected_movies_from_all_roots(instance_id):
     """
     Scan all configured Movie Hunt root folders and return list of { title, year } for every movie detected.
     This is the source of truth for "what's in the library" / Media Collection.
     """
-    folders = _get_root_folders_config()
+    folders = _get_root_folders_config(instance_id)
     all_detected = []
     seen = set()
     for f in folders:
@@ -2958,27 +3114,27 @@ def _normalize_root_folders(folders):
     return out
 
 
-def _get_root_folders_config():
+def _get_root_folders_config(instance_id):
     """Get Movie Hunt root folders list from database. Returns list of { path, is_default }."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('movie_hunt_root_folders')
+    config = db.get_app_config_for_instance('movie_hunt_root_folders', instance_id)
     if not config or not isinstance(config.get('root_folders'), list):
         return []
     raw = config['root_folders']
     normalized = _normalize_root_folders(raw)
     # Migrate legacy format (list of strings) to list of { path, is_default }
     if raw and isinstance(raw[0], str):
-        db.save_app_config('movie_hunt_root_folders', {'root_folders': normalized})
+        db.save_app_config_for_instance('movie_hunt_root_folders', instance_id, {'root_folders': normalized})
     return normalized
 
 
-def _save_root_folders_config(root_folders_list):
+def _save_root_folders_config(root_folders_list, instance_id):
     """Save Movie Hunt root folders list to database."""
     from src.primary.utils.database import get_database
     db = get_database()
     normalized = _normalize_root_folders(root_folders_list)
-    db.save_app_config('movie_hunt_root_folders', {'root_folders': normalized})
+    db.save_app_config_for_instance('movie_hunt_root_folders', instance_id, {'root_folders': normalized})
 
 
 TEST_FILENAME = 'movie-hunt.test'
@@ -2989,7 +3145,8 @@ def api_movie_hunt_root_folders_list():
     """List Movie Hunt root folders with free space and is_default (like Requestarr)."""
     import shutil
     try:
-        folders = _get_root_folders_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        folders = _get_root_folders_config(instance_id)
         out = []
         for i, f in enumerate(folders):
             path = (f.get('path') or '').strip()
@@ -3022,14 +3179,15 @@ def api_movie_hunt_root_folders_add():
             return jsonify({'success': False, 'message': 'Path is required'}), 400
         if '..' in path:
             return jsonify({'success': False, 'message': 'Path cannot contain ..'}), 400
-        folders = _get_root_folders_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        folders = _get_root_folders_config(instance_id)
         normalized = os.path.normpath(path)
         if any((f.get('path') or '').strip() == normalized for f in folders):
             return jsonify({'success': False, 'message': 'That path is already added'}), 400
         # First folder is default; additional ones are not
         is_first = len(folders) == 0
         folders.append({'path': normalized, 'is_default': is_first})
-        _save_root_folders_config(folders)
+        _save_root_folders_config(folders, instance_id)
         return jsonify({'success': True, 'index': len(folders) - 1}), 200
     except Exception as e:
         logger.exception('Root folders add error')
@@ -3040,14 +3198,15 @@ def api_movie_hunt_root_folders_add():
 def api_movie_hunt_root_folders_delete(index):
     """Delete root folder at index. If default was removed, first remaining becomes default."""
     try:
-        folders = _get_root_folders_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        folders = _get_root_folders_config(instance_id)
         if index < 0 or index >= len(folders):
             return jsonify({'success': False, 'message': 'Index out of range'}), 400
         was_default = folders[index].get('is_default')
         folders.pop(index)
         if was_default and folders:
             folders[0]['is_default'] = True
-        _save_root_folders_config(folders)
+        _save_root_folders_config(folders, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Root folders delete error')
@@ -3058,12 +3217,13 @@ def api_movie_hunt_root_folders_delete(index):
 def api_movie_hunt_root_folders_set_default(index):
     """Set root folder at index as default; others become non-default."""
     try:
-        folders = _get_root_folders_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        folders = _get_root_folders_config(instance_id)
         if index < 0 or index >= len(folders):
             return jsonify({'success': False, 'message': 'Index out of range'}), 400
         for i in range(len(folders)):
             folders[i]['is_default'] = (i == index)
-        _save_root_folders_config(folders)
+        _save_root_folders_config(folders, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Root folders set-default error')
@@ -3154,28 +3314,29 @@ def api_movie_hunt_root_folders_test():
 
 # --- Remote Path Mappings API --- #
 
-def _get_remote_mappings_config():
+def _get_remote_mappings_config(instance_id):
     """Get remote path mappings list from database. Returns list of { host, remote_path, local_path }."""
     from src.primary.utils.database import get_database
     db = get_database()
-    config = db.get_app_config('movie_hunt_remote_mappings')
+    config = db.get_app_config_for_instance('movie_hunt_remote_mappings', instance_id)
     if not config or not isinstance(config.get('mappings'), list):
         return []
     return config['mappings']
 
 
-def _save_remote_mappings_config(mappings_list):
+def _save_remote_mappings_config(mappings_list, instance_id):
     """Save remote path mappings list to database."""
     from src.primary.utils.database import get_database
     db = get_database()
-    db.save_app_config('movie_hunt_remote_mappings', {'mappings': mappings_list})
+    db.save_app_config_for_instance('movie_hunt_remote_mappings', instance_id, {'mappings': mappings_list})
 
 
 @movie_hunt_bp.route('/api/movie-hunt/remote-mappings', methods=['GET'])
 def api_movie_hunt_remote_mappings_list():
     """List Movie Hunt remote path mappings."""
     try:
-        mappings = _get_remote_mappings_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        mappings = _get_remote_mappings_config(instance_id)
         return jsonify({'success': True, 'mappings': mappings}), 200
     except Exception as e:
         logger.exception('Remote mappings list error')
@@ -3198,13 +3359,14 @@ def api_movie_hunt_remote_mappings_add():
         if not local_path:
             return jsonify({'success': False, 'message': 'Local path is required'}), 400
         
-        mappings = _get_remote_mappings_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        mappings = _get_remote_mappings_config(instance_id)
         mappings.append({
             'host': host,
             'remote_path': remote_path,
             'local_path': local_path
         })
-        _save_remote_mappings_config(mappings)
+        _save_remote_mappings_config(mappings, instance_id)
         return jsonify({'success': True, 'mapping': mappings[-1]}), 200
     except Exception as e:
         logger.exception('Remote mappings add error')
@@ -3227,7 +3389,8 @@ def api_movie_hunt_remote_mappings_update(index):
         if not local_path:
             return jsonify({'success': False, 'message': 'Local path is required'}), 400
         
-        mappings = _get_remote_mappings_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        mappings = _get_remote_mappings_config(instance_id)
         if index < 0 or index >= len(mappings):
             return jsonify({'success': False, 'message': 'Not found'}), 404
         
@@ -3236,7 +3399,7 @@ def api_movie_hunt_remote_mappings_update(index):
             'remote_path': remote_path,
             'local_path': local_path
         }
-        _save_remote_mappings_config(mappings)
+        _save_remote_mappings_config(mappings, instance_id)
         return jsonify({'success': True, 'mapping': mappings[index]}), 200
     except Exception as e:
         logger.exception('Remote mappings update error')
@@ -3247,12 +3410,13 @@ def api_movie_hunt_remote_mappings_update(index):
 def api_movie_hunt_remote_mappings_delete(index):
     """Delete a remote path mapping at index."""
     try:
-        mappings = _get_remote_mappings_config()
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        mappings = _get_remote_mappings_config(instance_id)
         if index < 0 or index >= len(mappings):
             return jsonify({'success': False, 'message': 'Not found'}), 404
         
         mappings.pop(index)
-        _save_remote_mappings_config(mappings)
+        _save_remote_mappings_config(mappings, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Remote mappings delete error')
@@ -3321,8 +3485,9 @@ def api_movie_hunt_collection_list():
     ?q= search, ?page=1&page_size=20, ?sort=title.asc.
     """
     try:
+        instance_id = _get_movie_hunt_instance_id_from_request()
         # 1) Source of truth: scan all root folders for movies on disk
-        detected_list = _get_detected_movies_from_all_roots()
+        detected_list = _get_detected_movies_from_all_roots(instance_id)
         # Build list: each detected item as { title, year, status: 'available', poster_path, tmdb_id }
         combined = []
         for d in detected_list:
@@ -3337,7 +3502,7 @@ def api_movie_hunt_collection_list():
             })
         # 2) Merge requested list: enrich detected with poster/tmdb; add requested-only as 'requested'
         # Use normalized (title, year) so "Demon Slayer: X" matches "Demon Slayer X" from disk
-        requested_list = _get_collection_config()
+        requested_list = _get_collection_config(instance_id)
         combined_key_set = {(_normalize_title_for_key(item.get('title')), str(item.get('year') or '').strip()) for item in combined}
         combined_tmdb_set = {item.get('tmdb_id') for item in combined if item.get('tmdb_id') is not None}
         for req in requested_list:
@@ -3379,7 +3544,7 @@ def api_movie_hunt_collection_list():
         # 2b) Deduplicate: one entry per movie (by tmdb_id or normalized title+year)
         combined = _dedupe_collection_items(combined)
         # 3) Persist 'available' back to requested items that we detected (so discover/Home stay in sync)
-        items_full = _get_collection_config()
+        items_full = _get_collection_config(instance_id)
         collection_updated = False
         detected_key_set = {(_normalize_title_for_key(d.get('title')), str(d.get('year') or '').strip()) for d in detected_list}
         for i, full_item in enumerate(items_full):
@@ -3392,7 +3557,7 @@ def api_movie_hunt_collection_list():
                 items_full[i]['status'] = 'available'
                 collection_updated = True
         if collection_updated:
-            _save_collection_config(items_full)
+            _save_collection_config(items_full, instance_id)
         # 4) Search, sort, paginate
         q = (request.args.get('q') or '').strip().lower()
         items = [x for x in combined if not q or q in ((x.get('title') or '') + ' ' + str(x.get('year') or '')).lower()]
@@ -3418,15 +3583,16 @@ def api_movie_hunt_collection_list():
 def api_movie_hunt_collection_patch(index):
     """Update collection item status. Body: { status } e.g. 'requested' or 'available'."""
     try:
+        instance_id = _get_movie_hunt_instance_id_from_request()
         data = request.get_json() or {}
         status = (data.get('status') or '').strip() or None
         if not status:
             return jsonify({'success': False, 'message': 'status is required'}), 400
-        items = _get_collection_config()
+        items = _get_collection_config(instance_id)
         if index < 0 or index >= len(items):
             return jsonify({'success': False, 'message': 'Not found'}), 404
         items[index]['status'] = status
-        _save_collection_config(items)
+        _save_collection_config(items, instance_id)
         return jsonify({'success': True, 'item': items[index]}), 200
     except Exception as e:
         logger.exception('Movie Hunt collection patch error')
@@ -3440,22 +3606,23 @@ def api_movie_hunt_collection_delete(index):
         body = request.get_json(silent=True) or {}
         title = (body.get('title') or '').strip()
         year = str(body.get('year') or '').strip()
+        instance_id = _get_movie_hunt_instance_id_from_request()
         if title:
             # Remove by title+year (for dynamic collection list where index != config index)
-            items = _get_collection_config()
+            items = _get_collection_config(instance_id)
             for i, it in enumerate(items):
                 if not isinstance(it, dict):
                     continue
                 if (it.get('title') or '').strip() == title and str(it.get('year') or '') == year:
                     items.pop(i)
-                    _save_collection_config(items)
+                    _save_collection_config(items, instance_id)
                     return jsonify({'success': True}), 200
             return jsonify({'success': False, 'message': 'Not found in requested list'}), 404
-        items = _get_collection_config()
+        items = _get_collection_config(instance_id)
         if index < 0 or index >= len(items):
             return jsonify({'success': False, 'message': 'Not found'}), 404
         items.pop(index)
-        _save_collection_config(items)
+        _save_collection_config(items, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Movie Hunt collection delete error')
