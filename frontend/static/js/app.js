@@ -48,9 +48,9 @@ let huntarrUI = {
         // Cache frequently used DOM elements
         this.cacheElements();
 
-        // Default: Requestarr enabled until we load settings; NZB Hunt disabled until dev_mode confirmed
+        // Default: Requestarr enabled until we load settings; NZB Hunt always visible (no dev key required)
         this._enableRequestarr = true;
-        this._enableNzbHunt = false;
+        this._enableNzbHunt = true;
         fetch('./api/settings')
             .then(r => r.json())
             .then(all => {
@@ -66,15 +66,10 @@ let huntarrUI = {
                     window.location.hash = '#';
                     this.switchSection('home');
                 }
-                // NZB Hunt: only visible when dev_mode is true
-                var devMode = !!(all.general && all.general.dev_mode);
-                this._enableNzbHunt = devMode;
+                // NZB Hunt: always visible (desktop and mobile), no dev key required
+                this._enableNzbHunt = true;
                 var nzbNav = document.getElementById('nzbHuntSupportNav');
-                if (nzbNav) nzbNav.style.display = devMode ? '' : 'none';
-                if (!devMode && /^#?nzb-hunt/.test(window.location.hash)) {
-                    window.location.hash = '#';
-                    this.switchSection('home');
-                }
+                if (nzbNav) nzbNav.style.display = '';
                 if (!this.originalSettings) this.originalSettings = {};
                 this.originalSettings.general = all.general || {};
                 this.updateMovieHuntNavVisibility();
@@ -649,7 +644,6 @@ let huntarrUI = {
                 }
             }
         } else if (section === 'nzb-hunt-home' && document.getElementById('nzb-hunt-section')) {
-            // NZB Hunt requires dev mode
             if (!this._enableNzbHunt) { this.switchSection('home'); return; }
             document.getElementById('nzb-hunt-section').classList.add('active');
             document.getElementById('nzb-hunt-section').style.display = 'block';
