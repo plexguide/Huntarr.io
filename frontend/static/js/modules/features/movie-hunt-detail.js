@@ -405,8 +405,24 @@
             const instanceSelect = document.getElementById('movie-detail-instance-select');
             if (instanceSelect) {
                 instanceSelect.addEventListener('change', async () => {
-                    this.selectedInstanceId = parseInt(instanceSelect.value);
+                    const instanceId = parseInt(instanceSelect.value, 10);
+                    if (!instanceId) return;
+                    
+                    this.selectedInstanceId = instanceId;
                     console.log('[MovieHuntDetail] Instance changed to:', this.selectedInstanceId);
+                    
+                    // Persist as server default so all Movie Hunt sections use this instance
+                    try {
+                        const res = await fetch('./api/movie-hunt/current-instance', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ instance_id: instanceId })
+                        });
+                        const data = await res.json();
+                        if (data.error) console.warn('[MovieHuntDetail] Set current instance failed:', data.error);
+                    } catch (err) {
+                        console.warn('[MovieHuntDetail] Set current instance error:', err);
+                    }
                     
                     // Update movie status for new instance
                     await this.updateMovieStatus();
