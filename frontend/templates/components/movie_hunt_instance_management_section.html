@@ -1,44 +1,53 @@
 <section id="instanceManagementSection" class="content-section" style="display: none;">
-    <div class="movie-hunt-instance-management-panel">
-        <div class="instance-management-header">
-            <h2 class="instance-management-title">Instance Management</h2>
-        </div>
+    <div id="instanceManagementContainer" class="app-content-panel">
         <p class="instance-management-description">Each instance has its own settings, queue, history, blocklist, and media. Select an instance from the dropdown elsewhere to switch. IDs are never reused.</p>
-        <div class="instance-management-actions">
-            <button type="button" id="instance-management-add" class="btn-primary">
-                <i class="fas fa-plus"></i> Add Instance
-            </button>
-        </div>
-        <div class="instance-management-list-wrapper">
-            <table class="instance-management-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th class="col-actions">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="instanceManagementTableBody">
-                    <tr><td colspan="3">Loading...</td></tr>
-                </tbody>
-            </table>
+        <div class="settings-group instance-management-settings-group">
+            <h3>Instance Management</h3>
+            <div class="instance-card-grid" id="instanceManagementGrid">
+                <div class="add-instance-card" id="instance-management-add-card" data-app-type="instance">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Adding Instance</div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 <style>
-#instanceManagementSection { display: none; padding: 24px; }
+#instanceManagementSection { display: none; padding: 0; margin: 0; width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
 #instanceManagementSection.active { display: block !important; }
-.instance-management-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
-.instance-management-title { margin: 0; font-size: 1.35rem; color: #f1f5f9; }
-.instance-management-description { color: #94a3b8; margin: 0 0 20px 0; font-size: 0.95rem; }
-.instance-management-actions { margin-bottom: 20px; }
-.instance-management-table { width: 100%; border-collapse: collapse; background: rgba(15, 23, 42, 0.5); border-radius: 8px; overflow: hidden; }
-.instance-management-table th, .instance-management-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(71, 85, 105, 0.4); }
-.instance-management-table th { background: rgba(30, 41, 59, 0.6); color: #94a3b8; font-weight: 600; }
-.instance-management-table .col-actions { width: 140px; text-align: right; }
-.instance-management-table .btn-edit, .instance-management-table .btn-delete { padding: 6px 12px; margin-left: 6px; font-size: 0.85rem; border: none; border-radius: 6px; cursor: pointer; }
-.instance-management-table .btn-edit { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-.instance-management-table .btn-edit:hover { background: rgba(59, 130, 246, 0.35); }
-.instance-management-table .btn-delete { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-.instance-management-table .btn-delete:hover { background: rgba(239, 68, 68, 0.35); }
+#instanceManagementContainer {
+    width: 100%;
+    padding: 20px;
+    margin: 0;
+    background-color: transparent;
+    box-shadow: none;
+    border: none;
+}
+.instance-management-description {
+    color: #94a3b8;
+    margin: 0 0 20px 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+/* Match Indexers/Clients: dark slate gradient panel */
+.instance-management-settings-group {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    border: 2px solid rgba(90, 109, 137, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0 25px 0;
+    box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.instance-management-settings-group h3 {
+    margin: 0 0 20px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f8fafc;
+}
+.instance-management-loading {
+    grid-column: 1 / -1;
+    color: #94a3b8;
+    padding: 24px;
+    text-align: center;
+}
 </style>

@@ -24,48 +24,64 @@
     window.MovieHuntInstanceManagement = {
         init: function() {
             var self = this;
-            var addBtn = document.getElementById('instance-management-add');
-            if (addBtn) addBtn.addEventListener('click', function() { self.promptAdd(); });
+            var addCard = document.getElementById('instance-management-add-card');
+            if (addCard) addCard.addEventListener('click', function() { self.promptAdd(); });
             this.loadList();
         },
 
         loadList: function() {
-            var tbody = document.getElementById('instanceManagementTableBody');
-            if (!tbody) return;
-            tbody.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+            var grid = document.getElementById('instanceManagementGrid');
+            if (!grid) return;
+            var addCard = document.getElementById('instance-management-add-card');
+            var addCardClone = addCard ? addCard.cloneNode(true) : null;
+            if (addCard) addCard.remove();
+            grid.innerHTML = '<div class="instance-management-loading">Loading...</div>';
             fetch(api('./api/movie-hunt/instances'), { cache: 'no-store' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var list = data.instances || [];
-                    tbody.innerHTML = '';
-                    if (list.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="3">No instances. Add one above.</td></tr>';
-                        return;
-                    }
+                    grid.innerHTML = '';
                     list.forEach(function(inst) {
-                        var tr = document.createElement('tr');
-                        tr.innerHTML =
-                            '<td>' + escapeHtml(inst.id) + '</td>' +
-                            '<td><span class="instance-name-cell">' + escapeHtml(inst.name || 'Instance ' + inst.id) + '</span></td>' +
-                            '<td class="col-actions">' +
-                            '<button type="button" class="btn-edit" data-id="' + escapeHtml(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Edit name">Edit</button>' +
-                            '<button type="button" class="btn-delete" data-id="' + escapeHtml(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Delete">Delete</button>' +
-                            '</td>';
-                        tbody.appendChild(tr);
+                        var card = document.createElement('div');
+                        card.className = 'instance-card';
+                        card.innerHTML =
+                            '<div class="instance-card-header">' +
+                            '<span class="instance-name">' + escapeHtml(inst.name || 'Instance ' + inst.id) + '</span>' +
+                            '</div>' +
+                            '<div class="instance-card-body">' +
+                            '<div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div>' +
+                            '</div>' +
+                            '<div class="instance-card-footer">' +
+                            '<button type="button" class="btn-card edit" data-id="' + escapeHtml(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Edit name"><i class="fas fa-pencil-alt"></i> Edit</button>' +
+                            '<button type="button" class="btn-card delete" data-id="' + escapeHtml(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Delete"><i class="fas fa-trash"></i> Delete</button>' +
+                            '</div>';
+                        grid.appendChild(card);
                     });
-                    tbody.querySelectorAll('.btn-edit').forEach(function(btn) {
-                        btn.addEventListener('click', function() {
+                    if (addCardClone) {
+                        addCardClone.id = 'instance-management-add-card';
+                        addCardClone.setAttribute('data-app-type', 'instance');
+                        grid.appendChild(addCardClone);
+                        addCardClone.addEventListener('click', function() { window.MovieHuntInstanceManagement.promptAdd(); });
+                    }
+                    grid.querySelectorAll('.btn-card.edit').forEach(function(btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
                             window.MovieHuntInstanceManagement.promptRename(btn.getAttribute('data-id'), btn.getAttribute('data-name') || '');
                         });
                     });
-                    tbody.querySelectorAll('.btn-delete').forEach(function(btn) {
-                        btn.addEventListener('click', function() {
+                    grid.querySelectorAll('.btn-card.delete').forEach(function(btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
                             window.MovieHuntInstanceManagement.promptDelete(btn.getAttribute('data-id'), btn.getAttribute('data-name') || '');
                         });
                     });
                 })
                 .catch(function() {
-                    tbody.innerHTML = '<tr><td colspan="3">Failed to load instances.</td></tr>';
+                    grid.innerHTML = '<div class="instance-management-loading" style="color: #f87171;">Failed to load instances.</div>';
+                    if (addCardClone) {
+                        grid.appendChild(addCardClone);
+                        addCardClone.addEventListener('click', function() { window.MovieHuntInstanceManagement.promptAdd(); });
+                    }
                 });
         },
 
