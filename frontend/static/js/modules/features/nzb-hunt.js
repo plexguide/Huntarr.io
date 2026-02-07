@@ -1,52 +1,449 @@
 /**
  * NZB Hunt - Standalone JavaScript module
  * Independent: does not share state with Movie Hunt, Requestarr, or any other module.
- * Manages NZB Home, Activity (coming soon), and Settings (coming soon).
+ * Manages NZB Home, Activity (coming soon), and Settings (Folders + Servers).
  */
-(function() {
+(function () {
     'use strict';
 
     window.NzbHunt = {
         currentTab: 'queue',
+        _servers: [],
+        _editIndex: null, // null = add, number = edit
 
-        init: function() {
+        /* ──────────────────────────────────────────────
+           Initialization
+        ────────────────────────────────────────────── */
+        init: function () {
             this.setupTabs();
             this.showTab('queue');
-            console.log('[NzbHunt] Initialized');
+            console.log('[NzbHunt] Home initialized');
         },
 
-        setupTabs: function() {
+        initSettings: function () {
+            this._setupSettingsTabs();
+            this._setupFolderBrowse();
+            this._setupServerGrid();
+            this._setupServerModal();
+            this._setupBrowseModal();
+            this._loadFolders();
+            this._loadServers();
+            console.log('[NzbHunt] Settings initialized');
+        },
+
+        /* ──────────────────────────────────────────────
+           NZB Home tabs (Queue / History)
+        ────────────────────────────────────────────── */
+        setupTabs: function () {
             var self = this;
             var tabs = document.querySelectorAll('#nzb-hunt-section .nzb-tab');
-            tabs.forEach(function(tab) {
-                tab.addEventListener('click', function() {
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
                     var target = tab.getAttribute('data-tab');
                     if (target) self.showTab(target);
                 });
             });
         },
 
-        showTab: function(tab) {
+        showTab: function (tab) {
             this.currentTab = tab;
-
-            // Update tab active states
-            var tabs = document.querySelectorAll('#nzb-hunt-section .nzb-tab');
-            tabs.forEach(function(t) {
+            document.querySelectorAll('#nzb-hunt-section .nzb-tab').forEach(function (t) {
                 t.classList.toggle('active', t.getAttribute('data-tab') === tab);
             });
-
-            // Show/hide tab panels
-            var panels = document.querySelectorAll('#nzb-hunt-section .nzb-tab-panel');
-            panels.forEach(function(p) {
+            document.querySelectorAll('#nzb-hunt-section .nzb-tab-panel').forEach(function (p) {
                 p.style.display = p.getAttribute('data-panel') === tab ? 'block' : 'none';
             });
+        },
+
+        /* ──────────────────────────────────────────────
+           Settings sub-tabs (Folders / Servers)
+        ────────────────────────────────────────────── */
+        _setupSettingsTabs: function () {
+            var self = this;
+            document.querySelectorAll('#nzb-hunt-settings-section .nzb-settings-tab').forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    var t = tab.getAttribute('data-settings-tab');
+                    if (t) self._showSettingsTab(t);
+                });
+            });
+        },
+
+        _showSettingsTab: function (tab) {
+            document.querySelectorAll('#nzb-hunt-settings-section .nzb-settings-tab').forEach(function (t) {
+                t.classList.toggle('active', t.getAttribute('data-settings-tab') === tab);
+            });
+            document.querySelectorAll('#nzb-hunt-settings-section .nzb-settings-panel').forEach(function (p) {
+                p.style.display = p.getAttribute('data-settings-panel') === tab ? 'block' : 'none';
+            });
+        },
+
+        /* ──────────────────────────────────────────────
+           Folders  – load / save / browse
+        ────────────────────────────────────────────── */
+        _loadFolders: function () {
+            fetch('./api/nzb-hunt/settings/folders?t=' + Date.now())
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var df = document.getElementById('nzb-download-folder');
+                    var tf = document.getElementById('nzb-temp-folder');
+                    var wf = document.getElementById('nzb-watched-folder');
+                    if (df && data.download_folder !== undefined) df.value = data.download_folder;
+                    if (tf && data.temp_folder !== undefined) tf.value = data.temp_folder;
+                    if (wf && data.watched_folder !== undefined) wf.value = data.watched_folder;
+                })
+                .catch(function () { /* use defaults */ });
+        },
+
+        _saveFolders: function () {
+            var payload = {
+                download_folder: (document.getElementById('nzb-download-folder') || {}).value || '/downloads',
+                temp_folder: (document.getElementById('nzb-temp-folder') || {}).value || '/downloads/incomplete',
+                watched_folder: (document.getElementById('nzb-watched-folder') || {}).value || ''
+            };
+            fetch('./api/nzb-hunt/settings/folders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Folders saved.', 'success');
+                    }
+                })
+                .catch(function () {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to save folders.', 'error');
+                    }
+                });
+        },
+
+        _setupFolderBrowse: function () {
+            var self = this;
+            var saveBtn = document.getElementById('nzb-save-folders');
+            if (saveBtn) saveBtn.addEventListener('click', function () { self._saveFolders(); });
+
+            ['nzb-browse-download-folder', 'nzb-browse-temp-folder', 'nzb-browse-watched-folder'].forEach(function (id) {
+                var btn = document.getElementById(id);
+                if (btn) {
+                    btn.addEventListener('click', function () {
+                        var inputId = id.replace('nzb-browse-', 'nzb-').replace('-folder', '-folder');
+                        // Map button id → input id
+                        var map = {
+                            'nzb-browse-download-folder': 'nzb-download-folder',
+                            'nzb-browse-temp-folder': 'nzb-temp-folder',
+                            'nzb-browse-watched-folder': 'nzb-watched-folder'
+                        };
+                        self._openBrowseModal(document.getElementById(map[id]));
+                    });
+                }
+            });
+        },
+
+        /* ──────────────────────────────────────────────
+           File Browser Modal
+        ────────────────────────────────────────────── */
+        _browseTarget: null,
+
+        _setupBrowseModal: function () {
+            var self = this;
+            var backdrop = document.getElementById('nzb-browse-backdrop');
+            var closeBtn = document.getElementById('nzb-browse-close');
+            var cancelBtn = document.getElementById('nzb-browse-cancel');
+            var okBtn = document.getElementById('nzb-browse-ok');
+            var upBtn = document.getElementById('nzb-browse-up');
+
+            if (backdrop) backdrop.addEventListener('click', function () { self._closeBrowseModal(); });
+            if (closeBtn) closeBtn.addEventListener('click', function () { self._closeBrowseModal(); });
+            if (cancelBtn) cancelBtn.addEventListener('click', function () { self._closeBrowseModal(); });
+            if (okBtn) okBtn.addEventListener('click', function () { self._confirmBrowse(); });
+            if (upBtn) upBtn.addEventListener('click', function () { self._browseParent(); });
+        },
+
+        _openBrowseModal: function (targetInput) {
+            this._browseTarget = targetInput;
+            var modal = document.getElementById('nzb-browse-modal');
+            if (!modal) return;
+            // Move to body if nested in a section
+            if (modal.parentElement !== document.body) document.body.appendChild(modal);
+            var pathInput = document.getElementById('nzb-browse-path-input');
+            var startPath = (targetInput && targetInput.value) ? targetInput.value : '/';
+            if (pathInput) pathInput.value = startPath;
+            modal.style.display = 'flex';
+            this._loadBrowsePath(startPath);
+        },
+
+        _closeBrowseModal: function () {
+            var modal = document.getElementById('nzb-browse-modal');
+            if (modal) modal.style.display = 'none';
+        },
+
+        _confirmBrowse: function () {
+            var pathInput = document.getElementById('nzb-browse-path-input');
+            if (this._browseTarget && pathInput) {
+                this._browseTarget.value = pathInput.value;
+            }
+            this._closeBrowseModal();
+        },
+
+        _browseParent: function () {
+            var pathInput = document.getElementById('nzb-browse-path-input');
+            if (!pathInput) return;
+            var cur = pathInput.value || '/';
+            if (cur === '/') return;
+            var parts = cur.replace(/\/+$/, '').split('/');
+            parts.pop();
+            var parent = parts.join('/') || '/';
+            pathInput.value = parent;
+            this._loadBrowsePath(parent);
+        },
+
+        _loadBrowsePath: function (path) {
+            var list = document.getElementById('nzb-browse-list');
+            var pathInput = document.getElementById('nzb-browse-path-input');
+            var upBtn = document.getElementById('nzb-browse-up');
+            if (!list) return;
+
+            list.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+
+            fetch('./api/nzb-hunt/browse?path=' + encodeURIComponent(path) + '&t=' + Date.now())
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (pathInput) pathInput.value = data.path || path;
+                    if (upBtn) upBtn.disabled = (data.path === '/');
+                    var dirs = data.directories || [];
+                    if (dirs.length === 0) {
+                        list.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">No subdirectories</div>';
+                        return;
+                    }
+                    list.innerHTML = '';
+                    dirs.forEach(function (d) {
+                        var item = document.createElement('div');
+                        item.className = 'nzb-browse-item';
+                        item.innerHTML = '<i class="fas fa-folder"></i> <span style="font-family: monospace; font-size: 0.9rem; word-break: break-all;">' + _esc(d.name) + '</span>';
+                        item.addEventListener('click', function () {
+                            if (pathInput) pathInput.value = d.path;
+                            window.NzbHunt._loadBrowsePath(d.path);
+                        });
+                        list.appendChild(item);
+                    });
+                })
+                .catch(function () {
+                    list.innerHTML = '<div style="padding: 20px; text-align: center; color: #f87171;">Failed to browse directory</div>';
+                });
+        },
+
+        /* ──────────────────────────────────────────────
+           Servers  – CRUD + card rendering
+        ────────────────────────────────────────────── */
+        _setupServerGrid: function () {
+            var self = this;
+            var addCard = document.getElementById('nzb-add-server-card');
+            if (addCard) {
+                addCard.addEventListener('click', function () {
+                    self._editIndex = null;
+                    self._openServerModal(null);
+                });
+            }
+        },
+
+        _loadServers: function () {
+            var self = this;
+            fetch('./api/nzb-hunt/servers?t=' + Date.now())
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    self._servers = data.servers || [];
+                    self._renderServerCards();
+                })
+                .catch(function () { self._servers = []; self._renderServerCards(); });
+        },
+
+        _renderServerCards: function () {
+            var grid = document.getElementById('nzb-server-grid');
+            if (!grid) return;
+
+            // Remove existing server cards (keep the add card)
+            var addCard = document.getElementById('nzb-add-server-card');
+            grid.innerHTML = '';
+
+            var self = this;
+            this._servers.forEach(function (srv, idx) {
+                var card = document.createElement('div');
+                card.className = 'nzb-server-card';
+                card.innerHTML =
+                    '<div class="nzb-server-card-header">' +
+                        '<div class="nzb-server-card-name"><i class="fas fa-server"></i> <span>' + _esc(srv.name || 'Server') + '</span></div>' +
+                        '<div class="nzb-server-card-badges">' +
+                            '<span class="nzb-badge nzb-badge-priority">P: ' + (srv.priority !== undefined ? srv.priority : 0) + '</span>' +
+                            (srv.ssl ? '<span class="nzb-badge nzb-badge-ssl">SSL</span>' : '') +
+                            '<span class="nzb-badge ' + (srv.enabled !== false ? 'nzb-badge-enabled' : 'nzb-badge-disabled') + '">' + (srv.enabled !== false ? 'On' : 'Off') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="nzb-server-card-body">' +
+                        '<div class="nzb-server-detail"><i class="fas fa-globe"></i> <span>' + _esc(srv.host || '') + ':' + (srv.port || 563) + '</span></div>' +
+                        '<div class="nzb-server-detail"><i class="fas fa-plug"></i> <span>' + (srv.connections || 8) + ' connections</span></div>' +
+                        (srv.username ? '<div class="nzb-server-detail"><i class="fas fa-user"></i> <span>' + _esc(srv.username) + '</span></div>' : '') +
+                        '<div class="nzb-server-bandwidth">' +
+                            '<div class="nzb-server-bandwidth-label"><span>Bandwidth</span><span>' + _fmtBytes(srv.bandwidth_used || 0) + '</span></div>' +
+                            '<div class="nzb-server-bandwidth-bar"><div class="nzb-server-bandwidth-fill" style="width: ' + Math.min(100, (srv.bandwidth_pct || 0)) + '%;"></div></div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="nzb-server-card-footer">' +
+                        '<button class="nzb-btn" data-action="edit" data-idx="' + idx + '"><i class="fas fa-pen"></i> Edit</button>' +
+                        '<button class="nzb-btn nzb-btn-danger" data-action="delete" data-idx="' + idx + '"><i class="fas fa-trash"></i> Delete</button>' +
+                    '</div>';
+
+                card.addEventListener('click', function (e) {
+                    var btn = e.target.closest('[data-action]');
+                    if (!btn) return;
+                    var action = btn.getAttribute('data-action');
+                    var i = parseInt(btn.getAttribute('data-idx'), 10);
+                    if (action === 'edit') {
+                        self._editIndex = i;
+                        self._openServerModal(self._servers[i]);
+                    } else if (action === 'delete') {
+                        var name = (self._servers[i] || {}).name || 'this server';
+                        if (!confirm('Delete "' + name + '"?')) return;
+                        fetch('./api/nzb-hunt/servers/' + i, { method: 'DELETE' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                if (data.success) self._loadServers();
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    window.huntarrUI.showNotification('Server deleted.', 'success');
+                                }
+                            })
+                            .catch(function () {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    window.huntarrUI.showNotification('Delete failed.', 'error');
+                                }
+                            });
+                    }
+                });
+
+                grid.appendChild(card);
+            });
+
+            // Re-add the "Add Server" card at the end
+            if (addCard) grid.appendChild(addCard);
+        },
+
+        /* ──────────────────────────────────────────────
+           Server Add/Edit Modal
+        ────────────────────────────────────────────── */
+        _setupServerModal: function () {
+            var self = this;
+            var backdrop = document.getElementById('nzb-server-modal-backdrop');
+            var closeBtn = document.getElementById('nzb-server-modal-close');
+            var cancelBtn = document.getElementById('nzb-server-modal-cancel');
+            var saveBtn = document.getElementById('nzb-server-modal-save');
+
+            if (backdrop) backdrop.addEventListener('click', function () { self._closeServerModal(); });
+            if (closeBtn) closeBtn.addEventListener('click', function () { self._closeServerModal(); });
+            if (cancelBtn) cancelBtn.addEventListener('click', function () { self._closeServerModal(); });
+            if (saveBtn) saveBtn.addEventListener('click', function () { self._saveServer(); });
+
+            // ESC key
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    var sm = document.getElementById('nzb-server-modal');
+                    var bm = document.getElementById('nzb-browse-modal');
+                    if (bm && bm.style.display === 'flex') { self._closeBrowseModal(); return; }
+                    if (sm && sm.style.display === 'flex') self._closeServerModal();
+                }
+            });
+        },
+
+        _openServerModal: function (server) {
+            var modal = document.getElementById('nzb-server-modal');
+            if (!modal) return;
+            if (modal.parentElement !== document.body) document.body.appendChild(modal);
+
+            var title = document.getElementById('nzb-server-modal-title');
+            if (title) title.textContent = server ? 'Edit Usenet Server' : 'Add Usenet Server';
+
+            // Fill fields
+            var f = function (id, val) { var el = document.getElementById(id); if (el) { if (el.type === 'checkbox') el.checked = val; else el.value = val; } };
+            f('nzb-server-name', server ? server.name : '');
+            f('nzb-server-host', server ? server.host : '');
+            f('nzb-server-port', server ? (server.port || 563) : 563);
+            f('nzb-server-ssl', server ? (server.ssl !== false) : true);
+            f('nzb-server-username', server ? (server.username || '') : '');
+            f('nzb-server-password', ''); // Don't prefill passwords
+            f('nzb-server-connections', server ? (server.connections || 8) : 8);
+            f('nzb-server-priority', server ? (server.priority !== undefined ? server.priority : 0) : 0);
+            f('nzb-server-enabled', server ? (server.enabled !== false) : true);
+
+            modal.style.display = 'flex';
+        },
+
+        _closeServerModal: function () {
+            var modal = document.getElementById('nzb-server-modal');
+            if (modal) modal.style.display = 'none';
+        },
+
+        _saveServer: function () {
+            var g = function (id) { var el = document.getElementById(id); if (!el) return ''; return el.type === 'checkbox' ? el.checked : el.value; };
+            var payload = {
+                name: g('nzb-server-name') || 'Server',
+                host: g('nzb-server-host'),
+                port: parseInt(g('nzb-server-port'), 10) || 563,
+                ssl: !!g('nzb-server-ssl'),
+                username: g('nzb-server-username'),
+                password: g('nzb-server-password'),
+                connections: parseInt(g('nzb-server-connections'), 10) || 8,
+                priority: parseInt(g('nzb-server-priority'), 10) || 0,
+                enabled: !!g('nzb-server-enabled')
+            };
+
+            var self = this;
+            var url, method;
+            if (this._editIndex !== null) {
+                url = './api/nzb-hunt/servers/' + this._editIndex;
+                method = 'PUT';
+            } else {
+                url = './api/nzb-hunt/servers';
+                method = 'POST';
+            }
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        self._closeServerModal();
+                        self._loadServers();
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Server saved.', 'success');
+                        }
+                    }
+                })
+                .catch(function () {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to save server.', 'error');
+                    }
+                });
         }
     };
 
+    /* ── Helpers ────────────────────────────────────────────────────── */
+    function _esc(s) {
+        var d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+
+    function _fmtBytes(b) {
+        if (!b || b <= 0) return '0 B';
+        var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        var i = Math.floor(Math.log(b) / Math.log(1024));
+        return (b / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+    }
+
     // Initialize on DOM ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() { window.NzbHunt.init(); });
-    } else {
-        window.NzbHunt.init();
+        document.addEventListener('DOMContentLoaded', function () { /* wait for section switch */ });
     }
 })();

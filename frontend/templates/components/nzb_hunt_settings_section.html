@@ -1,12 +1,169 @@
-<!-- NZB Hunt Settings Section - Standalone (coming soon) -->
+<!-- NZB Hunt Settings Section - Standalone module (independent of Movie Hunt / Requestarr) -->
 <section id="nzb-hunt-settings-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/nzb-hunt.css">
     <div class="nzb-hunt-container">
-        <div class="nzb-coming-soon">
-            <div class="nzb-coming-soon-icon"><i class="fas fa-cog"></i></div>
-            <h2>Settings</h2>
-            <p>Server connections, download paths, scheduling, and categories will be configurable here.</p>
-            <div class="nzb-coming-soon-badge"><i class="fas fa-flask"></i> Coming Soon</div>
+
+        <!-- Settings sub-nav tabs -->
+        <div class="nzb-settings-tabs">
+            <button class="nzb-settings-tab active" data-settings-tab="folders" id="nzb-settings-tab-folders">
+                <i class="fas fa-folder-open"></i> Folders
+            </button>
+            <button class="nzb-settings-tab" data-settings-tab="servers" id="nzb-settings-tab-servers">
+                <i class="fas fa-server"></i> Servers
+            </button>
+        </div>
+
+        <!-- ═══════ Folders Panel ═══════ -->
+        <div class="nzb-settings-panel" data-settings-panel="folders" style="display: block;">
+            <div class="nzb-settings-group">
+                <h3><i class="fas fa-folder-open" style="color: #f59e0b; margin-right: 8px;"></i>Download Folders</h3>
+                <p class="nzb-settings-help">Configure where NZB Hunt stores downloaded files. Use the file browser to select a folder inside the container.</p>
+
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Download Folder</span>
+                        <span class="nzb-folder-desc">Where completed downloads are saved.</span>
+                    </div>
+                    <div class="nzb-folder-input-group">
+                        <input type="text" id="nzb-download-folder" class="nzb-folder-input" value="/downloads" autocomplete="off" />
+                        <button type="button" class="nzb-btn-browse" id="nzb-browse-download-folder"><i class="fas fa-folder-open"></i> Browse</button>
+                    </div>
+                </div>
+
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Temporary Folder</span>
+                        <span class="nzb-folder-desc">Intermediate download location. Files are moved on completion.</span>
+                    </div>
+                    <div class="nzb-folder-input-group">
+                        <input type="text" id="nzb-temp-folder" class="nzb-folder-input" value="/downloads/incomplete" autocomplete="off" />
+                        <button type="button" class="nzb-btn-browse" id="nzb-browse-temp-folder"><i class="fas fa-folder-open"></i> Browse</button>
+                    </div>
+                </div>
+
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Watched Folder</span>
+                        <span class="nzb-folder-desc">Automatically picks up .nzb files placed in this directory.</span>
+                    </div>
+                    <div class="nzb-folder-input-group">
+                        <input type="text" id="nzb-watched-folder" class="nzb-folder-input" value="" placeholder="Not set" autocomplete="off" />
+                        <button type="button" class="nzb-btn-browse" id="nzb-browse-watched-folder"><i class="fas fa-folder-open"></i> Browse</button>
+                    </div>
+                </div>
+
+                <div class="nzb-settings-footer">
+                    <button class="nzb-btn nzb-btn-primary" id="nzb-save-folders"><i class="fas fa-save"></i> Save Folders</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ Servers Panel ═══════ -->
+        <div class="nzb-settings-panel" data-settings-panel="servers" style="display: none;">
+            <div class="nzb-settings-group">
+                <h3><i class="fas fa-server" style="color: #3b82f6; margin-right: 8px;"></i>Usenet Servers</h3>
+                <p class="nzb-settings-help">Add your Usenet provider connections. Servers are tried in priority order (lower number = higher priority).</p>
+                <div class="instance-card-grid" id="nzb-server-grid">
+                    <!-- Server cards rendered dynamically -->
+                    <div class="add-instance-card" id="nzb-add-server-card">
+                        <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                        <div class="add-text">Add Server</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ═══════ Add/Edit Server Modal ═══════ -->
+    <div id="nzb-server-modal" class="nzb-server-modal" style="display: none;">
+        <div class="nzb-server-modal-backdrop" id="nzb-server-modal-backdrop"></div>
+        <div class="nzb-server-modal-content">
+            <div class="nzb-server-modal-header">
+                <button type="button" class="nzb-server-modal-close" id="nzb-server-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <div class="nzb-server-modal-header-overlay">
+                    <h2 id="nzb-server-modal-title">Add Usenet Server</h2>
+                    <p class="nzb-server-modal-subtitle">Enter your provider details below.</p>
+                </div>
+            </div>
+            <div class="nzb-server-modal-body">
+                <div class="nzb-form-group">
+                    <label for="nzb-server-name">Name</label>
+                    <input type="text" id="nzb-server-name" placeholder="e.g. EasyNews" autocomplete="off" />
+                </div>
+                <div class="nzb-form-row">
+                    <div class="nzb-form-group" style="flex: 2;">
+                        <label for="nzb-server-host">Host</label>
+                        <input type="text" id="nzb-server-host" placeholder="news.provider.com" autocomplete="off" />
+                    </div>
+                    <div class="nzb-form-group" style="flex: 1;">
+                        <label for="nzb-server-port">Port</label>
+                        <input type="number" id="nzb-server-port" value="563" min="1" max="65535" />
+                    </div>
+                </div>
+                <div class="nzb-form-group">
+                    <label class="nzb-toggle-row">
+                        <span>SSL / TLS</span>
+                        <input type="checkbox" id="nzb-server-ssl" checked />
+                        <span class="nzb-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="nzb-form-row">
+                    <div class="nzb-form-group" style="flex: 1;">
+                        <label for="nzb-server-username">Username</label>
+                        <input type="text" id="nzb-server-username" placeholder="" autocomplete="off" />
+                    </div>
+                    <div class="nzb-form-group" style="flex: 1;">
+                        <label for="nzb-server-password">Password</label>
+                        <input type="password" id="nzb-server-password" placeholder="" autocomplete="off" />
+                    </div>
+                </div>
+                <div class="nzb-form-row">
+                    <div class="nzb-form-group" style="flex: 1;">
+                        <label for="nzb-server-connections">Connections</label>
+                        <input type="number" id="nzb-server-connections" value="8" min="1" max="100" />
+                    </div>
+                    <div class="nzb-form-group" style="flex: 1;">
+                        <label for="nzb-server-priority">Priority</label>
+                        <input type="number" id="nzb-server-priority" value="0" min="0" max="99" />
+                        <span class="nzb-form-hint">0 = highest</span>
+                    </div>
+                </div>
+                <div class="nzb-form-group">
+                    <label class="nzb-toggle-row">
+                        <span>Enabled</span>
+                        <input type="checkbox" id="nzb-server-enabled" checked />
+                        <span class="nzb-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="nzb-server-modal-footer">
+                <button type="button" class="nzb-btn" id="nzb-server-modal-cancel">Cancel</button>
+                <button type="button" class="nzb-btn nzb-btn-primary" id="nzb-server-modal-save"><i class="fas fa-save"></i> Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ File Browser Modal (standalone for NZB Hunt) ═══════ -->
+    <div id="nzb-browse-modal" class="nzb-browse-modal" style="display: none;">
+        <div class="nzb-browse-backdrop" id="nzb-browse-backdrop"></div>
+        <div class="nzb-browse-content">
+            <div class="nzb-browse-header">
+                <h2>File Browser</h2>
+                <button type="button" class="nzb-browse-close" id="nzb-browse-close" aria-label="Close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="nzb-browse-body">
+                <label>Start typing or select a path below</label>
+                <input type="text" id="nzb-browse-path-input" placeholder="/" autocomplete="off" />
+                <div class="nzb-browse-up-row">
+                    <button type="button" class="nzb-browse-up-btn" id="nzb-browse-up"><i class="fas fa-arrow-up"></i> Go Back</button>
+                </div>
+                <div id="nzb-browse-list" class="nzb-browse-list"></div>
+            </div>
+            <div class="nzb-browse-actions">
+                <button type="button" class="nzb-btn" id="nzb-browse-cancel">Cancel</button>
+                <button type="button" class="nzb-btn nzb-btn-primary" id="nzb-browse-ok">Ok</button>
+            </div>
         </div>
     </div>
 </section>

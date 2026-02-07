@@ -377,6 +377,711 @@
     font-weight: 500;
 }
 
+/* ═════════════════════════════════════════════════════════════════
+   SETTINGS  –  Folders & Servers
+   ═════════════════════════════════════════════════════════════════ */
+
+/* ── Settings section ────────────────────────────────────────────── */
+#nzb-hunt-settings-section {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    margin: 0;
+}
+#nzb-hunt-settings-section.active {
+    display: block !important;
+}
+
+/* ── Settings sub-nav tabs ───────────────────────────────────────── */
+.nzb-settings-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border-bottom: 2px solid rgba(90, 109, 137, 0.2);
+}
+
+.nzb-settings-tab {
+    padding: 12px 24px;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: none;
+    position: relative;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nzb-settings-tab:hover {
+    color: #e2e8f0;
+}
+
+.nzb-settings-tab.active {
+    color: #3b82f6;
+}
+
+.nzb-settings-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #3b82f6;
+    border-radius: 1px;
+}
+
+/* ── Settings group panel ────────────────────────────────────────── */
+.nzb-settings-group {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    border: 2px solid rgba(90, 109, 137, 0.3);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.nzb-settings-group h3 {
+    margin: 0 0 8px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+}
+
+.nzb-settings-help {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin: 0 0 24px;
+    line-height: 1.5;
+}
+
+.nzb-settings-footer {
+    margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ── Folder rows ─────────────────────────────────────────────────── */
+.nzb-folder-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.nzb-folder-row:last-of-type {
+    border-bottom: none;
+}
+
+.nzb-folder-label {
+    flex: 0 0 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nzb-folder-title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #e2e8f0;
+}
+
+.nzb-folder-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.nzb-folder-input-group {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.nzb-folder-input {
+    flex: 1;
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 8px;
+    color: #f8fafc;
+    font-size: 0.95rem;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+.nzb-folder-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.nzb-btn-browse {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(148, 163, 184, 0.1);
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.nzb-btn-browse:hover {
+    background: rgba(148, 163, 184, 0.2);
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+/* ── Server cards  (reuses instance-card-grid from movie hunt) ──── */
+#nzb-server-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 8px;
+}
+
+.nzb-server-card {
+    padding: 16px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    min-height: 180px;
+}
+
+.nzb-server-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.nzb-server-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.nzb-server-card-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f8fafc;
+    min-width: 0;
+}
+
+.nzb-server-card-name i {
+    color: #3b82f6;
+    flex-shrink: 0;
+}
+
+.nzb-server-card-name span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nzb-server-card-badges {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.nzb-badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.nzb-badge-priority {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+}
+
+.nzb-badge-enabled {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+}
+
+.nzb-badge-disabled {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.nzb-badge-ssl {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+.nzb-server-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.nzb-server-detail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.nzb-server-detail i {
+    width: 16px;
+    text-align: center;
+    color: #475569;
+}
+
+.nzb-server-detail span {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: #cbd5e1;
+}
+
+/* bandwidth bar */
+.nzb-server-bandwidth {
+    margin-top: 4px;
+}
+
+.nzb-server-bandwidth-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.nzb-server-bandwidth-bar {
+    height: 4px;
+    background: rgba(148, 163, 184, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.nzb-server-bandwidth-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    transition: width 0.4s;
+}
+
+.nzb-server-card-footer {
+    display: flex;
+    gap: 6px;
+}
+
+.nzb-server-card-footer .nzb-btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 7px 10px;
+}
+
+/* ── Add server card (matches instance-card-grid pattern) ────────── */
+#nzb-add-server-card {
+    min-height: 180px;
+    border: 2px dashed rgba(148, 163, 184, 0.2);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+}
+
+#nzb-add-server-card:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.04);
+}
+
+#nzb-add-server-card .add-icon {
+    font-size: 2rem;
+    color: #3b82f6;
+}
+
+#nzb-add-server-card .add-text {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* ═══════ Server Modal ═══════ */
+.nzb-server-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.nzb-server-modal[style*="display: flex"] {
+    display: flex !important;
+}
+
+.nzb-server-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+
+.nzb-server-modal-content {
+    position: relative;
+    z-index: 1001;
+    background: rgba(15, 23, 42, 0.98);
+    border: 2px solid rgba(59, 130, 246, 0.35);
+    border-radius: 12px;
+    max-width: 520px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.nzb-server-modal-header {
+    position: relative;
+    min-height: 100px;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
+    padding: 20px 24px 20px;
+}
+
+.nzb-server-modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.98));
+}
+
+.nzb-server-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.nzb-server-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.nzb-server-modal-header-overlay {
+    position: relative;
+    z-index: 2;
+}
+
+.nzb-server-modal-header-overlay h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin: 0 0 4px;
+}
+
+.nzb-server-modal-subtitle {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+}
+
+.nzb-server-modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.nzb-form-group {
+    margin-bottom: 16px;
+}
+
+.nzb-form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #e2e8f0;
+    margin-bottom: 6px;
+}
+
+.nzb-form-group input[type="text"],
+.nzb-form-group input[type="password"],
+.nzb-form-group input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid #475569;
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+}
+
+.nzb-form-group input:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.nzb-form-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+.nzb-form-row {
+    display: flex;
+    gap: 12px;
+}
+
+/* Toggle switch */
+.nzb-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+}
+
+.nzb-toggle-row input[type="checkbox"] {
+    display: none;
+}
+
+.nzb-toggle-slider {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: #475569;
+    border-radius: 12px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.nzb-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.nzb-toggle-row input:checked + .nzb-toggle-slider {
+    background: #3b82f6;
+}
+
+.nzb-toggle-row input:checked + .nzb-toggle-slider::after {
+    transform: translateX(20px);
+}
+
+.nzb-server-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(148, 163, 184, 0.15);
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* ═══════ File Browser Modal (NZB Hunt) ═══════ */
+.nzb-browse-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.nzb-browse-modal[style*="display: flex"] {
+    display: flex !important;
+}
+
+.nzb-browse-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1100;
+}
+
+.nzb-browse-content {
+    position: relative;
+    z-index: 1101;
+    background: rgba(15, 23, 42, 0.98);
+    border: 2px solid rgba(148, 163, 184, 0.3);
+    border-radius: 12px;
+    min-width: 400px;
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.nzb-browse-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.nzb-browse-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #f8fafc;
+}
+
+.nzb-browse-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 8px;
+    font-size: 1rem;
+}
+
+.nzb-browse-close:hover {
+    color: #f8fafc;
+}
+
+.nzb-browse-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.nzb-browse-body label {
+    display: block;
+    margin-bottom: 8px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+#nzb-browse-path-input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 8px;
+    color: #f8fafc;
+    font-family: monospace;
+    box-sizing: border-box;
+}
+
+#nzb-browse-path-input:focus {
+    border-color: #3b82f6;
+    outline: none;
+}
+
+.nzb-browse-up-row {
+    margin-bottom: 12px;
+}
+
+.nzb-browse-up-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: #0f172a;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.nzb-browse-up-btn:hover {
+    background: linear-gradient(135deg, #fbbf24 0%, #fcd34d 100%);
+}
+
+.nzb-browse-up-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.nzb-browse-list {
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.nzb-browse-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    color: #e2e8f0;
+}
+
+.nzb-browse-item:hover {
+    background: rgba(148, 163, 184, 0.15);
+}
+
+.nzb-browse-item:last-child {
+    border-bottom: none;
+}
+
+.nzb-browse-item i {
+    color: #94a3b8;
+}
+
+.nzb-browse-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
 /* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .nzb-hunt-container {
@@ -390,7 +1095,8 @@
     .nzb-status-divider {
         display: none;
     }
-    .nzb-tab {
+    .nzb-tab,
+    .nzb-settings-tab {
         padding: 10px 16px;
         font-size: 0.85rem;
     }
@@ -401,5 +1107,27 @@
     .nzb-queue-item-progress {
         width: 100%;
         order: 10;
+    }
+    .nzb-folder-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .nzb-folder-label {
+        flex: none;
+    }
+    .nzb-folder-input-group {
+        flex-direction: column;
+    }
+    .nzb-form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    #nzb-server-grid {
+        grid-template-columns: 1fr;
+    }
+    .nzb-browse-content {
+        min-width: 0;
+        width: 95%;
     }
 }

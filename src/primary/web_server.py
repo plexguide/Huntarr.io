@@ -56,6 +56,7 @@ from src.routes.backup_routes import backup_bp
 
 # Import log routes blueprint
 from src.primary.routes.log_routes import log_routes_bp
+from src.primary.routes.nzb_hunt_routes import nzb_hunt_bp
 
 # Import background module to trigger manual cycle resets
 from src.primary import background
@@ -280,6 +281,7 @@ app.register_blueprint(stateful_api, url_prefix='/api/stateful')
 app.register_blueprint(history_blueprint, url_prefix='/api/hunt-manager')
 app.register_blueprint(scheduler_api)
 app.register_blueprint(log_routes_bp)
+app.register_blueprint(nzb_hunt_bp)
 app.register_blueprint(backup_bp)
 
 # Register the authentication check to run before requests
