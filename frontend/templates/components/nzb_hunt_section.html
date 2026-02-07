@@ -1,0 +1,91 @@
+<!-- NZB Hunt Section - Standalone module (independent of Movie Hunt / Requestarr) -->
+<section id="nzb-hunt-section" class="content-section" style="display: none;">
+    <link rel="stylesheet" href="./static/css/nzb-hunt.css">
+
+    <div class="nzb-hunt-container">
+
+        <!-- Status bar -->
+        <div class="nzb-status-bar">
+            <div class="nzb-status-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Speed</span>
+                <span class="nzb-status-value" id="nzb-speed">0 B/s</span>
+            </div>
+            <div class="nzb-status-divider"></div>
+            <div class="nzb-status-item">
+                <i class="fas fa-clock"></i>
+                <span>ETA</span>
+                <span class="nzb-status-value" id="nzb-eta">--:--</span>
+            </div>
+            <div class="nzb-status-divider"></div>
+            <div class="nzb-status-item">
+                <i class="fas fa-download"></i>
+                <span>Remaining</span>
+                <span class="nzb-status-value" id="nzb-remaining">0 B</span>
+            </div>
+            <div class="nzb-status-divider"></div>
+            <div class="nzb-status-item">
+                <i class="fas fa-hdd"></i>
+                <span>Free Space</span>
+                <span class="nzb-status-value" id="nzb-free-space">--</span>
+            </div>
+            <div class="nzb-status-divider"></div>
+            <div class="nzb-status-item" style="margin-left: auto;">
+                <button class="nzb-btn nzb-btn-primary" id="nzb-pause-btn" title="Pause / Resume">
+                    <i class="fas fa-pause"></i>
+                    <span>Pause</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="nzb-tabs">
+            <button class="nzb-tab active" data-tab="queue">
+                Queue <span class="nzb-tab-badge nzb-tab-badge-default" id="nzb-queue-count">0</span>
+            </button>
+            <button class="nzb-tab" data-tab="history">
+                History <span class="nzb-tab-badge nzb-tab-badge-default" id="nzb-history-count">0</span>
+            </button>
+        </div>
+
+        <!-- Queue panel -->
+        <div class="nzb-tab-panel" data-panel="queue" style="display: block;">
+            <div class="nzb-queue-panel">
+                <div class="nzb-queue-header">
+                    <div class="nzb-queue-title"><i class="fas fa-list-ul"></i> Download Queue</div>
+                    <div class="nzb-queue-actions">
+                        <button class="nzb-btn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                </div>
+                <div id="nzb-queue-body">
+                    <div class="nzb-queue-empty">
+                        <div class="nzb-queue-empty-icon"><i class="fas fa-inbox"></i></div>
+                        <h3>Queue is empty</h3>
+                        <p>Downloads will appear here once NZB Hunt is connected to your Usenet setup.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History panel -->
+        <div class="nzb-tab-panel" data-panel="history" style="display: none;">
+            <div class="nzb-queue-panel">
+                <div class="nzb-queue-header">
+                    <div class="nzb-queue-title"><i class="fas fa-history"></i> Download History</div>
+                    <div class="nzb-queue-actions">
+                        <button class="nzb-btn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+                        <button class="nzb-btn nzb-btn-danger" title="Clear History"><i class="fas fa-trash-alt"></i> Clear</button>
+                    </div>
+                </div>
+                <div id="nzb-history-body">
+                    <div class="nzb-queue-empty">
+                        <div class="nzb-queue-empty-icon"><i class="fas fa-history"></i></div>
+                        <h3>No history yet</h3>
+                        <p>Completed downloads will be logged here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>

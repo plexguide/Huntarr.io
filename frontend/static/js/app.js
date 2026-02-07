@@ -48,8 +48,9 @@ let huntarrUI = {
         // Cache frequently used DOM elements
         this.cacheElements();
 
-        // Default: Requestarr enabled until we load settings
+        // Default: Requestarr enabled until we load settings; NZB Hunt disabled until dev_mode confirmed
         this._enableRequestarr = true;
+        this._enableNzbHunt = false;
         fetch('./api/settings')
             .then(r => r.json())
             .then(all => {
@@ -62,6 +63,15 @@ let huntarrUI = {
                     nav.style.display = (onSystem || onSettings) ? 'none' : (en ? '' : 'none');
                 }
                 if (!en && /^#?requestarr/.test(window.location.hash)) {
+                    window.location.hash = '#';
+                    this.switchSection('home');
+                }
+                // NZB Hunt: only visible when dev_mode is true
+                var devMode = !!(all.general && all.general.dev_mode);
+                this._enableNzbHunt = devMode;
+                var nzbNav = document.getElementById('nzbHuntSupportNav');
+                if (nzbNav) nzbNav.style.display = devMode ? '' : 'none';
+                if (!devMode && /^#?nzb-hunt/.test(window.location.hash)) {
                     window.location.hash = '#';
                     this.switchSection('home');
                 }
@@ -119,6 +129,9 @@ let huntarrUI = {
             this.showMainSidebar();
             var settingsSub = document.getElementById('settings-sub');
             if (settingsSub) settingsSub.classList.add('expanded');
+        } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-settings') {
+            console.log('[huntarrUI] Initialization - showing nzb hunt sidebar');
+            this.showNzbHuntSidebar();
         } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
@@ -516,7 +529,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'];
+            const noRefreshSections = ['instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'hunt-manager', 'logs', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -624,6 +637,31 @@ let huntarrUI = {
             if (typeof huntManagerModule !== 'undefined') {
                 huntManagerModule.refresh();
             }
+        } else if (section === 'nzb-hunt-home' && document.getElementById('nzb-hunt-section')) {
+            // NZB Hunt requires dev mode
+            if (!this._enableNzbHunt) { this.switchSection('home'); return; }
+            document.getElementById('nzb-hunt-section').classList.add('active');
+            document.getElementById('nzb-hunt-section').style.display = 'block';
+            newTitle = 'NZB Hunt';
+            this.currentSection = 'nzb-hunt-home';
+            this.showNzbHuntSidebar();
+            if (window.NzbHunt && typeof window.NzbHunt.init === 'function') {
+                window.NzbHunt.init();
+            }
+        } else if (section === 'nzb-hunt-activity' && document.getElementById('nzb-hunt-activity-section')) {
+            if (!this._enableNzbHunt) { this.switchSection('home'); return; }
+            document.getElementById('nzb-hunt-activity-section').classList.add('active');
+            document.getElementById('nzb-hunt-activity-section').style.display = 'block';
+            newTitle = 'NZB Hunt – Activity';
+            this.currentSection = 'nzb-hunt-activity';
+            this.showNzbHuntSidebar();
+        } else if (section === 'nzb-hunt-settings' && document.getElementById('nzb-hunt-settings-section')) {
+            if (!this._enableNzbHunt) { this.switchSection('home'); return; }
+            document.getElementById('nzb-hunt-settings-section').classList.add('active');
+            document.getElementById('nzb-hunt-settings-section').style.display = 'block';
+            newTitle = 'NZB Hunt – Settings';
+            this.currentSection = 'nzb-hunt-settings';
+            this.showNzbHuntSidebar();
         } else if ((section === 'requestarr' || section.startsWith('requestarr-')) && this._enableRequestarr === false) {
             this.switchSection('home');
             return;
@@ -1239,13 +1277,20 @@ let huntarrUI = {
     },
     
     // Sidebar switching functions
-    showMainSidebar: function() {
-        document.getElementById('sidebar').style.display = 'flex';
+    _hideAllSidebars: function() {
+        document.getElementById('sidebar').style.display = 'none';
         document.getElementById('apps-sidebar').style.display = 'none';
         document.getElementById('settings-sidebar').style.display = 'none';
         document.getElementById('requestarr-sidebar').style.display = 'none';
-        const mh = document.getElementById('movie-hunt-sidebar');
+        var mh = document.getElementById('movie-hunt-sidebar');
         if (mh) mh.style.display = 'none';
+        var nh = document.getElementById('nzb-hunt-sidebar');
+        if (nh) nh.style.display = 'none';
+    },
+
+    showMainSidebar: function() {
+        this._hideAllSidebars();
+        document.getElementById('sidebar').style.display = 'flex';
         // When on System (Hunt Manager, Logs, About), hide Settings, Requestarr, Apps in main sidebar
         var section = this.currentSection;
         var onSystem = section === 'hunt-manager' || section === 'logs' || section === 'about';
@@ -1267,43 +1312,48 @@ let huntarrUI = {
     },
     
     showAppsSidebar: function() {
-        document.getElementById('sidebar').style.display = 'none';
+        this._hideAllSidebars();
         document.getElementById('apps-sidebar').style.display = 'flex';
-        document.getElementById('settings-sidebar').style.display = 'none';
-        document.getElementById('requestarr-sidebar').style.display = 'none';
-        const mh = document.getElementById('movie-hunt-sidebar');
-        if (mh) mh.style.display = 'none';
     },
     
     showSettingsSidebar: function() {
-        document.getElementById('sidebar').style.display = 'none';
-        document.getElementById('apps-sidebar').style.display = 'none';
+        this._hideAllSidebars();
         document.getElementById('settings-sidebar').style.display = 'flex';
-        document.getElementById('requestarr-sidebar').style.display = 'none';
-        const mh = document.getElementById('movie-hunt-sidebar');
-        if (mh) mh.style.display = 'none';
     },
     
     showRequestarrSidebar: function() {
-        document.getElementById('sidebar').style.display = 'none';
-        document.getElementById('apps-sidebar').style.display = 'none';
-        document.getElementById('settings-sidebar').style.display = 'none';
+        this._hideAllSidebars();
         document.getElementById('requestarr-sidebar').style.display = 'flex';
-        const mh = document.getElementById('movie-hunt-sidebar');
-        if (mh) mh.style.display = 'none';
     },
 
     showMovieHuntSidebar: function() {
-        document.getElementById('sidebar').style.display = 'none';
-        document.getElementById('apps-sidebar').style.display = 'none';
-        document.getElementById('settings-sidebar').style.display = 'none';
-        document.getElementById('requestarr-sidebar').style.display = 'none';
-        const mh = document.getElementById('movie-hunt-sidebar');
+        this._hideAllSidebars();
+        var mh = document.getElementById('movie-hunt-sidebar');
         if (mh) mh.style.display = 'flex';
         if (window.HuntarrNavigation && typeof window.HuntarrNavigation.updateMovieHuntSidebarActive === 'function') {
             window.HuntarrNavigation.updateMovieHuntSidebarActive();
         }
         this._updateMovieHuntSidebarSettingsOnlyVisibility();
+    },
+
+    showNzbHuntSidebar: function() {
+        this._hideAllSidebars();
+        var nh = document.getElementById('nzb-hunt-sidebar');
+        if (nh) nh.style.display = 'flex';
+        // Update active nav item
+        var items = document.querySelectorAll('#nzb-hunt-sidebar .nav-item');
+        for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
+        var section = this.currentSection;
+        if (section === 'nzb-hunt-home') {
+            var n = document.getElementById('nzbHuntHomeNav');
+            if (n) n.classList.add('active');
+        } else if (section === 'nzb-hunt-activity') {
+            var n = document.getElementById('nzbHuntActivityNav');
+            if (n) n.classList.add('active');
+        } else if (section === 'nzb-hunt-settings') {
+            var n = document.getElementById('nzbHuntSettingsNav');
+            if (n) n.classList.add('active');
+        }
     },
 
     /** When on Settings subpages: hide Huntarr+Home, Media Collection, Activity. When on Activity (Queue/History/Blocklist/Logs): hide Huntarr+Home, Settings. */

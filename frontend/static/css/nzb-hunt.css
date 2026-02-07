@@ -1,0 +1,405 @@
+/**
+ * NZB Hunt - Standalone CSS
+ * Independent module: does not share styles with Movie Hunt, Requestarr, or any other module.
+ */
+
+/* ── Section layout ─────────────────────────────────────────────── */
+#nzb-hunt-section {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    margin: 0;
+}
+#nzb-hunt-section.active {
+    display: block !important;
+}
+
+.nzb-hunt-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ── Status bar (speed, queue, disk) ─────────────────────────────── */
+.nzb-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid rgba(90, 109, 137, 0.3);
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    flex-wrap: wrap;
+}
+
+.nzb-status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.nzb-status-item i {
+    color: #3b82f6;
+    font-size: 1rem;
+    width: 18px;
+    text-align: center;
+}
+
+.nzb-status-value {
+    color: #f1f5f9;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.nzb-status-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(148, 163, 184, 0.2);
+    flex-shrink: 0;
+}
+
+/* ── Tabs (Queue / History / Warnings) ───────────────────────────── */
+.nzb-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 24px;
+    border-bottom: 2px solid rgba(90, 109, 137, 0.2);
+}
+
+.nzb-tab {
+    padding: 12px 24px;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: none;
+    position: relative;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nzb-tab:hover {
+    color: #e2e8f0;
+}
+
+.nzb-tab.active {
+    color: #3b82f6;
+}
+
+.nzb-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #3b82f6;
+    border-radius: 1px;
+}
+
+.nzb-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 11px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.nzb-tab-badge-default {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+.nzb-tab-badge-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+/* ── Queue panel ─────────────────────────────────────────────────── */
+.nzb-queue-panel {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    border: 2px solid rgba(90, 109, 137, 0.3);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    min-height: 300px;
+}
+
+.nzb-queue-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(90, 109, 137, 0.2);
+}
+
+.nzb-queue-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nzb-queue-title i {
+    color: #3b82f6;
+}
+
+.nzb-queue-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nzb-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(30, 41, 59, 0.5);
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.nzb-btn:hover {
+    background: rgba(51, 65, 85, 0.8);
+    color: #fff;
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+.nzb-btn-primary {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #60a5fa;
+}
+
+.nzb-btn-primary:hover {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #93bbfd;
+}
+
+.nzb-btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.25);
+    color: #f87171;
+}
+
+.nzb-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+
+/* ── Queue empty state ───────────────────────────────────────────── */
+.nzb-queue-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px;
+    text-align: center;
+}
+
+.nzb-queue-empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.nzb-queue-empty-icon i {
+    font-size: 2rem;
+    color: #334155;
+}
+
+.nzb-queue-empty h3 {
+    color: #f1f5f9;
+    font-size: 1.15rem;
+    margin: 0 0 8px;
+}
+
+.nzb-queue-empty p {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin: 0;
+    max-width: 320px;
+}
+
+/* ── Queue item rows ─────────────────────────────────────────────── */
+.nzb-queue-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.15s;
+}
+
+.nzb-queue-item:hover {
+    background: rgba(59, 130, 246, 0.04);
+}
+
+.nzb-queue-item:last-child {
+    border-bottom: none;
+}
+
+.nzb-queue-item-name {
+    flex: 1;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nzb-queue-item-size {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.nzb-queue-item-progress {
+    width: 120px;
+    height: 6px;
+    background: rgba(148, 163, 184, 0.15);
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.nzb-queue-item-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+.nzb-queue-item-status {
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.nzb-queue-item-status.downloading {
+    color: #3b82f6;
+}
+
+.nzb-queue-item-status.paused {
+    color: #f59e0b;
+}
+
+.nzb-queue-item-status.queued {
+    color: #94a3b8;
+}
+
+/* ── Coming Soon placeholder ─────────────────────────────────────── */
+.nzb-coming-soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 24px;
+    text-align: center;
+}
+
+.nzb-coming-soon-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.08);
+}
+
+.nzb-coming-soon-icon i {
+    font-size: 2.5rem;
+    color: #3b82f6;
+}
+
+.nzb-coming-soon h2 {
+    color: #f1f5f9;
+    font-size: 1.5rem;
+    margin: 0 0 12px;
+    font-weight: 600;
+}
+
+.nzb-coming-soon p {
+    color: #64748b;
+    font-size: 1rem;
+    margin: 0;
+    max-width: 400px;
+    line-height: 1.6;
+}
+
+.nzb-coming-soon-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 20px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .nzb-hunt-container {
+        padding: 16px;
+    }
+    .nzb-status-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .nzb-status-divider {
+        display: none;
+    }
+    .nzb-tab {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+    }
+    .nzb-queue-item {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .nzb-queue-item-progress {
+        width: 100%;
+        order: 10;
+    }
+}
