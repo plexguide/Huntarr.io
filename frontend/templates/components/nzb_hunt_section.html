@@ -6,10 +6,32 @@
 
         <!-- Status bar -->
         <div class="nzb-status-bar">
-            <div class="nzb-status-item">
+            <!-- Speed (clickable for speed limit) -->
+            <div class="nzb-status-item nzb-speed-control" id="nzb-speed-control" title="Click to set speed limit" style="cursor: pointer; position: relative;">
                 <i class="fas fa-tachometer-alt"></i>
                 <span>Speed</span>
                 <span class="nzb-status-value" id="nzb-speed">0 B/s</span>
+                <i class="fas fa-caret-down" style="font-size: 0.7rem; color: #64748b; margin-left: 2px;"></i>
+                <!-- Speed limit indicator -->
+                <span class="nzb-speed-limit-badge" id="nzb-speed-limit-badge" style="display: none;"></span>
+
+                <!-- Speed limit popover -->
+                <div class="nzb-speed-popover" id="nzb-speed-popover" style="display: none;">
+                    <div class="nzb-speed-popover-title">Speed Limit</div>
+                    <div class="nzb-speed-popover-options">
+                        <button class="nzb-speed-opt" data-limit="0">Unlimited</button>
+                        <button class="nzb-speed-opt" data-limit="1048576">1 MB/s</button>
+                        <button class="nzb-speed-opt" data-limit="2621440">2.5 MB/s</button>
+                        <button class="nzb-speed-opt" data-limit="5242880">5 MB/s</button>
+                        <button class="nzb-speed-opt" data-limit="10485760">10 MB/s</button>
+                        <button class="nzb-speed-opt" data-limit="26214400">25 MB/s</button>
+                        <button class="nzb-speed-opt" data-limit="52428800">50 MB/s</button>
+                    </div>
+                    <div class="nzb-speed-popover-custom">
+                        <input type="number" id="nzb-speed-custom-input" placeholder="Custom MB/s" min="0" step="0.5">
+                        <button class="nzb-btn nzb-btn-primary nzb-speed-custom-btn" id="nzb-speed-custom-btn">Set</button>
+                    </div>
+                </div>
             </div>
             <div class="nzb-status-divider"></div>
             <div class="nzb-status-item">
@@ -31,7 +53,7 @@
             </div>
             <div class="nzb-status-divider"></div>
             <div class="nzb-status-item" style="margin-left: auto;">
-                <button class="nzb-btn nzb-btn-primary" id="nzb-pause-btn" title="Pause / Resume">
+                <button class="nzb-btn nzb-btn-primary" id="nzb-pause-btn" title="Pause / Resume all downloads">
                     <i class="fas fa-pause"></i>
                     <span>Pause</span>
                 </button>

@@ -67,6 +67,109 @@
     flex-shrink: 0;
 }
 
+/* ── Speed limit control ─────────────────────────────────────────── */
+.nzb-speed-control:hover {
+    background: rgba(59, 130, 246, 0.08);
+    border-radius: 8px;
+    padding: 4px 8px;
+    margin: -4px -8px;
+}
+
+.nzb-speed-limit-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    margin-left: 4px;
+    white-space: nowrap;
+}
+
+.nzb-speed-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 100;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 10px;
+    padding: 12px;
+    min-width: 200px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+}
+
+.nzb-speed-popover-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.nzb-speed-popover-options {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 8px;
+}
+
+.nzb-speed-opt {
+    background: none;
+    border: none;
+    color: #cbd5e1;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.15s;
+}
+
+.nzb-speed-opt:hover {
+    background: rgba(59, 130, 246, 0.12);
+    color: #fff;
+}
+
+.nzb-speed-opt.active {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    font-weight: 600;
+}
+
+.nzb-speed-popover-custom {
+    display: flex;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.nzb-speed-popover-custom input {
+    flex: 1;
+    padding: 6px 10px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 6px;
+    color: #f8fafc;
+    font-size: 0.85rem;
+    min-width: 0;
+}
+
+.nzb-speed-popover-custom input:focus {
+    border-color: #3b82f6;
+    outline: none;
+}
+
+.nzb-speed-custom-btn {
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
+    white-space: nowrap;
+}
+
 /* ── Tabs (Queue / History / Warnings) ───────────────────────────── */
 .nzb-tabs {
     display: flex;

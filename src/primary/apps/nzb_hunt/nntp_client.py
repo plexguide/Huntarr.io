@@ -2,7 +2,8 @@
 NNTP Client - Connect to Usenet servers and download articles.
 
 Uses Python's built-in nntplib with connection pooling and retry logic.
-Supports SSL/TLS connections and multiple server priorities.
+Supports SSL/TLS connections, multiple server priorities, parallel
+downloading via thread-safe connection pools, and per-server bandwidth tracking.
 """
 
 import nntplib
@@ -10,7 +11,7 @@ import ssl
 import socket
 import threading
 import time
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 
 from src.primary.utils.logger import get_logger
 
@@ -151,13 +152,15 @@ class NNTPConnection:
 class NNTPConnectionPool:
     """Pool of NNTP connections to a single server."""
     
-    def __init__(self, server_config: dict, max_connections: int = 8):
+    def __init__(self, server_config: dict, max_connections: int = 0):
         self.host = server_config.get("host", "")
         self.port = int(server_config.get("port", 563))
         self.use_ssl = bool(server_config.get("ssl", True))
         self.username = server_config.get("username", "")
         self.password = server_config.get("password", "")
-        self.max_connections = min(max_connections, int(server_config.get("connections", 8)))
+        # Use the server's configured connections, or the override if provided
+        server_conns = int(server_config.get("connections", 8))
+        self.max_connections = min(max_connections, server_conns) if max_connections > 0 else server_conns
         self.priority = int(server_config.get("priority", 0))
         self.enabled = bool(server_config.get("enabled", True))
         self.server_name = server_config.get("name", self.host)
@@ -165,6 +168,10 @@ class NNTPConnectionPool:
         self._connections: List[NNTPConnection] = []
         self._available: List[NNTPConnection] = []
         self._lock = threading.Lock()
+        
+        # Bandwidth tracking (thread-safe)
+        self._bandwidth_bytes = 0
+        self._bandwidth_lock = threading.Lock()
     
     def get_connection(self, timeout: float = 30.0) -> Optional[NNTPConnection]:
         """Get an available connection from the pool."""
@@ -217,6 +224,21 @@ class NNTPConnectionPool:
             conn.disconnect()
             return True, f"Connected to {self.server_name}"
         return False, f"Failed to connect to {self.host}:{self.port}"
+    
+    def add_bandwidth(self, nbytes: int):
+        """Record downloaded bytes for this server (thread-safe)."""
+        with self._bandwidth_lock:
+            self._bandwidth_bytes += nbytes
+    
+    def get_bandwidth(self) -> int:
+        """Get total bytes downloaded through this server."""
+        with self._bandwidth_lock:
+            return self._bandwidth_bytes
+    
+    def reset_bandwidth(self):
+        """Reset bandwidth counter."""
+        with self._bandwidth_lock:
+            self._bandwidth_bytes = 0
 
 
 class NNTPManager:
@@ -242,18 +264,39 @@ class NNTPManager:
             # Sort by priority (lower = higher priority)
             self._pools.sort(key=lambda p: p.priority)
     
-    def download_article(self, message_id: str, groups: List[str] = None) -> Optional[bytes]:
+    def download_article(self, message_id: str, groups: List[str] = None,
+                         conn_timeout: float = 5.0) -> Optional[bytes]:
         """Download an article, trying servers in priority order.
         
         Args:
             message_id: Article Message-ID
             groups: List of newsgroups to try
+            conn_timeout: Timeout for getting a connection from pool
             
         Returns:
             Article body bytes or None
         """
+        result = self.download_article_tracked(message_id, groups, conn_timeout)
+        return result[0]
+    
+    def download_article_tracked(self, message_id: str, groups: List[str] = None,
+                                  conn_timeout: float = 0.5) -> Tuple[Optional[bytes], str]:
+        """Download an article, returning (data, server_name).
+        
+        Uses a short connection timeout for parallel downloading so threads
+        quickly fall through to the next available server when a pool is full.
+        Also tracks bandwidth per server.
+        
+        Args:
+            message_id: Article Message-ID
+            groups: List of newsgroups to try
+            conn_timeout: Timeout for getting a connection from pool
+            
+        Returns:
+            Tuple of (article body bytes or None, server name that provided it)
+        """
         for pool in self._pools:
-            conn = pool.get_connection(timeout=5)
+            conn = pool.get_connection(timeout=conn_timeout)
             if not conn:
                 continue
             
@@ -266,11 +309,26 @@ class NNTPManager:
                 
                 data = conn.download_article(message_id)
                 if data is not None:
-                    return data
+                    pool.add_bandwidth(len(data))
+                    return data, pool.server_name
+            except Exception:
+                # Connection may be broken, don't return it
+                try:
+                    pool._lock.acquire()
+                    if conn in pool._connections:
+                        pool._connections.remove(conn)
+                    pool._lock.release()
+                except Exception:
+                    pass
+                conn.disconnect()
+                continue
             finally:
-                pool.release_connection(conn)
+                try:
+                    pool.release_connection(conn)
+                except Exception:
+                    pass
         
-        return None
+        return None, ""
     
     def has_servers(self) -> bool:
         """Check if any servers are configured."""
@@ -283,6 +341,23 @@ class NNTPManager:
             success, msg = pool.test_connection()
             results.append((pool.server_name, success, msg))
         return results
+    
+    def get_bandwidth_stats(self) -> Dict[str, int]:
+        """Get bytes downloaded per server (keyed by name:host)."""
+        stats = {}
+        for pool in self._pools:
+            key = f"{pool.server_name} ({pool.host})"
+            stats[key] = pool.get_bandwidth()
+        return stats
+    
+    def reset_bandwidth(self):
+        """Reset all server bandwidth counters."""
+        for pool in self._pools:
+            pool.reset_bandwidth()
+    
+    def get_total_max_connections(self) -> int:
+        """Get total max connections across all server pools."""
+        return sum(pool.max_connections for pool in self._pools)
     
     def close_all(self):
         """Close all server connections."""

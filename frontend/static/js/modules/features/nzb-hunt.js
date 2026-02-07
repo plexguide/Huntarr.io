@@ -33,7 +33,7 @@
             var historyClear = document.querySelector('#nzb-hunt-section [data-panel="history"] .nzb-btn-danger');
             if (historyClear) historyClear.addEventListener('click', function () { self._clearHistory(); });
 
-            // Wire up Pause / Resume button
+            // Wire up Pause / Resume ALL button (actually hits backend)
             var pauseBtn = document.getElementById('nzb-pause-btn');
             if (pauseBtn) {
                 pauseBtn.addEventListener('click', function () {
@@ -43,12 +43,19 @@
                     if (self._paused) {
                         if (icon) icon.className = 'fas fa-play';
                         if (label) label.textContent = 'Resume';
+                        fetch('./api/nzb-hunt/queue/pause-all', { method: 'POST' })
+                            .then(function () { self._fetchQueueAndStatus(); });
                     } else {
                         if (icon) icon.className = 'fas fa-pause';
                         if (label) label.textContent = 'Pause';
+                        fetch('./api/nzb-hunt/queue/resume-all', { method: 'POST' })
+                            .then(function () { self._fetchQueueAndStatus(); });
                     }
                 });
             }
+
+            // Wire up speed limit popover
+            this._setupSpeedLimit();
 
             // Start polling queue & status
             this._fetchQueueAndStatus();
@@ -70,6 +77,7 @@
             ]).then(function (results) {
                 var queueData = results[0];
                 var statusData = results[1];
+                self._lastStatus = statusData;
                 self._renderQueue(queueData.queue || []);
                 self._updateStatusBar(statusData);
                 self._updateQueueBadge(queueData.queue || []);
@@ -88,12 +96,37 @@
             var freeEl = document.getElementById('nzb-free-space');
 
             if (speedEl) speedEl.textContent = status.speed_human || '0 B/s';
-            if (etaEl) {
-                // Calculate ETA from queue items if available
-                etaEl.textContent = this._currentEta || '--:--';
-            }
-            if (remainEl) remainEl.textContent = this._currentRemaining || '0 B';
+            if (etaEl) etaEl.textContent = status.eta_human || this._currentEta || '--';
+            if (remainEl) remainEl.textContent = status.remaining_human || this._currentRemaining || '0 B';
             if (freeEl) freeEl.textContent = status.free_space_human || '--';
+
+            // Update speed limit badge
+            var limitBadge = document.getElementById('nzb-speed-limit-badge');
+            if (limitBadge) {
+                if (status.speed_limit_bps && status.speed_limit_bps > 0) {
+                    limitBadge.textContent = '⚡ ' + this._formatBytes(status.speed_limit_bps) + '/s';
+                    limitBadge.style.display = 'inline';
+                } else {
+                    limitBadge.style.display = 'none';
+                }
+            }
+
+            // Sync pause button state with backend
+            if (status.paused_global !== undefined) {
+                this._paused = status.paused_global;
+                var pauseBtn = document.getElementById('nzb-pause-btn');
+                if (pauseBtn) {
+                    var icon = pauseBtn.querySelector('i');
+                    var label = pauseBtn.querySelector('span');
+                    if (this._paused) {
+                        if (icon) icon.className = 'fas fa-play';
+                        if (label) label.textContent = 'Resume';
+                    } else {
+                        if (icon) icon.className = 'fas fa-pause';
+                        if (label) label.textContent = 'Pause';
+                    }
+                }
+            }
         },
 
         _updateQueueBadge: function (queue) {
@@ -115,20 +148,8 @@
                         '<h3>Queue is empty</h3>' +
                         '<p>Downloads will appear here once NZB Hunt is connected to your Usenet setup.</p>' +
                     '</div>';
-                this._currentEta = '--:--';
-                this._currentRemaining = '0 B';
                 return;
             }
-
-            // Calculate overall remaining and ETA
-            var totalRemaining = 0;
-            var totalSpeed = 0;
-            queue.forEach(function (item) {
-                totalRemaining += (item.total_bytes || 0) - (item.downloaded_bytes || 0);
-                if (item.state === 'downloading') totalSpeed += (item.speed_bps || 0);
-            });
-            this._currentRemaining = this._formatBytes(totalRemaining);
-            this._currentEta = totalSpeed > 0 ? this._formatEta(Math.round(totalRemaining / totalSpeed)) : '--:--';
 
             var self = this;
             var html =
@@ -231,6 +252,107 @@
                 case 'failed': return 'Failed';
                 default: return state || 'Unknown';
             }
+        },
+
+        /* ──────────────────────────────────────────────
+           Speed Limit Popover
+        ────────────────────────────────────────────── */
+        _setupSpeedLimit: function () {
+            var self = this;
+            var control = document.getElementById('nzb-speed-control');
+            var popover = document.getElementById('nzb-speed-popover');
+            if (!control || !popover) return;
+
+            // Toggle popover on click
+            control.addEventListener('click', function (e) {
+                // Don't toggle if clicking inside the popover itself
+                if (e.target.closest('.nzb-speed-popover')) return;
+                var visible = popover.style.display === 'block';
+                popover.style.display = visible ? 'none' : 'block';
+                if (!visible) {
+                    // Highlight the current limit
+                    self._highlightCurrentLimit();
+                }
+            });
+
+            // Close popover when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('#nzb-speed-control')) {
+                    popover.style.display = 'none';
+                }
+            });
+
+            // Preset speed limit buttons
+            popover.querySelectorAll('.nzb-speed-opt').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var limit = parseInt(btn.getAttribute('data-limit'), 10);
+                    self._setSpeedLimit(limit);
+                    popover.style.display = 'none';
+                });
+            });
+
+            // Custom speed limit
+            var customBtn = document.getElementById('nzb-speed-custom-btn');
+            var customInput = document.getElementById('nzb-speed-custom-input');
+            if (customBtn && customInput) {
+                customBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var mbps = parseFloat(customInput.value);
+                    if (mbps > 0) {
+                        self._setSpeedLimit(Math.round(mbps * 1024 * 1024));
+                    } else {
+                        self._setSpeedLimit(0);
+                    }
+                    customInput.value = '';
+                    popover.style.display = 'none';
+                });
+                customInput.addEventListener('keydown', function (e) {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') customBtn.click();
+                });
+                customInput.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+            }
+        },
+
+        _setSpeedLimit: function (bps) {
+            var self = this;
+            fetch('./api/nzb-hunt/speed-limit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ speed_limit_bps: bps })
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        var msg = bps > 0
+                            ? 'Speed limited to ' + self._formatBytes(bps) + '/s'
+                            : 'Speed limit removed';
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification(msg, 'success');
+                        }
+                        self._fetchQueueAndStatus();
+                    }
+                })
+                .catch(function (err) { console.error('[NzbHunt] Speed limit error:', err); });
+        },
+
+        _highlightCurrentLimit: function () {
+            var popover = document.getElementById('nzb-speed-popover');
+            if (!popover) return;
+
+            // Fetch current limit
+            fetch('./api/nzb-hunt/speed-limit?t=' + Date.now())
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var current = data.speed_limit_bps || 0;
+                    popover.querySelectorAll('.nzb-speed-opt').forEach(function (btn) {
+                        var val = parseInt(btn.getAttribute('data-limit'), 10);
+                        btn.classList.toggle('active', val === current);
+                    });
+                });
         },
 
         /* ──────────────────────────────────────────────

@@ -418,6 +418,80 @@ def nzb_hunt_history():
         return jsonify({"history": [], "error": str(e)}), 500
 
 
+@nzb_hunt_bp.route("/api/nzb-hunt/history", methods=["DELETE"])
+def nzb_hunt_clear_history():
+    """Clear download history."""
+    try:
+        mgr = _get_download_manager()
+        mgr.clear_history()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ──────────────────────────────────────────────────────────────────
+# Speed Limit
+# ──────────────────────────────────────────────────────────────────
+
+@nzb_hunt_bp.route("/api/nzb-hunt/speed-limit", methods=["GET"])
+def nzb_hunt_get_speed_limit():
+    """Get current download speed limit."""
+    try:
+        mgr = _get_download_manager()
+        bps = mgr.get_speed_limit()
+        return jsonify({
+            "speed_limit_bps": bps,
+            "speed_limit_human": f"{bps / (1024*1024):.1f} MB/s" if bps > 0 else "Unlimited",
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/speed-limit", methods=["POST"])
+def nzb_hunt_set_speed_limit():
+    """Set download speed limit.
+    Body: { speed_limit_bps: int }  (0 = unlimited)
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        bps = int(data.get("speed_limit_bps", 0))
+        mgr = _get_download_manager()
+        mgr.set_speed_limit(bps)
+        return jsonify({
+            "success": True,
+            "speed_limit_bps": bps,
+            "speed_limit_human": f"{bps / (1024*1024):.1f} MB/s" if bps > 0 else "Unlimited",
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ──────────────────────────────────────────────────────────────────
+# Pause / Resume All
+# ──────────────────────────────────────────────────────────────────
+
+@nzb_hunt_bp.route("/api/nzb-hunt/queue/pause-all", methods=["POST"])
+def nzb_hunt_pause_all():
+    """Pause all downloads."""
+    try:
+        mgr = _get_download_manager()
+        mgr.pause_all()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/queue/resume-all", methods=["POST"])
+def nzb_hunt_resume_all():
+    """Resume all paused downloads."""
+    try:
+        mgr = _get_download_manager()
+        mgr.resume_all()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @nzb_hunt_bp.route("/api/nzb-hunt/test-servers", methods=["POST"])
 def nzb_hunt_test_servers():
     """Test all configured NNTP server connections."""
