@@ -431,3 +431,37 @@ def nzb_hunt_test_servers():
     except Exception as e:
         logger.exception("NZB Hunt test servers error")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/test-server", methods=["POST"])
+def nzb_hunt_test_single_server():
+    """Test a single NNTP server connection (used by modal auto-test).
+    Body: { host, port, ssl, username, password }
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        host = (data.get("host") or "").strip()
+        if not host:
+            return jsonify({"success": False, "message": "Host is required"}), 200
+
+        port = int(data.get("port", 563))
+        use_ssl = bool(data.get("ssl", True))
+        username = (data.get("username") or "").strip()
+        password = (data.get("password") or "").strip()
+
+        from src.primary.apps.nzb_hunt.nntp_client import NNTPConnectionPool
+        pool = NNTPConnectionPool({
+            "name": "test",
+            "host": host,
+            "port": port,
+            "ssl": use_ssl,
+            "username": username,
+            "password": password,
+            "connections": 1,
+            "enabled": True,
+        }, max_connections=1)
+        success, msg = pool.test_connection()
+        return jsonify({"success": success, "message": msg})
+    except Exception as e:
+        logger.exception("NZB Hunt test single server error")
+        return jsonify({"success": False, "message": str(e)}), 200

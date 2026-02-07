@@ -275,19 +275,27 @@
             this._servers.forEach(function (srv, idx) {
                 var card = document.createElement('div');
                 card.className = 'nzb-server-card';
+                var statusDotId = 'nzb-server-status-' + idx;
+                var statusTextId = 'nzb-server-status-text-' + idx;
                 card.innerHTML =
                     '<div class="nzb-server-card-header">' +
-                        '<div class="nzb-server-card-name"><i class="fas fa-server"></i> <span>' + _esc(srv.name || 'Server') + '</span></div>' +
+                        '<div class="nzb-server-card-name">' +
+                            '<span class="nzb-server-status-dot status-checking" id="' + statusDotId + '" title="Checking..."></span>' +
+                            '<i class="fas fa-server"></i> <span>' + _esc(srv.name || 'Server') + '</span>' +
+                        '</div>' +
                         '<div class="nzb-server-card-badges">' +
                             '<span class="nzb-badge nzb-badge-priority">P: ' + (srv.priority !== undefined ? srv.priority : 0) + '</span>' +
                             (srv.ssl ? '<span class="nzb-badge nzb-badge-ssl">SSL</span>' : '') +
-                            '<span class="nzb-badge ' + (srv.enabled !== false ? 'nzb-badge-enabled' : 'nzb-badge-disabled') + '">' + (srv.enabled !== false ? 'On' : 'Off') + '</span>' +
+                            '<span class="nzb-badge ' + (srv.enabled !== false ? 'nzb-badge-enabled' : 'nzb-badge-disabled') + '">' + (srv.enabled !== false ? 'ON' : 'OFF') + '</span>' +
                         '</div>' +
                     '</div>' +
                     '<div class="nzb-server-card-body">' +
                         '<div class="nzb-server-detail"><i class="fas fa-globe"></i> <span>' + _esc(srv.host || '') + ':' + (srv.port || 563) + '</span></div>' +
                         '<div class="nzb-server-detail"><i class="fas fa-plug"></i> <span>' + (srv.connections || 8) + ' connections</span></div>' +
                         (srv.username ? '<div class="nzb-server-detail"><i class="fas fa-user"></i> <span>' + _esc(srv.username) + '</span></div>' : '') +
+                        '<div class="nzb-server-status-line" id="' + statusTextId + '">' +
+                            '<i class="fas fa-circle-notch fa-spin" style="font-size: 11px; color: #6366f1;"></i> <span style="font-size: 12px; color: #94a3b8;">Checking connection...</span>' +
+                        '</div>' +
                         '<div class="nzb-server-bandwidth">' +
                             '<div class="nzb-server-bandwidth-label"><span>Bandwidth</span><span>' + _fmtBytes(srv.bandwidth_used || 0) + '</span></div>' +
                             '<div class="nzb-server-bandwidth-bar"><div class="nzb-server-bandwidth-fill" style="width: ' + Math.min(100, (srv.bandwidth_pct || 0)) + '%;"></div></div>' +
@@ -330,6 +338,62 @@
 
             // Re-add the "Add Server" card at the end
             if (addCard) grid.appendChild(addCard);
+
+            // Auto-test each server's connection status
+            this._testAllServerStatuses();
+        },
+
+        _testAllServerStatuses: function () {
+            var self = this;
+            this._servers.forEach(function (srv, idx) {
+                if (srv.enabled === false) {
+                    // Disabled servers — mark as offline / disabled
+                    self._updateServerCardStatus(idx, 'offline', 'Disabled');
+                    return;
+                }
+                // Fire off an async test for each enabled server
+                var payload = {
+                    host: srv.host || '',
+                    port: srv.port || 563,
+                    ssl: srv.ssl !== false,
+                    username: srv.username || '',
+                    password: srv.password || ''
+                };
+                fetch('./api/nzb-hunt/test-server', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            self._updateServerCardStatus(idx, 'online', 'Connected');
+                        } else {
+                            self._updateServerCardStatus(idx, 'offline', data.message || 'Connection failed');
+                        }
+                    })
+                    .catch(function () {
+                        self._updateServerCardStatus(idx, 'offline', 'Test error');
+                    });
+            });
+        },
+
+        _updateServerCardStatus: function (idx, state, message) {
+            var dot = document.getElementById('nzb-server-status-' + idx);
+            var textEl = document.getElementById('nzb-server-status-text-' + idx);
+
+            if (dot) {
+                dot.className = 'nzb-server-status-dot status-' + state;
+                dot.title = message;
+            }
+
+            if (textEl) {
+                if (state === 'online') {
+                    textEl.innerHTML = '<i class="fas fa-check-circle" style="font-size: 11px; color: #22c55e;"></i> <span style="font-size: 12px; color: #4ade80;">Connected</span>';
+                } else if (state === 'offline') {
+                    textEl.innerHTML = '<i class="fas fa-times-circle" style="font-size: 11px; color: #ef4444;"></i> <span style="font-size: 12px; color: #f87171;">' + _esc(message) + '</span>';
+                }
+            }
         },
 
         /* ──────────────────────────────────────────────
@@ -341,11 +405,19 @@
             var closeBtn = document.getElementById('nzb-server-modal-close');
             var cancelBtn = document.getElementById('nzb-server-modal-cancel');
             var saveBtn = document.getElementById('nzb-server-modal-save');
+            var testBtn = document.getElementById('nzb-server-modal-test');
 
             if (backdrop) backdrop.addEventListener('click', function () { self._closeServerModal(); });
             if (closeBtn) closeBtn.addEventListener('click', function () { self._closeServerModal(); });
             if (cancelBtn) cancelBtn.addEventListener('click', function () { self._closeServerModal(); });
             if (saveBtn) saveBtn.addEventListener('click', function () { self._saveServer(); });
+            if (testBtn) testBtn.addEventListener('click', function () { self._testServerConnection(); });
+
+            // Toggle label updates
+            var sslCb = document.getElementById('nzb-server-ssl');
+            var enabledCb = document.getElementById('nzb-server-enabled');
+            if (sslCb) sslCb.addEventListener('change', function () { self._updateToggleLabel('nzb-ssl-label', this.checked); });
+            if (enabledCb) enabledCb.addEventListener('change', function () { self._updateToggleLabel('nzb-enabled-label', this.checked); });
 
             // ESC key
             document.addEventListener('keydown', function (e) {
@@ -380,7 +452,23 @@
             f('nzb-server-priority', server ? (server.priority !== undefined ? server.priority : 0) : 0);
             f('nzb-server-enabled', server ? (server.enabled !== false) : true);
 
+            // Reset test status area
+            this._resetTestStatus();
+
+            // Update toggle labels to match checkbox state
+            var sslCb = document.getElementById('nzb-server-ssl');
+            var enabledCb = document.getElementById('nzb-server-enabled');
+            this._updateToggleLabel('nzb-ssl-label', sslCb ? sslCb.checked : true);
+            this._updateToggleLabel('nzb-enabled-label', enabledCb ? enabledCb.checked : true);
+
             modal.style.display = 'flex';
+        },
+
+        _updateToggleLabel: function (labelId, isOn) {
+            var lbl = document.getElementById(labelId);
+            if (!lbl) return;
+            lbl.textContent = isOn ? 'ON' : 'OFF';
+            lbl.className = 'nzb-toggle-label ' + (isOn ? 'label-on' : 'label-off');
         },
 
         _closeServerModal: function () {
@@ -412,6 +500,9 @@
                 method = 'POST';
             }
 
+            // Show testing status in modal before save
+            self._showTestStatus('testing', 'Saving & testing connection...');
+
             fetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
@@ -420,16 +511,119 @@
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     if (data.success) {
-                        self._closeServerModal();
-                        self._loadServers();
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Server saved.', 'success');
-                        }
+                        // Auto-test the connection after saving
+                        self._testServerConnection(function (testSuccess, testMsg) {
+                            if (testSuccess) {
+                                self._showTestStatus('success', 'Saved & connected successfully!');
+                            } else {
+                                self._showTestStatus('fail', 'Saved, but connection failed: ' + testMsg);
+                            }
+                            self._loadServers();
+                            // Auto-close modal after a brief delay on success
+                            if (testSuccess) {
+                                setTimeout(function () {
+                                    self._closeServerModal();
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Server saved & connected!', 'success');
+                                    }
+                                }, 1500);
+                            } else {
+                                // Don't auto-close on failure so user can see the message
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    window.huntarrUI.showNotification('Server saved but connection failed.', 'warning');
+                                }
+                            }
+                        });
+                    } else {
+                        self._showTestStatus('fail', 'Failed to save server.');
                     }
                 })
                 .catch(function () {
+                    self._showTestStatus('fail', 'Failed to save server.');
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification('Failed to save server.', 'error');
+                    }
+                });
+        },
+
+        /* ── Connection Test Helpers ─────────────────────── */
+
+        _resetTestStatus: function () {
+            var el = document.getElementById('nzb-server-test-status');
+            if (el) {
+                el.style.display = 'none';
+                el.className = 'nzb-server-test-status';
+            }
+        },
+
+        _showTestStatus: function (state, message) {
+            var el = document.getElementById('nzb-server-test-status');
+            var icon = document.getElementById('nzb-server-test-icon');
+            var msg = document.getElementById('nzb-server-test-msg');
+            if (!el) return;
+
+            el.style.display = 'block';
+            el.className = 'nzb-server-test-status test-' + state;
+
+            if (icon) {
+                if (state === 'testing') {
+                    icon.className = 'fas fa-circle-notch fa-spin';
+                } else if (state === 'success') {
+                    icon.className = 'fas fa-check-circle';
+                } else {
+                    icon.className = 'fas fa-times-circle';
+                }
+            }
+
+            if (msg) msg.textContent = message;
+        },
+
+        _testServerConnection: function (callback) {
+            var g = function (id) { var el = document.getElementById(id); if (!el) return ''; return el.type === 'checkbox' ? el.checked : el.value; };
+            var host = (g('nzb-server-host') || '').trim();
+            if (!host) {
+                this._showTestStatus('fail', 'Host is required to test connection.');
+                if (callback) callback(false, 'Host is required');
+                return;
+            }
+
+            var payload = {
+                host: host,
+                port: parseInt(g('nzb-server-port'), 10) || 563,
+                ssl: !!g('nzb-server-ssl'),
+                username: (g('nzb-server-username') || '').trim(),
+                password: (g('nzb-server-password') || '').trim()
+            };
+
+            var self = this;
+            if (!callback) {
+                // Manual test button click – show testing state
+                self._showTestStatus('testing', 'Testing connection to ' + host + ':' + payload.port + '...');
+            }
+
+            fetch('./api/nzb-hunt/test-server', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (callback) {
+                        callback(data.success, data.message || '');
+                    } else {
+                        if (data.success) {
+                            self._showTestStatus('success', data.message || 'Connection successful!');
+                        } else {
+                            self._showTestStatus('fail', data.message || 'Connection failed.');
+                        }
+                    }
+                })
+                .catch(function (err) {
+                    var errMsg = 'Network error testing connection.';
+                    if (callback) {
+                        callback(false, errMsg);
+                    } else {
+                        self._showTestStatus('fail', errMsg);
                     }
                 });
         },

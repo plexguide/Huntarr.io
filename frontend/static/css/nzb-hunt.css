@@ -660,6 +660,15 @@
     color: #cbd5e1;
 }
 
+/* server status line */
+.nzb-server-status-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 4px 0;
+}
+
 /* bandwidth bar */
 .nzb-server-bandwidth {
     margin-top: 4px;
@@ -873,7 +882,7 @@
     gap: 12px;
 }
 
-/* Toggle switch */
+/* Toggle switch – redesigned with red/green states */
 .nzb-toggle-row {
     display: flex;
     align-items: center;
@@ -886,34 +895,189 @@
     display: none;
 }
 
+/* Toggle wrapper and label */
+.nzb-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nzb-toggle-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    min-width: 28px;
+    text-align: center;
+    transition: color 0.3s ease;
+    color: #f87171;
+}
+
+.nzb-toggle-label.label-on {
+    color: #4ade80;
+}
+
+.nzb-toggle-label.label-off {
+    color: #f87171;
+}
+
+/* New toggle switch with clear red OFF / green ON states */
+.nzb-toggle-switch,
 .nzb-toggle-slider {
-    position: relative;
-    width: 44px;
-    height: 24px;
-    background: #475569;
-    border-radius: 12px;
-    transition: background 0.2s;
-    flex-shrink: 0;
+    position: relative !important;
+    width: 64px !important;
+    height: 32px !important;
+    background: #ef4444 !important;
+    border-radius: 16px !important;
+    transition: background 0.3s ease, box-shadow 0.3s ease !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.6), 0 0 16px rgba(239, 68, 68, 0.3) !important;
+    cursor: pointer !important;
+    vertical-align: middle !important;
 }
 
+/* The sliding circle/thumb */
+.nzb-toggle-switch::after,
 .nzb-toggle-slider::after {
-    content: '';
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 18px;
-    height: 18px;
-    background: #fff;
-    border-radius: 50%;
-    transition: transform 0.2s;
+    content: '' !important;
+    position: absolute !important;
+    top: 4px !important;
+    left: 4px !important;
+    width: 24px !important;
+    height: 24px !important;
+    background: #fff !important;
+    border-radius: 50% !important;
+    transition: transform 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    z-index: 2 !important;
 }
 
+/* ON text (shown when checked) */
+.nzb-toggle-switch::before,
+.nzb-toggle-slider::before {
+    content: 'OFF' !important;
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    transform: translateY(-50%) !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    z-index: 1 !important;
+    pointer-events: none !important;
+}
+
+/* Checked (ON) state */
+.nzb-toggle-row input:checked + .nzb-toggle-switch,
 .nzb-toggle-row input:checked + .nzb-toggle-slider {
-    background: #3b82f6;
+    background: #22c55e !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.6), 0 0 16px rgba(34, 197, 94, 0.4) !important;
 }
 
+.nzb-toggle-row input:checked + .nzb-toggle-switch::after,
 .nzb-toggle-row input:checked + .nzb-toggle-slider::after {
-    transform: translateX(20px);
+    transform: translateX(32px) !important;
+}
+
+.nzb-toggle-row input:checked + .nzb-toggle-switch::before,
+.nzb-toggle-row input:checked + .nzb-toggle-slider::before {
+    content: 'ON' !important;
+    left: 10px !important;
+    right: auto !important;
+}
+
+/* ── Connection Test Status (modal) ──────────────── */
+.nzb-server-test-status {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    transition: border-color 0.3s, background 0.3s;
+}
+
+.nzb-server-test-status.test-testing {
+    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.nzb-server-test-status.test-success {
+    border-color: rgba(34, 197, 94, 0.5);
+    background: rgba(34, 197, 94, 0.08);
+}
+
+.nzb-server-test-status.test-fail {
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.nzb-server-test-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.nzb-server-test-status.test-testing .nzb-server-test-inner {
+    color: #a5b4fc;
+}
+
+.nzb-server-test-status.test-success .nzb-server-test-inner {
+    color: #4ade80;
+}
+
+.nzb-server-test-status.test-fail .nzb-server-test-inner {
+    color: #f87171;
+}
+
+.nzb-server-test-inner i {
+    font-size: 16px;
+}
+
+/* ── Server card status indicator ──────────────── */
+.nzb-server-status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #475569;
+    margin-right: 6px;
+    flex-shrink: 0;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+.nzb-server-status-dot.status-checking {
+    background: #6366f1;
+    animation: nzb-pulse-status 1.2s ease-in-out infinite;
+}
+
+.nzb-server-status-dot.status-online {
+    background: #22c55e;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+.nzb-server-status-dot.status-offline {
+    background: #ef4444;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+}
+
+@keyframes nzb-pulse-status {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ── Test Connection button style ────────────── */
+.nzb-btn-test {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #a5b4fc !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+}
+
+.nzb-btn-test:hover {
+    background: rgba(99, 102, 241, 0.25) !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
 }
 
 .nzb-server-modal-footer {
