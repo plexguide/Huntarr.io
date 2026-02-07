@@ -199,17 +199,13 @@
             const inLibrary = originalMovie.in_library || false;
             const inCooldown = originalMovie.in_cooldown || false;
             
-            let statusBadge = '';
             let actionButton = '';
             
             if (inLibrary) {
-                statusBadge = '<div class="movie-detail-status available"><i class="fas fa-check"></i> Available in Library</div>';
                 actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-check"></i> Already Available</button>';
             } else if (inCooldown) {
-                statusBadge = '<div class="movie-detail-status cooldown"><i class="fas fa-hand"></i> Recently Requested</div>';
                 actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-clock"></i> In Cooldown</button>';
             } else {
-                statusBadge = '<div class="movie-detail-status requested"><i class="fas fa-download"></i> Ready to Request</div>';
                 actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" id="movie-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
             }
 
@@ -262,7 +258,6 @@
                             <p class="movie-detail-overview">${this.escapeHtml(overview)}</p>
                             <div class="movie-detail-actions">
                                 ${actionButton}
-                                ${statusBadge}
                             </div>
                         </div>
                     </div>
