@@ -895,30 +895,6 @@
     display: none;
 }
 
-/* Toggle wrapper and label */
-.nzb-toggle-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.nzb-toggle-label {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    min-width: 28px;
-    text-align: center;
-    transition: color 0.3s ease;
-    color: #f87171;
-}
-
-.nzb-toggle-label.label-on {
-    color: #4ade80;
-}
-
-.nzb-toggle-label.label-off {
-    color: #f87171;
-}
 
 /* New toggle switch with clear red OFF / green ON states */
 .nzb-toggle-switch,

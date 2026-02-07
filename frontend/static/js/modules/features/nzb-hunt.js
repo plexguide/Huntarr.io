@@ -293,6 +293,7 @@
                         '<div class="nzb-server-detail"><i class="fas fa-globe"></i> <span>' + _esc(srv.host || '') + ':' + (srv.port || 563) + '</span></div>' +
                         '<div class="nzb-server-detail"><i class="fas fa-plug"></i> <span>' + (srv.connections || 8) + ' connections</span></div>' +
                         (srv.username ? '<div class="nzb-server-detail"><i class="fas fa-user"></i> <span>' + _esc(srv.username) + '</span></div>' : '') +
+                        (srv.password_masked ? '<div class="nzb-server-detail"><i class="fas fa-key"></i> <span style="font-family: monospace; letter-spacing: 1px;">' + _esc(srv.password_masked) + '</span></div>' : '') +
                         '<div class="nzb-server-status-line" id="' + statusTextId + '">' +
                             '<i class="fas fa-circle-notch fa-spin" style="font-size: 11px; color: #6366f1;"></i> <span style="font-size: 12px; color: #94a3b8;">Checking connection...</span>' +
                         '</div>' +
@@ -352,12 +353,14 @@
                     return;
                 }
                 // Fire off an async test for each enabled server
+                // Pass server_index so backend uses the saved password
                 var payload = {
                     host: srv.host || '',
                     port: srv.port || 563,
                     ssl: srv.ssl !== false,
                     username: srv.username || '',
-                    password: srv.password || ''
+                    password: '',
+                    server_index: idx
                 };
                 fetch('./api/nzb-hunt/test-server', {
                     method: 'POST',
@@ -413,11 +416,6 @@
             if (saveBtn) saveBtn.addEventListener('click', function () { self._saveServer(); });
             if (testBtn) testBtn.addEventListener('click', function () { self._testServerConnection(); });
 
-            // Toggle label updates
-            var sslCb = document.getElementById('nzb-server-ssl');
-            var enabledCb = document.getElementById('nzb-server-enabled');
-            if (sslCb) sslCb.addEventListener('change', function () { self._updateToggleLabel('nzb-ssl-label', this.checked); });
-            if (enabledCb) enabledCb.addEventListener('change', function () { self._updateToggleLabel('nzb-enabled-label', this.checked); });
 
             // ESC key
             document.addEventListener('keydown', function (e) {
@@ -447,7 +445,16 @@
             f('nzb-server-port', server ? (server.port || 563) : 563);
             f('nzb-server-ssl', server ? (server.ssl !== false) : true);
             f('nzb-server-username', server ? (server.username || '') : '');
-            f('nzb-server-password', ''); // Don't prefill passwords
+            // Password: clear the field but show masked version as placeholder
+            var pwField = document.getElementById('nzb-server-password');
+            if (pwField) {
+                pwField.value = '';
+                if (server && server.password_masked) {
+                    pwField.placeholder = server.password_masked;
+                } else {
+                    pwField.placeholder = '';
+                }
+            }
             f('nzb-server-connections', server ? (server.connections || 8) : 8);
             f('nzb-server-priority', server ? (server.priority !== undefined ? server.priority : 0) : 0);
             f('nzb-server-enabled', server ? (server.enabled !== false) : true);
@@ -455,20 +462,7 @@
             // Reset test status area
             this._resetTestStatus();
 
-            // Update toggle labels to match checkbox state
-            var sslCb = document.getElementById('nzb-server-ssl');
-            var enabledCb = document.getElementById('nzb-server-enabled');
-            this._updateToggleLabel('nzb-ssl-label', sslCb ? sslCb.checked : true);
-            this._updateToggleLabel('nzb-enabled-label', enabledCb ? enabledCb.checked : true);
-
             modal.style.display = 'flex';
-        },
-
-        _updateToggleLabel: function (labelId, isOn) {
-            var lbl = document.getElementById(labelId);
-            if (!lbl) return;
-            lbl.textContent = isOn ? 'ON' : 'OFF';
-            lbl.className = 'nzb-toggle-label ' + (isOn ? 'label-on' : 'label-off');
         },
 
         _closeServerModal: function () {
@@ -594,6 +588,12 @@
                 username: (g('nzb-server-username') || '').trim(),
                 password: (g('nzb-server-password') || '').trim()
             };
+
+            // If editing an existing server and password field is empty,
+            // pass server_index so backend can use the saved password
+            if (!payload.password && this._editIndex !== null) {
+                payload.server_index = this._editIndex;
+            }
 
             var self = this;
             if (!callback) {

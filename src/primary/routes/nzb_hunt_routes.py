@@ -107,11 +107,14 @@ def _mask_field(value, show_last=4):
 def list_nzb_servers():
     cfg = _load_config()
     servers = cfg.get("servers", [])
-    # Return servers with masked passwords
+    # Return servers with masked passwords (show last 4 chars)
     result = []
     for srv in servers:
         s = dict(srv)
-        s["password"] = ""  # never return password
+        raw_pw = s.get("password", "")
+        s["has_password"] = bool(raw_pw)
+        s["password_masked"] = _mask_field(raw_pw, show_last=4) if raw_pw else ""
+        s["password"] = ""  # never return actual password
         s.setdefault("bandwidth_used", 0)
         s.setdefault("bandwidth_pct", 0)
         result.append(s)
@@ -436,7 +439,8 @@ def nzb_hunt_test_servers():
 @nzb_hunt_bp.route("/api/nzb-hunt/test-server", methods=["POST"])
 def nzb_hunt_test_single_server():
     """Test a single NNTP server connection (used by modal auto-test).
-    Body: { host, port, ssl, username, password }
+    Body: { host, port, ssl, username, password, server_index? }
+    If password is empty and server_index is provided, uses the saved password.
     """
     try:
         data = request.get_json(silent=True) or {}
@@ -448,6 +452,17 @@ def nzb_hunt_test_single_server():
         use_ssl = bool(data.get("ssl", True))
         username = (data.get("username") or "").strip()
         password = (data.get("password") or "").strip()
+
+        # If no password provided but we have a server_index, use the saved password
+        if not password and data.get("server_index") is not None:
+            try:
+                idx = int(data["server_index"])
+                cfg = _load_config()
+                servers = cfg.get("servers", [])
+                if 0 <= idx < len(servers):
+                    password = servers[idx].get("password", "")
+            except (ValueError, TypeError):
+                pass
 
         from src.primary.apps.nzb_hunt.nntp_client import NNTPConnectionPool
         pool = NNTPConnectionPool({
