@@ -175,6 +175,101 @@ def delete_nzb_server(index):
 
 
 # ──────────────────────────────────────────────────────────────────
+# Category CRUD
+# ──────────────────────────────────────────────────────────────────
+
+@nzb_hunt_bp.route("/api/nzb-hunt/settings/categories-base", methods=["POST"])
+def save_nzb_categories_base():
+    data = request.get_json(silent=True) or {}
+    cfg = _load_config()
+    cfg["categories_base_folder"] = data.get("base_folder", "/downloads/complete")
+    _save_config(cfg)
+    return jsonify({"success": True})
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/categories", methods=["GET"])
+def list_nzb_categories():
+    cfg = _load_config()
+    return jsonify({
+        "categories": cfg.get("categories", []),
+        "base_folder": cfg.get("categories_base_folder", "/downloads/complete"),
+    })
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/categories", methods=["POST"])
+def add_nzb_category():
+    data = request.get_json(silent=True) or {}
+    cfg = _load_config()
+    cats = cfg.get("categories", [])
+    base = cfg.get("categories_base_folder", "/downloads/complete")
+    name = data.get("name", "").strip()
+    if not name:
+        return jsonify({"success": False, "error": "Name required"}), 400
+
+    folder = data.get("folder", "").strip()
+    if not folder:
+        safe_name = "".join(c for c in name.lower() if c.isalnum() or c in "_-")
+        folder = os.path.join(base, safe_name)
+
+    cat = {
+        "name": name,
+        "folder": folder,
+        "priority": data.get("priority", "normal"),
+        "processing": data.get("processing", "default"),
+        "indexer_groups": data.get("indexer_groups", ""),
+    }
+    cats.append(cat)
+    cfg["categories"] = cats
+    _save_config(cfg)
+
+    # Try to create the folder if it doesn't exist
+    try:
+        os.makedirs(folder, exist_ok=True)
+    except Exception as e:
+        logger.warning(f"Could not create category folder {folder}: {e}")
+
+    return jsonify({"success": True, "index": len(cats) - 1})
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/categories/<int:index>", methods=["PUT"])
+def update_nzb_category(index):
+    data = request.get_json(silent=True) or {}
+    cfg = _load_config()
+    cats = cfg.get("categories", [])
+    if index < 0 or index >= len(cats):
+        return jsonify({"success": False, "error": "Invalid index"}), 400
+
+    cat = cats[index]
+    cat["name"] = data.get("name", cat.get("name", ""))
+    cat["folder"] = data.get("folder", cat.get("folder", ""))
+    cat["priority"] = data.get("priority", cat.get("priority", "normal"))
+    cat["processing"] = data.get("processing", cat.get("processing", "default"))
+    cat["indexer_groups"] = data.get("indexer_groups", cat.get("indexer_groups", ""))
+    cfg["categories"] = cats
+    _save_config(cfg)
+
+    # Try to create the folder if it doesn't exist
+    try:
+        os.makedirs(cat["folder"], exist_ok=True)
+    except Exception as e:
+        logger.warning(f"Could not create category folder {cat['folder']}: {e}")
+
+    return jsonify({"success": True})
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/categories/<int:index>", methods=["DELETE"])
+def delete_nzb_category(index):
+    cfg = _load_config()
+    cats = cfg.get("categories", [])
+    if index < 0 or index >= len(cats):
+        return jsonify({"success": False, "error": "Invalid index"}), 400
+    cats.pop(index)
+    cfg["categories"] = cats
+    _save_config(cfg)
+    return jsonify({"success": True})
+
+
+# ──────────────────────────────────────────────────────────────────
 # File browser
 # ──────────────────────────────────────────────────────────────────
 

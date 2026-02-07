@@ -1123,11 +1123,314 @@
         flex-direction: column;
         gap: 0;
     }
-    #nzb-server-grid {
+    #nzb-server-grid,
+    .nzb-cat-grid {
         grid-template-columns: 1fr;
     }
     .nzb-browse-content {
         min-width: 0;
         width: 95%;
     }
+    .nzb-cat-base-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .nzb-cat-card-body {
+        flex-direction: column;
+    }
+    .nzb-cat-card-meta {
+        flex-wrap: wrap;
+    }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   CATEGORIES
+   ═════════════════════════════════════════════════════════════════ */
+
+/* ── Base folder row ─────────────────────────────────────────── */
+.nzb-cat-base-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.nzb-cat-base-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 260px;
+}
+
+.nzb-cat-base-label i {
+    font-size: 1.1rem;
+}
+
+/* ── Default category info ───────────────────────────────────── */
+.nzb-cat-default-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px dashed rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.nzb-cat-default-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nzb-badge-default {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+}
+
+.nzb-cat-default-text {
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.nzb-cat-default-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nzb-cat-default-path {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    color: #a5b4fc;
+    padding: 4px 10px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 6px;
+}
+
+/* ── Category card grid ──────────────────────────────────────── */
+.nzb-cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+}
+
+/* ── Category card ───────────────────────────────────────────── */
+.nzb-cat-card {
+    padding: 0;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.nzb-cat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    border-color: rgba(167, 139, 250, 0.3);
+}
+
+.nzb-cat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+}
+
+.nzb-cat-card-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #f8fafc;
+    min-width: 0;
+}
+
+.nzb-cat-card-name i {
+    color: #a78bfa;
+    flex-shrink: 0;
+}
+
+.nzb-cat-card-name span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nzb-cat-card-badges {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.nzb-badge-processing {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+}
+
+.nzb-badge-priority-cat {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+.nzb-cat-card-body {
+    padding: 12px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nzb-cat-card-path {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.nzb-cat-card-path i {
+    width: 16px;
+    text-align: center;
+    color: #475569;
+}
+
+.nzb-cat-card-path span {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: #cbd5e1;
+    word-break: break-all;
+}
+
+.nzb-cat-card-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.nzb-cat-card-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.nzb-cat-card-meta-item i {
+    font-size: 0.7rem;
+}
+
+.nzb-cat-card-meta-item span {
+    color: #94a3b8;
+}
+
+.nzb-cat-card-indexer {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    margin-top: 2px;
+}
+
+.nzb-cat-card-indexer i {
+    width: 16px;
+    text-align: center;
+    color: #475569;
+    margin-top: 2px;
+}
+
+.nzb-cat-card-indexer-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.nzb-cat-indexer-tag {
+    padding: 2px 8px;
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.nzb-cat-card-footer {
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px;
+    border-top: 1px solid rgba(148, 163, 184, 0.06);
+}
+
+.nzb-cat-card-footer .nzb-btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 7px 10px;
+}
+
+/* ── Add category card ───────────────────────────────────────── */
+.nzb-cat-add-card {
+    min-height: 160px;
+    border: 2px dashed rgba(167, 139, 250, 0.2);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+}
+
+.nzb-cat-add-card:hover {
+    border-color: rgba(167, 139, 250, 0.4);
+    background: rgba(167, 139, 250, 0.04);
+}
+
+.nzb-cat-add-card .add-icon {
+    font-size: 2rem;
+    color: #a78bfa;
+}
+
+.nzb-cat-add-card .add-text {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* ── Category form select ────────────────────────────────────── */
+.nzb-form-select {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid #475569;
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    box-sizing: border-box;
+}
+
+.nzb-form-select:focus {
+    border-color: #a78bfa;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.15);
 }

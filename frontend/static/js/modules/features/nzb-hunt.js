@@ -9,7 +9,9 @@
     window.NzbHunt = {
         currentTab: 'queue',
         _servers: [],
+        _categories: [],
         _editIndex: null, // null = add, number = edit
+        _catEditIndex: null, // null = add, number = edit
 
         /* ──────────────────────────────────────────────
            Initialization
@@ -26,8 +28,11 @@
             this._setupServerGrid();
             this._setupServerModal();
             this._setupBrowseModal();
+            this._setupCategoryGrid();
+            this._setupCategoryModal();
             this._loadFolders();
             this._loadServers();
+            this._loadCategories();
             console.log('[NzbHunt] Settings initialized');
         },
 
@@ -345,9 +350,11 @@
             // ESC key
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
-                    var sm = document.getElementById('nzb-server-modal');
                     var bm = document.getElementById('nzb-browse-modal');
+                    var cm = document.getElementById('nzb-cat-modal');
+                    var sm = document.getElementById('nzb-server-modal');
                     if (bm && bm.style.display === 'flex') { self._closeBrowseModal(); return; }
+                    if (cm && cm.style.display === 'flex') { self._closeCategoryModal(); return; }
                     if (sm && sm.style.display === 'flex') self._closeServerModal();
                 }
             });
@@ -425,6 +432,280 @@
                         window.huntarrUI.showNotification('Failed to save server.', 'error');
                     }
                 });
+        },
+
+        /* ──────────────────────────────────────────────
+           Categories  – CRUD + card rendering
+        ────────────────────────────────────────────── */
+        _getBaseFolder: function () {
+            var el = document.getElementById('nzb-cat-base-folder');
+            return (el && el.value) ? el.value : '/downloads/complete';
+        },
+
+        _setupCategoryGrid: function () {
+            var self = this;
+            var addCard = document.getElementById('nzb-add-cat-card');
+            if (addCard) {
+                addCard.addEventListener('click', function () {
+                    self._catEditIndex = null;
+                    self._openCategoryModal(null);
+                });
+            }
+
+            // Base folder browse
+            var browseBase = document.getElementById('nzb-browse-cat-base-folder');
+            if (browseBase) {
+                browseBase.addEventListener('click', function () {
+                    self._openBrowseModal(document.getElementById('nzb-cat-base-folder'));
+                });
+            }
+
+            // Save base folder
+            var saveBase = document.getElementById('nzb-save-cat-base');
+            if (saveBase) {
+                saveBase.addEventListener('click', function () { self._saveBaseFolder(); });
+            }
+
+            // Auto-update the default path display when base folder changes
+            var baseInput = document.getElementById('nzb-cat-base-folder');
+            if (baseInput) {
+                baseInput.addEventListener('input', function () {
+                    var display = document.getElementById('nzb-cat-default-path-display');
+                    if (display) display.textContent = baseInput.value || '/downloads/complete';
+                });
+            }
+
+            // Auto-generate folder path when category name changes
+            var catName = document.getElementById('nzb-cat-name');
+            if (catName) {
+                catName.addEventListener('input', function () {
+                    if (self._catEditIndex !== null) return; // Don't auto-fill when editing
+                    var folder = document.getElementById('nzb-cat-folder');
+                    var name = (catName.value || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+                    if (folder && name) {
+                        folder.value = self._getBaseFolder().replace(/\/+$/, '') + '/' + name;
+                    } else if (folder) {
+                        folder.value = '';
+                    }
+                });
+            }
+        },
+
+        _saveBaseFolder: function () {
+            var base = this._getBaseFolder();
+            fetch('./api/nzb-hunt/settings/categories-base', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ base_folder: base })
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Base folder saved.', 'success');
+                    }
+                })
+                .catch(function () {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to save base folder.', 'error');
+                    }
+                });
+        },
+
+        _loadCategories: function () {
+            var self = this;
+            fetch('./api/nzb-hunt/categories?t=' + Date.now())
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    self._categories = data.categories || [];
+                    // Update base folder input
+                    var baseEl = document.getElementById('nzb-cat-base-folder');
+                    if (baseEl && data.base_folder) baseEl.value = data.base_folder;
+                    // Update default path display
+                    var display = document.getElementById('nzb-cat-default-path-display');
+                    if (display) display.textContent = data.base_folder || '/downloads/complete';
+                    self._renderCategoryCards();
+                })
+                .catch(function () { self._categories = []; self._renderCategoryCards(); });
+        },
+
+        _renderCategoryCards: function () {
+            var grid = document.getElementById('nzb-cat-grid');
+            if (!grid) return;
+
+            var addCard = document.getElementById('nzb-add-cat-card');
+            grid.innerHTML = '';
+
+            var self = this;
+            this._categories.forEach(function (cat, idx) {
+                var card = document.createElement('div');
+                card.className = 'nzb-cat-card';
+
+                var indexerTags = '';
+                if (cat.indexer_groups) {
+                    var groups = cat.indexer_groups.split(',').map(function (g) { return g.trim(); }).filter(Boolean);
+                    if (groups.length > 0) {
+                        indexerTags = '<div class="nzb-cat-card-indexer"><i class="fas fa-search"></i><div class="nzb-cat-card-indexer-tags">' +
+                            groups.map(function (g) { return '<span class="nzb-cat-indexer-tag">' + _esc(g) + '</span>'; }).join('') +
+                            '</div></div>';
+                    }
+                }
+
+                card.innerHTML =
+                    '<div class="nzb-cat-card-header">' +
+                        '<div class="nzb-cat-card-name"><i class="fas fa-tag"></i> <span>' + _esc(cat.name || 'Category') + '</span></div>' +
+                        '<div class="nzb-cat-card-badges">' +
+                            '<span class="nzb-badge nzb-badge-priority-cat">' + _esc(_capFirst(cat.priority || 'normal')) + '</span>' +
+                            '<span class="nzb-badge nzb-badge-processing">' + _esc(cat.processing || 'Default') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="nzb-cat-card-body">' +
+                        '<div class="nzb-cat-card-path"><i class="fas fa-folder"></i> <span>' + _esc(cat.folder || '') + '</span></div>' +
+                        indexerTags +
+                    '</div>' +
+                    '<div class="nzb-cat-card-footer">' +
+                        '<button class="nzb-btn" data-action="edit-cat" data-idx="' + idx + '"><i class="fas fa-pen"></i> Edit</button>' +
+                        '<button class="nzb-btn nzb-btn-danger" data-action="delete-cat" data-idx="' + idx + '"><i class="fas fa-trash"></i> Delete</button>' +
+                    '</div>';
+
+                card.addEventListener('click', function (e) {
+                    var btn = e.target.closest('[data-action]');
+                    if (!btn) return;
+                    var action = btn.getAttribute('data-action');
+                    var i = parseInt(btn.getAttribute('data-idx'), 10);
+                    if (action === 'edit-cat') {
+                        self._catEditIndex = i;
+                        self._openCategoryModal(self._categories[i]);
+                    } else if (action === 'delete-cat') {
+                        var name = (self._categories[i] || {}).name || 'this category';
+                        if (!confirm('Delete "' + name + '"?')) return;
+                        fetch('./api/nzb-hunt/categories/' + i, { method: 'DELETE' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                if (data.success) self._loadCategories();
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    window.huntarrUI.showNotification('Category deleted.', 'success');
+                                }
+                            })
+                            .catch(function () {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    window.huntarrUI.showNotification('Delete failed.', 'error');
+                                }
+                            });
+                    }
+                });
+
+                grid.appendChild(card);
+            });
+
+            if (addCard) grid.appendChild(addCard);
+        },
+
+        /* ──────────────────────────────────────────────
+           Category Add/Edit Modal
+        ────────────────────────────────────────────── */
+        _setupCategoryModal: function () {
+            var self = this;
+            var backdrop = document.getElementById('nzb-cat-modal-backdrop');
+            var closeBtn = document.getElementById('nzb-cat-modal-close');
+            var cancelBtn = document.getElementById('nzb-cat-modal-cancel');
+            var saveBtn = document.getElementById('nzb-cat-modal-save');
+            var browseBtn = document.getElementById('nzb-cat-browse-folder');
+
+            if (backdrop) backdrop.addEventListener('click', function () { self._closeCategoryModal(); });
+            if (closeBtn) closeBtn.addEventListener('click', function () { self._closeCategoryModal(); });
+            if (cancelBtn) cancelBtn.addEventListener('click', function () { self._closeCategoryModal(); });
+            if (saveBtn) saveBtn.addEventListener('click', function () { self._saveCategory(); });
+            if (browseBtn) browseBtn.addEventListener('click', function () {
+                var folderInput = document.getElementById('nzb-cat-folder');
+                if (folderInput) folderInput.removeAttribute('readonly');
+                self._openBrowseModal(folderInput);
+            });
+        },
+
+        _openCategoryModal: function (cat) {
+            var modal = document.getElementById('nzb-cat-modal');
+            if (!modal) return;
+            if (modal.parentElement !== document.body) document.body.appendChild(modal);
+
+            var title = document.getElementById('nzb-cat-modal-title');
+            if (title) title.textContent = cat ? 'Edit Category' : 'Add Category';
+
+            var f = function (id, val) { var el = document.getElementById(id); if (el) el.value = val; };
+            f('nzb-cat-name', cat ? cat.name : '');
+            f('nzb-cat-folder', cat ? cat.folder : '');
+            f('nzb-cat-priority', cat ? (cat.priority || 'normal') : 'normal');
+            f('nzb-cat-processing', cat ? (cat.processing || 'default') : 'default');
+            f('nzb-cat-indexer', cat ? (cat.indexer_groups || '') : '');
+
+            // Set readonly on folder for new categories (auto-generated from name)
+            var folderInput = document.getElementById('nzb-cat-folder');
+            if (folderInput) {
+                if (cat) {
+                    folderInput.removeAttribute('readonly');
+                } else {
+                    folderInput.setAttribute('readonly', 'readonly');
+                }
+            }
+
+            modal.style.display = 'flex';
+        },
+
+        _closeCategoryModal: function () {
+            var modal = document.getElementById('nzb-cat-modal');
+            if (modal) modal.style.display = 'none';
+        },
+
+        _saveCategory: function () {
+            var g = function (id) { var el = document.getElementById(id); return el ? el.value : ''; };
+            var name = g('nzb-cat-name').trim();
+            if (!name) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Category name is required.', 'error');
+                }
+                return;
+            }
+            var folder = g('nzb-cat-folder').trim();
+            if (!folder) {
+                folder = this._getBaseFolder().replace(/\/+$/, '') + '/' + name.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+            }
+            var payload = {
+                name: name,
+                folder: folder,
+                priority: g('nzb-cat-priority') || 'normal',
+                processing: g('nzb-cat-processing') || 'default',
+                indexer_groups: g('nzb-cat-indexer') || ''
+            };
+
+            var self = this;
+            var url, method;
+            if (this._catEditIndex !== null) {
+                url = './api/nzb-hunt/categories/' + this._catEditIndex;
+                method = 'PUT';
+            } else {
+                url = './api/nzb-hunt/categories';
+                method = 'POST';
+            }
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        self._closeCategoryModal();
+                        self._loadCategories();
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Category saved.', 'success');
+                        }
+                    }
+                })
+                .catch(function () {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to save category.', 'error');
+                    }
+                });
         }
     };
 
@@ -440,6 +721,11 @@
         var units = ['B', 'KB', 'MB', 'GB', 'TB'];
         var i = Math.floor(Math.log(b) / Math.log(1024));
         return (b / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+    }
+
+    function _capFirst(s) {
+        if (!s) return '';
+        return s.charAt(0).toUpperCase() + s.slice(1);
     }
 
     // Initialize on DOM ready
