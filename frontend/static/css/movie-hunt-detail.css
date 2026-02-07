@@ -208,7 +208,7 @@
 
 /* Instance Selector */
 .movie-detail-instance-selector {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 16px;
@@ -217,6 +217,7 @@
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
+    max-width: 400px;
 }
 
 .movie-detail-instance-selector label {
@@ -227,6 +228,7 @@
     align-items: center;
     gap: 8px;
     margin: 0;
+    white-space: nowrap;
 }
 
 .movie-detail-instance-selector label i {
@@ -243,6 +245,7 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
+    min-width: 200px;
 }
 
 .movie-detail-select:hover {

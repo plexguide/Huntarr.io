@@ -1,94 +1,54 @@
 /**
- * Movie Hunt Detail Page - Modern movie detail view with TMDB data
- * Shows full movie info, cast, similar movies, and request functionality
+ * Requestarr Movie Detail Page - Detail view for Requestarr movies
+ * Handles Radarr instances and movie status checking
  */
 (function() {
     'use strict';
 
-    window.MovieHuntDetail = {
+    window.RequestarrDetail = {
         currentMovie: null,
         tmdbApiKey: null,
-        movieHuntInstances: [],
-        selectedInstanceId: null,
+        radarrInstances: [],
+        selectedInstanceName: null,
 
         init() {
-            console.log('[MovieHuntDetail] Module initialized');
+            console.log('[RequestarrDetail] Module initialized');
             
             // Listen for browser back/forward buttons
             window.addEventListener('popstate', (e) => {
-                if (e.state && e.state.movieDetail) {
+                if (e.state && e.state.requestarrMovieDetail) {
                     // User navigated to a movie detail via back/forward
-                    this.openDetail(e.state.movieDetail, {}, true);
-                } else if (!e.state || !e.state.requestarrMovieDetail) {
-                    // User navigated away from movie detail (and not to Requestarr detail)
+                    this.openDetail(e.state.requestarrMovieDetail, e.state.options || {}, true);
+                } else if (e.state && !e.state.movieDetail) {
+                    // User navigated away from movie detail (but not to Movie Hunt detail)
                     this.closeDetail(true);
                 }
             });
-            
-            // Check if URL has movie detail on page load
-            this.checkUrlForMovieDetail();
-        },
-        
-        checkUrlForMovieDetail() {
-            // Check URL hash for movie detail pattern: #movie/12345
-            const hash = window.location.hash;
-            const movieMatch = hash.match(/#movie\/(\d+)/);
-            
-            if (movieMatch) {
-                const tmdbId = parseInt(movieMatch[1]);
-                console.log('[MovieHuntDetail] Found movie in URL, loading:', tmdbId);
-                
-                // Fetch basic movie info and open detail
-                this.openDetailFromTmdbId(tmdbId);
-            }
-        },
-        
-        async openDetailFromTmdbId(tmdbId) {
-            try {
-                // Fetch basic movie info first
-                const details = await this.fetchMovieDetails(tmdbId);
-                if (details) {
-                    const movieData = {
-                        tmdb_id: details.id,
-                        id: details.id,
-                        title: details.title,
-                        year: details.release_date ? new Date(details.release_date).getFullYear() : null,
-                        poster_path: details.poster_path,
-                        backdrop_path: details.backdrop_path,
-                        overview: details.overview,
-                        vote_average: details.vote_average,
-                        in_library: false,
-                        in_cooldown: false
-                    };
-                    this.openDetail(movieData, {}, true);
-                }
-            } catch (error) {
-                console.error('[MovieHuntDetail] Error loading movie from URL:', error);
-            }
         },
 
         /**
-         * Open detail view for a movie from Movie Hunt
+         * Open detail view for a movie from Requestarr
          * @param {Object} movie - Movie data with at least title, year, tmdb_id
-         * @param {Object} options - Optional config (unused, kept for compatibility)
+         * @param {Object} options - Optional config: { suggestedInstance: string }
          * @param {Boolean} fromHistory - True if opened from browser history (don't push state again)
          */
         async openDetail(movie, options = {}, fromHistory = false) {
             if (!movie) return;
 
             this.currentMovie = movie;
-            console.log('[MovieHuntDetail] Opening detail for:', movie.title);
+            this.options = options || {};
+            console.log('[RequestarrDetail] Opening detail for:', movie.title);
             
-            // Load Movie Hunt instances if not already loaded
-            if (this.movieHuntInstances.length === 0) {
-                await this.loadMovieHuntInstances();
+            // Load Radarr instances if not already loaded
+            if (this.radarrInstances.length === 0) {
+                await this.loadRadarrInstances();
             }
 
             // Get or create detail view container
-            let detailView = document.getElementById('movie-hunt-detail-view');
+            let detailView = document.getElementById('requestarr-detail-view');
             if (!detailView) {
                 detailView = document.createElement('div');
-                detailView.id = 'movie-hunt-detail-view';
+                detailView.id = 'requestarr-detail-view';
                 detailView.className = 'movie-detail-view';
                 document.body.appendChild(detailView);
             }
@@ -96,14 +56,13 @@
             // Show loading state
             detailView.innerHTML = this.getLoadingHTML();
             detailView.classList.add('active');
-            // Don't hide body overflow - we want sidebar/topbar to remain accessible
 
             // Add to browser history (so back button works)
             if (!fromHistory) {
                 const tmdbId = movie.tmdb_id || movie.id;
-                const url = `${window.location.pathname}${window.location.search}#movie/${tmdbId}`;
+                const url = `${window.location.pathname}${window.location.search}#requestarr-movie/${tmdbId}`;
                 history.pushState(
-                    { movieDetail: movie },
+                    { requestarrMovieDetail: movie, options: this.options },
                     movie.title,
                     url
                 );
@@ -123,30 +82,26 @@
                 const details = await this.fetchMovieDetails(tmdbId);
                 
                 if (details) {
-                    console.log('[MovieHuntDetail] Rendering detail with instances:', this.movieHuntInstances.length);
                     detailView.innerHTML = this.renderMovieDetail(details, movie);
                     this.setupDetailInteractions();
                 } else {
                     detailView.innerHTML = this.getErrorHTML('Failed to load movie details');
                 }
             } catch (error) {
-                console.error('[MovieHuntDetail] Error loading details:', error);
+                console.error('[RequestarrDetail] Error loading details:', error);
                 detailView.innerHTML = this.getErrorHTML('Failed to load movie details');
             }
         },
 
         closeDetail(fromHistory = false) {
-            const detailView = document.getElementById('movie-hunt-detail-view');
+            const detailView = document.getElementById('requestarr-detail-view');
             if (detailView) {
                 detailView.classList.remove('active');
-                // Body overflow stays normal - sidebar/topbar always visible
             }
             
             // Remove from browser history if not already navigating
             if (!fromHistory && detailView && detailView.classList.contains('active')) {
-                // Clear the hash from URL
-                const url = `${window.location.pathname}${window.location.search}`;
-                history.back(); // Use back to maintain proper history stack
+                history.back();
             }
         },
 
@@ -154,7 +109,7 @@
             if (!tmdbId) return null;
 
             try {
-                // Get TMDB API key from Movie Hunt API (not Requestarr)
+                // Get TMDB API key from Movie Hunt (shared endpoint)
                 if (!this.tmdbApiKey) {
                     const keyResponse = await fetch('./api/movie-hunt/tmdb-key');
                     if (!keyResponse.ok) throw new Error('TMDB key endpoint failed: ' + keyResponse.status);
@@ -163,7 +118,7 @@
                 }
 
                 if (!this.tmdbApiKey) {
-                    console.error('[MovieHuntDetail] No TMDB API key available');
+                    console.error('[RequestarrDetail] No TMDB API key available');
                     return null;
                 }
 
@@ -178,8 +133,89 @@
                 const data = await response.json();
                 return data;
             } catch (error) {
-                console.error('[MovieHuntDetail] Error fetching from TMDB:', error);
+                console.error('[RequestarrDetail] Error fetching from TMDB:', error);
                 return null;
+            }
+        },
+
+        async loadRadarrInstances() {
+            try {
+                const response = await fetch('./api/requestarr/instances/radarr');
+                const data = await response.json();
+                
+                if (data.instances && data.instances.length > 0) {
+                    this.radarrInstances = data.instances;
+                    
+                    // Set initial selected instance (prioritize suggested instance from options)
+                    if (this.options.suggestedInstance) {
+                        this.selectedInstanceName = this.options.suggestedInstance;
+                    } else if (!this.selectedInstanceName) {
+                        this.selectedInstanceName = this.radarrInstances[0].name;
+                    }
+                    
+                    console.log('[RequestarrDetail] Loaded', this.radarrInstances.length, 'Radarr instances, selected:', this.selectedInstanceName);
+                } else {
+                    this.radarrInstances = [];
+                    this.selectedInstanceName = null;
+                }
+            } catch (error) {
+                console.error('[RequestarrDetail] Error loading Radarr instances:', error);
+                this.radarrInstances = [];
+                this.selectedInstanceName = null;
+            }
+        },
+
+        async checkMovieStatus(tmdbId, instanceName) {
+            if (!instanceName) return { in_library: false, in_cooldown: false };
+            
+            try {
+                const response = await fetch(`./api/requestarr/movie-status?tmdb_id=${tmdbId}&instance=${encodeURIComponent(instanceName)}`);
+                const data = await response.json();
+                
+                return {
+                    in_library: data.in_library || false,
+                    in_cooldown: (data.cooldown_status && data.cooldown_status.in_cooldown) || false
+                };
+            } catch (error) {
+                console.error('[RequestarrDetail] Error checking movie status:', error);
+                return { in_library: false, in_cooldown: false };
+            }
+        },
+
+        async updateMovieStatus() {
+            if (!this.currentMovie || !this.selectedInstanceName) return;
+            
+            const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
+            const status = await this.checkMovieStatus(tmdbId, this.selectedInstanceName);
+            
+            // Update the action button based on new status
+            const actionsContainer = document.querySelector('.movie-detail-actions');
+            if (actionsContainer) {
+                let actionButton = '';
+                
+                if (status.in_library) {
+                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-check"></i> Already Available</button>';
+                } else if (status.in_cooldown) {
+                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-clock"></i> In Cooldown</button>';
+                } else {
+                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" id="requestarr-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
+                }
+                
+                actionsContainer.innerHTML = actionButton;
+                
+                // Re-setup request button if it exists
+                const requestBtn = document.getElementById('requestarr-detail-request-btn');
+                if (requestBtn) {
+                    requestBtn.addEventListener('click', () => {
+                        if (window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                            window.RequestarrDiscover.modal.openModal(
+                                this.currentMovie.tmdb_id,
+                                'movie',
+                                this.selectedInstanceName
+                            );
+                        }
+                    });
+                }
             }
         },
 
@@ -213,7 +249,7 @@
             } else if (inCooldown) {
                 actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-clock"></i> In Cooldown</button>';
             } else {
-                actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" id="movie-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
+                actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" id="requestarr-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
             }
 
             // Director and main cast
@@ -246,27 +282,17 @@
                 }
             }
 
-            // Build Movie Hunt instance selector (always show, even if loading)
+            // Build Radarr instance selector
             let instanceSelectorHTML = '';
-            if (this.movieHuntInstances.length > 0) {
+            if (this.radarrInstances.length > 0) {
                 instanceSelectorHTML = `
                     <div class="movie-detail-instance-selector">
-                        <label for="movie-detail-instance-select"><i class="fas fa-server"></i> Instance:</label>
-                        <select id="movie-detail-instance-select" class="movie-detail-select">
-                            ${this.movieHuntInstances.map(instance => {
-                                const selected = instance.id === this.selectedInstanceId ? 'selected' : '';
-                                return `<option value="${instance.id}" ${selected}>Movie Hunt - ${this.escapeHtml(instance.name)}</option>`;
+                        <label for="requestarr-detail-instance-select"><i class="fas fa-server"></i> Instance:</label>
+                        <select id="requestarr-detail-instance-select" class="movie-detail-select">
+                            ${this.radarrInstances.map(instance => {
+                                const selected = instance.name === this.selectedInstanceName ? 'selected' : '';
+                                return `<option value="${this.escapeHtml(instance.name)}" ${selected}>Radarr - ${this.escapeHtml(instance.name)}</option>`;
                             }).join('')}
-                        </select>
-                    </div>
-                `;
-            } else {
-                // Show loading state if instances haven't loaded yet
-                instanceSelectorHTML = `
-                    <div class="movie-detail-instance-selector">
-                        <label for="movie-detail-instance-select"><i class="fas fa-server"></i> Instance:</label>
-                        <select id="movie-detail-instance-select" class="movie-detail-select" disabled>
-                            <option>Loading instances...</option>
                         </select>
                     </div>
                 `;
@@ -402,11 +428,11 @@
             }
 
             // Instance selector change handler
-            const instanceSelect = document.getElementById('movie-detail-instance-select');
+            const instanceSelect = document.getElementById('requestarr-detail-instance-select');
             if (instanceSelect) {
                 instanceSelect.addEventListener('change', async () => {
-                    this.selectedInstanceId = parseInt(instanceSelect.value);
-                    console.log('[MovieHuntDetail] Instance changed to:', this.selectedInstanceId);
+                    this.selectedInstanceName = instanceSelect.value;
+                    console.log('[RequestarrDetail] Instance changed to:', this.selectedInstanceName);
                     
                     // Update movie status for new instance
                     await this.updateMovieStatus();
@@ -417,11 +443,15 @@
             }
 
             // Request button
-            const requestBtn = document.getElementById('movie-detail-request-btn');
+            const requestBtn = document.getElementById('requestarr-detail-request-btn');
             if (requestBtn && this.currentMovie) {
                 requestBtn.addEventListener('click', () => {
-                    if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal) {
-                        window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+                    if (window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                        window.RequestarrDiscover.modal.openModal(
+                            this.currentMovie.tmdb_id,
+                            'movie',
+                            this.selectedInstanceName
+                        );
                     }
                 });
             }
@@ -432,7 +462,6 @@
                 card.addEventListener('click', async () => {
                     const tmdbId = card.getAttribute('data-tmdb-id');
                     if (tmdbId) {
-                        // Fetch basic movie data and open detail (this will update URL)
                         try {
                             const details = await this.fetchMovieDetails(tmdbId);
                             if (details) {
@@ -445,13 +474,13 @@
                                     backdrop_path: details.backdrop_path,
                                     overview: details.overview,
                                     vote_average: details.vote_average,
-                                    in_library: false
+                                    in_library: false,
+                                    in_cooldown: false
                                 };
-                                // Open detail and update URL (fromHistory = false)
-                                this.openDetail(movieData, {}, false);
+                                this.openDetail(movieData, this.options || {}, false);
                             }
                         } catch (error) {
-                            console.error('[MovieHuntDetail] Error opening similar movie:', error);
+                            console.error('[RequestarrDetail] Error opening similar movie:', error);
                         }
                     }
                 });
@@ -465,93 +494,6 @@
                 }
             };
             document.addEventListener('keydown', escHandler);
-        },
-
-        async loadMovieHuntInstances() {
-            console.log('[MovieHuntDetail] Starting to load Movie Hunt instances...');
-            try {
-                const response = await fetch('./api/movie-hunt/instances');
-                const data = await response.json();
-                console.log('[MovieHuntDetail] Instances API response:', data);
-                
-                if (data.instances && data.instances.length > 0) {
-                    this.movieHuntInstances = data.instances;
-                    
-                    // Set initial selected instance (Movie Hunt uses integer IDs)
-                    if (!this.selectedInstanceId) {
-                        // Get current instance from server
-                        const currentResponse = await fetch('./api/movie-hunt/current-instance');
-                        const currentData = await currentResponse.json();
-                        this.selectedInstanceId = currentData.instance_id || this.movieHuntInstances[0].id;
-                    }
-                    
-                    console.log('[MovieHuntDetail] Loaded', this.movieHuntInstances.length, 'Movie Hunt instances, selected:', this.selectedInstanceId);
-                } else {
-                    console.log('[MovieHuntDetail] No instances found in response');
-                    this.movieHuntInstances = [];
-                    this.selectedInstanceId = null;
-                }
-            } catch (error) {
-                console.error('[MovieHuntDetail] Error loading Movie Hunt instances:', error);
-                this.movieHuntInstances = [];
-                this.selectedInstanceId = null;
-            }
-        },
-
-        async checkMovieStatus(tmdbId, instanceId) {
-            if (!instanceId) return { in_library: false };
-            
-            try {
-                // Check Movie Hunt collection for this instance
-                const response = await fetch(`./api/movie-hunt/collection?instance_id=${instanceId}`);
-                const data = await response.json();
-                
-                // Find this movie in the collection
-                const items = data.items || [];
-                const movie = items.find(item => item.tmdb_id === tmdbId);
-                
-                if (movie) {
-                    return {
-                        in_library: movie.status === 'available'
-                    };
-                }
-                
-                return { in_library: false };
-            } catch (error) {
-                console.error('[MovieHuntDetail] Error checking movie status:', error);
-                return { in_library: false };
-            }
-        },
-
-        async updateMovieStatus() {
-            if (!this.currentMovie || !this.selectedInstanceId) return;
-            
-            const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
-            const status = await this.checkMovieStatus(tmdbId, this.selectedInstanceId);
-            
-            // Update the action button based on new status
-            const actionsContainer = document.querySelector('.movie-detail-actions');
-            if (actionsContainer) {
-                let actionButton = '';
-                
-                if (status.in_library) {
-                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-check"></i> Already Available</button>';
-                } else {
-                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" id="movie-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
-                }
-                
-                actionsContainer.innerHTML = actionButton;
-                
-                // Re-setup request button if it exists
-                const requestBtn = document.getElementById('movie-detail-request-btn');
-                if (requestBtn) {
-                    requestBtn.addEventListener('click', () => {
-                        if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal) {
-                            window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
-                        }
-                    });
-                }
-            }
         },
 
         getLoadingHTML() {
@@ -584,8 +526,8 @@
 
     // Initialize on load
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => window.MovieHuntDetail.init());
+        document.addEventListener('DOMContentLoaded', () => window.RequestarrDetail.init());
     } else {
-        window.MovieHuntDetail.init();
+        window.RequestarrDetail.init();
     }
 })();

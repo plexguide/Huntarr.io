@@ -982,8 +982,8 @@ export class RequestarrContent {
                 return;
             }
             
-            // For movies, open detail page if available
-            if (item.media_type === 'movie' && window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
+            // For movies, open Requestarr detail page if available
+            if (item.media_type === 'movie' && window.RequestarrDetail && window.RequestarrDetail.openDetail) {
                 const movieData = {
                     tmdb_id: item.tmdb_id,
                     id: item.tmdb_id,
@@ -996,8 +996,7 @@ export class RequestarrContent {
                     in_library: inLibrary,
                     in_cooldown: inCooldown
                 };
-                window.MovieHuntDetail.openDetail(movieData, {
-                    source: 'requestarr',
+                window.RequestarrDetail.openDetail(movieData, {
                     suggestedInstance: card.suggestedInstance
                 });
             } else {
