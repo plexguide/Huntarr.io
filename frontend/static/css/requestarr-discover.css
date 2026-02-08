@@ -555,14 +555,7 @@
     z-index: 999;
 }
 
-/* Blur everything behind Requestarr modal (full page incl. top bar) */
-body.requestarr-modal-open .app-container {
-    filter: blur(10px);
-}
-
-body.requestarr-modal-open {
-    overflow: hidden;
-}
+/* Blur for Requestarr modal is handled by movie-hunt.css (shared mh-req-modal styles) */
 
 .modal-content {
     position: relative;

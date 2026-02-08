@@ -1,5 +1,5 @@
 /**
- * Requestarr Movie Detail Page - Detail view for Requestarr movies
+ * Requestarr Movie Detail Page – Uses shared mh-* styling from Movie Hunt
  * Handles Radarr instances and movie status checking
  */
 (function() {
@@ -13,38 +13,27 @@
 
         init() {
             console.log('[RequestarrDetail] Module initialized');
-            
-            // Listen for browser back/forward buttons
+
             window.addEventListener('popstate', (e) => {
                 if (e.state && e.state.requestarrMovieDetail) {
-                    // User navigated to a movie detail via back/forward
                     this.openDetail(e.state.requestarrMovieDetail, e.state.options || {}, true);
                 } else if (e.state && !e.state.movieDetail) {
-                    // User navigated away from movie detail (but not to Movie Hunt detail)
                     this.closeDetail(true);
                 }
             });
         },
 
-        /**
-         * Open detail view for a movie from Requestarr
-         * @param {Object} movie - Movie data with at least title, year, tmdb_id
-         * @param {Object} options - Optional config: { suggestedInstance: string }
-         * @param {Boolean} fromHistory - True if opened from browser history (don't push state again)
-         */
         async openDetail(movie, options = {}, fromHistory = false) {
             if (!movie) return;
 
             this.currentMovie = movie;
             this.options = options || {};
             console.log('[RequestarrDetail] Opening detail for:', movie.title);
-            
-            // Load Radarr instances if not already loaded
+
             if (this.radarrInstances.length === 0) {
                 await this.loadRadarrInstances();
             }
 
-            // Get or create detail view container
             let detailView = document.getElementById('requestarr-detail-view');
             if (!detailView) {
                 detailView = document.createElement('div');
@@ -53,11 +42,9 @@
                 document.body.appendChild(detailView);
             }
 
-            // Show loading state
             detailView.innerHTML = this.getLoadingHTML();
             detailView.classList.add('active');
 
-            // Add to browser history (so back button works)
             if (!fromHistory) {
                 const tmdbId = movie.tmdb_id || movie.id;
                 const url = `${window.location.pathname}${window.location.search}#requestarr-movie/${tmdbId}`;
@@ -68,28 +55,28 @@
                 );
             }
 
-            // Setup close button
             setTimeout(() => {
-                const closeBtn = detailView.querySelector('.movie-detail-close');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', () => this.closeDetail());
+                const backBtn = document.getElementById('requestarr-detail-back-loading');
+                if (backBtn) {
+                    backBtn.addEventListener('click', () => this.closeDetail());
                 }
             }, 0);
 
             try {
-                // Fetch full movie details from TMDB
                 const tmdbId = movie.tmdb_id || movie.id;
                 const details = await this.fetchMovieDetails(tmdbId);
-                
+
                 if (details) {
                     detailView.innerHTML = this.renderMovieDetail(details, movie);
                     this.setupDetailInteractions();
                 } else {
                     detailView.innerHTML = this.getErrorHTML('Failed to load movie details');
+                    this.setupErrorBackButton();
                 }
             } catch (error) {
                 console.error('[RequestarrDetail] Error loading details:', error);
                 detailView.innerHTML = this.getErrorHTML('Failed to load movie details');
+                this.setupErrorBackButton();
             }
         },
 
@@ -98,8 +85,7 @@
             if (detailView) {
                 detailView.classList.remove('active');
             }
-            
-            // Remove from browser history if not already navigating
+
             if (!fromHistory && detailView && detailView.classList.contains('active')) {
                 history.back();
             }
@@ -109,7 +95,6 @@
             if (!tmdbId) return null;
 
             try {
-                // Get TMDB API key from Movie Hunt (shared endpoint)
                 if (!this.tmdbApiKey) {
                     const keyResponse = await fetch('./api/movie-hunt/tmdb-key');
                     if (!keyResponse.ok) throw new Error('TMDB key endpoint failed: ' + keyResponse.status);
@@ -122,16 +107,11 @@
                     return null;
                 }
 
-                // Fetch movie details with credits and similar movies
                 const url = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${this.tmdbApiKey}&append_to_response=credits,similar,videos,release_dates`;
                 const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`TMDB API returned ${response.status}`);
-                }
 
-                const data = await response.json();
-                return data;
+                if (!response.ok) throw new Error(`TMDB API returned ${response.status}`);
+                return await response.json();
             } catch (error) {
                 console.error('[RequestarrDetail] Error fetching from TMDB:', error);
                 return null;
@@ -142,18 +122,15 @@
             try {
                 const response = await fetch('./api/requestarr/instances/radarr');
                 const data = await response.json();
-                
+
                 if (data.instances && data.instances.length > 0) {
                     this.radarrInstances = data.instances;
-                    
-                    // Set initial selected instance (prioritize suggested instance from options)
+
                     if (this.options.suggestedInstance) {
                         this.selectedInstanceName = this.options.suggestedInstance;
                     } else if (!this.selectedInstanceName) {
                         this.selectedInstanceName = this.radarrInstances[0].name;
                     }
-                    
-                    console.log('[RequestarrDetail] Loaded', this.radarrInstances.length, 'Radarr instances, selected:', this.selectedInstanceName);
                 } else {
                     this.radarrInstances = [];
                     this.selectedInstanceName = null;
@@ -167,11 +144,11 @@
 
         async checkMovieStatus(tmdbId, instanceName) {
             if (!instanceName) return { in_library: false, in_cooldown: false };
-            
+
             try {
                 const response = await fetch(`./api/requestarr/movie-status?tmdb_id=${tmdbId}&instance=${encodeURIComponent(instanceName)}`);
                 const data = await response.json();
-                
+
                 return {
                     in_library: data.in_library || false,
                     in_cooldown: (data.cooldown_status && data.cooldown_status.in_cooldown) || false
@@ -184,26 +161,24 @@
 
         async updateMovieStatus() {
             if (!this.currentMovie || !this.selectedInstanceName) return;
-            
+
             const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
             const status = await this.checkMovieStatus(tmdbId, this.selectedInstanceName);
-            
-            // Update the action button based on new status
-            const actionsContainer = document.querySelector('.movie-detail-actions');
+
+            const actionsContainer = document.querySelector('.mh-hero-actions');
             if (actionsContainer) {
                 let actionButton = '';
-                
+
                 if (status.in_library) {
-                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-check"></i> Already Available</button>';
+                    actionButton = '<button class="mh-btn mh-btn-success" disabled><i class="fas fa-check"></i> Already Available</button>';
                 } else if (status.in_cooldown) {
-                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-clock"></i> In Cooldown</button>';
+                    actionButton = '<button class="mh-btn mh-btn-warning" disabled><i class="fas fa-clock"></i> In Cooldown</button>';
                 } else {
-                    actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" id="requestarr-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
+                    actionButton = '<button class="mh-btn mh-btn-primary" id="requestarr-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
                 }
-                
+
                 actionsContainer.innerHTML = actionButton;
-                
-                // Re-setup request button if it exists
+
                 const requestBtn = document.getElementById('requestarr-detail-request-btn');
                 if (requestBtn) {
                     requestBtn.addEventListener('click', () => {
@@ -220,42 +195,51 @@
         },
 
         renderMovieDetail(details, originalMovie) {
-            const backdropUrl = details.backdrop_path 
+            const backdropUrl = details.backdrop_path
                 ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
                 : (details.poster_path ? `https://image.tmdb.org/t/p/original${details.poster_path}` : '');
 
-            const posterUrl = details.poster_path 
+            const posterUrl = details.poster_path
                 ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
                 : './static/images/blackout.jpg';
 
             const rating = details.vote_average ? Number(details.vote_average).toFixed(1) : 'N/A';
             const year = details.release_date ? new Date(details.release_date).getFullYear() : 'N/A';
             const runtime = details.runtime ? `${Math.floor(details.runtime / 60)}h ${details.runtime % 60}m` : 'N/A';
-            
+
             const genres = details.genres && details.genres.length > 0
-                ? details.genres.map(g => `<span class="movie-detail-genre">${this.escapeHtml(g.name)}</span>`).join('')
-                : '<span class="movie-detail-genre">Unknown</span>';
+                ? details.genres.map(g => `<span class="mh-genre-tag">${this.escapeHtml(g.name)}</span>`).join('')
+                : '<span class="mh-genre-tag">Unknown</span>';
 
             const overview = details.overview || 'No overview available.';
 
-            // Check status from original movie data
-            const inLibrary = originalMovie.in_library || false;
-            const inCooldown = originalMovie.in_cooldown || false;
-            
-            let actionButton = '';
-            
-            if (inLibrary) {
-                actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-check"></i> Already Available</button>';
-            } else if (inCooldown) {
-                actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" disabled><i class="fas fa-clock"></i> In Cooldown</button>';
-            } else {
-                actionButton = '<button class="movie-detail-btn movie-detail-btn-primary" id="requestarr-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
+            // Certification
+            let certification = 'Not Rated';
+            if (details.release_dates && details.release_dates.results) {
+                const usRelease = details.release_dates.results.find(r => r.iso_3166_1 === 'US');
+                if (usRelease && usRelease.release_dates && usRelease.release_dates.length > 0) {
+                    const cert = usRelease.release_dates[0].certification;
+                    if (cert) certification = cert;
+                }
             }
 
-            // Director and main cast
+            // Status button
+            const inLibrary = originalMovie.in_library || false;
+            const inCooldown = originalMovie.in_cooldown || false;
+            let actionButton = '';
+
+            if (inLibrary) {
+                actionButton = '<button class="mh-btn mh-btn-success" disabled><i class="fas fa-check"></i> Already Available</button>';
+            } else if (inCooldown) {
+                actionButton = '<button class="mh-btn mh-btn-warning" disabled><i class="fas fa-clock"></i> In Cooldown</button>';
+            } else {
+                actionButton = '<button class="mh-btn mh-btn-primary" id="requestarr-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
+            }
+
+            // Director and cast
             let director = 'N/A';
             let mainCast = [];
-            
+
             if (details.credits) {
                 if (details.credits.crew) {
                     const directorObj = details.credits.crew.find(c => c.job === 'Director');
@@ -272,26 +256,16 @@
                 similarMovies = details.similar.results.slice(0, 6);
             }
 
-            // Certification/Rating
-            let certification = 'Not Rated';
-            if (details.release_dates && details.release_dates.results) {
-                const usRelease = details.release_dates.results.find(r => r.iso_3166_1 === 'US');
-                if (usRelease && usRelease.release_dates && usRelease.release_dates.length > 0) {
-                    const cert = usRelease.release_dates[0].certification;
-                    if (cert) certification = cert;
-                }
-            }
-
-            // Build Radarr instance selector
+            // Instance selector
             let instanceSelectorHTML = '';
             if (this.radarrInstances.length > 0) {
                 instanceSelectorHTML = `
-                    <div class="movie-detail-instance-selector">
-                        <label for="requestarr-detail-instance-select"><i class="fas fa-server"></i> Instance:</label>
-                        <select id="requestarr-detail-instance-select" class="movie-detail-select">
+                    <div class="mh-hero-instance">
+                        <i class="fas fa-server"></i>
+                        <select id="requestarr-detail-instance-select">
                             ${this.radarrInstances.map(instance => {
                                 const selected = instance.name === this.selectedInstanceName ? 'selected' : '';
-                                return `<option value="${this.escapeHtml(instance.name)}" ${selected}>Radarr - ${this.escapeHtml(instance.name)}</option>`;
+                                return `<option value="${this.escapeHtml(instance.name)}" ${selected}>Radarr \u2013 ${this.escapeHtml(instance.name)}</option>`;
                             }).join('')}
                         </select>
                     </div>
@@ -299,67 +273,78 @@
             }
 
             return `
-                <button class="movie-detail-close"><i class="fas fa-times"></i></button>
-                
-                <div class="movie-detail-hero" style="background-image: url('${backdropUrl}');">
-                    <div class="movie-detail-hero-content">
-                        <div class="movie-detail-poster">
-                            <img src="${posterUrl}" alt="${this.escapeHtml(details.title)}" onerror="this.src='./static/images/blackout.jpg'">
-                        </div>
-                        <div class="movie-detail-info">
-                            <h1 class="movie-detail-title">${this.escapeHtml(details.title)}</h1>
-                            ${instanceSelectorHTML}
-                            <div class="movie-detail-meta">
-                                <div class="movie-detail-year"><i class="fas fa-calendar"></i> ${year}</div>
-                                <div class="movie-detail-runtime"><i class="fas fa-clock"></i> ${runtime}</div>
-                                <div class="movie-detail-rating"><i class="fas fa-star"></i> ${rating}</div>
+                <!-- Toolbar -->
+                <div class="mh-toolbar">
+                    <div class="mh-toolbar-left">
+                        <button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
+                    </div>
+                    <div class="mh-toolbar-right"></div>
+                </div>
+
+                <!-- Hero -->
+                <div class="mh-hero" style="background-image: url('${backdropUrl}');">
+                    <div class="mh-hero-grad">
+                        <div class="mh-hero-layout">
+                            <div class="mh-hero-poster">
+                                <img src="${posterUrl}" alt="${this.escapeHtml(details.title)}" onerror="this.src='./static/images/blackout.jpg'">
                             </div>
-                            <div class="movie-detail-genres">${genres}</div>
-                            <p class="movie-detail-overview">${this.escapeHtml(overview)}</p>
-                            <div class="movie-detail-actions">
-                                ${actionButton}
+                            <div class="mh-hero-info">
+                                <h1 class="mh-hero-title">${this.escapeHtml(details.title)}</h1>
+                                <div class="mh-hero-meta">
+                                    ${certification !== 'Not Rated' ? `<span class="mh-cert">${this.escapeHtml(certification)}</span>` : ''}
+                                    <span><i class="fas fa-calendar-alt"></i> ${year}</span>
+                                    <span><i class="fas fa-clock"></i> ${runtime}</span>
+                                    <span class="mh-star"><i class="fas fa-star"></i> ${rating}</span>
+                                </div>
+                                <div class="mh-hero-genres">${genres}</div>
+                                ${instanceSelectorHTML}
+                                <p class="mh-hero-overview">${this.escapeHtml(overview)}</p>
+                                <div class="mh-hero-actions">
+                                    ${actionButton}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="movie-detail-content">
+                <!-- Body Sections -->
+                <div class="mh-detail-body">
                     <!-- Movie Details -->
-                    <div class="movie-detail-section">
-                        <h2 class="movie-detail-section-title"><i class="fas fa-info-circle"></i> Movie Details</h2>
-                        <div class="movie-detail-grid">
-                            <div class="movie-detail-item">
-                                <div class="movie-detail-item-label">Director</div>
-                                <div class="movie-detail-item-value">${this.escapeHtml(director)}</div>
+                    <div class="mh-section">
+                        <h2 class="mh-section-title"><i class="fas fa-info-circle"></i> Movie Details</h2>
+                        <div class="mh-detail-grid">
+                            <div class="mh-grid-item">
+                                <div class="mh-grid-label">Director</div>
+                                <div class="mh-grid-value">${this.escapeHtml(director)}</div>
                             </div>
-                            <div class="movie-detail-item">
-                                <div class="movie-detail-item-label">Release Date</div>
-                                <div class="movie-detail-item-value">${details.release_date || 'N/A'}</div>
+                            <div class="mh-grid-item">
+                                <div class="mh-grid-label">Release Date</div>
+                                <div class="mh-grid-value">${details.release_date || 'N/A'}</div>
                             </div>
-                            <div class="movie-detail-item">
-                                <div class="movie-detail-item-label">Rating</div>
-                                <div class="movie-detail-item-value">${certification}</div>
+                            <div class="mh-grid-item">
+                                <div class="mh-grid-label">Rating</div>
+                                <div class="mh-grid-value">${certification}</div>
                             </div>
-                            <div class="movie-detail-item">
-                                <div class="movie-detail-item-label">Budget</div>
-                                <div class="movie-detail-item-value">${details.budget ? '$' + (details.budget / 1000000).toFixed(1) + 'M' : 'N/A'}</div>
+                            <div class="mh-grid-item">
+                                <div class="mh-grid-label">Budget</div>
+                                <div class="mh-grid-value">${details.budget ? '$' + (details.budget / 1000000).toFixed(1) + 'M' : 'N/A'}</div>
                             </div>
-                            <div class="movie-detail-item">
-                                <div class="movie-detail-item-label">Revenue</div>
-                                <div class="movie-detail-item-value">${details.revenue ? '$' + (details.revenue / 1000000).toFixed(1) + 'M' : 'N/A'}</div>
+                            <div class="mh-grid-item">
+                                <div class="mh-grid-label">Revenue</div>
+                                <div class="mh-grid-value">${details.revenue ? '$' + (details.revenue / 1000000).toFixed(1) + 'M' : 'N/A'}</div>
                             </div>
-                            <div class="movie-detail-item">
-                                <div class="movie-detail-item-label">Language</div>
-                                <div class="movie-detail-item-value">${details.original_language ? details.original_language.toUpperCase() : 'N/A'}</div>
+                            <div class="mh-grid-item">
+                                <div class="mh-grid-label">Language</div>
+                                <div class="mh-grid-value">${details.original_language ? details.original_language.toUpperCase() : 'N/A'}</div>
                             </div>
                         </div>
                     </div>
 
                     ${mainCast.length > 0 ? `
                     <!-- Cast -->
-                    <div class="movie-detail-section">
-                        <h2 class="movie-detail-section-title"><i class="fas fa-users"></i> Cast</h2>
-                        <div class="movie-detail-cast">
+                    <div class="mh-section">
+                        <h2 class="mh-section-title"><i class="fas fa-users"></i> Cast</h2>
+                        <div class="mh-cast-row">
                             ${mainCast.map(actor => this.renderCastCard(actor)).join('')}
                         </div>
                     </div>
@@ -367,9 +352,9 @@
 
                     ${similarMovies.length > 0 ? `
                     <!-- Similar Movies -->
-                    <div class="movie-detail-section">
-                        <h2 class="movie-detail-section-title"><i class="fas fa-film"></i> Similar Movies</h2>
-                        <div class="movie-detail-similar">
+                    <div class="mh-section">
+                        <h2 class="mh-section-title"><i class="fas fa-film"></i> Similar Movies</h2>
+                        <div class="mh-similar-row">
                             ${similarMovies.map(movie => this.renderSimilarCard(movie)).join('')}
                         </div>
                     </div>
@@ -379,30 +364,28 @@
         },
 
         renderCastCard(actor) {
-            const photoUrl = actor.profile_path 
+            const photoUrl = actor.profile_path
                 ? `https://image.tmdb.org/t/p/w185${actor.profile_path}`
                 : './static/images/blackout.jpg';
 
             return `
-                <div class="movie-detail-cast-card">
-                    <div class="movie-detail-cast-photo">
+                <div class="mh-cast-card">
+                    <div class="mh-cast-photo">
                         <img src="${photoUrl}" alt="${this.escapeHtml(actor.name)}" onerror="this.src='./static/images/blackout.jpg'">
                     </div>
-                    <div class="movie-detail-cast-info">
-                        <div class="movie-detail-cast-name">${this.escapeHtml(actor.name)}</div>
-                        <div class="movie-detail-cast-character">${this.escapeHtml(actor.character || 'Unknown')}</div>
-                    </div>
+                    <div class="mh-cast-name">${this.escapeHtml(actor.name)}</div>
+                    <div class="mh-cast-char">${this.escapeHtml(actor.character || 'Unknown')}</div>
                 </div>
             `;
         },
 
         renderSimilarCard(movie) {
-            const posterUrl = movie.poster_path 
+            const posterUrl = movie.poster_path
                 ? `https://image.tmdb.org/t/p/w185${movie.poster_path}`
                 : './static/images/blackout.jpg';
 
             return `
-                <div class="media-card" data-tmdb-id="${movie.id}">
+                <div class="mh-similar-card media-card" data-tmdb-id="${movie.id}">
                     <div class="media-card-poster">
                         <img src="${posterUrl}" alt="${this.escapeHtml(movie.title)}" onerror="this.src='./static/images/blackout.jpg'">
                         <div class="media-card-overlay">
@@ -421,24 +404,20 @@
         },
 
         setupDetailInteractions() {
-            // Close button
-            const closeBtn = document.querySelector('.movie-detail-close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => this.closeDetail());
+            // Back button
+            const backBtn = document.getElementById('requestarr-detail-back');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => this.closeDetail());
             }
 
-            // Instance selector change handler
+            // Instance selector
             const instanceSelect = document.getElementById('requestarr-detail-instance-select');
             if (instanceSelect) {
                 instanceSelect.addEventListener('change', async () => {
                     this.selectedInstanceName = instanceSelect.value;
                     console.log('[RequestarrDetail] Instance changed to:', this.selectedInstanceName);
-                    
-                    // Update movie status for new instance
                     await this.updateMovieStatus();
                 });
-                
-                // Initial status check for selected instance
                 this.updateMovieStatus();
             }
 
@@ -456,8 +435,8 @@
                 });
             }
 
-            // Similar movie cards - open their details
-            const similarCards = document.querySelectorAll('.movie-detail-similar .media-card');
+            // Similar movie cards
+            const similarCards = document.querySelectorAll('.mh-similar-card.media-card');
             similarCards.forEach(card => {
                 card.addEventListener('click', async () => {
                     const tmdbId = card.getAttribute('data-tmdb-id');
@@ -486,7 +465,7 @@
                 });
             });
 
-            // ESC key to close
+            // ESC key
             const escHandler = (e) => {
                 if (e.key === 'Escape') {
                     this.closeDetail();
@@ -496,9 +475,21 @@
             document.addEventListener('keydown', escHandler);
         },
 
+        setupErrorBackButton() {
+            const errorBackBtn = document.getElementById('requestarr-detail-back-error');
+            if (errorBackBtn) {
+                errorBackBtn.addEventListener('click', () => this.closeDetail());
+            }
+        },
+
         getLoadingHTML() {
             return `
-                <button class="movie-detail-close"><i class="fas fa-times"></i></button>
+                <div class="mh-toolbar">
+                    <div class="mh-toolbar-left">
+                        <button class="mh-tb" id="requestarr-detail-back-loading"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
+                    </div>
+                    <div class="mh-toolbar-right"></div>
+                </div>
                 <div class="movie-detail-loading">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading movie details...</p>
@@ -508,7 +499,12 @@
 
         getErrorHTML(message) {
             return `
-                <button class="movie-detail-close"><i class="fas fa-times"></i></button>
+                <div class="mh-toolbar">
+                    <div class="mh-toolbar-left">
+                        <button class="mh-tb" id="requestarr-detail-back-error"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
+                    </div>
+                    <div class="mh-toolbar-right"></div>
+                </div>
                 <div class="movie-detail-loading">
                     <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
                     <p style="color: #ef4444;">${this.escapeHtml(message)}</p>
@@ -524,7 +520,6 @@
         }
     };
 
-    // Initialize on load
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => window.RequestarrDetail.init());
     } else {

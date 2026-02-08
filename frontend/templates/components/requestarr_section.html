@@ -574,63 +574,49 @@
         </div>
     </div>
 
-    <!-- Modal for Media Details -->
-    <div id="media-modal" class="media-modal" style="display: none;">
-        <div class="modal-backdrop" onclick="RequestarrDiscover.closeModal()"></div>
-        <div class="modal-content">
-            <button class="modal-close" onclick="RequestarrDiscover.closeModal()">
+    <!-- Requestarr Request Modal – Two-column poster + form layout (matches Movie Hunt design) -->
+    <div id="media-modal" class="mh-req-modal" style="display: none;">
+        <div class="modal-backdrop" id="requestarr-modal-backdrop"></div>
+        <div class="mh-req-card">
+            <button type="button" class="mh-req-close" id="requestarr-modal-close" aria-label="Close">
                 <i class="fas fa-times"></i>
             </button>
-            
-            <div class="modal-body">
-                <!-- Backdrop -->
-                <div class="modal-backdrop-image"></div>
-                
-                <!-- Content -->
-                <div class="modal-info">
-                    <div class="modal-poster">
-                        <img src="" alt="Poster">
+            <div class="mh-req-layout">
+                <!-- Poster column -->
+                <div class="mh-req-poster">
+                    <img id="requestarr-modal-poster-img" src="./static/images/blackout.jpg" alt="" onerror="this.src='./static/images/blackout.jpg'">
+                </div>
+                <!-- Form column -->
+                <div class="mh-req-form">
+                    <div class="mh-req-header">
+                        <span class="mh-req-label" id="requestarr-modal-label">Request Movie</span>
+                        <h2 class="mh-req-title" id="requestarr-modal-title"></h2>
+                        <div class="mh-req-meta" id="requestarr-modal-meta"></div>
                     </div>
-                    
-                    <div class="modal-details">
-                        <h1 class="modal-title"></h1>
-                        <div class="modal-meta">
-                            <span class="year"></span>
-                            <span class="rating"></span>
-                            <span class="runtime"></span>
+                    <div class="mh-req-status" id="requestarr-modal-status-container"></div>
+                    <div class="mh-req-fields">
+                        <div class="mh-req-field">
+                            <label>Instance</label>
+                            <select id="modal-instance-select" aria-label="Instance">
+                                <option value="">Loading...</option>
+                            </select>
                         </div>
-                        <div class="modal-genres"></div>
-                        <p class="modal-overview"></p>
-                        
-                        <!-- Request Options -->
-                        <div class="modal-request-section">
-                            <h3>Request This Title</h3>
-                            
-                            <!-- Instance Selection -->
-                            <div class="form-group">
-                                <label>Select Instance</label>
-                                <select id="modal-instance-select" class="modal-select">
-                                    <option value="">Select an instance...</option>
-                                </select>
-                            </div>
-                            
-                            <!-- Request Button -->
-                            <button id="modal-request-btn" class="modal-request-btn" disabled>
-                                <i class="fas fa-plus"></i>
-                                Request
-                            </button>
-                            
-                            <!-- Status Message -->
-                            <div id="modal-status" class="modal-status"></div>
+                        <div class="mh-req-field">
+                            <label>Root Folder</label>
+                            <select id="modal-root-folder">
+                                <option value="">Loading...</option>
+                            </select>
                         </div>
-                        
-                        <!-- Additional Info -->
-                        <div class="modal-extra-info">
-                            <div class="cast-section">
-                                <h4>Cast</h4>
-                                <div class="cast-list"></div>
-                            </div>
+                        <div class="mh-req-field">
+                            <label>Quality Profile</label>
+                            <select id="modal-quality-profile">
+                                <option value="">Loading...</option>
+                            </select>
                         </div>
+                    </div>
+                    <div class="mh-req-actions">
+                        <button type="button" class="mh-req-btn mh-req-btn-cancel" id="requestarr-modal-cancel">Cancel</button>
+                        <button type="button" class="mh-req-btn mh-req-btn-submit" id="modal-request-btn">Request</button>
                     </div>
                 </div>
             </div>
