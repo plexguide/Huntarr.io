@@ -45,6 +45,7 @@ chrome-user-data
 .idea
 *.iml
 .vscode
+.cursor
 *.swp
 *.swo
 
