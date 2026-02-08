@@ -332,6 +332,20 @@
     color: #93bbfd;
 }
 
+.nzb-btn:disabled,
+.nzb-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(71, 85, 105, 0.3) !important;
+    border-color: rgba(71, 85, 105, 0.4) !important;
+    color: #64748b !important;
+}
+.nzb-btn-primary:disabled:hover {
+    background: rgba(71, 85, 105, 0.3) !important;
+    border-color: rgba(71, 85, 105, 0.4) !important;
+    color: #64748b !important;
+}
+
 .nzb-btn-danger {
     background: rgba(239, 68, 68, 0.1);
     border-color: rgba(239, 68, 68, 0.25);

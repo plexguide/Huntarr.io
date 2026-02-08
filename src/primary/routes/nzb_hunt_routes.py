@@ -287,14 +287,17 @@ def list_nzb_servers():
 @nzb_hunt_bp.route("/api/nzb-hunt/servers", methods=["POST"])
 def add_nzb_server():
     data = request.get_json(silent=True) or {}
+    host = (data.get("host") or "").strip()
+    if not host:
+        return jsonify({"success": False, "error": "Host is required"}), 400
     cfg = _load_config()
     servers = cfg.get("servers", [])
     server = {
-        "name": data.get("name", "Server"),
-        "host": data.get("host", ""),
+        "name": (data.get("name") or "Server").strip() or "Server",
+        "host": host,
         "port": int(data.get("port", 563)),
         "ssl": bool(data.get("ssl", True)),
-        "username": data.get("username", ""),
+        "username": (data.get("username") or "").strip(),
         "password": data.get("password", ""),
         "connections": int(data.get("connections", 8)),
         "priority": int(data.get("priority", 0)),
@@ -311,13 +314,16 @@ def add_nzb_server():
 @nzb_hunt_bp.route("/api/nzb-hunt/servers/<int:index>", methods=["PUT"])
 def update_nzb_server(index):
     data = request.get_json(silent=True) or {}
+    host = (data.get("host") or "").strip()
+    if not host:
+        return jsonify({"success": False, "error": "Host is required"}), 400
     cfg = _load_config()
     servers = cfg.get("servers", [])
     if index < 0 or index >= len(servers):
         return jsonify({"success": False, "error": "Invalid index"}), 400
     srv = servers[index]
-    srv["name"] = data.get("name", srv.get("name", "Server"))
-    srv["host"] = data.get("host", srv.get("host", ""))
+    srv["name"] = (data.get("name", srv.get("name", "Server")) or "Server").strip() or "Server"
+    srv["host"] = host
     srv["port"] = int(data.get("port", srv.get("port", 563)))
     srv["ssl"] = bool(data.get("ssl", srv.get("ssl", True)))
     srv["username"] = data.get("username", srv.get("username", ""))

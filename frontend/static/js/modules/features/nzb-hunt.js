@@ -1191,7 +1191,12 @@
         /* ──────────────────────────────────────────────
            Server Add/Edit Modal
         ────────────────────────────────────────────── */
+        _serverModalSetupDone: false,
+
         _setupServerModal: function () {
+            if (this._serverModalSetupDone) return;
+            this._serverModalSetupDone = true;
+
             var self = this;
             var backdrop = document.getElementById('nzb-server-modal-backdrop');
             var closeBtn = document.getElementById('nzb-server-modal-close');
@@ -1205,8 +1210,10 @@
             if (saveBtn) saveBtn.addEventListener('click', function () { self._saveServer(); });
             if (testBtn) testBtn.addEventListener('click', function () { self._testServerConnection(); });
 
+            // When connection-related fields change, require a new successful test before Save
+            self._setupServerModalConnectionCheck();
 
-            // ESC key
+            // ESC key (only one global listener for server modal)
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     var bm = document.getElementById('nzb-browse-modal');
@@ -1248,10 +1255,43 @@
             f('nzb-server-priority', server ? (server.priority !== undefined ? server.priority : 0) : 0);
             f('nzb-server-enabled', server ? (server.enabled !== false) : true);
 
+            // Require successful connection test before Save
+            this._serverModalConnectionOk = false;
+            this._updateServerModalSaveButton();
+
             // Reset test status area
             this._resetTestStatus();
 
             modal.style.display = 'flex';
+        },
+
+        _serverModalConnectionOk: false,
+
+        _updateServerModalSaveButton: function () {
+            var saveBtn = document.getElementById('nzb-server-modal-save');
+            if (!saveBtn) return;
+            var host = (document.getElementById('nzb-server-host') || {}).value;
+            var hasHost = (host || '').trim().length > 0;
+            var canSave = hasHost && this._serverModalConnectionOk;
+            saveBtn.disabled = !canSave;
+            saveBtn.title = canSave ? 'Save server' : (hasHost ? 'Test connection first (click Test Connection)' : 'Enter host and test connection first');
+        },
+
+        _setupServerModalConnectionCheck: function () {
+            var self = this;
+            var ids = ['nzb-server-host', 'nzb-server-port', 'nzb-server-ssl', 'nzb-server-username', 'nzb-server-password'];
+            ids.forEach(function (id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                var handler = function () {
+                    self._serverModalConnectionOk = false;
+                    self._updateServerModalSaveButton();
+                };
+                el.removeEventListener('input', handler);
+                el.removeEventListener('change', handler);
+                el.addEventListener('input', handler);
+                el.addEventListener('change', handler);
+            });
         },
 
         _closeServerModal: function () {
@@ -1261,9 +1301,19 @@
 
         _saveServer: function () {
             var g = function (id) { var el = document.getElementById(id); if (!el) return ''; return el.type === 'checkbox' ? el.checked : el.value; };
+            var host = (g('nzb-server-host') || '').trim();
+            if (!host) {
+                this._showTestStatus('fail', 'Host is required.');
+                return;
+            }
+            if (!this._serverModalConnectionOk) {
+                this._showTestStatus('fail', 'Test connection successfully before saving.');
+                return;
+            }
+
             var payload = {
                 name: g('nzb-server-name') || 'Server',
-                host: g('nzb-server-host'),
+                host: host,
                 port: parseInt(g('nzb-server-port'), 10) || 563,
                 ssl: !!g('nzb-server-ssl'),
                 username: g('nzb-server-username'),
@@ -1402,8 +1452,12 @@
                         callback(data.success, data.message || '');
                     } else {
                         if (data.success) {
-                            self._showTestStatus('success', 'Connected to ' + host);
+                            self._serverModalConnectionOk = true;
+                            self._updateServerModalSaveButton();
+                            self._showTestStatus('success', 'Connected to ' + host + '. You can now save.');
                         } else {
+                            self._serverModalConnectionOk = false;
+                            self._updateServerModalSaveButton();
                             self._showTestStatus('fail', 'Connection to ' + host + ' failed: ' + (data.message || 'Unknown error'));
                         }
                     }
@@ -1413,6 +1467,8 @@
                     if (callback) {
                         callback(false, errMsg);
                     } else {
+                        self._serverModalConnectionOk = false;
+                        self._updateServerModalSaveButton();
                         self._showTestStatus('fail', errMsg);
                     }
                 });
