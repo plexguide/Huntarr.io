@@ -177,6 +177,17 @@
                 var name = self._escHtml(item.name || 'Unknown');
                 var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
 
+                // Build status display: show status_message if available (e.g., "Missing articles: 150/500")
+                var statusHtml = '<i class="' + stateIcon + '"></i> ' + stateLabel;
+                var failedSegs = item.failed_segments || 0;
+                if (item.status_message) {
+                    var msgClass = failedSegs > 0 ? ' style="color:#f59e0b;"' : '';
+                    statusHtml += '<br><small' + msgClass + '>' + self._escHtml(item.status_message) + '</small>';
+                } else if (item.state === 'downloading' && item.completed_segments === 0 && item.speed_bps === 0) {
+                    // Downloading but no progress - show connecting message
+                    statusHtml += '<br><small style="color:#94a3b8;">Connecting...</small>';
+                }
+
                 html +=
                     '<tr class="nzb-queue-row ' + stateClass + '" data-nzb-id="' + item.id + '">' +
                         '<td class="nzb-col-name" title="' + name + '"><span class="nzb-cell-name">' + name + '</span></td>' +
@@ -185,7 +196,7 @@
                         '<td class="nzb-col-size">' + downloaded + ' / ' + totalSize + '</td>' +
                         '<td class="nzb-col-speed">' + speed + '</td>' +
                         '<td class="nzb-col-eta">' + timeLeft + '</td>' +
-                        '<td class="nzb-col-status"><i class="' + stateIcon + '"></i> ' + stateLabel + '</td>' +
+                        '<td class="nzb-col-status">' + statusHtml + '</td>' +
                         '<td class="nzb-col-actions">' +
                             (item.state === 'downloading' || item.state === 'queued' ?
                                 '<button class="nzb-item-btn" title="Pause" data-action="pause" data-id="' + item.id + '"><i class="fas fa-pause"></i></button>' : '') +
@@ -395,6 +406,21 @@
                 var date = item.completed_at ? new Date(item.completed_at).toLocaleString() : '';
                 var category = item.category ? '<span class="nzb-item-category">' + self._escHtml(item.category) + '</span>' : '';
 
+                // Show error message for failed items
+                var errorHtml = '';
+                if (status === 'fail' && item.error_message) {
+                    errorHtml = '<div style="color:#f87171; font-size:0.8em; margin-top:4px;">' +
+                        '<i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>' +
+                        self._escHtml(item.error_message) +
+                    '</div>';
+                }
+                // Show missing article count if any
+                var failedInfo = '';
+                if (item.failed_segments && item.failed_segments > 0) {
+                    failedInfo = '<span style="color:#f59e0b; margin-left:8px;"><i class="fas fa-exclamation-triangle"></i> ' +
+                        item.failed_segments + ' missing articles</span>';
+                }
+
                 html +=
                     '<div class="nzb-queue-item nzb-item-history nzb-item-' + status + '">' +
                         '<div class="nzb-item-row-top">' +
@@ -405,8 +431,10 @@
                         '<div class="nzb-item-row-meta">' +
                             category +
                             '<span class="nzb-item-size"><i class="fas fa-database"></i> ' + size + '</span>' +
+                            failedInfo +
                             (date ? '<span class="nzb-item-date"><i class="fas fa-calendar-alt"></i> ' + date + '</span>' : '') +
                         '</div>' +
+                        errorHtml +
                     '</div>';
             });
 

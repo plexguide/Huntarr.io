@@ -125,12 +125,14 @@ class DownloadItem:
         self.started_at = None
         self.completed_at = None
         self.error_message = ""
+        self.status_message = ""  # User-facing status detail (e.g., "Missing articles: 150/500")
         
         # Progress tracking
         self.total_bytes = 0
         self.downloaded_bytes = 0
         self.total_segments = 0
         self.completed_segments = 0
+        self.failed_segments = 0  # Segments that couldn't be downloaded (missing articles)
         self.total_files = 0
         self.completed_files = 0
         self.speed_bps = 0  # bytes per second
@@ -166,10 +168,12 @@ class DownloadItem:
             "started_at": self.started_at,
             "completed_at": self.completed_at,
             "error_message": self.error_message,
+            "status_message": self.status_message,
             "total_bytes": self.total_bytes,
             "downloaded_bytes": self.downloaded_bytes,
             "total_segments": self.total_segments,
             "completed_segments": self.completed_segments,
+            "failed_segments": self.failed_segments,
             "total_files": self.total_files,
             "completed_files": self.completed_files,
             "progress_pct": round(self.progress_pct, 1),
@@ -195,10 +199,12 @@ class DownloadItem:
         item.started_at = d.get("started_at")
         item.completed_at = d.get("completed_at")
         item.error_message = d.get("error_message", "")
+        item.status_message = d.get("status_message", "")
         item.total_bytes = d.get("total_bytes", 0)
         item.downloaded_bytes = d.get("downloaded_bytes", 0)
         item.total_segments = d.get("total_segments", 0)
         item.completed_segments = d.get("completed_segments", 0)
+        item.failed_segments = d.get("failed_segments", 0)
         item.total_files = d.get("total_files", 0)
         item.completed_files = d.get("completed_files", 0)
         item.speed_bps = d.get("speed_bps", 0)
@@ -835,12 +841,25 @@ class NZBHuntDownloadManager:
             
             logger.info(f"[{item.id}] Starting parallel download with {max_workers} workers")
             
+            # Track consecutive failed segments for early abort
+            consecutive_failures = 0
+            MAX_CONSECUTIVE_FAILURES = 500  # Abort if 500+ segments fail in a row
+            MAX_FAILURE_PCT = 5.0  # Abort if > 5% segments fail (after min sample)
+            MIN_SEGMENTS_FOR_PCT_CHECK = 200  # Need at least this many before checking %
+            aborted = False
+            
             # Download each file in the NZB
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # NOTE: We manage the executor manually (not with 'with') so we can
+            # call shutdown(wait=False, cancel_futures=True) for fast abort.
+            executor = ThreadPoolExecutor(max_workers=max_workers)
+            try:
                 for file_idx, nzb_file in enumerate(sorted_files):
                     if item.state == STATE_PAUSED or self._paused_global:
                         self._save_state()
+                        executor.shutdown(wait=False, cancel_futures=True)
                         return
+                    if aborted:
+                        break
                     
                     filename = nzb_file.filename
                     file_path = os.path.join(temp_path, filename)
@@ -854,6 +873,8 @@ class NZBHuntDownloadManager:
                     for seg in nzb_file.segments:
                         if item.state == STATE_PAUSED or self._paused_global:
                             break
+                        if aborted:
+                            break
                         future = executor.submit(
                             self._download_segment,
                             seg.message_id, nzb_file.groups, item
@@ -862,11 +883,14 @@ class NZBHuntDownloadManager:
                     
                     # Collect results as they complete
                     segment_data = {}  # number -> decoded bytes
-                    failed_segments = 0
+                    file_failed = 0
                     
                     for future in as_completed(future_to_seg):
                         if item.state == STATE_PAUSED or self._paused_global:
-                            # Cancel remaining futures
+                            for f in future_to_seg:
+                                f.cancel()
+                            break
+                        if aborted:
                             for f in future_to_seg:
                                 f.cancel()
                             break
@@ -876,6 +900,7 @@ class NZBHuntDownloadManager:
                             nbytes, decoded, server_name = future.result()
                             if decoded is not None:
                                 segment_data[seg.number] = decoded
+                                consecutive_failures = 0  # Reset on success
                                 
                                 # Update progress (thread-safe via GIL for simple assignments)
                                 item.completed_segments += 1
@@ -887,27 +912,91 @@ class NZBHuntDownloadManager:
                                 remaining = max(0, item.total_bytes - item.downloaded_bytes)
                                 item.eta_seconds = int(remaining / speed) if speed > 0 else 0
                                 
+                                # Update status message with progress
+                                if item.failed_segments > 0:
+                                    item.status_message = (
+                                        f"Missing articles: {item.failed_segments}"
+                                    )
+                                
                                 # Save state periodically (lightweight, no NZB content)
                                 if item.completed_segments % 200 == 0:
                                     self._save_state()
                             else:
-                                failed_segments += 1
+                                file_failed += 1
+                                item.failed_segments += 1
+                                consecutive_failures += 1
+                                
+                                # Update status message so UI shows what's happening
+                                total_attempted = item.completed_segments + item.failed_segments
+                                item.status_message = (
+                                    f"Missing articles: {item.failed_segments}/{total_attempted}"
+                                )
+                                
+                                # Check for early abort: too many consecutive failures
+                                if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                                    logger.error(
+                                        f"[{item.id}] ABORTING: {consecutive_failures} consecutive "
+                                        f"missing articles - content likely removed (DMCA)"
+                                    )
+                                    aborted = True
+                                    break
+                                
+                                # Check failure percentage after enough samples
+                                if total_attempted >= MIN_SEGMENTS_FOR_PCT_CHECK:
+                                    fail_pct = (item.failed_segments / total_attempted) * 100
+                                    if fail_pct > MAX_FAILURE_PCT:
+                                        logger.error(
+                                            f"[{item.id}] ABORTING: {fail_pct:.1f}% segments "
+                                            f"missing ({item.failed_segments}/{total_attempted}) "
+                                            f"- download cannot be completed"
+                                        )
+                                        aborted = True
+                                        break
                         except Exception as e:
-                            failed_segments += 1
+                            file_failed += 1
+                            item.failed_segments += 1
+                            consecutive_failures += 1
                             logger.debug(f"[{item.id}] Segment {seg.number} error: {e}")
                     
                     if item.state == STATE_PAUSED or self._paused_global:
                         self._save_state()
+                        executor.shutdown(wait=False, cancel_futures=True)
                         return
                     
-                    if failed_segments > 0:
-                        logger.warning(f"[{item.id}] {failed_segments} segments failed "
-                                       f"for {filename}")
+                    if file_failed > 0:
+                        logger.warning(f"[{item.id}] {file_failed}/{len(nzb_file.segments)} "
+                                       f"segments failed for {filename}")
                     
-                    # Assemble file from ordered segments
-                    file_data = bytearray()
-                    for seg_num in sorted(segment_data.keys()):
-                        file_data.extend(segment_data[seg_num])
+                    if aborted:
+                        break
+                    
+                    # Assemble file from ordered segments.
+                    # If segments are missing, write zero-filled gaps at the
+                    # correct offsets so par2 can locate the damage and repair it.
+                    # (Simply concatenating available segments would shift all
+                    # offsets and make par2 repair impossible.)
+                    if file_failed > 0 and len(nzb_file.segments) > 0:
+                        # Build a segment-number → expected-size map from the NZB
+                        seg_sizes = {s.number: s.bytes for s in nzb_file.segments}
+                        all_seg_nums = sorted(seg_sizes.keys())
+                        
+                        file_data = bytearray()
+                        for seg_num in all_seg_nums:
+                            if seg_num in segment_data:
+                                file_data.extend(segment_data[seg_num])
+                            else:
+                                # Zero-fill at the expected encoded size
+                                # (close enough for par2 to locate the damage)
+                                gap_size = seg_sizes.get(seg_num, 0)
+                                file_data.extend(b'\x00' * gap_size)
+                        
+                        logger.info(f"[{item.id}] Assembled {filename} with "
+                                    f"{file_failed} zero-filled gaps for par2 repair")
+                    else:
+                        # No missing segments - simple concatenation
+                        file_data = bytearray()
+                        for seg_num in sorted(segment_data.keys()):
+                            file_data.extend(segment_data[seg_num])
                     
                     # Write file
                     try:
@@ -920,18 +1009,89 @@ class NZBHuntDownloadManager:
                     
                     item.completed_files += 1
                     self._save_state()
+            finally:
+                executor.shutdown(wait=False, cancel_futures=True)
+            
+            # Check if download was aborted due to missing articles
+            if aborted:
+                total_attempted = item.completed_segments + item.failed_segments
+                fail_pct = (item.failed_segments / max(1, total_attempted)) * 100
+                err_msg = (
+                    f"Aborted: too many missing articles "
+                    f"({item.failed_segments}/{total_attempted}, {fail_pct:.1f}%). "
+                    f"Content may have been removed (DMCA)."
+                )
+                item.state = STATE_FAILED
+                item.error_message = err_msg
+                item.status_message = f"Failed: {item.failed_segments} missing articles"
+                item.speed_bps = 0
+                item.eta_seconds = 0
+                logger.error(f"[{item.id}] {err_msg}")
+                # Clean up temp files
+                try:
+                    shutil.rmtree(temp_path, ignore_errors=True)
+                except Exception:
+                    pass
+                # Move to history as failed
+                with self._queue_lock:
+                    self._queue = [i for i in self._queue if i.id != item.id]
+                    self._delete_nzb_content(item.id)
+                    self._history.append(item)
+                    self._save_state()
+                return
+            
+            # Log overall missing article stats
+            if item.failed_segments > 0:
+                total_attempted = item.completed_segments + item.failed_segments
+                fail_pct = (item.failed_segments / max(1, total_attempted)) * 100
+                logger.warning(f"[{item.id}] Total missing articles: "
+                               f"{item.failed_segments}/{total_attempted} "
+                               f"({fail_pct:.1f}%)")
+                item.status_message = f"Missing articles: {item.failed_segments} ({fail_pct:.1f}%)"
             
             # ── Post-processing (par2 repair + archive extraction) ──
             item.state = STATE_EXTRACTING
+            if item.failed_segments > 0:
+                item.status_message = f"Verifying & repairing ({item.failed_segments} missing articles)..."
+            else:
+                item.status_message = "Post-processing..."
             self._save_state()
             logger.info(f"[{item.id}] Starting post-processing for {item.name}")
             
             pp_ok, pp_msg = post_process(temp_path, item_name=item.id)
             if pp_ok:
                 logger.info(f"[{item.id}] Post-processing success: {pp_msg}")
+                if item.failed_segments > 0:
+                    item.status_message = f"Repaired ({item.failed_segments} missing articles recovered via par2)"
+                else:
+                    item.status_message = ""
             else:
-                logger.warning(f"[{item.id}] Post-processing issue: {pp_msg}")
-                # Don't fail the download - files may still be usable
+                logger.error(f"[{item.id}] Post-processing failed: {pp_msg}")
+                # If post-processing fails (par2 repair failed, extraction failed, 
+                # no video files found), mark the download as failed so Movie Hunt
+                # can blocklist it and try a different release
+                item.state = STATE_FAILED
+                if item.failed_segments > 0:
+                    item.error_message = (
+                        f"{pp_msg} ({item.failed_segments} missing articles could not be repaired)"
+                    )
+                else:
+                    item.error_message = pp_msg
+                item.speed_bps = 0
+                item.eta_seconds = 0
+                logger.error(f"[{item.id}] Download marked as FAILED: {pp_msg}")
+                # Clean up the temp directory on failure
+                try:
+                    shutil.rmtree(temp_path, ignore_errors=True)
+                except Exception:
+                    pass
+                # Move to history as failed
+                with self._queue_lock:
+                    self._queue = [i for i in self._queue if i.id != item.id]
+                    self._delete_nzb_content(item.id)
+                    self._history.append(item)
+                    self._save_state()
+                return  # Skip the rest (move to final, mark completed)
             
             # Move from temp to final destination
             try:

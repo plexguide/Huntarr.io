@@ -181,9 +181,9 @@ def run_par2_repair(directory: str) -> Tuple[bool, str]:
             return True, "par2 repair successful"
         else:
             msg = (result.stderr or result.stdout or '')[:500]
-            logger.warning(f"par2 repair failed (rc={result.returncode}): {msg}")
-            # Don't treat par2 failure as fatal - extraction may still work
-            return True, f"par2 repair failed but continuing: {msg[:100]}"
+            logger.error(f"par2 repair failed (rc={result.returncode}): {msg}")
+            # Return False so caller knows repair failed - too many missing articles
+            return False, f"par2 repair failed: {msg[:200]}"
             
     except FileNotFoundError:
         logger.warning("par2 command not found, skipping verification")

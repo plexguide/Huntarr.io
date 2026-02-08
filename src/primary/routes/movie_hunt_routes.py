@@ -1198,6 +1198,25 @@ def _get_sabnzbd_history_item(client, queue_id):
         return None
 
 
+def _get_nzb_hunt_history_item(queue_id):
+    """Get the full history item from NZB Hunt by queue ID.
+    
+    Returns:
+        History dict if found, None otherwise.
+    """
+    try:
+        from src.primary.apps.nzb_hunt.download_manager import get_manager
+        mgr = get_manager()
+        history = mgr.get_history()
+        for h in history:
+            if h.get('id') == queue_id:
+                return h
+        return None
+    except Exception as e:
+        movie_hunt_logger.error("Import: error getting NZB Hunt history item %s: %s", queue_id, e)
+        return None
+
+
 def _get_nzb_hunt_completed_path(queue_id, title, year, instance_id):
     """Get the completed download path from NZB Hunt history.
     
@@ -1288,6 +1307,43 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
                 "Import: item left NZB Hunt queue (id=%s, title='%s'). Checking NZB Hunt history.",
                 queue_id, title
             )
+            # Get the full history item to check state (failed vs completed)
+            nzb_hunt_history = _get_nzb_hunt_history_item(queue_id)
+            
+            if not nzb_hunt_history:
+                movie_hunt_logger.warning(
+                    "Import: NZB Hunt item %s not found in history for '%s'", queue_id, title
+                )
+                return
+            
+            nzb_state = nzb_hunt_history.get('state', '')
+            
+            # If download failed, blocklist it so Movie Hunt picks a different release
+            if nzb_state == 'failed':
+                source_title = (nzb_hunt_history.get('name') or '').strip()
+                if source_title and source_title.endswith('.nzb'):
+                    source_title = source_title[:-4]
+                reason_failed = (nzb_hunt_history.get('error_message') or '').strip() or 'Download failed'
+                _blocklist_add(
+                    movie_title=title, year=year,
+                    source_title=source_title,
+                    reason_failed=reason_failed,
+                    instance_id=instance_id
+                )
+                movie_hunt_logger.warning(
+                    "Import: NZB Hunt download '%s' (%s) FAILED (state: %s, reason: %s). "
+                    "Added to blocklist so a different release will be chosen next time.",
+                    title, year, nzb_state, reason_failed[:100]
+                )
+                return
+            
+            if nzb_state != 'completed':
+                movie_hunt_logger.warning(
+                    "Import: NZB Hunt item %s for '%s' not completed (state: %s), skipping",
+                    queue_id, title, nzb_state
+                )
+                return
+            
             download_path = _get_nzb_hunt_completed_path(queue_id, title, year, instance_id)
             if not download_path:
                 return
