@@ -11,55 +11,40 @@
             <button class="nzb-settings-tab" data-settings-tab="servers" id="nzb-settings-tab-servers">
                 <i class="fas fa-server"></i> Servers
             </button>
-            <button class="nzb-settings-tab" data-settings-tab="categories" id="nzb-settings-tab-categories">
-                <i class="fas fa-tags"></i> Categories
-            </button>
             <button class="nzb-settings-tab" data-settings-tab="processing" id="nzb-settings-tab-processing">
                 <i class="fas fa-cogs"></i> Processing
             </button>
         </div>
 
-        <!-- ═══════ Folders Panel ═══════ -->
+        <!-- ═══════ Folders Panel (temp folder + completed categories) ═══════ -->
         <div class="nzb-settings-panel" data-settings-panel="folders" style="display: block;">
-            <div class="nzb-settings-group">
-                <h3><i class="fas fa-folder-open" style="color: #f59e0b; margin-right: 8px;"></i>Download Folders</h3>
-                <p class="nzb-settings-help">Configure where NZB Hunt stores downloaded files. Use the file browser to select a folder inside the container.</p>
 
-                <div class="nzb-folder-row">
-                    <div class="nzb-folder-label">
-                        <span class="nzb-folder-title">Download Folder</span>
-                        <span class="nzb-folder-desc">Where completed downloads are saved.</span>
-                    </div>
-                    <div class="nzb-folder-input-group">
-                        <input type="text" id="nzb-download-folder" class="nzb-folder-input" value="/downloads" autocomplete="off" />
-                        <button type="button" class="nzb-btn-browse" id="nzb-browse-download-folder"><i class="fas fa-folder-open"></i> Browse</button>
-                    </div>
-                </div>
-
-                <div class="nzb-folder-row">
-                    <div class="nzb-folder-label">
-                        <span class="nzb-folder-title">Temporary Folder</span>
-                        <span class="nzb-folder-desc">Intermediate download location. Files are moved on completion.</span>
+            <!-- Temporary Folder -->
+            <div class="nzb-settings-group" style="padding-bottom: 12px;">
+                <h3 style="margin-bottom: 8px;"><i class="fas fa-folder-open" style="color: #f59e0b; margin-right: 8px;"></i>Temporary Folder</h3>
+                <div class="nzb-folder-row" style="margin-top: 0;">
+                    <div class="nzb-folder-label" style="min-width: 0; flex: 0 0 auto;">
+                        <span class="nzb-folder-desc" style="margin: 0;">In-progress downloads are stored here until finished.</span>
                     </div>
                     <div class="nzb-folder-input-group">
                         <input type="text" id="nzb-temp-folder" class="nzb-folder-input" value="/downloads/incomplete" autocomplete="off" />
                         <button type="button" class="nzb-btn-browse" id="nzb-browse-temp-folder"><i class="fas fa-folder-open"></i> Browse</button>
                     </div>
                 </div>
+            </div>
 
-                <div class="nzb-folder-row">
-                    <div class="nzb-folder-label">
-                        <span class="nzb-folder-title">Watched Folder</span>
-                        <span class="nzb-folder-desc">Automatically picks up .nzb files placed in this directory.</span>
-                    </div>
-                    <div class="nzb-folder-input-group">
-                        <input type="text" id="nzb-watched-folder" class="nzb-folder-input" value="" placeholder="Not set" autocomplete="off" />
-                        <button type="button" class="nzb-btn-browse" id="nzb-browse-watched-folder"><i class="fas fa-folder-open"></i> Browse</button>
-                    </div>
-                </div>
+            <!-- Completed Categories -->
+            <div class="nzb-settings-group" style="margin-top: 20px; margin-bottom: 24px;">
+                <h3><i class="fas fa-tags" style="color: #a78bfa; margin-right: 8px;"></i>Completed Categories</h3>
+                <p class="nzb-settings-help">Each category defines a completed download folder. Downloads are moved here after post-processing.</p>
 
-                <div class="nzb-settings-footer">
-                    <button class="nzb-btn nzb-btn-primary" id="nzb-save-folders"><i class="fas fa-save"></i> Save Folders</button>
+                <!-- Category cards -->
+                <div class="nzb-cat-grid" id="nzb-cat-grid">
+                    <!-- Category cards rendered dynamically -->
+                    <div class="nzb-cat-add-card" id="nzb-add-cat-card">
+                        <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                        <div class="add-text">Add Category</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -74,50 +59,6 @@
                     <div class="add-instance-card" id="nzb-add-server-card">
                         <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
                         <div class="add-text">Add Server</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═══════ Categories Panel ═══════ -->
-        <div class="nzb-settings-panel" data-settings-panel="categories" style="display: none;">
-            <div class="nzb-settings-group">
-                <h3><i class="fas fa-tags" style="color: #a78bfa; margin-right: 8px;"></i>Download Categories</h3>
-                <p class="nzb-settings-help">Organize downloads into categories. Each category gets its own subfolder under the completed download folder. Indexers assign categories automatically based on matching groups.</p>
-
-                <!-- Completed download base folder -->
-                <div class="nzb-cat-base-row">
-                    <div class="nzb-cat-base-label">
-                        <i class="fas fa-folder" style="color: #f59e0b;"></i>
-                        <div>
-                            <span class="nzb-folder-title">Completed Folder</span>
-                            <span class="nzb-folder-desc">Category folders are created inside this path.</span>
-                        </div>
-                    </div>
-                    <div class="nzb-folder-input-group">
-                        <input type="text" id="nzb-cat-base-folder" class="nzb-folder-input" value="/downloads/complete" autocomplete="off" />
-                        <button type="button" class="nzb-btn-browse" id="nzb-browse-cat-base-folder"><i class="fas fa-folder-open"></i> Browse</button>
-                        <button type="button" class="nzb-btn nzb-btn-primary" id="nzb-save-cat-base"><i class="fas fa-save"></i></button>
-                    </div>
-                </div>
-
-                <!-- Default category row -->
-                <div class="nzb-cat-default-row">
-                    <div class="nzb-cat-default-info">
-                        <span class="nzb-badge nzb-badge-default">Default</span>
-                        <span class="nzb-cat-default-text">Downloads not matching any category go to the completed folder root.</span>
-                    </div>
-                    <div class="nzb-cat-default-details">
-                        <span class="nzb-cat-default-path" id="nzb-cat-default-path-display">/downloads/complete</span>
-                    </div>
-                </div>
-
-                <!-- Category cards -->
-                <div class="nzb-cat-grid" id="nzb-cat-grid">
-                    <!-- Category cards rendered dynamically -->
-                    <div class="nzb-cat-add-card" id="nzb-add-cat-card">
-                        <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
-                        <div class="add-text">Add Category</div>
                     </div>
                 </div>
             </div>
@@ -404,7 +345,7 @@
             </div>
             <div class="nzb-browse-actions">
                 <button type="button" class="nzb-btn" id="nzb-browse-cancel">Cancel</button>
-                <button type="button" class="nzb-btn nzb-btn-primary" id="nzb-browse-ok">Ok</button>
+                <button type="button" class="nzb-btn nzb-btn-primary" id="nzb-browse-ok"><i class="fas fa-save"></i> Save</button>
             </div>
         </div>
     </div>

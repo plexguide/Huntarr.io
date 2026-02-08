@@ -112,9 +112,13 @@ class DownloadItem:
     
     def __init__(self, nzb_id: str, name: str, category: str = "",
                  nzb_content: str = "", nzb_url: str = "",
-                 priority: str = "normal", added_by: str = ""):
+                 priority: str = "normal", added_by: str = "",
+                 nzb_name: str = "", indexer: str = ""):
         self.id = nzb_id
+        self.seq_id = 0  # Sequential ID, assigned by DownloadManager
         self.name = name
+        self.nzb_name = nzb_name or name  # Original NZB filename
+        self.indexer = indexer  # Which indexer provided this NZB
         self.category = category
         self.nzb_content = nzb_content
         self.nzb_url = nzb_url
@@ -160,7 +164,10 @@ class DownloadItem:
     def to_dict(self) -> dict:
         return {
             "id": self.id,
+            "seq_id": self.seq_id,
             "name": self.name,
+            "nzb_name": self.nzb_name,
+            "indexer": self.indexer,
             "category": self.category,
             "priority": self.priority,
             "added_by": self.added_by,
@@ -195,7 +202,10 @@ class DownloadItem:
             nzb_url=d.get("nzb_url", ""),
             priority=d.get("priority", "normal"),
             added_by=d.get("added_by", ""),
+            nzb_name=d.get("nzb_name", ""),
+            indexer=d.get("indexer", ""),
         )
+        item.seq_id = d.get("seq_id", 0)
         item.state = d.get("state", STATE_QUEUED)
         item.added_at = d.get("added_at", item.added_at)
         item.started_at = d.get("started_at")
@@ -233,6 +243,7 @@ class NZBHuntDownloadManager:
     def __init__(self):
         self._queue: List[DownloadItem] = []
         self._history: List[DownloadItem] = []
+        self._next_seq_id: int = 1  # Sequential download counter
         self._queue_lock = threading.Lock()
         self._nntp = NNTPManager()
         self._worker_thread: Optional[threading.Thread] = None
@@ -285,6 +296,7 @@ class NZBHuntDownloadManager:
         try:
             with open(path, "r") as f:
                 data = json.load(f)
+            self._next_seq_id = data.get("next_seq_id", 1)
             self._queue = [DownloadItem.from_dict(d) for d in data.get("queue", [])]
             self._history = [DownloadItem.from_dict(d) for d in data.get("history", [])]
             
@@ -365,6 +377,7 @@ class NZBHuntDownloadManager:
         """
         try:
             data = {
+                "next_seq_id": self._next_seq_id,
                 "queue": [item.to_dict() for item in self._queue],
                 "history": [item.to_dict() for item in self._history[-100:]],  # Keep last 100
             }
@@ -528,7 +541,8 @@ class NZBHuntDownloadManager:
     
     def add_nzb(self, nzb_url: str = "", nzb_content: str = "",
                 name: str = "", category: str = "",
-                priority: str = "normal", added_by: str = "") -> Tuple[bool, str, str]:
+                priority: str = "normal", added_by: str = "",
+                nzb_name: str = "", indexer: str = "") -> Tuple[bool, str, str]:
         """Add an NZB to the download queue.
         
         Args:
@@ -538,6 +552,8 @@ class NZBHuntDownloadManager:
             category: Category for organization
             priority: Priority level
             added_by: Who added it (e.g., "movie_hunt")
+            nzb_name: Original NZB filename (for tooltip display)
+            indexer: Name of the indexer that provided this NZB
             
         Returns:
             Tuple of (success, message, queue_id)
@@ -583,6 +599,8 @@ class NZBHuntDownloadManager:
             nzb_url=nzb_url,
             priority=priority,
             added_by=added_by,
+            nzb_name=nzb_name or name,
+            indexer=indexer,
         )
         item.total_bytes = nzb.total_bytes
         item.total_segments = nzb.total_segments
@@ -592,6 +610,9 @@ class NZBHuntDownloadManager:
         self._save_nzb_content(nzb_id, nzb_content)
         
         with self._queue_lock:
+            # Assign sequential ID
+            item.seq_id = self._next_seq_id
+            self._next_seq_id += 1
             self._queue.append(item)
             self._save_state()
         

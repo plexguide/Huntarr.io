@@ -71,9 +71,7 @@ def get_nzb_folders():
     cfg = _load_config()
     folders = cfg.get("folders", {})
     return jsonify({
-        "download_folder": folders.get("download_folder", "/downloads"),
         "temp_folder": folders.get("temp_folder", "/downloads/incomplete"),
-        "watched_folder": folders.get("watched_folder", ""),
     })
 
 
@@ -81,10 +79,11 @@ def get_nzb_folders():
 def save_nzb_folders():
     data = request.get_json(silent=True) or {}
     cfg = _load_config()
+    # Preserve existing download_folder (derived from categories base)
+    existing_folders = cfg.get("folders", {})
     cfg["folders"] = {
-        "download_folder": data.get("download_folder", "/downloads"),
+        "download_folder": existing_folders.get("download_folder", "/downloads/complete"),
         "temp_folder": data.get("temp_folder", "/downloads/incomplete"),
-        "watched_folder": data.get("watched_folder", ""),
     }
     _save_config(cfg)
     return jsonify({"success": True})
@@ -246,12 +245,39 @@ def save_nzb_categories_base():
     return jsonify({"success": True})
 
 
+_DEFAULT_CATEGORIES = [
+    {
+        "name": "movies",
+        "folder": "/downloads/complete/movies",
+        "priority": "normal",
+        "processing": "default",
+        "indexer_cats": "movies, movies.hd, movies.uhd",
+    },
+    {
+        "name": "tv",
+        "folder": "/downloads/complete/tv",
+        "priority": "normal",
+        "processing": "default",
+        "indexer_cats": "tv, tv.hd, tv.uhd",
+    },
+]
+
+
 @nzb_hunt_bp.route("/api/nzb-hunt/categories", methods=["GET"])
 def list_nzb_categories():
     cfg = _load_config()
+    cats = cfg.get("categories", None)
+    base = cfg.get("categories_base_folder", "/downloads/complete")
+
+    # Seed default categories on first access
+    if cats is None:
+        cats = _DEFAULT_CATEGORIES
+        cfg["categories"] = cats
+        _save_config(cfg)
+
     return jsonify({
-        "categories": cfg.get("categories", []),
-        "base_folder": cfg.get("categories_base_folder", "/downloads/complete"),
+        "categories": cats,
+        "base_folder": base,
     })
 
 
@@ -397,7 +423,7 @@ def nzb_hunt_queue():
 def nzb_hunt_queue_add():
     """Add an NZB to the download queue.
     
-    Body: { nzb_url, nzb_content, name, category, priority, added_by }
+    Body: { nzb_url, nzb_content, name, category, priority, added_by, nzb_name, indexer }
     At least one of nzb_url or nzb_content is required.
     """
     try:
@@ -408,6 +434,8 @@ def nzb_hunt_queue_add():
         category = (data.get("category") or "").strip()
         priority = (data.get("priority") or "normal").strip()
         added_by = (data.get("added_by") or "manual").strip()
+        nzb_name = (data.get("nzb_name") or "").strip()
+        indexer = (data.get("indexer") or "").strip()
 
         if not nzb_url and not nzb_content:
             return jsonify({"success": False, "error": "nzb_url or nzb_content required"}), 400
@@ -420,6 +448,8 @@ def nzb_hunt_queue_add():
             category=category,
             priority=priority,
             added_by=added_by,
+            nzb_name=nzb_name,
+            indexer=indexer,
         )
         return jsonify({"success": success, "message": message, "queue_id": queue_id})
     except Exception as e:

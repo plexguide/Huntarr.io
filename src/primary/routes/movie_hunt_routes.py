@@ -2840,7 +2840,7 @@ def _search_newznab_movie(base_url, api_key, query, categories, timeout=15):
         return []
 
 
-def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl):
+def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl, indexer=""):
     """
     Send NZB URL to NZB Hunt (built-in), SABnzbd, or NZBGet.
     Returns (success: bool, message: str, queue_id: str|int|None).
@@ -2866,6 +2866,8 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl)
                 category=cat,
                 priority=client.get('recent_priority', 'normal'),
                 added_by='movie_hunt',
+                nzb_name=nzb_name or '',
+                indexer=indexer,
             )
             return success, message, queue_id
         
@@ -3017,7 +3019,7 @@ def api_movie_hunt_request():
         # Use client's category; empty/default → "movies" so we send and filter by "movies"
         raw_cat = (client.get('category') or '').strip()
         request_category = MOVIE_HUNT_DEFAULT_CATEGORY if raw_cat.lower() in ('default', '*', '') else (raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY)
-        ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl)
+        ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl, indexer=indexer_used or '')
         if not ok:
             movie_hunt_logger.error("Request: send to download client failed for '%s': %s", title, msg)
             return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500

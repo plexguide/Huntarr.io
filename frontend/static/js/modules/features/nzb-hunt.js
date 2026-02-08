@@ -409,62 +409,76 @@
             }
 
             var self = this;
-            var html = '';
+            var html =
+                '<table class="nzb-history-table">' +
+                '<thead><tr>' +
+                '<th class="nzb-hist-col-status"></th>' +
+                '<th class="nzb-hist-col-name">Name</th>' +
+                '<th class="nzb-hist-col-cat">Category</th>' +
+                '<th class="nzb-hist-col-size">Size</th>' +
+                '<th class="nzb-hist-col-date">Completed</th>' +
+                '<th class="nzb-hist-col-result">Result</th>' +
+                '<th class="nzb-hist-col-info"></th>' +
+                '</tr></thead><tbody>';
+
             history.forEach(function (item) {
-                var status = item.state === 'completed' ? 'success' : 'fail';
-                var icon = status === 'success' ? 'fas fa-check-circle nzb-icon-completed' : 'fas fa-exclamation-circle nzb-icon-failed';
+                var isSuccess = item.state === 'completed';
+                var statusIcon = isSuccess
+                    ? '<i class="fas fa-check-circle nzb-hist-status-icon success"></i>'
+                    : '<i class="fas fa-times-circle nzb-hist-status-icon fail"></i>';
                 var name = self._escHtml(item.name || 'Unknown');
                 var size = self._formatBytes(item.total_bytes || item.downloaded_bytes || 0);
-                var date = item.completed_at ? new Date(item.completed_at).toLocaleString() : '';
-                var category = item.category ? '<span class="nzb-item-category">' + self._escHtml(item.category) + '</span>' : '';
+                var date = item.completed_at ? new Date(item.completed_at).toLocaleString() : '—';
+                var catLabel = item.category ? '<span class="nzb-hist-cat">' + self._escHtml(item.category) + '</span>' : '—';
 
-                // Show error message for failed items
-                var errorHtml = '';
-                if (status === 'fail' && item.error_message) {
-                    errorHtml = '<div style="color:#f87171; font-size:0.8em; margin-top:4px;">' +
-                        '<i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>' +
-                        self._escHtml(item.error_message) +
-                    '</div>';
+                // Result column
+                var resultHtml = '';
+                if (isSuccess) {
+                    resultHtml = '<span class="nzb-hist-result-ok"><i class="fas fa-check" style="margin-right:4px;"></i>Completed</span>';
+                } else {
+                    var errText = item.error_message ? self._escHtml(item.error_message) : 'Failed';
+                    resultHtml = '<span class="nzb-hist-result-fail"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>' + errText + '</span>';
                 }
-                // Show missing article info (in MB like SABnzbd, with segment count)
-                var failedInfo = '';
+                // Missing articles info
                 if (item.failed_segments && item.failed_segments > 0) {
                     var missingBytes = item.missing_bytes || 0;
                     var mbMissing = missingBytes / (1024 * 1024);
                     var missingStr = '';
-                    if (mbMissing >= 1024) {
-                        missingStr = (mbMissing / 1024).toFixed(1) + ' GB';
-                    } else if (mbMissing >= 1.0) {
-                        missingStr = mbMissing.toFixed(1) + ' MB';
-                    } else if (missingBytes > 0) {
-                        missingStr = (missingBytes / 1024).toFixed(0) + ' KB';
-                    }
-                    failedInfo = '<span style="color:#f59e0b; margin-left:8px;"><i class="fas fa-exclamation-triangle"></i> ';
+                    if (mbMissing >= 1024) { missingStr = (mbMissing / 1024).toFixed(1) + ' GB'; }
+                    else if (mbMissing >= 1.0) { missingStr = mbMissing.toFixed(1) + ' MB'; }
+                    else if (missingBytes > 0) { missingStr = (missingBytes / 1024).toFixed(0) + ' KB'; }
                     if (missingStr) {
-                        failedInfo += missingStr + ' missing articles';
-                    } else {
-                        failedInfo += item.failed_segments + ' missing articles';
+                        resultHtml += '<br><span class="nzb-hist-missing"><i class="fas fa-exclamation-triangle" style="margin-right:3px;"></i>' + missingStr + ' missing</span>';
                     }
-                    failedInfo += '</span>';
                 }
 
-                html +=
-                    '<div class="nzb-queue-item nzb-item-history nzb-item-' + status + '">' +
-                        '<div class="nzb-item-row-top">' +
-                            '<div class="nzb-item-name" title="' + name + '">' +
-                                '<i class="' + icon + '" style="margin-right: 6px;"></i>' + name +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="nzb-item-row-meta">' +
-                            category +
-                            '<span class="nzb-item-size"><i class="fas fa-database"></i> ' + size + '</span>' +
-                            failedInfo +
-                            (date ? '<span class="nzb-item-date"><i class="fas fa-calendar-alt"></i> ' + date + '</span>' : '') +
-                        '</div>' +
-                        errorHtml +
+                // Info tooltip content
+                var seqId = item.seq_id || '—';
+                var nzbName = self._escHtml(item.nzb_name || item.name || 'Unknown');
+                var indexer = item.indexer ? self._escHtml(item.indexer) : '—';
+                var addedBy = item.added_by ? self._escHtml(item.added_by) : '—';
+
+                var tooltipHtml =
+                    '<div class="nzb-hist-tooltip">' +
+                        '<div class="nzb-tip-row"><div class="nzb-tip-label">ID</div><strong>#' + seqId + '</strong></div>' +
+                        '<div class="nzb-tip-row"><div class="nzb-tip-label">NZB Name</div><strong>' + nzbName + '</strong></div>' +
+                        '<div class="nzb-tip-row"><div class="nzb-tip-label">Indexer</div><strong>' + indexer + '</strong></div>' +
+                        '<div class="nzb-tip-row"><div class="nzb-tip-label">Source</div><strong>' + addedBy + '</strong></div>' +
                     '</div>';
+
+                html +=
+                    '<tr>' +
+                        '<td class="nzb-hist-col-status">' + statusIcon + '</td>' +
+                        '<td class="nzb-hist-col-name" title="' + name + '"><span class="nzb-hist-cell-name">' + name + '</span></td>' +
+                        '<td class="nzb-hist-col-cat">' + catLabel + '</td>' +
+                        '<td class="nzb-hist-col-size">' + size + '</td>' +
+                        '<td class="nzb-hist-col-date">' + date + '</td>' +
+                        '<td class="nzb-hist-col-result">' + resultHtml + '</td>' +
+                        '<td class="nzb-hist-col-info"><button type="button" class="nzb-hist-info-btn" title="Details"><i class="fas fa-question-circle"></i>' + tooltipHtml + '</button></td>' +
+                    '</tr>';
             });
 
+            html += '</tbody></table>';
             body.innerHTML = html;
         },
 
@@ -575,27 +589,21 @@
         },
 
         /* ──────────────────────────────────────────────
-           Folders  – load / save / browse
+           Folders  – load / save / browse (combined with categories)
         ────────────────────────────────────────────── */
         _loadFolders: function () {
             fetch('./api/nzb-hunt/settings/folders?t=' + Date.now())
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
-                    var df = document.getElementById('nzb-download-folder');
                     var tf = document.getElementById('nzb-temp-folder');
-                    var wf = document.getElementById('nzb-watched-folder');
-                    if (df && data.download_folder !== undefined) df.value = data.download_folder;
                     if (tf && data.temp_folder !== undefined) tf.value = data.temp_folder;
-                    if (wf && data.watched_folder !== undefined) wf.value = data.watched_folder;
                 })
                 .catch(function () { /* use defaults */ });
         },
 
         _saveFolders: function () {
             var payload = {
-                download_folder: (document.getElementById('nzb-download-folder') || {}).value || '/downloads',
-                temp_folder: (document.getElementById('nzb-temp-folder') || {}).value || '/downloads/incomplete',
-                watched_folder: (document.getElementById('nzb-watched-folder') || {}).value || ''
+                temp_folder: (document.getElementById('nzb-temp-folder') || {}).value || '/downloads/incomplete'
             };
             fetch('./api/nzb-hunt/settings/folders', {
                 method: 'POST',
@@ -605,36 +613,24 @@
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Folders saved.', 'success');
+                        window.huntarrUI.showNotification('Temporary folder saved.', 'success');
                     }
                 })
                 .catch(function () {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to save folders.', 'error');
+                        window.huntarrUI.showNotification('Failed to save folder.', 'error');
                     }
                 });
         },
 
         _setupFolderBrowse: function () {
             var self = this;
-            var saveBtn = document.getElementById('nzb-save-folders');
-            if (saveBtn) saveBtn.addEventListener('click', function () { self._saveFolders(); });
-
-            ['nzb-browse-download-folder', 'nzb-browse-temp-folder', 'nzb-browse-watched-folder'].forEach(function (id) {
-                var btn = document.getElementById(id);
-                if (btn) {
-                    btn.addEventListener('click', function () {
-                        var inputId = id.replace('nzb-browse-', 'nzb-').replace('-folder', '-folder');
-                        // Map button id → input id
-                        var map = {
-                            'nzb-browse-download-folder': 'nzb-download-folder',
-                            'nzb-browse-temp-folder': 'nzb-temp-folder',
-                            'nzb-browse-watched-folder': 'nzb-watched-folder'
-                        };
-                        self._openBrowseModal(document.getElementById(map[id]));
-                    });
-                }
-            });
+            var browseTemp = document.getElementById('nzb-browse-temp-folder');
+            if (browseTemp) {
+                browseTemp.addEventListener('click', function () {
+                    self._openBrowseModal(document.getElementById('nzb-temp-folder'));
+                });
+            }
         },
 
         /* ──────────────────────────────────────────────
@@ -679,6 +675,10 @@
             var pathInput = document.getElementById('nzb-browse-path-input');
             if (this._browseTarget && pathInput) {
                 this._browseTarget.value = pathInput.value;
+                // Auto-save if the target is the temporary folder
+                if (this._browseTarget.id === 'nzb-temp-folder') {
+                    this._saveFolders();
+                }
             }
             this._closeBrowseModal();
         },
@@ -1124,9 +1124,10 @@
         /* ──────────────────────────────────────────────
            Categories  – CRUD + card rendering
         ────────────────────────────────────────────── */
+        _categoriesBaseFolder: '/downloads/complete',  // Internal base folder for auto-gen
+
         _getBaseFolder: function () {
-            var el = document.getElementById('nzb-cat-base-folder');
-            return (el && el.value) ? el.value : '/downloads/complete';
+            return this._categoriesBaseFolder || '/downloads/complete';
         },
 
         _setupCategoryGrid: function () {
@@ -1136,29 +1137,6 @@
                 addCard.addEventListener('click', function () {
                     self._catEditIndex = null;
                     self._openCategoryModal(null);
-                });
-            }
-
-            // Base folder browse
-            var browseBase = document.getElementById('nzb-browse-cat-base-folder');
-            if (browseBase) {
-                browseBase.addEventListener('click', function () {
-                    self._openBrowseModal(document.getElementById('nzb-cat-base-folder'));
-                });
-            }
-
-            // Save base folder
-            var saveBase = document.getElementById('nzb-save-cat-base');
-            if (saveBase) {
-                saveBase.addEventListener('click', function () { self._saveBaseFolder(); });
-            }
-
-            // Auto-update the default path display when base folder changes
-            var baseInput = document.getElementById('nzb-cat-base-folder');
-            if (baseInput) {
-                baseInput.addEventListener('input', function () {
-                    var display = document.getElementById('nzb-cat-default-path-display');
-                    if (display) display.textContent = baseInput.value || '/downloads/complete';
                 });
             }
 
@@ -1178,38 +1156,14 @@
             }
         },
 
-        _saveBaseFolder: function () {
-            var base = this._getBaseFolder();
-            fetch('./api/nzb-hunt/settings/categories-base', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ base_folder: base })
-            })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Base folder saved.', 'success');
-                    }
-                })
-                .catch(function () {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to save base folder.', 'error');
-                    }
-                });
-        },
-
         _loadCategories: function () {
             var self = this;
             fetch('./api/nzb-hunt/categories?t=' + Date.now())
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     self._categories = data.categories || [];
-                    // Update base folder input
-                    var baseEl = document.getElementById('nzb-cat-base-folder');
-                    if (baseEl && data.base_folder) baseEl.value = data.base_folder;
-                    // Update default path display
-                    var display = document.getElementById('nzb-cat-default-path-display');
-                    if (display) display.textContent = data.base_folder || '/downloads/complete';
+                    // Store base folder internally for auto-generating new category paths
+                    if (data.base_folder) self._categoriesBaseFolder = data.base_folder;
                     self._renderCategoryCards();
                 })
                 .catch(function () { self._categories = []; self._renderCategoryCards(); });

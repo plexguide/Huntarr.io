@@ -1794,26 +1794,137 @@
     color: #ef4444;
 }
 
-/* History items (card-style in History tab) */
-.nzb-queue-item.nzb-item-history {
-    padding: 10px 16px;
-    background: rgba(15, 23, 42, 0.5);
-    border: 1px solid rgba(71, 85, 105, 0.3);
-    border-radius: 8px;
-    margin-bottom: 8px;
+/* History table (matches queue table) */
+.nzb-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    table-layout: fixed;
 }
 
-.nzb-item-history .nzb-item-row-top { margin-bottom: 4px; }
-.nzb-item-history .nzb-item-name { font-size: 0.88rem; font-weight: 600; color: #e2e8f0; }
-.nzb-item-history .nzb-item-row-meta { font-size: 0.75rem; color: #64748b; }
-.nzb-item-success {
-    border-left: 3px solid #22c55e;
+.nzb-history-table thead {
+    background: rgba(15, 23, 42, 0.8);
+    border-bottom: 1px solid rgba(71, 85, 105, 0.5);
 }
 
-.nzb-item-fail {
-    border-left: 3px solid #ef4444;
+.nzb-history-table th {
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
-.nzb-item-date {
+.nzb-history-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.25);
+    color: #cbd5e1;
+    vertical-align: middle;
+}
+
+.nzb-history-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* History column widths */
+.nzb-history-table .nzb-hist-col-status { width: 28px; min-width: 28px; max-width: 28px; text-align: center; padding-right: 4px; }
+.nzb-history-table .nzb-hist-col-name   { width: 40%; min-width: 120px; }
+.nzb-history-table .nzb-hist-col-cat    { width: 10%; min-width: 60px; }
+.nzb-history-table .nzb-hist-col-size   { width: 10%; min-width: 70px; }
+.nzb-history-table .nzb-hist-col-date   { width: 16%; min-width: 110px; }
+.nzb-history-table .nzb-hist-col-result { width: 20%; min-width: 100px; }
+.nzb-history-table .nzb-hist-col-info   { width: 28px; min-width: 28px; max-width: 28px; text-align: center; }
+
+/* Status icon column */
+.nzb-hist-status-icon {
+    font-size: 0.85rem;
+}
+.nzb-hist-status-icon.success { color: #22c55e; }
+.nzb-hist-status-icon.fail    { color: #ef4444; }
+
+/* Name cell */
+.nzb-hist-cell-name {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+/* Category badge */
+.nzb-hist-cat {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    font-size: 0.72rem;
+    font-weight: 500;
+}
+
+/* Info tooltip button */
+.nzb-hist-info-btn {
+    background: none;
+    border: none;
     color: #64748b;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    position: relative;
 }
+.nzb-hist-info-btn:hover {
+    color: #93c5fd;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* Tooltip */
+.nzb-hist-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: -8px;
+    background: #1e293b;
+    border: 1px solid rgba(71, 85, 105, 0.6);
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-width: 280px;
+    max-width: 400px;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: #94a3b8;
+    text-align: left;
+    white-space: normal;
+    pointer-events: none;
+}
+.nzb-hist-info-btn:hover .nzb-hist-tooltip {
+    display: block;
+}
+.nzb-hist-tooltip strong {
+    color: #e2e8f0;
+    font-weight: 600;
+}
+.nzb-hist-tooltip .nzb-tip-label {
+    color: #64748b;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+}
+.nzb-hist-tooltip .nzb-tip-row {
+    margin-bottom: 6px;
+}
+.nzb-hist-tooltip .nzb-tip-row:last-child {
+    margin-bottom: 0;
+}
+
+/* Result column text */
+.nzb-hist-result-ok { color: #22c55e; font-weight: 500; }
+.nzb-hist-result-fail { color: #ef4444; font-size: 0.75rem; }
+.nzb-hist-missing { color: #f59e0b; font-size: 0.72rem; }
