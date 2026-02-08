@@ -604,6 +604,16 @@ echo "20. Missing BASE_URL frontend injection: $(grep -q "window.HUNTARR_BASE_UR
 - **Mobile Compatibility**: Flash prevention must work on mobile where sidebar space is limited
 - **Testing**: Navigate between sections, refresh page, check that only one sidebar shows at a time
 
+### Sidebar Desktop/Mobile Alignment (Critical)
+- **Rule**: Desktop sidebar is the PRIMARY design. Mobile sidebar must always align with it.
+- **Problem**: On mobile (icon-only mode, 60px width), sub-group items (`.nav-sub-group`) expand as unlabeled icons, creating visual clutter with 13+ indistinguishable icons instead of the clean 7-8 parent icons.
+- **Critical Requirement**: `.nav-sub-group` must be `display: none !important` on mobile (`max-width: 768px`).
+- **Sub-items hidden on mobile**: Settings sub-items (Main, Scheduling, Notifications, Backup/Restore, Logs, User), Movie Hunt sub-items (Activity children, Settings children).
+- **Why**: Sub-items like `fa-sliders-h`, `fa-calendar-alt`, `fa-bell`, `fa-database`, `fa-file-alt`, `fa-user` are meaningless as tiny unlabeled icons. Only parent-level icons (Home, Apps, Requestarr, Settings, System, Movie Hunt, NZB Hunt) should show on mobile.
+- **Files**: `/frontend/static/css/sidebar.css` (mobile section), `/frontend/static/css/mobile.css`
+- **Anti-Pattern**: NEVER show `.nav-sub-group` or `.nav-item-sub` items on mobile icon-only sidebar
+- **Testing**: Expand Settings sub-menu on desktop, then resize to mobile — sub-items must disappear
+
 ### Page Refresh Pattern for Caching Issues (Critical)
 - **Problem**: Frontend caching causing stale data display, especially toggle visibility issues
 - **Root Cause**: Complex cache management systems are error-prone and difficult to maintain

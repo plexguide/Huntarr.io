@@ -641,6 +641,14 @@ input:checked + .slider:before {
         margin: 0 !important;
     }
 
+    /* CRITICAL: Hide all sub-groups on mobile (icon-only mode).
+       Sub-items (Main, Scheduling, Notifications, etc.) don't make sense
+       as unlabeled icons. Only parent items show on mobile.
+       Desktop is the primary design — mobile must align with it. */
+    .nav-sub-group {
+        display: none !important;
+    }
+
     .app-icon-img {
         width: 18px;
         height: 18px;

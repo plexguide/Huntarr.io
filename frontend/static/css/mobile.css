@@ -61,6 +61,13 @@
         margin-bottom: 0 !important;
     }
     
+    /* Hide all sub-groups on mobile — sub-items are meaningless as
+       unlabeled icons. Desktop sidebar is the primary design; mobile
+       must align by showing only the same parent-level icons. */
+    .nav-sub-group {
+        display: none !important;
+    }
+    
     /* Center logo in mobile */
     .logo-container {
         justify-content: center !important;
