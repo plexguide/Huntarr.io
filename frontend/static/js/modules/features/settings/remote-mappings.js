@@ -158,7 +158,8 @@
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification('Please select a host', 'error');
                 } else {
-                    alert('Please select a host');
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Please select a host', 'error');
+                    else alert('Please select a host');
                 }
                 return;
             }
@@ -167,7 +168,8 @@
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification('Remote path is required', 'error');
                 } else {
-                    alert('Remote path is required');
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Remote path is required', 'error');
+                    else alert('Remote path is required');
                 }
                 return;
             }
@@ -176,7 +178,8 @@
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification('Local path is required', 'error');
                 } else {
-                    alert('Local path is required');
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Local path is required', 'error');
+                    else alert('Local path is required');
                 }
                 return;
             }
@@ -215,7 +218,8 @@
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification(data.message || 'Failed to save mapping', 'error');
                         } else {
-                            alert(data.message || 'Failed to save mapping');
+                            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.message || 'Failed to save mapping', 'error');
+                            else alert(data.message || 'Failed to save mapping');
                         }
                     }
                 })
@@ -224,7 +228,8 @@
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification('Failed to save mapping', 'error');
                     } else {
-                        alert('Failed to save mapping');
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to save mapping', 'error');
+                        else alert('Failed to save mapping');
                     }
                 });
         },
@@ -253,7 +258,8 @@
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification(data.message || 'Failed to delete mapping', 'error');
                         } else {
-                            alert(data.message || 'Failed to delete mapping');
+                            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.message || 'Failed to delete mapping', 'error');
+                            else alert(data.message || 'Failed to delete mapping');
                         }
                     }
                 })
@@ -262,7 +268,8 @@
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification('Failed to delete mapping', 'error');
                     } else {
-                        alert('Failed to delete mapping');
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to delete mapping', 'error');
+                        else alert('Failed to delete mapping');
                     }
                 });
             };

@@ -50,7 +50,8 @@ function setupErosForm() {
             if (typeof huntarrUI !== 'undefined') {
                 huntarrUI.showNotification('Please enter both API URL and API Key for Eros', 'error');
             } else {
-                alert('Please enter both API URL and API Key for Eros');
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Please enter both API URL and API Key for Eros', 'error');
+                else alert('Please enter both API URL and API Key for Eros');
             }
             return;
         }
@@ -98,7 +99,8 @@ function setupErosForm() {
                     if (typeof huntarrUI !== 'undefined') {
                         huntarrUI.showNotification(data.message || 'Failed to connect to Eros', 'error');
                     } else {
-                        alert(data.message || 'Failed to connect to Eros');
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.message || 'Failed to connect to Eros', 'error');
+                        else alert(data.message || 'Failed to connect to Eros');
                     }
                 }
             }
@@ -118,7 +120,8 @@ function setupErosForm() {
             if (typeof huntarrUI !== 'undefined') {
                 huntarrUI.showNotification('Error testing connection: ' + error.message, 'error');
             } else {
-                alert('Error testing connection: ' + error.message);
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error testing connection: ' + error.message, 'error');
+                else alert('Error testing connection: ' + error.message);
             }
         });
     });

@@ -1033,7 +1033,8 @@ export class RequestarrContent {
             }
             
             if (!instanceName) {
-                alert('No instance selected. Please select an instance first.');
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('No instance selected. Please select an instance first.', 'error');
+                else alert('No instance selected. Please select an instance first.');
                 return;
             }
 
@@ -1068,7 +1069,8 @@ export class RequestarrContent {
             console.log(`[RequestarrContent] Hidden media: ${title} (${mediaType}) for ${appType}/${instanceName}`);
         } catch (error) {
             console.error('[RequestarrContent] Error hiding media:', error);
-            alert('Failed to hide media. Please try again.');
+            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to hide media. Please try again.', 'error');
+            else alert('Failed to hide media. Please try again.');
         }
         };
         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {

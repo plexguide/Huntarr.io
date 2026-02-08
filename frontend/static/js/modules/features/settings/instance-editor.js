@@ -93,14 +93,16 @@
 
         if (!window.huntarrUI || !window.huntarrUI.originalSettings) {
             console.error('[SettingsForms] window.huntarrUI.originalSettings is missing');
-            alert('Error: Settings not loaded. Please refresh the page.');
+            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: Settings not loaded. Please refresh the page.', 'error');
+            else alert('Error: Settings not loaded. Please refresh the page.');
             return;
         }
 
         const settings = window.huntarrUI.originalSettings[appType];
         if (!settings) {
             console.error(`[SettingsForms] Settings for ${appType} not found in originalSettings`);
-            alert(`Error: Settings for ${appType} not found. Please refresh the page.`);
+            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: Settings for ' + appType + ' not found. Please refresh the page.', 'error');
+            else alert('Error: Settings for ' + appType + ' not found. Please refresh the page.');
             return;
         }
 
@@ -110,7 +112,8 @@
         if (isEdit) {
             if (!settings.instances || !settings.instances[index]) {
                 console.error(`[SettingsForms] Instance at index ${index} not found for ${appType}`);
-                alert('Error: Instance not found.');
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: Instance not found.', 'error');
+                else alert('Error: Instance not found.');
                 return;
             }
             instance = settings.instances[index];
@@ -247,7 +250,8 @@
             if (window.huntarrUI && window.huntarrUI.showNotification) {
                 window.huntarrUI.showNotification('The tag "upgradinatorr" cannot be added as an exempt tag.', 'warning');
             } else {
-                alert('The tag "upgradinatorr" cannot be added as an exempt tag.');
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('The tag "upgradinatorr" cannot be added as an exempt tag.', 'error');
+                else alert('The tag "upgradinatorr" cannot be added as an exempt tag.');
             }
             return;
         }

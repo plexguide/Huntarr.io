@@ -194,12 +194,14 @@
                 updateVisibility('setupTwoFactorSection', true);
             } else {
                 console.error('Failed to setup 2FA:', data.error);
-                alert('Failed to setup 2FA: ' + (data.error || 'Unknown error'));
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to setup 2FA: ' + (data.error || 'Unknown error'), 'error');
+                else alert('Failed to setup 2FA: ' + (data.error || 'Unknown error'));
             }
         })
         .catch(error => {
             console.error('Error setting up 2FA:', error);
-            alert('Error setting up 2FA: ' + error.message);
+            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error setting up 2FA: ' + error.message, 'error');
+            else alert('Error setting up 2FA: ' + error.message);
         });
     }
     

@@ -28,6 +28,7 @@
             if (addCard) addCard.addEventListener('click', function() { self.openAddModal(); });
             this.initAddModal();
             this.initDeleteModal();
+            this.initRenameModal();
             this.loadList();
         },
 
@@ -146,6 +147,73 @@
             document.body.classList.add('instance-delete-modal-open');
         },
 
+        initRenameModal: function() {
+            var self = this;
+            var modal = document.getElementById('instance-rename-modal');
+            var backdrop = document.getElementById('instance-rename-modal-backdrop');
+            var closeBtn = document.getElementById('instance-rename-modal-close');
+            var cancelBtn = document.getElementById('instance-rename-modal-cancel');
+            var saveBtn = document.getElementById('instance-rename-modal-save');
+            var input = document.getElementById('instance-rename-name');
+            if (!modal) return;
+            function closeModal() {
+                modal.style.display = 'none';
+                document.body.classList.remove('instance-rename-modal-open');
+                modal.removeAttribute('data-pending-id');
+            }
+            if (backdrop) backdrop.onclick = closeModal;
+            if (closeBtn) closeBtn.onclick = closeModal;
+            if (cancelBtn) cancelBtn.onclick = closeModal;
+            if (saveBtn) {
+                saveBtn.onclick = function() {
+                    var id = modal.getAttribute('data-pending-id');
+                    var name = (input && input.value) ? input.value.trim() : '';
+                    if (!id) return;
+                    if (!name) name = 'Unnamed';
+                    saveBtn.disabled = true;
+                    fetch(api('./api/movie-hunt/instances/' + id), {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: name })
+                    })
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data.error) {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.error, 'error');
+                                return;
+                            }
+                            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance renamed.', 'success');
+                            closeModal();
+                            self.loadList();
+                            if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.refresh) {
+                                ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-root-folders-instance-select'].forEach(function(sid) {
+                                    if (document.getElementById(sid)) window.MovieHuntInstanceDropdown.refresh(sid);
+                                });
+                            }
+                        })
+                        .catch(function() {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Request failed.', 'error');
+                        })
+                        .finally(function() { saveBtn.disabled = false; });
+                };
+            }
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
+            });
+        },
+
+        openRenameModal: function(id, currentName) {
+            var modal = document.getElementById('instance-rename-modal');
+            var input = document.getElementById('instance-rename-name');
+            if (!modal || !input) return;
+            modal.setAttribute('data-pending-id', String(id));
+            input.value = (currentName || '').trim() || '';
+            if (modal.parentNode !== document.body) document.body.appendChild(modal);
+            modal.style.display = 'flex';
+            document.body.classList.add('instance-rename-modal-open');
+            setTimeout(function() { input.focus(); }, 100);
+        },
+
         openAddModal: function() {
             var modal = document.getElementById('instance-add-modal');
             var input = document.getElementById('instance-add-name');
@@ -219,31 +287,7 @@
         },
 
         promptRename: function(id, currentName) {
-            var name = window.prompt('Rename instance:', currentName);
-            if (name == null) return;
-            name = (name || '').trim() || 'Unnamed';
-            fetch(api('./api/movie-hunt/instances/' + id), {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name })
-            })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.error) {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.error, 'error');
-                        return;
-                    }
-                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance renamed.', 'success');
-                    window.MovieHuntInstanceManagement.loadList();
-                    if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.refresh) {
-                        ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-root-folders-instance-select'].forEach(function(sid) {
-                            if (document.getElementById(sid)) window.MovieHuntInstanceDropdown.refresh(sid);
-                        });
-                    }
-                })
-                .catch(function() {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Request failed.', 'error');
-                });
+            this.openRenameModal(id, currentName);
         },
 
         promptDelete: function(id, name) {

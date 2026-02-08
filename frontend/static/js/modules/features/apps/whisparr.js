@@ -51,7 +51,8 @@ function setupWhisparrForm() {
             if (typeof huntarrUI !== 'undefined' && huntarrUI.showNotification) {
                 huntarrUI.showNotification('Please enter both API URL and API Key for Whisparr', 'error');
             } else {
-                alert('Please enter both API URL and API Key for Whisparr');
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Please enter both API URL and API Key for Whisparr', 'error');
+                else alert('Please enter both API URL and API Key for Whisparr');
             }
             return;
         }

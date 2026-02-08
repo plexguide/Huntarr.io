@@ -457,7 +457,8 @@ export class RequestarrSettings {
             console.log(`[RequestarrSettings] Unhidden media: ${title} (${mediaType})`);
         } catch (error) {
             console.error('[RequestarrSettings] Error unhiding media:', error);
-            alert('Failed to unhide media. Please try again.');
+            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to unhide media. Please try again.', 'error');
+            else alert('Failed to unhide media. Please try again.');
         }
         };
         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {

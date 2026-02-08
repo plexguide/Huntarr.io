@@ -430,7 +430,8 @@ const historyModule = {
         if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
             huntarrUI.showNotification(message, 'error');
         } else {
-            alert(message);
+            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(message, 'error');
+            else alert(message);
         }
     },
     

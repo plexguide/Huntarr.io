@@ -384,7 +384,8 @@
                 if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
                     huntarrUI.showNotification('Error: Could not determine which app settings to save', 'error');
                 } else {
-                    alert('Error: Could not determine which app settings to save');
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: Could not determine which app settings to save', 'error');
+                    else alert('Error: Could not determine which app settings to save');
                 }
                 return;
             }
@@ -396,7 +397,8 @@
                 if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
                     huntarrUI.showNotification(`Error: App panel not found for ${appType}`, 'error');
                 } else {
-                    alert(`Error: App panel not found for ${appType}`);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: App panel not found for ' + appType, 'error');
+                    else alert('Error: App panel not found for ' + appType);
                 }
                 return;
             }
@@ -431,7 +433,8 @@
                 if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
                     huntarrUI.showNotification(`Error collecting settings: ${error.message}`, 'error');
                 } else {
-                    alert(`Error collecting settings: ${error.message}`);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error collecting settings: ' + error.message, 'error');
+                    else alert('Error collecting settings: ' + error.message);
                 }
                 return;
             }
@@ -497,7 +500,8 @@
                 if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
                     huntarrUI.showNotification(`Error saving settings: ${error.message}`, 'error');
                 } else {
-                    alert(`Error saving settings: ${error.message}`);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error saving settings: ' + error.message, 'error');
+                    else alert('Error saving settings: ' + error.message);
                 }
                 // Reset the saving flag
                 window._appsCurrentlySaving = false;

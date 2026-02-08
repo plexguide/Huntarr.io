@@ -508,7 +508,8 @@ function saveSchedules() {
                     if (window.huntarrUI && typeof window.huntarrUI.showNotification === 'function') {
                         huntarrUI.showNotification('Schedules saved successfully!', 'success');
                     } else {
-                        alert('Schedules saved successfully!'); // Fallback
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Schedules saved successfully!', 'success');
+                        else alert('Schedules saved successfully!'); // Fallback
                     }
                     
                     // Update our schedules object with the cleaned version
@@ -921,7 +922,8 @@ function addSchedule() {
         if (window.huntarrUI && typeof window.huntarrUI.showNotification === 'function') {
             huntarrUI.showNotification('Please enter a valid hour and minute.', 'error');
         } else {
-            alert('Please enter a valid hour and minute.'); // Fallback
+            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Please enter a valid hour and minute.', 'error');
+            else alert('Please enter a valid hour and minute.'); // Fallback
         }
         return;
     }
