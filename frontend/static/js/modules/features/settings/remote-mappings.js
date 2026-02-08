@@ -99,6 +99,9 @@
             if (localPathInput) localPathInput.value = '';
 
             if (modal) {
+                if (modal.parentNode !== document.body) {
+                    document.body.appendChild(modal);
+                }
                 modal.style.display = 'flex';
                 document.body.classList.add('remote-mapping-edit-modal-open');
             }
@@ -125,6 +128,9 @@
             if (localPathInput) localPathInput.value = mapping.local_path || '';
 
             if (modal) {
+                if (modal.parentNode !== document.body) {
+                    document.body.appendChild(modal);
+                }
                 modal.style.display = 'flex';
                 document.body.classList.add('remote-mapping-edit-modal-open');
             }

@@ -197,6 +197,9 @@
     body.profile-add-modal-open {
         overflow: hidden;
     }
+    body.profile-add-modal-open .app-container {
+        filter: blur(10px);
+    }
     .profile-add-modal-backdrop {
         position: fixed;
         top: 0;
@@ -287,6 +290,9 @@
     function openProfileAddModal() {
         var modal = document.getElementById('profile-add-modal');
         var input = document.getElementById('profile-add-name');
+        if (modal && modal.parentNode !== document.body) {
+            document.body.appendChild(modal);
+        }
         if (modal) modal.style.display = 'flex';
         if (input) {
             input.value = '';

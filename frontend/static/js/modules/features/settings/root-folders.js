@@ -99,6 +99,9 @@
         openAddModal: function() {
             var modal = document.getElementById('root-folder-add-modal');
             var input = document.getElementById('root-folder-add-path');
+            if (modal && modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+            }
             if (modal) modal.style.display = 'flex';
             if (input) {
                 input.value = '';
