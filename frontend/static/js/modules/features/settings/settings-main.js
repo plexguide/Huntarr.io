@@ -156,8 +156,6 @@ window.HuntarrSettings = {
                     window.huntarrUI.applyTimezoneChange(event.target.value);
                 } else if (event.target.id === 'auth_mode' && window.huntarrUI.applyAuthModeChange) {
                     window.huntarrUI.applyAuthModeChange(event.target.value);
-                } else if (event.target.id === 'check_for_updates' && window.huntarrUI.applyUpdateCheckingChange) {
-                    window.huntarrUI.applyUpdateCheckingChange(event.target.checked);
                 } else if (event.target.id === 'show_trending' && window.huntarrUI.applyShowTrendingChange) {
                     window.huntarrUI.applyShowTrendingChange(event.target.checked);
                 } else if (event.target.id === 'enable_requestarr' && window.huntarrUI.applyEnableRequestarrChange) {

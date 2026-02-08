@@ -170,7 +170,11 @@ def load_settings(app_type, use_cache=True):
         'timestamp': time.time(),
         'data': current_settings
     }
-        
+
+    # Update checking is always enabled; remove the toggle but enforce the behavior
+    if app_type == 'general':
+        current_settings['check_for_updates'] = True
+
     return current_settings
 
 def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:

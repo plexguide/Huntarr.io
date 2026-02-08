@@ -34,17 +34,6 @@
             <div class="settings-group">
                 <h3>System Settings</h3>
                 <div class="setting-item">
-                    <label for="check_for_updates"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#check-for-updates" class="info-icon" title="Learn more about update checking" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Check for Updates:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="check_for_updates" ${
-                          settings.check_for_updates !== false ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Automatically check for Huntarr updates</p>
-                </div>
-
-                <div class="setting-item">
                     <label for="timezone"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#timezone" class="info-icon" title="Set your timezone for accurate time display" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Timezone:</label>
                     <select id="timezone" name="timezone" style="width: 300px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
                         ${(() => {

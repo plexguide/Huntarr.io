@@ -766,7 +766,6 @@ window.SettingsForms = {
         if (section === 'main') {
             return {
                 timezone: getVal('timezone', 'UTC'),
-                check_for_updates: getVal('check_for_updates', true),
                 display_community_resources: getVal('display_community_resources', true),
                 display_huntarr_support: getVal('display_huntarr_support', true),
                 enable_requestarr: getVal('enable_requestarr', true),
@@ -828,7 +827,6 @@ window.SettingsForms = {
         if (appType === "general") {
             settings.instances = [];
             settings.timezone = getInputValue("#timezone", "UTC");
-            settings.check_for_updates = getInputValue("#check_for_updates", true);
             settings.display_community_resources = getInputValue("#display_community_resources", true);
             settings.display_huntarr_support = getInputValue("#display_huntarr_support", true);
             settings.enable_requestarr = getInputValue("#enable_requestarr", true);

@@ -650,6 +650,8 @@ def save_general_settings():
     # Merge incoming data with current general settings so we never drop keys (e.g. show_trending)
     current = settings_manager.load_settings('general')
     merged = {**current, **data}
+    # Update checking is always enabled; ensure we persist True even if client omits the key
+    merged['check_for_updates'] = True
     success = settings_manager.save_settings('general', merged)
     
     if success:
