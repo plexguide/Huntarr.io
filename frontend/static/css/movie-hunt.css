@@ -38,9 +38,11 @@
 
 /* ── Request Modal – Redesigned two-column layout ───────────── */
 
-/* Blur only the app background when either modal is open; modal lives on body so it stays sharp */
+/* Blur backgrounds when request modal is open; modal lives on body so it stays sharp */
 body.movie-hunt-request-modal-open .app-container,
-body.requestarr-modal-open .app-container {
+body.movie-hunt-request-modal-open .movie-detail-view,
+body.requestarr-modal-open .app-container,
+body.requestarr-modal-open .movie-detail-view {
     filter: blur(10px);
 }
 body.movie-hunt-request-modal-open,
