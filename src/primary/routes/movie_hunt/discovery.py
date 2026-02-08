@@ -501,6 +501,139 @@ def api_movie_hunt_tmdb_key():
     return jsonify({'api_key': key or ''})
 
 
+@movie_hunt_bp.route('/api/movie-hunt/movie-status', methods=['GET'])
+def api_movie_hunt_movie_status():
+    """Return movie status from Movie Hunt's own collection, profiles, and root folders."""
+    import os
+    from src.primary.utils.database import get_database
+
+    tmdb_id = request.args.get('tmdb_id', type=int)
+    instance_id = _get_movie_hunt_instance_id_from_request()
+
+    if not tmdb_id:
+        return jsonify({'success': False, 'error': 'tmdb_id required'}), 400
+
+    try:
+        # Search Movie Hunt's own collection for this movie
+        items = _get_collection_config(instance_id)
+        movie = None
+        for item in items:
+            if item.get('tmdb_id') == tmdb_id:
+                movie = item
+                break
+
+        # Also check detected movies from root folders
+        from .storage import _get_detected_movies_from_all_roots
+        detected = _get_detected_movies_from_all_roots(instance_id)
+
+        if not movie:
+            # Check if movie is detected on disk but not in requested collection
+            for d in detected:
+                if d.get('tmdb_id') == tmdb_id:
+                    movie = d
+                    break
+            # Try matching by title+year
+            if not movie:
+                for d in detected:
+                    title_norm = _normalize_title_for_key(d.get('title'))
+                    # We can't match without tmdb_id from detected, skip title match for now
+                    pass
+
+        if not movie:
+            return jsonify({'success': True, 'found': False})
+
+        # Determine status
+        status_raw = (movie.get('status') or '').lower()
+        file_path = (movie.get('file_path') or '').strip()
+        root_folder = (movie.get('root_folder') or '').strip()
+
+        # Check if the movie file actually exists on disk
+        has_file = False
+        file_size = 0
+
+        if file_path and os.path.isfile(file_path):
+            has_file = True
+            try:
+                file_size = os.path.getsize(file_path)
+            except OSError:
+                file_size = 0
+        elif root_folder:
+            # Check if movie folder exists in the root folder
+            title = (movie.get('title') or '').strip()
+            year = str(movie.get('year') or '').strip()
+            if title:
+                folder_name = '%s (%s)' % (title, year) if year else title
+                movie_folder = os.path.join(root_folder, folder_name)
+                if os.path.isdir(movie_folder):
+                    # Find largest video file
+                    video_exts = {'.mkv', '.mp4', '.avi', '.mov', '.wmv', '.m4v', '.ts', '.flv'}
+                    for f in os.listdir(movie_folder):
+                        ext = os.path.splitext(f)[1].lower()
+                        if ext in video_exts:
+                            fpath = os.path.join(movie_folder, f)
+                            try:
+                                fsize = os.path.getsize(fpath)
+                                if fsize > file_size:
+                                    file_size = fsize
+                                    file_path = fpath
+                                    has_file = True
+                            except OSError:
+                                pass
+
+        # Also check detected list for status
+        if not has_file and status_raw != 'available':
+            detected_keys = {(_normalize_title_for_key(d.get('title')), str(d.get('year') or '').strip()) for d in detected}
+            movie_key = (_normalize_title_for_key(movie.get('title')), str(movie.get('year') or '').strip())
+            if movie_key in detected_keys:
+                has_file = True
+                status_raw = 'available'
+
+        # Final status
+        if has_file or status_raw == 'available':
+            status = 'downloaded'
+        elif status_raw == 'requested':
+            status = 'missing'
+        else:
+            status = 'requested'
+
+        # Get quality profile info from Movie Hunt profiles
+        from .profiles import _get_profiles_config
+        profiles = _get_profiles_config(instance_id)
+        # Use default profile name (Movie Hunt doesn't store per-movie profiles yet)
+        quality_profile_name = None
+        for p in profiles:
+            if p.get('is_default'):
+                quality_profile_name = (p.get('name') or 'Standard').strip()
+                break
+        if not quality_profile_name and profiles:
+            quality_profile_name = (profiles[0].get('name') or 'Standard').strip()
+
+        # Extract file quality from filename
+        file_quality = ''
+        if has_file and file_path:
+            from ._helpers import _extract_quality_from_filename
+            file_quality = _extract_quality_from_filename(os.path.basename(file_path))
+            if file_quality == '-':
+                file_quality = ''
+
+        return jsonify({
+            'success': True,
+            'found': True,
+            'status': status,
+            'has_file': has_file,
+            'path': file_path,
+            'root_folder_path': root_folder,
+            'quality_profile': quality_profile_name or 'Standard',
+            'file_size': file_size,
+            'file_quality': file_quality,
+            'requested_at': movie.get('requested_at', ''),
+        })
+
+    except Exception as e:
+        movie_hunt_logger.error("Movie Hunt status fetch failed: %s", e)
+        return jsonify({'success': True, 'found': False, 'reason': 'error'})
+
+
 @movie_hunt_bp.route('/api/movie-hunt/discover/movies', methods=['GET'])
 def api_movie_hunt_discover_movies():
     """Movie Hunt–only discover: TMDB discover/movie with in_library and in_cooldown from Movie Hunt collection."""

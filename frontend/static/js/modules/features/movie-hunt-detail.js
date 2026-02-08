@@ -298,6 +298,13 @@
                 </div>
 
                 <div class="movie-detail-content">
+                    <!-- Movie Hunt Status Bar -->
+                    <div id="movie-detail-mh-status" class="movie-detail-section movie-detail-mh-section">
+                        <div class="mh-status-bar mh-status-loading">
+                            <div class="mh-status-item"><span class="mh-status-value"><i class="fas fa-spinner fa-spin"></i> Checking status...</span></div>
+                        </div>
+                    </div>
+
                     <!-- Movie Details -->
                     <div class="movie-detail-section">
                         <h2 class="movie-detail-section-title"><i class="fas fa-info-circle"></i> Movie Details</h2>
@@ -567,6 +574,103 @@
                         }
                     });
                 }
+            }
+
+            // Fetch and render Movie Hunt status bar
+            this.fetchMovieHuntStatus(tmdbId, this.selectedInstanceId);
+        },
+
+        async fetchMovieHuntStatus(tmdbId, instanceId) {
+            try {
+                const resp = await fetch(`./api/movie-hunt/movie-status?tmdb_id=${tmdbId}&instance_id=${instanceId}`);
+                const data = await resp.json();
+
+                const container = document.getElementById('movie-detail-mh-status');
+                if (!container) return;
+
+                if (!data.success || !data.found) {
+                    container.innerHTML = '<div class="mh-status-bar"><div class="mh-status-item"><span class="mh-status-badge mh-status-not-added">Not in Collection</span></div></div>';
+                    return;
+                }
+
+                // Status badge with color coding
+                let statusBadge = '';
+                let statusClass = '';
+                let statusIcon = '';
+                if (data.status === 'downloaded') {
+                    statusClass = 'mh-status-downloaded';
+                    statusIcon = 'fa-check-circle';
+                    statusBadge = 'Downloaded';
+                } else if (data.status === 'missing') {
+                    statusClass = 'mh-status-missing';
+                    statusIcon = 'fa-exclamation-circle';
+                    statusBadge = 'Requested';
+                } else {
+                    statusClass = 'mh-status-requested';
+                    statusIcon = 'fa-clock';
+                    statusBadge = 'Requested';
+                }
+
+                // File size formatting
+                let sizeStr = '';
+                const bytes = data.file_size || 0;
+                if (bytes > 0) {
+                    if (bytes >= 1073741824) {
+                        sizeStr = (bytes / 1073741824).toFixed(1) + ' GiB';
+                    } else {
+                        sizeStr = (bytes / 1048576).toFixed(0) + ' MiB';
+                    }
+                }
+
+                let html = '<div class="mh-status-bar">';
+
+                // Status
+                html += '<div class="mh-status-item">';
+                html += '<span class="mh-status-label">Status</span>';
+                html += '<span class="mh-status-badge ' + statusClass + '"><i class="fas ' + statusIcon + '"></i> ' + statusBadge + '</span>';
+                html += '</div>';
+
+                // Quality Profile
+                if (data.quality_profile) {
+                    html += '<div class="mh-status-item">';
+                    html += '<span class="mh-status-label">Quality Profile</span>';
+                    html += '<span class="mh-status-value">' + this.escapeHtml(data.quality_profile) + '</span>';
+                    html += '</div>';
+                }
+
+                // File Quality (if downloaded)
+                if (data.file_quality) {
+                    html += '<div class="mh-status-item">';
+                    html += '<span class="mh-status-label">Quality</span>';
+                    html += '<span class="mh-status-badge mh-status-quality"><i class="fas fa-film"></i> ' + this.escapeHtml(data.file_quality) + '</span>';
+                    html += '</div>';
+                }
+
+                // Size
+                if (sizeStr) {
+                    html += '<div class="mh-status-item">';
+                    html += '<span class="mh-status-label">Size</span>';
+                    html += '<span class="mh-status-value">' + sizeStr + '</span>';
+                    html += '</div>';
+                }
+
+                // Root Folder / Path
+                if (data.path) {
+                    html += '<div class="mh-status-item mh-status-path">';
+                    html += '<span class="mh-status-label">Path</span>';
+                    html += '<span class="mh-status-value mh-path-text">' + this.escapeHtml(data.path) + '</span>';
+                    html += '</div>';
+                } else if (data.root_folder_path) {
+                    html += '<div class="mh-status-item mh-status-path">';
+                    html += '<span class="mh-status-label">Root Folder</span>';
+                    html += '<span class="mh-status-value mh-path-text">' + this.escapeHtml(data.root_folder_path) + '</span>';
+                    html += '</div>';
+                }
+
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('[MovieHuntDetail] Movie status fetch failed:', err);
             }
         },
 

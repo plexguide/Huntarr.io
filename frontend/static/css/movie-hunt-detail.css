@@ -556,3 +556,113 @@
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     }
 }
+
+/* ---- Movie Hunt Status Bar ---- */
+.movie-detail-mh-section {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.mh-status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    align-items: center;
+    padding: 12px 18px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 8px;
+}
+
+.mh-status-loading {
+    opacity: 0.6;
+}
+
+.mh-status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mh-status-path {
+    flex: 1;
+    min-width: 200px;
+}
+
+.mh-status-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(148, 163, 184, 0.6);
+}
+
+.mh-status-value {
+    font-size: 13px;
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+.mh-path-text {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    color: rgba(148, 163, 184, 0.8);
+    word-break: break-all;
+}
+
+.mh-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+/* Green — Downloaded / has file */
+.mh-status-downloaded {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* Red/Orange — Requested (missing) */
+.mh-status-missing {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Amber — Requested / pending */
+.mh-status-requested {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Not in Collection */
+.mh-status-not-added {
+    background: rgba(148, 163, 184, 0.08);
+    color: rgba(148, 163, 184, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+/* Blue — Quality */
+.mh-status-quality {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+@media (max-width: 600px) {
+    .mh-status-bar {
+        gap: 10px 16px;
+        padding: 10px 14px;
+    }
+    .mh-status-path {
+        min-width: 0;
+        width: 100%;
+    }
+}
