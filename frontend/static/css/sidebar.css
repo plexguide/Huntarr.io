@@ -44,7 +44,7 @@
     content: '';
     position: absolute;
     top: 0;
-    right: -1px;
+    right: 0;
     bottom: 0;
     width: 2px;
     background: linear-gradient(180deg,
@@ -57,9 +57,9 @@
         #3498db 100%
     );
     background-size: 100% 200%;
-    animation: sidebar-edge-flow 6s ease-in-out infinite;
-    z-index: 10;
-    opacity: 0.8;
+    animation: sidebar-edge-flow 111s ease-in-out infinite;
+    z-index: 1001;
+    opacity: 0.85;
 }
 
 @keyframes sidebar-edge-flow {
