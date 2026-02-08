@@ -10,6 +10,11 @@
     box-sizing: border-box;
 }
 
+/* Requestarr banner row spacing */
+#requestarr-section .app-banners-row {
+    margin: 0 0 8px 0;
+}
+
 /* Global Search Bar - Full Width (8px below to match app pages) */
 .global-search-bar {
     position: relative;
@@ -24,6 +29,8 @@
     transform: translateY(-50%);
     color: #888;
     font-size: 18px;
+    z-index: 1;
+    pointer-events: none;
 }
 
 .global-search-bar input {

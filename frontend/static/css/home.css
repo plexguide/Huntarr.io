@@ -286,16 +286,21 @@
 }
 
 /* ── Search bar ──────────────────────────────────────────────────── */
+.global-search-bar {
+    position: relative;
+    width: 100%;
+}
+
 .global-search-bar input {
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid rgba(148, 163, 184, 0.15);
     border-radius: 12px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.03);
     transition: all 0.3s ease;
     padding: 14px 20px 14px 52px;
     font-size: 15px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .global-search-bar input:focus {
@@ -305,10 +310,15 @@
 }
 
 .global-search-bar i {
-    color: #94a3b8;
-    transition: color 0.3s ease;
+    position: absolute;
     left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
     font-size: 16px;
+    z-index: 1;
+    transition: color 0.3s ease;
+    pointer-events: none;
 }
 
 .global-search-bar:focus-within i {
