@@ -241,7 +241,7 @@ def _save_collection_config(items_list, instance_id):
     db.save_app_config_for_instance('movie_hunt_collection', instance_id, {'items': items_list})
 
 
-def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None, root_folder=None):
+def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None, root_folder=None, quality_profile=None):
     """Append one entry to Media Collection after successful request."""
     items = _get_collection_config(instance_id)
     items.append({
@@ -250,6 +250,7 @@ def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None,
         'tmdb_id': tmdb_id,
         'poster_path': poster_path or '',
         'root_folder': root_folder or '',
+        'quality_profile': quality_profile or '',
         'requested_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
         'status': 'requested'
     })
@@ -596,17 +597,17 @@ def api_movie_hunt_movie_status():
         else:
             status = 'requested'
 
-        # Get quality profile info from Movie Hunt profiles
+        # Get quality profile info — check per-movie first, then default
         from .profiles import _get_profiles_config
         profiles = _get_profiles_config(instance_id)
-        # Use default profile name (Movie Hunt doesn't store per-movie profiles yet)
-        quality_profile_name = None
-        for p in profiles:
-            if p.get('is_default'):
-                quality_profile_name = (p.get('name') or 'Standard').strip()
-                break
-        if not quality_profile_name and profiles:
-            quality_profile_name = (profiles[0].get('name') or 'Standard').strip()
+        quality_profile_name = (movie.get('quality_profile') or '').strip()
+        if not quality_profile_name:
+            for p in profiles:
+                if p.get('is_default'):
+                    quality_profile_name = (p.get('name') or 'Standard').strip()
+                    break
+            if not quality_profile_name and profiles:
+                quality_profile_name = (profiles[0].get('name') or 'Standard').strip()
 
         # Extract file quality from filename
         file_quality = ''
@@ -859,3 +860,123 @@ def api_movie_hunt_collection_delete(index):
     except Exception as e:
         logger.exception('Movie Hunt collection delete error')
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/collection/update', methods=['POST'])
+def api_movie_hunt_collection_update_by_tmdb():
+    """Update a collection item's editable fields by tmdb_id."""
+    try:
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        data = request.get_json() or {}
+        tmdb_id = data.get('tmdb_id')
+        if not tmdb_id:
+            return jsonify({'success': False, 'error': 'tmdb_id required'}), 400
+        tmdb_id = int(tmdb_id)
+
+        items = _get_collection_config(instance_id)
+        found = False
+        for item in items:
+            if item.get('tmdb_id') == tmdb_id:
+                if 'root_folder' in data:
+                    item['root_folder'] = (data['root_folder'] or '').strip()
+                if 'quality_profile' in data:
+                    item['quality_profile'] = (data['quality_profile'] or '').strip()
+                if 'status' in data:
+                    item['status'] = (data['status'] or '').strip()
+                found = True
+                break
+
+        if not found:
+            return jsonify({'success': False, 'error': 'Movie not found in collection'}), 404
+
+        _save_collection_config(items, instance_id)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Collection update error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/collection/remove', methods=['POST'])
+def api_movie_hunt_collection_remove_by_tmdb():
+    """Remove a collection item by tmdb_id, optionally adding to exclusion list."""
+    import os
+    import shutil
+
+    try:
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        data = request.get_json() or {}
+        tmdb_id = data.get('tmdb_id')
+        title = (data.get('title') or '').strip()
+        year = str(data.get('year') or '').strip()
+        add_to_blocklist = data.get('add_to_blocklist', False)
+        delete_files = data.get('delete_files', False)
+
+        items = _get_collection_config(instance_id)
+        removed = False
+        removed_item = None
+
+        if tmdb_id:
+            tmdb_id = int(tmdb_id)
+            for i, item in enumerate(items):
+                if item.get('tmdb_id') == tmdb_id:
+                    removed_item = items.pop(i)
+                    removed = True
+                    break
+
+        if not removed and title:
+            for i, item in enumerate(items):
+                if (item.get('title') or '').strip() == title and str(item.get('year') or '') == year:
+                    removed_item = items.pop(i)
+                    removed = True
+                    break
+
+        if not removed:
+            return jsonify({'success': False, 'error': 'Movie not found in collection'}), 404
+
+        _save_collection_config(items, instance_id)
+
+        if add_to_blocklist and removed_item:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            exclusions = db.get_app_config_for_instance('movie_hunt_exclusions', instance_id) or {}
+            excluded = exclusions.get('movies', [])
+            entry = {
+                'tmdb_id': removed_item.get('tmdb_id'),
+                'title': removed_item.get('title', ''),
+                'year': removed_item.get('year', ''),
+                'excluded_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            }
+            existing_ids = {e.get('tmdb_id') for e in excluded if e.get('tmdb_id')}
+            if removed_item.get('tmdb_id') and removed_item['tmdb_id'] not in existing_ids:
+                excluded.append(entry)
+            exclusions['movies'] = excluded
+            db.save_app_config_for_instance('movie_hunt_exclusions', instance_id, exclusions)
+
+        if delete_files and removed_item:
+            root_folder = (removed_item.get('root_folder') or '').strip()
+            file_path = (removed_item.get('file_path') or '').strip()
+            movie_title = (removed_item.get('title') or '').strip()
+            movie_year = str(removed_item.get('year') or '').strip()
+
+            if file_path and os.path.isfile(file_path):
+                folder = os.path.dirname(file_path)
+                if os.path.isdir(folder):
+                    try:
+                        shutil.rmtree(folder)
+                        movie_hunt_logger.info("Deleted movie folder: %s", folder)
+                    except Exception as e:
+                        movie_hunt_logger.error("Failed to delete folder %s: %s", folder, e)
+            elif root_folder and movie_title:
+                folder_name = '%s (%s)' % (movie_title, movie_year) if movie_year else movie_title
+                folder_path = os.path.join(root_folder, folder_name)
+                if os.path.isdir(folder_path):
+                    try:
+                        shutil.rmtree(folder_path)
+                        movie_hunt_logger.info("Deleted movie folder: %s", folder_path)
+                    except Exception as e:
+                        movie_hunt_logger.error("Failed to delete folder %s: %s", folder_path, e)
+
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Collection remove error')
+        return jsonify({'success': False, 'error': str(e)}), 500
