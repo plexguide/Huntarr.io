@@ -56,7 +56,6 @@ div[id*="scheduling"] p:not(.no-schedules-message p),
     opacity: 1 !important;
     margin: 20px 0 !important;
     background-size: 300% 100% !important;
-    animation: gradientShift 15s ease infinite !important;
     box-shadow: 0 0 5px rgba(255, 255, 255, 0.2) !important;
 }
 
@@ -211,21 +210,13 @@ select.form-control {
     overflow: auto !important;
 }
 
-/* Color-shifting divider line */
+/* Color divider line */
 .color-shift-divider {
     height: 1px;
     background: linear-gradient(to right, #3498db, #9b59b6, #2ecc71, #f1c40f, #e74c3c);
-    background-size: 500% 100%;
-    animation: gradientShift 30s ease infinite;
     margin: 15px 0;
     border: none;
     opacity: 0.7;
-}
-
-@keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
 }
 
 /* Any container elements that might have overflow: hidden */

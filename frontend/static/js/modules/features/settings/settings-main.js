@@ -108,9 +108,6 @@ window.HuntarrSettings = {
                     if (swaparrData) window.swaparrSettings = swaparrData;
                 }
                 
-                if (app === 'general' && 'low_usage_mode' in settings) {
-                    if (window.huntarrUI.applyLowUsageMode) window.huntarrUI.applyLowUsageMode(settings.low_usage_mode);
-                }
             }
 
             const currentAppSettings = window.huntarrUI.originalSettings[app] || {};
@@ -155,9 +152,7 @@ window.HuntarrSettings = {
         
         settingsContainer.addEventListener('change', (event) => {
             if (event.target.matches('input, select, textarea')) {
-                if (event.target.id === 'low_usage_mode' && window.huntarrUI.applyLowUsageMode) {
-                    window.huntarrUI.applyLowUsageMode(event.target.checked);
-                } else if (event.target.id === 'timezone' && window.huntarrUI.applyTimezoneChange) {
+                if (event.target.id === 'timezone' && window.huntarrUI.applyTimezoneChange) {
                     window.huntarrUI.applyTimezoneChange(event.target.value);
                 } else if (event.target.id === 'auth_mode' && window.huntarrUI.applyAuthModeChange) {
                     window.huntarrUI.applyAuthModeChange(event.target.value);

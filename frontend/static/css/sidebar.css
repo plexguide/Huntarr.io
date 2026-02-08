@@ -61,11 +61,6 @@
     opacity: 0.85;
 }
 
-@keyframes sidebar-edge-flow {
-    0% { background-position: 50% 0%; }
-    50% { background-position: 50% 200%; }
-    100% { background-position: 50% 0%; }
-}
 
 /* ===== LOGO SECTION ===== */
 .logo-container {
@@ -142,16 +137,7 @@
 }
 
 .heart-icon i {
-    animation: heart-beat 2s ease-in-out infinite;
     color: #ff4d6d;
-}
-
-@keyframes heart-beat {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    15% { transform: translate(-50%, -50%) scale(1.2); }
-    30% { transform: translate(-50%, -50%) scale(1); }
-    45% { transform: translate(-50%, -50%) scale(1.15); }
-    60% { transform: translate(-50%, -50%) scale(1); }
 }
 
 /* ===== NAV GROUPS ===== */

@@ -67,14 +67,6 @@
 /* Error state styling */
 .timer-value.error {
     color: #ff5252;
-    animation: pulse 2s infinite;
-}
-
-/* Pulse animation for errors */
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
-    100% { opacity: 1; }
 }
 
 .timer-value {
@@ -89,13 +81,11 @@
 /* Under 5 minutes - orange */
 .timer-soon {
     color: #ff8c00 !important;
-    animation: pulse-warn 1.5s infinite alternate;
 }
 
 /* Under 1 minute - red */
 .timer-imminent {
     color: #ff3333 !important;
-    animation: pulse-imminent 0.8s infinite alternate;
 }
 
 .timer-error {
@@ -103,34 +93,6 @@
     opacity: 0.7;
 }
 
-/* Pulse animations for different timer states */
-@keyframes pulse-warn {
-    from {
-        opacity: 0.9;
-    }
-    to {
-        opacity: 1;
-        background-color: rgba(255, 193, 7, 0.1);
-    }
-}
-
-@keyframes pulse-imminent {
-    from {
-        opacity: 0.9;
-        transform: scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-        background-color: rgba(255, 87, 34, 0.15);
-    }
-}
-
-/* Low usage mode compatibility */
-.low-usage-mode .timer-soon,
-.low-usage-mode .timer-imminent {
-    animation: none !important;
-}
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {

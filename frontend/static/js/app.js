@@ -81,18 +81,10 @@ let huntarrUI = {
         this.setupLogoHandling();
         // Auto-save enabled - no unsaved changes handler needed
         
-        // Check if Low Usage Mode is enabled BEFORE loading stats to avoid race condition
-        this.checkLowUsageMode().then(() => {
-            // Initialize media stats after low usage mode is determined
-            if (window.location.pathname === '/') {
-                this.loadMediaStats();
-            }
-        }).catch(() => {
-            // If low usage mode check fails, still load stats
-            if (window.location.pathname === '/') {
-                this.loadMediaStats();
-            }
-        });
+        // Initialize media stats
+        if (window.location.pathname === '/') {
+            this.loadMediaStats();
+        }
         
         // Check if we need to navigate to a specific section after refresh
         const targetSection = localStorage.getItem('huntarr-target-section');
@@ -2118,18 +2110,6 @@ let huntarrUI = {
         return originalJSON !== currentJSON;
     },
     
-    // Check if Low Usage Mode is enabled in settings and apply it
-    checkLowUsageMode: function() {
-        return window.HuntarrTheme ? window.HuntarrTheme.checkLowUsageMode() : Promise.resolve();
-    },
-    
-    // Apply Low Usage Mode effects based on setting
-    applyLowUsageMode: function(enabled) {
-        if (window.HuntarrTheme) {
-            window.HuntarrTheme.applyLowUsageMode(enabled);
-        }
-    },
-
     // Apply timezone change immediately
     applyTimezoneChange: function(timezone) {
         if (window.HuntarrSettings && typeof window.HuntarrSettings.applyTimezoneChange === 'function') {
@@ -2208,24 +2188,6 @@ let huntarrUI = {
             button.disabled = false;
             button.innerHTML = `<i class="fas fa-sync-alt"></i> Reset`;
         });
-    },
-
-    // More robust low usage mode detection
-    isLowUsageModeEnabled: function() {
-        // Check multiple sources to determine if low usage mode is enabled
-        
-        // 1. Check CSS class on body (primary method)
-        const hasLowUsageClass = document.body.classList.contains('low-usage-mode');
-        
-        // 2. Check if the standalone low-usage-mode.js module is enabled
-        const standaloneModuleEnabled = window.LowUsageMode && window.LowUsageMode.isEnabled && window.LowUsageMode.isEnabled();
-        
-        // 3. Final determination based on reliable sources (no indicator checking needed)
-        const isEnabled = hasLowUsageClass || standaloneModuleEnabled;
-        
-        console.log(`[huntarrUI] Low usage mode detection - CSS class: ${hasLowUsageClass}, Module: ${standaloneModuleEnabled}, Final: ${isEnabled}`);
-        
-        return isEnabled;
     },
 
     showDashboard: function() {

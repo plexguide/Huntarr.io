@@ -82,7 +82,7 @@ window.HuntarrStats = {
     updateStatsDisplay: function(stats, isFromCache = false) {
         const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
         const statTypes = ['hunted', 'upgraded'];
-        const isLowUsageMode = window.huntarrUI ? window.huntarrUI.isLowUsageModeEnabled() : false;
+        const isLowUsageMode = false;
         
         apps.forEach(app => {
             if (!stats[app]) return;

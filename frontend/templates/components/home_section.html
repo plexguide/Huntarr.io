@@ -794,18 +794,6 @@
         opacity: 0.9;
     }
     
-    /* Glowing ring animations */
-    @keyframes pulse {
-        0% { opacity: 0.6; }
-        50% { opacity: 1; }
-        100% { opacity: 0.6; }
-    }
-    
-    @keyframes rotate {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
     /* Common styles for app icon wrappers */
     .app-stats-card .app-icon-wrapper::before,
     .app-stats-card .app-icon-wrapper::after {
@@ -817,7 +805,6 @@
         bottom: -4px;
         border-radius: 50%;
         border: 2px solid transparent;
-        animation: pulse 2s infinite ease-in-out, rotate 20s infinite linear;
     }
     
     .app-stats-card .app-icon-wrapper::after {
@@ -826,7 +813,6 @@
         right: -8px;
         bottom: -8px;
         opacity: 0.5;
-        animation: pulse 3s infinite ease-in-out, rotate 30s infinite linear reverse;
     }
     
     /* Sonarr blue glowing rings */
@@ -1747,17 +1733,6 @@ fixe    }
         background: linear-gradient(135deg, #d63031, #e84393);
         color: #ffffff;
         box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
-        animation: pulse-donate 2s infinite alternate;
-    }
-    
-    @keyframes pulse-github {
-        0% { box-shadow: 0 0 10px rgba(255, 193, 7, 0.4); }
-        100% { box-shadow: 0 0 20px rgba(255, 193, 7, 0.7); }
-    }
-    
-    @keyframes pulse-donate {
-        0% { box-shadow: 0 0 10px rgba(255, 107, 107, 0.4); }
-        100% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.7); }
     }
     
     .support-link .link-details {

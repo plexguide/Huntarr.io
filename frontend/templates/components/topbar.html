@@ -245,7 +245,7 @@
     
     .star-chip .chip-icon { 
         color: #ffd700;
-        animation: star-glow 3s ease-in-out infinite alternate;
+        filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.5));
     }
     .star-chip .chip-value { color: #f5d060; font-weight: 800; }
     
@@ -253,11 +253,6 @@
         background: rgba(255, 193, 7, 0.18);
         border-color: rgba(255, 193, 7, 0.4);
         box-shadow: 0 2px 10px rgba(255, 193, 7, 0.2);
-    }
-    
-    @keyframes star-glow {
-        0% { filter: drop-shadow(0 0 1px rgba(255, 215, 0, 0.3)); }
-        100% { filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.7)); }
     }
 
     /* ===== SOCIAL BUTTONS ===== */

@@ -56,16 +56,6 @@
                 </div>
 
                 <div class="setting-item">
-                    <label for="low_usage_mode"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#low-usage-mode" class="info-icon" title="Learn more about Low Usage Mode" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Low Usage Mode:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="low_usage_mode" ${
-                          settings.low_usage_mode === true ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Disables animations to reduce CPU/GPU usage on older devices</p>
-                </div>
-                <div class="setting-item">
                     <label for="timezone"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#timezone" class="info-icon" title="Set your timezone for accurate time display" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Timezone:</label>
                     <select id="timezone" name="timezone" style="width: 300px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
                         ${(() => {
@@ -238,8 +228,7 @@
             if (update) settings.check_for_updates = update.checked;
             const trendingEl = document.getElementById("show_trending");
             settings.show_trending = trendingEl ? trendingEl.checked : false;
-            const lowUsage = document.getElementById("low_usage_mode");
-            if (lowUsage) settings.low_usage_mode = lowUsage.checked;
+
             const timezone = document.getElementById("timezone");
             if (timezone) settings.timezone = timezone.value;
             const authMode = document.getElementById("auth_mode");

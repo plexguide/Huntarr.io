@@ -3418,23 +3418,11 @@ input:disabled + .toggle-slider {
 
 .fire-emoji {
     font-size: 1.3em;
-    animation: fire-pulse 2s ease-in-out infinite;
     filter: drop-shadow(0 0 8px rgba(255, 100, 50, 0.8)) drop-shadow(0 0 16px rgba(255, 150, 50, 0.6));
 }
 
 .movie-emoji, .tv-emoji {
     font-size: 1.3em;
-}
-
-@keyframes fire-pulse {
-    0%, 100% {
-        transform: scale(1);
-        filter: drop-shadow(0 0 8px rgba(255, 100, 50, 0.8)) drop-shadow(0 0 16px rgba(255, 150, 50, 0.6));
-    }
-    50% {
-        transform: scale(1.15);
-        filter: drop-shadow(0 0 12px rgba(255, 120, 50, 1)) drop-shadow(0 0 24px rgba(255, 180, 50, 0.8));
-    }
 }
 
 .trending-bar {
@@ -3450,16 +3438,4 @@ input:disabled + .toggle-slider {
     border-radius: 2px;
     margin-bottom: 20px;
     box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
-    animation: bar-glow 3s ease-in-out infinite;
-}
-
-@keyframes bar-glow {
-    0%, 100% {
-        opacity: 0.8;
-        box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
-    }
-    50% {
-        opacity: 1;
-        box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
-    }
 }

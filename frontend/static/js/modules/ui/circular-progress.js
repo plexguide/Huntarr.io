@@ -90,14 +90,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 align-items: center;
             }
             
-            @keyframes pulse-${app} {
-                0% { filter: drop-shadow(0 0 3px ${appColors[app]}40); }
-                50% { filter: drop-shadow(0 0 6px ${appColors[app]}80); }
-                100% { filter: drop-shadow(0 0 3px ${appColors[app]}40); }
-            }
-            
             .api-progress-circle circle:nth-child(2) {
-                animation: pulse-${app} 2s infinite;
+                filter: drop-shadow(0 0 4px ${appColors[app]}60);
                 transition: stroke-dashoffset 0.5s ease;
             }
         `;

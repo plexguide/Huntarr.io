@@ -1,6 +1,6 @@
 /**
  * Theme Module
- * Handles dark mode, logo persistence, and low usage mode
+ * Handles dark mode and logo persistence
  */
 
 window.HuntarrTheme = {
@@ -22,33 +22,6 @@ window.HuntarrTheme = {
                 sessionStorage.setItem('huntarr-logo-src', this.logoSrc);
             }
         });
-    },
-
-    checkLowUsageMode: function() {
-        return HuntarrUtils.fetchWithTimeout('./api/settings/general', { method: 'GET' })
-            .then(response => response.json())
-            .then(config => {
-                const enabled = config?.low_usage_mode === true;
-                this.applyLowUsageMode(enabled);
-                return config;
-            })
-            .catch(error => {
-                console.error('[HuntarrTheme] Error checking Low Usage Mode:', error);
-                this.applyLowUsageMode(false);
-                throw error;
-            });
-    },
-
-    applyLowUsageMode: function(enabled) {
-        console.log(`[HuntarrTheme] Setting Low Usage Mode: ${enabled ? 'Enabled' : 'Disabled'}`);
-        const wasEnabled = document.body.classList.contains('low-usage-mode');
-        
-        if (enabled) document.body.classList.add('low-usage-mode');
-        else document.body.classList.remove('low-usage-mode');
-        
-        if (wasEnabled !== enabled && window.mediaStats && window.HuntarrStats) {
-            window.HuntarrStats.updateStatsDisplay(window.mediaStats);
-        }
     },
 
     initDarkMode: function() {

@@ -1162,7 +1162,6 @@
 
 .nzb-server-status-dot.status-checking {
     background: #6366f1;
-    animation: nzb-pulse-status 1.2s ease-in-out infinite;
 }
 
 .nzb-server-status-dot.status-online {
@@ -1173,11 +1172,6 @@
 .nzb-server-status-dot.status-offline {
     background: #ef4444;
     box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
-}
-
-@keyframes nzb-pulse-status {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
 }
 
 /* ── Test Connection button style ────────────── */

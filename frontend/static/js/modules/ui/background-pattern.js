@@ -24,18 +24,13 @@ document.addEventListener('DOMContentLoaded', function() {
             background-position: -5px -5px;
             pointer-events: none;
             z-index: 0;
-            animation: patternFade 8s ease-in-out infinite alternate;
+            opacity: 0.5;
         }
         
         /* Make sure all dashboard content stays above the pattern */
         .dashboard-grid > * {
             position: relative;
             z-index: 1;
-        }
-        
-        @keyframes patternFade {
-            0% { opacity: 0.3; }
-            100% { opacity: 0.8; }
         }
         
         /* For mobile - smaller pattern */

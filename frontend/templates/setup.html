@@ -15,39 +15,10 @@
     <link rel="stylesheet" href="./static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Match the heart icon pulsing animation from the sidebar */
-        @keyframes heart-pulse {
-            0% { color: #ff4d6d; text-shadow: 0 0 10px #ff4d6d, 0 0 20px #ff4d6d; } /* Pink */
-            50% { color: #ff0a33; text-shadow: 0 0 15px #ff0a33, 0 0 25px #ff0a33; } /* Red */
-            100% { color: #ff4d6d; text-shadow: 0 0 10px #ff4d6d, 0 0 20px #ff4d6d; } /* Pink */
-        }
-        
-        /* Heart animation scaling effect */
-        @keyframes pulse-heart {
-            0% {
-                transform: scale(1);
-                opacity: 0.7;
-            }
-            100% {
-                transform: scale(1.2);
-                opacity: 1;
-            }
-        }
-        
         /* Special thankyou heart styling */
         .thankyou-heart {
-            animation: heart-pulse 7.2s infinite ease-in-out, pulse-heart 1.5s infinite alternate;
+            color: #ff4d6d;
             font-size: 28px;
-        }
-        
-        /* Define logo glowing animation same as sidebar */
-        @keyframes logo-glow {
-            0% { box-shadow: 0 0 15px #3498db, 0 0 5px rgba(52, 152, 219, 0.4); } /* Sonarr blue */
-            20% { box-shadow: 0 0 15px #f1c40f, 0 0 5px rgba(241, 196, 15, 0.4); } /* Radarr yellow */
-            40% { box-shadow: 0 0 15px #2ecc71, 0 0 5px rgba(46, 204, 113, 0.4); } /* Lidarr green */
-            60% { box-shadow: 0 0 15px #e74c3c, 0 0 5px rgba(231, 76, 60, 0.4); } /* Readarr red */
-            80% { box-shadow: 0 0 15px #9b59b6, 0 0 5px rgba(155, 89, 182, 0.4); } /* Whisparr purple */
-            100% { box-shadow: 0 0 15px #3498db, 0 0 5px rgba(52, 152, 219, 0.4); } /* Back to Sonarr blue */
         }
         
         /* Logo styling */
@@ -55,7 +26,7 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            animation: logo-glow 10s infinite ease-in-out;
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.4);
             transition: all 0.3s ease;
             margin-bottom: 5px;
         }

@@ -477,19 +477,11 @@
 
 .timer-value.refreshing-state {
     color: #00c2ce !important;
-    animation: pulse 2s infinite;
 }
 
 .timer-value.running-state {
     color: #00ff88 !important;
-    animation: pulse 1.5s infinite;
     font-weight: 600;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
-    100% { opacity: 1; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

@@ -770,7 +770,7 @@ window.SettingsForms = {
                 display_community_resources: getVal('display_community_resources', true),
                 display_huntarr_support: getVal('display_huntarr_support', true),
                 enable_requestarr: getVal('enable_requestarr', true),
-                low_usage_mode: getVal('low_usage_mode', true),
+
                 show_trending: getVal('show_trending', true),
                 tmdb_image_cache_days: parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '7'),
                 tmdb_cache_storage: container.querySelector('#tmdb_cache_storage')?.value || 'server',
@@ -832,7 +832,7 @@ window.SettingsForms = {
             settings.display_community_resources = getInputValue("#display_community_resources", true);
             settings.display_huntarr_support = getInputValue("#display_huntarr_support", true);
             settings.enable_requestarr = getInputValue("#enable_requestarr", true);
-            settings.low_usage_mode = getInputValue("#low_usage_mode", true);
+
             settings.show_trending = getInputValue("#show_trending", true);
 
             const authMode = container.querySelector("#auth_mode")?.value || "login";
