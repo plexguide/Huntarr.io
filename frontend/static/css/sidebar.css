@@ -49,20 +49,23 @@
     width: 2px;
     background: linear-gradient(180deg,
         #3498db 0%,
-        #2ecc71 25%,
-        #f39c12 50%,
-        #e74c3c 75%,
-        #9b59b6 100%
+        #5ba8d6 15%,
+        #d4a843 35%,
+        #f0c850 50%,
+        #d4a843 65%,
+        #5ba8d6 85%,
+        #3498db 100%
     );
     background-size: 100% 200%;
-    animation: sidebar-edge-flow 8s linear infinite;
+    animation: sidebar-edge-flow 6s ease-in-out infinite;
     z-index: 10;
-    opacity: 0.5;
+    opacity: 0.8;
 }
 
 @keyframes sidebar-edge-flow {
     0% { background-position: 50% 0%; }
-    100% { background-position: 50% 200%; }
+    50% { background-position: 50% 200%; }
+    100% { background-position: 50% 0%; }
 }
 
 /* ===== LOGO SECTION ===== */

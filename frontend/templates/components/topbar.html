@@ -81,21 +81,23 @@
         height: 2px;
         background: linear-gradient(90deg, 
             #3498db 0%,
-            #2ecc71 20%, 
-            #f39c12 40%, 
-            #e74c3c 60%, 
-            #9b59b6 80%, 
+            #5ba8d6 15%,
+            #d4a843 35%, 
+            #f0c850 50%, 
+            #d4a843 65%,
+            #5ba8d6 85%, 
             #3498db 100%
         );
         background-size: 200% 100%;
-        animation: topbar-gradient-flow 8s linear infinite;
+        animation: topbar-gradient-flow 6s ease-in-out infinite;
         z-index: 10;
-        opacity: 0.7;
+        opacity: 0.8;
     }
     
     @keyframes topbar-gradient-flow {
         0% { background-position: 0% 50%; }
-        100% { background-position: 200% 50%; }
+        50% { background-position: 200% 50%; }
+        100% { background-position: 0% 50%; }
     }
 
     /* ===== LAYOUT SECTIONS ===== */
