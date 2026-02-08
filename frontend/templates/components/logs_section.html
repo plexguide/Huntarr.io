@@ -1,14 +1,12 @@
 <div id="logsSection" class="system-tab-panel" data-system-panel="logs" style="display: none;">
-    <div class="logs-header">
-        <div class="logs-controls">
-            <div class="control-group">
-                <div class="log-app-filter">
-                    <label for="logAppSelect">
-                        <i class="fas fa-layer-group"></i>
-                        <span>App:</span>
-                    </label>
-                    <select id="logAppSelect" class="styled-select">
-                        <option value="all" selected>All</option>
+    <!-- Unified Toolbar -->
+    <div class="logs-toolbar">
+        <div class="logs-toolbar-row">
+            <div class="logs-filters">
+                <div class="logs-filter-chip">
+                    <i class="fas fa-layer-group"></i>
+                    <select id="logAppSelect" class="chip-select">
+                        <option value="all" selected>All Apps</option>
                         <option value="sonarr">Sonarr</option>
                         <option value="radarr">Radarr</option>
                         <option value="lidarr">Lidarr</option>
@@ -20,70 +18,61 @@
                         <option value="system">System</option>
                     </select>
                 </div>
-            </div>
-
-            <div class="control-group">
-                <div class="log-level-filter">
-                    <label for="logLevelSelect">
-                        <i class="fas fa-filter"></i>
-                        <span>Level:</span>
-                    </label>
-                    <select id="logLevelSelect" class="styled-select">
+                <div class="logs-filter-chip">
+                    <i class="fas fa-filter"></i>
+                    <select id="logLevelSelect" class="chip-select">
                         <option value="all">All Levels</option>
-                        <option value="debug" id="logLevelOptionDebug">DEBUG</option>
-                        <option value="info" selected>INFO</option>
-                        <option value="warning">WARNING</option>
-                        <option value="error">ERROR</option>
+                        <option value="debug" id="logLevelOptionDebug">Debug</option>
+                        <option value="info" selected>Info</option>
+                        <option value="warning">Warning</option>
+                        <option value="error">Error</option>
                     </select>
                 </div>
             </div>
-            
-            <div class="control-group main-search">
-                <div class="log-search">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="logSearchInput" placeholder="Search logs...">
-                    <button id="logSearchButton">Search</button>
-                </div>
+            <div class="logs-search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="logSearchInput" placeholder="Search logs...">
             </div>
-            
-            <div class="control-group">
-                <button type="button" id="clearLogsButton" class="btn-danger-outline">
-                    <i class="fas fa-trash-alt"></i> Clear
-                </button>
-            </div>
+            <button type="button" id="logSearchButton" class="logs-btn logs-btn-search" title="Search">
+                <i class="fas fa-search"></i>
+            </button>
+            <button type="button" id="clearLogsButton" class="logs-btn logs-btn-danger" title="Clear Logs">
+                <i class="fas fa-trash-alt"></i>
+            </button>
         </div>
-
-        <div class="logs-pagination-bar">
-            <div class="connection-status-wrapper">
-                Status: <span id="logConnectionStatus" class="status-disconnected">Disconnected</span>
+        <div class="logs-toolbar-meta">
+            <div class="logs-connection-dot">
+                <i class="fas fa-circle logs-status-icon"></i>
+                <span id="logConnectionStatus" class="status-disconnected">Disconnected</span>
             </div>
-            <div class="pagination-info">
-                <span id="logsPageInfo">Page <span id="logsCurrentPage">1</span> of <span id="logsTotalPages">1</span></span>
-            </div>
-            <div class="pagination-actions">
-                <button id="logsPrevPage" class="pagination-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
-                <button id="logsNextPage" class="pagination-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
-            </div>
-            <div class="page-size-selector">
-                <span>Show:</span>
-                <select id="logsPageSize" class="mini-select">
-                    <option value="20" selected>20</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    <option value="200">200</option>
-                </select>
+            <div class="logs-pagination">
+                <span class="logs-page-size">
+                    Show
+                    <select id="logsPageSize" class="chip-select chip-select-sm">
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                    </select>
+                </span>
+                <div class="logs-page-nav">
+                    <button id="logsPrevPage" class="logs-page-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
+                    <span id="logsPageInfo" class="logs-page-info">Page <span id="logsCurrentPage">1</span> of <span id="logsTotalPages">1</span></span>
+                    <button id="logsNextPage" class="logs-page-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
+                </div>
             </div>
         </div>
     </div>
-    
+
+    <!-- Log Table -->
     <div class="logs-table-wrapper">
         <table class="logs-data-table">
             <thead>
                 <tr>
-                    <th class="col-time">TIME</th>
-                    <th class="col-level">LEVEL</th>
-                    <th class="col-app">APP</th>
-                    <th class="col-message">MESSAGE</th>
+                    <th class="col-time">Time</th>
+                    <th class="col-level">Level</th>
+                    <th class="col-app">App</th>
+                    <th class="col-message">Message</th>
                 </tr>
             </thead>
             <tbody id="logsContainer">
