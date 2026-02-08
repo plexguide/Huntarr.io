@@ -686,6 +686,13 @@ let huntarrUI = {
             if (window.NzbHunt && typeof window.NzbHunt.initSettings === 'function') {
                 window.NzbHunt.initSettings();
             }
+            if (window._nzbHuntSettingsTab === 'servers' && window.NzbHunt && typeof window.NzbHunt._showSettingsTab === 'function') {
+                window.NzbHunt._showSettingsTab('servers');
+                delete window._nzbHuntSettingsTab;
+                if (window.location.hash !== '#nzb-hunt-settings') {
+                    window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-settings');
+                }
+            }
         } else if ((section === 'requestarr' || section.startsWith('requestarr-')) && this._enableRequestarr === false) {
             this.switchSection('home');
             return;

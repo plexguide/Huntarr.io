@@ -49,6 +49,11 @@ window.HuntarrNavigation = {
         if (section.indexOf('%23') >= 0) section = section.split('%23').pop() || section;
         if (section.indexOf('./') === 0) section = section.replace(/^\.?\/*/, '');
         if (!section) section = 'home';
+        // NZB Hunt Settings → open Servers tab when linked from "no server" warning
+        if (section === 'nzb-hunt-settings-servers') {
+            section = 'nzb-hunt-settings';
+            window._nzbHuntSettingsTab = 'servers';
+        }
         if (section === 'activity') {
             section = 'activity-queue';
             if (window.location.hash !== '#activity-queue') window.location.hash = 'activity-queue';

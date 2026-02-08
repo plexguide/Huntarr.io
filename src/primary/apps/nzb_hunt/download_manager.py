@@ -250,7 +250,12 @@ class NZBHuntDownloadManager:
         self._running = False
         self._paused_global = False
         self._config_dir = self._detect_config_dir()
-        
+        # Connection check cache (same Usenet servers used by Movie Hunt / future TV Hunt)
+        self._connection_ok = False
+        self._connection_check_time = 0.0
+        self._connection_lock = threading.Lock()
+        self._connection_cache_seconds = 120
+
         # Speed tracking – rolling window
         self._speed_lock = threading.Lock()
         self._speed_samples: deque = deque()
@@ -535,8 +540,29 @@ class NZBHuntDownloadManager:
     def test_servers(self) -> List[Tuple[str, bool, str]]:
         """Test all configured server connections."""
         self.configure_servers()
-        return self._nntp.test_servers()
-    
+        results = self._nntp.test_servers()
+        # Update connection cache so UI and worker see a successful test
+        with self._connection_lock:
+            self._connection_ok = any(r[1] for r in results)
+            self._connection_check_time = time.time()
+        return results
+
+    def _has_working_connection(self) -> bool:
+        """True if at least one Usenet server is configured and connects (cached).
+        Same servers are used when Movie Hunt (or future TV Hunt) sends NZBs here."""
+        if not self.has_servers():
+            return False
+        with self._connection_lock:
+            if time.time() - self._connection_check_time < self._connection_cache_seconds:
+                return self._connection_ok
+            # Cache stale – run test and update
+            self._connection_check_time = time.time()
+        self.configure_servers()
+        results = self._nntp.test_servers()
+        with self._connection_lock:
+            self._connection_ok = any(r[1] for r in results)
+        return self._connection_ok
+
     # ── Queue Management ──────────────────────────────────────────
     
     def add_nzb(self, nzb_url: str = "", nzb_content: str = "",
@@ -756,6 +782,7 @@ class NZBHuntDownloadManager:
             "paused_global": self._paused_global,
             "bandwidth_by_server": bandwidth_stats,
             "servers_configured": self.has_servers(),
+            "connection_ok": self._has_working_connection(),
             "worker_running": self._running,
         }
     
@@ -780,12 +807,25 @@ class NZBHuntDownloadManager:
         self._worker_thread.start()
     
     def _worker_loop(self):
-        """Main worker loop - processes queued downloads."""
+        """Main worker loop - processes queued downloads.
+        Items stay queued until at least one Usenet server is configured and connected
+        (same servers used by Movie Hunt / future TV Hunt).
+        """
         logger.info("NZB Hunt download worker started")
         try:
             self.configure_servers()
-            
+
             while self._running:
+                # Do not start any download until we have a working server connection
+                if not self.has_servers():
+                    logger.debug("NZB Hunt: no servers configured, waiting...")
+                    time.sleep(30)
+                    continue
+                if not self._has_working_connection():
+                    logger.debug("NZB Hunt: no successful server connection, keeping queue idle...")
+                    time.sleep(60)
+                    continue
+
                 # Find next queued item
                 item = None
                 with self._queue_lock:
@@ -793,11 +833,11 @@ class NZBHuntDownloadManager:
                         if i.state == STATE_QUEUED:
                             item = i
                             break
-                
+
                 if item is None:
                     # No more work
                     break
-                
+
                 # Process this download
                 self._process_download(item)
         except Exception as e:
@@ -835,6 +875,10 @@ class NZBHuntDownloadManager:
             )
             
             if article_data is not None:
+                # Mark connection as OK so status/worker don't re-test unnecessarily
+                with self._connection_lock:
+                    self._connection_ok = True
+                    self._connection_check_time = time.time()
                 # Decode yEnc in a separate process (CPU bound → avoids GIL contention)
                 try:
                     future = self._decode_pool.submit(_decode_yenc_in_process, article_data)

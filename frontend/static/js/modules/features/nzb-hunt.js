@@ -131,6 +131,13 @@
                     }
                 }
             }
+
+            // Show warning when no servers or no successful connection (same servers as Movie Hunt / TV Hunt)
+            var warnEl = document.getElementById('nzb-server-warning');
+            if (warnEl) {
+                var show = !status.servers_configured || !status.connection_ok;
+                warnEl.style.display = show ? 'flex' : 'none';
+            }
         },
 
         _updateQueueBadge: function (queue) {

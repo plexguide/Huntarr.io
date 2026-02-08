@@ -67,6 +67,33 @@
     flex-shrink: 0;
 }
 
+/* ── No server connected warning (same servers as Movie Hunt / TV Hunt) ─── */
+.nzb-server-warning {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, rgba(180, 83, 9, 0.15) 0%, rgba(146, 64, 14, 0.2) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 10px;
+    color: #fcd34d;
+    font-size: 0.9rem;
+}
+.nzb-server-warning i {
+    flex-shrink: 0;
+    font-size: 1.2rem;
+    color: #f59e0b;
+}
+.nzb-server-warning-link {
+    color: #fde047;
+    font-weight: 600;
+    text-decoration: underline;
+}
+.nzb-server-warning-link:hover {
+    color: #fef08a;
+}
+
 /* ── Speed limit control ─────────────────────────────────────────── */
 .nzb-speed-control:hover {
     background: rgba(59, 130, 246, 0.08);
