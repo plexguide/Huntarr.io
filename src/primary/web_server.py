@@ -12,17 +12,15 @@ from primary.utils.logger import LOG_DIR, APP_LOG_FILES, MAIN_LOG_FILE # Import 
 from primary import settings_manager # Import settings_manager
 from src.primary.stateful_manager import update_lock_expiration # Import stateful update function
 
-# import socket # No longer used
 import json
-# import signal # No longer used for reload
 import sys
 import qrcode
 import pyotp
 import logging
 import threading
-import importlib # Added import
+import importlib
 import requests
-from flask import Flask, render_template, request, jsonify, Response, send_from_directory, redirect, url_for, session, stream_with_context, Blueprint, current_app, g, make_response # Added stream_with_context and Blueprint
+from flask import Flask, render_template, request, jsonify, Response, send_from_directory, redirect, url_for, session, stream_with_context, Blueprint, current_app, g, make_response
 # from src.primary.config import API_URL # No longer needed directly
 # Use only settings_manager
 from src.primary import settings_manager

@@ -7,7 +7,6 @@ Supports multiple Arr applications running concurrently
 import time
 import sys
 import os
-# import socket # No longer used directly
 import signal
 import importlib
 import logging
@@ -32,8 +31,6 @@ from src.primary.state import check_state_reset, calculate_reset_time
 from src.primary.stats_manager import check_hourly_cap_exceeded
 # Instance list generator has been removed
 from src.primary.scheduler_engine import start_scheduler, stop_scheduler
-
-# from src.primary.utils.app_utils import get_ip_address # No longer used here
 
 # Global state for managing app threads and their status
 app_threads: Dict[str, threading.Thread] = {}
@@ -300,10 +297,6 @@ def app_specific_loop(app_type: str) -> None:
             app_logger.error(f"Error loading settings for cycle: {e}", exc_info=True)
             stop_event.wait(60) # Wait before retrying
             continue
-
-        # --- State Reset Check --- #
-        # REMOVED: Global check_state_reset(app_type) - this was resetting ALL instances at once!
-        # Per-instance state reset now happens inside _process_one_instance() for each instance individually
 
         app_logger.info(f"=== Starting {app_type.upper()} cycle ===")
 

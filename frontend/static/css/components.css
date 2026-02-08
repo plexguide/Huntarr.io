@@ -542,3 +542,18 @@
         margin-bottom: 10px;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Hide deny symbol in circular progress (merged from hide-deny-icon.css)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.hourly-cap-status.danger .hourly-cap-icon:before,
+.hourly-cap-status.danger .hourly-cap-icon::before {
+    display: none !important;
+}
+
+.api-progress-circle .deny-symbol,
+.api-progress-circle .stop-symbol,
+.api-progress-circle .minus-symbol {
+    display: none !important;
+}

@@ -123,7 +123,13 @@ let huntarrUI = {
             localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
             var settingsSub = document.getElementById('settings-sub');
-            if (settingsSub) settingsSub.classList.add('expanded');
+            if (settingsSub) { settingsSub.classList.add('expanded'); settingsSub.style.display = 'block'; }
+        } else if (this.currentSection === 'system' || this.currentSection === 'hunt-manager' || this.currentSection === 'logs' || this.currentSection === 'about') {
+            console.log('[huntarrUI] Initialization - showing main sidebar (system sub-menu)');
+            localStorage.removeItem('huntarr-settings-sidebar');
+            this.showMainSidebar();
+            var systemSub = document.getElementById('system-sub');
+            if (systemSub) { systemSub.classList.add('expanded'); systemSub.style.display = 'block'; }
         } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-settings') {
             console.log('[huntarrUI] Initialization - showing nzb hunt sidebar');
             this.showNzbHuntSidebar();
@@ -1310,11 +1316,14 @@ let huntarrUI = {
         var systemNav = document.getElementById('systemNav');
         var systemSubGroup = document.getElementById('system-sub');
         if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
-        if (settingsSubGroup) settingsSubGroup.style.display = onSystem ? 'none' : '';
+        if (settingsSubGroup) settingsSubGroup.style.display = onSystem ? 'none' : (onSettings ? 'block' : 'none');
         if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
         if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
         if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
-        if (systemSubGroup) systemSubGroup.style.display = onSettings ? 'none' : '';
+        if (systemSubGroup) systemSubGroup.style.display = onSettings ? 'none' : (onSystem ? 'block' : 'none');
+        // Ensure expanded classes match
+        if (settingsSubGroup) settingsSubGroup.classList.toggle('expanded', onSettings);
+        if (systemSubGroup) systemSubGroup.classList.toggle('expanded', onSystem);
         this._updateMainSidebarBetaVisibility();
     },
 
@@ -1719,374 +1728,14 @@ let huntarrUI = {
         }
     },
 
-    // Setup Prowlarr status polling  
-    setupProwlarrStatusPolling: function() {
-        // Delegate to Prowlarr module
-        if (window.HuntarrProwlarr) {
-            window.HuntarrProwlarr.setupProwlarrStatusPolling();
-        }
-    },
-    
-    loadProwlarrStatus: function() {
-        // Delegate to Prowlarr module
-        if (window.HuntarrProwlarr) {
-            window.HuntarrProwlarr.loadProwlarrStatus();
-        }
-    },
-
-    loadProwlarrIndexers: function() {
-        // Delegate to Prowlarr module
-        if (window.HuntarrProwlarr) {
-            window.HuntarrProwlarr.loadProwlarrIndexers();
-        }
-    },
-
-    loadProwlarrStats: function() {
-        // Delegate to Prowlarr module
-        if (window.HuntarrProwlarr) {
-            window.HuntarrProwlarr.loadProwlarrStats();
-        }
-    },
-
-    updateIndexersList: function(indexerDetails, errorMessage = null) {
-        // Delegate to Prowlarr module
-        if (window.HuntarrProwlarr) {
-            window.HuntarrProwlarr.updateIndexersList(indexerDetails, errorMessage);
-        }
-    },
-
-    updateProwlarrStatistics: function(stats, errorMessage = null) {
-        // Delegate to Prowlarr module
-        if (window.HuntarrProwlarr) {
-            window.HuntarrProwlarr.updateProwlarrStatistics(stats, errorMessage);
-        }
-    },
-
-    showIndexerStats: function(indexerName) {
-        // Delegate to Prowlarr module
-        if (window.HuntarrProwlarr) {
-            window.HuntarrProwlarr.showIndexerStats(indexerName);
-        }
-    },
-
-    showOverallStats: function() {
-        // Delegate to Prowlarr module
-        if (window.HuntarrProwlarr) {
-            window.HuntarrProwlarr.showOverallStats();
-        }
-    },
-
-    // Load and update Prowlarr status card
-    loadProwlarrStatus: function() {
-        const prowlarrCard = document.getElementById('prowlarrStatusCard');
-        if (!prowlarrCard) return;
-
-        // First check if Prowlarr is configured and enabled
-        HuntarrUtils.fetchWithTimeout('./api/prowlarr/status')
-            .then(response => response.json())
-            .then(statusData => {
-                // Only show card if Prowlarr is configured and enabled
-                if (statusData.configured && statusData.enabled) {
-                    prowlarrCard.style.display = 'block';
-                    
-                    // Update connection status
-                    const statusElement = document.getElementById('prowlarrConnectionStatus');
-                    if (statusElement) {
-                        if (statusData.connected) {
-                            statusElement.textContent = '🟢 Connected';
-                            statusElement.className = 'status-badge connected';
-                        } else {
-                            statusElement.textContent = '🔴 Disconnected';
-                            statusElement.className = 'status-badge error';
-                        }
-                    }
-                    
-                    // Load data if connected
-                    if (statusData.connected) {
-                        // Load indexers quickly first
-                        this.loadProwlarrIndexers();
-                        // Load statistics separately (cached)
-                        this.loadProwlarrStats();
-                        
-                        // Set up periodic refresh for statistics (every 5 minutes)
-                        if (!this.prowlarrStatsInterval) {
-                            this.prowlarrStatsInterval = setInterval(() => {
-                                this.loadProwlarrStats();
-                            }, 5 * 60 * 1000); // 5 minutes
-                        }
-                    } else {
-                        // Show disconnected state
-                        this.updateIndexersList(null, 'Prowlarr is disconnected');
-                        this.updateProwlarrStatistics(null, 'Prowlarr is disconnected');
-                        
-                        // Clear interval if disconnected
-                        if (this.prowlarrStatsInterval) {
-                            clearInterval(this.prowlarrStatsInterval);
-                            this.prowlarrStatsInterval = null;
-                        }
-                    }
-                    
-                } else {
-                    // Hide card if not configured or disabled
-                    prowlarrCard.style.display = 'none';
-                    console.log('[huntarrUI] Prowlarr card hidden - configured:', statusData.configured, 'enabled:', statusData.enabled);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading Prowlarr status:', error);
-                // Hide card on error
-                prowlarrCard.style.display = 'none';
-            });
-    },
-
-    // Load Prowlarr indexers quickly
-    loadProwlarrIndexers: function() {
-        HuntarrUtils.fetchWithTimeout('./api/prowlarr/indexers')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.indexer_details) {
-                    this.updateIndexersList(data.indexer_details);
-                } else {
-                    console.error('Failed to load Prowlarr indexers:', data.error);
-                    this.updateIndexersList(null, data.error || 'Failed to load indexers');
-                }
-            })
-            .catch(error => {
-                console.error('Error loading Prowlarr indexers:', error);
-                this.updateIndexersList(null, 'Connection error');
-            });
-    },
-
-    // Load Prowlarr statistics (cached)
-    loadProwlarrStats: function() {
-        HuntarrUtils.fetchWithTimeout('./api/prowlarr/stats')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.stats) {
-                    this.updateProwlarrStatistics(data.stats);
-                } else {
-                    console.error('Failed to load Prowlarr stats:', data.error);
-                    this.updateProwlarrStatistics(null, data.error || 'Failed to load stats');
-                }
-            })
-            .catch(error => {
-                console.error('Error loading Prowlarr stats:', error);
-                this.updateProwlarrStatistics(null, 'Connection error');
-            });
-    },
-
-    // Update indexers list display
-    updateIndexersList: function(indexerDetails, errorMessage = null) {
-        const indexersList = document.getElementById('prowlarr-indexers-list');
-        if (!indexersList) return;
-        
-        if (errorMessage) {
-            // Show error state
-            indexersList.innerHTML = `<div class="loading-text" style="color: #ef4444;">${errorMessage}</div>`;
-            return;
-        }
-        
-        if (!indexerDetails || (!indexerDetails.active && !indexerDetails.throttled && !indexerDetails.failed)) {
-            // No indexers found
-            indexersList.innerHTML = '<div class="loading-text">No indexers configured</div>';
-            return;
-        }
-        
-        // Combine all indexers and sort alphabetically
-        let allIndexers = [];
-        
-        // Add active indexers
-        if (indexerDetails.active) {
-            allIndexers = allIndexers.concat(
-                indexerDetails.active.map(idx => ({ ...idx, status: 'active' }))
-            );
-        }
-        
-        // Add throttled indexers
-        if (indexerDetails.throttled) {
-            allIndexers = allIndexers.concat(
-                indexerDetails.throttled.map(idx => ({ ...idx, status: 'throttled' }))
-            );
-        }
-        
-        // Add failed indexers
-        if (indexerDetails.failed) {
-            allIndexers = allIndexers.concat(
-                indexerDetails.failed.map(idx => ({ ...idx, status: 'failed' }))
-            );
-        }
-        
-        // Sort alphabetically by name
-        allIndexers.sort((a, b) => a.name.localeCompare(b.name));
-        
-        if (allIndexers.length === 0) {
-            indexersList.innerHTML = '<div class="loading-text">No indexers found</div>';
-            return;
-        }
-        
-        // Build the HTML for indexers list with hover interactions
-        const indexersHtml = allIndexers.map(indexer => {
-            const statusText = indexer.status === 'active' ? 'Active' :
-                             indexer.status === 'throttled' ? 'Throttled' :
-                             'Failed';
-            
-            return `
-                <div class="indexer-item" data-indexer-name="${indexer.name}">
-                    <span class="indexer-name hoverable">${indexer.name}</span>
-                    <span class="indexer-status ${indexer.status}">${statusText}</span>
-                </div>
-            `;
-        }).join('');
-        
-        indexersList.innerHTML = indexersHtml;
-        
-        // Add hover event listeners to indexer names
-        const indexerItems = indexersList.querySelectorAll('.indexer-item');
-        indexerItems.forEach(item => {
-            const indexerName = item.dataset.indexerName;
-            const nameElement = item.querySelector('.indexer-name');
-            
-            nameElement.addEventListener('mouseenter', () => {
-                this.showIndexerStats(indexerName);
-                nameElement.classList.add('hovered');
-            });
-            
-            nameElement.addEventListener('mouseleave', () => {
-                this.showOverallStats();
-                nameElement.classList.remove('hovered');
-            });
-        });
-    },
-
-    // Update Prowlarr statistics display
-    updateProwlarrStatistics: function(stats, errorMessage = null) {
-        const statisticsContent = document.getElementById('prowlarr-statistics-content');
-        if (!statisticsContent) return;
-        
-        if (errorMessage) {
-            statisticsContent.innerHTML = `<div class="loading-text" style="color: #ef4444;">${errorMessage}</div>`;
-            return;
-        }
-        
-        if (!stats) {
-            statisticsContent.innerHTML = '<div class="loading-text">No statistics available</div>';
-            return;
-        }
-        
-        // Debug: Log the stats data
-        console.log('Statistics data:', stats);
-        
-        // Build statistics cards HTML
-        let statisticsCards = [];
-        
-        // Search activity (last 24 hours)
-        if (stats.searches_today !== undefined) {
-            const todayClass = stats.searches_today > 0 ? 'success' : '';
-            statisticsCards.push(`
-                <div class="stat-card">
-                    <div class="stat-label">Searches (24h)</div>
-                    <div class="stat-value ${todayClass}">${stats.searches_today}</div>
-                </div>
-            `);
-        }
-        
-        // Grabs (last 24 hours)
-        if (stats.grabs_today !== undefined) {
-            const grabsClass = stats.grabs_today > 0 ? 'success' : '';
-            statisticsCards.push(`
-                <div class="stat-card">
-                    <div class="stat-label">Grabs (24h)</div>
-                    <div class="stat-value ${grabsClass}">${stats.grabs_today}</div>
-                </div>
-            `);
-        }
-        
-        // Success rate (always show, even if 0 or undefined)
-        let successRate = 0;
-        if (stats.recent_success_rate !== undefined && stats.recent_success_rate !== null) {
-            successRate = stats.recent_success_rate;
-        }
-        const successClass = successRate > 0 ? 'success' : 'error';
-        statisticsCards.push(`
-            <div class="stat-card">
-                <div class="stat-label">Success Rate</div>
-                <div class="stat-value ${successClass}">${successRate}%</div>
-            </div>
-        `);
-        console.log('Added success rate card:', successRate, successClass);
-        
-        // Average response time
-        if (stats.avg_response_time !== undefined) {
-            const responseClass = stats.avg_response_time <= 1000 ? 'success' : 
-                                stats.avg_response_time <= 3000 ? 'warning' : 'error';
-            const responseTime = stats.avg_response_time >= 1000 ? 
-                                `${(stats.avg_response_time / 1000).toFixed(1)}s` : 
-                                `${stats.avg_response_time}ms`;
-            statisticsCards.push(`
-                <div class="stat-card">
-                    <div class="stat-label">Avg Response</div>
-                    <div class="stat-value ${responseClass}">${responseTime}</div>
-                </div>
-            `);
-        }
-        
-        // Failed searches (only show if > 0)
-        if (stats.recent_failed_searches !== undefined && stats.recent_failed_searches > 0) {
-            statisticsCards.push(`
-                <div class="stat-card">
-                    <div class="stat-label">Failed Today</div>
-                    <div class="stat-value error">${stats.recent_failed_searches}</div>
-                </div>
-            `);
-        }
-        
-        if (statisticsCards.length === 0) {
-            statisticsContent.innerHTML = '<div class="loading-text">No recent activity</div>';
-        } else {
-            const finalHTML = statisticsCards.join('');
-            console.log('Final Prowlarr statistics HTML:', finalHTML);
-            console.log('Number of stat cards:', statisticsCards.length);
-            statisticsContent.innerHTML = finalHTML;
-        }
-    },
-
-    // Show statistics for a specific indexer
-    showIndexerStats: function(indexerName) {
-        // Update the statistics header
-        const statisticsHeader = document.querySelector('.prowlarr-statistics-card .subcard-header h5');
-        if (statisticsHeader) {
-            statisticsHeader.innerHTML = `<i class="fas fa-chart-bar"></i> ${indexerName} Stats`;
-        }
-        
-        // Fetch and display indexer-specific stats
-        HuntarrUtils.fetchWithTimeout(`./api/prowlarr/indexer-stats/${encodeURIComponent(indexerName)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.stats) {
-                    this.updateProwlarrStatistics(data.stats);
-                } else {
-                    this.updateProwlarrStatistics(null, `No stats available for ${indexerName}`);
-                }
-            })
-            .catch(error => {
-                console.error(`Error loading stats for ${indexerName}:`, error);
-                this.updateProwlarrStatistics(null, 'Error loading indexer stats');
-            });
-    },
-
-    // Show overall statistics (when not hovering)
-    showOverallStats: function() {
-        // Reset the statistics header
-        const statisticsHeader = document.querySelector('.prowlarr-statistics-card .subcard-header h5');
-        if (statisticsHeader) {
-            statisticsHeader.innerHTML = '<i class="fas fa-chart-bar"></i> Statistics';
-        }
-        
-        // Show cached overall stats
-        this.loadProwlarrStats();
-    },
-
-
+    // Prowlarr delegates — implementations in modules/features/prowlarr.js
+    loadProwlarrStatus: function() { if (window.HuntarrProwlarr) window.HuntarrProwlarr.loadProwlarrStatus(); },
+    loadProwlarrIndexers: function() { if (window.HuntarrProwlarr) window.HuntarrProwlarr.loadProwlarrIndexers(); },
+    loadProwlarrStats: function() { if (window.HuntarrProwlarr) window.HuntarrProwlarr.loadProwlarrStats(); },
+    updateIndexersList: function(d, e) { if (window.HuntarrProwlarr) window.HuntarrProwlarr.updateIndexersList(d, e); },
+    updateProwlarrStatistics: function(s, e) { if (window.HuntarrProwlarr) window.HuntarrProwlarr.updateProwlarrStatistics(s, e); },
+    showIndexerStats: function(n) { if (window.HuntarrProwlarr) window.HuntarrProwlarr.showIndexerStats(n); },
+    showOverallStats: function() { if (window.HuntarrProwlarr) window.HuntarrProwlarr.showOverallStats(); },
 
     
     // User
@@ -2573,30 +2222,6 @@ let huntarrUI = {
         }
     },
 
-    showRequestarrSidebar: function() {
-        if (window.HuntarrRequestarr) {
-            window.HuntarrRequestarr.showRequestarrSidebar();
-        }
-    },
-
-    showMainSidebar: function() {
-        if (window.HuntarrNavigation) {
-            window.HuntarrNavigation.showMainSidebar();
-        }
-    },
-
-    showAppsSidebar: function() {
-        if (window.HuntarrNavigation) {
-            window.HuntarrNavigation.showAppsSidebar();
-        }
-    },
-
-    showSettingsSidebar: function() {
-        if (window.HuntarrNavigation) {
-            window.HuntarrNavigation.showSettingsSidebar();
-        }
-    },
-
     updateRequestarrSidebarActive: function() {
         if (window.HuntarrRequestarr) {
             window.HuntarrRequestarr.updateRequestarrSidebarActive();
@@ -2699,30 +2324,7 @@ let huntarrUI = {
         }
     },
 
-    // Setup Prowlarr status polling
-    setupProwlarrStatusPolling: function() {
-        console.log('[huntarrUI] Setting up Prowlarr status polling');
-        
-        // Load initial status
-        this.loadProwlarrStatus();
-        
-        // Set up polling to refresh Prowlarr status every 30 seconds
-        // Only poll when home section is active to reduce unnecessary requests
-        this.prowlarrPollingInterval = setInterval(() => {
-            if (this.currentSection === 'home') {
-                this.loadProwlarrStatus();
-            }
-        }, 30000);
-        
-        // Set up refresh button handler
-        const refreshButton = document.getElementById('refresh-prowlarr-data');
-        if (refreshButton) {
-            refreshButton.addEventListener('click', () => {
-                console.log('[huntarrUI] Manual Prowlarr refresh triggered');
-                this.loadProwlarrStatus();
-            });
-        }
-    },
+    setupProwlarrStatusPolling: function() { if (window.HuntarrProwlarr) window.HuntarrProwlarr.setupProwlarrStatusPolling(); },
 
 
 };

@@ -226,11 +226,6 @@ def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
         
         db = get_database()
         
-        # REMOVED: Redundant initialization and expiration checks
-        # These are now handled ONCE per cycle in background.py _process_one_instance()
-        # db.initialize_instance_state_management(app_type, instance_name, instance_hours)
-        # if db.check_instance_expiration(app_type, instance_name):
-        
         # Check if already processed
         if db.is_processed(app_type, instance_name, media_id):
             stateful_logger.debug(f"[add_processed_id] ID {media_id} already in database for {app_type}/{instance_name}")
@@ -283,11 +278,6 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
             # Fall back to checking anyway if we can't determine the mode
         
         db = get_database()
-        
-        # REMOVED: Redundant initialization and expiration checks
-        # These are now handled ONCE per cycle in background.py _process_one_instance()
-        # db.initialize_instance_state_management(app_type, instance_name, instance_hours)
-        # if db.check_instance_expiration(app_type, instance_name):
         
         # Converting media_id to string since some callers might pass an integer
         media_id_str = str(media_id)
