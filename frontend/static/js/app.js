@@ -1015,7 +1015,7 @@ let huntarrUI = {
                 document.getElementById('settingsRootFoldersSection').classList.remove('active');
                 document.getElementById('settingsRootFoldersSection').style.display = 'none';
             }
-            newTitle = 'Instance Management';
+            newTitle = 'Instances';
             this.currentSection = 'settings-instance-management';
             this.showMovieHuntSidebar();
             if (window.MovieHuntInstanceManagement && typeof window.MovieHuntInstanceManagement.init === 'function') {

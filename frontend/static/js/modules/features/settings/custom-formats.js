@@ -187,6 +187,7 @@
         openViewModal: function(index) {
             var list = window.CustomFormats._list;
             if (index < 0 || index >= list.length) return;
+            window.CustomFormats._ensureViewModalInBody();
             var item = list[index];
             var title = (item.title || item.name || 'Unnamed');
             document.getElementById('custom-format-view-modal-title').textContent = 'View JSON: ' + title;
@@ -232,10 +233,24 @@
             return title;
         },
 
+        _ensureAddModalInBody: function() {
+            var modal = document.getElementById('custom-format-modal');
+            if (modal && modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+            }
+        },
+        _ensureViewModalInBody: function() {
+            var modal = document.getElementById('custom-format-view-modal');
+            if (modal && modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+            }
+        },
+
         openAddModal: function(source) {
             window.CustomFormats._editingIndex = null;
             window.CustomFormats._modalMode = source;
-            
+            window.CustomFormats._ensureAddModalInBody();
+
             if (source === 'preformat') {
                 document.getElementById('custom-format-modal-title').textContent = 'Add Pre-Formatted';
                 document.getElementById('custom-format-preformat-area').style.display = 'block';
@@ -248,7 +263,7 @@
                 var importArea = document.getElementById('custom-format-import-area');
                 if (importArea) importArea.style.display = 'block';
             }
-            
+
             document.getElementById('custom-format-modal-save').innerHTML = '<i class="fas fa-plus"></i> Add';
             document.getElementById('custom-format-json-textarea').value = '';
             document.getElementById('custom-format-modal').style.display = 'flex';
@@ -258,6 +273,7 @@
         openEditModal: function(index) {
             var list = window.CustomFormats._list;
             if (index < 0 || index >= list.length) return;
+            window.CustomFormats._ensureAddModalInBody();
             window.CustomFormats._editingIndex = index;
             var item = list[index];
             document.getElementById('custom-format-modal-title').textContent = 'Edit Custom Format';

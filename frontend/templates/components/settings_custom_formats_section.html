@@ -285,6 +285,7 @@
     .custom-format-modal { position: fixed; top:0;left:0;right:0;bottom:0; z-index: 1000; display: none; align-items: center; justify-content: center; }
     .custom-format-modal[style*="display: flex"] { display: flex !important; }
     body.custom-format-modal-open { overflow: hidden; }
+    body.custom-format-modal-open .app-container { filter: blur(10px); }
     .custom-format-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 1000; }
     .custom-format-modal-content { position: relative; z-index: 1001; background: rgba(15,23,42,0.98); border: 2px solid rgba(99,102,241,0.4); border-radius: 12px; max-width: 560px; width: 90%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
     .custom-format-modal-header { position: relative; padding: 20px 24px 12px; background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%); }

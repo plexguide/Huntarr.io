@@ -121,7 +121,7 @@ window.HuntarrNavigation = {
             'eros': { title: 'Whisparr V3', nav: document.getElementById('appsErosNav'), section: document.getElementById('erosSection'), sidebar: 'apps', app: 'eros' },
             'swaparr': { title: 'Swaparr', nav: document.getElementById('appsSwaparrNav'), section: document.getElementById('swaparrSection'), sidebar: 'apps', init: 'initializeSwaparr' },
             'settings': { title: 'Settings', nav: document.getElementById('mainSettingsMainNav'), section: document.getElementById('settingsSection'), sidebar: 'main', init: 'initializeSettings' },
-            'settings-instance-management': { title: 'Instance Management', nav: document.getElementById('movieHuntSettingsInstanceManagementNav'), section: document.getElementById('instanceManagementSection'), sidebar: 'moviehunt' },
+            'settings-instance-management': { title: 'Instances', nav: document.getElementById('movieHuntSettingsInstanceManagementNav'), section: document.getElementById('instanceManagementSection'), sidebar: 'moviehunt' },
             'settings-movie-management': { title: 'Movie Management', nav: document.getElementById('movieHuntSettingsMovieManagementNav'), section: document.getElementById('movieManagementSection'), sidebar: 'moviehunt' },
             'settings-profiles': { title: 'Profiles', nav: document.getElementById('movieHuntSettingsProfilesNav'), section: document.getElementById('settingsProfilesSection'), sidebar: 'moviehunt' },
             'profile-editor': { title: 'Profile Editor', nav: document.getElementById('movieHuntSettingsProfilesNav'), section: document.getElementById('profileEditorSection'), sidebar: 'moviehunt' },
