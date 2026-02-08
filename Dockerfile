@@ -28,8 +28,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . /app/
 
-# Create necessary directories (config for app data; /media for Docker media mount)
-RUN mkdir -p /config /media && chmod -R 755 /config /media
+# Create necessary directories (config for app data; /media and /downloads for Docker mounts)
+RUN mkdir -p /config /media /downloads && chmod -R 755 /config /media /downloads
 
 # Set environment variables
 ENV PYTHONPATH=/app
