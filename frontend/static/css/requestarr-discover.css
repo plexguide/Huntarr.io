@@ -1809,28 +1809,28 @@ input:disabled + .toggle-slider {
 .control-select {
     width: 100%;
     padding: 10px 16px;
-    background: #2d3748;
-    border: 1px solid #4a5568;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.12);
     border-radius: 8px;
-    color: #fff;
+    color: #e2e8f0;
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .control-select:hover {
-    background: #374151;
-    border-color: #718096;
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(148, 163, 184, 0.25);
 }
 
 .control-select:focus {
     outline: none;
-    border-color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.5);
 }
 
 .control-select option {
-    background: #2d3748;
-    color: #fff;
+    background: #0f172a;
+    color: #e2e8f0;
     padding: 8px;
 }
 
@@ -1839,10 +1839,10 @@ input:disabled + .toggle-slider {
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: #2d3748;
-    border: 1px solid #4a5568;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.12);
     border-radius: 8px;
-    color: #fff;
+    color: #e2e8f0;
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
@@ -1850,8 +1850,8 @@ input:disabled + .toggle-slider {
 }
 
 .filter-button:hover {
-    background: #374151;
-    border-color: #718096;
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(148, 163, 184, 0.25);
 }
 
 .filter-button i {
