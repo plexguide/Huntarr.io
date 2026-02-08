@@ -671,6 +671,81 @@ class RequestarrAPI:
                 'cooldown_status': cooldown_status
             }
     
+    def get_movie_status_from_movie_hunt(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
+        """Get movie status from Movie Hunt's collection - in library, previously requested, etc."""
+        try:
+            # Check cooldown status
+            cooldown_hours = self.get_cooldown_hours()
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'movie_hunt', instance_name, cooldown_hours)
+            already_requested_in_db = cooldown_status['last_requested_at'] is not None
+            
+            # Resolve Movie Hunt instance ID
+            instance_id = self._resolve_movie_hunt_instance_id(instance_name)
+            if instance_id is None:
+                return {
+                    'in_library': False,
+                    'previously_requested': already_requested_in_db,
+                    'cooldown_status': cooldown_status
+                }
+            
+            # Check Movie Hunt's collection for this movie
+            from src.primary.routes.movie_hunt.discovery import _get_collection_config
+            items = _get_collection_config(instance_id)
+            
+            movie = None
+            for item in items:
+                if item.get('tmdb_id') == tmdb_id:
+                    movie = item
+                    break
+            
+            if not movie:
+                # Also check detected movies from root folders
+                try:
+                    from src.primary.routes.movie_hunt.storage import _get_detected_movies_from_all_roots
+                    detected = _get_detected_movies_from_all_roots(instance_id)
+                    for d in detected:
+                        if d.get('tmdb_id') == tmdb_id:
+                            movie = d
+                            break
+                except Exception:
+                    pass
+            
+            if not movie:
+                return {
+                    'in_library': False,
+                    'previously_requested': already_requested_in_db,
+                    'cooldown_status': cooldown_status
+                }
+            
+            # Determine status
+            import os
+            status_raw = (movie.get('status') or '').lower()
+            file_path = (movie.get('file_path') or '').strip()
+            has_file = False
+            
+            if file_path and os.path.isfile(file_path):
+                has_file = True
+            elif status_raw == 'available':
+                has_file = True
+            
+            return {
+                'in_library': has_file,
+                'previously_requested': already_requested_in_db or status_raw == 'requested',
+                'monitored': True,
+                'cooldown_status': cooldown_status
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting movie status from Movie Hunt: {e}")
+            cooldown_hours = self.get_cooldown_hours()
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'movie_hunt', instance_name, cooldown_hours)
+            already_requested_in_db = cooldown_status['last_requested_at'] is not None
+            return {
+                'in_library': False,
+                'previously_requested': already_requested_in_db,
+                'cooldown_status': cooldown_status
+            }
+    
     def check_library_status_batch(self, items: List[Dict[str, Any]], app_type: str = None, instance_name: str = None) -> List[Dict[str, Any]]:
         """
         Check library status for a batch of media items.
@@ -873,8 +948,12 @@ class RequestarrAPI:
             return items  # Return all items on error
     
     def get_quality_profiles(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
-        """Get quality profiles from Radarr or Sonarr instance"""
+        """Get quality profiles from Radarr, Sonarr, or Movie Hunt instance"""
         try:
+            # Movie Hunt profiles come from internal database, not external API
+            if app_type == 'movie_hunt':
+                return self._get_movie_hunt_quality_profiles(instance_name)
+            
             # Get instance config
             app_config = self.db.get_app_config(app_type)
             if not app_config or not app_config.get('instances'):
@@ -956,6 +1035,44 @@ class RequestarrAPI:
         except Exception as e:
             logger.error(f"Error getting quality profiles from {app_type}: {e}")
             return []
+    
+    def _get_movie_hunt_quality_profiles(self, instance_name: str) -> List[Dict[str, Any]]:
+        """Get quality profiles from a Movie Hunt instance (internal database)"""
+        try:
+            instance_id = self._resolve_movie_hunt_instance_id(instance_name)
+            if instance_id is None:
+                logger.warning(f"Movie Hunt instance '{instance_name}' not found")
+                return []
+            
+            from src.primary.routes.movie_hunt.profiles import _get_profiles_config
+            profiles = _get_profiles_config(instance_id)
+            
+            # Return in same format as Radarr/Sonarr profiles (id + name)
+            # Movie Hunt profiles use name-based identification, so use name as both id and name
+            result = []
+            for i, profile in enumerate(profiles):
+                profile_name = (profile.get('name') or '').strip()
+                if profile_name:
+                    result.append({
+                        'id': profile_name,  # Movie Hunt uses names, not integer IDs
+                        'name': profile_name
+                    })
+            return result
+        except Exception as e:
+            logger.error(f"Error getting Movie Hunt quality profiles for '{instance_name}': {e}")
+            return []
+    
+    def _resolve_movie_hunt_instance_id(self, instance_name: str) -> Optional[int]:
+        """Resolve a Movie Hunt instance name to its database ID"""
+        try:
+            mh_instances = self.db.get_movie_hunt_instances()
+            for inst in mh_instances:
+                if (inst.get('name') or '').strip() == instance_name:
+                    return inst.get('id')
+            return None
+        except Exception as e:
+            logger.error(f"Error resolving Movie Hunt instance '{instance_name}': {e}")
+            return None
     
     def get_default_instances(self) -> Dict[str, str]:
         """Get default Sonarr and Radarr instances from database"""
@@ -1111,20 +1228,21 @@ class RequestarrAPI:
             raise
 
     def get_default_root_folders(self) -> Dict[str, str]:
-        """Get default root folder paths per app (issue #806). Returns paths for radarr/sonarr."""
+        """Get default root folder paths per app (issue #806). Returns paths for radarr/sonarr/movie_hunt."""
         try:
             requestarr_config = self.db.get_app_config('requestarr')
             if requestarr_config:
                 return {
                     'default_root_folder_radarr': (requestarr_config.get('default_root_folder_radarr') or '').strip(),
-                    'default_root_folder_sonarr': (requestarr_config.get('default_root_folder_sonarr') or '').strip()
+                    'default_root_folder_sonarr': (requestarr_config.get('default_root_folder_sonarr') or '').strip(),
+                    'default_root_folder_movie_hunt': (requestarr_config.get('default_root_folder_movie_hunt') or '').strip()
                 }
-            return {'default_root_folder_radarr': '', 'default_root_folder_sonarr': ''}
+            return {'default_root_folder_radarr': '', 'default_root_folder_sonarr': '', 'default_root_folder_movie_hunt': ''}
         except Exception as e:
             logger.error(f"Error getting default root folders: {e}")
-            return {'default_root_folder_radarr': '', 'default_root_folder_sonarr': ''}
+            return {'default_root_folder_radarr': '', 'default_root_folder_sonarr': '', 'default_root_folder_movie_hunt': ''}
 
-    def set_default_root_folders(self, default_root_folder_radarr: str = None, default_root_folder_sonarr: str = None):
+    def set_default_root_folders(self, default_root_folder_radarr: str = None, default_root_folder_sonarr: str = None, default_root_folder_movie_hunt: str = None):
         """Set default root folder path per app (issue #806)."""
         try:
             requestarr_config = self.db.get_app_config('requestarr') or {}
@@ -1132,14 +1250,18 @@ class RequestarrAPI:
                 requestarr_config['default_root_folder_radarr'] = (default_root_folder_radarr or '').strip()
             if default_root_folder_sonarr is not None:
                 requestarr_config['default_root_folder_sonarr'] = (default_root_folder_sonarr or '').strip()
+            if default_root_folder_movie_hunt is not None:
+                requestarr_config['default_root_folder_movie_hunt'] = (default_root_folder_movie_hunt or '').strip()
             self.db.save_app_config('requestarr', requestarr_config)
-            logger.info(f"Set default root folders - Radarr: {requestarr_config.get('default_root_folder_radarr') or 'None'}, Sonarr: {requestarr_config.get('default_root_folder_sonarr') or 'None'}")
+            logger.info(f"Set default root folders - Radarr: {requestarr_config.get('default_root_folder_radarr') or 'None'}, Sonarr: {requestarr_config.get('default_root_folder_sonarr') or 'None'}, Movie Hunt: {requestarr_config.get('default_root_folder_movie_hunt') or 'None'}")
         except Exception as e:
             logger.error(f"Error setting default root folders: {e}")
             raise
 
     def get_root_folders(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
-        """Fetch root folders from *arr instance (for settings UI, issue #806). Deduped by ID and path."""
+        """Fetch root folders from *arr or Movie Hunt instance (for settings UI, issue #806). Deduped by ID and path."""
+        if app_type == 'movie_hunt':
+            return self._get_movie_hunt_root_folders(instance_name)
         if app_type not in ('radarr', 'sonarr'):
             return []
         try:
@@ -1236,6 +1358,45 @@ class RequestarrAPI:
             
         except Exception as e:
             logger.error(f"Error fetching root folders from {app_type}/{instance_name}: {e}")
+            return []
+    
+    def _get_movie_hunt_root_folders(self, instance_name: str) -> List[Dict[str, Any]]:
+        """Get root folders from a Movie Hunt instance (internal database)"""
+        try:
+            instance_id = self._resolve_movie_hunt_instance_id(instance_name)
+            if instance_id is None:
+                logger.warning(f"Movie Hunt instance '{instance_name}' not found")
+                return []
+            
+            from src.primary.routes.movie_hunt.storage import _get_root_folders_config
+            folders = _get_root_folders_config(instance_id)
+            
+            # Convert to same format as Radarr/Sonarr root folders
+            import os
+            result = []
+            for folder in folders:
+                path = (folder.get('path') or '').strip()
+                if not path:
+                    continue
+                
+                # Try to get free space info
+                free_space = None
+                try:
+                    if os.path.isdir(path):
+                        stat = os.statvfs(path)
+                        free_space = stat.f_bavail * stat.f_frsize
+                except (OSError, AttributeError):
+                    pass
+                
+                result.append({
+                    'path': path,
+                    'freeSpace': free_space,
+                    'is_default': folder.get('is_default', False)
+                })
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error getting Movie Hunt root folders for '{instance_name}': {e}")
             return []
 
     def get_watch_providers(self, media_type: str, region: str = '') -> List[Dict[str, Any]]:
@@ -1609,9 +1770,9 @@ class RequestarrAPI:
             }
     
     def get_enabled_instances(self) -> Dict[str, List[Dict[str, str]]]:
-        """Get enabled and properly configured Sonarr and Radarr instances"""
-        instances = {'sonarr': [], 'radarr': []}
-        seen_names = {'sonarr': set(), 'radarr': set()}
+        """Get enabled and properly configured Sonarr, Radarr, and Movie Hunt instances"""
+        instances = {'sonarr': [], 'radarr': [], 'movie_hunt': []}
+        seen_names = {'sonarr': set(), 'radarr': set(), 'movie_hunt': set()}
         
         try:
             # Get Sonarr instances
@@ -1660,18 +1821,46 @@ class RequestarrAPI:
                         })
                         seen_names['radarr'].add(name_lower)
             
+            # Get Movie Hunt instances (from dedicated database table)
+            try:
+                mh_instances = self.db.get_movie_hunt_instances()
+                for inst in mh_instances:
+                    name = (inst.get('name') or '').strip()
+                    if not name:
+                        continue
+                    name_lower = name.lower()
+                    if name_lower not in seen_names['movie_hunt']:
+                        instances['movie_hunt'].append({
+                            'name': name,
+                            'id': inst.get('id'),
+                            'url': 'internal'
+                        })
+                        seen_names['movie_hunt'].add(name_lower)
+            except Exception as e:
+                logger.warning(f"Error loading Movie Hunt instances: {e}")
+            
             return instances
             
         except Exception as e:
             logger.error(f"Error getting enabled instances: {e}")
-            return {'sonarr': [], 'radarr': []}
+            return {'sonarr': [], 'radarr': [], 'movie_hunt': []}
     
     def request_media(self, tmdb_id: int, media_type: str, title: str, year: int,
                      overview: str, poster_path: str, backdrop_path: str,
                      app_type: str, instance_name: str, quality_profile_id: int = None,
-                     root_folder_path: str = None) -> Dict[str, Any]:
+                     root_folder_path: str = None, quality_profile_name: str = None) -> Dict[str, Any]:
         """Request media through the specified app instance"""
         try:
+            # Movie Hunt has its own request pipeline
+            if app_type == 'movie_hunt':
+                return self._request_media_via_movie_hunt(
+                    tmdb_id=tmdb_id, title=title, year=year,
+                    overview=overview, poster_path=poster_path,
+                    backdrop_path=backdrop_path, instance_name=instance_name,
+                    quality_profile_name=quality_profile_name,
+                    root_folder_path=root_folder_path, media_type=media_type
+                )
+            
             # Get instance configuration first
             app_config = self.db.get_app_config(app_type)
             if not app_config or not app_config.get('instances'):
@@ -1850,6 +2039,186 @@ class RequestarrAPI:
             return {
                 'success': False,
                 'message': f'Error requesting {title}: {str(e)}',
+                'status': 'error'
+            }
+    
+    def _request_media_via_movie_hunt(self, tmdb_id: int, title: str, year: int,
+                                      overview: str, poster_path: str, backdrop_path: str,
+                                      instance_name: str, quality_profile_name: str = None,
+                                      root_folder_path: str = None, media_type: str = 'movie') -> Dict[str, Any]:
+        """Request a movie through Movie Hunt's own search-score-download pipeline"""
+        try:
+            # Resolve instance ID
+            instance_id = self._resolve_movie_hunt_instance_id(instance_name)
+            if instance_id is None:
+                return {
+                    'success': False,
+                    'message': f'Movie Hunt instance "{instance_name}" not found',
+                    'status': 'instance_not_found'
+                }
+            
+            # Check cooldown
+            cooldown_hours = self.get_cooldown_hours()
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'movie_hunt', instance_name, cooldown_hours)
+            
+            if cooldown_status['in_cooldown']:
+                hours_remaining = cooldown_status['hours_remaining']
+                if hours_remaining <= 24:
+                    hours = int(hours_remaining)
+                    minutes = int((hours_remaining - hours) * 60)
+                    time_msg = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
+                else:
+                    days = int(hours_remaining / 24)
+                    remaining_hours = hours_remaining - (days * 24)
+                    hours = int(remaining_hours)
+                    minutes = int((remaining_hours - hours) * 60)
+                    time_msg = f"{days}d {hours}h {minutes}m"
+                
+                return {
+                    'success': False,
+                    'message': f'{title} was recently requested. Please wait {time_msg} before requesting again',
+                    'status': 'in_cooldown',
+                    'hours_remaining': hours_remaining
+                }
+            
+            # Check if movie already exists in Movie Hunt collection
+            status = self.get_movie_status_from_movie_hunt(tmdb_id, instance_name)
+            if status.get('in_library'):
+                return {
+                    'success': False,
+                    'message': f'{title} already exists in Movie Hunt - {instance_name}',
+                    'status': 'already_exists'
+                }
+            
+            # Build request data for Movie Hunt's internal request endpoint
+            # We call the discovery module's internal functions directly
+            from src.primary.routes.movie_hunt.discovery import _get_collection_config
+            from src.primary.routes.movie_hunt.indexers import _get_indexers_config, INDEXER_PRESET_URLS
+            from src.primary.routes.movie_hunt.profiles import _get_profile_by_name_or_default, _best_result_matching_profile
+            from src.primary.routes.movie_hunt.clients import _get_clients_config
+            from src.primary.routes.movie_hunt._helpers import (
+                _get_blocklist_source_titles, _blocklist_normalize_source_title,
+                _add_requested_queue_id, MOVIE_HUNT_DEFAULT_CATEGORY
+            )
+            from src.primary.routes.movie_hunt.discovery import (
+                _search_newznab_movie, _add_nzb_to_download_client, _collection_append
+            )
+            from src.primary.settings_manager import get_ssl_verify_setting
+            
+            indexers = _get_indexers_config(instance_id)
+            clients = _get_clients_config(instance_id)
+            enabled_indexers = [i for i in indexers if i.get('enabled', True) and (i.get('preset') or '').strip().lower() != 'manual']
+            enabled_clients = [c for c in clients if c.get('enabled', True)]
+            
+            if not enabled_indexers:
+                return {
+                    'success': False,
+                    'message': 'No indexers configured or enabled in Movie Hunt. Add indexers in Movie Hunt Settings.',
+                    'status': 'no_indexers'
+                }
+            if not enabled_clients:
+                return {
+                    'success': False,
+                    'message': 'No download clients configured or enabled in Movie Hunt. Add a client in Movie Hunt Settings.',
+                    'status': 'no_clients'
+                }
+            
+            year_str = str(year).strip() if year else ''
+            query = f'{title} {year_str}'.strip()
+            runtime_minutes = 90  # Default runtime
+            
+            profile = _get_profile_by_name_or_default(quality_profile_name, instance_id)
+            verify_ssl = get_ssl_verify_setting()
+            
+            nzb_url = None
+            nzb_title = None
+            indexer_used = None
+            request_score = 0
+            request_score_breakdown = ''
+            
+            for idx in enabled_indexers:
+                preset = (idx.get('preset') or '').strip().lower()
+                base_url = INDEXER_PRESET_URLS.get(preset)
+                if not base_url:
+                    continue
+                api_key = (idx.get('api_key') or '').strip()
+                if not api_key:
+                    continue
+                categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
+                results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
+                if results:
+                    blocklist_titles = _get_blocklist_source_titles(instance_id)
+                    if blocklist_titles:
+                        results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
+                        if not results:
+                            continue
+                    chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(
+                        results, profile, instance_id, runtime_minutes=runtime_minutes
+                    )
+                    min_score = profile.get('min_custom_format_score', 0)
+                    try:
+                        min_score = int(min_score)
+                    except (TypeError, ValueError):
+                        min_score = 0
+                    if chosen and chosen_score >= min_score:
+                        nzb_url = chosen.get('nzb_url')
+                        nzb_title = chosen.get('title', 'Unknown')
+                        indexer_used = idx.get('name') or preset
+                        request_score = chosen_score
+                        request_score_breakdown = chosen_breakdown or ''
+                        break
+            
+            if not nzb_url:
+                profile_name = (profile.get('name') or 'Standard').strip()
+                min_score = profile.get('min_custom_format_score', 0)
+                try:
+                    min_score = int(min_score)
+                except (TypeError, ValueError):
+                    min_score = 0
+                return {
+                    'success': False,
+                    'message': f'No release found matching quality profile "{profile_name}" (min score {min_score}). Try a different profile or search again later.',
+                    'status': 'no_release'
+                }
+            
+            # Send to download client
+            client = enabled_clients[0]
+            raw_cat = (client.get('category') or '').strip()
+            request_category = MOVIE_HUNT_DEFAULT_CATEGORY if raw_cat.lower() in ('default', '*', '') else (raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY)
+            ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl, indexer=indexer_used or '')
+            
+            if not ok:
+                return {
+                    'success': False,
+                    'message': f'Failed to send to download client: {msg}',
+                    'status': 'client_failed'
+                }
+            
+            # Track the request in Movie Hunt's queue
+            if queue_id:
+                client_name = (client.get('name') or 'Download client').strip() or 'Download client'
+                _add_requested_queue_id(client_name, queue_id, instance_id, title=title, year=year_str, score=request_score, score_breakdown=request_score_breakdown)
+            
+            # Add to Movie Hunt collection
+            _collection_append(title=title, year=year_str, instance_id=instance_id, tmdb_id=tmdb_id, poster_path=poster_path, root_folder=root_folder_path)
+            
+            # Save request to Requestarr's DB for cooldown tracking
+            self.db.add_request(
+                tmdb_id, media_type, title, year, overview,
+                poster_path, backdrop_path, 'movie_hunt', instance_name
+            )
+            
+            return {
+                'success': True,
+                'message': f'"{title}" sent to {client.get("name") or "download client"} via Movie Hunt.',
+                'status': 'requested'
+            }
+            
+        except Exception as e:
+            logger.error(f"Error requesting media via Movie Hunt: {e}", exc_info=True)
+            return {
+                'success': False,
+                'message': f'Error requesting {title} via Movie Hunt: {str(e)}',
                 'status': 'error'
             }
     

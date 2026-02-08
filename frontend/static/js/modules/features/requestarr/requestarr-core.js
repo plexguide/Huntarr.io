@@ -9,10 +9,28 @@ import { RequestarrSettings } from './requestarr-settings.js';
 import { RequestarrFilters } from './requestarr-filters.js';
 import { RequestarrTVFilters } from './requestarr-tv-filters.js';
 
+/**
+ * Encode a compound instance value: "appType:instanceName"
+ */
+export function encodeInstanceValue(appType, name) {
+    return `${appType}:${name}`;
+}
+
+/**
+ * Decode a compound instance value back to { appType, name }.
+ * Backward compat: values without ':' are assumed 'radarr'.
+ */
+export function decodeInstanceValue(value) {
+    if (!value) return { appType: 'radarr', name: '' };
+    const idx = value.indexOf(':');
+    if (idx === -1) return { appType: 'radarr', name: value };
+    return { appType: value.substring(0, idx), name: value.substring(idx + 1) };
+}
+
 export class RequestarrDiscover {
     constructor() {
         this.currentView = 'discover';
-        this.instances = { sonarr: [], radarr: [] };
+        this.instances = { sonarr: [], radarr: [], movie_hunt: [] };
         this.qualityProfiles = {};
         this.searchTimeouts = {};
         this.currentModal = null;
@@ -46,10 +64,11 @@ export class RequestarrDiscover {
             const response = await fetch('./api/requestarr/instances');
             const data = await response.json();
             
-            if (data.sonarr || data.radarr) {
+            if (data.sonarr || data.radarr || data.movie_hunt) {
                 this.instances = {
                     sonarr: data.sonarr || [],
-                    radarr: data.radarr || []
+                    radarr: data.radarr || [],
+                    movie_hunt: data.movie_hunt || []
                 };
                 await this.loadAllQualityProfiles();
             }
@@ -82,6 +101,19 @@ export class RequestarrDiscover {
                 }
             } catch (error) {
                 console.error(`[RequestarrDiscover] Error loading Sonarr quality profiles for ${instance.name}:`, error);
+            }
+        }
+        
+        // Load Movie Hunt quality profiles
+        for (const instance of this.instances.movie_hunt) {
+            try {
+                const response = await fetch(`./api/requestarr/quality-profiles/movie_hunt/${instance.name}`);
+                const data = await response.json();
+                if (data.success) {
+                    this.qualityProfiles[`movie_hunt-${instance.name}`] = data.profiles;
+                }
+            } catch (error) {
+                console.error(`[RequestarrDiscover] Error loading Movie Hunt quality profiles for ${instance.name}:`, error);
             }
         }
     }

@@ -684,12 +684,17 @@ export class RequestarrSettings {
     }
     
     async loadDefaultInstances() {
+        const { encodeInstanceValue, decodeInstanceValue } = await import('./requestarr-core.js');
         const movieSelect = document.getElementById('default-movie-instance');
         const tvSelect = document.getElementById('default-tv-instance');
         
         if (!movieSelect || !tvSelect) return;
         
         try {
+            // Load Movie Hunt instances
+            const movieHuntResponse = await fetch('./api/requestarr/instances/movie_hunt');
+            const movieHuntData = await movieHuntResponse.json();
+            
             // Load Radarr instances
             const radarrResponse = await fetch('./api/requestarr/instances/radarr');
             const radarrData = await radarrResponse.json();
@@ -702,36 +707,74 @@ export class RequestarrSettings {
             const defaultsResponse = await fetch('./api/requestarr/settings/default-instances');
             const defaultsData = await defaultsResponse.json();
             
-            let movieInstanceToSave = null;
-            let tvInstanceToSave = null;
             let needsAutoSave = false;
             
-            // Populate movie instances
-            if (radarrData.instances && radarrData.instances.length > 0) {
+            // Build combined movie instances list: Movie Hunt first, then Radarr
+            const movieHuntInstances = (movieHuntData.instances || []);
+            const radarrInstances = (radarrData.instances || []);
+            const allMovieInstances = [];
+            
+            // Add Movie Hunt instances at the top
+            movieHuntInstances.forEach(inst => {
+                allMovieInstances.push({
+                    value: encodeInstanceValue('movie_hunt', inst.name),
+                    label: `Movie Hunt - ${inst.name}`,
+                    appType: 'movie_hunt',
+                    name: inst.name
+                });
+            });
+            
+            // Add Radarr instances below
+            radarrInstances.forEach(inst => {
+                allMovieInstances.push({
+                    value: encodeInstanceValue('radarr', inst.name),
+                    label: `Radarr - ${inst.name}`,
+                    appType: 'radarr',
+                    name: inst.name
+                });
+            });
+            
+            // Populate movie instances dropdown
+            if (allMovieInstances.length > 0) {
                 movieSelect.innerHTML = '';
-                radarrData.instances.forEach(instance => {
+                allMovieInstances.forEach(inst => {
                     const option = document.createElement('option');
-                    option.value = instance.name;
-                    option.textContent = `Radarr - ${instance.name}`;
+                    option.value = inst.value;
+                    option.textContent = inst.label;
                     movieSelect.appendChild(option);
                 });
                 
                 // Set selection: saved default or first instance (never leave blank)
                 const savedMovie = defaultsData.success && defaultsData.defaults && defaultsData.defaults.movie_instance;
-                const movieExists = savedMovie && radarrData.instances.some(i => i.name === defaultsData.defaults.movie_instance);
-                if (savedMovie && movieExists) {
-                    movieSelect.value = defaultsData.defaults.movie_instance;
+                if (savedMovie) {
+                    // Check if the saved value exists in our dropdown options
+                    // Support both new compound format and legacy plain name format
+                    let foundMatch = false;
+                    if (allMovieInstances.some(i => i.value === savedMovie)) {
+                        movieSelect.value = savedMovie;
+                        foundMatch = true;
+                    } else {
+                        // Backward compat: try matching legacy value (plain Radarr name without prefix)
+                        const legacyMatch = allMovieInstances.find(i => i.appType === 'radarr' && i.name === savedMovie);
+                        if (legacyMatch) {
+                            movieSelect.value = legacyMatch.value;
+                            foundMatch = true;
+                            needsAutoSave = true; // Re-save in new format
+                        }
+                    }
+                    if (!foundMatch) {
+                        movieSelect.value = allMovieInstances[0].value;
+                        needsAutoSave = true;
+                    }
                 } else {
-                    movieSelect.value = radarrData.instances[0].name;
-                    movieInstanceToSave = radarrData.instances[0].name;
+                    movieSelect.value = allMovieInstances[0].value;
                     needsAutoSave = true;
                 }
             } else {
-                // No instances available
-                movieSelect.innerHTML = '<option value="">No Radarr instances configured</option>';
+                movieSelect.innerHTML = '<option value="">No movie instances configured</option>';
             }
             
-            // Populate TV instances
+            // Populate TV instances (Sonarr only - unchanged)
             if (sonarrData.instances && sonarrData.instances.length > 0) {
                 tvSelect.innerHTML = '';
                 sonarrData.instances.forEach(instance => {
@@ -748,23 +791,19 @@ export class RequestarrSettings {
                     tvSelect.value = defaultsData.defaults.tv_instance;
                 } else {
                     tvSelect.value = sonarrData.instances[0].name;
-                    tvInstanceToSave = sonarrData.instances[0].name;
                     needsAutoSave = true;
                 }
             } else {
-                // No instances available
                 tvSelect.innerHTML = '<option value="">No Sonarr instances configured</option>';
             }
             
             // Ensure neither dropdown is ever blank when instances exist
-            if (radarrData.instances && radarrData.instances.length > 0 && !movieSelect.value) {
-                movieSelect.value = radarrData.instances[0].name;
-                movieInstanceToSave = radarrData.instances[0].name;
+            if (allMovieInstances.length > 0 && !movieSelect.value) {
+                movieSelect.value = allMovieInstances[0].value;
                 needsAutoSave = true;
             }
             if (sonarrData.instances && sonarrData.instances.length > 0 && !tvSelect.value) {
                 tvSelect.value = sonarrData.instances[0].name;
-                tvInstanceToSave = sonarrData.instances[0].name;
                 needsAutoSave = true;
             }
             
@@ -829,6 +868,7 @@ export class RequestarrSettings {
 
     /** Default root folders per app (issue #806) */
     async loadDefaultRootFolders() {
+        const { decodeInstanceValue } = await import('./requestarr-core.js');
         const radarrSelect = document.getElementById('default-root-folder-radarr');
         const sonarrSelect = document.getElementById('default-root-folder-sonarr');
         const movieInstanceSelect = document.getElementById('default-movie-instance');
@@ -847,26 +887,43 @@ export class RequestarrSettings {
             const rootFoldersRes = await fetch('./api/requestarr/settings/default-root-folders');
             const defaultsData = await defaultsRes.json();
             const savedRootData = rootFoldersRes.ok ? await rootFoldersRes.json() : {};
-            const movieInstance = (defaultsData.defaults && defaultsData.defaults.movie_instance) || (movieInstanceSelect && movieInstanceSelect.value) || '';
-            const tvInstance = (defaultsData.defaults && defaultsData.defaults.tv_instance) || (tvInstanceSelect && tvInstanceSelect.value) || '';
-            const savedRadarrPath = (savedRootData.default_root_folder_radarr || '').trim();
+            
+            // Decode the movie instance compound value to get app type and name
+            // Prioritize the current dropdown value (user may have just changed it) over saved default
+            const movieInstanceRaw = (movieInstanceSelect && movieInstanceSelect.value) || (defaultsData.defaults && defaultsData.defaults.movie_instance) || '';
+            const tvInstance = (tvInstanceSelect && tvInstanceSelect.value) || (defaultsData.defaults && defaultsData.defaults.tv_instance) || '';
+            
+            const movieDecoded = decodeInstanceValue(movieInstanceRaw);
+            const movieAppType = movieDecoded.appType; // 'movie_hunt' or 'radarr'
+            const movieInstanceName = movieDecoded.name;
+            
+            // Update the root folder label dynamically based on instance type
+            const radarrLabel = document.querySelector('label[for="default-root-folder-radarr"]');
+            if (radarrLabel) {
+                radarrLabel.textContent = movieAppType === 'movie_hunt' ? 'Default Root Folder (Movie Hunt)' : 'Default Root Folder (Radarr)';
+            }
+            
+            // Determine which saved path to use
+            const savedMoviePath = movieAppType === 'movie_hunt' 
+                ? (savedRootData.default_root_folder_movie_hunt || '').trim()
+                : (savedRootData.default_root_folder_radarr || '').trim();
             const savedSonarrPath = (savedRootData.default_root_folder_sonarr || '').trim();
+            
+            const fallbackLabel = movieAppType === 'movie_hunt' ? 'Movie Hunt' : 'Radarr';
 
-            // Radarr root folders with bulletproof deduplication
-            if (movieInstance) {
-                const rfRes = await fetch(`./api/requestarr/rootfolders?app_type=radarr&instance_name=${encodeURIComponent(movieInstance)}`);
+            // Movie root folders (from Radarr or Movie Hunt, depending on instance type)
+            if (movieInstanceName) {
+                const rfRes = await fetch(`./api/requestarr/rootfolders?app_type=${movieAppType}&instance_name=${encodeURIComponent(movieInstanceName)}`);
                 const rfData = await rfRes.json();
-                console.log('[RequestarrSettings] Radarr API returned', rfData.root_folders?.length || 0, 'root folders');
+                console.log(`[RequestarrSettings] ${fallbackLabel} API returned`, rfData.root_folders?.length || 0, 'root folders');
                 if (rfData.success && rfData.root_folders && rfData.root_folders.length > 0) {
                     // Use Map to dedupe by normalized path, keeping first occurrence
                     const seenPaths = new Map();
                     rfData.root_folders.forEach(rf => {
                         if (!rf || !rf.path) return;
-                        // Normalize: trim, remove trailing slashes, lowercase
                         const originalPath = rf.path.trim();
                         const normalized = originalPath.replace(/\/+$/, '').toLowerCase();
                         if (!normalized) return;
-                        // Only add if not seen before (keeps first occurrence)
                         if (!seenPaths.has(normalized)) {
                             seenPaths.set(normalized, {
                                 path: originalPath,
@@ -874,45 +931,39 @@ export class RequestarrSettings {
                             });
                         }
                     });
-                    console.log('[RequestarrSettings] After deduplication:', seenPaths.size, 'unique Radarr root folders');
+                    console.log(`[RequestarrSettings] After deduplication: ${seenPaths.size} unique ${fallbackLabel} root folders`);
                     
-                    // Only show fallback if NO root folders exist
                     if (seenPaths.size === 0) {
-                        radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
+                        radarrSelect.innerHTML = `<option value="">Use first root folder in ${fallbackLabel}</option>`;
                     } else {
-                        // Clear and add only actual root folders
                         radarrSelect.innerHTML = '';
-                        // Add options from deduplicated map
                         seenPaths.forEach(rf => {
                             const opt = document.createElement('option');
                             opt.value = rf.path;
                             opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
                             radarrSelect.appendChild(opt);
                         });
-                        if (savedRadarrPath) radarrSelect.value = savedRadarrPath;
+                        if (savedMoviePath) radarrSelect.value = savedMoviePath;
                     }
                 } else {
-                    radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
+                    radarrSelect.innerHTML = `<option value="">Use first root folder in ${fallbackLabel}</option>`;
                 }
             } else {
-                radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
+                radarrSelect.innerHTML = `<option value="">Use first root folder in ${fallbackLabel}</option>`;
             }
 
-            // Sonarr root folders with bulletproof deduplication
+            // Sonarr root folders with bulletproof deduplication (unchanged)
             if (tvInstance) {
                 const sfRes = await fetch(`./api/requestarr/rootfolders?app_type=sonarr&instance_name=${encodeURIComponent(tvInstance)}`);
                 const sfData = await sfRes.json();
                 console.log('[RequestarrSettings] Sonarr API returned', sfData.root_folders?.length || 0, 'root folders');
                 if (sfData.success && sfData.root_folders && sfData.root_folders.length > 0) {
-                    // Use Map to dedupe by normalized path, keeping first occurrence
                     const seenPaths = new Map();
                     sfData.root_folders.forEach(rf => {
                         if (!rf || !rf.path) return;
-                        // Normalize: trim, remove trailing slashes, lowercase
                         const originalPath = rf.path.trim();
                         const normalized = originalPath.replace(/\/+$/, '').toLowerCase();
                         if (!normalized) return;
-                        // Only add if not seen before (keeps first occurrence)
                         if (!seenPaths.has(normalized)) {
                             seenPaths.set(normalized, {
                                 path: originalPath,
@@ -922,13 +973,10 @@ export class RequestarrSettings {
                     });
                     console.log('[RequestarrSettings] After deduplication:', seenPaths.size, 'unique Sonarr root folders');
                     
-                    // Only show fallback if NO root folders exist
                     if (seenPaths.size === 0) {
                         sonarrSelect.innerHTML = '<option value="">Use first root folder in Sonarr</option>';
                     } else {
-                        // Clear and add only actual root folders
                         sonarrSelect.innerHTML = '';
-                        // Add options from deduplicated map
                         seenPaths.forEach(rf => {
                             const opt = document.createElement('option');
                             opt.value = rf.path;
@@ -945,7 +993,7 @@ export class RequestarrSettings {
             }
         } catch (error) {
             console.error('[RequestarrSettings] Error loading default root folders:', error);
-            radarrSelect.innerHTML = '<option value="">Use first root folder in Radarr</option>';
+            radarrSelect.innerHTML = '<option value="">Use first root folder</option>';
             sonarrSelect.innerHTML = '<option value="">Use first root folder in Sonarr</option>';
         } finally {
             this._loadingRootFolders = false;
@@ -953,8 +1001,10 @@ export class RequestarrSettings {
     }
 
     async saveDefaultRootFolders() {
+        const { decodeInstanceValue } = await import('./requestarr-core.js');
         const radarrSelect = document.getElementById('default-root-folder-radarr');
         const sonarrSelect = document.getElementById('default-root-folder-sonarr');
+        const movieInstanceSelect = document.getElementById('default-movie-instance');
         const saveBtn = document.getElementById('save-default-root-folders');
         if (!radarrSelect || !sonarrSelect) return;
         if (saveBtn) {
@@ -962,13 +1012,25 @@ export class RequestarrSettings {
             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         }
         try {
+            // Determine if the movie instance is Movie Hunt or Radarr
+            const movieInstanceVal = movieInstanceSelect ? movieInstanceSelect.value : '';
+            const movieDecoded = decodeInstanceValue(movieInstanceVal);
+            
+            const body = {
+                default_root_folder_sonarr: sonarrSelect.value || ''
+            };
+            
+            // Save the root folder path under the correct key based on instance type
+            if (movieDecoded.appType === 'movie_hunt') {
+                body.default_root_folder_movie_hunt = radarrSelect.value || '';
+            } else {
+                body.default_root_folder_radarr = radarrSelect.value || '';
+            }
+            
             const response = await fetch('./api/requestarr/settings/default-root-folders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    default_root_folder_radarr: radarrSelect.value || '',
-                    default_root_folder_sonarr: sonarrSelect.value || ''
-                })
+                body: JSON.stringify(body)
             });
             const data = await response.json();
             if (data.success) {

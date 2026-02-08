@@ -1,15 +1,26 @@
 /**
  * Requestarr Movie Detail Page – Uses shared mh-* styling from Movie Hunt
- * Handles Radarr instances and movie status checking
+ * Handles Radarr + Movie Hunt instances and movie status checking
  */
 (function() {
     'use strict';
 
+    // Inline encode/decode helpers (mirrors requestarr-core.js exports)
+    function _encodeInstanceValue(appType, name) {
+        return appType + ':' + name;
+    }
+    function _decodeInstanceValue(value) {
+        if (!value) return { appType: 'radarr', name: '' };
+        var idx = value.indexOf(':');
+        if (idx === -1) return { appType: 'radarr', name: value };
+        return { appType: value.substring(0, idx), name: value.substring(idx + 1) };
+    }
+
     window.RequestarrDetail = {
         currentMovie: null,
         tmdbApiKey: null,
-        radarrInstances: [],
-        selectedInstanceName: null,
+        movieInstances: [],  // Combined Movie Hunt + Radarr instances
+        selectedInstanceName: null,  // Compound value: "movie_hunt:Name" or "radarr:Name"
 
         init() {
             console.log('[RequestarrDetail] Module initialized');
@@ -30,8 +41,8 @@
             this.options = options || {};
             console.log('[RequestarrDetail] Opening detail for:', movie.title);
 
-            if (this.radarrInstances.length === 0) {
-                await this.loadRadarrInstances();
+            if (this.movieInstances.length === 0) {
+                await this.loadMovieInstances();
             }
 
             let detailView = document.getElementById('requestarr-detail-view');
@@ -118,36 +129,70 @@
             }
         },
 
-        async loadRadarrInstances() {
+        async loadMovieInstances() {
             try {
-                const response = await fetch('./api/requestarr/instances/radarr');
-                const data = await response.json();
+                // Fetch both Movie Hunt and Radarr instances in parallel
+                const [mhResponse, radarrResponse] = await Promise.all([
+                    fetch('./api/requestarr/instances/movie_hunt'),
+                    fetch('./api/requestarr/instances/radarr')
+                ]);
+                const mhData = await mhResponse.json();
+                const radarrData = await radarrResponse.json();
 
-                if (data.instances && data.instances.length > 0) {
-                    this.radarrInstances = data.instances;
+                const combined = [];
 
+                // Movie Hunt instances first
+                if (mhData.instances) {
+                    mhData.instances.forEach(function(inst) {
+                        combined.push({
+                            name: inst.name,
+                            appType: 'movie_hunt',
+                            compoundValue: _encodeInstanceValue('movie_hunt', inst.name),
+                            label: 'Movie Hunt \u2013 ' + inst.name
+                        });
+                    });
+                }
+
+                // Then Radarr instances
+                if (radarrData.instances) {
+                    radarrData.instances.forEach(function(inst) {
+                        combined.push({
+                            name: inst.name,
+                            appType: 'radarr',
+                            compoundValue: _encodeInstanceValue('radarr', inst.name),
+                            label: 'Radarr \u2013 ' + inst.name
+                        });
+                    });
+                }
+
+                this.movieInstances = combined;
+
+                if (combined.length > 0) {
                     if (this.options.suggestedInstance) {
                         this.selectedInstanceName = this.options.suggestedInstance;
                     } else if (!this.selectedInstanceName) {
-                        this.selectedInstanceName = this.radarrInstances[0].name;
+                        this.selectedInstanceName = combined[0].compoundValue;
                     }
                 } else {
-                    this.radarrInstances = [];
+                    this.movieInstances = [];
                     this.selectedInstanceName = null;
                 }
             } catch (error) {
-                console.error('[RequestarrDetail] Error loading Radarr instances:', error);
-                this.radarrInstances = [];
+                console.error('[RequestarrDetail] Error loading movie instances:', error);
+                this.movieInstances = [];
                 this.selectedInstanceName = null;
             }
         },
 
-        async checkMovieStatus(tmdbId, instanceName) {
-            if (!instanceName) return { in_library: false, in_cooldown: false };
+        async checkMovieStatus(tmdbId, instanceValue) {
+            if (!instanceValue) return { in_library: false, in_cooldown: false };
 
             try {
-                const response = await fetch(`./api/requestarr/movie-status?tmdb_id=${tmdbId}&instance=${encodeURIComponent(instanceName)}`);
-                const data = await response.json();
+                // Decode compound value to get app type and actual name
+                var decoded = _decodeInstanceValue(instanceValue);
+                var appTypeParam = decoded.appType === 'movie_hunt' ? '&app_type=movie_hunt' : '';
+                var response = await fetch('./api/requestarr/movie-status?tmdb_id=' + tmdbId + '&instance=' + encodeURIComponent(decoded.name) + appTypeParam);
+                var data = await response.json();
 
                 return {
                     in_library: data.in_library || false,
@@ -256,16 +301,16 @@
                 similarMovies = details.similar.results.slice(0, 6);
             }
 
-            // Instance selector
+            // Instance selector - combined Movie Hunt + Radarr
             let instanceSelectorHTML = '';
-            if (this.radarrInstances.length > 0) {
+            if (this.movieInstances.length > 0) {
                 instanceSelectorHTML = `
                     <div class="mh-hero-instance">
                         <i class="fas fa-server"></i>
                         <select id="requestarr-detail-instance-select">
-                            ${this.radarrInstances.map(instance => {
-                                const selected = instance.name === this.selectedInstanceName ? 'selected' : '';
-                                return `<option value="${this.escapeHtml(instance.name)}" ${selected}>Radarr \u2013 ${this.escapeHtml(instance.name)}</option>`;
+                            ${this.movieInstances.map(instance => {
+                                const selected = instance.compoundValue === this.selectedInstanceName ? 'selected' : '';
+                                return `<option value="${this.escapeHtml(instance.compoundValue)}" ${selected}>${this.escapeHtml(instance.label)}</option>`;
                             }).join('')}
                         </select>
                     </div>

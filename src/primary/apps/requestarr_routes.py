@@ -105,8 +105,15 @@ def request_media():
         
         # Get quality_profile from request, convert empty string to None
         quality_profile = data.get('quality_profile')
-        quality_profile_id = int(quality_profile) if quality_profile and quality_profile != '' else None
         root_folder_path = (data.get('root_folder_path') or '').strip() or None
+        
+        # For Movie Hunt, quality_profile is a name string, not an integer ID
+        if app_type == 'movie_hunt':
+            quality_profile_id = None  # Not used for Movie Hunt
+            quality_profile_name = quality_profile if quality_profile and quality_profile != '' else None
+        else:
+            quality_profile_id = int(quality_profile) if quality_profile and quality_profile != '' else None
+            quality_profile_name = None
         
         result = requestarr_api.request_media(
             tmdb_id=data['tmdb_id'],
@@ -119,7 +126,8 @@ def request_media():
             app_type=app_type,
             instance_name=instance_name,
             quality_profile_id=quality_profile_id,
-            root_folder_path=root_folder_path
+            root_folder_path=root_folder_path,
+            quality_profile_name=quality_profile_name
         )
         
         logger.info(f"[Requestarr] Request result: {result}")
@@ -350,16 +358,21 @@ def get_series_status():
 
 @requestarr_bp.route('/movie-status', methods=['GET'])
 def get_movie_status():
-    """Get movie status from Radarr - in library, previously requested, etc."""
+    """Get movie status from Radarr or Movie Hunt - in library, previously requested, etc."""
     try:
         tmdb_id = request.args.get('tmdb_id', type=int)
         instance_name = request.args.get('instance')
+        app_type = request.args.get('app_type', '').strip().lower()
         
         if not tmdb_id or not instance_name:
             return jsonify({'error': 'Missing parameters'}), 400
         
-        # Get movie status from Radarr
-        status = requestarr_api.get_movie_status_from_radarr(tmdb_id, instance_name)
+        # Route to Movie Hunt status check if app_type is movie_hunt
+        if app_type == 'movie_hunt':
+            status = requestarr_api.get_movie_status_from_movie_hunt(tmdb_id, instance_name)
+        else:
+            # Default: Get movie status from Radarr
+            status = requestarr_api.get_movie_status_from_radarr(tmdb_id, instance_name)
         return jsonify(status)
         
     except Exception as e:
@@ -386,7 +399,7 @@ def check_requested_seasons():
 
 @requestarr_bp.route('/quality-profiles/<app_type>/<instance_name>', methods=['GET'])
 def get_quality_profiles(app_type, instance_name):
-    """Get quality profiles from Radarr or Sonarr instance"""
+    """Get quality profiles from Radarr, Sonarr, or Movie Hunt instance"""
     try:
         profiles = requestarr_api.get_quality_profiles(app_type, instance_name)
         return jsonify({'success': True, 'profiles': profiles})
@@ -470,12 +483,12 @@ def set_default_instances():
 
 @requestarr_bp.route('/rootfolders', methods=['GET'])
 def get_root_folders():
-    """Get root folders for a *arr instance (for default root folder dropdown, issue #806)"""
+    """Get root folders for a *arr or Movie Hunt instance"""
     try:
         app_type = request.args.get('app_type', '').strip().lower()
         instance_name = request.args.get('instance_name', '').strip()
-        if app_type not in ('radarr', 'sonarr') or not instance_name:
-            return jsonify({'success': False, 'error': 'app_type (radarr/sonarr) and instance_name required'}), 400
+        if app_type not in ('radarr', 'sonarr', 'movie_hunt') or not instance_name:
+            return jsonify({'success': False, 'error': 'app_type (radarr/sonarr/movie_hunt) and instance_name required'}), 400
         folders = requestarr_api.get_root_folders(app_type, instance_name)
         return jsonify({'success': True, 'root_folders': folders})
     except Exception as e:
@@ -499,7 +512,12 @@ def set_default_root_folders():
         data = request.get_json() or {}
         radarr_path = data.get('default_root_folder_radarr', '')
         sonarr_path = data.get('default_root_folder_sonarr', '')
-        requestarr_api.set_default_root_folders(default_root_folder_radarr=radarr_path, default_root_folder_sonarr=sonarr_path)
+        movie_hunt_path = data.get('default_root_folder_movie_hunt', '')
+        requestarr_api.set_default_root_folders(
+            default_root_folder_radarr=radarr_path,
+            default_root_folder_sonarr=sonarr_path,
+            default_root_folder_movie_hunt=movie_hunt_path
+        )
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"Error setting default root folders: {e}")
@@ -629,8 +647,30 @@ def get_hidden_media():
 
 @requestarr_bp.route('/instances/<app_type>', methods=['GET'])
 def get_instances(app_type):
-    """Get list of configured instances for an app type (radarr/sonarr)"""
+    """Get list of configured instances for an app type (radarr/sonarr/movie_hunt)"""
     try:
+        # Movie Hunt instances come from the dedicated database table
+        if app_type == 'movie_hunt':
+            from src.primary.utils.database import get_database
+            db = get_database()
+            mh_instances = db.get_movie_hunt_instances()
+            instances = []
+            seen_names = set()
+            for inst in mh_instances:
+                name = (inst.get('name') or '').strip()
+                if not name:
+                    continue
+                normalized_name = name.lower()
+                if normalized_name in seen_names:
+                    continue
+                seen_names.add(normalized_name)
+                instances.append({
+                    'name': name,
+                    'id': inst.get('id'),
+                    'url': 'internal'  # Movie Hunt is internal, no external URL
+                })
+            return jsonify({'instances': instances, 'app_type': 'movie_hunt'})
+        
         from src.primary.settings_manager import get_setting
         
         # Get instances from settings
