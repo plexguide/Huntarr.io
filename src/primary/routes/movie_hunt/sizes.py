@@ -17,13 +17,13 @@ from ...utils.database import HuntarrDatabase
 
 SIZES_DEFAULT = [
     # --- Low quality / legacy ---
-    {'id': 'unknown',    'name': 'Unknown',     'group': 'Low Quality',  'min': 0,  'preferred': 95,  'max': 100},
-    {'id': 'workprint',  'name': 'WORKPRINT',   'group': 'Low Quality',  'min': 0,  'preferred': 95,  'max': 100},
-    {'id': 'cam',        'name': 'CAM',         'group': 'Low Quality',  'min': 0,  'preferred': 95,  'max': 100},
-    {'id': 'telesync',   'name': 'TELESYNC',    'group': 'Low Quality',  'min': 0,  'preferred': 95,  'max': 100},
-    {'id': 'telecine',   'name': 'TELECINE',    'group': 'Low Quality',  'min': 0,  'preferred': 95,  'max': 100},
-    {'id': 'regional',   'name': 'REGIONAL',    'group': 'Low Quality',  'min': 0,  'preferred': 95,  'max': 100},
-    {'id': 'dvdscr',     'name': 'DVDSCR',      'group': 'Low Quality',  'min': 0,  'preferred': 95,  'max': 100},
+    {'id': 'unknown',    'name': 'Unknown',     'group': 'Low Quality',  'min': 0,  'preferred': 75,  'max': 100},
+    {'id': 'workprint',  'name': 'WORKPRINT',   'group': 'Low Quality',  'min': 0,  'preferred': 75,  'max': 100},
+    {'id': 'cam',        'name': 'CAM',         'group': 'Low Quality',  'min': 0,  'preferred': 75,  'max': 100},
+    {'id': 'telesync',   'name': 'TELESYNC',    'group': 'Low Quality',  'min': 0,  'preferred': 75,  'max': 100},
+    {'id': 'telecine',   'name': 'TELECINE',    'group': 'Low Quality',  'min': 0,  'preferred': 75,  'max': 100},
+    {'id': 'regional',   'name': 'REGIONAL',    'group': 'Low Quality',  'min': 0,  'preferred': 75,  'max': 100},
+    {'id': 'dvdscr',     'name': 'DVDSCR',      'group': 'Low Quality',  'min': 0,  'preferred': 75,  'max': 100},
 
     # --- SD ---
     {'id': 'sdtv',       'name': 'SDTV',        'group': 'SD',  'min': 0,  'preferred': 20,  'max': 40},
