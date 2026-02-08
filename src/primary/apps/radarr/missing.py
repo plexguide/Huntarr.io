@@ -11,10 +11,13 @@ import datetime
 from typing import List, Dict, Any, Set, Callable
 from src.primary.utils.logger import get_logger
 from src.primary.apps.radarr import api as radarr_api
-from src.primary.stats_manager import increment_stat_only, check_hourly_cap_exceeded
-from src.primary.stateful_manager import is_processed, add_processed_id
+from src.primary.stats_manager import increment_stat_only
+from src.primary.stateful_manager import add_processed_id
 from src.primary.utils.history_utils import log_processed_media
-from src.primary.settings_manager import load_settings, get_advanced_setting
+from src.primary.settings_manager import load_settings
+from src.primary.apps._common.settings import extract_app_settings, validate_settings
+from src.primary.apps._common.filtering import filter_exempt_items, filter_unprocessed
+from src.primary.apps._common.processing import should_continue_processing
 
 # Get logger for the app
 radarr_logger = get_logger("radarr")
@@ -93,42 +96,26 @@ def process_missing_movies(
     """
     processed_any = False
     
-    # Get instance name (display) and stable key for DB (survives renames)
-    instance_name = app_settings.get("instance_name", app_settings.get("name", "Radarr Default"))
-    instance_key = app_settings.get("instance_id") or instance_name
-
-    # Per-instance tagging (from instance settings)
-    tag_processed_items = app_settings.get("tag_processed_items", True)
-    tag_enable_missing = app_settings.get("tag_enable_missing", True)
+    # Extract common settings using shared utility
+    s = extract_app_settings(app_settings, "radarr", "hunt_missing_movies", "Radarr Default")
+    instance_name = s['instance_name']
+    instance_key = s['instance_key']
+    api_url = s['api_url']
+    api_key = s['api_key']
+    api_timeout = s['api_timeout']
+    monitored_only = s['monitored_only']
+    hunt_missing_movies = s['hunt_count']
+    tag_processed_items = s['tag_processed_items']
+    tag_enable_missing = s['tag_enable_missing']
     
-    # Log important settings
+    # App-specific settings
+    skip_future_releases = app_settings.get("skip_future_releases", True)
+    
     radarr_logger.info("=== Radarr Missing Movies Settings ===")
     radarr_logger.debug(f"Instance Name: {instance_name}")
-    
-    # Extract necessary settings
-    api_url = app_settings.get("api_url", "").strip()
-    api_key = app_settings.get("api_key", "").strip()
-    api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
-    monitored_only = app_settings.get("monitored_only", True)
-    skip_future_releases = app_settings.get("skip_future_releases", True)
-    # skip_movie_refresh setting removed as it was a performance bottleneck
-    hunt_missing_movies = app_settings.get("hunt_missing_movies", 0)
-    
-    # Use advanced settings from database for command operations
-    command_wait_delay = get_advanced_setting("command_wait_delay", 1)
-    command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
-    
-    # Configuration logging removed to reduce log spam
-    
     radarr_logger.info("Starting missing movies processing cycle for Radarr.")
     
-    if not api_url or not api_key:
-        radarr_logger.error("API URL or Key not configured in settings. Cannot process missing movies.")
-        return False
-
-    # Skip if hunt_missing_movies is set to 0
-    if hunt_missing_movies <= 0:
-        radarr_logger.info("'hunt_missing_movies' setting is 0 or less. Skipping missing movie processing.")
+    if not validate_settings(api_url, api_key, hunt_missing_movies, "radarr", radarr_logger):
         return False
 
     # Check for stop signal
@@ -230,37 +217,23 @@ def process_missing_movies(
         return False
 
     # Filter out movies with exempt tags (issue #676)
-    exempt_tags = app_settings.get("exempt_tags") or []
-    if exempt_tags:
-        exempt_id_to_label = radarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
-        if exempt_id_to_label:
-            filtered = []
-            for movie in missing_movies:
-                skip = False
-                for tid in movie.get("tags", []):
-                    if tid in exempt_id_to_label:
-                        radarr_logger.info(
-                            f"Skipping movie \"{movie.get('title', 'Unknown')}\" (ID: {movie.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
-                        )
-                        skip = True
-                        break
-                if not skip:
-                    filtered.append(movie)
-            missing_movies = filtered
-            radarr_logger.info(f"Exempt tags filter: {len(missing_movies)} movies remaining after excluding items with exempt tags.")
+    missing_movies = filter_exempt_items(
+        missing_movies, s['exempt_tags'], radarr_api,
+        api_url, api_key, api_timeout,
+        get_tags_fn=lambda m: m.get("tags", []),
+        get_id_fn=lambda m: m.get("id"),
+        get_title_fn=lambda m: m.get("title", "Unknown"),
+        app_type="radarr", logger=radarr_logger
+    )
 
     movies_processed = 0
     processing_done = False
     
-    # Filter out already processed movies using stateful management
-    unprocessed_movies = []
-    for movie in missing_movies:
-        movie_id = str(movie.get("id"))
-        if not is_processed("radarr", instance_key, movie_id):
-            unprocessed_movies.append(movie)
-        else:
-            radarr_logger.debug(f"Skipping already processed movie ID: {movie_id}")
-    
+    # Filter out already processed movies using shared utility
+    unprocessed_movies = filter_unprocessed(
+        missing_movies, "radarr", instance_key,
+        get_id_fn=lambda m: m.get("id"), logger=radarr_logger
+    )
     radarr_logger.info(f"Found {len(unprocessed_movies)} unprocessed missing movies out of {len(missing_movies)} total.")
     
     if not unprocessed_movies:
@@ -287,18 +260,8 @@ def process_missing_movies(
     
     # Process each movie
     for movie in movies_to_process:
-        if stop_check():
-            radarr_logger.info("Stop requested during processing. Aborting...")
+        if not should_continue_processing("radarr", stop_check, radarr_logger):
             break
-        
-        # Check API limit before processing each movie
-        try:
-            if check_hourly_cap_exceeded("radarr"):
-                radarr_logger.warning(f"🛑 Radarr API hourly limit reached - stopping missing movies processing after {movies_processed} movies")
-                break
-        except Exception as e:
-            radarr_logger.error(f"Error checking hourly API cap: {e}")
-            # Continue processing if cap check fails - safer than stopping
             
         movie_id = movie.get("id")
         movie_title = movie.get("title", "Unknown Title")

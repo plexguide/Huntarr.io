@@ -35,7 +35,7 @@ from src.primary.auth import (
 )
 # Import blueprint for common routes
 from src.primary.routes.common import common_bp
-from src.primary.routes.movie_hunt_routes import movie_hunt_bp
+from src.primary.routes.movie_hunt import movie_hunt_bp
 from src.primary.routes.plex_auth_routes import plex_auth_bp
 # Import blueprints for each app from the centralized blueprints module
 from src.primary.apps.blueprints import sonarr_bp, radarr_bp, lidarr_bp, readarr_bp, whisparr_bp, eros_bp, swaparr_bp, requestarr_bp, prowlarr_bp

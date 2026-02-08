@@ -17,6 +17,9 @@ from src.primary.stateful_manager import is_processed, add_processed_id
 from src.primary.utils.history_utils import log_processed_media
 from src.primary.settings_manager import load_settings, get_advanced_setting
 from src.primary.state import check_state_reset
+from src.primary.apps._common.settings import extract_app_settings, validate_settings
+from src.primary.apps._common.filtering import filter_exempt_items
+from src.primary.apps._common.processing import should_continue_processing
 
 # Get the logger for the Lidarr module
 lidarr_logger = get_logger(__name__) # Use __name__ for correct logger hierarchy
@@ -37,26 +40,23 @@ def process_missing_albums(
         bool: True if any items were processed, False otherwise.
     """
     
-    # Copy instance-specific information
-    instance_name = app_settings.get("instance_name", "Default")
-    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
-    api_url = app_settings.get("api_url", "").strip()
-    api_key = app_settings.get("api_key", "").strip()
-    api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
-    monitored_only = app_settings.get("monitored_only", True)
-    skip_future_releases = app_settings.get("skip_future_releases", False)
-    hunt_missing_items = app_settings.get("hunt_missing_items", 0)
+    # Extract common settings using shared utility
+    s = extract_app_settings(app_settings, "lidarr", "hunt_missing_items", "Lidarr Default")
+    instance_name = s['instance_name']
+    instance_key = s['instance_key']
+    api_url = s['api_url']
+    api_key = s['api_key']
+    api_timeout = s['api_timeout']
+    monitored_only = s['monitored_only']
+    hunt_missing_items = s['hunt_count']
+    command_wait_delay = s['command_wait_delay']
+    command_wait_attempts = s['command_wait_attempts']
+    
+    # App-specific settings
     hunt_missing_mode = app_settings.get("hunt_missing_mode", "album")
-    command_wait_delay = get_advanced_setting("command_wait_delay", 1)
-    command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
     
     # Early exit for disabled features
-    if not api_url or not api_key:
-        lidarr_logger.warning(f"Missing API URL or API key, skipping missing processing for {instance_name}")
-        return False
-    
-    if hunt_missing_items <= 0:
-        lidarr_logger.debug(f"Hunting for missing items is disabled (hunt_missing_items={hunt_missing_items}) for {instance_name}")
+    if not validate_settings(api_url, api_key, hunt_missing_items, "lidarr", lidarr_logger):
         return False
     
     # Make sure any requested stop function is executable
@@ -98,26 +98,14 @@ def process_missing_albums(
             lidarr_logger.info(f"Retrieved {len(missing_albums_data)} missing albums from random page selection.")
 
             # Filter out albums whose artist has an exempt tag (issue #676)
-            exempt_tags = app_settings.get("exempt_tags") or []
-            if exempt_tags:
-                exempt_id_to_label = lidarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
-                if exempt_id_to_label:
-                    filtered = []
-                    for album in missing_albums_data:
-                        artist = album.get("artist") or {}
-                        artist_tags = artist.get("tags", [])
-                        skip = False
-                        for tid in artist_tags:
-                            if tid in exempt_id_to_label:
-                                lidarr_logger.info(
-                                    f"Skipping album \"{album.get('title', 'Unknown')}\" (artist: \"{artist.get('name', 'Unknown')}\") - artist has exempt tag \"{exempt_id_to_label[tid]}\""
-                                )
-                                skip = True
-                                break
-                        if not skip:
-                            filtered.append(album)
-                    missing_albums_data = filtered
-                    lidarr_logger.info(f"Exempt tags filter: {len(missing_albums_data)} albums remaining after excluding artists with exempt tags.")
+            missing_albums_data = filter_exempt_items(
+                missing_albums_data, s['exempt_tags'], lidarr_api,
+                api_url, api_key, api_timeout,
+                get_tags_fn=lambda a: (a.get("artist") or {}).get("tags", []),
+                get_id_fn=lambda a: a.get("id"),
+                get_title_fn=lambda a: a.get("title", "Unknown"),
+                app_type="lidarr", logger=lidarr_logger
+            )
             
             # Convert to the expected format for album processing - keep IDs as integers
             unprocessed_entities = []
@@ -144,26 +132,14 @@ def process_missing_albums(
             lidarr_logger.info(f"Retrieved {len(missing_albums_data)} missing albums.")
 
             # Filter out albums whose artist has an exempt tag (issue #676)
-            exempt_tags = app_settings.get("exempt_tags") or []
-            if exempt_tags:
-                exempt_id_to_label = lidarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
-                if exempt_id_to_label:
-                    filtered = []
-                    for album in missing_albums_data:
-                        artist = album.get("artist") or {}
-                        artist_tags = artist.get("tags", [])
-                        skip = False
-                        for tid in artist_tags:
-                            if tid in exempt_id_to_label:
-                                lidarr_logger.info(
-                                    f"Skipping album \"{album.get('title', 'Unknown')}\" (artist: \"{artist.get('name', 'Unknown')}\") - artist has exempt tag \"{exempt_id_to_label[tid]}\""
-                                )
-                                skip = True
-                                break
-                        if not skip:
-                            filtered.append(album)
-                    missing_albums_data = filtered
-                    lidarr_logger.info(f"Exempt tags filter: {len(missing_albums_data)} albums remaining after excluding artists with exempt tags.")
+            missing_albums_data = filter_exempt_items(
+                missing_albums_data, s['exempt_tags'], lidarr_api,
+                api_url, api_key, api_timeout,
+                get_tags_fn=lambda a: (a.get("artist") or {}).get("tags", []),
+                get_id_fn=lambda a: a.get("id"),
+                get_title_fn=lambda a: a.get("title", "Unknown"),
+                app_type="lidarr", logger=lidarr_logger
+            )
 
             # Group by artist ID
             items_by_artist = {}
@@ -244,18 +220,8 @@ def process_missing_albums(
                 
             lidarr_logger.info(f"Triggering Artist Search for {len(entities_to_search_ids)} artists on {instance_name}...")
             for i, artist_id in enumerate(entities_to_search_ids):
-                if stop_check(): # Use the new stop_check function
-                    lidarr_logger.warning("Shutdown requested during artist search trigger.")
+                if not should_continue_processing("lidarr", stop_check, lidarr_logger):
                     break
-                
-                # Check API limit before processing each artist
-                try:
-                    if check_hourly_cap_exceeded("lidarr"):
-                        lidarr_logger.warning(f"🛑 Lidarr API hourly limit reached - stopping artist processing after {processed_count} artists")
-                        break
-                except Exception as e:
-                    lidarr_logger.error(f"Error checking hourly API cap: {e}")
-                    # Continue processing if cap check fails - safer than stopping
 
                 # Get artist name from cached details or first album
                 artist_name = f"Artist ID {artist_id}" # Default if name not found

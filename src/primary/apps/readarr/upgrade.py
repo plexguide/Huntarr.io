@@ -11,10 +11,13 @@ from typing import List, Dict, Any, Set, Callable, Union, Optional
 from src.primary.utils.logger import get_logger
 from src.primary.apps.readarr import api as readarr_api
 from src.primary.stats_manager import increment_stat, check_hourly_cap_exceeded
-from src.primary.stateful_manager import is_processed, add_processed_id
+from src.primary.stateful_manager import add_processed_id
 from src.primary.utils.history_utils import log_processed_media
 from src.primary.state import check_state_reset
-from src.primary.settings_manager import load_settings # Import load_settings function
+from src.primary.settings_manager import load_settings
+from src.primary.apps._common.settings import extract_app_settings, validate_settings
+from src.primary.apps._common.filtering import filter_exempt_items, filter_unprocessed
+from src.primary.apps._common.processing import should_continue_processing
 
 # Get logger for the app
 readarr_logger = get_logger("readarr")
@@ -40,32 +43,25 @@ def process_cutoff_upgrades(
     
     processed_any = False
     
-    # Load general settings to get centralized timeout
-    general_settings = load_settings('general')
-    
-    # Per-instance tagging (from instance settings)
-    tag_processed_items = app_settings.get("tag_processed_items", True)
+    # Extract common settings using shared utility
+    s = extract_app_settings(app_settings, "readarr", "hunt_upgrade_books", "Readarr Default")
+    instance_name = s['instance_name']
+    instance_key = s['instance_key']
+    api_url = s['api_url']
+    api_key = s['api_key']
+    api_timeout = s['api_timeout']
+    monitored_only = s['monitored_only']
+    hunt_upgrade_books = s['hunt_count']
+    tag_processed_items = s['tag_processed_items']
     tag_enable_upgraded = app_settings.get("tag_enable_upgraded", True)
-    
-    # Get the API credentials for this instance
-    api_url = app_settings.get('api_url', '')
-    api_key = app_settings.get('api_key', '')
-    
-    # Use the centralized timeout from general settings with app-specific as fallback
-    api_timeout = general_settings.get("api_timeout", app_settings.get("api_timeout", 90))  # Use centralized timeout
     
     readarr_logger.info(f"Using API timeout of {api_timeout} seconds for Readarr")
     
-    # Extract necessary settings
-    instance_name = app_settings.get("instance_name", "Readarr Default")
-    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
-    monitored_only = app_settings.get("monitored_only", True)
+    # App-specific settings
     upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()
     if upgrade_selection_method not in ("cutoff", "tags"):
         upgrade_selection_method = "cutoff"
     upgrade_tag = (app_settings.get("upgrade_tag") or "").strip()
-    # skip_author_refresh setting removed as it was a performance bottleneck
-    hunt_upgrade_books = app_settings.get("hunt_upgrade_books", 0)
     command_wait_delay = app_settings.get("command_wait_delay", 5)
     command_wait_attempts = app_settings.get("command_wait_attempts", 12)
     
@@ -97,26 +93,14 @@ def process_cutoff_upgrades(
         readarr_logger.info(f"Found {len(upgrade_eligible_data)} books eligible for quality upgrade.")
 
     # Filter out books whose author has an exempt tag (issue #676)
-    exempt_tags = app_settings.get("exempt_tags") or []
-    if exempt_tags:
-        exempt_id_to_label = readarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
-        if exempt_id_to_label:
-            filtered = []
-            for book in upgrade_eligible_data:
-                author = book.get("author") or {}
-                author_tags = author.get("tags", [])
-                skip = False
-                for tid in author_tags:
-                    if tid in exempt_id_to_label:
-                        readarr_logger.info(
-                            f"Skipping book \"{book.get('title', 'Unknown')}\" (author: \"{author.get('name', 'Unknown')}\") - author has exempt tag \"{exempt_id_to_label[tid]}\""
-                        )
-                        skip = True
-                        break
-                if not skip:
-                    filtered.append(book)
-            upgrade_eligible_data = filtered
-            readarr_logger.info(f"Exempt tags filter: {len(upgrade_eligible_data)} books remaining for upgrades after excluding authors with exempt tags.")
+    upgrade_eligible_data = filter_exempt_items(
+        upgrade_eligible_data, s['exempt_tags'], readarr_api,
+        api_url, api_key, api_timeout,
+        get_tags_fn=lambda b: (b.get("author") or {}).get("tags", []),
+        get_id_fn=lambda b: b.get("id"),
+        get_title_fn=lambda b: b.get("title", "Unknown"),
+        app_type="readarr", logger=readarr_logger
+    )
 
     # Filter out future releases if configured
     skip_future_releases = app_settings.get("skip_future_releases", True)
@@ -159,15 +143,11 @@ def process_cutoff_upgrades(
         readarr_logger.info("No upgradeable books found to process (after potential filtering). Skipping.")
         return False
         
-    # Filter out already processed books using stateful management
-    unprocessed_books = []
-    for book in upgrade_eligible_data:
-        book_id = str(book.get("id"))
-        if not is_processed("readarr", instance_key, book_id):
-            unprocessed_books.append(book)
-        else:
-            readarr_logger.debug(f"Skipping already processed book ID: {book_id}")
-    
+    # Filter out already processed books using shared utility
+    unprocessed_books = filter_unprocessed(
+        upgrade_eligible_data, "readarr", instance_key,
+        get_id_fn=lambda b: b.get("id"), logger=readarr_logger
+    )
     readarr_logger.info(f"Found {len(unprocessed_books)} unprocessed books out of {len(upgrade_eligible_data)} total books eligible for upgrade.")
     
     if not unprocessed_books:

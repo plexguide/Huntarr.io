@@ -10,11 +10,14 @@ import datetime
 from typing import List, Dict, Any, Set, Callable
 from src.primary.utils.logger import get_logger
 from src.primary.apps.radarr import api as radarr_api
-from src.primary.stats_manager import increment_stat, increment_stat_only, check_hourly_cap_exceeded
-from src.primary.stateful_manager import is_processed, add_processed_id
+from src.primary.stats_manager import increment_stat_only
+from src.primary.stateful_manager import add_processed_id
 from src.primary.utils.history_utils import log_processed_media
-from src.primary.settings_manager import get_advanced_setting, load_settings
+from src.primary.settings_manager import load_settings
 from src.primary.utils.date_utils import parse_date
+from src.primary.apps._common.settings import extract_app_settings, validate_settings
+from src.primary.apps._common.filtering import filter_exempt_items, filter_unprocessed
+from src.primary.apps._common.processing import should_continue_processing
 
 # Get logger for the app
 radarr_logger = get_logger("radarr")
@@ -71,25 +74,20 @@ def process_cutoff_upgrades(
     radarr_logger.info("Starting quality cutoff upgrades processing cycle for Radarr.")
     processed_any = False
     
-    # Per-instance tagging (from instance settings)
-    tag_processed_items = app_settings.get("tag_processed_items", True)
+    # Extract common settings using shared utility
+    s = extract_app_settings(app_settings, "radarr", "hunt_upgrade_movies", "Radarr Default")
+    instance_name = s['instance_name']
+    instance_key = s['instance_key']
+    api_url = s['api_url']
+    api_key = s['api_key']
+    api_timeout = s['api_timeout']
+    monitored_only = s['monitored_only']
+    hunt_upgrade_movies = s['hunt_count']
+    tag_processed_items = s['tag_processed_items']
     tag_enable_upgraded = app_settings.get("tag_enable_upgraded", True)
     
-    # Extract necessary settings
-    api_url = app_settings.get("api_url", "").strip()
-    api_key = app_settings.get("api_key", "").strip()
-    api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
-    monitored_only = app_settings.get("monitored_only", True)
-    # skip_movie_refresh setting removed as it was a performance bottleneck
-    hunt_upgrade_movies = app_settings.get("hunt_upgrade_movies", 0)
+    # App-specific settings
     skip_future_releases = app_settings.get("skip_future_releases", True)
-    
-    # Use advanced settings from database for command operations
-    command_wait_delay = get_advanced_setting("command_wait_delay", 1)
-    command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
-    
-    instance_name = app_settings.get("instance_name", app_settings.get("name", "Radarr Default"))
-    instance_key = app_settings.get("instance_id") or instance_name
     upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()
     if upgrade_selection_method not in ("cutoff", "tags"):
         upgrade_selection_method = "cutoff"
@@ -173,24 +171,14 @@ def process_cutoff_upgrades(
     radarr_logger.info(f"Found {len(upgrade_eligible_data)} movies with upgrade allowed quality profiles.")
 
     # Filter out movies with exempt tags (issue #676)
-    exempt_tags = app_settings.get("exempt_tags") or []
-    if exempt_tags:
-        exempt_id_to_label = radarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
-        if exempt_id_to_label:
-            filtered = []
-            for movie in upgrade_eligible_data:
-                skip = False
-                for tid in movie.get("tags", []):
-                    if tid in exempt_id_to_label:
-                        radarr_logger.info(
-                            f"Skipping movie \"{movie.get('title', 'Unknown')}\" (ID: {movie.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
-                        )
-                        skip = True
-                        break
-                if not skip:
-                    filtered.append(movie)
-            upgrade_eligible_data = filtered
-            radarr_logger.info(f"Exempt tags filter: {len(upgrade_eligible_data)} movies remaining for upgrades after excluding items with exempt tags.")
+    upgrade_eligible_data = filter_exempt_items(
+        upgrade_eligible_data, s['exempt_tags'], radarr_api,
+        api_url, api_key, api_timeout,
+        get_tags_fn=lambda m: m.get("tags", []),
+        get_id_fn=lambda m: m.get("id"),
+        get_title_fn=lambda m: m.get("title", "Unknown"),
+        app_type="radarr", logger=radarr_logger
+    )
 
     # Skip future releases if enabled (matching missing movies logic)
     if skip_future_releases:
@@ -268,15 +256,11 @@ def process_cutoff_upgrades(
         radarr_logger.info("No movies eligible for upgrade left to process after filtering future releases.")
         return False
 
-    # Filter out already processed movies using stateful management
-    unprocessed_movies = []
-    for movie in upgrade_eligible_data:
-        movie_id = str(movie.get("id"))
-        if not is_processed("radarr", instance_key, movie_id):
-            unprocessed_movies.append(movie)
-        else:
-            radarr_logger.debug(f"Skipping already processed movie ID: {movie_id}")
-    
+    # Filter out already processed movies using shared utility
+    unprocessed_movies = filter_unprocessed(
+        upgrade_eligible_data, "radarr", instance_key,
+        get_id_fn=lambda m: m.get("id"), logger=radarr_logger
+    )
     radarr_logger.info(f"Found {len(unprocessed_movies)} unprocessed movies for upgrade out of {len(upgrade_eligible_data)} total.")
     
     if not unprocessed_movies:
@@ -291,18 +275,8 @@ def process_cutoff_upgrades(
     processed_something = False
     
     for movie in movies_to_process:
-        if stop_check():
-            radarr_logger.info("Stop signal received, aborting Radarr upgrade cycle.")
+        if not should_continue_processing("radarr", stop_check, radarr_logger):
             break
-        
-        # Check API limit before processing each movie
-        try:
-            if check_hourly_cap_exceeded("radarr"):
-                radarr_logger.warning(f"🛑 Radarr API hourly limit reached - stopping upgrade processing after {processed_count} movies")
-                break
-        except Exception as e:
-            radarr_logger.error(f"Error checking hourly API cap: {e}")
-            # Continue processing if cap check fails - safer than stopping
             
         movie_id = movie.get("id")
         movie_title = movie.get("title")

@@ -9,11 +9,14 @@ import random
 from typing import List, Dict, Any, Set, Callable
 from src.primary.utils.logger import get_logger
 from src.primary.apps.readarr import api as readarr_api
-from src.primary.stats_manager import increment_stat, check_hourly_cap_exceeded
-from src.primary.stateful_manager import is_processed, add_processed_id
+from src.primary.stats_manager import increment_stat
+from src.primary.stateful_manager import add_processed_id
 from src.primary.utils.history_utils import log_processed_media
-from src.primary.settings_manager import load_settings, get_advanced_setting
+from src.primary.settings_manager import load_settings
 from src.primary.state import check_state_reset
+from src.primary.apps._common.settings import extract_app_settings, validate_settings
+from src.primary.apps._common.filtering import filter_exempt_items, filter_unprocessed
+from src.primary.apps._common.processing import should_continue_processing
 
 # Get logger for the app
 readarr_logger = get_logger("readarr")
@@ -38,39 +41,21 @@ def process_missing_books(
     # Reset state files if enough time has passed
     check_state_reset("readarr")
     
-    # Per-instance tagging (from instance settings)
-    tag_processed_items = app_settings.get("tag_processed_items", True)
-    tag_enable_missing = app_settings.get("tag_enable_missing", True)
-    
-    # Get the settings for the instance
-    general_settings = readarr_api.load_settings('general')
-    
-    # Extract necessary settings
-    api_url = app_settings.get("api_url", "").strip()
-    api_key = app_settings.get("api_key", "").strip()
-    api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
-    instance_name = app_settings.get("instance_name", "Readarr Default")
-    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
+    # Extract common settings using shared utility
+    s = extract_app_settings(app_settings, "readarr", "hunt_missing_books", "Readarr Default")
+    instance_name = s['instance_name']
+    instance_key = s['instance_key']
+    api_url = s['api_url']
+    api_key = s['api_key']
+    api_timeout = s['api_timeout']
+    monitored_only = s['monitored_only']
+    hunt_missing_books = s['hunt_count']
+    tag_processed_items = s['tag_processed_items']
+    tag_enable_missing = s['tag_enable_missing']
     
     readarr_logger.info(f"Using API timeout of {api_timeout} seconds for Readarr")
     
-    monitored_only = app_settings.get("monitored_only", True)
-    skip_future_releases = app_settings.get("skip_future_releases", True)
-    hunt_missing_books = app_settings.get("hunt_missing_books", 0)
-    
-    # Use advanced settings from database for command operations
-    command_wait_delay = get_advanced_setting("command_wait_delay", 1)
-    command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
-
-    # Configuration logging removed to reduce log spam
-
-    if not api_url or not api_key:
-        readarr_logger.error("API URL or Key not configured in settings. Cannot process missing books.")
-        return False
-
-    # Skip if hunt_missing_books is set to 0
-    if hunt_missing_books <= 0:
-        readarr_logger.info("'hunt_missing_books' setting is 0 or less. Skipping missing book processing.")
+    if not validate_settings(api_url, api_key, hunt_missing_books, "readarr", readarr_logger):
         return False
 
     # Check for stop signal
@@ -95,41 +80,25 @@ def process_missing_books(
     readarr_logger.info(f"Retrieved {len(missing_books_data)} missing books from random page selection.")
 
     # Filter out books whose author has an exempt tag (issue #676)
-    exempt_tags = app_settings.get("exempt_tags") or []
-    if exempt_tags:
-        exempt_id_to_label = readarr_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
-        if exempt_id_to_label:
-            filtered = []
-            for book in missing_books_data:
-                author = book.get("author") or {}
-                author_tags = author.get("tags", [])
-                skip = False
-                for tid in author_tags:
-                    if tid in exempt_id_to_label:
-                        readarr_logger.info(
-                            f"Skipping book \"{book.get('title', 'Unknown')}\" (author: \"{author.get('name', 'Unknown')}\") - author has exempt tag \"{exempt_id_to_label[tid]}\""
-                        )
-                        skip = True
-                        break
-                if not skip:
-                    filtered.append(book)
-            missing_books_data = filtered
-            readarr_logger.info(f"Exempt tags filter: {len(missing_books_data)} books remaining after excluding authors with exempt tags.")
+    missing_books_data = filter_exempt_items(
+        missing_books_data, s['exempt_tags'], readarr_api,
+        api_url, api_key, api_timeout,
+        get_tags_fn=lambda b: (b.get("author") or {}).get("tags", []),
+        get_id_fn=lambda b: b.get("id"),
+        get_title_fn=lambda b: b.get("title", "Unknown"),
+        app_type="readarr", logger=readarr_logger
+    )
 
     # Check for stop signal after retrieving books
     if stop_check():
         readarr_logger.info("Stop requested after retrieving missing books. Aborting...")
         return False
 
-    # Filter out already processed books using stateful management (now book-based instead of author-based)
-    unprocessed_books = []
-    for book in missing_books_data:
-        book_id = str(book.get("id"))
-        if not is_processed("readarr", instance_key, book_id):
-            unprocessed_books.append(book)
-        else:
-            readarr_logger.debug(f"Skipping already processed book ID: {book_id}")
-
+    # Filter out already processed books using shared utility
+    unprocessed_books = filter_unprocessed(
+        missing_books_data, "readarr", instance_key,
+        get_id_fn=lambda b: b.get("id"), logger=readarr_logger
+    )
     readarr_logger.info(f"Found {len(unprocessed_books)} unprocessed missing books out of {len(missing_books_data)} total.")
     
     if not unprocessed_books:
@@ -156,18 +125,8 @@ def process_missing_books(
 
     # Process each individual book
     for book in books_to_process:
-        if stop_check():
-            readarr_logger.info("Stop signal received, aborting Readarr missing cycle.")
+        if not should_continue_processing("readarr", stop_check, readarr_logger):
             break
-        
-        # Check API limit before processing each book
-        try:
-            if check_hourly_cap_exceeded("readarr"):
-                readarr_logger.warning(f"🛑 Readarr API hourly limit reached - stopping missing books processing after {processed_count} books")
-                break
-        except Exception as e:
-            readarr_logger.error(f"Error checking hourly API cap: {e}")
-            # Continue processing if cap check fails - safer than stopping
 
         book_id = book.get("id")
         book_title = book.get("title", f"Unknown Book ID {book_id}")

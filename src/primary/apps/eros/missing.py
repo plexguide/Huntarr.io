@@ -13,10 +13,13 @@ from typing import List, Dict, Any, Set, Callable
 from src.primary.utils.logger import get_logger
 from src.primary.apps.eros import api as eros_api
 from src.primary.settings_manager import load_settings, get_advanced_setting
-from src.primary.stateful_manager import is_processed, add_processed_id
-from src.primary.stats_manager import increment_stat, check_hourly_cap_exceeded
+from src.primary.stateful_manager import add_processed_id
+from src.primary.stats_manager import increment_stat
 from src.primary.utils.history_utils import log_processed_media
 from src.primary.state import check_state_reset
+from src.primary.apps._common.settings import extract_app_settings, validate_settings
+from src.primary.apps._common.filtering import filter_exempt_items, filter_unprocessed
+from src.primary.apps._common.processing import should_continue_processing
 
 # Get logger for the app
 eros_logger = get_logger("eros")
@@ -41,43 +44,29 @@ def process_missing_items(
     # Reset state files if enough time has passed
     check_state_reset("eros")
     
-    # Per-instance tagging (from instance settings)
-    tag_processed_items = app_settings.get("tag_processed_items", True)
-    tag_enable_missing = app_settings.get("tag_enable_missing", True)
+    # Extract common settings using shared utility
+    # Eros uses hunt_missing_items with fallback to hunt_missing_scenes
+    hunt_key_value = app_settings.get("hunt_missing_items", app_settings.get("hunt_missing_scenes", 0))
+    app_settings["hunt_missing_items"] = hunt_key_value  # Normalize for extract
+    s = extract_app_settings(app_settings, "eros", "hunt_missing_items", "Eros Default")
+    instance_name = s['instance_name']
+    instance_key = s['instance_key']
+    api_url = s['api_url']
+    api_key = s['api_key']
+    api_timeout = s['api_timeout']
+    monitored_only = s['monitored_only']
+    hunt_missing_items = s['hunt_count']
+    tag_processed_items = s['tag_processed_items']
+    tag_enable_missing = s['tag_enable_missing']
     
-    # Extract necessary settings
-    api_url = app_settings.get("api_url", "").strip()
-    api_key = app_settings.get("api_key", "").strip()
-    api_timeout = app_settings.get("api_timeout", 120)  # Per-instance setting
-    instance_name = app_settings.get("instance_name", "Eros Default")
-    instance_key = app_settings.get("instance_id") or instance_name  # Stable ID for DB keying
-    
-    # Load general settings to get centralized timeout
-    general_settings = load_settings('general')
-    
-    monitored_only = app_settings.get("monitored_only", True)
+    # App-specific settings
     skip_future_releases = app_settings.get("skip_future_releases", True)
-    # skip_item_refresh setting removed as it was a performance bottleneck
-    search_mode = app_settings.get("search_mode", "movie")  # Default to movie mode if not specified
+    search_mode = app_settings.get("search_mode", "movie")
     
     eros_logger.info(f"Using search mode: {search_mode} for missing items")
-    
-    # Use the new hunt_missing_items parameter name, falling back to hunt_missing_scenes for backwards compatibility
-    hunt_missing_items = app_settings.get("hunt_missing_items", app_settings.get("hunt_missing_scenes", 0))
-    
-    # Use advanced settings from database for command operations
-    command_wait_delay = get_advanced_setting("command_wait_delay", 1)
-    command_wait_attempts = get_advanced_setting("command_wait_attempts", 600)
-    
-    # Use the centralized advanced setting for stateful management hours
-    stateful_management_hours = get_advanced_setting("stateful_management_hours", 72)
-    
-    # Log that we're using Eros v3 API
     eros_logger.debug(f"Using Eros API v3 for instance: {instance_name}")
 
-    # Skip if hunt_missing_items is set to a negative value or 0
-    if hunt_missing_items <= 0:
-        eros_logger.info("'hunt_missing_items' setting is 0 or less. Skipping missing item processing.")
+    if not validate_settings(api_url, api_key, hunt_missing_items, "eros", eros_logger):
         return False
 
     # Check for stop signal
@@ -105,24 +94,14 @@ def process_missing_items(
     eros_logger.info(f"Found {len(missing_items)} items with missing files.")
 
     # Filter out items with exempt tags (issue #676)
-    exempt_tags = app_settings.get("exempt_tags") or []
-    if exempt_tags:
-        exempt_id_to_label = eros_api.get_exempt_tag_ids(api_url, api_key, api_timeout, exempt_tags)
-        if exempt_id_to_label:
-            filtered = []
-            for item in missing_items:
-                skip = False
-                for tid in item.get("tags", []):
-                    if tid in exempt_id_to_label:
-                        eros_logger.info(
-                            f"Skipping item \"{item.get('title', 'Unknown')}\" (ID: {item.get('id')}) - has exempt tag \"{exempt_id_to_label[tid]}\""
-                        )
-                        skip = True
-                        break
-                if not skip:
-                    filtered.append(item)
-            missing_items = filtered
-            eros_logger.info(f"Exempt tags filter: {len(missing_items)} items remaining after excluding items with exempt tags.")
+    missing_items = filter_exempt_items(
+        missing_items, s['exempt_tags'], eros_api,
+        api_url, api_key, api_timeout,
+        get_tags_fn=lambda item: item.get("tags", []),
+        get_id_fn=lambda item: item.get("id"),
+        get_title_fn=lambda item: item.get("title", "Unknown"),
+        app_type="eros", logger=eros_logger
+    )
 
     # Filter out future releases if configured
     if skip_future_releases:
@@ -144,15 +123,11 @@ def process_missing_items(
         eros_logger.info("No missing items left to process after filtering future releases.")
         return False
         
-    # Filter out already processed items using stateful management
-    unprocessed_items = []
-    for item in missing_items:
-        item_id = str(item.get("id"))
-        if not is_processed("eros", instance_key, item_id):
-            unprocessed_items.append(item)
-        else:
-            eros_logger.debug(f"Skipping already processed item ID: {item_id}")
-    
+    # Filter out already processed items using shared utility
+    unprocessed_items = filter_unprocessed(
+        missing_items, "eros", instance_key,
+        get_id_fn=lambda item: item.get("id"), logger=eros_logger
+    )
     eros_logger.info(f"Found {len(unprocessed_items)} unprocessed items out of {len(missing_items)} total items with missing files.")
     
     if not unprocessed_items:
@@ -170,19 +145,8 @@ def process_missing_items(
 
     # Process selected items
     for item in items_to_search:
-        # Check for stop signal before each item
-        if stop_check():
-            eros_logger.info("Stop requested during item processing. Aborting...")
+        if not should_continue_processing("eros", stop_check, eros_logger):
             break
-        
-        # Check API limit before processing each item
-        try:
-            if check_hourly_cap_exceeded("eros"):
-                eros_logger.warning(f"🛑 Eros API hourly limit reached - stopping missing items processing after {items_processed} items")
-                break
-        except Exception as e:
-            eros_logger.error(f"Error checking hourly API cap: {e}")
-            # Continue processing if cap check fails - safer than stopping
         
         # Re-check limit in case it changed
         current_limit = app_settings.get("hunt_missing_items", app_settings.get("hunt_missing_scenes", 1))
