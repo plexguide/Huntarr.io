@@ -1,14 +1,23 @@
 ---
-description: Use custom confirm modals instead of native browser dialogs for confirmations, additions, and deletions
+description: Use custom modals for confirmations/additions; use toasts instead of alert(). No native confirm/alert/prompt for user-facing flows.
 globs: ["**/*.js", "**/*.html"]
 alwaysApply: true
 ---
-# Confirm Modals Rule (No Old-School Popups)
+# Confirm Modals & Notifications Rule (No Old-School Popups)
 
-## Use Custom Modals for Confirmations, Additions, and Deletions
+## Two Patterns: Modals vs Toasts
 
-- **DO** use the app’s custom modal UI for any user confirmation, addition, or deletion.
-- **DO NOT** use native browser `confirm()`, `alert()`, or `prompt()` for these flows.
+| User interaction | Old (avoid) | New (use) |
+|------------------|-------------|-----------|
+| **User must choose** (OK/Cancel, Delete/Confirm, or enter a value) | `confirm()`, `prompt()` | **Custom modal** (HuntarrConfirm or section-specific add/rename modal) |
+| **One-way message** (error, success, info — no choice) | `alert()` | **Toast notification** via `window.huntarrUI.showNotification(msg, type)` with `alert()` fallback |
+
+- **Modals** = user must click something (Cancel, Delete, Save, etc.). These are **not** toasts.
+- **Toasts** = auto-dismissing notifications. Use for success/error/info that replaced `alert()`.
+
+---
+
+## 1. When the User Must Choose: Use Modals
 
 ### Global Confirm Modal (Deletions / Destructive Actions)
 
@@ -21,8 +30,8 @@ alwaysApply: true
 ```javascript
 window.HuntarrConfirm.show({
     title: 'Delete Something',      // Modal heading
-    message: 'Are you sure...?',    // Body text (supports \\n for newlines)
-    confirmLabel: 'Delete',         // Button text (e.g. Delete, Clear, Reset, OK)
+    message: 'Are you sure...?',    // Body text (supports \n for newlines)
+    confirmLabel: 'Delete',        // Button text (e.g. Delete, Clear, Reset, OK)
     onConfirm: function() {         // Called when user clicks confirm
         // Perform the action (e.g. fetch DELETE, then refresh)
     }
@@ -30,32 +39,71 @@ window.HuntarrConfirm.show({
 ```
 
 - **Fallback:** If `HuntarrConfirm` is not available, fall back to `confirm()` so behavior still works.
-- **Styling:** The modal uses the app’s purple/blue theme (blur backdrop, purple border, gradient confirm button). CSS: `frontend/static/css/confirm-modal.css`. HTML: `frontend/templates/components/confirm_modal.html`.
+- **Styling:** Purple/blue theme, blur backdrop. CSS: `frontend/static/css/confirm-modal.css`. HTML: `frontend/templates/components/confirm_modal.html`.
 
 ### Add / Edit Flows (Custom Modals, Not prompt())
 
-- **DO** use custom modal popups (with backdrop, blur, purple/blue styling) for:
-  - Adding items (e.g. Add Instance, Add Profile, Add Remote Path Mapping, Add Client, Add Indexer).
-  - Editing items where a form in a modal is appropriate.
+- Use **custom modal popups** (backdrop, blur, purple/blue) for:
+  - Adding items (Add Instance, Add Profile, Add Remote Path Mapping, Add Client, Add Indexer).
+  - Editing/renaming (e.g. Rename Instance) — use a modal with an input, not `prompt()`.
 - **DO NOT** use `window.prompt()` or `window.confirm()` for these flows.
-- **Pattern:** Define a modal in the section template (or a shared component), move it to `document.body` when opening, apply a body class for backdrop blur, and use the same purple/blue styles as Remote Mapping / Add Instance.
+- **Pattern:** Modal in section template or shared component, move to `document.body` when opening, body class for blur, same purple/blue styles as Add Instance / Remote Mapping.
 
-### Anti-Patterns
+---
 
-- **DON’T** use `confirm('...')` for delete/clear/reset/destructive actions — use `HuntarrConfirm.show()`.
-- **DON’T** use `prompt('...')` for “add” or “name” inputs — use a custom modal with an input field.
-- **DON’T** use `alert('...')` for success/error when `window.huntarrUI.showNotification()` (or equivalent) is available.
+## 2. When It’s Just a Message: Use Toasts (Not alert)
 
-### Files to Know
+- For **success, error, or info** messages that do **not** require the user to click OK, use the **toast** system so the message auto-dismisses.
+- **DO NOT** use `alert()` when the app notification system is available.
 
-- **Global confirm:** `frontend/static/js/modules/core/confirm-modal.js`, `frontend/templates/components/confirm_modal.html`, `frontend/static/css/confirm-modal.css`
-- **Example section delete modal:** Instance Management delete modal in `movie_hunt_instance_management_section.html` + `movie-hunt-instance-management.js` (same visual style; section-specific modal is fine when you need more than a single message + confirm button).
+**Pattern (always prefer toast, fallback to alert):**
+```javascript
+if (window.huntarrUI && window.huntarrUI.showNotification) {
+    window.huntarrUI.showNotification(message, 'error');   // or 'success' / 'info'
+} else {
+    alert(message);
+}
+```
 
-### Scanning for Violations
+- Use `'error'` for validation/API failures, `'success'` for success messages, `'info'` for neutral info.
+- This applies to: validation errors (“Please select a host”), save/delete failures, “State reset successfully”, 2FA errors, connection errors, etc.
 
-Before adding new confirmation or deletion UI, search for remaining native dialogs:
-- `grep -r "confirm(" frontend/ --include="*.js" --include="*.html"`
-- `grep -r "prompt(" frontend/ --include="*.js"`
-- `grep -r "alert(" frontend/ --include="*.js"`
+---
 
-Replace any user-facing confirmations/additions/deletions with the modal pattern above.
+## Anti-Patterns
+
+- **DON’T** use `confirm('...')` for delete/clear/reset/destructive actions — use `HuntarrConfirm.show()` (modal).
+- **DON’T** use `prompt('...')` for add/rename/name inputs — use a custom modal with an input field.
+- **DON’T** use `alert('...')` alone for success/error/info — use `showNotification(msg, type)` with `alert()` fallback (toast).
+
+---
+
+## Files to Know
+
+- **Global confirm modal:** `frontend/static/js/modules/core/confirm-modal.js`, `frontend/templates/components/confirm_modal.html`, `frontend/static/css/confirm-modal.css`
+- **Section modals (add/rename/delete):** e.g. Instance Management in `movie_hunt_instance_management_section.html` + `movie-hunt-instance-management.js`
+- **Toasts:** `window.huntarrUI.showNotification(message, 'error'|'success'|'info')` (do not modify the toast component for this rule; use it instead of alert)
+
+---
+
+## Detecting Violations (Before Commits or New Features)
+
+Run these from the project root to find remaining native dialogs:
+
+```bash
+# Confirm: should only appear in fallbacks (else branch after HuntarrConfirm check) or unsaved-changes/session flows
+grep -rn "confirm(" frontend/ --include="*.js" --include="*.html" | grep -v "HuntarrConfirm" | grep -v "// fallback" | grep -v "unsaved changes" | grep -v "session expired"
+
+# Prompt: should be zero (all replaced with modals)
+grep -rn "prompt(" frontend/ --include="*.js"
+
+# Alert: should only appear in "else alert(...)" fallback after showNotification check
+grep -rn "alert(" frontend/ --include="*.js"
+```
+
+**What to replace:**
+- Any **new** `confirm(...)` for user choices → `HuntarrConfirm.show()` or a custom modal.
+- Any **new** `prompt(...)` for user input → custom modal with input.
+- Any **new** `alert(...)` used alone → `showNotification(..., 'error'|'success'|'info')` with `else alert(...)` fallback.
+
+**Exception:** Unsaved-changes and session-expired confirmations may stay as `confirm()` until product decides to give them custom modals; leave them out of the “must replace” list when scanning.
