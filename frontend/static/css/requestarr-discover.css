@@ -227,17 +227,18 @@
 .media-card {
     flex: 0 0 150px;
     cursor: pointer;
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
-    transition: transform 0.2s, border 0.2s;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid transparent;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.08);
     position: relative;
 }
 
 .media-card:hover {
-    transform: translateY(-5px) scale(1.05);
-    border: 2px solid #f59e0b; /* Huntarr gold/amber color */
+    transform: translateY(-4px);
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
 .media-card-poster {
@@ -245,8 +246,8 @@
     height: 225px;
     position: relative;
     overflow: hidden;
-    border-radius: 12px;
-    background: #000;
+    border-radius: 10px;
+    background: #0f172a;
     /* Blackout background for missing posters */
     background-image: url('../images/blackout.jpg');
     background-size: cover;
@@ -426,13 +427,13 @@
 }
 
 .media-card-info {
-    padding: 10px;
+    padding: 8px 10px 10px;
 }
 
 .media-card-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #e2e8f0;
     margin-bottom: 4px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -444,7 +445,7 @@
     justify-content: space-between;
     align-items: center;
     font-size: 11px;
-    color: #888;
+    color: #64748b;
     gap: 8px;
 }
 
@@ -454,7 +455,7 @@
 }
 
 .media-card-year {
-    color: #888;
+    color: #64748b;
     flex-shrink: 0;
 }
 
@@ -474,7 +475,7 @@
 .media-card-hide-btn {
     background: none;
     border: none;
-    color: #666;
+    color: #475569;
     cursor: pointer;
     padding: 4px 6px;
     border-radius: 4px;
@@ -493,8 +494,9 @@
 }
 
 /* Smooth card removal animation */
-.media-card {
-    transition: opacity 0.3s ease, transform 0.3s ease;
+.media-card.removing {
+    opacity: 0;
+    transform: scale(0.95);
 }
 
 /* Loading Spinner */

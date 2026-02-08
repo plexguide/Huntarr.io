@@ -312,24 +312,25 @@
 #movie-hunt-section .media-card {
     flex: 0 0 150px;
     cursor: pointer;
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
-    transition: transform 0.2s, border 0.2s;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid transparent;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.08);
     position: relative;
 }
 #movie-hunt-section .media-card:hover {
-    transform: translateY(-5px) scale(1.05);
-    border-color: #f59e0b;
+    transform: translateY(-4px);
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 #movie-hunt-section .media-card-poster {
     width: 150px;
     height: 225px;
     position: relative;
     overflow: hidden;
-    border-radius: 12px;
-    background: #000;
+    border-radius: 10px;
+    background: #0f172a;
 }
 #movie-hunt-section .media-card-overlay {
     position: absolute;
@@ -418,11 +419,11 @@
 }
 #movie-hunt-section .media-card.in-cooldown .media-card-request-btn,
 #movie-hunt-section .media-card.in-library .media-card-request-btn { display: none; }
-#movie-hunt-section .media-card-info { padding: 10px; }
+#movie-hunt-section .media-card-info { padding: 8px 10px 10px; }
 #movie-hunt-section .media-card-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #e2e8f0;
     margin-bottom: 4px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -433,10 +434,10 @@
     justify-content: space-between;
     align-items: center;
     font-size: 11px;
-    color: #888;
+    color: #64748b;
     gap: 8px;
 }
-#movie-hunt-section .media-card-year { color: #888; flex-shrink: 0; }
+#movie-hunt-section .media-card-year { color: #64748b; flex-shrink: 0; }
 #movie-hunt-section .media-card-rating { display: flex; align-items: center; gap: 4px; color: #fbbf24; }
 #movie-hunt-section .loading-spinner {
     display: flex;
