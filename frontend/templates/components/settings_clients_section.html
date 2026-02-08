@@ -770,22 +770,47 @@
                 var card = deleteBtn.closest('.instance-card');
                 var nameEl = card ? card.querySelector('.instance-name span') : null;
                 var name = nameEl ? nameEl.textContent.trim() : 'this client';
-                if (!confirm('Delete "' + name + '"?')) return;
-                fetch('./api/clients/' + index, { method: 'DELETE' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (data.success && window.SettingsForms && window.SettingsForms.refreshClientsList) {
-                            window.SettingsForms.refreshClientsList();
-                        }
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Client deleted.', 'success');
-                        }
-                    })
-                    .catch(function() {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Failed to delete client', 'error');
+                if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                    window.HuntarrConfirm.show({
+                        title: 'Delete Client',
+                        message: 'Delete "' + name + '"?',
+                        confirmLabel: 'Delete',
+                        onConfirm: function() {
+                            fetch('./api/clients/' + index, { method: 'DELETE' })
+                                .then(function(r) { return r.json(); })
+                                .then(function(data) {
+                                    if (data.success && window.SettingsForms && window.SettingsForms.refreshClientsList) {
+                                        window.SettingsForms.refreshClientsList();
+                                    }
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Client deleted.', 'success');
+                                    }
+                                })
+                                .catch(function() {
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Failed to delete client', 'error');
+                                    }
+                                });
                         }
                     });
+                } else {
+                    if (!confirm('Delete "' + name + '"?')) return;
+                    fetch('./api/clients/' + index, { method: 'DELETE' })
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data.success && window.SettingsForms && window.SettingsForms.refreshClientsList) {
+                                window.SettingsForms.refreshClientsList();
+                            }
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification('Client deleted.', 'success');
+                            }
+                        })
+                        .catch(function() {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification('Failed to delete client', 'error');
+                            }
+                        });
+                }
             }
         });
     }

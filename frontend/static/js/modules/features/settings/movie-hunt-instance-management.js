@@ -27,6 +27,7 @@
             var addCard = document.getElementById('instance-management-add-card');
             if (addCard) addCard.addEventListener('click', function() { self.openAddModal(); });
             this.initAddModal();
+            this.initDeleteModal();
             this.loadList();
         },
 
@@ -80,6 +81,69 @@
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
             });
+        },
+
+        initDeleteModal: function() {
+            var self = this;
+            var modal = document.getElementById('instance-delete-modal');
+            var messageEl = document.getElementById('instance-delete-modal-message');
+            var backdrop = document.getElementById('instance-delete-modal-backdrop');
+            var closeBtn = document.getElementById('instance-delete-modal-close');
+            var cancelBtn = document.getElementById('instance-delete-modal-cancel');
+            var confirmBtn = document.getElementById('instance-delete-modal-confirm');
+            if (!modal) return;
+            function closeModal() {
+                modal.style.display = 'none';
+                document.body.classList.remove('instance-delete-modal-open');
+                modal.removeAttribute('data-pending-id');
+                modal.removeAttribute('data-pending-name');
+            }
+            if (backdrop) backdrop.onclick = closeModal;
+            if (closeBtn) closeBtn.onclick = closeModal;
+            if (cancelBtn) cancelBtn.onclick = closeModal;
+            if (confirmBtn) {
+                confirmBtn.onclick = function() {
+                    var id = modal.getAttribute('data-pending-id');
+                    if (!id) return;
+                    confirmBtn.disabled = true;
+                    fetch(api('./api/movie-hunt/instances/' + id), { method: 'DELETE' })
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data.error) {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.error, 'error');
+                                return;
+                            }
+                            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance deleted.', 'success');
+                            closeModal();
+                            self.loadList();
+                            if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.refresh) {
+                                ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-root-folders-instance-select'].forEach(function(sid) {
+                                    if (document.getElementById(sid)) window.MovieHuntInstanceDropdown.refresh(sid);
+                                });
+                            }
+                        })
+                        .catch(function() {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Request failed.', 'error');
+                        })
+                        .finally(function() { confirmBtn.disabled = false; });
+                };
+            }
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
+            });
+        },
+
+        openDeleteModal: function(id, name) {
+            var modal = document.getElementById('instance-delete-modal');
+            var messageEl = document.getElementById('instance-delete-modal-message');
+            if (!modal || !messageEl) return;
+            var displayName = (name || id || 'this instance').trim() || 'this instance';
+            messageEl.textContent = 'Delete instance "' + displayName + '"? This cannot be undone. Its data will remain but the instance will no longer appear.';
+            modal.setAttribute('data-pending-id', String(id));
+            modal.setAttribute('data-pending-name', displayName);
+            if (modal.parentNode !== document.body) document.body.appendChild(modal);
+            modal.style.display = 'flex';
+            document.body.classList.add('instance-delete-modal-open');
         },
 
         openAddModal: function() {
@@ -183,25 +247,7 @@
         },
 
         promptDelete: function(id, name) {
-            if (!window.confirm('Delete instance "' + (name || id) + '"? This cannot be undone. Its data will remain but the instance will no longer appear.')) return;
-            fetch(api('./api/movie-hunt/instances/' + id), { method: 'DELETE' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.error) {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.error, 'error');
-                        return;
-                    }
-                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance deleted.', 'success');
-                    window.MovieHuntInstanceManagement.loadList();
-                    if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.refresh) {
-                        ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-root-folders-instance-select'].forEach(function(sid) {
-                            if (document.getElementById(sid)) window.MovieHuntInstanceDropdown.refresh(sid);
-                        });
-                    }
-                })
-                .catch(function() {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Request failed.', 'error');
-                });
+            this.openDeleteModal(id, name);
         }
     };
 })();

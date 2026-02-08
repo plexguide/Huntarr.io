@@ -33,6 +33,24 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Instance confirmation modal (purple/blue, same style) -->
+    <div id="instance-delete-modal" class="instance-delete-modal" style="display: none;">
+        <div class="instance-delete-modal-backdrop" id="instance-delete-modal-backdrop"></div>
+        <div class="instance-delete-modal-content">
+            <div class="instance-delete-modal-header">
+                <button type="button" class="instance-delete-modal-close" id="instance-delete-modal-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h2 class="instance-delete-modal-title">Delete Instance</h2>
+                <p class="instance-delete-modal-message" id="instance-delete-modal-message"></p>
+            </div>
+            <div class="instance-delete-modal-actions">
+                <button type="button" class="instance-delete-modal-cancel" id="instance-delete-modal-cancel">Cancel</button>
+                <button type="button" class="instance-delete-modal-confirm" id="instance-delete-modal-confirm"><i class="fas fa-trash"></i> Delete</button>
+            </div>
+        </div>
+    </div>
 </section>
 <style>
 #instanceManagementSection { display: none; padding: 0; margin: 0; width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
@@ -205,6 +223,117 @@ body.instance-add-modal-open .app-container {
     filter: brightness(1.1);
 }
 .instance-add-modal-ok:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Delete Instance confirmation modal - same purple/blue style */
+.instance-delete-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.instance-delete-modal[style*="display: flex"] {
+    display: flex !important;
+}
+body.instance-delete-modal-open {
+    overflow: hidden;
+}
+body.instance-delete-modal-open .app-container {
+    filter: blur(10px);
+}
+.instance-delete-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+.instance-delete-modal-content {
+    position: relative;
+    z-index: 1001;
+    background: rgba(15, 23, 42, 0.98);
+    border: 2px solid rgba(99, 102, 241, 0.4);
+    border-radius: 12px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+.instance-delete-modal-header {
+    position: relative;
+    padding: 20px 24px 16px;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
+}
+.instance-delete-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+}
+.instance-delete-modal-close:hover {
+    color: #f8fafc;
+}
+.instance-delete-modal-title {
+    margin: 0 0 8px 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #f8fafc;
+}
+.instance-delete-modal-message {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+.instance-delete-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px 20px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+.instance-delete-modal-cancel {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 14px;
+    cursor: pointer;
+}
+.instance-delete-modal-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+.instance-delete-modal-confirm {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.instance-delete-modal-confirm:hover {
+    filter: brightness(1.1);
+}
+.instance-delete-modal-confirm:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }

@@ -241,26 +241,38 @@
 
         deleteFolder: function(index) {
             if (typeof index !== 'number' || index < 0) return;
-            if (!confirm('Remove this root folder?')) return;
-            fetch('./api/movie-hunt/root-folders/' + index, { method: 'DELETE' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Root folder removed.', 'success');
+            var doDelete = function() {
+                fetch('./api/movie-hunt/root-folders/' + index, { method: 'DELETE' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification('Root folder removed.', 'success');
+                            }
+                            window.RootFolders.refreshList();
+                        } else {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification(data.message || 'Delete failed', 'error');
+                            }
                         }
-                        window.RootFolders.refreshList();
-                    } else {
+                    })
+                    .catch(function(err) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification(data.message || 'Delete failed', 'error');
+                            window.huntarrUI.showNotification(err.message || 'Delete failed', 'error');
                         }
-                    }
-                })
-                .catch(function(err) {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification(err.message || 'Delete failed', 'error');
-                    }
+                    });
+            };
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Remove Root Folder',
+                    message: 'Remove this root folder?',
+                    confirmLabel: 'OK',
+                    onConfirm: doDelete
                 });
+            } else {
+                if (!confirm('Remove this root folder?')) return;
+                doDelete();
+            }
         },
 
         openBrowseModal: function(sourceInput) {

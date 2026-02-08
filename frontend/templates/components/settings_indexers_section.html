@@ -360,22 +360,47 @@
                 var card = deleteBtn.closest('.instance-card');
                 var nameEl = card ? card.querySelector('.instance-name span') : null;
                 var name = nameEl ? nameEl.textContent.trim() : 'this indexer';
-                if (!confirm('Delete "' + name + '"?')) return;
-                fetch('./api/indexers/' + index, { method: 'DELETE' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (data.success && window.SettingsForms && window.SettingsForms.refreshIndexersList) {
-                            window.SettingsForms.refreshIndexersList();
-                        }
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Indexer deleted.', 'success');
-                        }
-                    })
-                    .catch(function() {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Failed to delete indexer', 'error');
+                if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                    window.HuntarrConfirm.show({
+                        title: 'Delete Indexer',
+                        message: 'Delete "' + name + '"?',
+                        confirmLabel: 'Delete',
+                        onConfirm: function() {
+                            fetch('./api/indexers/' + index, { method: 'DELETE' })
+                                .then(function(r) { return r.json(); })
+                                .then(function(data) {
+                                    if (data.success && window.SettingsForms && window.SettingsForms.refreshIndexersList) {
+                                        window.SettingsForms.refreshIndexersList();
+                                    }
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Indexer deleted.', 'success');
+                                    }
+                                })
+                                .catch(function() {
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Failed to delete indexer', 'error');
+                                    }
+                                });
                         }
                     });
+                } else {
+                    if (!confirm('Delete "' + name + '"?')) return;
+                    fetch('./api/indexers/' + index, { method: 'DELETE' })
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data.success && window.SettingsForms && window.SettingsForms.refreshIndexersList) {
+                                window.SettingsForms.refreshIndexersList();
+                            }
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification('Indexer deleted.', 'success');
+                            }
+                        })
+                        .catch(function() {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification('Failed to delete indexer', 'error');
+                            }
+                        });
+                }
             }
         });
     }

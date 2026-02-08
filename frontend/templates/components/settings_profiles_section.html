@@ -418,22 +418,47 @@
                 var list = window.SettingsForms && window.SettingsForms._profilesList ? window.SettingsForms._profilesList : [];
                 var profile = list[index];
                 var name = profile && profile.name ? profile.name : 'this profile';
-                if (!confirm('Delete "' + name + '"?')) return;
-                fetch('./api/profiles/' + index, { method: 'DELETE' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (data.success && window.SettingsForms && window.SettingsForms.refreshProfilesList) {
-                            window.SettingsForms.refreshProfilesList();
-                        }
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification(data.success ? 'Profile deleted.' : (data.error || 'Could not delete.'), data.success ? 'success' : 'error');
-                        }
-                    })
-                    .catch(function() {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Failed to delete profile.', 'error');
+                if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                    window.HuntarrConfirm.show({
+                        title: 'Delete Profile',
+                        message: 'Delete "' + name + '"?',
+                        confirmLabel: 'Delete',
+                        onConfirm: function() {
+                            fetch('./api/profiles/' + index, { method: 'DELETE' })
+                                .then(function(r) { return r.json(); })
+                                .then(function(data) {
+                                    if (data.success && window.SettingsForms && window.SettingsForms.refreshProfilesList) {
+                                        window.SettingsForms.refreshProfilesList();
+                                    }
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification(data.success ? 'Profile deleted.' : (data.error || 'Could not delete.'), data.success ? 'success' : 'error');
+                                    }
+                                })
+                                .catch(function() {
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Failed to delete profile.', 'error');
+                                    }
+                                });
                         }
                     });
+                } else {
+                    if (!confirm('Delete "' + name + '"?')) return;
+                    fetch('./api/profiles/' + index, { method: 'DELETE' })
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data.success && window.SettingsForms && window.SettingsForms.refreshProfilesList) {
+                                window.SettingsForms.refreshProfilesList();
+                            }
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification(data.success ? 'Profile deleted.' : (data.error || 'Could not delete.'), data.success ? 'success' : 'error');
+                            }
+                        })
+                        .catch(function() {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification('Failed to delete profile.', 'error');
+                            }
+                        });
+                }
             }
         });
     }

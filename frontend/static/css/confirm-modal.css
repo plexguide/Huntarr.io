@@ -1,0 +1,111 @@
+/* Global confirm modal - purple/blue (same as Remote Mapping / Delete Instance) */
+.huntarr-confirm-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.huntarr-confirm-modal[style*="display: flex"] {
+    display: flex !important;
+}
+body.huntarr-confirm-modal-open {
+    overflow: hidden;
+}
+body.huntarr-confirm-modal-open .app-container {
+    filter: blur(10px);
+}
+.huntarr-confirm-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+.huntarr-confirm-modal-content {
+    position: relative;
+    z-index: 1001;
+    background: rgba(15, 23, 42, 0.98);
+    border: 2px solid rgba(99, 102, 241, 0.4);
+    border-radius: 12px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+.huntarr-confirm-modal-header {
+    position: relative;
+    padding: 20px 24px 16px;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
+}
+.huntarr-confirm-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+}
+.huntarr-confirm-modal-close:hover {
+    color: #f8fafc;
+}
+.huntarr-confirm-modal-title {
+    margin: 0 0 8px 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #f8fafc;
+}
+.huntarr-confirm-modal-message {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+.huntarr-confirm-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px 20px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+.huntarr-confirm-modal-cancel {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 14px;
+    cursor: pointer;
+}
+.huntarr-confirm-modal-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+.huntarr-confirm-modal-confirm {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.huntarr-confirm-modal-confirm:hover {
+    filter: brightness(1.1);
+}
+.huntarr-confirm-modal-confirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

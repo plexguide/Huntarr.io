@@ -568,26 +568,38 @@
         },
 
         deleteFormat: function(index) {
-            if (!confirm('Remove this custom format?')) return;
-            fetch('./api/custom-formats/' + index, { method: 'DELETE' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Custom format removed.', 'success');
+            var doDelete = function() {
+                fetch('./api/custom-formats/' + index, { method: 'DELETE' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification('Custom format removed.', 'success');
+                            }
+                            window.CustomFormats.refreshList();
+                        } else {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification(data.message || 'Delete failed', 'error');
+                            }
                         }
-                        window.CustomFormats.refreshList();
-                    } else {
+                    })
+                    .catch(function() {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification(data.message || 'Delete failed', 'error');
+                            window.huntarrUI.showNotification('Delete failed', 'error');
                         }
-                    }
-                })
-                .catch(function() {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Delete failed', 'error');
-                    }
+                    });
+            };
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Remove Custom Format',
+                    message: 'Remove this custom format?',
+                    confirmLabel: 'Remove',
+                    onConfirm: doDelete
                 });
+            } else {
+                if (!confirm('Remove this custom format?')) return;
+                doDelete();
+            }
         },
 
         deleteAllByType: function(type) {
@@ -611,11 +623,16 @@
             
             var typeName = type === 'preformat' ? 'pre-formatted' : 'imported';
             var confirmMsg = 'Delete all ' + toDelete.length + ' ' + typeName + ' custom format(s)?\n\nThis action cannot be undone.';
-            if (!confirm(confirmMsg)) return;
-            
             var deleted = 0;
             var failed = 0;
             var currentIndex = toDelete.length - 1;
+
+            function runDeleteAll() {
+                currentIndex = toDelete.length - 1;
+                deleted = 0;
+                failed = 0;
+                deleteNext();
+            }
             
             function deleteNext() {
                 if (currentIndex < 0) {
@@ -644,8 +661,18 @@
                         deleteNext();
                     });
             }
-            
-            deleteNext();
+
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Delete All ' + typeName.charAt(0).toUpperCase() + typeName.slice(1) + ' Custom Formats',
+                    message: confirmMsg,
+                    confirmLabel: 'Delete All',
+                    onConfirm: runDeleteAll
+                });
+            } else {
+                if (!confirm(confirmMsg)) return;
+                runDeleteAll();
+            }
         },
 
         init: function() {
