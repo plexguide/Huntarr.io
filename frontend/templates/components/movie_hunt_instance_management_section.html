@@ -11,6 +11,28 @@
             </div>
         </div>
     </div>
+
+    <!-- Add Instance modal (purple/blue, same as Remote Mapping / Add Profile) -->
+    <div id="instance-add-modal" class="instance-add-modal" style="display: none;">
+        <div class="instance-add-modal-backdrop" id="instance-add-modal-backdrop"></div>
+        <div class="instance-add-modal-content">
+            <div class="instance-add-modal-header">
+                <button type="button" class="instance-add-modal-close" id="instance-add-modal-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h2 class="instance-add-modal-title">Add Instance</h2>
+                <p class="instance-add-modal-subtitle">Enter a name for the new instance.</p>
+            </div>
+            <div class="instance-add-modal-body">
+                <label for="instance-add-name">Instance name</label>
+                <input type="text" id="instance-add-name" class="instance-add-name-input" placeholder="e.g. Main" maxlength="64" autocomplete="off">
+            </div>
+            <div class="instance-add-modal-actions">
+                <button type="button" class="instance-add-modal-cancel" id="instance-add-modal-cancel">Cancel</button>
+                <button type="button" class="instance-add-modal-ok" id="instance-add-modal-ok"><i class="fas fa-plus"></i> Add</button>
+            </div>
+        </div>
+    </div>
 </section>
 <style>
 #instanceManagementSection { display: none; padding: 0; margin: 0; width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
@@ -52,5 +74,138 @@
     color: #94a3b8;
     padding: 24px;
     text-align: center;
+}
+
+/* Add Instance modal - purple/blue (same as Remote Mapping / Add Profile) */
+.instance-add-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.instance-add-modal[style*="display: flex"] {
+    display: flex !important;
+}
+body.instance-add-modal-open {
+    overflow: hidden;
+}
+body.instance-add-modal-open .app-container {
+    filter: blur(10px);
+}
+.instance-add-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+.instance-add-modal-content {
+    position: relative;
+    z-index: 1001;
+    background: rgba(15, 23, 42, 0.98);
+    border: 2px solid rgba(99, 102, 241, 0.4);
+    border-radius: 12px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+.instance-add-modal-header {
+    position: relative;
+    padding: 20px 24px 12px;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
+}
+.instance-add-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+}
+.instance-add-modal-close:hover {
+    color: #f8fafc;
+}
+.instance-add-modal-title {
+    margin: 0 0 4px 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #f8fafc;
+}
+.instance-add-modal-subtitle {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #94a3b8;
+}
+.instance-add-modal-body {
+    padding: 20px 24px;
+}
+.instance-add-modal-body label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+}
+.instance-add-name-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem;
+    color: #f8fafc;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+.instance-add-name-input:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+.instance-add-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px 20px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+.instance-add-modal-cancel {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 14px;
+    cursor: pointer;
+}
+.instance-add-modal-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+.instance-add-modal-ok {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.instance-add-modal-ok:hover {
+    filter: brightness(1.1);
+}
+.instance-add-modal-ok:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 </style>
