@@ -34,7 +34,7 @@ window.HuntarrAuth = {
                 userNav.style.display = 'none';
             }
         } else {
-            if (userInfoContainer) userInfoContainer.style.display = '';
+            if (userInfoContainer) userInfoContainer.style.display = 'flex';
             if (userNav) userNav.style.display = '';
         }
     },
