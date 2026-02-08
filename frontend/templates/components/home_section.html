@@ -98,11 +98,16 @@
                 </div>
             </div>
         </div>
-        <!-- Updated statistics card with new layout -->
+        <!-- Live Hunts Executed -->
         <div class="card stats-card">
-            <div class="card-header">
-                <h3><i class="fas fa-crosshairs"></i> Live Hunts Executed</h3>
-                <button id="reset-stats" class="cycle-reset-button"><i class="fas fa-sync-alt"></i> Reset Stats</button>
+            <div class="home-section-bar">
+                <div class="home-section-bar-left">
+                    <i class="fas fa-crosshairs home-section-icon"></i>
+                    <span class="home-section-title">Live Hunts Executed</span>
+                </div>
+                <button id="reset-stats" class="home-section-btn" title="Reset Stats">
+                    <i class="fas fa-sync-alt"></i> Reset Stats
+                </button>
             </div>
             <div class="media-stats-container">
                 <!-- Empty State for Live Hunts -->
@@ -365,9 +370,14 @@
 
         <!-- Swaparr Status Card (only shows when Swaparr is enabled) -->
         <div class="card stats-card" id="swaparrStatusCard" style="display: none;">
-            <div class="card-header">
-                <h3><i class="fas fa-download"></i> Swaparr Status</h3>
-                <button id="reset-swaparr-data" class="cycle-reset-button"><i class="fas fa-trash"></i> Reset</button>
+            <div class="home-section-bar">
+                <div class="home-section-bar-left">
+                    <i class="fas fa-download home-section-icon"></i>
+                    <span class="home-section-title">Swaparr Status</span>
+                </div>
+                <button id="reset-swaparr-data" class="home-section-btn" title="Reset">
+                    <i class="fas fa-trash"></i> Reset
+                </button>
             </div>
             <div class="media-stats-container">
                 <div class="swaparr-stats-grid">

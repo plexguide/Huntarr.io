@@ -3,6 +3,281 @@
    All home-section styles in one file.  Loaded only by homeSection.
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════════════════════════
+   MODERN REDESIGN OVERRIDES — matches Logs/Hunt Manager design
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Section Bar (replaces old card-header) ─────────────────────── */
+.home-section-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px 12px 0 0;
+    margin: -1px -1px 0 -1px;
+}
+
+.home-section-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.home-section-icon {
+    color: #f59e0b;
+    font-size: 0.85rem;
+}
+
+.home-section-title {
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.home-section-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(30, 41, 59, 0.8);
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+.home-section-btn:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.home-section-btn i {
+    font-size: 0.72rem;
+}
+
+/* ── Stats Card Container — modern dark glass ───────────────────── */
+#homeSection .stats-card {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    overflow: hidden;
+}
+
+/* Hide old card-header when new home-section-bar is present */
+#homeSection .stats-card > .card-header {
+    display: none !important;
+}
+
+/* ── Media Stats Container ──────────────────────────────────────── */
+#homeSection .media-stats-container {
+    padding: 16px !important;
+    background: transparent !important;
+}
+
+/* ── App Stats Grid — tighter gap ───────────────────────────────── */
+#homeSection .app-stats-grid {
+    gap: 14px !important;
+}
+
+/* ── App Stat Cards — cleaner modern look ───────────────────────── */
+#homeSection .app-stats-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    min-height: auto !important;
+    padding: 0 16px 0 16px !important;
+    transition: border-color 0.2s, background 0.2s !important;
+}
+
+#homeSection .app-stats-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+}
+
+/* Keep the colored top accent but make it more subtle */
+#homeSection .app-stats-card.sonarr  { border-top: 2px solid rgba(59, 130, 246, 0.4) !important; }
+#homeSection .app-stats-card.radarr  { border-top: 2px solid rgba(245, 158, 11, 0.4) !important; }
+#homeSection .app-stats-card.lidarr  { border-top: 2px solid rgba(34, 197, 94, 0.4) !important; }
+#homeSection .app-stats-card.readarr { border-top: 2px solid rgba(168, 85, 247, 0.4) !important; }
+#homeSection .app-stats-card.whisparr { border-top: 2px solid rgba(236, 72, 153, 0.4) !important; }
+#homeSection .app-stats-card.eros    { border-top: 2px solid rgba(236, 72, 153, 0.4) !important; }
+#homeSection .app-stats-card.swaparr { border-top: 2px solid rgba(99, 102, 241, 0.4) !important; }
+
+/* ── App Icon — smaller, cleaner ────────────────────────────────── */
+#homeSection .app-icon-wrapper {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+#homeSection .app-icon-wrapper .app-logo {
+    width: 48px !important;
+    height: 48px !important;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+#homeSection .app-stats-card h4 {
+    font-size: 0.88rem !important;
+    color: #e2e8f0 !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+}
+
+/* ── Stat Numbers — keep gradients, refine size ─────────────────── */
+#homeSection .app-stats-card .stat-number {
+    font-size: 1.8rem !important;
+    font-weight: 800 !important;
+}
+
+#homeSection .app-stats-card .stat-label {
+    color: #64748b !important;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* ── API Progress Bar — refined ─────────────────────────────────── */
+#homeSection .api-progress-bar {
+    height: 4px !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    border: none !important;
+    border-radius: 4px !important;
+}
+
+#homeSection .hourly-cap-text {
+    font-size: 0.68rem !important;
+    color: #64748b !important;
+}
+
+#homeSection .api-progress-text {
+    font-size: 0.62rem !important;
+    color: #475569 !important;
+}
+
+/* ── Per-card Reset Buttons — subtle icon style ─────────────────── */
+#homeSection .app-stats-card .cycle-reset-button {
+    background: rgba(30, 41, 59, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #64748b !important;
+    border-radius: 6px !important;
+    font-size: 0.75rem !important;
+    padding: 4px 12px !important;
+    box-shadow: none !important;
+}
+
+#homeSection .app-stats-card .cycle-reset-button:hover {
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    color: #f87171 !important;
+    background: rgba(239, 68, 68, 0.08) !important;
+    transform: none !important;
+}
+
+/* ── Requestarr Home Card — cleaner glass ───────────────────────── */
+#homeSection .requestarr-home-card {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    padding: 16px 20px 12px !important;
+}
+
+/* ── Search Bar — refined ───────────────────────────────────────── */
+#homeSection .global-search-bar {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+#homeSection .global-search-bar:focus-within {
+    border-color: rgba(59, 130, 246, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+}
+
+#homeSection .global-search-bar i {
+    color: #475569 !important;
+}
+
+#homeSection .global-search-bar input {
+    color: #e2e8f0 !important;
+}
+
+#homeSection .global-search-bar input::placeholder {
+    color: #475569 !important;
+}
+
+/* ── Section Titles (Trending, Popular Movies, etc.) ────────────── */
+#homeSection .section-title {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #e2e8f0 !important;
+    letter-spacing: 0.01em !important;
+}
+
+/* ── Trending bar accent ────────────────────────────────────────── */
+#homeSection .trending-bar {
+    height: 2px !important;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0) 100%) !important;
+    border-radius: 2px;
+    margin-bottom: 14px;
+}
+
+/* ── Dashboard grid spacing ─────────────────────────────────────── */
+#homeSection .dashboard-grid {
+    gap: 14px !important;
+}
+
+/* ── Empty State — refined ──────────────────────────────────────── */
+#homeSection #live-hunts-empty-state {
+    background: rgba(15, 23, 42, 0.4) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+}
+
+/* ── Support / Prowlarr cards — match container style ───────────── */
+#homeSection .support-links-card,
+#homeSection .community-hub-card {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+/* ── Sponsor banners — subtle ───────────────────────────────────── */
+#homeSection .home-sponsor-banner {
+    background: rgba(15, 23, 42, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 8px !important;
+}
+
+#homeSection .home-sponsor-banner:hover {
+    background: rgba(30, 41, 59, 0.6) !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+/* ── Cycle timer badges — smaller ───────────────────────────────── */
+#homeSection .inline-timer {
+    font-size: 0.72rem !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   END MODERN REDESIGN OVERRIDES
+   ═══════════════════════════════════════════════════════════════════ */
+
 /* ── Support / Community link compaction ──────────────────────────── */
 .support-link, .community-link {
     padding: 5px;
