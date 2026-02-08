@@ -38,7 +38,15 @@
 
 /* ── Request Modal – Redesigned two-column layout ───────────── */
 
-/* Overlay */
+/* Blur only the app background when this modal is open; modal lives on body so it stays sharp */
+body.movie-hunt-request-modal-open .app-container {
+    filter: blur(10px);
+}
+body.movie-hunt-request-modal-open {
+    overflow: hidden;
+}
+
+/* Overlay: own layer so it never inherits blur */
 .mh-req-modal {
     position: fixed;
     inset: 0;
@@ -46,17 +54,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    isolation: isolate;
+    transform: translateZ(0);
+    filter: none;
 }
 .mh-req-modal .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    z-index: 0;
 }
 
-/* Card */
+/* Card: sits above backdrop, never blurred */
 .mh-req-card {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     background: #1e293b;
     border: 1px solid rgba(148, 163, 184, 0.12);
     border-radius: 12px;
@@ -66,8 +80,6 @@
     width: 92vw;
     max-height: 90vh;
     overflow-y: auto;
-    transform: translateZ(0);
-    backface-visibility: hidden;
 }
 
 /* Close button */

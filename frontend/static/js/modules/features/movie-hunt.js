@@ -77,7 +77,7 @@
             if (!modal || !submitBtn) return;
             function close() {
                 modal.style.display = 'none';
-                document.body.classList.remove('requestarr-modal-open');
+                document.body.classList.remove('movie-hunt-request-modal-open');
             }
             if (backdrop) backdrop.addEventListener('click', close);
             if (closeBtn) closeBtn.addEventListener('click', close);
@@ -106,6 +106,8 @@
             if (modal.parentNode !== document.body) {
                 document.body.appendChild(modal);
             }
+            /* Ensure modal is on top: body class triggers blur on .app-container only */
+            document.body.classList.add('movie-hunt-request-modal-open');
 
             this._pendingRequestItem = item;
             titleEl.textContent = item && item.title ? item.title : '';
@@ -181,15 +183,14 @@
                 });
             }
 
-            // Show modal
+            // Show modal (class already added above so blur applies to background only)
             modal.style.display = 'flex';
-            document.body.classList.add('requestarr-modal-open');
 
             // Re-attach close handlers every time modal opens (to ensure they work)
             var self = this;
             function closeModal() {
                 modal.style.display = 'none';
-                document.body.classList.remove('requestarr-modal-open');
+                document.body.classList.remove('movie-hunt-request-modal-open');
             }
 
             // Remove old listeners and add new ones for Cancel, Close, and Backdrop
@@ -319,7 +320,7 @@
             var modal = document.getElementById('movie-hunt-request-modal');
             if (modal) {
                 modal.style.display = 'none';
-                document.body.classList.remove('requestarr-modal-open');
+                document.body.classList.remove('movie-hunt-request-modal-open');
             }
             this._pendingRequestItem = null;
         },
