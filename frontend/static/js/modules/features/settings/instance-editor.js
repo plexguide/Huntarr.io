@@ -1386,29 +1386,42 @@
             const nextInstance = settings.instances[1];
             confirmMessage = `Are you sure you want to delete the default instance "${instanceName}"?\n\nThe next instance "${nextInstance.name || 'Unnamed'}" will become the new default.`;
         }
-        
-        if (!confirm(confirmMessage)) return;
-        
-        console.log(`[huntarrUI] Deleting instance "${instanceName}" (index ${index}) from ${appType}...`);
-        
-        // Remove the instance from the local settings object
-        settings.instances.splice(index, 1);
-        
-        // Update the global state immediately to ensure re-render uses fresh data
-        if (window.huntarrUI && window.huntarrUI.originalSettings) {
-            window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
+
+        const self = this;
+        const doDelete = function() {
+            console.log(`[huntarrUI] Deleting instance "${instanceName}" (index ${index}) from ${appType}...`);
+
+            // Remove the instance from the local settings object
+            settings.instances.splice(index, 1);
+
+            // Update the global state immediately to ensure re-render uses fresh data
+            if (window.huntarrUI && window.huntarrUI.originalSettings) {
+                window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
+            }
+
+            // Use a flag to indicate we're doing a structural change that needs full refresh
+            window._appsSuppressChangeDetection = true;
+
+            // Save to backend and trigger refresh
+            self.saveAppSettings(appType, settings, `Instance "${instanceName}" deleted successfully`);
+
+            // Force a small delay then clear suppression
+            setTimeout(() => {
+                window._appsSuppressChangeDetection = false;
+            }, 800);
+        };
+
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({
+                title: 'Delete Instance',
+                message: confirmMessage,
+                confirmLabel: 'Delete',
+                onConfirm: doDelete
+            });
+        } else {
+            if (!confirm(confirmMessage)) return;
+            doDelete();
         }
-        
-        // Use a flag to indicate we're doing a structural change that needs full refresh
-        window._appsSuppressChangeDetection = true;
-        
-        // Save to backend and trigger refresh
-        this.saveAppSettings(appType, settings, `Instance "${instanceName}" deleted successfully`);
-        
-        // Force a small delay then clear suppression
-        setTimeout(() => {
-            window._appsSuppressChangeDetection = false;
-        }, 800);
     },
 
     });
