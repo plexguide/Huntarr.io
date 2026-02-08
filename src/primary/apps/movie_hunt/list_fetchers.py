@@ -376,12 +376,15 @@ def _fetch_tmdb(settings):
 
 def _fetch_trakt(settings):
     """Fetch movies from Trakt."""
+    import os
     list_type = settings.get('list_type', 'popular')
     access_token = settings.get('access_token', '')
-    client_id = settings.get('client_id', '')
 
-    if not client_id:
-        raise ValueError("Trakt Client ID is required")
+    # Use embedded credentials (same as the OAuth routes)
+    client_id = os.environ.get(
+        'TRAKT_CLIENT_ID',
+        '9ee2169e48c064874e7591ab76e0e26ae49a22d4b1dcb893076b46cf634a769e'
+    )
 
     headers = {
         'Content-Type': 'application/json',

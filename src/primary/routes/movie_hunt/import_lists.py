@@ -1,5 +1,6 @@
 """Import Lists routes for Movie Hunt — CRUD, sync, and OAuth."""
 
+import os
 import time
 import uuid
 import threading
@@ -76,8 +77,8 @@ def _default_settings_for_type(list_type):
             'list_type': 'popular',
             'username': '', 'list_name': '',
             'access_token': '', 'refresh_token': '', 'expires_at': 0,
-            'client_id': '', 'client_secret': '',
-            'limit': 100,
+            'years': '', 'additional_parameters': '',
+            'limit': 5000,
         }
     elif list_type == 'rss':
         return {'url': ''}
@@ -298,56 +299,97 @@ def get_list_types():
 
 
 # ---------------------------------------------------------------------------
-# OAuth helpers (Trakt, Plex)
+# Trakt OAuth — embedded app credentials (device code flow)
 # ---------------------------------------------------------------------------
 
-@movie_hunt_bp.route('/api/movie-hunt/import-lists/trakt/auth-url', methods=['POST'])
-def trakt_auth_url():
-    """Return the Trakt OAuth authorization URL."""
-    data = request.get_json(force=True) or {}
-    client_id = (data.get('client_id') or '').strip()
-    if not client_id:
-        return jsonify({'success': False, 'error': 'Trakt Client ID is required'}), 400
+# Huntarr's registered Trakt application credentials.
+# Override with environment variables if needed.
+TRAKT_CLIENT_ID = os.environ.get(
+    'TRAKT_CLIENT_ID',
+    '9ee2169e48c064874e7591ab76e0e26ae49a22d4b1dcb893076b46cf634a769e'
+)
+TRAKT_CLIENT_SECRET = os.environ.get(
+    'TRAKT_CLIENT_SECRET',
+    '65ad5c1b292586f6d453a15c918afe32b574de417aa4c01c1ccddb0ea2808df3'
+)
 
-    redirect_uri = (data.get('redirect_uri') or 'urn:ietf:wg:oauth:2.0:oob').strip()
-    auth_url = f'https://trakt.tv/oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}'
-    return jsonify({'success': True, 'auth_url': auth_url})
+
+def _get_trakt_credentials():
+    """Return (client_id, client_secret) — embedded or from env."""
+    return TRAKT_CLIENT_ID, TRAKT_CLIENT_SECRET
 
 
-@movie_hunt_bp.route('/api/movie-hunt/import-lists/trakt/exchange-code', methods=['POST'])
-def trakt_exchange_code():
-    """Exchange Trakt authorization code for tokens."""
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/trakt/device-code', methods=['POST'])
+def trakt_device_code():
+    """Initiate Trakt device code OAuth flow. Returns user_code and verification_url."""
     import requests as req
-    data = request.get_json(force=True) or {}
-    code = (data.get('code') or '').strip()
-    client_id = (data.get('client_id') or '').strip()
-    client_secret = (data.get('client_secret') or '').strip()
-    redirect_uri = (data.get('redirect_uri') or 'urn:ietf:wg:oauth:2.0:oob').strip()
-
-    if not all([code, client_id, client_secret]):
-        return jsonify({'success': False, 'error': 'Code, Client ID, and Client Secret are required'}), 400
+    client_id, _ = _get_trakt_credentials()
 
     try:
-        resp = req.post('https://api.trakt.tv/oauth/token', json={
-            'code': code,
+        resp = req.post('https://api.trakt.tv/oauth/device/code', json={
             'client_id': client_id,
-            'client_secret': client_secret,
-            'redirect_uri': redirect_uri,
-            'grant_type': 'authorization_code',
         }, headers={'Content-Type': 'application/json'}, timeout=15)
 
         if resp.status_code != 200:
             return jsonify({'success': False, 'error': f'Trakt returned {resp.status_code}: {resp.text[:200]}'}), 400
 
-        tokens = resp.json()
+        body = resp.json()
         return jsonify({
             'success': True,
-            'access_token': tokens.get('access_token', ''),
-            'refresh_token': tokens.get('refresh_token', ''),
-            'expires_at': int(time.time()) + tokens.get('expires_in', 7776000),
+            'device_code': body.get('device_code', ''),
+            'user_code': body.get('user_code', ''),
+            'verification_url': body.get('verification_url', 'https://trakt.tv/activate'),
+            'expires_in': body.get('expires_in', 600),
+            'interval': body.get('interval', 5),
         })
     except Exception as e:
-        logger.error("Trakt OAuth exchange failed: %s", e)
+        logger.error("Trakt device code request failed: %s", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/trakt/device-token', methods=['POST'])
+def trakt_device_token():
+    """Poll for Trakt device token after user authorizes."""
+    import requests as req
+    data = request.get_json(force=True) or {}
+    device_code = (data.get('device_code') or '').strip()
+    if not device_code:
+        return jsonify({'success': False, 'error': 'device_code is required'}), 400
+
+    client_id, client_secret = _get_trakt_credentials()
+
+    try:
+        resp = req.post('https://api.trakt.tv/oauth/device/token', json={
+            'code': device_code,
+            'client_id': client_id,
+            'client_secret': client_secret,
+        }, headers={'Content-Type': 'application/json'}, timeout=15)
+
+        if resp.status_code == 200:
+            tokens = resp.json()
+            return jsonify({
+                'success': True,
+                'access_token': tokens.get('access_token', ''),
+                'refresh_token': tokens.get('refresh_token', ''),
+                'expires_at': int(time.time()) + tokens.get('expires_in', 7776000),
+            })
+        elif resp.status_code == 400:
+            return jsonify({'success': False, 'pending': True, 'error': 'Authorization pending'}), 200
+        elif resp.status_code == 404:
+            return jsonify({'success': False, 'error': 'Invalid device code'}), 400
+        elif resp.status_code == 409:
+            return jsonify({'success': False, 'error': 'Code already approved'}), 400
+        elif resp.status_code == 410:
+            return jsonify({'success': False, 'error': 'Code expired — try again'}), 400
+        elif resp.status_code == 418:
+            return jsonify({'success': False, 'error': 'User denied authorization'}), 400
+        elif resp.status_code == 429:
+            return jsonify({'success': False, 'pending': True, 'error': 'Slow down'}), 200
+        else:
+            return jsonify({'success': False, 'error': f'Trakt returned {resp.status_code}'}), 400
+
+    except Exception as e:
+        logger.error("Trakt device token poll failed: %s", e)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

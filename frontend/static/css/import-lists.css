@@ -277,17 +277,114 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: background .2s;
+    transition: background .2s, opacity .2s;
 }
 .btn-trakt-auth:hover, .btn-plex-auth:hover {
     background: rgba(99,102,241,.35);
 }
+.btn-trakt-auth:disabled, .btn-plex-auth:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+.btn-trakt-auth.trakt-auth-success {
+    background: rgba(34,197,94,.2);
+    color: #4ade80;
+    border-color: rgba(34,197,94,.35);
+}
+.trakt-auth-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
 .trakt-auth-status, .plex-auth-status {
-    margin-left: 12px;
     font-size: 12px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+}
+
+/* Trakt device code auth UI */
+.trakt-device-auth {
+    margin-top: 8px;
+}
+.trakt-device-code-box {
+    background: rgba(15,23,42,.6);
+    border: 1px solid rgba(99,102,241,.25);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+}
+.trakt-device-label {
+    display: block;
+    font-size: 12px;
+    color: rgba(255,255,255,.5);
+    margin-bottom: 4px;
+}
+.trakt-device-link {
+    display: block;
+    font-size: 13px;
+    color: #818cf8;
+    text-decoration: none;
+    margin-bottom: 10px;
+}
+.trakt-device-link:hover { color: #a5b4fc; text-decoration: underline; }
+.trakt-device-code {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    letter-spacing: 4px;
+    color: #fff;
+    background: rgba(99,102,241,.15);
+    border: 1px dashed rgba(99,102,241,.35);
+    border-radius: 8px;
+    padding: 10px 20px;
+    display: inline-block;
+    margin-bottom: 10px;
+    user-select: all;
+}
+.trakt-device-code-copyable {
+    cursor: pointer;
+    transition: background .2s, border-color .2s, transform .1s;
+}
+.trakt-device-code-copyable:hover {
+    background: rgba(99,102,241,.25);
+    border-color: rgba(99,102,241,.55);
+    transform: scale(1.02);
+}
+.trakt-device-code-copyable:active {
+    transform: scale(0.98);
+}
+.trakt-code-copied {
+    background: rgba(34,197,94,.2) !important;
+    border-color: rgba(34,197,94,.5) !important;
+    color: #22c55e !important;
+}
+.trakt-device-open-link {
+    display: inline-block;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    background: #6366f1;
+    border-radius: 6px;
+    text-decoration: none;
+    margin-bottom: 12px;
+    transition: background .2s, transform .1s;
+}
+.trakt-device-open-link:hover {
+    background: #4f46e5;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+.trakt-device-open-link i {
+    margin-right: 6px;
+}
+.trakt-device-waiting {
+    display: block;
+    font-size: 12px;
+    color: rgba(255,255,255,.45);
 }
 
 /* Form actions */

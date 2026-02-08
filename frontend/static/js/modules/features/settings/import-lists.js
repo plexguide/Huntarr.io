@@ -482,22 +482,23 @@
                 html += _fieldInput('person_id', 'TMDb Person ID', s.person_id || '', 'Numeric person ID');
             }
         } else if (typeId === 'trakt') {
-            html += _fieldInput('client_id', 'Trakt Client ID', s.client_id || '', 'From trakt.tv/oauth/applications');
-            html += _fieldInput('client_secret', 'Trakt Client Secret', s.client_secret || '', 'From your Trakt app', 'password');
-            if (subtypeId === 'watchlist' || subtypeId === 'custom') {
-                html += '<div class="import-list-form-group">' +
-                    '<label>Trakt Authorization</label>' +
-                    '<button type="button" class="btn-trakt-auth" id="' + containerId + '-trakt-auth-btn">' +
-                        '<i class="fas fa-sign-in-alt"></i> Authorize with Trakt' +
+            // Auth section — always shown for all Trakt subtypes
+            var isAuthed = s.access_token && s.access_token !== '••••••••';
+            html += '<div class="import-list-form-group">' +
+                '<label>Authenticate with Trakt</label>' +
+                '<div class="trakt-auth-row">' +
+                    '<button type="button" class="btn-trakt-auth' + (isAuthed ? ' trakt-auth-success' : '') + '" id="' + containerId + '-trakt-auth-btn">' +
+                        (isAuthed ? '<i class="fas fa-check"></i> Authenticated' : '<i class="fas fa-sign-in-alt"></i> Start OAuth') +
                     '</button>' +
                     '<span class="trakt-auth-status" id="' + containerId + '-trakt-status">' +
-                        (s.access_token && s.access_token !== '••••••••' ? '<i class="fas fa-check-circle" style="color:#22c55e"></i> Authorized' : '<i class="fas fa-times-circle" style="color:#ef4444"></i> Not authorized') +
+                        (isAuthed ? '<i class="fas fa-check-circle" style="color:#22c55e"></i> Authorized' : '') +
                     '</span>' +
-                    '<input type="hidden" class="dynamic-field" data-field="access_token" value="' + _esc(s.access_token || '') + '">' +
-                    '<input type="hidden" class="dynamic-field" data-field="refresh_token" value="' + _esc(s.refresh_token || '') + '">' +
-                    '<input type="hidden" class="dynamic-field" data-field="expires_at" value="' + (s.expires_at || 0) + '">' +
-                '</div>';
-            }
+                '</div>' +
+                '<input type="hidden" class="dynamic-field" data-field="access_token" value="' + _esc(s.access_token || '') + '">' +
+                '<input type="hidden" class="dynamic-field" data-field="refresh_token" value="' + _esc(s.refresh_token || '') + '">' +
+                '<input type="hidden" class="dynamic-field" data-field="expires_at" value="' + (s.expires_at || 0) + '">' +
+            '</div>';
+
             if (subtypeId === 'watchlist') {
                 html += _fieldInput('username', 'Username', s.username || '', 'Trakt username (or leave blank for "me")');
             }
@@ -505,7 +506,9 @@
                 html += _fieldInput('username', 'Username', s.username || '', 'Trakt username');
                 html += _fieldInput('list_name', 'List Name', s.list_name || '', 'Name of the custom list');
             }
-            html += _fieldInput('limit', 'Max Items', s.limit || '100', '1-500', 'number');
+            html += _fieldInput('years', 'Years', s.years || '', 'Filter movies by year or year range');
+            html += _fieldInput('additional_parameters', 'Additional Parameters', s.additional_parameters || '', 'Additional Trakt API parameters');
+            html += _fieldInput('limit', 'Limit', s.limit || '5000', 'Limit the number of movies to get', 'number');
         } else if (typeId === 'rss') {
             html += _fieldInput('url', 'RSS Feed URL', s.url || '', 'https://example.com/feed.rss');
         } else if (typeId === 'stevenlu') {
@@ -565,64 +568,141 @@
     // OAuth flows
     // -------------------------------------------------------------------
 
+    var _traktPollTimer = null;
+
     function _startTraktOAuth(containerId) {
-        var clientIdEl = document.querySelector('#' + containerId + ' [data-field="client_id"]');
-        var clientSecretEl = document.querySelector('#' + containerId + ' [data-field="client_secret"]');
-        var clientId = clientIdEl ? clientIdEl.value.trim() : '';
-        var clientSecret = clientSecretEl ? clientSecretEl.value.trim() : '';
+        var statusEl = document.getElementById(containerId + '-trakt-status');
+        var authBtn = document.getElementById(containerId + '-trakt-auth-btn');
+        if (authBtn) { authBtn.disabled = true; authBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...'; }
 
-        if (!clientId) { _notify('Enter your Trakt Client ID first', 'error'); return; }
-        if (!clientSecret) { _notify('Enter your Trakt Client Secret first', 'error'); return; }
-
-        // Get auth URL
-        fetch('./api/movie-hunt/import-lists/trakt/auth-url', {
+        // Step 1: Request device code (backend uses embedded credentials)
+        fetch('./api/movie-hunt/import-lists/trakt/device-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ client_id: clientId, redirect_uri: 'urn:ietf:wg:oauth:2.0:oob' })
+            body: '{}'
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (!data.success) { _notify(data.error || 'Failed to get auth URL', 'error'); return; }
+            if (!data.success) {
+                _notify(data.error || 'Failed to get device code', 'error');
+                if (authBtn) { authBtn.disabled = false; authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Start OAuth'; }
+                return;
+            }
 
-            // Open in new window
-            window.open(data.auth_url, '_blank');
+            var deviceCode = data.device_code;
+            var userCode = data.user_code;
+            var verifyUrl = data.verification_url || 'https://trakt.tv/activate';
+            var interval = (data.interval || 5) * 1000;
+            var expiresIn = data.expires_in || 600;
 
-            // Prompt for code
-            var code = prompt('After authorizing on Trakt, paste the PIN code here:');
-            if (!code || !code.trim()) return;
+            // Show code first — user copies, then clicks the link
+            if (statusEl) {
+                statusEl.innerHTML =
+                    '<div class="trakt-device-auth">' +
+                        '<div class="trakt-device-code-box">' +
+                            '<span class="trakt-device-label">1. Click code to copy</span>' +
+                            '<div class="trakt-device-code trakt-device-code-copyable" id="' + containerId + '-trakt-code" title="Click to copy">' + _esc(userCode) + '</div>' +
+                            '<span class="trakt-device-label" style="margin-top:8px">2. Open Trakt &amp; paste it</span>' +
+                            '<a href="' + _esc(verifyUrl) + '" target="_blank" rel="noopener" class="trakt-device-open-link" id="' + containerId + '-trakt-open">' +
+                                '<i class="fas fa-external-link-alt"></i> Open trakt.tv/activate' +
+                            '</a>' +
+                            '<span class="trakt-device-waiting"><i class="fas fa-spinner fa-spin"></i> Waiting for authorization...</span>' +
+                        '</div>' +
+                    '</div>';
 
-            // Exchange code
-            fetch('./api/movie-hunt/import-lists/trakt/exchange-code', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code: code.trim(),
-                    client_id: clientId,
-                    client_secret: clientSecret,
-                    redirect_uri: 'urn:ietf:wg:oauth:2.0:oob'
-                })
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(tokenData) {
-                if (tokenData.success) {
-                    // Store tokens in hidden fields
-                    var atEl = document.querySelector('#' + containerId + ' [data-field="access_token"]');
-                    var rtEl = document.querySelector('#' + containerId + ' [data-field="refresh_token"]');
-                    var exEl = document.querySelector('#' + containerId + ' [data-field="expires_at"]');
-                    if (atEl) atEl.value = tokenData.access_token;
-                    if (rtEl) rtEl.value = tokenData.refresh_token;
-                    if (exEl) exEl.value = tokenData.expires_at;
-
-                    var status = document.getElementById(containerId + '-trakt-status');
-                    if (status) status.innerHTML = '<i class="fas fa-check-circle" style="color:#22c55e"></i> Authorized';
-                    _notify('Trakt authorized!', 'success');
-                } else {
-                    _notify('Trakt auth failed: ' + (tokenData.error || ''), 'error');
+                // Click-to-copy on the code (works on HTTP too)
+                var codeEl = document.getElementById(containerId + '-trakt-code');
+                if (codeEl) {
+                    codeEl.onclick = function() {
+                        var copied = false;
+                        // Method 1: navigator.clipboard (HTTPS/localhost only)
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            try { navigator.clipboard.writeText(userCode); copied = true; } catch(e) {}
+                        }
+                        // Method 2: execCommand fallback (works on HTTP)
+                        if (!copied) {
+                            var ta = document.createElement('textarea');
+                            ta.value = userCode;
+                            ta.style.position = 'fixed';
+                            ta.style.left = '-9999px';
+                            ta.style.opacity = '0';
+                            document.body.appendChild(ta);
+                            ta.select();
+                            try { document.execCommand('copy'); copied = true; } catch(e) {}
+                            document.body.removeChild(ta);
+                        }
+                        // Visual feedback
+                        codeEl.classList.add('trakt-code-copied');
+                        codeEl.setAttribute('title', 'Copied!');
+                        var origHTML = codeEl.innerHTML;
+                        codeEl.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                        setTimeout(function() {
+                            codeEl.innerHTML = origHTML;
+                            codeEl.classList.remove('trakt-code-copied');
+                            codeEl.setAttribute('title', 'Click to copy');
+                        }, 1500);
+                    };
                 }
-            })
-            .catch(function(e) { _notify('Trakt auth error: ' + e, 'error'); });
+            }
+            if (authBtn) {
+                authBtn.style.display = 'none';
+            }
+
+            // Step 2: Poll for token
+            if (_traktPollTimer) clearInterval(_traktPollTimer);
+            var pollCount = 0;
+            var maxPolls = Math.floor(expiresIn / (interval / 1000));
+
+            _traktPollTimer = setInterval(function() {
+                pollCount++;
+                if (pollCount > maxPolls) {
+                    clearInterval(_traktPollTimer);
+                    _traktPollTimer = null;
+                    if (statusEl) statusEl.innerHTML = '<i class="fas fa-times-circle" style="color:#ef4444"></i> Code expired — try again';
+                    if (authBtn) { authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Start OAuth'; authBtn.onclick = function() { _startTraktOAuth(containerId); }; }
+                    return;
+                }
+
+                fetch('./api/movie-hunt/import-lists/trakt/device-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_code: deviceCode })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(tokenData) {
+                    if (tokenData.success) {
+                        clearInterval(_traktPollTimer);
+                        _traktPollTimer = null;
+
+                        var atEl = document.querySelector('#' + containerId + ' [data-field="access_token"]');
+                        var rtEl = document.querySelector('#' + containerId + ' [data-field="refresh_token"]');
+                        var exEl = document.querySelector('#' + containerId + ' [data-field="expires_at"]');
+                        if (atEl) atEl.value = tokenData.access_token;
+                        if (rtEl) rtEl.value = tokenData.refresh_token;
+                        if (exEl) exEl.value = tokenData.expires_at;
+
+                        if (statusEl) statusEl.innerHTML = '<i class="fas fa-check-circle" style="color:#22c55e"></i> Authorized';
+                        if (authBtn) { authBtn.innerHTML = '<i class="fas fa-check"></i> Authenticated'; authBtn.disabled = true; authBtn.classList.add('trakt-auth-success'); authBtn.onclick = null; }
+                        _notify('Trakt authorized!', 'success');
+                    } else if (tokenData.pending) {
+                        // Still waiting — keep polling
+                    } else {
+                        clearInterval(_traktPollTimer);
+                        _traktPollTimer = null;
+                        if (statusEl) statusEl.innerHTML = '<i class="fas fa-times-circle" style="color:#ef4444"></i> ' + _esc(tokenData.error || 'Auth failed');
+                        if (authBtn) { authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Start OAuth'; authBtn.disabled = false; authBtn.onclick = function() { _startTraktOAuth(containerId); }; }
+                        _notify('Trakt auth failed: ' + (tokenData.error || ''), 'error');
+                    }
+                })
+                .catch(function() {
+                    // Network error — keep polling, it might recover
+                });
+            }, interval);
         })
-        .catch(function(e) { _notify('Error: ' + e, 'error'); });
+        .catch(function(e) {
+            _notify('Error: ' + e, 'error');
+            if (authBtn) { authBtn.disabled = false; authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Start OAuth'; }
+        });
     }
 
     function _startPlexOAuth(containerId) {
