@@ -307,11 +307,11 @@ window.HuntarrNavigation = {
         var settingsSubGroup = document.getElementById('settings-sub');
         var systemSubGroup = document.getElementById('system-sub');
         if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
-        if (settingsSubGroup) settingsSubGroup.style.display = onSystem ? 'none' : '';
+        if (settingsSubGroup) { settingsSubGroup.style.display = onSystem ? 'none' : (onSettings ? 'block' : 'none'); settingsSubGroup.classList.toggle('expanded', onSettings); }
         if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
         if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
         if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
-        if (systemSubGroup) systemSubGroup.style.display = onSettings ? 'none' : '';
+        if (systemSubGroup) { systemSubGroup.style.display = onSettings ? 'none' : (onSystem ? 'block' : 'none'); systemSubGroup.classList.toggle('expanded', onSystem); }
         if (window.huntarrUI && typeof window.huntarrUI._updateMainSidebarBetaVisibility === 'function') {
             window.huntarrUI._updateMainSidebarBetaVisibility();
         }
