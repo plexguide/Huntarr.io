@@ -237,14 +237,14 @@
                     <p class="setting-help" style="margin-left: -3ch !important;">Server-Side: Images cached on Huntarr server, shared across all users. Browser-Side: Images cached in each user's browser localStorage.</p>
                 </div>
                 <div class="setting-item">
-                    <label for="enable_requestarr">Enable Requestarr:</label>
+                    <label for="enable_requestarr">Enable Requests:</label>
                     <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                         <input type="checkbox" id="enable_requestarr" ${
                           settings.enable_requestarr !== false ? "checked" : ""
                         }>
                         <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                     </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Show Requestarr in the menu and enable discover/trending on the home page. When disabled, Requestarr is hidden and no TMDB/trending APIs are called.</p>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Show Requests in the menu and enable discover/trending on the home page. When disabled, Requests is hidden and no TMDB/trending APIs are called.</p>
                 </div>
                 <div class="setting-item" id="show_trending_setting_item">
                     <label for="show_trending"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#show-trending" class="info-icon" title="Learn more about rotating discover content on home page" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Show Discover Content:</label>
@@ -254,7 +254,7 @@
                         } ${settings.enable_requestarr === false ? "disabled" : ""}>
                         <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                     </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Display rotating discover content on the home page (Trending This Week, Popular Movies, Popular TV Shows). Requires Requestarr to be enabled.</p>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Display rotating discover content on the home page (Trending This Week, Popular Movies, Popular TV Shows). Requires Requests to be enabled.</p>
                 </div>
                 <div class="setting-item">
                     <label for="low_usage_mode"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#low-usage-mode" class="info-icon" title="Learn more about Low Usage Mode" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Low Usage Mode:</label>
