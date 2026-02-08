@@ -68,7 +68,7 @@
                             closeModal();
                             self.loadList();
                             if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.refresh) {
-                                ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-root-folders-instance-select'].forEach(function(id) {
+                                ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-import-lists-instance-select', 'settings-root-folders-instance-select'].forEach(function(id) {
                                     if (document.getElementById(id)) window.MovieHuntInstanceDropdown.refresh(id);
                                 });
                             }
@@ -118,7 +118,7 @@
                             closeModal();
                             self.loadList();
                             if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.refresh) {
-                                ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-root-folders-instance-select'].forEach(function(sid) {
+                                ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-import-lists-instance-select', 'settings-root-folders-instance-select'].forEach(function(sid) {
                                     if (document.getElementById(sid)) window.MovieHuntInstanceDropdown.refresh(sid);
                                 });
                             }
@@ -186,7 +186,7 @@
                             closeModal();
                             self.loadList();
                             if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.refresh) {
-                                ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-root-folders-instance-select'].forEach(function(sid) {
+                                ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-import-lists-instance-select', 'settings-root-folders-instance-select'].forEach(function(sid) {
                                     if (document.getElementById(sid)) window.MovieHuntInstanceDropdown.refresh(sid);
                                 });
                             }

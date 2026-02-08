@@ -1,0 +1,491 @@
+"""Import Lists routes for Movie Hunt — CRUD, sync, and OAuth."""
+
+import time
+import uuid
+import threading
+from flask import request, jsonify
+
+from . import movie_hunt_bp
+from ._helpers import _get_movie_hunt_instance_id_from_request, movie_hunt_logger
+from .discovery import (
+    _get_collection_config, _save_collection_config, _collection_append,
+    _get_tmdb_api_key_movie_hunt
+)
+
+logger = movie_hunt_logger
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+LIST_TYPES = [
+    'imdb', 'tmdb', 'trakt', 'rss', 'stevenlu', 'plex', 'custom_json'
+]
+
+SYNC_INTERVAL_OPTIONS = [1, 3, 6, 12, 24, 48, 72, 168]  # hours
+
+
+def _get_import_lists(instance_id):
+    """Return list of import list configs for an instance."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config_for_instance('movie_hunt_import_lists', instance_id)
+    if not config or not isinstance(config.get('lists'), list):
+        return []
+    return config['lists']
+
+
+def _save_import_lists(lists, instance_id):
+    """Persist import lists for an instance."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    db.save_app_config_for_instance('movie_hunt_import_lists', instance_id, {'lists': lists})
+
+
+def _find_list_by_id(lists, list_id):
+    """Find a list dict and its index by id. Returns (index, dict) or (None, None)."""
+    for i, lst in enumerate(lists):
+        if lst.get('id') == list_id:
+            return i, lst
+    return None, None
+
+
+def _build_default_list(list_type, name=None):
+    """Return a new list dict with defaults."""
+    return {
+        'id': str(uuid.uuid4()),
+        'name': name or '',
+        'type': list_type,
+        'enabled': True,
+        'sync_interval_hours': 12,
+        'last_sync': None,
+        'last_sync_count': 0,
+        'last_error': None,
+        'settings': _default_settings_for_type(list_type),
+    }
+
+
+def _default_settings_for_type(list_type):
+    """Return default type-specific settings."""
+    if list_type == 'imdb':
+        return {'list_type': 'top_250', 'list_id': ''}
+    elif list_type == 'tmdb':
+        return {'list_type': 'popular', 'list_id': '', 'keyword_id': '', 'company_id': '', 'person_id': ''}
+    elif list_type == 'trakt':
+        return {
+            'list_type': 'popular',
+            'username': '', 'list_name': '',
+            'access_token': '', 'refresh_token': '', 'expires_at': 0,
+            'client_id': '', 'client_secret': '',
+            'limit': 100,
+        }
+    elif list_type == 'rss':
+        return {'url': ''}
+    elif list_type == 'stevenlu':
+        return {'url': 'https://popular-movies-data.stevenlu.com/movies.json'}
+    elif list_type == 'plex':
+        return {'access_token': ''}
+    elif list_type == 'custom_json':
+        return {'url': ''}
+    return {}
+
+
+# ---------------------------------------------------------------------------
+# CRUD routes
+# ---------------------------------------------------------------------------
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists', methods=['GET'])
+def get_import_lists():
+    """List all import lists for the current instance."""
+    instance_id = _get_movie_hunt_instance_id_from_request()
+    lists = _get_import_lists(instance_id)
+    # Sanitise: strip tokens from response
+    safe = []
+    for lst in lists:
+        s = dict(lst)
+        settings = dict(s.get('settings') or {})
+        for key in ('access_token', 'refresh_token', 'client_secret'):
+            if key in settings and settings[key]:
+                settings[key] = '••••••••'
+        s['settings'] = settings
+        safe.append(s)
+    return jsonify({'success': True, 'lists': safe})
+
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists', methods=['POST'])
+def add_import_list():
+    """Create a new import list."""
+    instance_id = _get_movie_hunt_instance_id_from_request()
+    data = request.get_json(force=True) or {}
+    list_type = data.get('type', '').strip()
+    if list_type not in LIST_TYPES:
+        return jsonify({'success': False, 'error': f'Invalid list type: {list_type}'}), 400
+
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'success': False, 'error': 'Name is required'}), 400
+
+    new_list = _build_default_list(list_type, name)
+    # Merge any provided settings
+    if 'settings' in data and isinstance(data['settings'], dict):
+        new_list['settings'].update(data['settings'])
+    if 'sync_interval_hours' in data:
+        try:
+            new_list['sync_interval_hours'] = int(data['sync_interval_hours'])
+        except (TypeError, ValueError):
+            pass
+    if 'enabled' in data:
+        new_list['enabled'] = bool(data['enabled'])
+
+    lists = _get_import_lists(instance_id)
+    lists.append(new_list)
+    _save_import_lists(lists, instance_id)
+
+    logger.info("Import list created: %s (%s) for instance %s", name, list_type, instance_id)
+    return jsonify({'success': True, 'list': new_list}), 201
+
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/<list_id>', methods=['PUT'])
+def update_import_list(list_id):
+    """Update an existing import list."""
+    instance_id = _get_movie_hunt_instance_id_from_request()
+    data = request.get_json(force=True) or {}
+
+    lists = _get_import_lists(instance_id)
+    idx, existing = _find_list_by_id(lists, list_id)
+    if existing is None:
+        return jsonify({'success': False, 'error': 'List not found'}), 404
+
+    # Update allowed fields
+    for field in ('name', 'enabled', 'sync_interval_hours'):
+        if field in data:
+            existing[field] = data[field]
+
+    if 'settings' in data and isinstance(data['settings'], dict):
+        merged = dict(existing.get('settings') or {})
+        for k, v in data['settings'].items():
+            # Don't overwrite tokens with masked values
+            if k in ('access_token', 'refresh_token', 'client_secret') and v == '••••••••':
+                continue
+            merged[k] = v
+        existing['settings'] = merged
+
+    lists[idx] = existing
+    _save_import_lists(lists, instance_id)
+
+    logger.info("Import list updated: %s for instance %s", list_id, instance_id)
+    return jsonify({'success': True, 'list': existing})
+
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/<list_id>', methods=['DELETE'])
+def delete_import_list(list_id):
+    """Delete an import list."""
+    instance_id = _get_movie_hunt_instance_id_from_request()
+    lists = _get_import_lists(instance_id)
+    idx, existing = _find_list_by_id(lists, list_id)
+    if existing is None:
+        return jsonify({'success': False, 'error': 'List not found'}), 404
+
+    lists.pop(idx)
+    _save_import_lists(lists, instance_id)
+
+    logger.info("Import list deleted: %s for instance %s", list_id, instance_id)
+    return jsonify({'success': True})
+
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/<list_id>/toggle', methods=['POST'])
+def toggle_import_list(list_id):
+    """Toggle enabled/disabled."""
+    instance_id = _get_movie_hunt_instance_id_from_request()
+    lists = _get_import_lists(instance_id)
+    idx, existing = _find_list_by_id(lists, list_id)
+    if existing is None:
+        return jsonify({'success': False, 'error': 'List not found'}), 404
+
+    existing['enabled'] = not existing.get('enabled', True)
+    lists[idx] = existing
+    _save_import_lists(lists, instance_id)
+
+    return jsonify({'success': True, 'enabled': existing['enabled']})
+
+
+# ---------------------------------------------------------------------------
+# Sync routes
+# ---------------------------------------------------------------------------
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/<list_id>/sync', methods=['POST'])
+def sync_import_list(list_id):
+    """Manually sync a single import list."""
+    instance_id = _get_movie_hunt_instance_id_from_request()
+    lists = _get_import_lists(instance_id)
+    idx, existing = _find_list_by_id(lists, list_id)
+    if existing is None:
+        return jsonify({'success': False, 'error': 'List not found'}), 404
+
+    result = _run_sync(existing, instance_id)
+
+    # Update sync metadata
+    existing['last_sync'] = time.time()
+    existing['last_sync_count'] = result.get('added', 0)
+    existing['last_error'] = result.get('error')
+    lists[idx] = existing
+    _save_import_lists(lists, instance_id)
+
+    return jsonify({'success': True, 'result': result})
+
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/sync-all', methods=['POST'])
+def sync_all_import_lists():
+    """Sync all enabled import lists."""
+    instance_id = _get_movie_hunt_instance_id_from_request()
+    lists = _get_import_lists(instance_id)
+    results = {}
+
+    for i, lst in enumerate(lists):
+        if not lst.get('enabled', True):
+            continue
+        result = _run_sync(lst, instance_id)
+        lst['last_sync'] = time.time()
+        lst['last_sync_count'] = result.get('added', 0)
+        lst['last_error'] = result.get('error')
+        lists[i] = lst
+        results[lst['id']] = result
+
+    _save_import_lists(lists, instance_id)
+    return jsonify({'success': True, 'results': results})
+
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/types', methods=['GET'])
+def get_list_types():
+    """Return available list types and their metadata."""
+    types = [
+        {'id': 'imdb', 'name': 'IMDb', 'icon': 'fab fa-imdb',
+         'subtypes': [
+             {'id': 'top_250', 'name': 'IMDb Top 250'},
+             {'id': 'popular', 'name': 'IMDb Popular Movies'},
+             {'id': 'custom', 'name': 'IMDb List (by ID)'},
+         ]},
+        {'id': 'tmdb', 'name': 'TMDb', 'icon': 'fas fa-film',
+         'subtypes': [
+             {'id': 'popular', 'name': 'Popular Movies'},
+             {'id': 'top_rated', 'name': 'Top Rated'},
+             {'id': 'now_playing', 'name': 'Now Playing'},
+             {'id': 'upcoming', 'name': 'Upcoming'},
+             {'id': 'list', 'name': 'TMDb List (by ID)'},
+             {'id': 'keyword', 'name': 'By Keyword'},
+             {'id': 'company', 'name': 'By Company'},
+             {'id': 'person', 'name': 'By Person'},
+         ]},
+        {'id': 'trakt', 'name': 'Trakt', 'icon': 'fas fa-play-circle',
+         'subtypes': [
+             {'id': 'popular', 'name': 'Popular'},
+             {'id': 'trending', 'name': 'Trending'},
+             {'id': 'watchlist', 'name': 'Watchlist'},
+             {'id': 'custom', 'name': 'Custom List'},
+         ],
+         'requires_oauth': True},
+        {'id': 'plex', 'name': 'Plex Watchlist', 'icon': 'fas fa-tv',
+         'subtypes': [],
+         'requires_oauth': True},
+        {'id': 'rss', 'name': 'RSS Feed', 'icon': 'fas fa-rss',
+         'subtypes': []},
+        {'id': 'stevenlu', 'name': 'StevenLu Popular', 'icon': 'fas fa-chart-line',
+         'subtypes': []},
+        {'id': 'custom_json', 'name': 'Custom JSON', 'icon': 'fas fa-code',
+         'subtypes': []},
+    ]
+    return jsonify({'success': True, 'types': types})
+
+
+# ---------------------------------------------------------------------------
+# OAuth helpers (Trakt, Plex)
+# ---------------------------------------------------------------------------
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/trakt/auth-url', methods=['POST'])
+def trakt_auth_url():
+    """Return the Trakt OAuth authorization URL."""
+    data = request.get_json(force=True) or {}
+    client_id = (data.get('client_id') or '').strip()
+    if not client_id:
+        return jsonify({'success': False, 'error': 'Trakt Client ID is required'}), 400
+
+    redirect_uri = (data.get('redirect_uri') or 'urn:ietf:wg:oauth:2.0:oob').strip()
+    auth_url = f'https://trakt.tv/oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}'
+    return jsonify({'success': True, 'auth_url': auth_url})
+
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/trakt/exchange-code', methods=['POST'])
+def trakt_exchange_code():
+    """Exchange Trakt authorization code for tokens."""
+    import requests as req
+    data = request.get_json(force=True) or {}
+    code = (data.get('code') or '').strip()
+    client_id = (data.get('client_id') or '').strip()
+    client_secret = (data.get('client_secret') or '').strip()
+    redirect_uri = (data.get('redirect_uri') or 'urn:ietf:wg:oauth:2.0:oob').strip()
+
+    if not all([code, client_id, client_secret]):
+        return jsonify({'success': False, 'error': 'Code, Client ID, and Client Secret are required'}), 400
+
+    try:
+        resp = req.post('https://api.trakt.tv/oauth/token', json={
+            'code': code,
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'redirect_uri': redirect_uri,
+            'grant_type': 'authorization_code',
+        }, headers={'Content-Type': 'application/json'}, timeout=15)
+
+        if resp.status_code != 200:
+            return jsonify({'success': False, 'error': f'Trakt returned {resp.status_code}: {resp.text[:200]}'}), 400
+
+        tokens = resp.json()
+        return jsonify({
+            'success': True,
+            'access_token': tokens.get('access_token', ''),
+            'refresh_token': tokens.get('refresh_token', ''),
+            'expires_at': int(time.time()) + tokens.get('expires_in', 7776000),
+        })
+    except Exception as e:
+        logger.error("Trakt OAuth exchange failed: %s", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Sync engine
+# ---------------------------------------------------------------------------
+
+def _run_sync(list_config, instance_id):
+    """Fetch movies from a list and add new ones to the collection. Returns result dict."""
+    from src.primary.apps.movie_hunt.list_fetchers import fetch_list
+
+    list_type = list_config.get('type', '')
+    list_name = list_config.get('name', list_type)
+    settings = list_config.get('settings') or {}
+
+    logger.info("Syncing import list: %s (%s)", list_name, list_type)
+
+    try:
+        movies = fetch_list(list_type, settings)
+    except Exception as e:
+        logger.error("Failed to fetch list %s: %s", list_name, e)
+        return {'added': 0, 'skipped': 0, 'total': 0, 'error': str(e)}
+
+    if not movies:
+        logger.info("No movies returned from list: %s", list_name)
+        return {'added': 0, 'skipped': 0, 'total': len(movies) if movies else 0, 'error': None}
+
+    # Get existing collection to check for dupes
+    collection = _get_collection_config(instance_id)
+    existing_tmdb_ids = set()
+    existing_title_years = set()
+    for item in collection:
+        if not isinstance(item, dict):
+            continue
+        tmdb_id = item.get('tmdb_id')
+        if tmdb_id:
+            try:
+                existing_tmdb_ids.add(int(tmdb_id))
+            except (TypeError, ValueError):
+                pass
+        title = (item.get('title') or '').strip().lower()
+        year = str(item.get('year') or '').strip()
+        if title:
+            existing_title_years.add((title, year))
+
+    added = 0
+    skipped = 0
+    for movie in movies:
+        tmdb_id = movie.get('tmdb_id')
+        title = (movie.get('title') or '').strip()
+        year = str(movie.get('year') or '').strip()
+
+        # Skip if already in collection
+        if tmdb_id and int(tmdb_id) in existing_tmdb_ids:
+            skipped += 1
+            continue
+        if title and (title.lower(), year) in existing_title_years:
+            skipped += 1
+            continue
+
+        # Get default root folder for this instance
+        from src.primary.utils.database import get_database
+        db = get_database()
+        rf_config = db.get_app_config_for_instance('movie_hunt_root_folders', instance_id) or {}
+        root_folders = rf_config.get('root_folders', [])
+        default_rf = ''
+        for rf in root_folders:
+            if rf.get('is_default'):
+                default_rf = rf.get('path', '')
+                break
+        if not default_rf and root_folders:
+            default_rf = root_folders[0].get('path', '')
+
+        _collection_append(
+            title=title,
+            year=year,
+            instance_id=instance_id,
+            tmdb_id=tmdb_id,
+            poster_path=movie.get('poster_path', ''),
+            root_folder=default_rf,
+        )
+
+        # Track to avoid dupes within same sync
+        if tmdb_id:
+            existing_tmdb_ids.add(int(tmdb_id))
+        if title:
+            existing_title_years.add((title.lower(), year))
+
+        added += 1
+
+    logger.info("Import list %s sync complete: %d added, %d skipped, %d total",
+                list_name, added, skipped, len(movies))
+
+    return {'added': added, 'skipped': skipped, 'total': len(movies), 'error': None}
+
+
+# ---------------------------------------------------------------------------
+# Background sync (called from background.py)
+# ---------------------------------------------------------------------------
+
+def run_import_list_sync_cycle():
+    """Check all instances for import lists due for sync. Called periodically from background."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+
+    # Get all Movie Hunt instances
+    try:
+        instances = db.get_app_config_for_instance('movie_hunt_instances', 0) or {}
+        instance_list = instances.get('instances', [])
+        if not instance_list:
+            instance_list = [{'id': 0}]
+    except Exception:
+        instance_list = [{'id': 0}]
+
+    now = time.time()
+
+    for inst in instance_list:
+        inst_id = inst.get('id', 0)
+        lists = _get_import_lists(inst_id)
+        changed = False
+
+        for i, lst in enumerate(lists):
+            if not lst.get('enabled', True):
+                continue
+
+            interval_sec = lst.get('sync_interval_hours', 12) * 3600
+            last_sync = lst.get('last_sync') or 0
+
+            if now - last_sync < interval_sec:
+                continue
+
+            logger.info("Auto-sync import list: %s (instance %s)", lst.get('name', '?'), inst_id)
+            result = _run_sync(lst, inst_id)
+            lst['last_sync'] = now
+            lst['last_sync_count'] = result.get('added', 0)
+            lst['last_error'] = result.get('error')
+            lists[i] = lst
+            changed = True
+
+        if changed:
+            _save_import_lists(lists, inst_id)

@@ -1302,6 +1302,39 @@ def start_prowlarr_stats_thread():
     prowlarr_stats_thread.start()
     logger.info(f"Prowlarr stats refresher started. Thread is alive: {prowlarr_stats_thread.is_alive()}")
 
+# ---------------------------------------------------------------------------
+# Import Lists sync thread
+# ---------------------------------------------------------------------------
+_import_list_sync_thread = None
+
+
+def _import_list_sync_loop():
+    """Background loop: check import lists for sync every 5 minutes."""
+    while not stop_event.is_set():
+        try:
+            from src.primary.routes.movie_hunt.import_lists import run_import_list_sync_cycle
+            run_import_list_sync_cycle()
+        except Exception as e:
+            logger.error(f"Import list sync cycle error: {e}")
+        # Wait 5 minutes between checks
+        stop_event.wait(300)
+
+
+def _start_import_list_sync_thread():
+    """Start the Import Lists background sync thread."""
+    global _import_list_sync_thread
+    if _import_list_sync_thread and _import_list_sync_thread.is_alive():
+        logger.info("Import Lists sync thread already running")
+        return
+    _import_list_sync_thread = threading.Thread(
+        target=_import_list_sync_loop,
+        name="ImportListSync",
+        daemon=True,
+    )
+    _import_list_sync_thread.start()
+    logger.info("Import Lists sync thread started")
+
+
 def start_swaparr_thread():
     """Start the dedicated Swaparr processing thread"""
     global swaparr_thread
@@ -1354,7 +1387,14 @@ def start_huntarr():
         logger.info("Schedule action engine started successfully")
     except Exception as e:
         logger.error(f"Failed to start schedule action engine: {e}")
-        
+
+    # Start Import Lists background sync thread
+    try:
+        _start_import_list_sync_thread()
+        logger.info("Import Lists sync thread started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start Import Lists sync thread: {e}")
+
     # Configuration logging has been disabled to reduce log spam
     # Settings are loaded and used internally without verbose logging
 

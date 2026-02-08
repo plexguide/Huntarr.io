@@ -133,7 +133,7 @@ let huntarrUI = {
         } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-settings') {
             console.log('[huntarrUI] Initialization - showing nzb hunt sidebar');
             this.showNzbHuntSidebar();
-        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'settings-sizes' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-root-folders') {
+        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'settings-sizes' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-import-lists' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings') {
@@ -531,7 +531,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -1011,6 +1011,10 @@ let huntarrUI = {
                 document.getElementById('settingsClientsSection').classList.remove('active');
                 document.getElementById('settingsClientsSection').style.display = 'none';
             }
+            if (document.getElementById('settingsImportListsSection')) {
+                document.getElementById('settingsImportListsSection').classList.remove('active');
+                document.getElementById('settingsImportListsSection').style.display = 'none';
+            }
             if (document.getElementById('settingsRootFoldersSection')) {
                 document.getElementById('settingsRootFoldersSection').classList.remove('active');
                 document.getElementById('settingsRootFoldersSection').style.display = 'none';
@@ -1052,6 +1056,10 @@ let huntarrUI = {
             if (document.getElementById('settingsClientsSection')) {
                 document.getElementById('settingsClientsSection').classList.remove('active');
                 document.getElementById('settingsClientsSection').style.display = 'none';
+            }
+            if (document.getElementById('settingsImportListsSection')) {
+                document.getElementById('settingsImportListsSection').classList.remove('active');
+                document.getElementById('settingsImportListsSection').style.display = 'none';
             }
             if (document.getElementById('settingsRootFoldersSection')) {
                 document.getElementById('settingsRootFoldersSection').classList.remove('active');
@@ -1124,6 +1132,10 @@ let huntarrUI = {
             if (document.getElementById('settingsClientsSection')) {
                 document.getElementById('settingsClientsSection').classList.remove('active');
                 document.getElementById('settingsClientsSection').style.display = 'none';
+            }
+            if (document.getElementById('settingsImportListsSection')) {
+                document.getElementById('settingsImportListsSection').classList.remove('active');
+                document.getElementById('settingsImportListsSection').style.display = 'none';
             }
             if (document.getElementById('settingsRootFoldersSection')) {
                 document.getElementById('settingsRootFoldersSection').classList.remove('active');
@@ -1231,6 +1243,28 @@ let huntarrUI = {
             this.showMovieHuntSidebar();
             if (window.SettingsForms && typeof window.SettingsForms.refreshClientsList === 'function') {
                 window.SettingsForms.refreshClientsList();
+            }
+        } else if (section === 'settings-import-lists' && document.getElementById('settingsImportListsSection')) {
+            document.getElementById('settingsImportListsSection').classList.add('active');
+            document.getElementById('settingsImportListsSection').style.display = 'block';
+            if (document.getElementById('movieHuntSettingsImportListsNav')) document.getElementById('movieHuntSettingsImportListsNav').classList.add('active');
+            if (document.getElementById('instanceManagementSection')) {
+                document.getElementById('instanceManagementSection').classList.remove('active');
+                document.getElementById('instanceManagementSection').style.display = 'none';
+            }
+            if (document.getElementById('movieManagementSection')) {
+                document.getElementById('movieManagementSection').classList.remove('active');
+                document.getElementById('movieManagementSection').style.display = 'none';
+            }
+            if (document.getElementById('settingsSizesSection')) {
+                document.getElementById('settingsSizesSection').classList.remove('active');
+                document.getElementById('settingsSizesSection').style.display = 'none';
+            }
+            newTitle = 'Import Lists';
+            this.currentSection = 'settings-import-lists';
+            this.showMovieHuntSidebar();
+            if (window.ImportLists && typeof window.ImportLists.refreshList === 'function') {
+                window.ImportLists.refreshList();
             }
         } else if (section === 'settings-root-folders' && document.getElementById('settingsRootFoldersSection')) {
             document.getElementById('settingsRootFoldersSection').classList.add('active');
@@ -1463,7 +1497,7 @@ let huntarrUI = {
 
     /** When on Settings subpages: hide Huntarr+Home, Media Collection, Activity. When on Activity (Queue/History/Blocklist/Logs): hide Huntarr+Home, Settings. */
     _updateMovieHuntSidebarSettingsOnlyVisibility: function() {
-        var settingsSections = ['movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-root-folders'];
+        var settingsSections = ['movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders'];
         var activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt'];
         var onSettings = settingsSections.indexOf(this.currentSection) !== -1;
         var onActivity = activitySections.indexOf(this.currentSection) !== -1;

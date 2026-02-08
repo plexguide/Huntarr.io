@@ -1,0 +1,351 @@
+/* ============================================================
+   Import Lists — Cards, Modals, Type Picker
+   ============================================================ */
+
+/* Header with Sync All button */
+.import-lists-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+.import-lists-header h3 { margin: 0; }
+.import-lists-help {
+    color: rgba(255,255,255,.55);
+    font-size: 13px;
+    margin: 4px 0 0;
+}
+.btn-sync-all {
+    background: rgba(139,92,246,.25);
+    color: #c4b5fd;
+    border: 1px solid rgba(139,92,246,.35);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    transition: background .2s, border-color .2s;
+}
+.btn-sync-all:hover {
+    background: rgba(139,92,246,.4);
+    border-color: rgba(139,92,246,.55);
+}
+
+/* ---- List cards ---- */
+.import-list-card {
+    border-radius: 12px;
+    background: rgba(30,30,50,.7);
+    border: 1px solid rgba(139,92,246,.2);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color .2s, box-shadow .2s;
+}
+.import-list-card:hover {
+    border-color: rgba(139,92,246,.45);
+    box-shadow: 0 0 12px rgba(139,92,246,.12);
+}
+.import-list-card.disabled-list {
+    opacity: .55;
+}
+
+.import-list-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px 8px;
+}
+.import-list-card-icon {
+    font-size: 22px;
+    color: #a78bfa;
+    width: 32px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.import-list-card-title {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.import-list-card-name {
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.import-list-card-type {
+    font-size: 11px;
+    color: rgba(255,255,255,.45);
+    margin-top: 2px;
+}
+
+.import-list-card-body {
+    padding: 4px 16px 10px;
+    flex: 1;
+}
+
+/* Badges */
+.import-list-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+.import-list-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.badge-enabled  { background: rgba(34,197,94,.18); color: #4ade80; }
+.badge-disabled { background: rgba(239,68,68,.18); color: #f87171; }
+.badge-interval { background: rgba(139,92,246,.15); color: #c4b5fd; }
+
+/* Stats row */
+.import-list-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.import-list-stat {
+    font-size: 11px;
+    color: rgba(255,255,255,.5);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.import-list-stat.stat-error { color: #f87171; }
+
+/* Footer buttons */
+.import-list-card-footer {
+    display: flex;
+    border-top: 1px solid rgba(255,255,255,.06);
+    background: rgba(0,0,0,.15);
+}
+.import-list-card-footer .btn-card {
+    flex: 1;
+    padding: 8px 0;
+    text-align: center;
+    font-size: 12px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.6);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+.import-list-card-footer .btn-card:hover {
+    background: rgba(139,92,246,.15);
+    color: #c4b5fd;
+}
+.import-list-card-footer .btn-card + .btn-card {
+    border-left: 1px solid rgba(255,255,255,.06);
+}
+
+/* ---- Modal (shared) ---- */
+.import-list-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.import-list-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(4px);
+}
+.import-list-modal-content {
+    position: relative;
+    background: #1a1a2e;
+    border: 1px solid rgba(139,92,246,.3);
+    border-radius: 16px;
+    width: 90vw;
+    max-width: 560px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 28px 32px 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+.import-list-modal-header {
+    margin-bottom: 20px;
+    position: relative;
+}
+.import-list-modal-close {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.5);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+}
+.import-list-modal-close:hover { color: #fff; }
+.import-list-modal-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+}
+.import-list-modal-subtitle {
+    color: rgba(255,255,255,.5);
+    font-size: 13px;
+    margin: 6px 0 0;
+}
+
+/* ---- Type picker grid ---- */
+.import-list-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+.import-list-type-card {
+    background: rgba(30,30,50,.8);
+    border: 1px solid rgba(139,92,246,.2);
+    border-radius: 12px;
+    padding: 20px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s, transform .15s;
+}
+.import-list-type-card:hover {
+    border-color: rgba(139,92,246,.5);
+    background: rgba(139,92,246,.1);
+    transform: translateY(-2px);
+}
+.import-list-type-icon {
+    font-size: 28px;
+    color: #a78bfa;
+    margin-bottom: 10px;
+}
+.import-list-type-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+.import-list-type-oauth {
+    font-size: 10px;
+    color: rgba(255,255,255,.4);
+    margin-top: 6px;
+}
+
+/* ---- Config form ---- */
+.import-list-config-form { }
+.import-list-config-back {
+    color: #a78bfa;
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.import-list-config-back:hover { color: #c4b5fd; }
+
+.import-list-form-group {
+    margin-bottom: 14px;
+}
+.import-list-form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,.7);
+    margin-bottom: 5px;
+}
+
+/* OAuth buttons */
+.btn-trakt-auth, .btn-plex-auth {
+    background: rgba(139,92,246,.2);
+    color: #c4b5fd;
+    border: 1px solid rgba(139,92,246,.35);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .2s;
+}
+.btn-trakt-auth:hover, .btn-plex-auth:hover {
+    background: rgba(139,92,246,.35);
+}
+.trakt-auth-status, .plex-auth-status {
+    margin-left: 12px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Form actions */
+.import-list-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,.06);
+}
+.import-list-form-actions .btn-cancel {
+    background: rgba(255,255,255,.08);
+    color: rgba(255,255,255,.7);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.import-list-form-actions .btn-save {
+    background: rgba(139,92,246,.35);
+    color: #e0d5ff;
+    border: 1px solid rgba(139,92,246,.5);
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.import-list-form-actions .btn-save:hover { background: rgba(139,92,246,.5); }
+.import-list-form-actions .btn-delete {
+    background: rgba(239,68,68,.2);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,.3);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: auto;
+}
+.import-list-form-actions .btn-delete:hover { background: rgba(239,68,68,.35); }
+
+/* ---- Responsive ---- */
+@media (max-width: 600px) {
+    .import-list-modal-content {
+        width: 95vw;
+        padding: 20px 16px;
+    }
+    .import-list-type-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .import-lists-header {
+        flex-direction: column;
+    }
+}
