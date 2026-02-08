@@ -657,56 +657,14 @@ select.form-control {
     100% { background-position: 0% 50%; }
 }
 
-/* Top Bar */
+/* Top Bar - base styles (main styling in topbar.html component) */
 .top-bar {
-    height: 48px;
-    background: linear-gradient(135deg, #1e2738 0%, #0e1420 50%, #101824 75%, rgba(18, 25, 38, 0.95) 100%);
-    background-size: 100% 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    border-bottom: 1px solid rgba(90, 109, 137, 0.15);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
     position: relative;
 }
 
-/* Add subtle highlight to the bottom of the topbar */
-.top-bar::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, rgba(52, 152, 219, 0.3), rgba(155, 89, 182, 0.3)); /* Sonarr blue to Whisparr purple */
-    z-index: 1;
-}
+/* Page title styled in topbar.html component */
 
-.page-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-}
-
-.user-info span {
-    margin-right: 12px;
-}
-
-.logout-btn {
-    color: var(--text-secondary);
-    transition: color 0.3s;
-}
-
-.logout-btn:hover {
-    color: var(--error-color);
-}
+/* User info & logout - base styles (main styling in topbar.html component) */
 
 /* Content Sections - Strict section isolation */
 .content-section {
@@ -1741,16 +1699,7 @@ input:checked + .toggle-slider:before {
 
 /* Ensure very small screens can still access everything */
 @media (max-width: 480px) {
-    .top-bar {
-        flex-direction: column;
-        align-items: flex-start;
-        height: auto;
-        padding: 10px 15px;
-    }
-
-    .user-info {
-        margin-top: 10px;
-    }
+    /* Top bar handled in topbar.html component */
 
     .action-buttons {
         flex-direction: column;

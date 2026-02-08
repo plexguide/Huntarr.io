@@ -125,17 +125,10 @@ button {
     min-width: 0;
 }
 
-/* Top Bar */
+/* Top Bar - base structure (main styling in topbar.html component) */
 .top-bar {
-    height: 48px;
-    background-color: var(--topbar-bg);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     flex-shrink: 0; /* Prevent top-bar from shrinking */
+    position: relative;
 }
 
 /* CRITICAL FIX: Content sections must fill remaining space exactly */
@@ -302,26 +295,7 @@ input:checked + .slider:before {
     color: var(--text-primary);
 }
 
-.user-info {
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-}
-
-.user-info span {
-    margin-right: 12px;
-}
-
-.logout-btn {
-    color: var(--text-secondary);
-    transition: color 0.3s;
-}
-
-.logout-btn:hover {
-    color: var(--error-color);
-}
-
-/* REMOVED DUPLICATE - Using flex-based approach above */
+/* User info & logout - base styles (main styling in topbar.html component) */
 
 /* Responsive adjustments for mobile view - FLEX BASED */
 @media (max-width: 768px) {
@@ -1050,16 +1024,6 @@ input:checked + .toggle-slider:before {
         transform: none !important;
         justify-content: center !important;
     }
-    
-    /* Version bar */
-    .version-bar {
-        flex-wrap: wrap !important;
-        gap: 8px !important;
-    }
-    
-    .version-item, .developer-credit {
-        font-size: 12px !important;
-    }
 }
 
 @media (max-width: 480px) {
@@ -1079,13 +1043,7 @@ input:checked + .toggle-slider:before {
         grid-template-columns: repeat(2, 1fr);
     }
     
-    .version-bar {
-        gap: 8px;
-    }
-    
-    .version-divider {
-        display: none;
-    }
+    /* Version info handled in topbar.html component */
 }
 
 /* Footer */

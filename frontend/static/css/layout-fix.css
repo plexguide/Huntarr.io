@@ -37,14 +37,11 @@ html, body {
 
 /* FORCE TOP BAR TO STAY VISIBLE AND FIXED HEIGHT */
 .top-bar {
-    height: 48px !important;
+    height: 44px !important;
     flex-shrink: 0 !important;
     display: flex !important;
-    background-color: var(--topbar-bg) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    padding: 0 20px !important;
+    padding: 0 24px !important;
     align-items: center !important;
-    justify-content: space-between !important;
 }
 
 /* FORCE CONTENT SECTIONS TO FILL REMAINING SPACE */
@@ -83,7 +80,7 @@ html, body {
     /* CRITICAL: Keep top-bar visible on mobile */
     .top-bar {
         display: flex !important;
-        height: 48px !important;
+        height: 44px !important;
         flex-shrink: 0 !important;
     }
     

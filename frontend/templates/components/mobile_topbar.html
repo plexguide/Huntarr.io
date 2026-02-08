@@ -1,72 +1,80 @@
-<!-- Mobile-specific topbar - clean and simple design -->
+<!-- Mobile-specific topbar - matching desktop design language -->
 <div id="mobile-topbar" class="mobile-topbar">
+    <!-- Animated gradient accent line -->
+    <div class="mobile-accent-line"></div>
+    
     <div class="mobile-topbar-content">
         <!-- Left side: Current section title -->
         <div class="mobile-topbar-left">
             <span class="mobile-app-title" id="mobilePageTitle">Home</span>
         </div>
         
-        <!-- Right side: Version info -->
+        <!-- Right side: Chips -->
         <div class="mobile-topbar-right">
-            <div class="mobile-version-container">
-                <div class="mobile-version-item mobile-star-item">
+            <div class="mobile-chip-strip">
+                <a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener" class="mobile-chip mobile-star-chip">
                     <i class="fas fa-star"></i>
-                    <a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener">
-                        <span id="mobile-github-stars">--</span>
-                    </a>
+                    <span id="mobile-github-stars">--</span>
+                </a>
+                <div class="mobile-chip mobile-version-chip">
+                    <i class="fas fa-code-branch"></i>
+                    <span id="mobile-current-version">--</span>
                 </div>
-                <div class="mobile-version-item">
-                    <i class="fas fa-info-circle"></i>
-                    <span id="mobile-current-version">8.1.4</span>
-                </div>
-                <div class="mobile-version-item">
-                    <i class="fas fa-download"></i>
-                    <span id="mobile-latest-version">8.1.4</span>
-                </div>
+                <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="mobile-chip mobile-latest-chip">
+                    <i class="fas fa-arrow-up"></i>
+                    <span id="mobile-latest-version">--</span>
+                </a>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-/* Mobile topbar styling */
+/* ===== MOBILE TOPBAR CORE ===== */
 .mobile-topbar {
-    display: none; /* Hidden by default, shown only in mobile */
-    background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
-    backdrop-filter: blur(10px);
-    padding: 12px 16px;
+    display: none;
+    background: linear-gradient(135deg, 
+        rgba(22, 30, 44, 0.98) 0%, 
+        rgba(15, 22, 35, 0.98) 40%, 
+        rgba(18, 26, 40, 0.98) 70%, 
+        rgba(22, 30, 44, 0.98) 100%
+    );
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 10px 16px;
     position: sticky;
     top: 0;
     z-index: 100;
     width: 100%;
     box-sizing: border-box;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
-/* Top color line - matching desktop topbar */
-.mobile-topbar::before {
-    content: '';
+/* ===== ANIMATED ACCENT LINE ===== */
+.mobile-accent-line {
     position: absolute;
-    top: 0;
+    bottom: -1px;
     left: 0;
     right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(52, 152, 219, 0.6), rgba(155, 89, 182, 0.6)); /* Sonarr blue to Whisparr purple */
-    box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); /* Add subtle glow */
-    z-index: 2;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        #3498db 0%,
+        #2ecc71 20%, 
+        #f39c12 40%, 
+        #e74c3c 60%, 
+        #9b59b6 80%, 
+        #3498db 100%
+    );
+    background-size: 200% 100%;
+    animation: mobile-gradient-flow 8s linear infinite;
+    z-index: 10;
+    opacity: 0.7;
 }
 
-/* Bottom color line - matching desktop topbar */
-.mobile-topbar::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(52, 152, 219, 0.6), rgba(155, 89, 182, 0.6)); /* Sonarr blue to Whisparr purple */
-    z-index: 1;
+@keyframes mobile-gradient-flow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
 }
 
 .mobile-topbar-content {
@@ -78,95 +86,112 @@
 
 .mobile-topbar-left {
     flex: 1;
+    min-width: 0;
 }
 
 .mobile-app-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
-    color: #e2e8f0;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    color: #e8ecf2;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .mobile-topbar-right {
     flex-shrink: 0;
 }
 
-.mobile-version-container {
+/* ===== MOBILE CHIPS ===== */
+.mobile-chip-strip {
     display: flex;
-    gap: 8px;
+    gap: 5px;
     align-items: center;
 }
 
-.mobile-version-item {
-    display: flex;
+.mobile-chip {
+    display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: rgba(52, 152, 219, 0.15);
-    border: 1px solid rgba(52, 152, 219, 0.3);
-    border-radius: 6px;
-    padding: 4px 8px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 12px;
     font-size: 11px;
-    color: #3498db;
-    font-weight: 600;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid transparent;
     white-space: nowrap;
+    transition: all 0.2s ease;
 }
 
-.mobile-version-item.mobile-star-item {
-    background: rgba(255, 193, 7, 0.15);
-    border: 1px solid rgba(255, 193, 7, 0.35);
-    color: #f5c542;
-}
-
-.mobile-version-item.mobile-star-item a {
-    color: inherit;
-    font-weight: inherit;
-}
-
-.mobile-version-item.mobile-star-item i {
-    color: #ffd166;
-}
-
-.mobile-version-item i {
-    font-size: 10px;
+.mobile-chip i {
+    font-size: 9px;
     opacity: 0.8;
 }
 
-/* Show mobile topbar only on mobile screens */
+/* Star chip */
+.mobile-star-chip {
+    background: rgba(255, 193, 7, 0.10);
+    border-color: rgba(255, 193, 7, 0.25);
+    color: #f5d060;
+}
+.mobile-star-chip i { color: #ffd700; }
+
+/* Version chip */
+.mobile-version-chip {
+    background: rgba(52, 152, 219, 0.08);
+    border-color: rgba(52, 152, 219, 0.18);
+    color: #7cb8e4;
+}
+.mobile-version-chip i { color: #3498db; }
+
+/* Latest chip */
+.mobile-latest-chip {
+    background: rgba(46, 204, 113, 0.08);
+    border-color: rgba(46, 204, 113, 0.18);
+    color: #7cd4a0;
+}
+.mobile-latest-chip i { color: #2ecc71; }
+
+/* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 768px) {
     .mobile-topbar {
         display: block !important;
-        /* Extra left padding so title has breathing room from the sidebar */
         padding-left: 24px !important;
     }
     
-    /* Hide the original topbar in mobile */
     .topbar {
         display: none !important;
     }
 }
 
-/* Even more compact for very small screens */
 @media (max-width: 480px) {
     .mobile-topbar {
-        padding: 10px 12px;
+        padding: 8px 12px;
     }
     
     .mobile-app-title {
-        font-size: 16px;
+        font-size: 14px;
     }
     
-    .mobile-version-container {
-        gap: 6px;
+    .mobile-chip-strip {
+        gap: 4px;
     }
     
-    .mobile-version-item {
-        padding: 3px 6px;
+    .mobile-chip {
+        padding: 0 6px;
         font-size: 10px;
-        gap: 3px;
+        height: 22px;
     }
     
-    .mobile-version-item i {
-        font-size: 9px;
+    .mobile-chip i {
+        font-size: 8px;
+    }
+    
+    /* Hide latest on very small screens */
+    .mobile-latest-chip {
+        display: none;
     }
 }
 </style>
@@ -182,7 +207,6 @@ function updateMobilePageTitle(title) {
 
 // Update mobile topbar version info
 function updateMobileVersionInfo() {
-    // Get version info from localStorage (same as main topbar)
     try {
         const versionInfo = localStorage.getItem('huntarr-version-info');
         if (versionInfo) {
@@ -234,10 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Observe the main page title for changes
     const pageTitleElement = document.getElementById('currentPageTitle');
     if (pageTitleElement) {
-        // Set initial title
         updateMobilePageTitle(pageTitleElement.textContent);
-        
-        // Observe for changes
         observer.observe(pageTitleElement, {
             childList: true,
             characterData: true,
@@ -253,6 +274,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Make updateMobilePageTitle available globally so it can be called from switchSection
+// Make updateMobilePageTitle available globally
 window.updateMobilePageTitle = updateMobilePageTitle;
-</script> 
+</script>

@@ -1,84 +1,104 @@
 <div class="top-bar">
-    <!-- Add color line at the top of the topbar -->
-    <div class="top-color-line"></div>
+    <!-- Animated gradient accent line -->
+    <div class="topbar-accent-line"></div>
+    
     <div class="topbar-section left">
         <div class="page-title" id="currentPageTitle"></div>
     </div>
+    
     <div class="topbar-section center">
-        <div class="version-bar">
-            <div class="version-item">
-                <i class="fas fa-code-branch version-icon"></i>
-                <span>Ver: <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank"><span id="version-value" style="display: none;"></span></a></span>
-            </div>
-            <div class="version-divider"></div>
-            <div class="version-item">
-                <i class="fas fa-cloud-download-alt version-icon"></i>
-                <span>Latest: <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank"><span id="latest-version-value" style="display: none;"></span></a></span>
-            </div>
-            <div class="version-divider"></div>
-            <div class="version-item version-bubble star-bubble">
-                <i class="fas fa-star version-icon star-icon"></i>
-                <span><a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener"><span id="github-stars-value" style="font-weight: bold;">764</span></a></span>
-            </div>
-            <div class="version-divider"></div>
-            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" rel="noopener" class="version-item version-social-link" title="Join Huntarr on Discord" aria-label="Discord">
-                <i class="fab fa-discord version-social-icon discord-icon"></i>
+        <div class="topbar-info-strip">
+            <!-- Version chip -->
+            <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="topbar-chip version-chip" title="Current version">
+                <span class="chip-icon"><i class="fas fa-code-branch"></i></span>
+                <span class="chip-label">v</span><span id="version-value" class="chip-value" style="display: none;"></span>
             </a>
-            <a href="https://www.reddit.com/r/huntarr/" target="_blank" rel="noopener" class="version-item version-social-link" title="Huntarr on Reddit" aria-label="Reddit">
-                <i class="fab fa-reddit version-social-icon reddit-icon"></i>
+            
+            <!-- Latest chip -->
+            <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="topbar-chip latest-chip" title="Latest release">
+                <span class="chip-icon"><i class="fas fa-arrow-up"></i></span>
+                <span id="latest-version-value" class="chip-value" style="display: none;"></span>
             </a>
+            
+            <!-- Star chip -->
+            <a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener" class="topbar-chip star-chip" title="GitHub Stars">
+                <span class="chip-icon"><i class="fas fa-star"></i></span>
+                <span id="github-stars-value" class="chip-value">--</span>
+            </a>
+            
+            <!-- Social icons -->
+            <div class="topbar-social-group">
+                <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" rel="noopener" class="topbar-social-btn discord-btn" title="Join Discord" aria-label="Discord">
+                    <i class="fab fa-discord"></i>
+                </a>
+                <a href="https://www.reddit.com/r/huntarr/" target="_blank" rel="noopener" class="topbar-social-btn reddit-btn" title="Visit Reddit" aria-label="Reddit">
+                    <i class="fab fa-reddit-alien"></i>
+                </a>
+            </div>
         </div>
     </div>
+    
     <div class="topbar-section right">
         <div class="user-info" id="userInfoContainer">
+            <div class="user-avatar" id="userAvatar">
+                <i class="fas fa-user"></i>
+            </div>
             <span id="username">User</span>
-            <a href="#" id="logoutLink" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+            <a href="#" id="logoutLink" class="logout-btn" title="Sign out"><i class="fas fa-sign-out-alt"></i></a>
         </div>
     </div>
 </div>
 
 <style>
+    /* ===== TOPBAR CORE ===== */
     .top-bar {
-        height: 30px; /* Reduced height without shrinking content */
-        background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
+        height: 44px;
+        background: linear-gradient(135deg, 
+            rgba(22, 30, 44, 0.98) 0%, 
+            rgba(15, 22, 35, 0.98) 40%, 
+            rgba(18, 26, 40, 0.98) 70%, 
+            rgba(22, 30, 44, 0.98) 100%
+        );
         display: flex;
         align-items: center;
-        padding: 0 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        border-bottom: 1px solid rgba(90, 109, 137, 0.15);
-        position: sticky;
-        top: 0;
-        z-index: 100;
+        padding: 0 24px;
         position: relative;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(5px); /* Add subtle blur effect for depth */
-        border-radius: 0 0 12px 12px; /* Slightly rounded bottom corners */
+        z-index: 100;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        box-shadow: 
+            0 1px 0 rgba(255, 255, 255, 0.02) inset,
+            0 4px 16px rgba(0, 0, 0, 0.25);
     }
-    
-    /* Top color line */
-    .top-color-line {
+
+    /* ===== ANIMATED ACCENT LINE ===== */
+    .topbar-accent-line {
         position: absolute;
-        top: 0;
+        bottom: -1px;
         left: 0;
         right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, rgba(52, 152, 219, 0.6), rgba(155, 89, 182, 0.6)); /* Sonarr blue to Whisparr purple */
-        z-index: 2;
-        box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); /* Add subtle glow */
+        height: 2px;
+        background: linear-gradient(90deg, 
+            #3498db 0%,
+            #2ecc71 20%, 
+            #f39c12 40%, 
+            #e74c3c 60%, 
+            #9b59b6 80%, 
+            #3498db 100%
+        );
+        background-size: 200% 100%;
+        animation: topbar-gradient-flow 8s linear infinite;
+        z-index: 10;
+        opacity: 0.7;
     }
     
-    /* Add subtle colored accent to the bottom of the top bar */
-    .top-bar::before {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, rgba(52, 152, 219, 0.6), rgba(155, 89, 182, 0.6)); /* Sonarr blue to Whisparr purple */
-        z-index: 1;
+    @keyframes topbar-gradient-flow {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
     }
-    
+
+    /* ===== LAYOUT SECTIONS ===== */
     .topbar-section {
         display: flex;
         align-items: center;
@@ -88,225 +108,281 @@
     .topbar-section.left {
         flex: 1;
         justify-content: flex-start;
+        min-width: 0;
     }
     
     .topbar-section.center {
-        flex: 1;
+        flex: 0 1 auto;
         justify-content: center;
-        align-items: center;
-        display: flex;
-        position: static;
-        left: unset;
-        transform: unset;
-        width: auto;
     }
     
     .topbar-section.right {
         flex: 1;
         justify-content: flex-end;
+        min-width: 0;
     }
-    
-    /* Page title styling */
+
+    /* ===== PAGE TITLE ===== */
     .top-bar .page-title {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
-        color: #ffffff;
-        text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-        letter-spacing: 0.5px;
+        color: #e8ecf2;
+        letter-spacing: 0.3px;
         line-height: 1;
         margin: 0;
         padding: 0;
         height: 100%;
         display: flex;
         align-items: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
+    
     .top-bar .page-title .client-editor-title-app {
         color: #f59e0b;
         font-weight: 700;
     }
-    
-    .version-bar {
+
+    /* ===== INFO STRIP ===== */
+    .topbar-info-strip {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         white-space: nowrap;
-        background: rgba(20, 30, 45, 0.4);
-        border-radius: 6px;
-        padding: 4px 10px;
-        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(90, 109, 137, 0.15);
+    }
+
+    /* ===== CHIP BASE ===== */
+    .topbar-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 26px;
+        padding: 0 10px;
+        border-radius: 13px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
     }
     
-    .version-item {
+    .topbar-chip::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+    
+    .topbar-chip:hover {
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .chip-icon {
+        display: flex;
+        align-items: center;
+        font-size: 10px;
+        opacity: 0.8;
+    }
+    
+    .chip-label {
+        opacity: 0.6;
+        font-weight: 500;
+    }
+    
+    .chip-value {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ===== VERSION CHIP ===== */
+    .version-chip {
+        background: rgba(52, 152, 219, 0.08);
+        border-color: rgba(52, 152, 219, 0.18);
+        color: #7cb8e4;
+    }
+    
+    .version-chip .chip-icon { color: #3498db; }
+    .version-chip .chip-value { color: #a8d4f0; }
+    
+    .version-chip:hover {
+        background: rgba(52, 152, 219, 0.16);
+        border-color: rgba(52, 152, 219, 0.35);
+        color: #a8d4f0;
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.15);
+    }
+
+    /* ===== LATEST CHIP ===== */
+    .latest-chip {
+        background: rgba(46, 204, 113, 0.08);
+        border-color: rgba(46, 204, 113, 0.18);
+        color: #7cd4a0;
+    }
+    
+    .latest-chip .chip-icon { color: #2ecc71; }
+    .latest-chip .chip-value { color: #a8e6c5; }
+    
+    .latest-chip:hover {
+        background: rgba(46, 204, 113, 0.16);
+        border-color: rgba(46, 204, 113, 0.35);
+        color: #a8e6c5;
+        box-shadow: 0 2px 8px rgba(46, 204, 113, 0.15);
+    }
+
+    /* ===== STAR CHIP ===== */
+    .star-chip {
+        background: rgba(255, 193, 7, 0.10);
+        border-color: rgba(255, 193, 7, 0.25);
+        color: #f5d060;
+    }
+    
+    .star-chip .chip-icon { 
+        color: #ffd700;
+        animation: star-glow 3s ease-in-out infinite alternate;
+    }
+    .star-chip .chip-value { color: #f5d060; font-weight: 800; }
+    
+    .star-chip:hover {
+        background: rgba(255, 193, 7, 0.18);
+        border-color: rgba(255, 193, 7, 0.4);
+        box-shadow: 0 2px 10px rgba(255, 193, 7, 0.2);
+    }
+    
+    @keyframes star-glow {
+        0% { filter: drop-shadow(0 0 1px rgba(255, 215, 0, 0.3)); }
+        100% { filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.7)); }
+    }
+
+    /* ===== SOCIAL BUTTONS ===== */
+    .topbar-social-group {
         display: flex;
         align-items: center;
         gap: 4px;
-        font-size: 12px;
-        color: #e0e6ed;
-        transition: all 0.2s ease;
-    }
-
-    .version-item.version-bubble {
-        background: rgba(52, 152, 219, 0.12);
-        border: 1px solid rgba(52, 152, 219, 0.25);
-        border-radius: 6px;
-        padding: 2px 8px;
-    }
-
-    .version-item.star-bubble {
-        background: rgba(255, 193, 7, 0.15);
-        border-color: rgba(255, 193, 7, 0.35);
-        color: #f5c542;
-    }
-
-    .version-item.star-bubble a {
-        color: inherit;
-        font-weight: inherit;
+        margin-left: 4px;
     }
     
-    .version-item:hover {
-        transform: translateY(-1px);
-    }
-    
-    .version-divider {
-        width: 1px;
-        height: 14px;
-        background-color: rgba(120, 140, 180, 0.3);
-    }
-    
-    .version-icon {
-        color: #3498db;
-        font-size: 13px;
-        filter: drop-shadow(0 0 2px rgba(52, 152, 219, 0.4));
-    }
-    
-    .star-icon {
-        color: #ffd700;
-        animation: star-pulse 3s infinite alternate;
-    }
-    
-    @keyframes star-pulse {
-        0% { filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.4)); }
-        100% { filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8)); }
-    }
-    
-    .version-bar a {
-        color: #3498db;
+    .topbar-social-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        border: 1px solid transparent;
         text-decoration: none;
-        font-weight: 600;
-        transition: all 0.2s ease;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 13px;
         position: relative;
     }
     
-    .version-bar a::after {
-        content: '';
-        position: absolute;
-        width: 0;
-        height: 1px;
-        bottom: -1px;
-        left: 0;
-        background-color: #3498db;
-        transition: width 0.3s ease;
+    .topbar-social-btn:hover {
+        transform: translateY(-1px) scale(1.05);
+        text-decoration: none;
     }
     
-    .version-bar a:hover {
-        color: #5dade2;
-    }
-    
-    .version-bar a:hover::after {
-        width: 100%;
-    }
-    
-    /* Social links (Discord, Reddit) - icon only, open in new tab */
-    .version-social-link {
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        padding: 2px 6px !important;
-        border-radius: 6px;
-        text-decoration: none !important;
-        border: 1px solid transparent;
-        transition: all 0.2s ease;
-    }
-    .version-social-link::after {
-        display: none !important;
-    }
-    .version-social-icon {
-        font-size: 14px;
-    }
-    .version-social-link .discord-icon {
+    /* Discord */
+    .discord-btn {
         color: #5865f2;
+        background: rgba(88, 101, 242, 0.06);
     }
-    .version-social-link:hover .discord-icon {
+    .discord-btn:hover {
         color: #7289da;
+        background: rgba(88, 101, 242, 0.18);
+        border-color: rgba(88, 101, 242, 0.3);
+        box-shadow: 0 2px 8px rgba(88, 101, 242, 0.2);
     }
-    .version-social-link:has(.discord-icon):hover {
-        background: rgba(88, 101, 242, 0.15);
-        border-color: rgba(88, 101, 242, 0.35);
-    }
-    .version-social-link .reddit-icon {
+    
+    /* Reddit */
+    .reddit-btn {
         color: #ff4500;
+        background: rgba(255, 69, 0, 0.06);
     }
-    .version-social-link:hover .reddit-icon {
-        color: #ff5722;
+    .reddit-btn:hover {
+        color: #ff6633;
+        background: rgba(255, 69, 0, 0.18);
+        border-color: rgba(255, 69, 0, 0.3);
+        box-shadow: 0 2px 8px rgba(255, 69, 0, 0.2);
     }
-    .version-social-link:has(.reddit-icon):hover {
-        background: rgba(255, 69, 0, 0.15);
-        border-color: rgba(255, 69, 0, 0.35);
-    }
-    
-    .developer-credit {
-        color: #e0e6ed;
-    }
-    
-    .developer-credit a {
-        color: #3498db;
-        font-weight: 600;
-    }
-    
-    /* User info styling */
+
+    /* ===== USER INFO ===== */
     .user-info {
         display: flex;
         align-items: center;
         gap: 8px;
-        background: rgba(20, 30, 45, 0.4);
-        border-radius: 6px;
-        padding: 4px 10px;
-        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(90, 109, 137, 0.15);
-        transition: all 0.2s ease;
+        height: 30px;
+        padding: 0 10px 0 4px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .user-info:hover {
-        background: rgba(25, 35, 50, 0.6);
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .user-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: #ffffff;
+        font-weight: 700;
+        flex-shrink: 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
     
     #username {
         font-weight: 600;
-        color: #e0e6ed;
-        font-size: 13px;
+        color: #c8d0dc;
+        font-size: 12px;
+        letter-spacing: 0.2px;
     }
     
     .logout-btn {
-        color: #e74c3c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(231, 76, 60, 0.6);
         transition: all 0.2s ease;
-        opacity: 0.8;
+        font-size: 12px;
+        padding: 2px;
+        text-decoration: none;
     }
     
     .logout-btn:hover {
-        color: #ff6b6b;
-        opacity: 1;
-        transform: scale(1.1);
+        color: #e74c3c;
+        transform: scale(1.15);
+        text-decoration: none;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1100px) {
+        .chip-label { display: none; }
+        .topbar-info-strip { gap: 4px; }
+        .topbar-chip { padding: 0 8px; }
     }
     
-    /* Responsive styling */
+    @media (max-width: 900px) {
+        .latest-chip { display: none; }
+    }
+
     @media (max-width: 768px) {
-        /* Completely hide the desktop topbar on mobile */
         .top-bar {
             display: none !important;
         }
         
-        /* Sidebar related styles, preserved */
         .sidebar {
             display: flex !important;
             flex-direction: column !important;
@@ -340,9 +416,7 @@
         }
     }
     
-    /* Phone-specific styling for very small screens */
     @media (max-width: 480px) {
-        /* Ensure desktop topbar stays hidden */
         .top-bar {
             display: none !important;
         }
@@ -351,36 +425,51 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Connect to the loaded elements from home_section
         const versionElement = document.getElementById('version-value');
         const latestVersionElement = document.getElementById('latest-version-value');
         const starsElement = document.getElementById('github-stars-value');
+        const avatarElement = document.getElementById('userAvatar');
+        const usernameElement = document.getElementById('username');
         
-        // Function to get the values from localStorage if they exist
+        // Update avatar with first letter of username
+        function updateAvatar() {
+            if (usernameElement && avatarElement) {
+                const name = usernameElement.textContent || 'U';
+                const firstLetter = name.charAt(0).toUpperCase();
+                avatarElement.textContent = firstLetter;
+            }
+        }
+        
+        // Watch for username changes to update avatar
+        const usernameObserver = new MutationObserver(function() {
+            updateAvatar();
+        });
+        if (usernameElement) {
+            usernameObserver.observe(usernameElement, { childList: true, characterData: true, subtree: true });
+        }
+        
         function updateVersionInfo() {
-            // Version
             try {
                 const versionInfo = localStorage.getItem('huntarr-version-info');
                 if (versionInfo) {
                     const parsedInfo = JSON.parse(versionInfo);
                     if (parsedInfo.currentVersion) {
                         versionElement.textContent = parsedInfo.currentVersion;
-                        versionElement.style.display = 'inline'; // Show the element
+                        versionElement.style.display = 'inline';
                     }
                     if (parsedInfo.latestVersion) {
                         latestVersionElement.textContent = parsedInfo.latestVersion;
-                        latestVersionElement.style.display = 'inline'; // Show the element
+                        latestVersionElement.style.display = 'inline';
                     }
                     if (parsedInfo.betaVersion) {
                         const betaVersionElement = document.getElementById('beta-version-value');
                         if (betaVersionElement) {
                             betaVersionElement.textContent = parsedInfo.betaVersion;
-                            betaVersionElement.style.display = 'inline'; // Show the element
+                            betaVersionElement.style.display = 'inline';
                         }
                     }
                 }
                 
-                // Stars
                 const starsInfo = localStorage.getItem('huntarr-github-stars');
                 if (starsInfo) {
                     try {
@@ -397,7 +486,6 @@
             }
         }
         
-        // Fallback function to show N/A if data doesn't load within a reasonable time
         function showFallbacks() {
             setTimeout(() => {
                 if (versionElement.style.display === 'none' || !versionElement.textContent) {
@@ -408,16 +496,13 @@
                     latestVersionElement.textContent = 'N/A';
                     latestVersionElement.style.display = 'inline';
                 }
-            }, 3000); // Wait 3 seconds before showing fallback
+            }, 3000);
         }
         
-        // Initial update
         updateVersionInfo();
-        
-        // Start fallback timer
+        updateAvatar();
         showFallbacks();
         
-        // Watch for changes (in case the home page updates values)
         window.addEventListener('storage', function(e) {
             if (e.key === 'huntarr-version-info' || e.key === 'huntarr-github-stars') {
                 updateVersionInfo();
