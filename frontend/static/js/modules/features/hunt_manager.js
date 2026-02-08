@@ -125,19 +125,17 @@ const huntManagerModule = {
     // Clear hunt history
     clearHuntHistory: function() {
         const appName = this.currentApp === 'all' ? 'all apps' : this.currentApp;
-        
-        if (!confirm(`Are you sure you want to clear hunt history for ${appName}? This action cannot be undone.`)) {
-            return;
-        }
-        
-        HuntarrUtils.fetchWithTimeout(`./api/hunt-manager/${this.currentApp}`, {
+        const msg = `Are you sure you want to clear hunt history for ${appName}? This action cannot be undone.`;
+        const self = this;
+        const doClear = function() {
+            HuntarrUtils.fetchWithTimeout(`./api/hunt-manager/${self.currentApp}`, {
             method: 'DELETE'
         })
         .then(response => response.json().then(data => ({ response, data })))
         .then(({ response, data }) => {
             if (response.ok) {
-                console.log(`Cleared hunt history for ${this.currentApp}`);
-                this.loadHuntHistory();
+                console.log(`Cleared hunt history for ${self.currentApp}`);
+                self.loadHuntHistory();
                 if (huntarrUI && huntarrUI.showNotification) {
                     huntarrUI.showNotification(`Hunt history cleared for ${appName}`, 'success');
                 }
@@ -151,6 +149,13 @@ const huntManagerModule = {
                 huntarrUI.showNotification(`Error clearing hunt history: ${error.message}`, 'error');
             }
         });
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Clear Hunt History', message: msg, confirmLabel: 'Clear', onConfirm: doClear });
+        } else {
+            if (!confirm(msg)) return;
+            doClear();
+        }
     },
     
     // Load hunt history

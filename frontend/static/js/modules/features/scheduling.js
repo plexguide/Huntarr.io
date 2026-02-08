@@ -116,10 +116,18 @@ function setupEventListeners() {
                 
                 const scheduleId = deleteButton.dataset.id;
                 const appType = deleteButton.dataset.appType || 'global';
-                
-                // One single confirmation dialog
-                if (confirm('Are you sure you want to delete this schedule?')) {
-                    deleteSchedule(scheduleId, appType);
+
+                if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                    window.HuntarrConfirm.show({
+                        title: 'Delete Schedule',
+                        message: 'Are you sure you want to delete this schedule?',
+                        confirmLabel: 'Delete',
+                        onConfirm: function() { deleteSchedule(scheduleId, appType); }
+                    });
+                } else {
+                    if (confirm('Are you sure you want to delete this schedule?')) {
+                        deleteSchedule(scheduleId, appType);
+                    }
                 }
             }
         });

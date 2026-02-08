@@ -674,17 +674,12 @@ window.LogsModule = {
         const logAppSelect = document.getElementById('logAppSelect');
         const currentApp = logAppSelect ? logAppSelect.value : (this.currentLogApp || 'all');
         
-        // Show confirmation dialog
         const appText = currentApp === 'all' ? 'all logs' : `${currentApp.toUpperCase()} logs`;
-        if (!confirm(`Are you sure you want to clear ${appText}? This action cannot be undone.`)) {
-            console.log('[LogsModule] Clear logs cancelled by user');
-            return;
-        }
-        
-        console.log(`[LogsModule] Clearing logs for app: ${currentApp}`);
-        
-        // Call backend API to delete logs from database
-        HuntarrUtils.fetchWithTimeout(`./api/logs/${currentApp}/clear`, {
+        const msg = `Are you sure you want to clear ${appText}? This action cannot be undone.`;
+        const self = this;
+        const doClear = function() {
+            console.log(`[LogsModule] Clearing logs for app: ${currentApp}`);
+            HuntarrUtils.fetchWithTimeout(`./api/logs/${currentApp}/clear`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -700,8 +695,8 @@ window.LogsModule = {
             console.log('[LogsModule] Logs cleared successfully:', data);
             
             // Clear the frontend display
-            if (this.elements.logsContainer) {
-                this.elements.logsContainer.innerHTML = '';
+            if (self.elements.logsContainer) {
+                self.elements.logsContainer.innerHTML = '';
             }
             
             // Show success notification
@@ -711,7 +706,7 @@ window.LogsModule = {
             
             // Reload logs to show any new entries that may have arrived
             setTimeout(() => {
-                this.connectToLogs();
+                self.connectToLogs();
             }, 500);
         })
         .catch(error => {
@@ -722,6 +717,16 @@ window.LogsModule = {
                 huntarrUI.showNotification(`Error clearing logs: ${error.message}`, 'error');
             }
         });
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Clear Logs', message: msg, confirmLabel: 'Clear', onConfirm: doClear });
+        } else {
+            if (!confirm(msg)) {
+                console.log('[LogsModule] Clear logs cancelled by user');
+                return;
+            }
+            doClear();
+        }
     },
     
     // Insert log entry in reverse chronological order (newest first)

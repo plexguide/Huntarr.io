@@ -177,8 +177,12 @@ const historyModule = {
     
     // Handle clear history
     handleClearHistory: function() {
-        if (confirm(`Are you sure you want to clear ${this.currentApp === 'all' ? 'all history' : this.currentApp + ' history'}?`)) {
-            this.clearHistory();
+        var msg = 'Are you sure you want to clear ' + (this.currentApp === 'all' ? 'all history' : this.currentApp + ' history') + '?';
+        var self = this;
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Clear History', message: msg, confirmLabel: 'Clear', onConfirm: function() { self.clearHistory(); } });
+        } else {
+            if (confirm(msg)) self.clearHistory();
         }
     },
     

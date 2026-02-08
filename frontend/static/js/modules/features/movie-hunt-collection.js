@@ -190,24 +190,31 @@
         removeFromCollection: function(title, year) {
             var self = this;
             if (!title) return;
-            if (!confirm('Remove this movie from your requested list?')) return;
-            fetch('./api/movie-hunt/collection/0', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: title, year: year })
-            })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Removed from collection.', 'success');
-                    }
-                    self.loadCollection();
+            var doRemove = function() {
+                fetch('./api/movie-hunt/collection/0', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title, year: year })
                 })
-                .catch(function() {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to remove.', 'error');
-                    }
-                });
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Removed from collection.', 'success');
+                        }
+                        self.loadCollection();
+                    })
+                    .catch(function() {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Failed to remove.', 'error');
+                        }
+                    });
+            };
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({ title: 'Remove from Requested List', message: 'Remove this movie from your requested list?', confirmLabel: 'Remove', onConfirm: doRemove });
+            } else {
+                if (!confirm('Remove this movie from your requested list?')) return;
+                doRemove();
+            }
         }
     };
 })();

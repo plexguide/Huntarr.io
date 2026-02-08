@@ -435,17 +435,15 @@ window.SettingsForms = {
     
     // Reset state implementation
     resetInstanceState: function (appType, instanceIndex) {
-        if (!confirm('Are you sure you want to reset the state?')) return;
-        
-        let instanceName = null;
-        const settings = window.huntarrUI.originalSettings[appType];
-        if (settings && settings.instances && settings.instances[instanceIndex]) {
-            instanceName = settings.instances[instanceIndex].name;
-        }
-        
-        if (!instanceName) instanceName = "Default";
-
-        HuntarrUtils.fetchWithTimeout("./api/stateful/reset", {
+        var self = this;
+        var doReset = function() {
+            let instanceName = null;
+            const settings = window.huntarrUI.originalSettings[appType];
+            if (settings && settings.instances && settings.instances[instanceIndex]) {
+                instanceName = settings.instances[instanceIndex].name;
+            }
+            if (!instanceName) instanceName = "Default";
+            HuntarrUtils.fetchWithTimeout("./api/stateful/reset", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ app_type: appType, instance_name: instanceName }),
@@ -453,11 +451,20 @@ window.SettingsForms = {
         .then((response) => response.json())
         .then((data) => {
             if (data.success) {
-                alert('State reset successfully.');
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('State reset successfully.', 'success');
+                else alert('State reset successfully.');
             } else {
-                alert('Failed to reset state.');
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to reset state.', 'error');
+                else alert('Failed to reset state.');
             }
         });
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Reset State', message: 'Are you sure you want to reset the state?', confirmLabel: 'Reset', onConfirm: doReset });
+        } else {
+            if (!confirm('Are you sure you want to reset the state?')) return;
+            doReset();
+        }
     },
 
     // Update enable status icon when dropdown changes

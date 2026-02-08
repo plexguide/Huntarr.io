@@ -120,8 +120,8 @@
     }
 
     function clearMovieHuntLogs() {
-        if (!window.confirm('Clear all Movie Hunt logs? This cannot be undone.')) return;
-        fetch('./api/logs/movie_hunt/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        var doClear = function() {
+            fetch('./api/logs/movie_hunt/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success) {
@@ -135,6 +135,13 @@
             .catch(function() {
                 if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Connection error', 'error');
             });
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Clear Movie Hunt Logs', message: 'Clear all Movie Hunt logs? This cannot be undone.', confirmLabel: 'Clear', onConfirm: doClear });
+        } else {
+            if (!window.confirm('Clear all Movie Hunt logs? This cannot be undone.')) return;
+            doClear();
+        }
     }
 
     function loadData() {
@@ -298,28 +305,36 @@
 
     function removeBlocklistEntry(sourceTitle) {
         if (!sourceTitle || !sourceTitle.trim()) return;
-        if (!window.confirm('Remove this release from the blocklist? It may be selected again when requesting.')) return;
-        fetch('./api/activity/blocklist', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source_title: sourceTitle })
-        })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.success !== false) {
-                    loadData();
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Removed from blocklist.', 'success');
-                    }
-                } else if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification(data.error || 'Failed to remove.', 'error');
-                }
+        var msg = 'Remove this release from the blocklist? It may be selected again when requesting.';
+        var doRemove = function() {
+            fetch('./api/activity/blocklist', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_title: sourceTitle })
             })
-            .catch(function() {
-                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Failed to remove from blocklist.', 'error');
-                }
-            });
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success !== false) {
+                        loadData();
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Removed from blocklist.', 'success');
+                        }
+                    } else if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(data.error || 'Failed to remove.', 'error');
+                    }
+                })
+                .catch(function() {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to remove from blocklist.', 'error');
+                    }
+                });
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Remove from Blocklist', message: msg, confirmLabel: 'Remove', onConfirm: doRemove });
+        } else {
+            if (!window.confirm(msg)) return;
+            doRemove();
+        }
     }
 
     function performSearch() {

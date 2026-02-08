@@ -1009,10 +1009,10 @@ export class RequestarrContent {
     }
 
     async hideMedia(tmdbId, mediaType, title, cardElement) {
+        const self = this;
+        const msg = `Hide "${title}" permanently?\n\nThis will remove it from all discovery pages. You can unhide it later from the Hidden Media page.`;
+        const doHide = async function() {
         try {
-            const confirmed = confirm(`Hide "${title}" permanently?\n\nThis will remove it from all discovery pages. You can unhide it later from the Hidden Media page.`);
-            if (!confirmed) return;
-
             // Get item data from card
             const item = cardElement.itemData || {};
             const posterPath = item.poster_path || null;
@@ -1020,15 +1020,15 @@ export class RequestarrContent {
             // Determine app_type and instance from media_type
             const appType = mediaType === 'movie' ? 'radarr' : 'sonarr';
             // Use view's selected instance, or card's suggested instance (search/discover), or default, or first available
-            let instanceName = mediaType === 'movie' ? this.selectedMovieInstance : this.selectedTVInstance;
+            let instanceName = mediaType === 'movie' ? self.selectedMovieInstance : self.selectedTVInstance;
             if (!instanceName && cardElement.suggestedInstance) {
                 instanceName = cardElement.suggestedInstance;
             }
             if (!instanceName) {
-                instanceName = mediaType === 'movie' ? this.defaultMovieInstance : this.defaultTVInstance;
+                instanceName = mediaType === 'movie' ? self.defaultMovieInstance : self.defaultTVInstance;
             }
-            if (!instanceName && this.core && this.core.instances) {
-                const instances = mediaType === 'movie' ? (this.core.instances.radarr || []) : (this.core.instances.sonarr || []);
+            if (!instanceName && self.core && self.core.instances) {
+                const instances = mediaType === 'movie' ? (self.core.instances.radarr || []) : (self.core.instances.sonarr || []);
                 instanceName = instances.length > 0 ? instances[0].name : null;
             }
             
@@ -1056,7 +1056,7 @@ export class RequestarrContent {
 
             // Add to hidden media set for immediate filtering
             const key = `${tmdbId}:${mediaType}:${appType}:${instanceName}`;
-            this.hiddenMediaSet.add(key);
+            self.hiddenMediaSet.add(key);
 
             // Remove the card from view with animation
             cardElement.style.opacity = '0';
@@ -1069,6 +1069,13 @@ export class RequestarrContent {
         } catch (error) {
             console.error('[RequestarrContent] Error hiding media:', error);
             alert('Failed to hide media. Please try again.');
+        }
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Hide Media', message: msg, confirmLabel: 'Hide', onConfirm: function() { doHide(); } });
+        } else {
+            if (!confirm(msg)) return;
+            doHide();
         }
     }
 }

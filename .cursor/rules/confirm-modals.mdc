@@ -1,0 +1,61 @@
+---
+description: Use custom confirm modals instead of native browser dialogs for confirmations, additions, and deletions
+globs: ["**/*.js", "**/*.html"]
+alwaysApply: true
+---
+# Confirm Modals Rule (No Old-School Popups)
+
+## Use Custom Modals for Confirmations, Additions, and Deletions
+
+- **DO** use the app’s custom modal UI for any user confirmation, addition, or deletion.
+- **DO NOT** use native browser `confirm()`, `alert()`, or `prompt()` for these flows.
+
+### Global Confirm Modal (Deletions / Destructive Actions)
+
+- Use **`window.HuntarrConfirm.show()`** for:
+  - Delete confirmations (instances, profiles, indexers, clients, root folders, custom formats, schedules, app instances, backups, etc.)
+  - Clear/reset actions (logs, history, hunt history, blocklist remove, state reset, stats reset, Swaparr reset, etc.)
+  - Other destructive or irreversible actions (restore/upload backup, unlink Plex, hide/unhide media, etc.)
+
+**API:**
+```javascript
+window.HuntarrConfirm.show({
+    title: 'Delete Something',      // Modal heading
+    message: 'Are you sure...?',    // Body text (supports \\n for newlines)
+    confirmLabel: 'Delete',         // Button text (e.g. Delete, Clear, Reset, OK)
+    onConfirm: function() {         // Called when user clicks confirm
+        // Perform the action (e.g. fetch DELETE, then refresh)
+    }
+});
+```
+
+- **Fallback:** If `HuntarrConfirm` is not available, fall back to `confirm()` so behavior still works.
+- **Styling:** The modal uses the app’s purple/blue theme (blur backdrop, purple border, gradient confirm button). CSS: `frontend/static/css/confirm-modal.css`. HTML: `frontend/templates/components/confirm_modal.html`.
+
+### Add / Edit Flows (Custom Modals, Not prompt())
+
+- **DO** use custom modal popups (with backdrop, blur, purple/blue styling) for:
+  - Adding items (e.g. Add Instance, Add Profile, Add Remote Path Mapping, Add Client, Add Indexer).
+  - Editing items where a form in a modal is appropriate.
+- **DO NOT** use `window.prompt()` or `window.confirm()` for these flows.
+- **Pattern:** Define a modal in the section template (or a shared component), move it to `document.body` when opening, apply a body class for backdrop blur, and use the same purple/blue styles as Remote Mapping / Add Instance.
+
+### Anti-Patterns
+
+- **DON’T** use `confirm('...')` for delete/clear/reset/destructive actions — use `HuntarrConfirm.show()`.
+- **DON’T** use `prompt('...')` for “add” or “name” inputs — use a custom modal with an input field.
+- **DON’T** use `alert('...')` for success/error when `window.huntarrUI.showNotification()` (or equivalent) is available.
+
+### Files to Know
+
+- **Global confirm:** `frontend/static/js/modules/core/confirm-modal.js`, `frontend/templates/components/confirm_modal.html`, `frontend/static/css/confirm-modal.css`
+- **Example section delete modal:** Instance Management delete modal in `movie_hunt_instance_management_section.html` + `movie-hunt-instance-management.js` (same visual style; section-specific modal is fine when you need more than a single message + confirm button).
+
+### Scanning for Violations
+
+Before adding new confirmation or deletion UI, search for remaining native dialogs:
+- `grep -r "confirm(" frontend/ --include="*.js" --include="*.html"`
+- `grep -r "prompt(" frontend/ --include="*.js"`
+- `grep -r "alert(" frontend/ --include="*.js"`
+
+Replace any user-facing confirmations/additions/deletions with the modal pattern above.

@@ -234,17 +234,18 @@
 
             const mapping = this.currentMappings[this.editingIndex];
             const confirmMsg = `Delete remote path mapping for ${mapping.host || 'this host'}?`;
-            
-            if (!confirm(confirmMsg)) return;
+            const self = this;
+            const idx = this.editingIndex;
 
-            fetch(`./api/movie-hunt/remote-mappings/${this.editingIndex}`, {
+            const doDelete = function() {
+                fetch(`./api/movie-hunt/remote-mappings/${idx}`, {
                 method: 'DELETE'
             })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        this.closeModal();
-                        this.refreshList();
+                        self.closeModal();
+                        self.refreshList();
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification('Remote path mapping deleted', 'success');
                         }
@@ -264,6 +265,19 @@
                         alert('Failed to delete mapping');
                     }
                 });
+            };
+
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Delete Remote Path Mapping',
+                    message: confirmMsg,
+                    confirmLabel: 'Delete',
+                    onConfirm: doDelete
+                });
+            } else {
+                if (!confirm(confirmMsg)) return;
+                doDelete();
+            }
         },
 
         escapeHtml: function(text) {

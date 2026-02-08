@@ -556,11 +556,8 @@ class UserModule {
 
     async unlinkPlexAccount() {
         const statusElement = document.getElementById('plexUnlinkStatus');
-        
-        if (!confirm('Are you sure you want to unlink your Plex account?')) {
-            return;
-        }
-
+        const self = this;
+        const doUnlink = async function() {
         try {
             const response = await fetch('./api/auth/plex/unlink', { 
                 method: 'POST',
@@ -569,14 +566,14 @@ class UserModule {
             const result = await response.json();
 
             if (response.ok) {
-                this.showStatus(statusElement, 'Plex account unlinked successfully!', 'success');
+                self.showStatus(statusElement, 'Plex account unlinked successfully!', 'success');
                 setTimeout(() => {
-                    this.updatePlexStatus(null);
+                    self.updatePlexStatus(null);
                 }, 1500);
             } else {
                 // Check if session expired - provide actionable guidance
                 if (result.session_expired) {
-                    this.showStatus(statusElement, result.error || 'Session expired. Please refresh the page and log in again.', 'error');
+                    self.showStatus(statusElement, result.error || 'Session expired. Please refresh the page and log in again.', 'error');
                     // Auto-prompt user to refresh after showing message
                     setTimeout(() => {
                         if (confirm('Your session has expired. Would you like to log in again now?')) {
@@ -584,11 +581,18 @@ class UserModule {
                         }
                     }, 2000);
                 } else {
-                    this.showStatus(statusElement, result.error || 'Failed to unlink Plex account', 'error');
+                    self.showStatus(statusElement, result.error || 'Failed to unlink Plex account', 'error');
                 }
             }
         } catch (error) {
-            this.showStatus(statusElement, 'Error unlinking Plex account', 'error');
+            self.showStatus(statusElement, 'Error unlinking Plex account', 'error');
+        }
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Unlink Plex Account', message: 'Are you sure you want to unlink your Plex account?', confirmLabel: 'Unlink', onConfirm: function() { doUnlink(); } });
+        } else {
+            if (!confirm('Are you sure you want to unlink your Plex account?')) return;
+            doUnlink();
         }
     }
 

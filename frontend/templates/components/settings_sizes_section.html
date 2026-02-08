@@ -644,8 +644,8 @@
     }
 
     function resetSizes() {
-        if (!confirm('Reset all size limits to defaults?')) return;
-        fetch('./api/sizes/reset', { method: 'POST' })
+        function doReset() {
+            fetch('./api/sizes/reset', { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success && data.sizes) {
@@ -661,6 +661,18 @@
                     window.huntarrUI.showNotification('Failed to reset sizes.', 'error');
                 }
             });
+        }
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({
+                title: 'Reset Size Limits',
+                message: 'Reset all size limits to defaults?',
+                confirmLabel: 'Reset',
+                onConfirm: doReset
+            });
+        } else {
+            if (!confirm('Reset all size limits to defaults?')) return;
+            doReset();
+        }
     }
 
     // Init

@@ -344,14 +344,10 @@ window.HuntarrStats = {
         const confirmMessage = appType 
             ? `Are you sure you want to reset all ${appType.charAt(0).toUpperCase() + appType.slice(1)} statistics? This will clear all tracked hunted and upgraded items.`
             : 'Are you sure you want to reset ALL statistics for ALL apps? This cannot be undone.';
-        
-        if (!confirm(confirmMessage)) {
-            return;
-        }
-        
+        var self = this;
+        var doReset = function() {
         const endpoint = './api/stats/reset';
         const body = appType ? JSON.stringify({ app_type: appType }) : '{}';
-
         HuntarrUtils.fetchWithTimeout(endpoint, {
             method: 'POST',
             headers: {
@@ -370,7 +366,7 @@ window.HuntarrStats = {
                         : 'All statistics reset successfully';
                     window.huntarrUI.showNotification(message, 'success');
                 }
-                this.loadMediaStats();
+                self.loadMediaStats();
             } else {
                 const msg = (data && data.error) ? data.error : 'Failed to reset statistics';
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -384,6 +380,13 @@ window.HuntarrStats = {
                 window.huntarrUI.showNotification('Error resetting statistics', 'error');
             }
         });
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Reset Statistics', message: confirmMessage, confirmLabel: 'Reset', onConfirm: doReset });
+        } else {
+            if (!confirm(confirmMessage)) return;
+            doReset();
+        }
     },
 
     checkAppConnections: function() {

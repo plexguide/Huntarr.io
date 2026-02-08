@@ -433,10 +433,10 @@ export class RequestarrSettings {
     }
 
     async unhideMedia(tmdbId, mediaType, appType, instanceName, title, cardElement) {
+        const self = this;
+        const msg = `Unhide "${title}"?\n\nThis will make it visible in ${appType}/${instanceName} again.`;
+        const doUnhide = async function() {
         try {
-            const confirmed = confirm(`Unhide "${title}"?\n\nThis will make it visible in ${appType}/${instanceName} again.`);
-            if (!confirmed) return;
-
             const response = await fetch(`./api/requestarr/hidden-media/${tmdbId}/${mediaType}/${appType}/${instanceName}`, {
                 method: 'DELETE'
             });
@@ -446,18 +446,25 @@ export class RequestarrSettings {
             }
 
             // Remove from local cache and re-render
-            this.hiddenMediaItems = this.hiddenMediaItems.filter(item => {
+            self.hiddenMediaItems = self.hiddenMediaItems.filter(item => {
                 return !(item.tmdb_id === tmdbId &&
                     item.media_type === mediaType &&
                     item.app_type === appType &&
                     item.instance_name === instanceName);
             });
-            this.renderHiddenMediaPage();
+            self.renderHiddenMediaPage();
 
             console.log(`[RequestarrSettings] Unhidden media: ${title} (${mediaType})`);
         } catch (error) {
             console.error('[RequestarrSettings] Error unhiding media:', error);
             alert('Failed to unhide media. Please try again.');
+        }
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Unhide Media', message: msg, confirmLabel: 'Unhide', onConfirm: function() { doUnhide(); } });
+        } else {
+            if (!confirm(msg)) return;
+            doUnhide();
         }
     }
 

@@ -420,20 +420,15 @@ const BackupRestore = {
             return;
         }
 
-        // Final confirmation dialog
-        if (!confirm('This will permanently overwrite your current database. Are you absolutely sure?')) {
-            return;
-        }
-
-        console.log('[BackupRestore] Restoring backup:', backupId);
-        
-        const restoreBtn = document.getElementById('restore-backup-btn');
-        if (restoreBtn) {
-            restoreBtn.disabled = true;
-            restoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Restoring...';
-        }
-
-        fetch('./api/backup/restore', {
+        var self = this;
+        var doRestore = function() {
+            console.log('[BackupRestore] Restoring backup:', backupId);
+            const restoreBtn = document.getElementById('restore-backup-btn');
+            if (restoreBtn) {
+                restoreBtn.disabled = true;
+                restoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Restoring...';
+            }
+            fetch('./api/backup/restore', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -465,6 +460,13 @@ const BackupRestore = {
                 restoreBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Restore Database';
             }
         });
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Restore Database', message: 'This will permanently overwrite your current database. Are you absolutely sure?', confirmLabel: 'Restore', onConfirm: doRestore });
+        } else {
+            if (!confirm('This will permanently overwrite your current database. Are you absolutely sure?')) return;
+            doRestore();
+        }
     },
 
     validateDeleteConfirmation: function() {
@@ -495,20 +497,15 @@ const BackupRestore = {
             return;
         }
 
-        // Final confirmation dialog
-        if (!confirm('This will PERMANENTLY DELETE your entire Huntarr database. This action CANNOT be undone. Are you absolutely sure?')) {
-            return;
-        }
-
-        console.log('[BackupRestore] Deleting database');
-        
-        const deleteBtn = document.getElementById('delete-database-btn');
-        if (deleteBtn) {
-            deleteBtn.disabled = true;
-            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-        }
-
-        fetch('./api/backup/delete-database', {
+        var self = this;
+        var doDelete = function() {
+            console.log('[BackupRestore] Deleting database');
+            const deleteBtn = document.getElementById('delete-database-btn');
+            if (deleteBtn) {
+                deleteBtn.disabled = true;
+                deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            }
+            fetch('./api/backup/delete-database', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -537,20 +534,25 @@ const BackupRestore = {
                 deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Database';
             }
         });
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Delete Database', message: 'This will PERMANENTLY DELETE your entire Huntarr database. This action CANNOT be undone. Are you absolutely sure?', confirmLabel: 'Delete', onConfirm: doDelete });
+        } else {
+            if (!confirm('This will PERMANENTLY DELETE your entire Huntarr database. This action CANNOT be undone. Are you absolutely sure?')) return;
+            doDelete();
+        }
     },
 
     deleteBackup: function(backupId) {
-        if (!confirm('Are you sure you want to delete this backup? This action cannot be undone.')) {
-            return;
-        }
-
+        var self = this;
+        var doDelete = function() {
         console.log('[BackupRestore] Deleting backup:', backupId);
         console.log('[BackupRestore] Backup ID type:', typeof backupId);
         console.log('[BackupRestore] Backup ID length:', backupId ? backupId.length : 0);
 
         // Add extra validation for backupId
         if (!backupId || typeof backupId !== 'string') {
-            this.showError('Invalid backup ID provided for deletion');
+            self.showError('Invalid backup ID provided for deletion');
             return;
         }
 
@@ -575,16 +577,23 @@ const BackupRestore = {
         })
         .then(data => {
             if (data.success) {
-                this.showSuccess('Backup deleted successfully');
-                this.loadBackupList(); // Refresh the list
+                self.showSuccess('Backup deleted successfully');
+                self.loadBackupList(); // Refresh the list
             } else {
                 throw new Error(data.error || 'Failed to delete backup');
             }
         })
         .catch(error => {
             console.error('[BackupRestore] Error deleting backup:', error);
-            this.showError('Failed to delete backup: ' + error.message);
+            self.showError('Failed to delete backup: ' + error.message);
         });
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Delete Backup', message: 'Are you sure you want to delete this backup? This action cannot be undone.', confirmLabel: 'Delete', onConfirm: doDelete });
+        } else {
+            if (!confirm('Are you sure you want to delete this backup? This action cannot be undone.')) return;
+            doDelete();
+        }
     },
 
     formatFileSize: function(bytes) {
@@ -758,33 +767,24 @@ const BackupRestore = {
             return;
         }
 
-        // Final confirmation dialog
-        if (!confirm('This will permanently overwrite your current database with the uploaded backup. Are you absolutely sure?')) {
-            return;
-        }
-
-        console.log('[BackupRestore] Uploading backup:', file.name);
-        
-        const uploadBtn = document.getElementById('upload-backup-btn');
-        if (uploadBtn) {
-            uploadBtn.disabled = true;
-            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading and restoring...';
-        }
-
-        // Create form data
-        const formData = new FormData();
-        formData.append('backup_file', file);
-
-        fetch('./api/backup/upload', {
+        var self = this;
+        var doUpload = function() {
+            console.log('[BackupRestore] Uploading backup:', file.name);
+            const uploadBtn = document.getElementById('upload-backup-btn');
+            if (uploadBtn) {
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading and restoring...';
+            }
+            const formData = new FormData();
+            formData.append('backup_file', file);
+            fetch('./api/backup/upload', {
             method: 'POST',
             body: formData
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                this.showSuccess('Backup uploaded and restored successfully! Reloading page...');
-                
-                // Reload the page after a short delay
+                self.showSuccess('Backup uploaded and restored successfully! Reloading page...');
                 setTimeout(() => {
                     window.location.reload();
                 }, 2000);
@@ -794,7 +794,7 @@ const BackupRestore = {
         })
         .catch(error => {
             console.error('[BackupRestore] Error uploading backup:', error);
-            this.showError('Failed to upload backup: ' + error.message);
+            self.showError('Failed to upload backup: ' + error.message);
         })
         .finally(() => {
             if (uploadBtn) {
@@ -802,6 +802,13 @@ const BackupRestore = {
                 uploadBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Upload and Restore Backup';
             }
         });
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Upload and Restore', message: 'This will permanently overwrite your current database with the uploaded backup. Are you absolutely sure?', confirmLabel: 'Upload', onConfirm: doUpload });
+        } else {
+            if (!confirm('This will permanently overwrite your current database with the uploaded backup. Are you absolutely sure?')) return;
+            doUpload();
+        }
     }
 };
 

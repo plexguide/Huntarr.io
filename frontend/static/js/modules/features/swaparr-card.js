@@ -63,12 +63,9 @@ window.HuntarrSwaparr = {
             return;
         }
         
-        // Show confirmation
-        if (!confirm('Are you sure you want to reset all Swaparr data? This will clear all strike counts and removed items data.')) {
-            return;
-        }
-        
-        this.swaparrResetInProgress = true;
+        var self = this;
+        var doReset = function() {
+            self.swaparrResetInProgress = true;
         
         // Immediately update the UI first to provide immediate feedback
         this.updateSwaparrStatsDisplay({
@@ -101,12 +98,19 @@ window.HuntarrSwaparr = {
                 .finally(() => {
                     // Reset the flag after a delay
                     setTimeout(() => {
-                        this.swaparrResetInProgress = false;
+                        self.swaparrResetInProgress = false;
                     }, 1000);
                 });
         } catch (error) {
             console.warn('Error in Swaparr stats reset:', error);
-            this.swaparrResetInProgress = false;
+            self.swaparrResetInProgress = false;
+        }
+        };
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({ title: 'Reset Swaparr Data', message: 'Are you sure you want to reset all Swaparr data? This will clear all strike counts and removed items data.', confirmLabel: 'Reset', onConfirm: doReset });
+        } else {
+            if (!confirm('Are you sure you want to reset all Swaparr data? This will clear all strike counts and removed items data.')) return;
+            doReset();
         }
     },
 

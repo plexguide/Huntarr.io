@@ -1106,20 +1106,28 @@
                         self._openServerModal(self._servers[i]);
                     } else if (action === 'delete') {
                         var name = (self._servers[i] || {}).name || 'this server';
-                        if (!confirm('Delete "' + name + '"?')) return;
-                        fetch('./api/nzb-hunt/servers/' + i, { method: 'DELETE' })
-                            .then(function (r) { return r.json(); })
-                            .then(function (data) {
-                                if (data.success) self._loadServers();
-                                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                    window.huntarrUI.showNotification('Server deleted.', 'success');
-                                }
-                            })
-                            .catch(function () {
-                                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                    window.huntarrUI.showNotification('Delete failed.', 'error');
-                                }
-                            });
+                        var idx = i;
+                        var doDelete = function() {
+                            fetch('./api/nzb-hunt/servers/' + idx, { method: 'DELETE' })
+                                .then(function (r) { return r.json(); })
+                                .then(function (data) {
+                                    if (data.success) self._loadServers();
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Server deleted.', 'success');
+                                    }
+                                })
+                                .catch(function () {
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Delete failed.', 'error');
+                                    }
+                                });
+                        };
+                        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                            window.HuntarrConfirm.show({ title: 'Delete Server', message: 'Delete "' + name + '"?', confirmLabel: 'Delete', onConfirm: doDelete });
+                        } else {
+                            if (!confirm('Delete "' + name + '"?')) return;
+                            doDelete();
+                        }
                     }
                 });
 
@@ -1571,20 +1579,28 @@
                         self._openCategoryModal(self._categories[i]);
                     } else if (action === 'delete-cat') {
                         var name = (self._categories[i] || {}).name || 'this category';
-                        if (!confirm('Delete "' + name + '"?')) return;
-                        fetch('./api/nzb-hunt/categories/' + i, { method: 'DELETE' })
-                            .then(function (r) { return r.json(); })
-                            .then(function (data) {
-                                if (data.success) self._loadCategories();
-                                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                    window.huntarrUI.showNotification('Category deleted.', 'success');
-                                }
-                            })
-                            .catch(function () {
-                                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                    window.huntarrUI.showNotification('Delete failed.', 'error');
-                                }
-                            });
+                        var idx = i;
+                        var doDelete = function() {
+                            fetch('./api/nzb-hunt/categories/' + idx, { method: 'DELETE' })
+                                .then(function (r) { return r.json(); })
+                                .then(function (data) {
+                                    if (data.success) self._loadCategories();
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Category deleted.', 'success');
+                                    }
+                                })
+                                .catch(function () {
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Delete failed.', 'error');
+                                    }
+                                });
+                        };
+                        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                            window.HuntarrConfirm.show({ title: 'Delete Category', message: 'Delete "' + name + '"?', confirmLabel: 'Delete', onConfirm: doDelete });
+                        } else {
+                            if (!confirm('Delete "' + name + '"?')) return;
+                            doDelete();
+                        }
                     }
                 });
 
