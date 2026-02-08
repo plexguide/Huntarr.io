@@ -31,14 +31,7 @@
         `;
 
         container.innerHTML = saveButtonTopHtml + `
-            <div class="settings-group" style="
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-                border: 2px solid rgba(90, 109, 137, 0.3);
-                border-radius: 12px;
-                padding: 20px;
-                margin: 15px 0 25px 0;
-                box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            ">
+            <div class="settings-group">
                 <h3>System Settings</h3>
                 <div class="setting-item">
                     <label for="check_for_updates"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#check-for-updates" class="info-icon" title="Learn more about update checking" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Check for Updates:</label>
@@ -102,14 +95,7 @@
                 </div>
             </div>
 
-            <div class="settings-group" style="
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-                border: 2px solid rgba(90, 109, 137, 0.3);
-                border-radius: 12px;
-                padding: 20px;
-                margin: 15px 0 25px 0;
-                box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            ">
+            <div class="settings-group">
                 <h3>Security</h3>
                 <div class="setting-item">
                     <label for="auth_mode"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#authentication-mode" class="info-icon" title="Learn more about authentication modes" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Authentication Mode:</label>
@@ -144,14 +130,7 @@
                 </div>
             </div>
             
-            <div class="settings-group" style="
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-                border: 2px solid rgba(90, 109, 137, 0.3);
-                border-radius: 12px;
-                padding: 20px;
-                margin: 15px 0 25px 0;
-                box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            ">
+            <div class="settings-group">
                 <h3>Advanced Settings</h3>
                 <div class="setting-item">
                     <label for="base_url">Base URL:</label>
@@ -176,14 +155,7 @@
                 </div>
             </div>
 
-            <div class="settings-group" style="
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-                border: 2px solid rgba(90, 109, 137, 0.3);
-                border-radius: 12px;
-                padding: 20px;
-                margin: 15px 0 25px 0;
-                box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            ">
+            <div class="settings-group">
                 <h3>Display Settings</h3>
                 <div class="setting-item">
                     <label for="display_community_resources">Display Resources:</label>

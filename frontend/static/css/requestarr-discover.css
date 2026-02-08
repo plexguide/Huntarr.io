@@ -1173,18 +1173,21 @@ input:disabled + .toggle-slider {
 }
 
 .settings-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
     border-radius: 12px;
-    padding: 30px;
-    margin-bottom: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
 }
 
 .settings-card h3 {
-    font-size: 20px;
+    font-size: 1.1rem;
     font-weight: 600;
-    color: #fff;
-    margin-bottom: 10px;
+    color: #f1f5f9;
+    margin: 0 0 16px 0;
+    padding: 0 0 12px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    letter-spacing: 0.3px;
 }
 
 .settings-description {

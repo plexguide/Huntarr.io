@@ -28,14 +28,7 @@
         `;
 
         container.innerHTML = saveButtonTopHtml + `
-                <div class="settings-group" style="
-                    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-                    border: 2px solid rgba(90, 109, 137, 0.3);
-                    border-radius: 12px;
-                    padding: 20px;
-                    margin: 15px 0 25px 0;
-                    box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-                ">
+            <div class="settings-group">
                     <h3>Apprise Notifications</h3>
                     <div class="setting-item">
                         <label for="enable_notifications"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#enable-notifications" class="info-icon" title="Enable or disable notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enable Notifications:</label>

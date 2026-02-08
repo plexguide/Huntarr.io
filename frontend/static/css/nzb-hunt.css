@@ -238,11 +238,10 @@
 
 /* ── Queue panel ─────────────────────────────────────────────────── */
 .nzb-queue-panel {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    border: 2px solid rgba(90, 109, 137, 0.3);
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     min-height: 300px;
 }
 
@@ -542,11 +541,10 @@
 
 /* ── Settings group panel ────────────────────────────────────────── */
 .nzb-settings-group {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    border: 2px solid rgba(90, 109, 137, 0.3);
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
     border-radius: 12px;
     padding: 24px;
-    box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .nzb-settings-group h3 {

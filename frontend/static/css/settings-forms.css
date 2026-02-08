@@ -51,45 +51,31 @@
 
 /* Settings Groups */
 .settings-group {
-    background: linear-gradient(145deg, rgba(30, 39, 56, 0.6), rgba(22, 28, 40, 0.7));
-    border: 1px solid rgba(90, 109, 137, 0.15);
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
     border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 25px;
+    padding: 24px;
+    margin-bottom: 20px;
     position: relative;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(5px);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.settings-group:hover {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
 .settings-group h3 {
-    margin-bottom: 20px;
-    padding: 12px 18px;
-    font-size: 1.2rem;
-    color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    background: linear-gradient(to right, rgba(52, 152, 219, 0.8), rgba(41, 128, 185, 0.7));
-    border-left: 4px solid rgba(52, 152, 219, 0.9);
-    letter-spacing: 0.5px;
-    position: relative;
-    overflow: hidden;
+    margin: 0 0 18px 0;
+    padding: 0 0 12px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    letter-spacing: 0.3px;
+    background: none;
+    box-shadow: none;
+    text-shadow: none;
+    border-radius: 0;
+    border-left: none;
 }
 
 .settings-group h3::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-    pointer-events: none;
+    display: none;
 }
 
 /* Setting Items */

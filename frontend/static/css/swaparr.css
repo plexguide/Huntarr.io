@@ -146,8 +146,8 @@
 
 .swaparr-table-header {
     padding: 15px 20px;
-    background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, rgba(41, 128, 185, 0.2) 100%);
-    border-bottom: 1px solid rgba(90, 109, 137, 0.3);
+    background: rgba(15, 23, 42, 0.3);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .swaparr-table-header h4 {

@@ -544,20 +544,24 @@ button {
 }
 
 .settings-group {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    border: 2px solid rgba(90, 109, 137, 0.3);
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
     border-radius: 12px;
-    padding: 20px;
-    margin: 15px 0 25px 0;
-    box-shadow: 0 4px 12px rgba(90, 109, 137, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    padding: 24px;
+    margin: 12px 0 20px 0;
     position: relative;
 }
 
 .settings-group h3 {
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border-color);
+    margin: 0 0 18px 0;
+    padding: 0 0 12px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
     font-size: 1.1rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    background: none;
+    box-shadow: none;
+    text-shadow: none;
 }
 
 .setting-item {
@@ -1535,11 +1539,11 @@ label .info-icon ~ text {
 }
 
 #appsSection .settings-group {
-    margin-top: 20px;
-    margin-bottom: 30px;
-    background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
-    border-radius: 8px;
-    padding: 20px;
+    margin-top: 16px;
+    margin-bottom: 24px;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 12px;
+    padding: 24px;
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
     position: relative;
     border: 1px solid rgba(90, 109, 137, 0.1);
@@ -1547,14 +1551,7 @@ label .info-icon ~ text {
 }
 
 #appsSection .settings-group::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, rgba(52, 152, 219, 0.3), rgba(155, 89, 182, 0.3)); /* Sonarr blue to Whisparr purple */
-    opacity: 0.7;
+    display: none;
 }
 
 #appsSection .settings-group-header {
