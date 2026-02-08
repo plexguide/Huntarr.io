@@ -9,10 +9,11 @@ Development rules are split into focused files for Cursor. This index is always 
 
 | File | Purpose |
 |------|--------|
-| **huntarr-critical.mdc** | No auto-commit, testing, deploy, version, cross-platform (alwaysApply) |
-| **huntarr-database.mdc** | DatabaseManager only; no SQLite/JSON; paths; Synology |
+| **huntarr-critical.mdc** | No auto-commit, testing, deploy, version, cross-platform, imports (alwaysApply) |
+| **huntarr-architecture.mdc** | How Huntarr runs: main.py, blueprints, auth, background, port, API responses |
+| **huntarr-database.mdc** | get_database()/HuntarrDatabase; no SQLite/JSON; paths; config_paths; Synology |
 | **huntarr-frontend.mdc** | Relative URLs, BASE_URL frontend, docs links, JS, refresh, sidebars, CSS |
-| **huntarr-base-url.mdc** | Backend BASE_URL: middleware, redirects, path checks |
+| **huntarr-base-url.mdc** | Backend BASE_URL: middleware, redirects, path checks; auth sees stripped path |
 | **huntarr-bug-patterns.mdc** | Known bug patterns and fixes (auth, settings, Lidarr, Hunt Manager, etc.) |
 | **huntarr-scan-debug.mdc** | Key files, violation scan commands, debugging tips |
 | **confirm-modals.mdc** | HuntarrConfirm for destructive/critical actions |
