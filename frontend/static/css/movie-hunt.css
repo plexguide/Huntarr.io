@@ -279,28 +279,30 @@
 #movie-hunt-section .control-select {
     width: 100%;
     padding: 10px 16px;
-    background: #2d3748;
-    border: 1px solid #4a5568;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.12);
     border-radius: 8px;
-    color: #fff;
+    color: #e2e8f0;
     font-size: 14px;
     cursor: pointer;
 }
-#movie-hunt-section .control-select:focus { outline: none; border-color: #f59e0b; }
+#movie-hunt-section .control-select:hover { background: rgba(15, 23, 42, 0.8); border-color: rgba(148, 163, 184, 0.25); }
+#movie-hunt-section .control-select:focus { outline: none; border-color: rgba(245, 158, 11, 0.5); }
+#movie-hunt-section .control-select option { background: #0f172a; color: #e2e8f0; }
 #movie-hunt-section .filter-button {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: #2d3748;
-    border: 1px solid #4a5568;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.12);
     border-radius: 8px;
-    color: #fff;
+    color: #e2e8f0;
     font-size: 14px;
     cursor: pointer;
     margin-left: auto;
 }
-#movie-hunt-section .filter-button:hover { background: #374151; border-color: #718096; }
+#movie-hunt-section .filter-button:hover { background: rgba(15, 23, 42, 0.8); border-color: rgba(148, 163, 184, 0.25); }
 #movie-hunt-section .media-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

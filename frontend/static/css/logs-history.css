@@ -1,0 +1,617 @@
+/* ==========================================================================
+   Huntarr Logs & History Styles
+   ========================================================================== */
+
+/* Logs Section */
+.section-header {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.app-tabs, .log-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.app-tab, .settings-tab {
+    padding: 8px 20px;
+    background-color: var(--bg-tertiary);
+    border: none;
+    border-radius: 20px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.app-tab.active, .settings-tab.active {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.app-tab:hover, .settings-tab:hover {
+    background-color: var(--accent-hover);
+    color: white;
+}
+
+.log-tabs {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.log-tab {
+    padding: 8px 20px;
+    background-color: var(--bg-tertiary);
+    border: none;
+    border-radius: 20px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.log-tab.active {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.log-tab:hover {
+    background-color: var(--accent-hover);
+    color: white;
+}
+
+.log-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+    flex-grow: 1;
+}
+
+/* Remove background from section headers */
+#appsSection .section-header,
+#schedulingSection .section-header,
+#logsSection .section-header,
+#historySection .section-header {
+    background-color: transparent !important;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 7px 0 !important;
+}
+
+.log-options {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.auto-scroll {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+}
+
+.clear-button {
+    padding: 6px 12px;
+    background-color: var(--button-danger-bg);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.3s;
+}
+
+.clear-button:hover {
+    background-color: var(--button-danger-hover);
+}
+
+/* Log container */
+.logs {
+    height: calc(85vh - 160px);
+    background-color: var(--log-bg);
+    border: 1px solid var(--log-border);
+    border-radius: 8px;
+    padding: 15px;
+    overflow-y: auto;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.5;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+/* Log entries */
+.log-entry {
+    margin-bottom: 5px;
+    padding: 2px 5px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.log-timestamp {
+    color: var(--text-muted);
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+.log-app {
+    color: var(--accent-color);
+    font-weight: bold;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.log-level {
+    font-weight: bold;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.log-level-info {
+    background-color: var(--info-bg, #d1ecf1);
+    color: var(--info-color, #0c5460);
+}
+
+.log-level-warning {
+    background-color: var(--warning-bg, #fff3cd);
+    color: var(--warning-color, #856404);
+}
+
+.log-level-error {
+    background-color: var(--error-bg, #f8d7da);
+    color: var(--error-color, #721c24);
+}
+
+.log-level-debug {
+    background-color: var(--debug-bg, #e2e3e5);
+    color: var(--debug-color, #383d41);
+}
+
+.log-info .log-message {
+    color: var(--info-color, #0c5460);
+}
+
+.log-warning .log-message {
+    color: var(--warning-color, #856404);
+}
+
+.log-error .log-message {
+    color: var(--error-color, #721c24);
+}
+
+.log-debug .log-message {
+    color: var(--debug-color, #383d41);
+}
+
+.log-logger {
+    color: var(--text-muted);
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+.log-message {
+    flex-grow: 1;
+    word-break: break-word;
+}
+
+/* Log Dropdown Styles */
+.log-dropdown-container {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.log-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.log-dropdown-btn {
+    padding: 10px 20px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-weight: 500;
+    transition: all 0.3s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+    justify-content: space-between;
+}
+
+.log-dropdown-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.log-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--bg-secondary);
+    min-width: 180px;
+    z-index: 10;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+    border: 1px solid var(--border-color);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.log-dropdown-content.show {
+    display: block;
+}
+
+.log-option {
+    display: block;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.log-option:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.log-option.active {
+    color: var(--accent-color);
+    font-weight: 600;
+    background-color: rgba(var(--accent-color-rgb), 0.1);
+}
+
+/* Settings Dropdown Styles */
+.settings-dropdown-container {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.settings-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.settings-dropdown-btn {
+    padding: 10px 20px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-weight: 500;
+    transition: all 0.3s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+    justify-content: space-between;
+}
+
+.settings-dropdown-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.settings-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--bg-secondary);
+    min-width: 180px;
+    z-index: 10;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+    border: 1px solid var(--border-color);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.settings-dropdown-content.show {
+    display: block;
+}
+
+.settings-option {
+    display: block;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.settings-option:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.settings-option.active {
+    color: var(--accent-color);
+    font-weight: 600;
+    background-color: rgba(var(--accent-color-rgb), 0.1);
+}
+
+/* History Dropdown Styles */
+.history-dropdown-container {
+    display: flex;
+    align-items: center;
+}
+
+.history-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.history-dropdown-btn {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.history-dropdown-btn:hover {
+    background-color: var(--bg-primary);
+}
+
+.history-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--bg-secondary);
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1001;
+    border-radius: 4px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-dropdown-content a {
+    color: var(--text-primary);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    transition: all 0.2s;
+}
+
+.history-dropdown-content a:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.history-dropdown-content a.active {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.history-dropdown-content.show {
+    display: block;
+}
+
+/* Dropdown helper text */
+.dropdown-helper {
+    display: block;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.8rem;
+    margin-top: 8px;
+    text-align: center;
+    position: absolute;
+    width: 100%;
+    left: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.log-dropdown:hover .dropdown-helper {
+    opacity: 1;
+}
+
+/* History Table */
+.history-container {
+    position: relative;
+    height: calc(85vh - 160px);
+    overflow-y: auto;
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    font-size: 14px;
+}
+
+.history-table thead {
+    position: sticky;
+    top: 0;
+    background-color: var(--bg-tertiary);
+    z-index: 1;
+}
+
+.history-table th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.history-table tbody tr:nth-child(even) {
+    background-color: var(--bg-tertiary);
+}
+
+.history-table tbody tr:hover {
+    background-color: rgba(var(--accent-color-rgb), 0.1);
+}
+
+/* Operation Type Styles */
+.operation-missing {
+    background-color: #8b1538;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    display: inline-block;
+}
+
+.operation-upgrade {
+    background-color: #1e40af;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    display: inline-block;
+}
+
+/* History Controls */
+.history-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+}
+
+.history-search {
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+}
+
+.history-search input {
+    padding: 8px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px 0 0 4px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    width: 200px;
+}
+
+.history-search button {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.history-search button:hover {
+    background-color: var(--accent-hover);
+}
+
+.history-page-size {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-page-size select {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 0;
+    gap: 15px;
+}
+
+.pagination-button {
+    padding: 8px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pagination-button:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.pagination-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--bg-tertiary);
+    color: var(--text-muted);
+}
+
+#historyPageInfo {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Pagination above table */
+.pagination-controls.pagination-above-table {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 10px 0;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .history-controls {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .history-search {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .history-search input {
+        width: calc(100% - 40px);
+    }
+
+    .history-table {
+        font-size: 13px;
+    }
+    
+    .history-table th, .history-table td {
+        padding: 8px 10px;
+    }
+    
+    .history-search input {
+        width: 150px;
+    }
+}
