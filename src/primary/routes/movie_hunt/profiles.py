@@ -147,6 +147,55 @@ def _get_profile_by_name_or_default(quality_profile_name, instance_id):
     return _normalize_profile(profiles[0]) if profiles else _profile_defaults()
 
 
+# --- Size limits (min/max/preferred from Sizes settings) ---
+
+def _get_size_limits_for_quality(quality_name):
+    """Return (min, preferred, max) MB/min for the given quality name from Sizes config."""
+    try:
+        from .sizes import _get_sizes
+        sizes = _get_sizes()
+    except Exception:
+        return 0, 0, 400
+    q = (quality_name or '').strip()
+    for s in (sizes or []):
+        if (s.get('name') or '').strip() == q:
+            return (
+                max(0, int(s.get('min', 0))),
+                max(0, int(s.get('preferred', 0))),
+                max(1, int(s.get('max', 400))),
+            )
+    return 0, 0, 400
+
+
+def _size_mb_per_min(size_bytes, runtime_minutes):
+    """Convert size in bytes and runtime in minutes to MB per minute. Returns None if invalid."""
+    if not size_bytes or size_bytes <= 0 or not runtime_minutes or runtime_minutes <= 0:
+        return None
+    return (float(size_bytes) / (1024.0 * 1024.0)) / float(runtime_minutes)
+
+
+def _size_filter_and_preference(result, quality_name, runtime_minutes):
+    """
+    Check result size against Sizes config for the given quality.
+    Returns (passes_filter, preference_score).
+    - passes_filter: False if size is outside min-max (or no size info is treated as pass).
+    - preference_score: 0-100, higher = closer to preferred (only when size_bytes and runtime present).
+    """
+    size_bytes = result.get('size_bytes') or 0
+    mb_per_min = _size_mb_per_min(size_bytes, runtime_minutes) if size_bytes else None
+    min_s, pref_s, max_s = _get_size_limits_for_quality(quality_name)
+    if mb_per_min is None:
+        return True, 50
+    if mb_per_min < min_s or mb_per_min > max_s:
+        return False, None
+    if max_s <= min_s:
+        return True, 100
+    dist = abs(mb_per_min - pref_s)
+    range_len = max_s - min_s
+    pref_score = max(0, min(100, 100 - (dist / range_len) * 100))
+    return True, pref_score
+
+
 # --- Release matching and scoring ---
 
 def _release_matches_quality(release_title, quality_name):
@@ -283,36 +332,47 @@ def _score_release(release_title, profile, instance_id):
     return total, ', '.join(parts)
 
 
-def _best_result_matching_profile(results, profile, instance_id):
+def _best_result_matching_profile(results, profile, instance_id, runtime_minutes=90):
     """
     From Newznab results list, return the best result that matches the profile.
+    Respects Sizes settings: only results within min-max for that quality are considered;
+    among those, prefers releases closer to the preferred size.
     Returns (result, score, breakdown_str).
     """
     if not results:
         return None, 0, ''
+    runtime = max(1, int(runtime_minutes)) if runtime_minutes is not None else 90
     enabled_names = [q.get('name') or '' for q in (profile.get('qualities') or []) if q.get('enabled')]
     if not enabled_names:
         scored = []
         for r in results:
             title = (r.get('title') or '').strip()
             sc, br = _score_release(title, profile, instance_id)
-            scored.append((sc, br, r))
-        scored.sort(key=lambda x: (-x[0], x[2].get('title') or ''))
+            passes, pref = _size_filter_and_preference(r, '', runtime)
+            if not passes:
+                continue
+            scored.append((sc, pref or 50, br, r))
+        if not scored:
+            return None, 0, ''
+        scored.sort(key=lambda x: (-x[0], -x[1], x[3].get('title') or ''))
         best = scored[0]
-        return best[2], best[0], best[1]
+        return best[3], best[0], best[2]
     candidates = []
     for r in results:
         title = (r.get('title') or '').strip()
         for qname in enabled_names:
             if _release_matches_quality(title, qname):
+                passes, pref = _size_filter_and_preference(r, qname, runtime)
+                if not passes:
+                    break
                 sc, br = _score_release(title, profile, instance_id)
-                candidates.append((sc, br, r))
+                candidates.append((sc, pref or 50, br, r))
                 break
     if not candidates:
         return None, 0, ''
-    candidates.sort(key=lambda x: (-x[0], x[2].get('title') or ''))
+    candidates.sort(key=lambda x: (-x[0], -x[1], x[3].get('title') or ''))
     best = candidates[0]
-    return best[2], best[0], best[1]
+    return best[3], best[0], best[2]
 
 
 def _first_result_matching_profile(results, profile):

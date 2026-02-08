@@ -24,6 +24,60 @@ from ...utils.logger import logger
 
 # --- Newznab search ---
 
+def _parse_size_from_item(it, enc):
+    """Extract size in bytes from JSON API item. Returns 0 if missing."""
+    size = it.get('size')
+    if size is not None:
+        try:
+            return int(size)
+        except (TypeError, ValueError):
+            pass
+    if isinstance(enc, dict):
+        length = enc.get('length') or enc.get('@length')
+        if length is not None:
+            try:
+                return int(length)
+            except (TypeError, ValueError):
+                pass
+    attrs = it.get('newznab:attr') or it.get('attr') or []
+    if isinstance(attrs, dict):
+        attrs = [attrs]
+    for a in attrs:
+        if isinstance(a, dict) and (a.get('@name') or a.get('name')) == 'size':
+            v = a.get('@value') or a.get('value')
+            if v is not None:
+                try:
+                    return int(v)
+                except (TypeError, ValueError):
+                    pass
+    return 0
+
+
+def _parse_size_from_xml_item(item, enc, ns, attr_ns):
+    """Extract size in bytes from XML item (enclosure length or newznab:attr). Returns 0 if missing."""
+    if enc is not None:
+        length = enc.get('length')
+        if length is not None:
+            try:
+                return int(length)
+            except (TypeError, ValueError):
+                pass
+    for attr in item:
+        tag = (attr.tag or '').split('}')[-1] if '}' in str(attr.tag) else (attr.tag or '')
+        if tag.lower() != 'attr':
+            continue
+        name = attr.get('name') or attr.get('{http://www.newznab.com/DTD/2010/feeds/attributes/}name')
+        if name != 'size':
+            continue
+        v = attr.get('value') or attr.get('{http://www.newznab.com/DTD/2010/feeds/attributes/}value')
+        if v is not None:
+            try:
+                return int(v)
+            except (TypeError, ValueError):
+                pass
+    return 0
+
+
 def _search_newznab_movie(base_url, api_key, query, categories, timeout=15):
     """Search a Newznab indexer for movie NZBs. Returns list of {title, nzb_url}."""
     if not (base_url and api_key and query and query.strip()):
@@ -65,13 +119,15 @@ def _search_newznab_movie(base_url, api_key, query, categories, timeout=15):
                     if not nzb_url:
                         continue
                     title = (it.get('title') or '').strip() or 'Unknown'
-                    results.append({'title': title, 'nzb_url': nzb_url})
+                    size_bytes = _parse_size_from_item(it, enc)
+                    results.append({'title': title, 'nzb_url': nzb_url, 'size_bytes': size_bytes})
                 return results
             except (ValueError, TypeError, KeyError):
                 pass
         root = ET.fromstring(text)
         ns = {'nzb': 'http://www.newznab.com/DTD/2010/feeds/'}
         items = root.findall('.//nzb:item', ns) or root.findall('.//item')
+        attr_ns = 'http://www.newznab.com/DTD/2010/feeds/attributes/'
         for item in items:
             nzb_url = None
             enc = item.find('nzb:enclosure', ns) or item.find('enclosure')
@@ -85,7 +141,8 @@ def _search_newznab_movie(base_url, api_key, query, categories, timeout=15):
                 continue
             title_el = item.find('nzb:title', ns) or item.find('title')
             title = (title_el.text or '').strip() if title_el is not None else 'Unknown'
-            results.append({'title': title, 'nzb_url': nzb_url})
+            size_bytes = _parse_size_from_xml_item(item, enc, ns, attr_ns)
+            results.append({'title': title, 'nzb_url': nzb_url, 'size_bytes': size_bytes})
         return results
     except (ET.ParseError, requests.RequestException) as e:
         logger.debug('Newznab search error: %s', e)
@@ -338,6 +395,14 @@ def api_movie_hunt_request():
         query = f'{title}'
         if year:
             query = f'{title} {year}'
+        runtime_minutes = data.get('runtime')
+        if runtime_minutes is not None:
+            try:
+                runtime_minutes = max(1, int(runtime_minutes))
+            except (TypeError, ValueError):
+                runtime_minutes = 90
+        else:
+            runtime_minutes = 90
         profile = _get_profile_by_name_or_default(quality_profile, instance_id)
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
@@ -362,7 +427,9 @@ def api_movie_hunt_request():
                     results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
                     if not results:
                         continue
-                chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(results, profile, instance_id)
+                chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(
+                    results, profile, instance_id, runtime_minutes=runtime_minutes
+                )
                 min_score = profile.get('min_custom_format_score', 0)
                 try:
                     min_score = int(min_score)
