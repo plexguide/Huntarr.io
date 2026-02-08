@@ -1403,6 +1403,15 @@ let huntarrUI = {
         } else {
             console.warn("[huntarrUI] currentPageTitle element not found during section switch.");
         }
+
+        // Hide CORE "Home" nav link only when we're on the home page; show it on Settings, System, etc.
+        if (this.elements.homeNav) {
+            if (this.currentSection === 'home') {
+                this.elements.homeNav.classList.add('nav-item-core-home-hidden');
+            } else {
+                this.elements.homeNav.classList.remove('nav-item-core-home-hidden');
+            }
+        }
     },
     
     // Sidebar switching functions
