@@ -90,7 +90,6 @@
         openMovieHuntRequestModal(item) {
             var modal = document.getElementById('movie-hunt-request-modal');
             var titleEl = document.getElementById('movie-hunt-request-modal-title');
-            var headerEl = document.getElementById('movie-hunt-request-modal-header');
             var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
             var statusContainer = document.getElementById('movie-hunt-request-status-container');
             var rootFolderSelect = document.getElementById('movie-hunt-request-root-folder');
@@ -98,26 +97,44 @@
             var cancelBtn = document.getElementById('movie-hunt-request-modal-cancel');
             var closeBtn = document.getElementById('movie-hunt-request-modal-close');
             var backdrop = document.getElementById('movie-hunt-request-modal-backdrop');
-            
+            var posterImg = document.getElementById('movie-hunt-request-poster-img');
+            var metaEl = document.getElementById('movie-hunt-request-modal-meta');
+
             if (!modal || !titleEl || !submitBtn) return;
-            
+
             /* Move modal to body so it sits outside .app-container and is not blurred */
             if (modal.parentNode !== document.body) {
                 document.body.appendChild(modal);
             }
-            
+
             this._pendingRequestItem = item;
-            var title = (item && item.title) ? String(item.title).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
             titleEl.textContent = item && item.title ? item.title : '';
-            var backdropUrl = (item && (item.backdrop_path || item.poster_path)) ? (item.backdrop_path || item.poster_path) : '';
-            if (backdropUrl && backdropUrl.indexOf('http') !== 0) {
-                backdropUrl = 'https://image.tmdb.org/t/p/w500' + (backdropUrl.indexOf('/') === 0 ? backdropUrl : '/' + backdropUrl);
+
+            // Poster image
+            if (posterImg) {
+                var posterPath = (item && item.poster_path) ? item.poster_path : '';
+                if (posterPath && posterPath.indexOf('http') !== 0) {
+                    posterPath = 'https://image.tmdb.org/t/p/w342' + (posterPath.indexOf('/') === 0 ? posterPath : '/' + posterPath);
+                }
+                posterImg.src = posterPath || './static/images/blackout.jpg';
             }
-            if (headerEl) {
-                headerEl.style.backgroundImage = backdropUrl ? 'url(' + backdropUrl + ')' : 'none';
+
+            // Meta line: year, genres
+            if (metaEl) {
+                var parts = [];
+                if (item && item.year) parts.push(String(item.year));
+                if (item && item.genres && item.genres.length) {
+                    var genreNames = item.genres.map(function(g) { return typeof g === 'string' ? g : (g.name || ''); }).filter(Boolean);
+                    if (genreNames.length) parts.push(genreNames.slice(0, 3).join(', '));
+                } else if (item && item.genre_ids) {
+                    // genre_ids are numeric; we don't have a map here, so just show the year
+                }
+                metaEl.textContent = parts.join('  \u00B7  ');
             }
+
+            // Compact status badge
             if (statusContainer) {
-                statusContainer.innerHTML = '<div class="series-status-box status-requestable"><i class="fas fa-inbox"></i><div><div class="status-title">Available to request</div><div class="status-text">This movie will be sent to your download client.</div></div></div>';
+                statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
             }
             if (rootFolderSelect) {
                 rootFolderSelect.innerHTML = '<option value="">Loading...</option>';
@@ -128,7 +145,7 @@
             }
             submitBtn.disabled = false;
             submitBtn.textContent = 'Request';
-            
+
             // Populate instance dropdown
             if (instanceSelect && window.MovieHuntInstanceDropdown) {
                 var self = this;
@@ -152,7 +169,7 @@
                 }).catch(function() {
                     instanceSelect.innerHTML = '<option value="1">Default Instance</option>';
                 });
-                
+
                 // Add change handler to check status when instance changes
                 var newInstanceSelect = instanceSelect.cloneNode(true);
                 instanceSelect.parentNode.replaceChild(newInstanceSelect, instanceSelect);
@@ -163,37 +180,37 @@
                     self.loadMovieHuntQualityProfiles(instanceSelect.value);
                 });
             }
-            
+
             // Show modal
             modal.style.display = 'flex';
             document.body.classList.add('requestarr-modal-open');
-            
+
             // Re-attach close handlers every time modal opens (to ensure they work)
             var self = this;
             function closeModal() {
                 modal.style.display = 'none';
                 document.body.classList.remove('requestarr-modal-open');
             }
-            
+
             // Remove old listeners and add new ones for Cancel, Close, and Backdrop
             if (cancelBtn) {
                 var newCancelBtn = cancelBtn.cloneNode(true);
                 cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
                 newCancelBtn.addEventListener('click', closeModal);
             }
-            
+
             if (closeBtn) {
                 var newCloseBtn = closeBtn.cloneNode(true);
                 closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
                 newCloseBtn.addEventListener('click', closeModal);
             }
-            
+
             if (backdrop) {
                 var newBackdrop = backdrop.cloneNode(true);
                 backdrop.parentNode.replaceChild(newBackdrop, backdrop);
                 newBackdrop.addEventListener('click', closeModal);
             }
-            
+
             // Re-attach submit button listener
             if (submitBtn) {
                 var newSubmitBtn = submitBtn.cloneNode(true);
@@ -202,7 +219,7 @@
                     self.submitMovieHuntRequest();
                 });
             }
-            
+
             this.loadMovieHuntRequestRootFolders(instanceSelect ? instanceSelect.value : null);
             this.loadMovieHuntQualityProfiles(instanceSelect ? instanceSelect.value : null);
         },
@@ -210,23 +227,23 @@
         checkMovieStatusForInstance(item, instanceId) {
             var statusContainer = document.getElementById('movie-hunt-request-status-container');
             if (!statusContainer || !item || !item.tmdb_id) return;
-            
-            statusContainer.innerHTML = '<div class="series-status-box"><i class="fas fa-spinner fa-spin"></i><div><div class="status-title">Checking status...</div></div></div>';
-            
+
+            statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-loading"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
+
             fetch('./api/movie-hunt/collection?instance_id=' + instanceId, { cache: 'no-store' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var movies = (data && data.movies) ? data.movies : [];
                     var found = movies.find(function(m) { return m.tmdb_id === item.tmdb_id; });
-                    
+
                     if (found) {
-                        statusContainer.innerHTML = '<div class="series-status-box status-in-library"><i class="fas fa-check-circle"></i><div><div class="status-title">In Collection</div><div class="status-text">This movie is already in your collection for this instance.</div></div></div>';
+                        statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-bookmark"></i> Already in Collection</span>';
                     } else {
-                        statusContainer.innerHTML = '<div class="series-status-box status-requestable"><i class="fas fa-inbox"></i><div><div class="status-title">Available to request</div><div class="status-text">This movie will be sent to your download client.</div></div></div>';
+                        statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
                     }
                 })
                 .catch(function() {
-                    statusContainer.innerHTML = '<div class="series-status-box status-requestable"><i class="fas fa-inbox"></i><div><div class="status-title">Available to request</div><div class="status-text">This movie will be sent to your download client.</div></div></div>';
+                    statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
                 });
         },
 

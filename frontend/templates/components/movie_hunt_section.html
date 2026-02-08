@@ -101,48 +101,49 @@
         </div>
     </div>
 
-    <!-- Movie Hunt Request Modal - same structure and design as Requestarr for consistency -->
-    <div id="movie-hunt-request-modal" class="media-modal" style="display: none;">
+    <!-- Movie Hunt Request Modal – Two-column poster + form layout -->
+    <div id="movie-hunt-request-modal" class="media-modal mh-req-modal" style="display: none;">
         <div class="modal-backdrop" id="movie-hunt-request-modal-backdrop"></div>
-        <div class="modal-content">
-            <div class="modal-body">
-                <div class="request-modal-header" id="movie-hunt-request-modal-header">
-                    <button type="button" class="modal-close-btn" id="movie-hunt-request-modal-close" aria-label="Close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                    <div class="request-modal-header-overlay">
-                        <h2 class="request-modal-title">Request Movie</h2>
-                        <h3 class="request-modal-subtitle" id="movie-hunt-request-modal-title"></h3>
-                    </div>
+        <div class="mh-req-card">
+            <button type="button" class="mh-req-close" id="movie-hunt-request-modal-close" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="mh-req-layout">
+                <!-- Poster column -->
+                <div class="mh-req-poster">
+                    <img id="movie-hunt-request-poster-img" src="./static/images/blackout.jpg" alt="" onerror="this.src='./static/images/blackout.jpg'">
                 </div>
-                <div class="request-modal-content">
-                    <div id="movie-hunt-request-status-container"></div>
-                    <div class="request-advanced-section">
-                        <div class="advanced-field">
-                            <select id="movie-hunt-request-instance" class="advanced-select" aria-label="Instance">
+                <!-- Form column -->
+                <div class="mh-req-form">
+                    <div class="mh-req-header">
+                        <span class="mh-req-label">Request Movie</span>
+                        <h2 class="mh-req-title" id="movie-hunt-request-modal-title"></h2>
+                        <div class="mh-req-meta" id="movie-hunt-request-modal-meta"></div>
+                    </div>
+                    <div class="mh-req-status" id="movie-hunt-request-status-container"></div>
+                    <div class="mh-req-fields">
+                        <div class="mh-req-field">
+                            <label>Instance</label>
+                            <select id="movie-hunt-request-instance" aria-label="Instance">
                                 <option value="default">Default Instance</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="request-advanced-section">
-                        <div class="advanced-field">
+                        <div class="mh-req-field">
                             <label>Root Folder</label>
-                            <select id="movie-hunt-request-root-folder" class="advanced-select">
+                            <select id="movie-hunt-request-root-folder">
                                 <option value="">Loading...</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="request-advanced-section">
-                        <div class="advanced-field">
+                        <div class="mh-req-field">
                             <label>Quality Profile</label>
-                            <select id="movie-hunt-request-quality-profile" class="advanced-select">
+                            <select id="movie-hunt-request-quality-profile">
                                 <option value="">Loading...</option>
                             </select>
                         </div>
                     </div>
-                    <div class="request-modal-actions">
-                        <button type="button" class="modal-btn cancel-btn" id="movie-hunt-request-modal-cancel">Cancel</button>
-                        <button type="button" class="modal-btn request-btn" id="movie-hunt-request-modal-submit">Request</button>
+                    <div class="mh-req-actions">
+                        <button type="button" class="mh-req-btn mh-req-btn-cancel" id="movie-hunt-request-modal-cancel">Cancel</button>
+                        <button type="button" class="mh-req-btn mh-req-btn-submit" id="movie-hunt-request-modal-submit">Request</button>
                     </div>
                 </div>
             </div>
