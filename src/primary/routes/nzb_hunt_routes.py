@@ -193,6 +193,67 @@ def save_nzb_advanced():
 
 
 # ──────────────────────────────────────────────────────────────────
+# Display preferences (queue / history view settings)
+# ──────────────────────────────────────────────────────────────────
+
+_DISPLAY_PREFS_DEFAULTS = {
+    "queue":   {"refreshRate": 3, "perPage": 20},
+    "history": {
+        "refreshRate": 30,
+        "perPage": 20,
+        "dateFormat": "relative",
+        "showCategory": False,
+        "showSize": False,
+        "showIndexer": False,
+    },
+}
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/settings/display-prefs", methods=["GET"])
+def get_nzb_display_prefs():
+    cfg = _load_config()
+    saved = cfg.get("display_prefs", {})
+    result = {}
+    for ctx in ("queue", "history"):
+        defaults = _DISPLAY_PREFS_DEFAULTS[ctx]
+        section = saved.get(ctx, {})
+        result[ctx] = {}
+        for key, default in defaults.items():
+            result[ctx][key] = section.get(key, default)
+    return jsonify(result)
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/settings/display-prefs", methods=["POST"])
+def save_nzb_display_prefs():
+    data = request.get_json(silent=True) or {}
+    cfg = _load_config()
+    prefs = cfg.get("display_prefs", {})
+    for ctx in ("queue", "history"):
+        if ctx not in data:
+            continue
+        incoming = data[ctx]
+        defaults = _DISPLAY_PREFS_DEFAULTS[ctx]
+        section = prefs.get(ctx, {})
+        for key, default in defaults.items():
+            if key in incoming:
+                if isinstance(default, bool):
+                    section[key] = bool(incoming[key])
+                elif isinstance(default, int):
+                    try:
+                        section[key] = int(incoming[key])
+                    except (ValueError, TypeError):
+                        section[key] = default
+                else:
+                    section[key] = str(incoming[key])
+            else:
+                section.setdefault(key, default)
+        prefs[ctx] = section
+    cfg["display_prefs"] = prefs
+    _save_config(cfg)
+    return jsonify({"success": True})
+
+
+# ──────────────────────────────────────────────────────────────────
 # Server CRUD
 # ──────────────────────────────────────────────────────────────────
 
@@ -543,7 +604,7 @@ def nzb_hunt_queue_remove(nzb_id):
 def nzb_hunt_history():
     """Get download history."""
     try:
-        limit = request.args.get("limit", 50, type=int)
+        limit = request.args.get("limit", 5000, type=int)
         mgr = _get_download_manager()
         return jsonify({"history": mgr.get_history(limit=limit)})
     except Exception as e:
@@ -559,6 +620,24 @@ def nzb_hunt_clear_history():
         mgr.clear_history()
         return jsonify({"success": True})
     except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/history/<path:nzb_id>", methods=["DELETE"])
+def nzb_hunt_delete_history_item(nzb_id):
+    """Delete a single history item by its nzo_id."""
+    try:
+        mgr = _get_download_manager()
+        if hasattr(mgr, 'delete_history_item'):
+            mgr.delete_history_item(nzb_id)
+        else:
+            # Fallback: filter from history file
+            history = mgr.get_history(limit=10000)
+            history = [h for h in history if h.get('nzo_id') != nzb_id and h.get('id') != nzb_id]
+            mgr._save_history(history)
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.exception("Delete history item error: %s", nzb_id)
         return jsonify({"success": False, "error": str(e)}), 500
 
 

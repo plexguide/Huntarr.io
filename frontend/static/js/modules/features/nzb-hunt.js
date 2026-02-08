@@ -57,12 +57,16 @@
             // Wire up speed limit popover
             this._setupSpeedLimit();
 
-            // Start polling queue & status
-            this._fetchQueueAndStatus();
-            this._fetchHistory();
-            this._pollTimer = setInterval(function () { self._fetchQueueAndStatus(); }, 3000);
+            // Wire up modal controls
+            this._setupPrefsModal();
 
-            console.log('[NzbHunt] Home initialized – polling started');
+            // Load display prefs from server, then start polling with correct rates
+            this._loadDisplayPrefs(function () {
+                self._fetchQueueAndStatus();
+                self._fetchHistory();
+                self._applyRefreshRates();
+                console.log('[NzbHunt] Home initialized – polling started');
+            });
         },
 
         /* ──────────────────────────────────────────────
@@ -379,26 +383,233 @@
         },
 
         /* ──────────────────────────────────────────────
-           History Rendering
+           Display Preferences (server-side) – context-aware
         ────────────────────────────────────────────── */
-        _fetchHistory: function () {
+        _displayPrefs: {
+            queue:   { refreshRate: 3, perPage: 20 },
+            history: { refreshRate: 30, perPage: 20, dateFormat: 'relative', showCategory: false, showSize: false, showIndexer: false }
+        },
+        _histPollTimer: null,
+        _prefsLoaded: false,
+
+        _loadDisplayPrefs: function (callback) {
             var self = this;
-            fetch('./api/nzb-hunt/history?limit=50&t=' + Date.now())
+            fetch('./api/nzb-hunt/settings/display-prefs?t=' + Date.now())
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
-                    self._renderHistory(data.history || []);
+                    if (data.queue) {
+                        self._displayPrefs.queue.refreshRate = data.queue.refreshRate || 3;
+                        self._displayPrefs.queue.perPage = data.queue.perPage || 20;
+                    }
+                    if (data.history) {
+                        self._displayPrefs.history.refreshRate = data.history.refreshRate || 30;
+                        self._displayPrefs.history.perPage = data.history.perPage || 20;
+                        self._displayPrefs.history.dateFormat = data.history.dateFormat || 'relative';
+                        self._displayPrefs.history.showCategory = !!data.history.showCategory;
+                        self._displayPrefs.history.showSize = !!data.history.showSize;
+                        self._displayPrefs.history.showIndexer = !!data.history.showIndexer;
+                    }
+                    self._histPerPage = self._displayPrefs.history.perPage;
+                    self._prefsLoaded = true;
+                    console.log('[NzbHunt] Display prefs loaded from server');
+                    if (callback) callback();
+                })
+                .catch(function (err) {
+                    console.error('[NzbHunt] Failed to load display prefs:', err);
+                    self._prefsLoaded = true;
+                    if (callback) callback();
+                });
+        },
+
+        _saveDisplayPrefs: function (callback) {
+            var self = this;
+            this._histPerPage = this._displayPrefs.history.perPage;
+            fetch('./api/nzb-hunt/settings/display-prefs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this._displayPrefs)
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    console.log('[NzbHunt] Display prefs saved to server');
+                    if (callback) callback(data);
+                })
+                .catch(function (err) {
+                    console.error('[NzbHunt] Failed to save display prefs:', err);
+                    if (callback) callback({ success: false });
+                });
+        },
+
+        _applyRefreshRates: function () {
+            var self = this;
+            // Queue poll timer
+            if (this._pollTimer) clearInterval(this._pollTimer);
+            var qRate = (this._displayPrefs.queue.refreshRate || 3) * 1000;
+            this._pollTimer = setInterval(function () { self._fetchQueueAndStatus(); }, qRate);
+
+            // History poll timer
+            if (this._histPollTimer) clearInterval(this._histPollTimer);
+            var hRate = (this._displayPrefs.history.refreshRate || 30) * 1000;
+            this._histPollTimer = setInterval(function () { self._fetchHistory(); }, hRate);
+        },
+
+        _openPrefsModal: function () {
+            var ctx = this.currentTab; // 'queue' or 'history'
+            var prefs = this._displayPrefs[ctx];
+            var titleEl = document.getElementById('nzb-prefs-title');
+            if (titleEl) titleEl.textContent = (ctx === 'queue' ? 'Queue' : 'History') + ' Settings';
+
+            // Show/hide history-only section
+            var histSec = document.getElementById('nzb-prefs-history-section');
+            if (histSec) histSec.style.display = (ctx === 'history') ? '' : 'none';
+
+            // Populate shared fields
+            var el;
+            el = document.getElementById('nzb-pref-refresh');
+            if (el) el.value = String(prefs.refreshRate || (ctx === 'queue' ? 3 : 30));
+            el = document.getElementById('nzb-pref-per-page');
+            if (el) el.value = String(prefs.perPage || 20);
+
+            // Populate history-only fields
+            if (ctx === 'history') {
+                el = document.getElementById('nzb-pref-date-format');
+                if (el) el.value = prefs.dateFormat || 'relative';
+                el = document.getElementById('nzb-pref-show-category');
+                if (el) el.checked = !!prefs.showCategory;
+                el = document.getElementById('nzb-pref-show-size');
+                if (el) el.checked = !!prefs.showSize;
+                el = document.getElementById('nzb-pref-show-indexer');
+                if (el) el.checked = !!prefs.showIndexer;
+            }
+
+            // Store context for save
+            this._prefsContext = ctx;
+
+            var overlay = document.getElementById('nzb-prefs-overlay');
+            if (overlay) overlay.style.display = 'flex';
+        },
+
+        _closePrefsModal: function () {
+            var overlay = document.getElementById('nzb-prefs-overlay');
+            if (overlay) overlay.style.display = 'none';
+        },
+
+        _savePrefsFromModal: function () {
+            var self = this;
+            var ctx = this._prefsContext || this.currentTab;
+            var prefs = this._displayPrefs[ctx];
+            var el;
+
+            el = document.getElementById('nzb-pref-refresh');
+            if (el) prefs.refreshRate = parseInt(el.value, 10) || (ctx === 'queue' ? 3 : 30);
+            el = document.getElementById('nzb-pref-per-page');
+            if (el) prefs.perPage = parseInt(el.value, 10) || 20;
+
+            if (ctx === 'history') {
+                el = document.getElementById('nzb-pref-date-format');
+                if (el) prefs.dateFormat = el.value;
+                el = document.getElementById('nzb-pref-show-category');
+                if (el) prefs.showCategory = el.checked;
+                el = document.getElementById('nzb-pref-show-size');
+                if (el) prefs.showSize = el.checked;
+                el = document.getElementById('nzb-pref-show-indexer');
+                if (el) prefs.showIndexer = el.checked;
+            }
+
+            this._saveDisplayPrefs(function () {
+                self._applyRefreshRates();
+                self._closePrefsModal();
+
+                if (ctx === 'history') {
+                    self._histPage = 1;
+                    self._renderHistory();
+                }
+
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification((ctx === 'queue' ? 'Queue' : 'History') + ' settings saved.', 'success');
+                }
+            });
+        },
+
+        _setupPrefsModal: function () {
+            var self = this;
+            var gearBtn = document.getElementById('nzb-display-prefs-btn');
+            if (gearBtn) gearBtn.addEventListener('click', function () { self._openPrefsModal(); });
+
+            var closeBtn = document.getElementById('nzb-prefs-close');
+            if (closeBtn) closeBtn.addEventListener('click', function () { self._closePrefsModal(); });
+
+            var saveBtn = document.getElementById('nzb-prefs-save');
+            if (saveBtn) saveBtn.addEventListener('click', function () { self._savePrefsFromModal(); });
+
+            var overlay = document.getElementById('nzb-prefs-overlay');
+            if (overlay) {
+                overlay.addEventListener('click', function (e) {
+                    if (e.target === overlay) self._closePrefsModal();
+                });
+            }
+        },
+
+        /* ──────────────────────────────────────────────
+           History Rendering  (SABnzbd-inspired)
+        ────────────────────────────────────────────── */
+        _histPage: 1,
+        _histPerPage: 20,
+        _histAll: [],
+        _histFilter: '',
+
+        _fetchHistory: function () {
+            var self = this;
+            fetch('./api/nzb-hunt/history?limit=5000&t=' + Date.now())
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var hist = data.history || [];
+                    // Sort newest first
+                    hist.sort(function (a, b) {
+                        var ta = new Date(a.completed_at || a.added_at || 0).getTime();
+                        var tb = new Date(b.completed_at || b.added_at || 0).getTime();
+                        return tb - ta;
+                    });
+                    self._histAll = hist;
+                    self._histPage = 1;
+                    self._renderHistory();
                 })
                 .catch(function (err) { console.error('[NzbHunt] History fetch error:', err); });
         },
 
-        _renderHistory: function (history) {
+        _timeAgo: function (dateStr) {
+            if (!dateStr) return '—';
+            var now = Date.now();
+            var then = new Date(dateStr).getTime();
+            var diff = Math.max(0, now - then);
+            var sec = Math.floor(diff / 1000);
+            if (sec < 60) return 'just now';
+            var min = Math.floor(sec / 60);
+            if (min < 60) return min + (min === 1 ? ' minute ago' : ' minutes ago');
+            var hr = Math.floor(min / 60);
+            if (hr < 24) return hr + (hr === 1 ? ' hour ago' : ' hours ago');
+            var days = Math.floor(hr / 24);
+            if (days < 30) return days + (days === 1 ? ' day ago' : ' days ago');
+            var months = Math.floor(days / 30);
+            return months + (months === 1 ? ' month ago' : ' months ago');
+        },
+
+        _renderHistory: function () {
             var body = document.getElementById('nzb-history-body');
             if (!body) return;
 
+            var all = this._histAll;
             var badge = document.getElementById('nzb-history-count');
-            if (badge) badge.textContent = history.length;
+            if (badge) badge.textContent = all.length;
 
-            if (!history || history.length === 0) {
+            // Filter
+            var filter = this._histFilter.toLowerCase();
+            var filtered = filter
+                ? all.filter(function (h) { return (h.name || '').toLowerCase().indexOf(filter) !== -1; })
+                : all;
+
+            // Empty state
+            if (!filtered.length) {
                 body.innerHTML =
                     '<div class="nzb-queue-empty">' +
                         '<div class="nzb-queue-empty-icon"><i class="fas fa-history"></i></div>' +
@@ -408,104 +619,155 @@
                 return;
             }
 
+            // Pagination
+            var perPage = this._histPerPage;
+            var totalPages = Math.ceil(filtered.length / perPage);
+            if (this._histPage > totalPages) this._histPage = totalPages;
+            var start = (this._histPage - 1) * perPage;
+            var page = filtered.slice(start, start + perPage);
+
+            // Bandwidth stats
+            var totalBytes = 0;
+            all.forEach(function (h) { totalBytes += (h.total_bytes || h.downloaded_bytes || 0); });
+
             var self = this;
+            var prefs = this._displayPrefs.history;
             var html =
                 '<table class="nzb-history-table">' +
                 '<thead><tr>' +
                 '<th class="nzb-hist-col-status"></th>' +
-                '<th class="nzb-hist-col-name">Name</th>' +
-                '<th class="nzb-hist-col-cat">Category</th>' +
-                '<th class="nzb-hist-col-size">Size</th>' +
-                '<th class="nzb-hist-col-date">Completed</th>' +
-                '<th class="nzb-hist-col-result">Result</th>' +
-                '<th class="nzb-hist-col-info"></th>' +
+                '<th class="nzb-hist-col-name">Name</th>';
+            if (prefs.showCategory) html += '<th class="nzb-hist-col-cat">Category</th>';
+            if (prefs.showSize) html += '<th class="nzb-hist-col-size">Size</th>';
+            if (prefs.showIndexer) html += '<th class="nzb-hist-col-indexer">Indexer</th>';
+            html += '<th class="nzb-hist-col-result">Result</th>' +
+                '<th class="nzb-hist-col-age"></th>' +
+                '<th class="nzb-hist-col-actions"></th>' +
                 '</tr></thead><tbody>';
 
-            history.forEach(function (item) {
+            page.forEach(function (item) {
                 var isSuccess = item.state === 'completed';
                 var statusIcon = isSuccess
                     ? '<i class="fas fa-check-circle nzb-hist-status-icon success"></i>'
                     : '<i class="fas fa-times-circle nzb-hist-status-icon fail"></i>';
                 var name = self._escHtml(item.name || 'Unknown');
-                var size = self._formatBytes(item.total_bytes || item.downloaded_bytes || 0);
-                var date = item.completed_at ? new Date(item.completed_at).toLocaleString() : '—';
-                var catLabel = item.category ? '<span class="nzb-hist-cat">' + self._escHtml(item.category) + '</span>' : '—';
+                var dateVal = item.completed_at || item.added_at;
+                var age = prefs.dateFormat === 'absolute'
+                    ? (dateVal ? new Date(dateVal).toLocaleString() : '—')
+                    : self._timeAgo(dateVal);
 
-                // Result column
-                var resultHtml = '';
+                // Result text
+                var resultHtml;
                 if (isSuccess) {
-                    resultHtml = '<span class="nzb-hist-result-ok"><i class="fas fa-check" style="margin-right:4px;"></i>Completed</span>';
+                    resultHtml = '<span class="nzb-hist-result-ok">Completed</span>';
                 } else {
-                    var errText = item.error_message ? self._escHtml(item.error_message) : 'Failed';
-                    resultHtml = '<span class="nzb-hist-result-fail"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>' + errText + '</span>';
-                }
-                // Missing articles info
-                if (item.failed_segments && item.failed_segments > 0) {
-                    var missingBytes = item.missing_bytes || 0;
-                    var mbMissing = missingBytes / (1024 * 1024);
-                    var missingStr = '';
-                    if (mbMissing >= 1024) { missingStr = (mbMissing / 1024).toFixed(1) + ' GB'; }
-                    else if (mbMissing >= 1.0) { missingStr = mbMissing.toFixed(1) + ' MB'; }
-                    else if (missingBytes > 0) { missingStr = (missingBytes / 1024).toFixed(0) + ' KB'; }
-                    if (missingStr) {
-                        resultHtml += '<br><span class="nzb-hist-missing"><i class="fas fa-exclamation-triangle" style="margin-right:3px;"></i>' + missingStr + ' missing</span>';
+                    var shortErr = 'Aborted';
+                    if (item.error_message && !/missing article/i.test(item.error_message)) {
+                        shortErr = item.error_message.length > 24
+                            ? self._escHtml(item.error_message.substring(0, 22)) + '…'
+                            : self._escHtml(item.error_message);
                     }
+                    resultHtml = '<span class="nzb-hist-result-fail">' + shortErr + '</span>';
                 }
 
-                // Info tooltip content
-                var seqId = item.seq_id || '—';
-                var nzbName = self._escHtml(item.nzb_name || item.name || 'Unknown');
-                var indexer = item.indexer ? self._escHtml(item.indexer) : '—';
-                var addedBy = item.added_by ? self._escHtml(item.added_by) : '—';
+                var nzbId = item.nzo_id || item.id || '';
 
-                var tooltipHtml =
-                    '<div class="nzb-hist-tooltip">' +
-                        '<div class="nzb-tip-row"><div class="nzb-tip-label">ID</div><strong>#' + seqId + '</strong></div>' +
-                        '<div class="nzb-tip-row"><div class="nzb-tip-label">NZB Name</div><strong>' + nzbName + '</strong></div>' +
-                        '<div class="nzb-tip-row"><div class="nzb-tip-label">Indexer</div><strong>' + indexer + '</strong></div>' +
-                        '<div class="nzb-tip-row"><div class="nzb-tip-label">Source</div><strong>' + addedBy + '</strong></div>' +
-                    '</div>';
-
-                html +=
-                    '<tr>' +
-                        '<td class="nzb-hist-col-status">' + statusIcon + '</td>' +
-                        '<td class="nzb-hist-col-name" title="' + name + '"><span class="nzb-hist-cell-name">' + name + '</span></td>' +
-                        '<td class="nzb-hist-col-cat">' + catLabel + '</td>' +
-                        '<td class="nzb-hist-col-size">' + size + '</td>' +
-                        '<td class="nzb-hist-col-date">' + date + '</td>' +
-                        '<td class="nzb-hist-col-result">' + resultHtml + '</td>' +
-                        '<td class="nzb-hist-col-info"><button type="button" class="nzb-hist-info-btn" title="Details"><i class="fas fa-question-circle"></i>' + tooltipHtml + '</button></td>' +
-                    '</tr>';
+                html += '<tr>';
+                html += '<td class="nzb-hist-col-status">' + statusIcon + '</td>';
+                html += '<td class="nzb-hist-col-name" title="' + name + '"><span class="nzb-hist-cell-name">' + name + '</span></td>';
+                if (prefs.showCategory) {
+                    var catLabel = item.category ? '<span class="nzb-hist-cat">' + self._escHtml(item.category) + '</span>' : '—';
+                    html += '<td class="nzb-hist-col-cat">' + catLabel + '</td>';
+                }
+                if (prefs.showSize) {
+                    html += '<td class="nzb-hist-col-size">' + self._formatBytes(item.total_bytes || item.downloaded_bytes || 0) + '</td>';
+                }
+                if (prefs.showIndexer) {
+                    html += '<td class="nzb-hist-col-indexer">' + self._escHtml(item.indexer || '—') + '</td>';
+                }
+                html += '<td class="nzb-hist-col-result">' + resultHtml + '</td>';
+                html += '<td class="nzb-hist-col-age">' + age + '</td>';
+                html += '<td class="nzb-hist-col-actions"><button type="button" class="nzb-hist-delete-btn" data-nzb-id="' + nzbId + '" title="Delete"><i class="fas fa-trash-alt"></i></button></td>';
+                html += '</tr>';
             });
 
             html += '</tbody></table>';
+
+            // Footer: search | pagination | stats
+            html += '<div class="nzb-history-footer">';
+            html += '<div class="nzb-hist-search"><i class="fas fa-search"></i><input type="text" id="nzb-hist-search-input" placeholder="Search" value="' + self._escHtml(this._histFilter) + '" /></div>';
+            html += '<div class="nzb-hist-pagination">';
+            if (totalPages > 1) {
+                html += '<button data-hist-page="prev" ' + (this._histPage <= 1 ? 'disabled' : '') + '>&laquo;</button>';
+                // Show page numbers with ellipsis
+                var pages = self._paginationRange(this._histPage, totalPages);
+                for (var i = 0; i < pages.length; i++) {
+                    if (pages[i] === '…') {
+                        html += '<span>…</span>';
+                    } else {
+                        html += '<button data-hist-page="' + pages[i] + '" ' + (pages[i] === this._histPage ? 'class="active"' : '') + '>' + pages[i] + '</button>';
+                    }
+                }
+                html += '<button data-hist-page="next" ' + (this._histPage >= totalPages ? 'disabled' : '') + '>&raquo;</button>';
+            }
+            html += '</div>';
+            html += '<div class="nzb-hist-stats"><span><i class="fas fa-download"></i>' + self._formatBytes(totalBytes) + ' Total</span><span>' + filtered.length + ' items</span></div>';
+            html += '</div>';
+
             body.innerHTML = html;
 
-            // Position tooltips dynamically to avoid overflow clipping
-            body.querySelectorAll('.nzb-hist-info-btn').forEach(function (btn) {
-                btn.addEventListener('mouseenter', function () {
-                    var tip = btn.querySelector('.nzb-hist-tooltip');
-                    if (!tip) return;
-                    var rect = btn.getBoundingClientRect();
-                    // Position above the button, aligned to the right edge
-                    tip.style.bottom = 'auto';
-                    tip.style.right = 'auto';
-                    tip.style.top = (rect.top - 8) + 'px';
-                    tip.style.left = (rect.right - 20) + 'px';
-                    tip.style.transform = 'translateY(-100%)';
-                    // If tooltip would go off-screen top, position below instead
-                    var tipRect = tip.getBoundingClientRect();
-                    if (tipRect.top < 8) {
-                        tip.style.top = (rect.bottom + 8) + 'px';
-                        tip.style.transform = 'none';
-                    }
-                    // If tooltip would go off-screen right, shift left
-                    tipRect = tip.getBoundingClientRect();
-                    if (tipRect.right > window.innerWidth - 8) {
-                        tip.style.left = (window.innerWidth - tipRect.width - 12) + 'px';
-                    }
+            // Wire up search
+            var searchInput = document.getElementById('nzb-hist-search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    self._histFilter = this.value;
+                    self._histPage = 1;
+                    self._renderHistory();
+                });
+            }
+
+            // Wire up pagination
+            body.querySelectorAll('[data-hist-page]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var val = btn.getAttribute('data-hist-page');
+                    if (val === 'prev') { self._histPage = Math.max(1, self._histPage - 1); }
+                    else if (val === 'next') { self._histPage++; }
+                    else { self._histPage = parseInt(val, 10); }
+                    self._renderHistory();
                 });
             });
+
+            // Wire up per-row delete
+            body.querySelectorAll('.nzb-hist-delete-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var id = btn.getAttribute('data-nzb-id');
+                    if (!id) return;
+                    self._deleteHistoryItem(id);
+                });
+            });
+        },
+
+        _paginationRange: function (current, total) {
+            if (total <= 7) {
+                var arr = [];
+                for (var i = 1; i <= total; i++) arr.push(i);
+                return arr;
+            }
+            var pages = [1];
+            if (current > 3) pages.push('…');
+            for (var p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p++) {
+                pages.push(p);
+            }
+            if (current < total - 2) pages.push('…');
+            pages.push(total);
+            return pages;
+        },
+
+        _deleteHistoryItem: function (nzbId) {
+            var self = this;
+            fetch('./api/nzb-hunt/history/' + encodeURIComponent(nzbId), { method: 'DELETE' })
+                .then(function () { self._fetchHistory(); })
+                .catch(function (err) { console.error('[NzbHunt] Delete history item error:', err); });
         },
 
         _clearHistory: function () {

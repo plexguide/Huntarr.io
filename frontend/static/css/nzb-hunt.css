@@ -19,9 +19,9 @@
 
 .nzb-hunt-container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1600px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 24px 32px;
 }
 
 /* ── Status bar (speed, queue, disk) ─────────────────────────────── */
@@ -1792,21 +1792,19 @@
     color: #ef4444;
 }
 
-/* History table (matches queue table) */
+/* ═══ History table – SABnzbd-inspired clean layout ═══ */
 .nzb-history-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     table-layout: fixed;
 }
-
 .nzb-history-table thead {
     background: rgba(15, 23, 42, 0.8);
     border-bottom: 1px solid rgba(71, 85, 105, 0.5);
 }
-
 .nzb-history-table th {
-    padding: 8px 10px;
+    padding: 8px 12px;
     text-align: left;
     font-weight: 600;
     color: #94a3b8;
@@ -1814,31 +1812,25 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
-
 .nzb-history-table td {
-    padding: 6px 10px;
-    border-bottom: 1px solid rgba(71, 85, 105, 0.25);
+    padding: 7px 12px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.2);
     color: #cbd5e1;
     vertical-align: middle;
 }
-
 .nzb-history-table tbody tr:hover {
     background: rgba(255, 255, 255, 0.03);
 }
 
-/* History column widths */
-.nzb-history-table .nzb-hist-col-status { width: 28px; min-width: 28px; max-width: 28px; text-align: center; padding-right: 4px; }
-.nzb-history-table .nzb-hist-col-name   { width: 40%; min-width: 120px; }
-.nzb-history-table .nzb-hist-col-cat    { width: 10%; min-width: 60px; }
-.nzb-history-table .nzb-hist-col-size   { width: 10%; min-width: 70px; }
-.nzb-history-table .nzb-hist-col-date   { width: 16%; min-width: 110px; }
-.nzb-history-table .nzb-hist-col-result { width: 20%; min-width: 100px; }
-.nzb-history-table .nzb-hist-col-info   { width: 40px; min-width: 40px; max-width: 40px; text-align: center; padding-right: 8px; }
+/* Column widths – SABnzbd style: icon | name | status | time ago | actions */
+.nzb-history-table .nzb-hist-col-status { width: 28px; min-width: 28px; max-width: 28px; text-align: center; padding-right: 0; }
+.nzb-history-table .nzb-hist-col-name   { /* flex fill */ }
+.nzb-history-table .nzb-hist-col-result { width: 120px; min-width: 100px; }
+.nzb-history-table .nzb-hist-col-age    { width: 120px; min-width: 90px; text-align: right; color: #64748b; font-size: 0.78rem; }
+.nzb-history-table .nzb-hist-col-actions { width: 36px; min-width: 36px; max-width: 36px; text-align: center; }
 
-/* Status icon column */
-.nzb-hist-status-icon {
-    font-size: 0.85rem;
-}
+/* Status icons */
+.nzb-hist-status-icon { font-size: 0.85rem; }
 .nzb-hist-status-icon.success { color: #22c55e; }
 .nzb-hist-status-icon.fail    { color: #ef4444; }
 
@@ -1852,7 +1844,91 @@
     font-weight: 500;
 }
 
-/* Category badge */
+/* Result column */
+.nzb-hist-result-ok   { color: #22c55e; font-weight: 500; }
+.nzb-hist-result-fail  { color: #ef4444; font-weight: 500; }
+
+/* Per-row delete button */
+.nzb-hist-delete-btn {
+    background: none;
+    border: none;
+    color: #475569;
+    cursor: pointer;
+    font-size: 0.82rem;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+.nzb-hist-delete-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* ─── History footer (pagination + stats) ─── */
+.nzb-history-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-top: 1px solid rgba(71, 85, 105, 0.3);
+    font-size: 0.76rem;
+    color: #64748b;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.nzb-hist-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.nzb-hist-search input {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(71, 85, 105, 0.4);
+    border-radius: 4px;
+    color: #e2e8f0;
+    padding: 4px 8px;
+    font-size: 0.76rem;
+    width: 140px;
+    outline: none;
+}
+.nzb-hist-search input:focus { border-color: #3b82f6; }
+.nzb-hist-search input::placeholder { color: #475569; }
+
+.nzb-hist-pagination {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+.nzb-hist-pagination button {
+    background: none;
+    border: 1px solid rgba(71, 85, 105, 0.3);
+    color: #94a3b8;
+    padding: 3px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.74rem;
+    min-width: 28px;
+    transition: background 0.15s, color 0.15s;
+}
+.nzb-hist-pagination button:hover { background: rgba(59, 130, 246, 0.1); color: #e2e8f0; }
+.nzb-hist-pagination button.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.nzb-hist-pagination button:disabled { opacity: 0.4; cursor: default; }
+.nzb-hist-pagination span { color: #475569; padding: 0 4px; }
+
+.nzb-hist-stats {
+    display: flex;
+    gap: 16px;
+    color: #64748b;
+    font-size: 0.76rem;
+}
+.nzb-hist-stats span { white-space: nowrap; }
+.nzb-hist-stats i { margin-right: 4px; color: #475569; }
+
+/* Extra optional columns */
+.nzb-history-table .nzb-hist-col-cat  { width: 90px; min-width: 70px; }
+.nzb-history-table .nzb-hist-col-size { width: 80px; min-width: 60px; text-align: right; color: #94a3b8; }
+.nzb-history-table .nzb-hist-col-indexer { width: 100px; min-width: 70px; color: #94a3b8; }
+
 .nzb-hist-cat {
     display: inline-block;
     padding: 2px 8px;
@@ -1863,64 +1939,180 @@
     font-weight: 500;
 }
 
-/* Info tooltip button */
-.nzb-hist-info-btn {
+/* ═══ Gear / Display-prefs button in status bar ═══ */
+.nzb-display-prefs-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(71, 85, 105, 0.35);
+    color: #94a3b8;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.3s;
+}
+.nzb-display-prefs-btn:hover {
+    color: #e2e8f0;
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.4);
+    transform: rotate(45deg);
+}
+
+/* ═══ Display Preferences Modal ═══ */
+.nzb-prefs-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: nzbFadeIn 0.2s ease;
+}
+@keyframes nzbFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.nzb-prefs-modal {
+    background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(71, 85, 105, 0.45);
+    border-radius: 14px;
+    width: 380px;
+    max-width: 92vw;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    animation: nzbSlideUp 0.25s ease;
+}
+@keyframes nzbSlideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+.nzb-prefs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+}
+.nzb-prefs-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+.nzb-prefs-close {
     background: none;
     border: none;
     color: #64748b;
+    font-size: 1.4rem;
     cursor: pointer;
-    font-size: 0.8rem;
-    padding: 4px;
-    border-radius: 4px;
-    transition: color 0.15s, background 0.15s;
-    position: relative;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color 0.15s;
 }
-.nzb-hist-info-btn:hover {
-    color: #93c5fd;
-    background: rgba(59, 130, 246, 0.1);
+.nzb-prefs-close:hover { color: #ef4444; }
+
+.nzb-prefs-body {
+    padding: 18px 24px;
 }
 
-/* Tooltip */
-.nzb-hist-tooltip {
-    display: none;
-    position: fixed;
-    background: #1e293b;
-    border: 1px solid rgba(71, 85, 105, 0.6);
-    border-radius: 8px;
-    padding: 10px 14px;
-    min-width: 280px;
-    max-width: 400px;
-    z-index: 10000;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    font-size: 0.78rem;
-    line-height: 1.6;
-    color: #94a3b8;
-    text-align: left;
-    white-space: normal;
-    pointer-events: none;
+.nzb-prefs-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+    gap: 16px;
 }
-.nzb-hist-info-btn:hover .nzb-hist-tooltip {
-    display: block;
+.nzb-prefs-label {
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    font-weight: 500;
 }
-.nzb-hist-tooltip strong {
+
+.nzb-prefs-select {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(71, 85, 105, 0.45);
+    border-radius: 6px;
     color: #e2e8f0;
-    font-weight: 600;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    outline: none;
+    min-width: 160px;
+    transition: border-color 0.15s;
 }
-.nzb-hist-tooltip .nzb-tip-label {
+.nzb-prefs-select:focus { border-color: #3b82f6; }
+
+.nzb-prefs-divider {
+    border-top: 1px solid rgba(71, 85, 105, 0.25);
+    margin: 12px 0 8px;
+}
+.nzb-prefs-section-title {
     color: #64748b;
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 2px;
-}
-.nzb-hist-tooltip .nzb-tip-row {
-    margin-bottom: 6px;
-}
-.nzb-hist-tooltip .nzb-tip-row:last-child {
-    margin-bottom: 0;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 4px;
 }
 
-/* Result column text */
-.nzb-hist-result-ok { color: #22c55e; font-weight: 500; }
-.nzb-hist-result-fail { color: #ef4444; font-size: 0.75rem; }
-.nzb-hist-missing { color: #f59e0b; font-size: 0.72rem; }
+/* Prefs-modal toggle – unique class (avoids nzb-toggle-slider conflict) */
+.nzb-pref-toggle {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+.nzb-pref-toggle input[type="checkbox"] {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+    pointer-events: none;
+    margin: 0;
+    padding: 0;
+}
+.nzb-pref-slider {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #334155;
+    border: 1px solid rgba(71, 85, 105, 0.5);
+    border-radius: 18px;
+    transition: background 0.25s, border-color 0.25s;
+}
+.nzb-pref-slider::before {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    left: 2px;
+    bottom: 2px;
+    background: #64748b;
+    border-radius: 50%;
+    transition: transform 0.25s, background 0.25s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+}
+.nzb-pref-toggle input[type="checkbox"]:checked + .nzb-pref-slider {
+    background: #22c55e;
+    border-color: #16a34a;
+}
+.nzb-pref-toggle input[type="checkbox"]:checked + .nzb-pref-slider::before {
+    transform: translateX(16px);
+    background: #fff;
+}
+
+.nzb-prefs-footer {
+    padding: 14px 22px 18px;
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(71, 85, 105, 0.2);
+}
