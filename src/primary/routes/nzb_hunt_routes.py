@@ -91,6 +91,57 @@ def save_nzb_folders():
 
 
 # ──────────────────────────────────────────────────────────────────
+# Processing settings
+# ──────────────────────────────────────────────────────────────────
+
+_PROCESSING_DEFAULTS = {
+    "max_retries": 3,
+    "abort_hopeless": True,
+    "abort_threshold_pct": 5,
+    "propagation_delay": 0,
+    "disconnect_on_empty": True,
+    "direct_unpack": False,
+    "encrypted_rar_action": "pause",
+    "unwanted_ext_action": "off",
+    "unwanted_extensions": "exe",
+}
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/settings/processing", methods=["GET"])
+def get_nzb_processing():
+    cfg = _load_config()
+    proc = cfg.get("processing", {})
+    result = {}
+    for key, default in _PROCESSING_DEFAULTS.items():
+        result[key] = proc.get(key, default)
+    return jsonify(result)
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/settings/processing", methods=["POST"])
+def save_nzb_processing():
+    data = request.get_json(silent=True) or {}
+    cfg = _load_config()
+    proc = {}
+    for key, default in _PROCESSING_DEFAULTS.items():
+        if key in data:
+            # Ensure correct types
+            if isinstance(default, bool):
+                proc[key] = bool(data[key])
+            elif isinstance(default, int):
+                try:
+                    proc[key] = int(data[key])
+                except (ValueError, TypeError):
+                    proc[key] = default
+            else:
+                proc[key] = str(data[key])
+        else:
+            proc[key] = cfg.get("processing", {}).get(key, default)
+    cfg["processing"] = proc
+    _save_config(cfg)
+    return jsonify({"success": True})
+
+
+# ──────────────────────────────────────────────────────────────────
 # Server CRUD
 # ──────────────────────────────────────────────────────────────────
 

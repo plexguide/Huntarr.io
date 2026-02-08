@@ -133,6 +133,7 @@ class DownloadItem:
         self.total_segments = 0
         self.completed_segments = 0
         self.failed_segments = 0  # Segments that couldn't be downloaded (missing articles)
+        self.missing_bytes = 0    # Estimated bytes of missing articles (like SABnzbd's mbmissing)
         self.total_files = 0
         self.completed_files = 0
         self.speed_bps = 0  # bytes per second
@@ -174,6 +175,7 @@ class DownloadItem:
             "total_segments": self.total_segments,
             "completed_segments": self.completed_segments,
             "failed_segments": self.failed_segments,
+            "missing_bytes": self.missing_bytes,
             "total_files": self.total_files,
             "completed_files": self.completed_files,
             "progress_pct": round(self.progress_pct, 1),
@@ -205,6 +207,7 @@ class DownloadItem:
         item.total_segments = d.get("total_segments", 0)
         item.completed_segments = d.get("completed_segments", 0)
         item.failed_segments = d.get("failed_segments", 0)
+        item.missing_bytes = d.get("missing_bytes", 0)
         item.total_files = d.get("total_files", 0)
         item.completed_files = d.get("completed_files", 0)
         item.speed_bps = d.get("speed_bps", 0)
@@ -403,6 +406,32 @@ class NZBHuntDownloadManager:
             pass
         return []
     
+    def _get_processing_settings(self) -> dict:
+        """Get processing settings from config."""
+        defaults = {
+            "max_retries": 3,
+            "abort_hopeless": True,
+            "abort_threshold_pct": 5,
+            "propagation_delay": 0,
+            "disconnect_on_empty": True,
+            "direct_unpack": False,
+            "encrypted_rar_action": "pause",
+            "unwanted_ext_action": "off",
+            "unwanted_extensions": "exe",
+        }
+        try:
+            config_path = os.path.join(self._config_dir, "nzb_hunt_config.json")
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f:
+                    cfg = json.load(f)
+                proc = cfg.get("processing", {})
+                for key, default in defaults.items():
+                    if key in proc:
+                        defaults[key] = proc[key]
+        except Exception:
+            pass
+        return defaults
+
     def _get_category_folder(self, category: str) -> Optional[str]:
         """Get the download folder for a specific category."""
         try:
@@ -758,11 +787,13 @@ class NZBHuntDownloadManager:
             logger.info("NZB Hunt download worker stopped")
     
     def _download_segment(self, message_id: str, groups: List[str],
-                           item: DownloadItem) -> Tuple[int, Optional[bytes], str]:
-        """Download and decode a single segment.
+                           item: DownloadItem,
+                           max_retries: int = 3) -> Tuple[int, Optional[bytes], str]:
+        """Download and decode a single segment with retry logic.
         
         NNTP download runs in the calling thread (I/O bound, releases GIL).
         yEnc decode runs in a separate process (CPU bound, no GIL contention).
+        Retries up to max_retries times on failure (like SABnzbd's max_art_tries).
         
         Returns:
             (decoded_length, decoded_bytes_or_None, server_name)
@@ -771,30 +802,37 @@ class NZBHuntDownloadManager:
         if item.state == STATE_PAUSED or self._paused_global:
             return 0, None, ""
         
-        # Download the article – I/O bound, releases GIL during socket ops
-        article_data, server_name = self._nntp.download_article_tracked(
-            message_id, groups, conn_timeout=1.0
-        )
+        server_name = ""
         
-        if article_data is None:
-            return 0, None, server_name
+        for attempt in range(max_retries):
+            if item.state == STATE_PAUSED or self._paused_global:
+                return 0, None, ""
+            
+            # Download the article – I/O bound, releases GIL during socket ops
+            article_data, server_name = self._nntp.download_article_tracked(
+                message_id, groups, conn_timeout=1.0
+            )
+            
+            if article_data is not None:
+                # Decode yEnc in a separate process (CPU bound → avoids GIL contention)
+                try:
+                    future = self._decode_pool.submit(_decode_yenc_in_process, article_data)
+                    decoded = future.result(timeout=60)
+                    if decoded is not None:
+                        # Apply rate limiting (lightweight, stays in main process)
+                        self._rate_limiter.consume(len(decoded))
+                        # Record for rolling speed
+                        self._record_speed(len(decoded))
+                        return len(decoded), decoded, server_name
+                except Exception:
+                    pass
+            
+            # Retry after a brief pause (only if not last attempt)
+            if attempt < max_retries - 1:
+                time.sleep(0.5 * (attempt + 1))  # Back off: 0.5s, 1s, 1.5s
         
-        # Decode yEnc in a separate process (CPU bound → avoids GIL contention)
-        try:
-            future = self._decode_pool.submit(_decode_yenc_in_process, article_data)
-            decoded = future.result(timeout=60)
-            if decoded is None:
-                return 0, None, server_name
-        except Exception:
-            return 0, None, server_name
-        
-        # Apply rate limiting (lightweight, stays in main process)
-        self._rate_limiter.consume(len(decoded))
-        
-        # Record for rolling speed
-        self._record_speed(len(decoded))
-        
-        return len(decoded), decoded, server_name
+        # All retries exhausted after max_retries attempts
+        return 0, None, server_name
     
     def _process_download(self, item: DownloadItem):
         """Process a single NZB download using parallel connections."""
@@ -803,6 +841,15 @@ class NZBHuntDownloadManager:
         self._save_state()
         
         try:
+            # Load processing settings from config
+            proc_settings = self._get_processing_settings()
+            max_retries = proc_settings.get("max_retries", 3)
+            abort_hopeless = proc_settings.get("abort_hopeless", True)
+            abort_threshold_pct = proc_settings.get("abort_threshold_pct", 5)
+            
+            logger.info(f"[{item.id}] Processing settings: retries={max_retries}, "
+                        f"abort_hopeless={abort_hopeless}, threshold={abort_threshold_pct}%")
+            
             # Parse the NZB
             nzb = parse_nzb(item.nzb_content)
             
@@ -844,7 +891,7 @@ class NZBHuntDownloadManager:
             # Track consecutive failed segments for early abort
             consecutive_failures = 0
             MAX_CONSECUTIVE_FAILURES = 500  # Abort if 500+ segments fail in a row
-            MAX_FAILURE_PCT = 5.0  # Abort if > 5% segments fail (after min sample)
+            MAX_FAILURE_PCT = float(abort_threshold_pct)  # From processing settings
             MIN_SEGMENTS_FOR_PCT_CHECK = 200  # Need at least this many before checking %
             aborted = False
             
@@ -877,7 +924,8 @@ class NZBHuntDownloadManager:
                             break
                         future = executor.submit(
                             self._download_segment,
-                            seg.message_id, nzb_file.groups, item
+                            seg.message_id, nzb_file.groups, item,
+                            max_retries
                         )
                         future_to_seg[future] = seg
                     
@@ -914,9 +962,15 @@ class NZBHuntDownloadManager:
                                 
                                 # Update status message with progress
                                 if item.failed_segments > 0:
-                                    item.status_message = (
-                                        f"Missing articles: {item.failed_segments}"
-                                    )
+                                    mb_missing = item.missing_bytes / (1024 * 1024)
+                                    if mb_missing >= 1.0:
+                                        item.status_message = (
+                                            f"{mb_missing:.1f} MB Missing articles"
+                                        )
+                                    else:
+                                        item.status_message = (
+                                            f"Missing articles: {item.failed_segments}"
+                                        )
                                 
                                 # Save state periodically (lightweight, no NZB content)
                                 if item.completed_segments % 200 == 0:
@@ -926,36 +980,48 @@ class NZBHuntDownloadManager:
                                 item.failed_segments += 1
                                 consecutive_failures += 1
                                 
-                                # Update status message so UI shows what's happening
+                                # Track missing bytes (encoded segment size from NZB)
+                                item.missing_bytes += seg.bytes if seg.bytes else 0
+                                
+                                # Update status message with MB missing (like SABnzbd)
                                 total_attempted = item.completed_segments + item.failed_segments
-                                item.status_message = (
-                                    f"Missing articles: {item.failed_segments}/{total_attempted}"
-                                )
-                                
-                                # Check for early abort: too many consecutive failures
-                                if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
-                                    logger.error(
-                                        f"[{item.id}] ABORTING: {consecutive_failures} consecutive "
-                                        f"missing articles - content likely removed (DMCA)"
+                                mb_missing = item.missing_bytes / (1024 * 1024)
+                                if mb_missing >= 1.0:
+                                    item.status_message = (
+                                        f"{mb_missing:.1f} MB Missing articles"
                                     )
-                                    aborted = True
-                                    break
+                                else:
+                                    item.status_message = (
+                                        f"Missing articles: {item.failed_segments}"
+                                    )
                                 
-                                # Check failure percentage after enough samples
-                                if total_attempted >= MIN_SEGMENTS_FOR_PCT_CHECK:
-                                    fail_pct = (item.failed_segments / total_attempted) * 100
-                                    if fail_pct > MAX_FAILURE_PCT:
+                                # Check for early abort (only if abort_hopeless is enabled)
+                                if abort_hopeless:
+                                    # Too many consecutive failures (content likely DMCA'd)
+                                    if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
                                         logger.error(
-                                            f"[{item.id}] ABORTING: {fail_pct:.1f}% segments "
-                                            f"missing ({item.failed_segments}/{total_attempted}) "
-                                            f"- download cannot be completed"
+                                            f"[{item.id}] ABORTING: {consecutive_failures} consecutive "
+                                            f"missing articles - content likely removed (DMCA)"
                                         )
                                         aborted = True
                                         break
+                                    
+                                    # Check failure percentage after enough samples
+                                    if total_attempted >= MIN_SEGMENTS_FOR_PCT_CHECK:
+                                        fail_pct = (item.failed_segments / total_attempted) * 100
+                                        if fail_pct > MAX_FAILURE_PCT:
+                                            logger.error(
+                                                f"[{item.id}] ABORTING: {fail_pct:.1f}% segments "
+                                                f"missing ({item.failed_segments}/{total_attempted}) "
+                                                f"- download cannot be completed"
+                                            )
+                                            aborted = True
+                                            break
                         except Exception as e:
                             file_failed += 1
                             item.failed_segments += 1
                             consecutive_failures += 1
+                            item.missing_bytes += seg.bytes if seg.bytes else 0
                             logger.debug(f"[{item.id}] Segment {seg.number} error: {e}")
                     
                     if item.state == STATE_PAUSED or self._paused_global:
@@ -1016,14 +1082,16 @@ class NZBHuntDownloadManager:
             if aborted:
                 total_attempted = item.completed_segments + item.failed_segments
                 fail_pct = (item.failed_segments / max(1, total_attempted)) * 100
+                mb_missing = item.missing_bytes / (1024 * 1024)
+                mb_str = f"{mb_missing:.1f} MB" if mb_missing >= 1.0 else f"{item.missing_bytes / 1024:.0f} KB"
                 err_msg = (
-                    f"Aborted: too many missing articles "
-                    f"({item.failed_segments}/{total_attempted}, {fail_pct:.1f}%). "
+                    f"Aborted: {mb_str} missing articles "
+                    f"({item.failed_segments}/{total_attempted} segments, {fail_pct:.1f}%). "
                     f"Content may have been removed (DMCA)."
                 )
                 item.state = STATE_FAILED
                 item.error_message = err_msg
-                item.status_message = f"Failed: {item.failed_segments} missing articles"
+                item.status_message = f"Failed: {mb_str} missing articles"
                 item.speed_bps = 0
                 item.eta_seconds = 0
                 logger.error(f"[{item.id}] {err_msg}")
@@ -1052,7 +1120,9 @@ class NZBHuntDownloadManager:
             # ── Post-processing (par2 repair + archive extraction) ──
             item.state = STATE_EXTRACTING
             if item.failed_segments > 0:
-                item.status_message = f"Verifying & repairing ({item.failed_segments} missing articles)..."
+                ext_mb = item.missing_bytes / (1024 * 1024)
+                ext_mb_str = f"{ext_mb:.1f} MB" if ext_mb >= 1.0 else f"{item.failed_segments} segments"
+                item.status_message = f"Verifying & repairing ({ext_mb_str} missing articles)..."
             else:
                 item.status_message = "Post-processing..."
             self._save_state()
@@ -1062,7 +1132,9 @@ class NZBHuntDownloadManager:
             if pp_ok:
                 logger.info(f"[{item.id}] Post-processing success: {pp_msg}")
                 if item.failed_segments > 0:
-                    item.status_message = f"Repaired ({item.failed_segments} missing articles recovered via par2)"
+                    pp_mb = item.missing_bytes / (1024 * 1024)
+                    pp_mb_str = f"{pp_mb:.1f} MB" if pp_mb >= 1.0 else f"{item.failed_segments} segments"
+                    item.status_message = f"Repaired ({pp_mb_str} missing articles recovered via par2)"
                 else:
                     item.status_message = ""
             else:
@@ -1072,8 +1144,10 @@ class NZBHuntDownloadManager:
                 # can blocklist it and try a different release
                 item.state = STATE_FAILED
                 if item.failed_segments > 0:
+                    err_mb = item.missing_bytes / (1024 * 1024)
+                    err_mb_str = f"{err_mb:.1f} MB" if err_mb >= 1.0 else f"{item.failed_segments} segments"
                     item.error_message = (
-                        f"{pp_msg} ({item.failed_segments} missing articles could not be repaired)"
+                        f"{pp_msg} ({err_mb_str} missing articles could not be repaired)"
                     )
                 else:
                     item.error_message = pp_msg

@@ -177,10 +177,10 @@
                 var name = self._escHtml(item.name || 'Unknown');
                 var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
 
-                // Build status display: show status_message if available (e.g., "Missing articles: 150/500")
+                // Build status display: show status_message if available
                 var statusHtml = '<i class="' + stateIcon + '"></i> ' + stateLabel;
                 var failedSegs = item.failed_segments || 0;
-                if (item.status_message) {
+                if (item.status_message && item.state !== 'downloading') {
                     var msgClass = failedSegs > 0 ? ' style="color:#f59e0b;"' : '';
                     statusHtml += '<br><small' + msgClass + '>' + self._escHtml(item.status_message) + '</small>';
                 } else if (item.state === 'downloading' && item.completed_segments === 0 && item.speed_bps === 0) {
@@ -188,11 +188,23 @@
                     statusHtml += '<br><small style="color:#94a3b8;">Connecting...</small>';
                 }
 
+                // Build progress display with inline missing articles (like SABnzbd)
+                var pctHtml = progress.toFixed(1) + '%';
+                var missingBytes = item.missing_bytes || 0;
+                if (missingBytes > 0 && item.state === 'downloading') {
+                    var mbMissing = missingBytes / (1024 * 1024);
+                    var missingStr = mbMissing >= 1024 ? (mbMissing / 1024).toFixed(1) + ' GB' :
+                                     mbMissing >= 1.0 ? mbMissing.toFixed(1) + ' MB' :
+                                     (missingBytes / 1024).toFixed(0) + ' KB';
+                    pctHtml += ' <span style="color:#f59e0b; font-style:italic; font-size:0.85em;">' +
+                               missingStr + ' Missing articles</span>';
+                }
+
                 html +=
                     '<tr class="nzb-queue-row ' + stateClass + '" data-nzb-id="' + item.id + '">' +
                         '<td class="nzb-col-name" title="' + name + '"><span class="nzb-cell-name">' + name + '</span></td>' +
                         '<td class="nzb-col-cat"><span class="nzb-cell-cat">' + catLabel + '</span></td>' +
-                        '<td class="nzb-col-pct">' + progress.toFixed(1) + '%</td>' +
+                        '<td class="nzb-col-pct">' + pctHtml + '</td>' +
                         '<td class="nzb-col-size">' + downloaded + ' / ' + totalSize + '</td>' +
                         '<td class="nzb-col-speed">' + speed + '</td>' +
                         '<td class="nzb-col-eta">' + timeLeft + '</td>' +
@@ -414,11 +426,26 @@
                         self._escHtml(item.error_message) +
                     '</div>';
                 }
-                // Show missing article count if any
+                // Show missing article info (in MB like SABnzbd, with segment count)
                 var failedInfo = '';
                 if (item.failed_segments && item.failed_segments > 0) {
-                    failedInfo = '<span style="color:#f59e0b; margin-left:8px;"><i class="fas fa-exclamation-triangle"></i> ' +
-                        item.failed_segments + ' missing articles</span>';
+                    var missingBytes = item.missing_bytes || 0;
+                    var mbMissing = missingBytes / (1024 * 1024);
+                    var missingStr = '';
+                    if (mbMissing >= 1024) {
+                        missingStr = (mbMissing / 1024).toFixed(1) + ' GB';
+                    } else if (mbMissing >= 1.0) {
+                        missingStr = mbMissing.toFixed(1) + ' MB';
+                    } else if (missingBytes > 0) {
+                        missingStr = (missingBytes / 1024).toFixed(0) + ' KB';
+                    }
+                    failedInfo = '<span style="color:#f59e0b; margin-left:8px;"><i class="fas fa-exclamation-triangle"></i> ';
+                    if (missingStr) {
+                        failedInfo += missingStr + ' missing articles';
+                    } else {
+                        failedInfo += item.failed_segments + ' missing articles';
+                    }
+                    failedInfo += '</span>';
                 }
 
                 html +=
@@ -493,9 +520,11 @@
             this._setupBrowseModal();
             this._setupCategoryGrid();
             this._setupCategoryModal();
+            this._setupProcessing();
             this._loadFolders();
             this._loadServers();
             this._loadCategories();
+            this._loadProcessing();
             console.log('[NzbHunt] Settings initialized');
         },
 
@@ -1362,6 +1391,97 @@
                 .catch(function () {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification('Failed to save category.', 'error');
+                    }
+                });
+        },
+
+        /* ──────────────────────────────────────────────
+           Processing  – load / save settings
+        ────────────────────────────────────────────── */
+        _setupProcessing: function () {
+            var self = this;
+            var saveBtn = document.getElementById('nzb-save-processing');
+            if (saveBtn) saveBtn.addEventListener('click', function () { self._saveProcessing(); });
+
+            // Show/hide abort threshold row based on toggle
+            var abortToggle = document.getElementById('nzb-proc-abort-hopeless');
+            var thresholdRow = document.getElementById('nzb-proc-abort-threshold-row');
+            if (abortToggle && thresholdRow) {
+                abortToggle.addEventListener('change', function () {
+                    thresholdRow.style.display = abortToggle.checked ? '' : 'none';
+                });
+            }
+        },
+
+        _loadProcessing: function () {
+            fetch('./api/nzb-hunt/settings/processing?t=' + Date.now())
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var el;
+                    el = document.getElementById('nzb-proc-max-retries');
+                    if (el && data.max_retries !== undefined) el.value = data.max_retries;
+
+                    el = document.getElementById('nzb-proc-abort-hopeless');
+                    if (el) el.checked = data.abort_hopeless !== false;
+
+                    el = document.getElementById('nzb-proc-abort-threshold');
+                    if (el && data.abort_threshold_pct !== undefined) el.value = data.abort_threshold_pct;
+
+                    el = document.getElementById('nzb-proc-propagation-delay');
+                    if (el && data.propagation_delay !== undefined) el.value = data.propagation_delay;
+
+                    el = document.getElementById('nzb-proc-disconnect-empty');
+                    if (el) el.checked = data.disconnect_on_empty !== false;
+
+                    el = document.getElementById('nzb-proc-direct-unpack');
+                    if (el) el.checked = !!data.direct_unpack;
+
+                    el = document.getElementById('nzb-proc-encrypted-rar');
+                    if (el && data.encrypted_rar_action) el.value = data.encrypted_rar_action;
+
+                    el = document.getElementById('nzb-proc-unwanted-action');
+                    if (el && data.unwanted_ext_action) el.value = data.unwanted_ext_action;
+
+                    el = document.getElementById('nzb-proc-unwanted-ext');
+                    if (el && data.unwanted_extensions !== undefined) el.value = data.unwanted_extensions;
+
+                    // Hide threshold row if abort is off
+                    var abortEl = document.getElementById('nzb-proc-abort-hopeless');
+                    var thresholdRow = document.getElementById('nzb-proc-abort-threshold-row');
+                    if (abortEl && thresholdRow) {
+                        thresholdRow.style.display = abortEl.checked ? '' : 'none';
+                    }
+                })
+                .catch(function () { /* use defaults */ });
+        },
+
+        _saveProcessing: function () {
+            var payload = {
+                max_retries: parseInt((document.getElementById('nzb-proc-max-retries') || {}).value || '3', 10),
+                abort_hopeless: !!(document.getElementById('nzb-proc-abort-hopeless') || {}).checked,
+                abort_threshold_pct: parseInt((document.getElementById('nzb-proc-abort-threshold') || {}).value || '5', 10),
+                propagation_delay: parseInt((document.getElementById('nzb-proc-propagation-delay') || {}).value || '0', 10),
+                disconnect_on_empty: !!(document.getElementById('nzb-proc-disconnect-empty') || {}).checked,
+                direct_unpack: !!(document.getElementById('nzb-proc-direct-unpack') || {}).checked,
+                encrypted_rar_action: (document.getElementById('nzb-proc-encrypted-rar') || {}).value || 'pause',
+                unwanted_ext_action: (document.getElementById('nzb-proc-unwanted-action') || {}).value || 'off',
+                unwanted_extensions: (document.getElementById('nzb-proc-unwanted-ext') || {}).value || ''
+            };
+
+            fetch('./api/nzb-hunt/settings/processing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Processing settings saved.', 'success');
+                    }
+                })
+                .catch(function () {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to save processing settings.', 'error');
                     }
                 });
         }

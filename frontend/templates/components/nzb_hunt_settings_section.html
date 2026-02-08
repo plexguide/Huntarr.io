@@ -14,6 +14,9 @@
             <button class="nzb-settings-tab" data-settings-tab="categories" id="nzb-settings-tab-categories">
                 <i class="fas fa-tags"></i> Categories
             </button>
+            <button class="nzb-settings-tab" data-settings-tab="processing" id="nzb-settings-tab-processing">
+                <i class="fas fa-cogs"></i> Processing
+            </button>
         </div>
 
         <!-- ═══════ Folders Panel ═══════ -->
@@ -116,6 +119,130 @@
                         <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
                         <div class="add-text">Add Category</div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ Processing Panel ═══════ -->
+        <div class="nzb-settings-panel" data-settings-panel="processing" style="display: none;">
+            <div class="nzb-settings-group">
+                <h3><i class="fas fa-cogs" style="color: #10b981; margin-right: 8px;"></i>Processing</h3>
+                <p class="nzb-settings-help">Configure how NZB Hunt handles downloads, retries, and post-processing.</p>
+
+                <!-- Retries -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Maximum retries</span>
+                        <span class="nzb-folder-desc">Maximum number of retry attempts per article per server.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 120px;">
+                        <input type="number" id="nzb-proc-max-retries" class="nzb-folder-input" value="3" min="0" max="10" style="text-align: center;" />
+                    </div>
+                </div>
+
+                <!-- Abort hopeless jobs -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Abort jobs that cannot be completed</span>
+                        <span class="nzb-folder-desc">When during download it becomes clear that too much data is missing, abort the job.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 80px;">
+                        <label class="nzb-toggle-row" style="margin:0;">
+                            <input type="checkbox" id="nzb-proc-abort-hopeless" checked />
+                            <span class="nzb-toggle-switch"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Abort threshold -->
+                <div class="nzb-folder-row" id="nzb-proc-abort-threshold-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Abort threshold (%)</span>
+                        <span class="nzb-folder-desc">Abort download when this percentage of articles is missing.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 120px;">
+                        <input type="number" id="nzb-proc-abort-threshold" class="nzb-folder-input" value="5" min="1" max="50" step="1" style="text-align: center;" />
+                    </div>
+                </div>
+
+                <!-- Propagation delay -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Propagation delay</span>
+                        <span class="nzb-folder-desc">Posts will be paused until they are at least this age (minutes). Setting job priority to Force will skip the delay.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 160px;">
+                        <input type="number" id="nzb-proc-propagation-delay" class="nzb-folder-input" value="0" min="0" max="1440" style="text-align: center;" />
+                        <span style="color: #94a3b8; font-size: 0.85em; margin-left: 8px;">mins</span>
+                    </div>
+                </div>
+
+                <!-- Disconnect on empty queue -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Disconnect on empty queue</span>
+                        <span class="nzb-folder-desc">Disconnect from Usenet server(s) when queue is empty or paused.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 80px;">
+                        <label class="nzb-toggle-row" style="margin:0;">
+                            <input type="checkbox" id="nzb-proc-disconnect-empty" checked />
+                            <span class="nzb-toggle-switch"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <hr style="border-color: rgba(148,163,184,0.15); margin: 24px 0;">
+
+                <!-- Post-processing section -->
+                <h3 style="margin-top: 0;"><i class="fas fa-magic" style="color: #8b5cf6; margin-right: 8px;"></i>Post-Processing</h3>
+
+                <!-- Direct unpack -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Direct Unpack</span>
+                        <span class="nzb-folder-desc">Jobs will start unpacking during downloading. Only works for jobs that do not need repair.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 80px;">
+                        <label class="nzb-toggle-row" style="margin:0;">
+                            <input type="checkbox" id="nzb-proc-direct-unpack" />
+                            <span class="nzb-toggle-switch"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Action on encrypted RAR -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Action when encrypted RAR is downloaded</span>
+                        <span class="nzb-folder-desc">In case of &ldquo;Pause&rdquo;, you'll need to set a password and resume the job.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 180px;">
+                        <select id="nzb-proc-encrypted-rar" class="nzb-form-select">
+                            <option value="pause">Pause</option>
+                            <option value="abort">Abort</option>
+                            <option value="ignore">Continue</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Unwanted extensions -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Unwanted extensions</span>
+                        <span class="nzb-folder-desc">Comma-separated list of unwanted file extensions. For example: <code>exe, com, bat</code></span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="flex: 1; max-width: 400px;">
+                        <select id="nzb-proc-unwanted-action" class="nzb-form-select" style="max-width: 130px;">
+                            <option value="off" selected>Off</option>
+                            <option value="blacklist">Blacklist</option>
+                            <option value="abort">Abort</option>
+                        </select>
+                        <input type="text" id="nzb-proc-unwanted-ext" class="nzb-folder-input" value="exe" placeholder="exe, com, bat" autocomplete="off" style="flex: 1;" />
+                    </div>
+                </div>
+
+                <div class="nzb-settings-footer">
+                    <button class="nzb-btn nzb-btn-primary" id="nzb-save-processing"><i class="fas fa-save"></i> Save Processing</button>
                 </div>
             </div>
         </div>
