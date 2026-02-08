@@ -1,0 +1,73 @@
+/* ==========================================================================
+   Huntarr Design Tokens & Theme Variables
+   ========================================================================== */
+
+:root {
+    /* Light Theme Colors */
+    --bg-primary: #f8f9fa;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f3f5;
+    --text-primary: #212529;
+    --text-secondary: #495057;
+    --text-muted: #6c757d;
+    --border-color: #dee2e6;
+    --accent-color: #3498db;
+    --accent-hover: #2980b9;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --error-color: #e74c3c;
+    --info-color: #2980b9;
+    --debug-color: #7f8c8d;
+    
+    /* Component Colors */
+    --sidebar-bg: #2c3e50;
+    --sidebar-text: #ecf0f1;
+    --sidebar-item-hover: #34495e;
+    --sidebar-item-active: #3498db;
+    --topbar-bg: var(--bg-secondary);
+    --card-bg: var(--bg-secondary);
+    --switch-bg: #cbd2d9;
+    --switch-active: #3498db;
+    
+    /* Button Colors */
+    --button-primary-bg: #3498db;
+    --button-primary-text: #ffffff;
+    --button-primary-hover: #2980b9;
+    --button-danger-bg: #e74c3c;
+    --button-danger-hover: #c0392b;
+    --button-success-bg: #27ae60;
+    --button-success-hover: #219955;
+    
+    /* Status Colors */
+    --status-connected: #27ae60;
+    --status-not-connected: #e74c3c;
+    
+    /* Logs Colors */
+    --log-bg: var(--bg-secondary);
+    --log-border: var(--border-color);
+}
+
+.dark-theme {
+    --bg-primary: #1a1d24;
+    --bg-secondary: #252a34;
+    --bg-tertiary: #2d3748;
+    --text-primary: #f8f9fa;
+    --text-secondary: #e9ecef;
+    --text-muted: #adb5bd;
+    --border-color: #4a5568;
+    --accent-color: #3498db;
+    --accent-hover: #2980b9;
+    
+    /* Component Colors */
+    --sidebar-bg: #121212;
+    --sidebar-text: #ecf0f1;
+    --sidebar-item-hover: #2d3748;
+    --sidebar-item-active: #3498db;
+    --topbar-bg: #252a34;
+    --card-bg: #252a34;
+    --switch-bg: #4a5568;
+    
+    /* Logs Colors */
+    --log-bg: #252a34;
+    --log-border: #4a5568;
+}
