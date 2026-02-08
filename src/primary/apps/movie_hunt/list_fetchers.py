@@ -600,28 +600,51 @@ def _fetch_plex(settings):
     if not access_token:
         raise ValueError("Plex authentication is required. Please sign in with Plex.")
 
+    # Get client identifier for Plex API
+    try:
+        from src.primary.auth import get_client_identifier
+        client_id = get_client_identifier()
+    except Exception:
+        client_id = 'huntarr-import-lists'
+
     movies = []
     try:
-        # Plex watchlist RSS via discover API
         headers = {
             'X-Plex-Token': access_token,
+            'X-Plex-Client-Identifier': client_id,
+            'X-Plex-Product': 'Huntarr',
             'Accept': 'application/json',
         }
 
-        # Use Plex discover API for watchlist
-        url = 'https://metadata.provider.plex.tv/library/sections/watchlist/all'
-        resp = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        # Plex watchlist API — type=1 for movies, includeGuids for external IDs
+        params = {
+            'type': '1',
+            'includeGuids': '1',
+            'includeFields': 'title,year,type',
+            'sort': 'watchlistedAt:desc',
+        }
 
-        if resp.status_code == 401:
+        # Try multiple Plex API endpoints (they've changed over time)
+        endpoints = [
+            'https://discover.provider.plex.tv/library/sections/watchlist/all',
+            'https://metadata.provider.plex.tv/library/sections/watchlist/all',
+        ]
+
+        resp = None
+        for url in endpoints:
+            try:
+                resp = requests.get(url, headers=headers, params=params, timeout=REQUEST_TIMEOUT)
+                if resp.status_code == 200:
+                    break
+                logger.debug("Plex endpoint %s returned %d, trying next...", url, resp.status_code)
+            except Exception as ep_err:
+                logger.debug("Plex endpoint %s failed: %s", url, ep_err)
+                continue
+
+        if resp is None or resp.status_code == 401:
             raise ValueError("Plex token expired or invalid. Please re-authenticate.")
         if resp.status_code != 200:
-            # Fallback: try the RSS feed approach
-            url = f'https://rss.plex.tv/watchlist/{access_token}'
-            resp = requests.get(url, timeout=REQUEST_TIMEOUT)
-            if resp.status_code != 200:
-                raise ValueError(f"Plex API returned {resp.status_code}")
-            # Parse RSS
-            return _parse_plex_rss(resp.content)
+            raise ValueError(f"Plex API returned {resp.status_code}")
 
         data = resp.json()
         metadata = data.get('MediaContainer', {}).get('Metadata', [])
