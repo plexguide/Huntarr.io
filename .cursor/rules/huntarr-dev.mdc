@@ -19,4 +19,4 @@ Development rules are split into focused files for Cursor. This index is always 
 | **confirm-modals.mdc** | HuntarrConfirm for destructive/critical actions |
 | **unraid-always-redeploy.mdc** | Deploy to Unraid after code changes; use deploy-with-build.exp |
 
-After code changes: run Unraid deploy (`./unraid/deploy-with-build.exp`) or local Docker build per huntarr-critical.mdc.
+Deploy after code changes: see **huntarr-critical.mdc** and **unraid-always-redeploy.mdc**.
