@@ -514,14 +514,17 @@
         } else if (typeId === 'stevenlu') {
             html += _fieldInput('url', 'JSON Feed URL', s.url || 'https://popular-movies-data.stevenlu.com/movies.json', 'StevenLu JSON URL');
         } else if (typeId === 'plex') {
+            var plexAuthed = s.access_token && s.access_token !== '••••••••';
             html += '<div class="import-list-form-group">' +
-                '<label>Plex Authorization</label>' +
-                '<button type="button" class="btn-plex-auth" id="' + containerId + '-plex-auth-btn">' +
-                    '<i class="fas fa-sign-in-alt"></i> Sign in with Plex' +
-                '</button>' +
-                '<span class="plex-auth-status" id="' + containerId + '-plex-status">' +
-                    (s.access_token && s.access_token !== '••••••••' ? '<i class="fas fa-check-circle" style="color:#22c55e"></i> Signed in' : '<i class="fas fa-times-circle" style="color:#ef4444"></i> Not signed in') +
-                '</span>' +
+                '<label>Authenticate with Plex</label>' +
+                '<div class="plex-auth-row">' +
+                    '<button type="button" class="btn-plex-auth' + (plexAuthed ? ' plex-auth-success' : '') + '" id="' + containerId + '-plex-auth-btn">' +
+                        (plexAuthed ? '<i class="fas fa-check"></i> Authenticated' : '<i class="fas fa-sign-in-alt"></i> Sign in with Plex') +
+                    '</button>' +
+                    '<span class="plex-auth-status" id="' + containerId + '-plex-status">' +
+                        (plexAuthed ? '<i class="fas fa-check-circle" style="color:#22c55e"></i> Signed in' : '') +
+                    '</span>' +
+                '</div>' +
                 '<input type="hidden" class="dynamic-field" data-field="access_token" value="' + _esc(s.access_token || '') + '">' +
             '</div>';
         } else if (typeId === 'custom_json') {
@@ -705,27 +708,94 @@
         });
     }
 
-    function _startPlexOAuth(containerId) {
-        // Use existing Plex auth flow if available
-        if (window.PlexAuth && typeof window.PlexAuth.startAuth === 'function') {
-            window.PlexAuth.startAuth(function(token) {
-                var atEl = document.querySelector('#' + containerId + ' [data-field="access_token"]');
-                if (atEl) atEl.value = token;
-                var status = document.getElementById(containerId + '-plex-status');
-                if (status) status.innerHTML = '<i class="fas fa-check-circle" style="color:#22c55e"></i> Signed in';
-                _notify('Plex signed in!', 'success');
-            });
-            return;
-        }
+    var _plexPollTimer = null;
 
-        // Fallback: prompt for token
-        var token = prompt('Enter your Plex token (find it at plex.tv/devices.xml):');
-        if (!token || !token.trim()) return;
-        var atEl = document.querySelector('#' + containerId + ' [data-field="access_token"]');
-        if (atEl) atEl.value = token.trim();
-        var status = document.getElementById(containerId + '-plex-status');
-        if (status) status.innerHTML = '<i class="fas fa-check-circle" style="color:#22c55e"></i> Signed in';
-        _notify('Plex token set!', 'success');
+    function _startPlexOAuth(containerId) {
+        var statusEl = document.getElementById(containerId + '-plex-status');
+        var authBtn = document.getElementById(containerId + '-plex-auth-btn');
+        if (authBtn) { authBtn.disabled = true; authBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...'; }
+
+        // Step 1: Create a Plex PIN
+        fetch('./api/movie-hunt/import-lists/plex/pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) {
+                _notify(data.error || 'Failed to create Plex PIN', 'error');
+                if (authBtn) { authBtn.disabled = false; authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign in with Plex'; }
+                return;
+            }
+
+            var pinId = data.pin_id;
+            var authUrl = data.auth_url;
+
+            // Show status UI with link to Plex
+            if (statusEl) {
+                statusEl.innerHTML =
+                    '<div class="plex-device-auth">' +
+                        '<div class="plex-device-code-box">' +
+                            '<span class="plex-device-label">Click below to sign in with Plex</span>' +
+                            '<a href="' + _esc(authUrl) + '" target="_blank" rel="noopener" class="plex-device-open-link">' +
+                                '<i class="fas fa-external-link-alt"></i> Sign in at Plex.tv' +
+                            '</a>' +
+                            '<span class="plex-device-waiting"><i class="fas fa-spinner fa-spin"></i> Waiting for authorization...</span>' +
+                        '</div>' +
+                    '</div>';
+            }
+            if (authBtn) { authBtn.style.display = 'none'; }
+
+            // Auto-open Plex auth page
+            window.open(authUrl, '_blank');
+
+            // Step 2: Poll for token
+            if (_plexPollTimer) clearInterval(_plexPollTimer);
+            var pollCount = 0;
+            var maxPolls = 120; // 10 minutes at 5s intervals
+
+            _plexPollTimer = setInterval(function() {
+                pollCount++;
+                if (pollCount > maxPolls) {
+                    clearInterval(_plexPollTimer);
+                    _plexPollTimer = null;
+                    if (statusEl) statusEl.innerHTML = '<i class="fas fa-times-circle" style="color:#ef4444"></i> Timed out — try again';
+                    if (authBtn) { authBtn.style.display = ''; authBtn.disabled = false; authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign in with Plex'; }
+                    return;
+                }
+
+                fetch('./api/movie-hunt/import-lists/plex/check/' + pinId)
+                .then(function(r) { return r.json(); })
+                .then(function(checkData) {
+                    if (checkData.success && checkData.claimed) {
+                        // Got the token!
+                        clearInterval(_plexPollTimer);
+                        _plexPollTimer = null;
+
+                        var atEl = document.querySelector('#' + containerId + ' [data-field="access_token"]');
+                        if (atEl) atEl.value = checkData.token;
+
+                        if (statusEl) statusEl.innerHTML = '<i class="fas fa-check-circle" style="color:#22c55e"></i> Signed in';
+                        if (authBtn) {
+                            authBtn.style.display = '';
+                            authBtn.innerHTML = '<i class="fas fa-check"></i> Authenticated';
+                            authBtn.disabled = true;
+                            authBtn.classList.add('plex-auth-success');
+                        }
+                        _notify('Plex authorized!', 'success');
+                    }
+                    // If not claimed yet, keep polling
+                })
+                .catch(function() {
+                    // Network error — keep polling
+                });
+            }, 5000);
+        })
+        .catch(function(e) {
+            _notify('Error: ' + e, 'error');
+            if (authBtn) { authBtn.disabled = false; authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign in with Plex'; }
+        });
     }
 
     // -------------------------------------------------------------------

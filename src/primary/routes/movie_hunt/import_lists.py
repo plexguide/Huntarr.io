@@ -394,6 +394,89 @@ def trakt_device_token():
 
 
 # ---------------------------------------------------------------------------
+# Plex OAuth — PIN-based flow for Import Lists
+# ---------------------------------------------------------------------------
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/plex/pin', methods=['POST'])
+def plex_create_pin():
+    """Create a Plex PIN for import list authentication (no redirect)."""
+    import requests as req
+
+    from src.primary.auth import get_client_identifier, PLEX_PRODUCT_NAME
+
+    client_id = get_client_identifier()
+
+    headers = {
+        'accept': 'application/json',
+        'X-Plex-Client-Identifier': client_id,
+    }
+    data = {
+        'strong': 'true',
+        'X-Plex-Product': PLEX_PRODUCT_NAME,
+        'X-Plex-Client-Identifier': client_id,
+    }
+
+    try:
+        resp = req.post('https://plex.tv/api/v2/pins', headers=headers, data=data, timeout=15)
+        resp.raise_for_status()
+        pin_data = resp.json()
+
+        pin_id = pin_data['id']
+        pin_code = pin_data['code']
+
+        # Build auth URL (no forwardUrl — user stays on Huntarr and we poll)
+        auth_url = (
+            f"https://app.plex.tv/auth#?clientID={client_id}"
+            f"&code={pin_code}"
+            f"&context%5Bdevice%5D%5Bproduct%5D={PLEX_PRODUCT_NAME}"
+        )
+
+        return jsonify({
+            'success': True,
+            'pin_id': pin_id,
+            'pin_code': pin_code,
+            'auth_url': auth_url,
+        })
+    except Exception as e:
+        logger.error("Plex PIN creation failed: %s", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/import-lists/plex/check/<int:pin_id>', methods=['GET'])
+def plex_check_pin(pin_id):
+    """Poll whether Plex PIN has been claimed. Returns token if yes."""
+    import requests as req
+
+    from src.primary.auth import get_client_identifier
+
+    client_id = get_client_identifier()
+
+    headers = {
+        'accept': 'application/json',
+        'X-Plex-Client-Identifier': client_id,
+    }
+
+    try:
+        resp = req.get(
+            f'https://plex.tv/api/v2/pins/{pin_id}',
+            headers=headers,
+            params={'code': ''},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        result = resp.json()
+        auth_token = result.get('authToken')
+
+        if auth_token:
+            return jsonify({'success': True, 'claimed': True, 'token': auth_token})
+        else:
+            return jsonify({'success': True, 'claimed': False})
+    except Exception as e:
+        logger.error("Plex PIN check failed: %s", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
 # Sync engine
 # ---------------------------------------------------------------------------
 
