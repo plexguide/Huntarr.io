@@ -587,9 +587,6 @@ let huntarrUI = {
             if (activitySection) { activitySection.classList.remove('active'); activitySection.style.display = 'none'; }
             var systemSection = document.getElementById('systemSection');
             if (systemSection) { systemSection.classList.add('active'); systemSection.style.display = 'block'; }
-            // Hide the system tab bar - this is shown under Movie Hunt sidebar
-            var systemContainer = systemSection ? systemSection.querySelector('.system-container') : null;
-            if (systemContainer) systemContainer.style.display = 'none';
             if (window.HuntarrNavigation) window.HuntarrNavigation.switchSystemTab('logs');
             newTitle = 'Logs';
             this.currentSection = section;
@@ -607,15 +604,10 @@ let huntarrUI = {
                 } catch (error) { console.error('[huntarrUI] Error during LogsModule calls:', error); }
             }
         } else if ((section === 'system' || section === 'hunt-manager' || section === 'logs' || section === 'about') && document.getElementById('systemSection')) {
-            // System section with tabbed navigation (Hunt Manager, Logs, About)
+            // System section with sidebar sub-navigation (Hunt Manager, Logs, About)
             var systemSection = document.getElementById('systemSection');
             systemSection.classList.add('active');
             systemSection.style.display = 'block';
-            // Ensure tab bar is visible (may have been hidden by logs-movie-hunt)
-            var systemContainer = systemSection.querySelector('.system-container');
-            if (systemContainer) systemContainer.style.display = '';
-            var systemNav = document.getElementById('systemNav');
-            if (systemNav) systemNav.classList.add('active');
             
             // Determine which tab to show
             var activeTab = section === 'system' ? 'hunt-manager' : section;
@@ -628,6 +620,24 @@ let huntarrUI = {
             
             localStorage.removeItem('huntarr-settings-sidebar');
             this.showMainSidebar();
+            
+            // Mark the correct sidebar sub-item active (AFTER showMainSidebar)
+            var subNavMap = { 'hunt-manager': 'mainSystemHuntManagerNav', 'logs': 'mainSystemLogsNav', 'about': 'mainSystemAboutNav' };
+            var activeSubNav = document.getElementById(subNavMap[activeTab]);
+            if (activeSubNav) activeSubNav.classList.add('active');
+            
+            // Expand the system sub-group in sidebar (set inline to override CSS)
+            var systemSubGroup = document.getElementById('system-sub');
+            if (systemSubGroup) {
+                systemSubGroup.classList.add('expanded');
+                systemSubGroup.style.display = 'block';
+            }
+            // Collapse settings sub-group
+            var settingsSubGroup = document.getElementById('settings-sub');
+            if (settingsSubGroup) {
+                settingsSubGroup.classList.remove('expanded');
+                settingsSubGroup.style.display = 'none';
+            }
             
             // Initialize the active tab's module
             if (activeTab === 'hunt-manager') {
@@ -1292,12 +1302,19 @@ let huntarrUI = {
         // When on System (Hunt Manager, Logs, About), hide Settings, Requestarr, Apps in main sidebar
         var section = this.currentSection;
         var onSystem = section === 'system' || section === 'hunt-manager' || section === 'logs' || section === 'about';
+        var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(section) !== -1;
         var settingsNav = document.getElementById('settingsNav');
+        var settingsSubGroup = document.getElementById('settings-sub');
         var requestarrNav = document.getElementById('requestarrNav');
         var appsNav = document.getElementById('appsNav');
+        var systemNav = document.getElementById('systemNav');
+        var systemSubGroup = document.getElementById('system-sub');
         if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
-        if (requestarrNav) requestarrNav.style.display = onSystem ? 'none' : '';
-        if (appsNav) appsNav.style.display = onSystem ? 'none' : '';
+        if (settingsSubGroup) settingsSubGroup.style.display = onSystem ? 'none' : '';
+        if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
+        if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
+        if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
+        if (systemSubGroup) systemSubGroup.style.display = onSettings ? 'none' : '';
         this._updateMainSidebarBetaVisibility();
     },
 

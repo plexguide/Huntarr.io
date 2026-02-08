@@ -61,11 +61,24 @@
         margin-bottom: 0 !important;
     }
     
-    /* Hide all sub-groups on mobile — sub-items are meaningless as
-       unlabeled icons. Desktop sidebar is the primary design; mobile
-       must align by showing only the same parent-level icons. */
+    /* Respect JavaScript visibility control on mobile — when JS sets
+       display:none on nav items/groups (e.g. hiding Apps, Settings,
+       Requestarr when on System view), it must override flex !important. */
+    .nav-item[style*="display: none"],
+    .nav-group[style*="display: none"],
+    .nav-sub-group[style*="display: none"] {
+        display: none !important;
+    }
+
+    /* Hide most sub-groups on mobile — sub-items are meaningless as
+       unlabeled icons. Exception: System sub-group matches desktop. */
     .nav-sub-group {
         display: none !important;
+    }
+
+    /* Show System sub-group on mobile when expanded (matches desktop) */
+    #system-sub.expanded {
+        display: block !important;
     }
     
     /* Center logo in mobile */

@@ -1,22 +1,7 @@
 <section id="systemSection" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/system.css">
 
-    <div class="system-container">
-        <!-- Horizontal tab navigation (same pattern as NZB Hunt Settings) -->
-        <div class="system-tabs">
-            <button class="system-tab active" data-system-tab="hunt-manager" id="system-tab-hunt-manager">
-                <i class="fas fa-crosshairs"></i> Hunt Manager
-            </button>
-            <button class="system-tab" data-system-tab="logs" id="system-tab-logs">
-                <i class="fas fa-list-alt"></i> Logs
-            </button>
-            <button class="system-tab" data-system-tab="about" id="system-tab-about">
-                <i class="fas fa-info-circle"></i> About
-            </button>
-        </div>
-    </div>
-
-    <!-- Tab panels -->
+    <!-- Tab panels (controlled by sidebar sub-navigation) -->
     {% include 'components/hunt_manager_section.html' %}
     {% include 'components/logs_section.html' %}
     {% include 'components/about_section.html' %}

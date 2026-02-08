@@ -611,6 +611,15 @@ input:checked + .slider:before {
         align-items: center !important;
     }
 
+    /* Respect JavaScript visibility control — when JS hides a nav item or
+       group (e.g. hiding Apps/Settings/Requestarr on System view), the
+       inline display:none must win over the flex !important above. */
+    .nav-item[style*="display: none"],
+    .nav-group[style*="display: none"],
+    .nav-sub-group[style*="display: none"] {
+        display: none !important;
+    }
+
     .nav-item:hover,
     .nav-item.active {
         width: 38px !important;
@@ -641,12 +650,17 @@ input:checked + .slider:before {
         margin: 0 !important;
     }
 
-    /* CRITICAL: Hide all sub-groups on mobile (icon-only mode).
-       Sub-items (Main, Scheduling, Notifications, etc.) don't make sense
+    /* Hide most sub-groups on mobile (icon-only mode).
+       Settings sub-items (Main, Scheduling, Notifications, etc.) don't make sense
        as unlabeled icons. Only parent items show on mobile.
-       Desktop is the primary design — mobile must align with it. */
+       Exception: System sub-group (Hunt Manager, Logs, About) matches desktop. */
     .nav-sub-group {
         display: none !important;
+    }
+
+    /* Show System sub-group on mobile when expanded (matches desktop behavior) */
+    #system-sub.expanded {
+        display: block !important;
     }
 
     .app-icon-img {

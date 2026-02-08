@@ -90,10 +90,10 @@ window.HuntarrNavigation = {
         let newTitle = 'Home';
         const sectionMap = {
             'home': { title: 'Home', nav: ui.elements.homeNav, section: ui.elements.homeSection, sidebar: 'main' },
-            'system': { title: 'Hunt Manager', nav: document.getElementById('systemNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'hunt-manager' },
-            'hunt-manager': { title: 'Hunt Manager', nav: document.getElementById('systemNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'hunt-manager' },
-            'logs': { title: 'Logs', nav: document.getElementById('systemNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'logs' },
-            'about': { title: 'About', nav: document.getElementById('systemNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'about' },
+            'system': { title: 'Hunt Manager', nav: document.getElementById('mainSystemHuntManagerNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'hunt-manager' },
+            'hunt-manager': { title: 'Hunt Manager', nav: document.getElementById('mainSystemHuntManagerNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'hunt-manager' },
+            'logs': { title: 'Logs', nav: document.getElementById('mainSystemLogsNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'logs' },
+            'about': { title: 'About', nav: document.getElementById('mainSystemAboutNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'about' },
             'movie-hunt-home': { title: 'Movie Hunt', nav: document.getElementById('movieHuntHomeNav'), section: document.getElementById('movie-hunt-section'), sidebar: 'moviehunt', view: 'movies' },
             'movie-hunt-collection': { title: 'Media Collection', nav: document.getElementById('movieHuntCollectionNav'), section: document.getElementById('movie-hunt-section'), sidebar: 'moviehunt', view: 'collection' },
             'activity-queue': { title: 'Activity – Queue', nav: document.getElementById('movieHuntActivityQueueNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'queue' },
@@ -168,6 +168,12 @@ window.HuntarrNavigation = {
             if (settingsSub) {
                 if (['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(section) !== -1) settingsSub.classList.add('expanded');
                 else settingsSub.classList.remove('expanded');
+            }
+            // Expand/collapse System sub (Hunt Manager, Logs, About)
+            const systemSub = document.getElementById('system-sub');
+            if (systemSub) {
+                if (['system', 'hunt-manager', 'logs', 'about'].indexOf(section) !== -1) systemSub.classList.add('expanded');
+                else systemSub.classList.remove('expanded');
             }
         } else if (config.sidebar === 'apps') {
             if (section === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
@@ -298,10 +304,14 @@ window.HuntarrNavigation = {
         var requestarrNav = document.getElementById('requestarrNav');
         var appsNav = document.getElementById('appsNav');
         var systemNav = document.getElementById('systemNav');
+        var settingsSubGroup = document.getElementById('settings-sub');
+        var systemSubGroup = document.getElementById('system-sub');
         if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
+        if (settingsSubGroup) settingsSubGroup.style.display = onSystem ? 'none' : '';
         if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
         if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
         if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
+        if (systemSubGroup) systemSubGroup.style.display = onSettings ? 'none' : '';
         if (window.huntarrUI && typeof window.huntarrUI._updateMainSidebarBetaVisibility === 'function') {
             window.huntarrUI._updateMainSidebarBetaVisibility();
         }

@@ -63,6 +63,20 @@
                 <div class="nav-icon-wrapper"><i class="fas fa-server"></i></div>
                 <span>System</span>
             </a>
+            <div class="nav-sub-group" id="system-sub">
+                <a href="./#hunt-manager" class="nav-item nav-item-sub" id="mainSystemHuntManagerNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-crosshairs"></i></div>
+                    <span>Hunt Manager</span>
+                </a>
+                <a href="./#logs" class="nav-item nav-item-sub" id="mainSystemLogsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-list-alt"></i></div>
+                    <span>Logs</span>
+                </a>
+                <a href="./#about" class="nav-item nav-item-sub" id="mainSystemAboutNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-info-circle"></i></div>
+                    <span>About</span>
+                </a>
+            </div>
         </div>
 
         <div class="nav-group" id="main-sidebar-beta-group">
@@ -421,7 +435,10 @@
 
         // Main sidebar items
         if (currentHash === '#home') selector = '#homeNav';
-        else if (currentHash === '#system' || currentHash === '#hunt-manager' || currentHash === '#logs' || currentHash === '#about') selector = '#systemNav';
+        // System sub items
+        else if (currentHash === '#system' || currentHash === '#hunt-manager') { selector = '#mainSystemHuntManagerNav'; expandSub('system-sub'); }
+        else if (currentHash === '#logs') { selector = '#mainSystemLogsNav'; expandSub('system-sub'); }
+        else if (currentHash === '#about') { selector = '#mainSystemAboutNav'; expandSub('system-sub'); }
         else if (currentHash === '#apps' || currentHash === '#sonarr' || currentHash === '#instance-editor') selector = '#appsNav';
         else if (currentHash === '#swaparr') selector = '#appsSwaparrNav';
         else if (currentHash === '#requestarr') selector = '#requestarrNav';
@@ -469,6 +486,9 @@
         // Collapse settings sub when not on settings
         var settingsHashes = ['#settings', '#scheduling', '#notifications', '#backup-restore', '#settings-logs', '#user'];
         if (settingsHashes.indexOf(currentHash) === -1) collapseSub('settings-sub');
+        // Collapse system sub when not on system
+        var systemHashes = ['#system', '#hunt-manager', '#logs', '#about'];
+        if (systemHashes.indexOf(currentHash) === -1) collapseSub('system-sub');
     }
 
     function expandSub(id) {
