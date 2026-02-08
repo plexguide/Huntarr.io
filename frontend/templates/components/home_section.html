@@ -3,13 +3,15 @@
     
     <!-- Add initially hidden class to prevent flickering before JS initializes -->  
     <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.15s ease;">
-        <!-- College Sponsor + Partner Projects - Above all content, right aligned -->
-        <div class="home-banners-row" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin: 0 0 8px 0; flex-wrap: wrap;">
+        <!-- College Sponsor + Partner Projects - Compact inline chips -->
+        <div class="home-banners-row">
             <a href="#" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="home-sponsor-banner" data-sponsor-url="">
-                <span class="sponsor-text">Daughter's College Sponsor: <span class="sponsor-name" id="home-sponsor-name">Loading...</span></span>
+                <span class="sponsor-label">Daughter's College Sponsor:</span>
+                <span class="sponsor-name" id="home-sponsor-name">Loading...</span>
             </a>
             <a href="#" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="partner-projects-banner" data-partner-url="">
-                <span class="sponsor-text">Partner Projects: <span class="sponsor-name" id="partner-projects-name">Loading...</span></span>
+                <span class="sponsor-label">Partner Projects:</span>
+                <span class="sponsor-name" id="partner-projects-name">Loading...</span>
             </a>
         </div>
         
