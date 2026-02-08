@@ -141,6 +141,58 @@ def save_nzb_processing():
 
 
 # ──────────────────────────────────────────────────────────────────
+# Advanced settings
+# ──────────────────────────────────────────────────────────────────
+
+_ADVANCED_DEFAULTS = {
+    "receive_threads": 2,
+    "downloader_sleep_time": 10,
+    "direct_unpack_threads": 3,
+    "size_limit": "",
+    "req_completion_rate": 100.2,
+    "max_url_retries": 10,
+}
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/settings/advanced", methods=["GET"])
+def get_nzb_advanced():
+    cfg = _load_config()
+    adv = cfg.get("advanced", {})
+    result = {}
+    for key, default in _ADVANCED_DEFAULTS.items():
+        result[key] = adv.get(key, default)
+    return jsonify(result)
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/settings/advanced", methods=["POST"])
+def save_nzb_advanced():
+    data = request.get_json(silent=True) or {}
+    cfg = _load_config()
+    adv = {}
+    for key, default in _ADVANCED_DEFAULTS.items():
+        if key in data:
+            if isinstance(default, bool):
+                adv[key] = bool(data[key])
+            elif isinstance(default, int):
+                try:
+                    adv[key] = int(data[key])
+                except (ValueError, TypeError):
+                    adv[key] = default
+            elif isinstance(default, float):
+                try:
+                    adv[key] = float(data[key])
+                except (ValueError, TypeError):
+                    adv[key] = default
+            else:
+                adv[key] = str(data[key])
+        else:
+            adv[key] = cfg.get("advanced", {}).get(key, default)
+    cfg["advanced"] = adv
+    _save_config(cfg)
+    return jsonify({"success": True})
+
+
+# ──────────────────────────────────────────────────────────────────
 # Server CRUD
 # ──────────────────────────────────────────────────────────────────
 

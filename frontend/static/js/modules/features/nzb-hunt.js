@@ -480,6 +480,32 @@
 
             html += '</tbody></table>';
             body.innerHTML = html;
+
+            // Position tooltips dynamically to avoid overflow clipping
+            body.querySelectorAll('.nzb-hist-info-btn').forEach(function (btn) {
+                btn.addEventListener('mouseenter', function () {
+                    var tip = btn.querySelector('.nzb-hist-tooltip');
+                    if (!tip) return;
+                    var rect = btn.getBoundingClientRect();
+                    // Position above the button, aligned to the right edge
+                    tip.style.bottom = 'auto';
+                    tip.style.right = 'auto';
+                    tip.style.top = (rect.top - 8) + 'px';
+                    tip.style.left = (rect.right - 20) + 'px';
+                    tip.style.transform = 'translateY(-100%)';
+                    // If tooltip would go off-screen top, position below instead
+                    var tipRect = tip.getBoundingClientRect();
+                    if (tipRect.top < 8) {
+                        tip.style.top = (rect.bottom + 8) + 'px';
+                        tip.style.transform = 'none';
+                    }
+                    // If tooltip would go off-screen right, shift left
+                    tipRect = tip.getBoundingClientRect();
+                    if (tipRect.right > window.innerWidth - 8) {
+                        tip.style.left = (window.innerWidth - tipRect.width - 12) + 'px';
+                    }
+                });
+            });
         },
 
         _clearHistory: function () {
@@ -535,10 +561,12 @@
             this._setupCategoryGrid();
             this._setupCategoryModal();
             this._setupProcessing();
+            this._setupAdvanced();
             this._loadFolders();
             this._loadServers();
             this._loadCategories();
             this._loadProcessing();
+            this._loadAdvanced();
             console.log('[NzbHunt] Settings initialized');
         },
 
@@ -1436,6 +1464,71 @@
                 .catch(function () {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification('Failed to save processing settings.', 'error');
+                    }
+                });
+        },
+
+        /* ──────────────────────────────────────────────
+           Advanced settings
+        ────────────────────────────────────────────── */
+        _setupAdvanced: function () {
+            var self = this;
+            var saveBtn = document.getElementById('nzb-save-advanced');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function () { self._saveAdvanced(); });
+            }
+        },
+
+        _loadAdvanced: function () {
+            fetch('./api/nzb-hunt/settings/advanced?t=' + Date.now())
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var el;
+                    el = document.getElementById('nzb-adv-receive-threads');
+                    if (el && data.receive_threads !== undefined) el.value = data.receive_threads;
+
+                    el = document.getElementById('nzb-adv-sleep-time');
+                    if (el && data.downloader_sleep_time !== undefined) el.value = data.downloader_sleep_time;
+
+                    el = document.getElementById('nzb-adv-unpack-threads');
+                    if (el && data.direct_unpack_threads !== undefined) el.value = data.direct_unpack_threads;
+
+                    el = document.getElementById('nzb-adv-size-limit');
+                    if (el && data.size_limit !== undefined) el.value = data.size_limit;
+
+                    el = document.getElementById('nzb-adv-completion-rate');
+                    if (el && data.req_completion_rate !== undefined) el.value = data.req_completion_rate;
+
+                    el = document.getElementById('nzb-adv-url-retries');
+                    if (el && data.max_url_retries !== undefined) el.value = data.max_url_retries;
+                })
+                .catch(function () { /* use defaults */ });
+        },
+
+        _saveAdvanced: function () {
+            var payload = {
+                receive_threads: parseInt((document.getElementById('nzb-adv-receive-threads') || {}).value || '2', 10),
+                downloader_sleep_time: parseInt((document.getElementById('nzb-adv-sleep-time') || {}).value || '10', 10),
+                direct_unpack_threads: parseInt((document.getElementById('nzb-adv-unpack-threads') || {}).value || '3', 10),
+                size_limit: (document.getElementById('nzb-adv-size-limit') || {}).value || '',
+                req_completion_rate: parseFloat((document.getElementById('nzb-adv-completion-rate') || {}).value || '100.2'),
+                max_url_retries: parseInt((document.getElementById('nzb-adv-url-retries') || {}).value || '10', 10)
+            };
+
+            fetch('./api/nzb-hunt/settings/advanced', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Advanced settings saved.', 'success');
+                    }
+                })
+                .catch(function () {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to save advanced settings.', 'error');
                     }
                 });
         }

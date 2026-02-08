@@ -14,6 +14,9 @@
             <button class="nzb-settings-tab" data-settings-tab="processing" id="nzb-settings-tab-processing">
                 <i class="fas fa-cogs"></i> Processing
             </button>
+            <button class="nzb-settings-tab" data-settings-tab="advanced" id="nzb-settings-tab-advanced">
+                <i class="fas fa-sliders-h"></i> Advanced
+            </button>
         </div>
 
         <!-- ═══════ Folders Panel (temp folder + completed categories) ═══════ -->
@@ -184,6 +187,90 @@
 
                 <div class="nzb-settings-footer">
                     <button class="nzb-btn nzb-btn-primary" id="nzb-save-processing"><i class="fas fa-save"></i> Save Processing</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ Advanced Panel ═══════ -->
+        <div class="nzb-settings-panel" data-settings-panel="advanced" style="display: none;">
+            <div class="nzb-settings-group">
+                <h3><i class="fas fa-sliders-h" style="color: #f59e0b; margin-right: 8px;"></i>Performance Tuning</h3>
+                <p class="nzb-settings-help">Fine-tune download performance, CPU usage, and resource limits. These settings help balance speed against system load.</p>
+
+                <!-- Receive Threads -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Receive Threads</span>
+                        <span class="nzb-folder-desc">Number of threads used to read and decode download data. Lower values reduce CPU usage; higher values may improve download speed on fast connections.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 120px;">
+                        <input type="number" id="nzb-adv-receive-threads" class="nzb-folder-input" value="2" min="1" max="8" style="text-align: center;" />
+                    </div>
+                </div>
+
+                <!-- Downloader Sleep Time -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">CPU Throttle</span>
+                        <span class="nzb-folder-desc">A small delay added between data reads to reduce CPU load. Higher values use less CPU but may reduce download speed. Value of 10 = 1ms. Set to 0 only if max connections don't reach full speed.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 120px;">
+                        <input type="number" id="nzb-adv-sleep-time" class="nzb-folder-input" value="10" min="0" max="100" style="text-align: center;" />
+                    </div>
+                </div>
+
+                <!-- Direct Unpack Threads -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Concurrent Unpack Limit</span>
+                        <span class="nzb-folder-desc">Maximum number of simultaneous unpack operations. Limits disk I/O strain when multiple downloads finish at once. Increase on fast storage (SSD/NVMe), decrease on slower drives.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 120px;">
+                        <input type="number" id="nzb-adv-unpack-threads" class="nzb-folder-input" value="3" min="1" max="10" style="text-align: center;" />
+                    </div>
+                </div>
+
+                <hr style="border-color: rgba(148,163,184,0.15); margin: 24px 0;">
+
+                <h3 style="margin-top: 0;"><i class="fas fa-shield-alt" style="color: #3b82f6; margin-right: 8px;"></i>Download Protection</h3>
+                <p class="nzb-settings-help">Control how downloads are filtered and validated to prevent wasting bandwidth on bad or oversized NZBs.</p>
+
+                <!-- Size Limit -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Download Size Limit</span>
+                        <span class="nzb-folder-desc">Downloads exceeding this size are automatically paused with low priority. Useful for preventing unexpectedly large grabs. Set to 0 for no limit.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 180px;">
+                        <input type="text" id="nzb-adv-size-limit" class="nzb-folder-input" value="" placeholder="e.g. 25G" autocomplete="off" />
+                        <span style="color: #64748b; font-size: 0.8em; margin-left: 8px; white-space: nowrap;">K / M / G</span>
+                    </div>
+                </div>
+
+                <!-- Completion Rate -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">Minimum Completion Rate (%)</span>
+                        <span class="nzb-folder-desc">Downloads with availability below this percentage are aborted early via pre-check. A perfect download with 10% par2 files is 110%. Anything below 100% is unrepairable by definition.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 120px;">
+                        <input type="number" id="nzb-adv-completion-rate" class="nzb-folder-input" value="100.2" min="90" max="120" step="0.1" style="text-align: center;" />
+                    </div>
+                </div>
+
+                <!-- Max URL Retries -->
+                <div class="nzb-folder-row">
+                    <div class="nzb-folder-label">
+                        <span class="nzb-folder-title">NZB Fetch Retries</span>
+                        <span class="nzb-folder-desc">How many times to retry when fetching an NZB from an indexer fails. Each retry waits progressively longer (60s, 120s, 180s&hellip;). Only applies to temporary server errors.</span>
+                    </div>
+                    <div class="nzb-folder-input-group" style="max-width: 120px;">
+                        <input type="number" id="nzb-adv-url-retries" class="nzb-folder-input" value="10" min="0" max="50" style="text-align: center;" />
+                    </div>
+                </div>
+
+                <div class="nzb-settings-footer">
+                    <button class="nzb-btn nzb-btn-primary" id="nzb-save-advanced"><i class="fas fa-save"></i> Save Advanced</button>
                 </div>
             </div>
         </div>

@@ -241,7 +241,7 @@
     background: rgba(15, 23, 42, 0.4);
     border: 1px solid rgba(148, 163, 184, 0.08);
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
     min-height: 300px;
 }
 
@@ -1833,7 +1833,7 @@
 .nzb-history-table .nzb-hist-col-size   { width: 10%; min-width: 70px; }
 .nzb-history-table .nzb-hist-col-date   { width: 16%; min-width: 110px; }
 .nzb-history-table .nzb-hist-col-result { width: 20%; min-width: 100px; }
-.nzb-history-table .nzb-hist-col-info   { width: 28px; min-width: 28px; max-width: 28px; text-align: center; }
+.nzb-history-table .nzb-hist-col-info   { width: 40px; min-width: 40px; max-width: 40px; text-align: center; padding-right: 8px; }
 
 /* Status icon column */
 .nzb-hist-status-icon {
@@ -1883,16 +1883,14 @@
 /* Tooltip */
 .nzb-hist-tooltip {
     display: none;
-    position: absolute;
-    bottom: calc(100% + 8px);
-    right: -8px;
+    position: fixed;
     background: #1e293b;
     border: 1px solid rgba(71, 85, 105, 0.6);
     border-radius: 8px;
     padding: 10px 14px;
     min-width: 280px;
     max-width: 400px;
-    z-index: 100;
+    z-index: 10000;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     font-size: 0.78rem;
     line-height: 1.6;
