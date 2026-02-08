@@ -51,8 +51,16 @@ const huntManagerModule = {
             pageInfo: document.getElementById('huntManagerPageInfo'),
             tableBody: document.getElementById('huntManagerTableBody'),
             emptyState: document.getElementById('huntManagerEmptyState'),
-            loading: document.getElementById('huntManagerLoading')
+            loading: document.getElementById('huntManagerLoading'),
+            connectionStatus: document.getElementById('huntManagerConnectionStatus')
         };
+    },
+    
+    // Update connection status indicator
+    updateConnectionStatus: function(state, text) {
+        if (!this.elements.connectionStatus) return;
+        this.elements.connectionStatus.textContent = text || state;
+        this.elements.connectionStatus.className = 'hm-status-' + state;
     },
     
     // Setup event listeners
@@ -164,6 +172,7 @@ const huntManagerModule = {
         
         this.isLoading = true;
         this.showLoading(true);
+        this.updateConnectionStatus('loading', 'Loading...');
         
         const params = new URLSearchParams({
             page: this.currentPage,
@@ -179,6 +188,7 @@ const huntManagerModule = {
             .then(data => {
                 if (data.entries !== undefined) {
                     this.displayHuntHistory(data);
+                    this.updateConnectionStatus('connected', 'Connected');
                 } else {
                     throw new Error(data.error || 'Invalid response format');
                 }
@@ -186,6 +196,7 @@ const huntManagerModule = {
             .catch(error => {
                 console.error('Error loading hunt history:', error);
                 this.showError(`Error loading hunt history: ${error.message}`);
+                this.updateConnectionStatus('error', 'Connection error');
             })
             .finally(() => {
                 this.isLoading = false;

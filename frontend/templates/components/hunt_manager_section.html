@@ -1,13 +1,11 @@
 <div id="huntManagerSection" class="system-tab-panel active" data-system-panel="hunt-manager">
-    <div class="hunt-manager-header">
-        <div class="hunt-manager-controls">
-            <div class="control-group">
-                <div class="log-app-filter">
-                    <label for="huntManagerAppSelect">
-                        <i class="fas fa-filter"></i>
-                        <span>App:</span>
-                    </label>
-                    <select id="huntManagerAppSelect" class="styled-select">
+    <!-- Unified Toolbar -->
+    <div class="hm-toolbar">
+        <div class="hm-toolbar-row">
+            <div class="hm-filters">
+                <div class="hm-filter-chip">
+                    <i class="fas fa-filter"></i>
+                    <select id="huntManagerAppSelect" class="hm-chip-select">
                         <option value="all">All Apps</option>
                         <option value="sonarr">Sonarr</option>
                         <option value="radarr">Radarr</option>
@@ -18,51 +16,51 @@
                     </select>
                 </div>
             </div>
-            
-            <div class="control-group main-search">
-                <div class="log-search">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="huntManagerSearchInput" placeholder="Search processed media...">
-                    <button id="huntManagerSearchButton">Search</button>
-                </div>
+            <div class="hm-search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="huntManagerSearchInput" placeholder="Search processed media...">
             </div>
-            
-            <div class="control-group">
-                <button id="clearHuntManagerButton" class="btn-danger-outline">
-                    <i class="fas fa-trash-alt"></i> Clear Data
-                </button>
-            </div>
+            <button type="button" id="huntManagerSearchButton" class="hm-btn hm-btn-search" title="Search">
+                <i class="fas fa-search"></i>
+            </button>
+            <button type="button" id="clearHuntManagerButton" class="hm-btn hm-btn-danger" title="Clear Data">
+                <i class="fas fa-trash-alt"></i>
+            </button>
         </div>
-
-        <div class="hunt-manager-pagination">
-            <div class="pagination-info">
-                <span id="huntManagerPageInfo">Page <span id="huntManagerCurrentPage">1</span> of <span id="huntManagerTotalPages">1</span></span>
+        <div class="hm-toolbar-meta">
+            <div class="hm-connection-dot">
+                <i class="fas fa-circle hm-status-icon"></i>
+                <span id="huntManagerConnectionStatus" class="hm-status-disconnected">Disconnected</span>
             </div>
-            <div class="pagination-actions">
-                <button id="huntManagerPrevPage" class="pagination-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
-                <button id="huntManagerNextPage" class="pagination-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
-            </div>
-            <div class="page-size-selector">
-                <span>Show:</span>
-                <select id="huntManagerPageSize" class="mini-select">
-                    <option value="10">10</option>
-                    <option value="20" selected>20</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
+            <div class="hm-pagination">
+                <span class="hm-page-size">
+                    Show
+                    <select id="huntManagerPageSize" class="hm-chip-select hm-chip-select-sm">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </span>
+                <div class="hm-page-nav">
+                    <button id="huntManagerPrevPage" class="hm-page-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
+                    <span id="huntManagerPageInfo" class="hm-page-info">Page <span id="huntManagerCurrentPage">1</span> of <span id="huntManagerTotalPages">1</span></span>
+                    <button id="huntManagerNextPage" class="hm-page-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="hunt-table-wrapper">
-        <table class="hunt-data-table">
+    <!-- Data Table -->
+    <div class="hm-table-wrapper">
+        <table class="hm-data-table">
             <thead>
                 <tr>
-                    <th class="col-info">PROCESSED INFORMATION</th>
-                    <th class="col-op">OPERATION</th>
-                    <th class="col-id">ID NUMBER</th>
-                    <th class="col-instance">APP INSTANCE</th>
-                    <th class="col-time">TIME</th>
+                    <th class="col-info">Processed Information</th>
+                    <th class="col-op">Operation</th>
+                    <th class="col-id">ID</th>
+                    <th class="col-instance">App Instance</th>
+                    <th class="col-time">Time</th>
                 </tr>
             </thead>
             <tbody id="huntManagerTableBody">
@@ -71,16 +69,16 @@
         </table>
     </div>
 
-    <div id="huntManagerEmptyState" class="empty-state-card" style="display: none;">
-        <div class="empty-state-icon">
+    <div id="huntManagerEmptyState" class="hm-empty-state" style="display: none;">
+        <div class="hm-empty-icon">
             <i class="fas fa-crosshairs"></i>
         </div>
         <h3>No hunt data found</h3>
         <p>Items will appear here once media has been processed by your apps.</p>
     </div>
 
-    <div id="huntManagerLoading" class="loading-overlay" style="display: none;">
-        <div class="loading-spinner-container">
+    <div id="huntManagerLoading" class="hm-loading" style="display: none;">
+        <div class="hm-loading-inner">
             <i class="fas fa-circle-notch fa-spin fa-3x"></i>
             <p>Fetching hunt data...</p>
         </div>
@@ -88,275 +86,359 @@
 </div>
 
 <style>
-/* Modern Hunt Manager Styling */
+/* ═══════════════════════════════════════════════════════════════════════
+   Hunt Manager — Modern Compact Layout (matches Logs redesign)
+   ═══════════════════════════════════════════════════════════════════════ */
+
 #huntManagerSection {
-    padding-bottom: 80px !important; /* Extra space for footer/scrolling */
+    padding-bottom: 80px !important;
 }
 
-.hunt-manager-header {
-    padding: 10px 0 20px 0;
+/* ── Toolbar ── */
+.hm-toolbar {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 0;
+    margin-bottom: 16px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
 }
 
-.hunt-manager-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.control-group {
-    display: flex;
-    align-items: center;
-}
-
-.control-group.main-search {
-    flex: 1;
-    min-width: 300px;
-}
-
-.log-app-filter {
+.hm-toolbar-row {
     display: flex;
     align-items: center;
     gap: 10px;
+    padding: 12px 16px;
 }
 
-.log-app-filter label {
-    color: #94a3b8;
-    font-size: 0.9em;
+.hm-toolbar-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    min-height: 40px;
+}
+
+/* ── Filter Chips ── */
+.hm-filters {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.hm-filter-chip {
     display: flex;
     align-items: center;
     gap: 6px;
-}
-
-.log-app-filter select {
-    background: #1e293b;
-    border: 1px solid #334155;
-    color: #f1f5f9;
-    padding: 8px 12px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    outline: none;
-    transition: all 0.2s;
+    padding: 0 4px 0 10px;
+    height: 36px;
+    transition: border-color 0.2s;
 }
 
-.log-app-filter select:focus {
-    border-color: #3b82f6;
+.hm-filter-chip:hover,
+.hm-filter-chip:focus-within {
+    border-color: rgba(59, 130, 246, 0.4);
 }
 
-.log-search {
-    position: relative;
-    width: 100%;
-    display: flex;
-    gap: 12px;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-.log-search::before {
-    display: none !important;
-    content: none !important;
-}
-
-.search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+.hm-filter-chip i {
     color: #64748b;
-    pointer-events: none;
-    z-index: 5;
+    font-size: 0.75rem;
+    flex-shrink: 0;
 }
 
-.log-search input {
-    background: #1e293b;
-    border: 1px solid #334155;
-    color: #f1f5f9;
-    padding: 10px 12px 10px 38px;
-    border-radius: 8px;
-    width: 100%;
-    outline: none;
-    transition: all 0.2s;
-    height: 42px; /* Fixed height for alignment */
-}
-
-.log-search input:focus {
-    border-color: #3b82f6;
-    background: #1e293b;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-.log-search button {
-    background: #3b82f6;
-    color: white;
+.hm-chip-select {
+    background: transparent;
     border: none;
-    padding: 0 24px;
-    border-radius: 8px;
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    font-weight: 500;
+    outline: none;
     cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s;
-    white-space: nowrap;
-    height: 42px; /* Match input height */
+    padding: 6px 4px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    padding-right: 20px;
+}
+
+.hm-chip-select option {
+    background: #1e293b;
+    color: #e2e8f0;
+}
+
+.hm-chip-select-sm {
+    font-size: 0.8rem;
+    padding: 2px 18px 2px 4px;
+}
+
+/* ── Search Bar ── */
+.hm-search-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0 12px;
+    height: 36px;
+    min-width: 160px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hm-search-bar:focus-within {
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.hm-search-bar i {
+    color: #475569;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.hm-search-bar input {
+    background: transparent;
+    border: none;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    outline: none;
+    width: 100%;
+    padding: 0;
+}
+
+.hm-search-bar input::placeholder {
+    color: #475569;
+}
+
+/* ── Toolbar Buttons ── */
+.hm-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.log-search button:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-}
-
-.log-search button:active {
-    transform: translateY(0);
-}
-
-.log-search button:hover {
-    background: #2563eb;
-}
-
-.btn-danger-outline {
-    background: transparent;
-    border: 1px solid #ef4444;
-    color: #ef4444;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.btn-danger-outline:hover {
-    background: #ef4444;
-    color: white;
-}
-
-/* Pagination Styling */
-.hunt-manager-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 20px;
-    padding-top: 15px;
-}
-
-.pagination-info {
-    color: #94a3b8;
-    font-size: 0.9em;
-}
-
-.pagination-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.pagination-btn {
-    background: #1e293b;
-    border: 1px solid #334155;
-    color: #f1f5f9;
     width: 36px;
     height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(30, 41, 59, 0.8);
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+}
+
+.hm-btn:hover {
+    background: rgba(30, 41, 59, 1);
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.hm-btn-search:hover {
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #60a5fa;
+}
+
+.hm-btn-danger:hover {
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.08);
+}
+
+/* ── Meta Row: Connection + Pagination ── */
+.hm-connection-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+.hm-status-icon {
+    font-size: 0.45rem;
+    color: #64748b;
+    transition: color 0.3s;
+}
+
+.hm-status-connected {
+    color: #10b981;
+}
+
+.hm-connection-dot:has(.hm-status-connected) .hm-status-icon {
+    color: #10b981;
+}
+
+.hm-status-disconnected {
+    color: #64748b;
+}
+
+.hm-status-error {
+    color: #f87171;
+}
+
+.hm-connection-dot:has(.hm-status-error) .hm-status-icon {
+    color: #f87171;
+}
+
+.hm-status-loading {
+    color: #fbbf24;
+}
+
+.hm-connection-dot:has(.hm-status-loading) .hm-status-icon {
+    color: #fbbf24;
+}
+
+.hm-pagination {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hm-page-size {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.hm-page-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hm-page-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(30, 41, 59, 0.6);
+    color: #94a3b8;
     cursor: pointer;
     transition: all 0.2s;
+    font-size: 0.7rem;
 }
 
-.pagination-btn:hover:not(:disabled) {
-    border-color: #3b82f6;
-    color: #3b82f6;
+.hm-page-btn:hover:not(:disabled) {
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.08);
 }
 
-.pagination-btn:disabled {
-    opacity: 0.3;
+.hm-page-btn:disabled {
+    opacity: 0.25;
     cursor: not-allowed;
 }
 
-.page-size-selector {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.hm-page-info {
     color: #94a3b8;
-    font-size: 0.9em;
+    font-size: 0.8rem;
+    padding: 0 4px;
+    white-space: nowrap;
 }
 
-.mini-select {
-    background: #1e293b;
-    border: 1px solid #334155;
-    color: #f1f5f9;
-    padding: 4px 8px;
-    border-radius: 6px;
-    outline: none;
-}
+/* ═══════════════════════════════════════════════════════════════════════
+   Data Table
+   ═══════════════════════════════════════════════════════════════════════ */
 
-/* Table Wrapper - Broken out of the frame */
-.hunt-table-wrapper {
-    margin-top: 10px;
+.hm-table-wrapper {
     border-radius: 12px;
-    overflow: visible; /* Allow breaking out of the frame */
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.hunt-data-table {
+.hm-data-table {
     width: 100%;
-    border-collapse: separate;
+    border-collapse: collapse;
     border-spacing: 0;
 }
 
-.hunt-data-table thead {
+.hm-data-table thead {
     position: sticky;
-    top: -20px; /* Account for section padding */
+    top: 0;
     z-index: 10;
 }
 
-.hunt-data-table th {
-    background: #1e293b;
-    color: #94a3b8;
+.hm-data-table th {
+    background: rgba(15, 23, 42, 0.9);
+    color: #64748b;
     text-align: left;
-    padding: 14px 20px;
-    font-size: 0.8em;
+    padding: 10px 16px;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-    border-bottom: 2px solid #0f172a;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.hunt-data-table th:first-child { border-radius: 8px 0 0 8px; }
-.hunt-data-table th:last-child { border-radius: 0 8px 8px 0; }
-
-.hunt-data-table td {
-    padding: 16px 20px;
-    color: #e2e8f0;
+.hm-data-table td {
+    padding: 10px 16px;
+    color: #cbd5e1;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-    font-size: 0.9em;
+    font-size: 0.85rem;
+    line-height: 1.4;
 }
 
-.hunt-data-table tr:last-child td {
+.hm-data-table tbody tr {
+    transition: background 0.15s;
+}
+
+.hm-data-table tbody tr:hover {
+    background: rgba(59, 130, 246, 0.04);
+}
+
+.hm-data-table tr:last-child td {
     border-bottom: none;
 }
 
-.hunt-data-table tbody tr {
-    transition: background 0.2s;
+/* Column styles */
+.col-info { }
+
+.col-op {
+    width: 100px;
+    white-space: nowrap;
 }
 
-.hunt-data-table tbody tr:hover {
-    background: rgba(59, 130, 246, 0.05);
+.col-id {
+    width: 100px;
+    color: #64748b !important;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.78rem !important;
 }
 
+.col-instance {
+    width: 200px;
+    color: #94a3b8 !important;
+    white-space: nowrap;
+}
+
+.col-time {
+    width: 120px;
+    color: #64748b !important;
+    white-space: nowrap;
+}
+
+/* Clickable item links */
 .hunt-item-link {
     color: #60a5fa !important;
     font-weight: 600;
     text-decoration: none !important;
-    transition: all 0.2s;
+    cursor: pointer;
+    transition: color 0.2s;
 }
 
 .hunt-item-link:hover {
@@ -364,24 +446,32 @@
     text-decoration: underline !important;
 }
 
-/* Operation Badges */
+/* ═══════════════════════════════════════════════════════════════════════
+   Operation Badges — pill style (matches log level badges)
+   ═══════════════════════════════════════════════════════════════════════ */
+
 .operation-badge {
-    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 10px;
     border-radius: 9999px;
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.025em;
+    letter-spacing: 0.04em;
+    min-width: 60px;
+    line-height: 1;
 }
 
 .operation-missing {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.12);
     color: #f87171;
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .operation-upgrade {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(59, 130, 246, 0.12);
     color: #60a5fa;
     border: 1px solid rgba(59, 130, 246, 0.2);
 }
@@ -392,146 +482,172 @@
     border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
-.col-id { color: #94a3b8 !important; font-family: inherit; }
-.col-time { color: #64748b !important; white-space: nowrap; }
-.col-instance { color: #94a3b8 !important; }
-
-/* Empty State Styling */
-.empty-state-card {
-    text-align: center;
-    padding: 60px 20px;
-    background: rgba(30, 41, 59, 0.3);
-    border-radius: 12px;
-    border: 1px dashed #334155;
-    margin-top: 20px;
-}
-
-.empty-state-icon {
-    color: #334155;
-    font-size: 4rem;
-    margin-bottom: 20px;
-}
-
-.empty-state-card h3 {
-    color: #f1f5f9;
-    margin-bottom: 10px;
-}
-
-.empty-state-card p {
-    color: #64748b;
-}
-
-/* Loading Overlay */
-.loading-overlay {
-    text-align: center;
-    padding: 60px 20px;
-}
-
-.loading-spinner-container {
-    color: #3b82f6;
-}
-
-.loading-spinner-container p {
-    margin-top: 15px;
-    color: #94a3b8;
-}
-
+/* Discovery Badge */
 .discovery-badge {
     background: rgba(34, 197, 94, 0.1);
     color: #4ade80;
     padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.7em;
+    border-radius: 9999px;
+    font-size: 0.65rem;
     font-weight: 600;
     margin-left: 8px;
-    border: 1px solid rgba(34, 197, 94, 0.2);
+    border: 1px solid rgba(34, 197, 94, 0.18);
 }
-/* Responsive adjustments */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Empty State & Loading
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.hm-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+    margin-top: 20px;
+}
+
+.hm-empty-icon {
+    color: #334155;
+    font-size: 3.5rem;
+    margin-bottom: 16px;
+}
+
+.hm-empty-state h3 {
+    color: #e2e8f0;
+    margin-bottom: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.hm-empty-state p {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.hm-loading {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.hm-loading-inner {
+    color: #3b82f6;
+}
+
+.hm-loading-inner p {
+    margin-top: 15px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Responsive — Mobile
+   ═══════════════════════════════════════════════════════════════════════ */
+
 @media (max-width: 768px) {
-    .hunt-manager-controls {
-        flex-direction: column;
-        align-items: stretch;
+    .hm-toolbar-row {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 12px;
     }
 
-    .control-group.main-search {
+    .hm-filters {
+        width: auto;
+    }
+
+    .hm-search-bar {
         min-width: unset;
+        flex: 1;
     }
 
-    .hunt-manager-pagination {
-        flex-direction: column;
-        align-items: flex-start;
+    .hm-toolbar-meta {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+
+    .hm-pagination {
         gap: 10px;
     }
 
-    .page-size-selector {
-        width: 100%;
-        justify-content: flex-start;
-        gap: 10px;
-        padding-left: 2px; /* Tiny bump to the right */
+    /* Card layout for table rows */
+    .hm-data-table,
+    .hm-data-table thead,
+    .hm-data-table tbody,
+    .hm-data-table th,
+    .hm-data-table td,
+    .hm-data-table tr {
+        display: block;
     }
 
-    .mini-select {
-        min-width: 60px;
-    }
-
-    /* Transform table into cards for mobile */
-    .hunt-data-table, 
-    .hunt-data-table thead, 
-    .hunt-data-table tbody, 
-    .hunt-data-table th, 
-    .hunt-data-table td, 
-    .hunt-data-table tr { 
-        display: block; 
-    }
-
-    .hunt-data-table thead tr { 
+    .hm-data-table thead tr {
         position: absolute;
         top: -9999px;
         left: -9999px;
     }
 
-    .hunt-data-table tr {
-        background: rgba(30, 41, 59, 0.4);
+    .hm-data-table tbody tr {
+        background: rgba(15, 23, 42, 0.5);
         border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        margin-bottom: 15px;
-        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        padding: 12px;
     }
 
-    .hunt-data-table td { 
+    .hm-data-table td {
         border: none;
-        padding: 8px 0;
+        padding: 4px 0;
         position: relative;
-        padding-left: 40%; 
+        padding-left: 35%;
         text-align: right;
-        font-size: 0.85em;
+        font-size: 0.82rem;
     }
 
-    .hunt-data-table td:before { 
+    .hm-data-table td:before {
         position: absolute;
-        top: 8px;
+        top: 4px;
         left: 0;
-        width: 35%; 
-        padding-right: 10px; 
-        white-space: nowrap;
+        width: 30%;
         text-align: left;
-        font-weight: 700;
-        color: #94a3b8;
+        font-weight: 600;
+        color: #64748b;
         text-transform: uppercase;
-        font-size: 0.75rem; /* Standardized font size for all labels */
+        font-size: 0.68rem;
+        letter-spacing: 0.03em;
     }
 
-    .hunt-data-table td:nth-of-type(1) { padding-left: 0; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 12px; margin-bottom: 8px; }
-    .hunt-data-table td:nth-of-type(1):before { content: none; }
-    
-    .hunt-data-table td:nth-of-type(2):before { content: "Operation"; }
-    .hunt-data-table td:nth-of-type(3):before { content: "ID"; }
-    .hunt-data-table td:nth-of-type(4):before { content: "Instance"; }
-    .hunt-data-table td:nth-of-type(5):before { content: "Time"; }
+    /* First cell (processed info) spans full width */
+    .hm-data-table td:nth-of-type(1) {
+        padding-left: 0;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 10px;
+        margin-bottom: 6px;
+    }
+    .hm-data-table td:nth-of-type(1):before { content: none; }
 
-    .hunt-data-table td.col-time {
-        color: #4ade80 !important; /* Make time more visible on mobile */
+    .hm-data-table td:nth-of-type(2):before { content: "Operation"; }
+    .hm-data-table td:nth-of-type(3):before { content: "ID"; }
+    .hm-data-table td:nth-of-type(4):before { content: "Instance"; }
+    .hm-data-table td:nth-of-type(5):before { content: "Time"; }
+
+    .hm-data-table td.col-time {
+        color: #4ade80 !important;
         font-weight: 600;
     }
 }
-</style> 
+
+@media (max-width: 480px) {
+    .hm-toolbar-row {
+        flex-wrap: wrap;
+    }
+
+    .hm-filters {
+        width: 100%;
+    }
+
+    .hm-filter-chip {
+        flex: 1;
+    }
+}
+</style>
