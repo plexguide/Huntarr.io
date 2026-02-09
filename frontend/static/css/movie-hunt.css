@@ -207,8 +207,8 @@ body.requestarr-modal-open {
 /* Form fields: grid so label column and control column align across all rows */
 .mh-req-fields {
     display: grid;
-    grid-template-columns: 150px 1fr;
-    gap: 10px 12px;
+    grid-template-columns: auto 1fr;
+    gap: 10px 14px;
     align-items: center;
 }
 .mh-req-field {
@@ -219,13 +219,13 @@ body.requestarr-modal-open {
     font-weight: 600;
     color: rgba(148, 163, 184, 0.6);
     text-align: left;
-    /* Keep label text and icon on same line without breaking grid */
     white-space: nowrap;
-    overflow: visible;
+    grid-column: 1;
 }
 .mh-req-field select,
 .mh-req-field .mh-req-field-input-wrap {
     min-width: 0;
+    grid-column: 2;
 }
 .mh-req-field select {
     width: 100%;

@@ -679,25 +679,173 @@
    MOBILE ADJUSTMENTS
    ═══════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
+    /* Keep toggle visible so users can switch */
     .view-toggle-group {
-        display: none; /* Hide on small screens — grid is the only sensible layout */
+        display: flex;
     }
 
+    /* ── Grid mode on mobile ────────────────────────────────────── */
     .app-group-cards {
         grid-template-columns: 1fr;
     }
 
-    .app-list-table {
-        font-size: 0.75rem;
+    /* Hide drag handles on mobile — too hard to use */
+    .card-drag-handle,
+    .group-drag-handle {
+        display: none !important;
     }
 
-    .app-list-table thead th,
+    /* ── List mode on mobile: card-per-row layout (like logs) ─── */
+    /* Convert table structure to stacked cards */
+    .app-list-table,
+    .app-list-table thead,
+    .app-list-table tbody,
+    .app-list-table th,
+    .app-list-table td,
+    .app-list-table tr {
+        display: block;
+    }
+
+    /* Hide table header — labels will be inline via ::before */
+    .app-list-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .app-list-table colgroup {
+        display: none;
+    }
+
+    /* Each row becomes a compact card */
+    .app-list-table tbody tr {
+        background: rgba(15, 23, 42, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        margin-bottom: 8px;
+        padding: 12px 14px;
+        position: relative;
+    }
+
+    .app-list-table tbody tr:nth-child(even) {
+        background: rgba(15, 23, 42, 0.55);
+    }
+
+    /* Each td becomes a label:value row */
     .app-list-table tbody td {
-        padding: 6px 8px;
+        border: none;
+        padding: 3px 0;
+        position: relative;
+        padding-left: 38%;
+        text-align: right;
+        font-size: 0.82rem;
+        white-space: normal;
     }
 
+    .app-list-table tbody td:before {
+        position: absolute;
+        top: 3px;
+        left: 0;
+        width: 36%;
+        text-align: left;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        font-size: 0.64rem;
+        letter-spacing: 0.05em;
+    }
+
+    /* Label text for each column */
+    .app-list-table tbody td.list-instance-name:before { content: "Instance"; }
+    .app-list-table tbody td.list-stat:nth-of-type(2):before { content: "Searches"; }
+    .app-list-table tbody td.list-stat:nth-of-type(3):before { content: "Upgrades"; }
+    .app-list-table tbody td.list-api:before { content: "API"; }
+    .app-list-table tbody td.list-status:before { content: "Status"; }
+    .app-list-table tbody td.list-actions:before { content: none; }
+
+    /* Instance name — prominent, full width on mobile */
+    .app-list-table tbody td.list-instance-name {
+        padding-left: 0;
+        text-align: left;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        padding-bottom: 6px;
+        margin-bottom: 4px;
+    }
+
+    .app-list-table tbody td.list-instance-name:before { content: none; }
+
+    /* Actions — center the reset button */
+    .app-list-table tbody td.list-actions {
+        padding-left: 0;
+        text-align: center;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+        margin-top: 4px;
+        padding-top: 8px;
+    }
+
+    /* Status timer in mobile card */
+    .app-list-table tbody td.list-status {
+        padding-left: 38%;
+        text-align: right;
+    }
+
+    .list-status .cycle-timer {
+        display: inline-flex;
+        font-size: 0.72rem;
+        padding: 2px 6px;
+    }
+
+    /* API bar slightly smaller on mobile */
     .list-api-bar {
-        width: 40px;
+        width: 50px;
+    }
+
+    .list-api-text {
+        font-size: 0.68rem !important;
+    }
+
+    /* Group header: keep compact */
+    .app-stats-list .app-group-header.list-header {
+        padding: 10px 14px;
+    }
+
+    .app-group-logo {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .app-group-label {
+        font-size: 0.82rem !important;
+    }
+}
+
+/* Extra-small mobile */
+@media (max-width: 480px) {
+    .app-list-table tbody td {
+        padding-left: 42%;
+        font-size: 0.78rem;
+    }
+
+    .app-list-table tbody td:before {
+        width: 40%;
+        font-size: 0.6rem;
+    }
+
+    .app-list-table tbody td.list-instance-name {
+        font-size: 0.84rem;
+    }
+
+    .home-section-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .home-section-bar-right {
+        width: 100%;
+        justify-content: flex-end;
     }
 }
 

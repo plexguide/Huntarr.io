@@ -242,8 +242,8 @@
                 <div class="setting-item">
                     <label for="dashboard_view_mode">Dashboard View Mode:</label>
                     <select id="dashboard_view_mode" class="control-select" style="width: 200px;">
-                        <option value="grid" ${(!settings.dashboard_view_mode || settings.dashboard_view_mode === "grid") ? "selected" : ""}>Grid (Default)</option>
-                        <option value="list" ${settings.dashboard_view_mode === "list" ? "selected" : ""}>List</option>
+                        <option value="list" ${(!settings.dashboard_view_mode || settings.dashboard_view_mode === "list") ? "selected" : ""}>List (Default)</option>
+                        <option value="grid" ${settings.dashboard_view_mode === "grid" ? "selected" : ""}>Grid</option>
                     </select>
                     <p class="setting-help" style="margin-left: -3ch !important;">Choose between grid cards or a compact list table for the Hunt Activity dashboard.</p>
                 </div>
@@ -277,7 +277,7 @@
                     window.HuntarrStats.resetDashboardLayout();
                     // Also reset the dropdown in this form
                     const modeSelect = container.querySelector('#dashboard_view_mode');
-                    if (modeSelect) modeSelect.value = 'grid';
+                    if (modeSelect) modeSelect.value = 'list';
                 } else {
                     localStorage.removeItem('huntarr-dashboard-layout');
                     localStorage.removeItem('huntarr-dashboard-view-mode');

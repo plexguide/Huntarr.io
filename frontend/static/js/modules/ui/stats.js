@@ -7,7 +7,7 @@
 window.HuntarrStats = {
     isLoadingStats: false,
     _pollInterval: null,
-    _currentViewMode: 'grid', // 'grid' or 'list'
+    _currentViewMode: 'list', // 'grid' or 'list'
     _lastRenderedMode: null,  // Track which mode we last rendered
 
     // App metadata: order, display names, icons, accent colors
@@ -126,7 +126,7 @@ window.HuntarrStats = {
             var mode = localStorage.getItem('huntarr-dashboard-view-mode');
             if (mode === 'list' || mode === 'grid') return mode;
         } catch (e) {}
-        return 'grid';
+        return 'list'; // Default is list mode
     },
 
     _setViewMode: function(mode) {
@@ -774,7 +774,7 @@ window.HuntarrStats = {
     resetDashboardLayout: function() {
         localStorage.removeItem('huntarr-dashboard-layout');
         localStorage.removeItem('huntarr-dashboard-view-mode');
-        this._currentViewMode = 'grid';
+        this._currentViewMode = 'list';
         this._clearDynamicContent();
         // Reset toggle
         var toggleGroup = document.getElementById('dashboard-view-toggle');
