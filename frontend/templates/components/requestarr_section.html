@@ -569,10 +569,24 @@
                                 <option value="">Loading...</option>
                             </select>
                         </div>
+                        <div class="mh-req-field" id="requestarr-modal-min-availability-wrap" style="display: none;">
+                            <label>Minimum Availability</label>
+                            <select id="modal-minimum-availability" aria-label="Minimum Availability">
+                                <option value="released" selected>Released</option>
+                                <option value="inCinemas">In Cinemas</option>
+                                <option value="announced">Announced</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="mh-req-actions">
-                        <button type="button" class="mh-req-btn mh-req-btn-cancel" id="requestarr-modal-cancel">Cancel</button>
-                        <button type="button" class="mh-req-btn mh-req-btn-submit" id="modal-request-btn">Request</button>
+                        <label class="mh-req-checkbox-wrap" id="requestarr-modal-start-search-wrap" style="display: none;">
+                            <input type="checkbox" id="modal-start-search" checked>
+                            <span>Start search for missing movie</span>
+                        </label>
+                        <div class="mh-req-buttons">
+                            <button type="button" class="mh-req-btn mh-req-btn-cancel" id="requestarr-modal-cancel">Cancel</button>
+                            <button type="button" class="mh-req-btn mh-req-btn-submit" id="modal-request-btn">Request</button>
+                        </div>
                     </div>
                 </div>
             </div>

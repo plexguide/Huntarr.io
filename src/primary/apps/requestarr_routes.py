@@ -106,6 +106,12 @@ def request_media():
         # Get quality_profile from request, convert empty string to None
         quality_profile = data.get('quality_profile')
         root_folder_path = (data.get('root_folder_path') or '').strip() or None
+        start_search = data.get('start_search', True)
+        if isinstance(start_search, str):
+            start_search = start_search.strip().lower() not in ('false', '0', 'no', '')
+        elif start_search is None:
+            start_search = True
+        minimum_availability = (data.get('minimum_availability') or '').strip() or 'released'
         
         # For Movie Hunt, quality_profile is a name string, not an integer ID
         if app_type == 'movie_hunt':
@@ -127,7 +133,9 @@ def request_media():
             instance_name=instance_name,
             quality_profile_id=quality_profile_id,
             root_folder_path=root_folder_path,
-            quality_profile_name=quality_profile_name
+            quality_profile_name=quality_profile_name,
+            start_search=start_search,
+            minimum_availability=minimum_availability
         )
         
         logger.info(f"[Requestarr] Request result: {result}")

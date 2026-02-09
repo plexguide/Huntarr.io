@@ -1986,17 +1986,19 @@ class RequestarrAPI:
     def request_media(self, tmdb_id: int, media_type: str, title: str, year: int,
                      overview: str, poster_path: str, backdrop_path: str,
                      app_type: str, instance_name: str, quality_profile_id: int = None,
-                     root_folder_path: str = None, quality_profile_name: str = None) -> Dict[str, Any]:
+                     root_folder_path: str = None, quality_profile_name: str = None,
+                     start_search: bool = True, minimum_availability: str = 'released') -> Dict[str, Any]:
         """Request media through the specified app instance"""
         try:
-            # Movie Hunt has its own request pipeline
+            # Movie Hunt has its own request pipeline (add to library, optionally start search)
             if app_type == 'movie_hunt':
                 return self._request_media_via_movie_hunt(
                     tmdb_id=tmdb_id, title=title, year=year,
                     overview=overview, poster_path=poster_path,
                     backdrop_path=backdrop_path, instance_name=instance_name,
                     quality_profile_name=quality_profile_name,
-                    root_folder_path=root_folder_path, media_type=media_type
+                    root_folder_path=root_folder_path, media_type=media_type,
+                    start_search=start_search, minimum_availability=minimum_availability or 'released'
                 )
             
             # Get instance configuration first
@@ -2183,8 +2185,9 @@ class RequestarrAPI:
     def _request_media_via_movie_hunt(self, tmdb_id: int, title: str, year: int,
                                       overview: str, poster_path: str, backdrop_path: str,
                                       instance_name: str, quality_profile_name: str = None,
-                                      root_folder_path: str = None, media_type: str = 'movie') -> Dict[str, Any]:
-        """Request a movie through Movie Hunt's own search-score-download pipeline"""
+                                      root_folder_path: str = None, media_type: str = 'movie',
+                                      start_search: bool = True, minimum_availability: str = 'released') -> Dict[str, Any]:
+        """Add movie to Movie Hunt library; optionally start search (indexers -> download client)."""
         try:
             # Resolve instance ID
             instance_id = self._resolve_movie_hunt_instance_id(instance_name)
@@ -2195,10 +2198,38 @@ class RequestarrAPI:
                     'status': 'instance_not_found'
                 }
             
-            # Check cooldown
+            # Check if movie already in library (by status lookup)
+            status = self.get_movie_status_from_movie_hunt(tmdb_id, instance_name)
+            if status.get('in_library'):
+                return {
+                    'success': False,
+                    'message': f'{title} is already in your library for this instance.',
+                    'status': 'already_exists'
+                }
+            
+            year_str = str(year).strip() if year else ''
+            poster_path_str = (poster_path or '').strip() or None
+            root_folder = (root_folder_path or '').strip() or None
+            quality_profile = (quality_profile_name or '').strip() or None
+            min_avail = (minimum_availability or '').strip() or 'released'
+            
+            # Add to library only (no search): append to collection and return
+            if not start_search:
+                from src.primary.routes.movie_hunt.discovery import _collection_append
+                _collection_append(
+                    title=title, year=year_str, instance_id=instance_id,
+                    tmdb_id=tmdb_id, poster_path=poster_path_str, root_folder=root_folder,
+                    quality_profile=quality_profile, minimum_availability=min_avail
+                )
+                return {
+                    'success': True,
+                    'message': 'Successfully added to library.',
+                    'status': 'added'
+                }
+            
+            # Check cooldown before starting search
             cooldown_hours = self.get_cooldown_hours()
             cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'movie_hunt', instance_name, cooldown_hours)
-            
             if cooldown_status['in_cooldown']:
                 hours_remaining = cooldown_status['hours_remaining']
                 if hours_remaining <= 24:
@@ -2211,24 +2242,14 @@ class RequestarrAPI:
                     hours = int(remaining_hours)
                     minutes = int((remaining_hours - hours) * 60)
                     time_msg = f"{days}d {hours}h {minutes}m"
-                
                 return {
                     'success': False,
-                    'message': f'{title} was recently requested. Please wait {time_msg} before requesting again',
+                    'message': f'{title} was recently requested. Please wait {time_msg} before searching again.',
                     'status': 'in_cooldown',
                     'hours_remaining': hours_remaining
                 }
             
-            # Check if movie already exists in Movie Hunt collection
-            status = self.get_movie_status_from_movie_hunt(tmdb_id, instance_name)
-            if status.get('in_library'):
-                return {
-                    'success': False,
-                    'message': f'{title} already exists in Movie Hunt - {instance_name}',
-                    'status': 'already_exists'
-                }
-            
-            # Build request data for Movie Hunt's internal request endpoint
+            # Build request data for Movie Hunt's internal search+download pipeline
             # We call the discovery module's internal functions directly
             from src.primary.routes.movie_hunt.discovery import _get_collection_config
             from src.primary.routes.movie_hunt.indexers import _get_indexers_config, INDEXER_PRESET_URLS
@@ -2337,8 +2358,12 @@ class RequestarrAPI:
                 client_name = (client.get('name') or 'Download client').strip() or 'Download client'
                 _add_requested_queue_id(client_name, queue_id, instance_id, title=title, year=year_str, score=request_score, score_breakdown=request_score_breakdown)
             
-            # Add to Movie Hunt collection
-            _collection_append(title=title, year=year_str, instance_id=instance_id, tmdb_id=tmdb_id, poster_path=poster_path, root_folder=root_folder_path)
+            # Add to Movie Hunt collection (with quality and minimum_availability)
+            _collection_append(
+                title=title, year=year_str, instance_id=instance_id, tmdb_id=tmdb_id,
+                poster_path=poster_path_str, root_folder=root_folder,
+                quality_profile=quality_profile, minimum_availability=min_avail
+            )
             
             # Save request to Requestarr's DB for cooldown tracking
             self.db.add_request(

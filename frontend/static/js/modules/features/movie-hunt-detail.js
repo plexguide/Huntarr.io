@@ -185,11 +185,11 @@
             const inCooldown = originalMovie.in_cooldown || false;
             let actionBtnHTML = '';
             if (inLibrary) {
-                actionBtnHTML = '<button class="mh-btn mh-btn-success" disabled><i class="fas fa-check"></i> Available</button>';
+                actionBtnHTML = '<span class="mh-btn mh-btn-success mh-btn-static"><i class="fas fa-check-circle"></i> Already in library</span>';
             } else if (inCooldown) {
                 actionBtnHTML = '<button class="mh-btn mh-btn-warning" disabled><i class="fas fa-clock"></i> Cooldown</button>';
             } else {
-                actionBtnHTML = '<button class="mh-btn mh-btn-primary" id="mh-btn-request"><i class="fas fa-download"></i> Request Movie</button>';
+                actionBtnHTML = '<button class="mh-btn mh-btn-primary" id="mh-btn-request"><i class="fas fa-plus-circle"></i> Add to Library</button>';
             }
 
             // Instance selector (Movie Hunt + Radarr); value is "mh:<id>" or "radarr:<name>"
@@ -757,15 +757,16 @@
             if (!this.currentMovie || !this.selectedInstanceId) return;
             const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
 
-            // Update action button
-            const status = await this.checkMovieStatus(tmdbId, this.selectedInstanceId);
+            // Use movie-status API for both info bar and action button so they always match
+            const data = await this.fetchMovieHuntStatus(tmdbId, this.selectedInstanceId);
             const actionsContainer = document.getElementById('mh-detail-actions');
             if (actionsContainer) {
+                const inLibrary = data && data.found && (data.status || '').toLowerCase() === 'downloaded';
                 let btn = '';
-                if (status.in_library) {
-                    btn = '<button class="mh-btn mh-btn-success" disabled><i class="fas fa-check"></i> Available</button>';
+                if (inLibrary) {
+                    btn = '<span class="mh-btn mh-btn-success mh-btn-static"><i class="fas fa-check-circle"></i> Already in library</span>';
                 } else {
-                    btn = '<button class="mh-btn mh-btn-primary" id="mh-btn-request"><i class="fas fa-download"></i> Request Movie</button>';
+                    btn = '<button class="mh-btn mh-btn-primary" id="mh-btn-request"><i class="fas fa-plus-circle"></i> Add to Library</button>';
                 }
                 actionsContainer.innerHTML = btn;
                 const requestBtn = document.getElementById('mh-btn-request');
@@ -777,9 +778,6 @@
                     });
                 }
             }
-
-            // Fetch and update inline info bar
-            this.fetchMovieHuntStatus(tmdbId, this.selectedInstanceId);
         },
 
         async fetchMovieHuntStatus(tmdbId, instanceId) {
@@ -798,7 +796,7 @@
                     if (statusEl) statusEl.innerHTML = '<span class="mh-badge mh-badge-none">Not in Collection</span>';
                     if (profileEl) profileEl.textContent = '-';
                     if (sizeEl) sizeEl.textContent = '-';
-                    return;
+                    return data;
                 }
 
                 // Path
@@ -808,11 +806,11 @@
                     pathEl.title = pathText;
                 }
 
-                // Status badge
+                // Status badge (use "Already in library" when downloaded)
                 if (statusEl) {
                     let cls = '', icon = '', label = '';
                     if (data.status === 'downloaded') {
-                        cls = 'mh-badge-ok'; icon = 'fa-check-circle'; label = 'Downloaded';
+                        cls = 'mh-badge-ok'; icon = 'fa-check-circle'; label = 'Already in library';
                     } else if (data.status === 'missing') {
                         cls = 'mh-badge-warn'; icon = 'fa-exclamation-circle'; label = 'Requested';
                     } else {
@@ -832,8 +830,10 @@
                     sizeEl.innerHTML = this.formatFileSize(data.file_size || 0) +
                         ' <span class="mh-badge mh-badge-quality">' + this.escapeHtml(data.file_quality) + '</span>';
                 }
+                return data;
             } catch (err) {
                 console.error('[MovieHuntDetail] Status fetch error:', err);
+                return null;
             }
         },
 
