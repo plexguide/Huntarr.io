@@ -1352,6 +1352,33 @@ class RequestarrAPI:
             logger.error(f"Error setting default instances: {e}")
             raise
 
+    def get_modal_preferences(self) -> Dict[str, Any]:
+        """Get user preferences for the request modal (e.g. start_search, minimum_availability)"""
+        try:
+            requestarr_config = self.db.get_app_config('requestarr') or {}
+            return requestarr_config.get('modal_preferences', {
+                'start_search': True,
+                'minimum_availability': 'released',
+                'movie_instance': '',
+                'tv_instance': ''
+            })
+        except Exception as e:
+            logger.error(f"Error getting modal preferences: {e}")
+            return {'start_search': True, 'minimum_availability': 'released', 'movie_instance': '', 'tv_instance': ''}
+
+    def set_modal_preferences(self, preferences: Dict[str, Any]):
+        """Set user preferences for the request modal"""
+        try:
+            requestarr_config = self.db.get_app_config('requestarr') or {}
+            current_prefs = requestarr_config.get('modal_preferences', {})
+            current_prefs.update(preferences)
+            requestarr_config['modal_preferences'] = current_prefs
+            self.db.save_app_config('requestarr', requestarr_config)
+            logger.info(f"Updated modal preferences: {preferences}")
+        except Exception as e:
+            logger.error(f"Error setting modal preferences: {e}")
+            raise
+
     def get_default_root_folders(self) -> Dict[str, str]:
         """Get default root folder paths per app (issue #806). Returns paths for radarr/sonarr/movie_hunt."""
         try:

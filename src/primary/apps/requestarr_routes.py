@@ -521,6 +521,27 @@ def set_default_instances():
         logger.error(f"Error setting default instances: {e}")
         return jsonify({'success': False, 'error': 'Failed to set default instances'}), 500
 
+@requestarr_bp.route('/settings/modal-preferences', methods=['GET'])
+def get_modal_preferences():
+    """Get modal preferences"""
+    try:
+        prefs = requestarr_api.get_modal_preferences()
+        return jsonify({'success': True, 'preferences': prefs})
+    except Exception as e:
+        logger.error(f"Error getting modal preferences: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get modal preferences'}), 500
+
+@requestarr_bp.route('/settings/modal-preferences', methods=['POST'])
+def set_modal_preferences():
+    """Set modal preferences"""
+    try:
+        data = request.get_json()
+        requestarr_api.set_modal_preferences(data)
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error setting modal preferences: {e}")
+        return jsonify({'success': False, 'error': 'Failed to set modal preferences'}), 500
+
 @requestarr_bp.route('/rootfolders', methods=['GET'])
 def get_root_folders():
     """Get root folders for a *arr or Movie Hunt instance"""

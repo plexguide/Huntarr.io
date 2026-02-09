@@ -17,9 +17,8 @@
         init: function() {
             var self = this;
             this.page = 1;
-            // Load saved view mode
-            var savedView = (typeof localStorage !== 'undefined' && localStorage.getItem('movie-hunt-collection-view')) || 'posters';
-            this.viewMode = savedView;
+            // Load saved view mode (server-side preference)
+            this.viewMode = HuntarrUtils.getUIPreference('movie-hunt-collection-view', 'posters');
             this.setupInstanceSelect();
             this.setupSort();
             this.setupSearch();
@@ -153,14 +152,14 @@
             var self = this;
             var select = document.getElementById('movie-hunt-collection-sort');
             if (!select) return;
-            var saved = (typeof localStorage !== 'undefined' && localStorage.getItem('movie-hunt-collection-sort')) || 'title.asc';
+            var saved = HuntarrUtils.getUIPreference('movie-hunt-collection-sort', 'title.asc');
             if (saved) {
                 self.sortBy = saved;
                 try { select.value = saved; } catch (e) {}
             }
             select.onchange = function() {
                 self.sortBy = (select.value || 'title.asc').trim();
-                if (typeof localStorage !== 'undefined') localStorage.setItem('movie-hunt-collection-sort', self.sortBy);
+                HuntarrUtils.setUIPreference('movie-hunt-collection-sort', self.sortBy);
                 self.page = 1;
                 self.loadCollection();
             };
@@ -177,7 +176,7 @@
             select.value = this.viewMode;
             select.onchange = function() {
                 self.viewMode = select.value;
-                if (typeof localStorage !== 'undefined') localStorage.setItem('movie-hunt-collection-view', self.viewMode);
+                HuntarrUtils.setUIPreference('movie-hunt-collection-view', self.viewMode);
                 self.renderPage();
             };
         },

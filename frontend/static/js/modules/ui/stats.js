@@ -40,25 +40,11 @@ window.HuntarrStats = {
 
     // ─── Layout Persistence ───────────────────────────────────────────
     _getLayout: function() {
-        try {
-            var stored = localStorage.getItem('huntarr-dashboard-layout');
-            if (stored) return JSON.parse(stored);
-        } catch (e) {}
-        return null;
+        return HuntarrUtils.getUIPreference('dashboard-layout', null);
     },
 
     _saveLayout: function(layout) {
-        try {
-            localStorage.setItem('huntarr-dashboard-layout', JSON.stringify(layout));
-        } catch (e) {}
-        // Also persist to general settings (fire-and-forget)
-        try {
-            HuntarrUtils.fetchWithTimeout('./api/settings/general', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dashboard_layout: layout })
-            }).catch(function() {});
-        } catch (e) {}
+        HuntarrUtils.setUIPreference('dashboard-layout', layout);
     },
 
     _getGroupOrder: function() {
@@ -122,24 +108,14 @@ window.HuntarrStats = {
 
     // ─── View Mode ────────────────────────────────────────────────────
     _getViewMode: function() {
-        try {
-            var mode = localStorage.getItem('huntarr-dashboard-view-mode');
-            if (mode === 'list' || mode === 'grid') return mode;
-        } catch (e) {}
-        return 'list'; // Default is list mode
+        var mode = HuntarrUtils.getUIPreference('dashboard-view-mode', 'list');
+        if (mode === 'list' || mode === 'grid') return mode;
+        return 'list';
     },
 
     _setViewMode: function(mode) {
         this._currentViewMode = mode;
-        try { localStorage.setItem('huntarr-dashboard-view-mode', mode); } catch (e) {}
-        // Persist to general settings
-        try {
-            HuntarrUtils.fetchWithTimeout('./api/settings/general', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dashboard_view_mode: mode })
-            }).catch(function() {});
-        } catch (e) {}
+        HuntarrUtils.setUIPreference('dashboard-view-mode', mode);
     },
 
     initViewToggle: function() {
@@ -772,8 +748,8 @@ window.HuntarrStats = {
 
     // ─── Dashboard Layout Reset ───────────────────────────────────────
     resetDashboardLayout: function() {
-        localStorage.removeItem('huntarr-dashboard-layout');
-        localStorage.removeItem('huntarr-dashboard-view-mode');
+        HuntarrUtils.setUIPreference('dashboard-layout', null);
+        HuntarrUtils.setUIPreference('dashboard-view-mode', 'list');
         this._currentViewMode = 'list';
         this._clearDynamicContent();
         // Reset toggle

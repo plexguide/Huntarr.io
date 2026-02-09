@@ -17,6 +17,9 @@ export class RequestarrModal {
         const modal = document.getElementById('media-modal');
         if (!modal) return;
 
+        // Load modal preferences from server
+        await this.loadModalPreferences();
+
         // Move modal to body so it sits outside .app-container and is not blurred
         if (modal.parentElement !== document.body) {
             document.body.appendChild(modal);
@@ -51,11 +54,25 @@ export class RequestarrModal {
         const backdrop = document.getElementById('requestarr-modal-backdrop');
         const closeBtn = document.getElementById('requestarr-modal-close');
         const cancelBtn = document.getElementById('requestarr-modal-cancel');
+        const startCb = document.getElementById('modal-start-search');
+        const minSelect = document.getElementById('modal-minimum-availability');
 
         if (backdrop) backdrop.onclick = () => self.closeModal();
         if (closeBtn) closeBtn.onclick = () => self.closeModal();
         if (cancelBtn) cancelBtn.onclick = () => self.closeModal();
         if (requestBtn) requestBtn.onclick = () => self.submitRequest();
+
+        // Attach change listeners for preferences
+        if (startCb) {
+            startCb.onchange = () => {
+                this.saveModalPreferences({ start_search: startCb.checked });
+            };
+        }
+        if (minSelect) {
+            minSelect.onchange = () => {
+                this.saveModalPreferences({ minimum_availability: minSelect.value });
+            };
+        }
 
         this.suggestedInstance = suggestedInstance;
 
@@ -74,6 +91,45 @@ export class RequestarrModal {
             console.error('[RequestarrModal] Error loading details:', error);
             if (titleEl) titleEl.textContent = 'Error';
             if (statusContainer) statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-error"><i class="fas fa-exclamation-triangle"></i> Failed to load details</span>';
+        }
+    }
+
+    async loadModalPreferences() {
+        try {
+            const response = await fetch('./api/requestarr/settings/modal-preferences');
+            const result = await response.json();
+            if (result.success) {
+                this.preferences = result.preferences;
+            } else {
+                this.preferences = {
+                    start_search: true,
+                    minimum_availability: 'released',
+                    movie_instance: '',
+                    tv_instance: ''
+                };
+            }
+        } catch (error) {
+            console.error('[RequestarrModal] Error loading preferences:', error);
+            this.preferences = {
+                start_search: true,
+                minimum_availability: 'released',
+                movie_instance: '',
+                tv_instance: ''
+            };
+        }
+    }
+
+    async saveModalPreferences(prefs) {
+        try {
+            await fetch('./api/requestarr/settings/modal-preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(prefs)
+            });
+            // Update local object
+            Object.assign(this.preferences, prefs);
+        } catch (error) {
+            console.error('[RequestarrModal] Error saving preferences:', error);
         }
     }
 
@@ -121,7 +177,7 @@ export class RequestarrModal {
             });
         }
 
-        const currentlySelectedInstance = isTVShow ? this.core.content.selectedTVInstance : this.core.content.selectedMovieInstance;
+        const currentlySelectedInstance = isTVShow ? (this.preferences?.tv_instance || this.core.content.selectedTVInstance) : (this.preferences?.movie_instance || this.core.content.selectedMovieInstance);
         const defaultInstance = this.suggestedInstance || currentlySelectedInstance || uniqueInstances[0]?.compoundValue || uniqueInstances[0]?.name || '';
 
         console.log('[RequestarrModal] Default instance:', defaultInstance);
@@ -388,8 +444,11 @@ export class RequestarrModal {
         const isMovieHunt = !isTVShow && instanceValue && decodeInstanceValue(instanceValue).appType === 'movie_hunt';
         if (wrapMin) wrapMin.style.display = isMovieHunt ? 'block' : 'none';
         if (wrapStart) wrapStart.style.display = isMovieHunt ? 'flex' : 'none';
-        if (minSelect) minSelect.value = 'released';
-        if (startCb) startCb.checked = true;
+        
+        // Use loaded preferences or defaults
+        if (minSelect) minSelect.value = this.preferences?.minimum_availability || 'released';
+        if (startCb) startCb.checked = this.preferences?.hasOwnProperty('start_search') ? this.preferences.start_search : true;
+        
         if (labelEl) labelEl.textContent = isTVShow ? 'Request Series' : (isMovieHunt ? 'Add to Library' : 'Request Movie');
         if (requestBtn && !requestBtn.disabled) requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
     }
@@ -397,11 +456,11 @@ export class RequestarrModal {
     instanceChanged(instanceName) {
         const isTVShow = this.core.currentModalData.media_type === 'tv';
 
-        // For TV, instanceName is plain; for movies, it's a compound value
+        // Save to server modal preferences
         if (isTVShow) {
-            localStorage.setItem('huntarr-requestarr-instance-sonarr', instanceName);
+            this.saveModalPreferences({ tv_instance: instanceName });
         } else {
-            localStorage.setItem('huntarr-requestarr-instance-movie', instanceName);
+            this.saveModalPreferences({ movie_instance: instanceName });
         }
         console.log('[RequestarrModal] Instance changed to:', instanceName);
 

@@ -255,7 +255,8 @@ GENERAL_DEFAULTS = {
     "log_backup_count": 5,
     "log_retention_days": 30,
     "log_auto_cleanup": True,
-    "enable_debug_logs": True
+    "enable_debug_logs": True,
+    "ui_preferences": {}
 }
 
 

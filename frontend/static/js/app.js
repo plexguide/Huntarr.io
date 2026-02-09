@@ -66,9 +66,22 @@ let huntarrUI = {
                 this._enableNzbHunt = true;
                 var nzbNav = document.getElementById('nzbHuntSupportNav');
                 if (nzbNav) nzbNav.style.display = '';
-                if (!this.originalSettings) this.originalSettings = {};
-                this.originalSettings.general = all.general || {};
+                
+                // Initialize originalSettings early
+                this.originalSettings = all || {};
+                this.originalSettings.general = all.general || { ui_preferences: {} };
+                if (!this.originalSettings.general.ui_preferences) this.originalSettings.general.ui_preferences = {};
+                
                 this.updateMovieHuntNavVisibility();
+
+                // NOW initialize UI preferences that depend on settings
+                if (window.HuntarrTheme) {
+                    window.HuntarrTheme.initDarkMode();
+                }
+                this.logoUrl = HuntarrUtils.getUIPreference('logo-url', this.logoUrl);
+                if (typeof window.applyLogoToAllElements === 'function') {
+                    window.applyLogoToAllElements();
+                }
             })
             .catch(() => {});
         
@@ -155,33 +168,17 @@ let huntarrUI = {
         // Load username
         this.loadUsername();
         
-        // Initialize theme and dark mode
-        if (window.HuntarrTheme) {
-            window.HuntarrTheme.initDarkMode();
-        }
-
-        // Ensure logo is visible immediately
-        this.logoUrl = localStorage.getItem('huntarr-logo-url') || this.logoUrl;
-        
-        // Load current version
-        this.loadCurrentVersion(); // Load current version
-        
-        // Load latest version from GitHub
-        this.loadLatestVersion(); // Load latest version from GitHub
-        
-        // Load latest beta version from GitHub
-        this.loadBetaVersion(); // Load latest beta version from GitHub
-        
-        // Load GitHub star count
-        this.loadGitHubStarCount(); // Load GitHub star count
-        
         // Preload stateful management info so it's ready when needed
         this.loadStatefulInfo();
         
-        // Ensure logo is applied
-        if (typeof window.applyLogoToAllElements === 'function') {
-            window.applyLogoToAllElements();
-        }
+        // Load current version
+        this.loadCurrentVersion();
+        // Load latest version from GitHub
+        this.loadLatestVersion();
+        // Load latest beta version from GitHub
+        this.loadBetaVersion();
+        // Load GitHub star count
+        this.loadGitHubStarCount();
         
         // Initialize instance event handlers
         this.setupInstanceEventHandlers();

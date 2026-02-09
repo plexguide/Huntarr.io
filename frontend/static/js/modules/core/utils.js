@@ -113,6 +113,41 @@ const HuntarrUtils = {
             );
 
         return parts.join(", ") || "0 seconds";
+    },
+
+    /**
+     * Get a UI preference from the server-side general settings.
+     * Uses huntarrUI.originalSettings.general as the source.
+     */
+    getUIPreference: function(key, defaultValue) {
+        if (!window.huntarrUI || !window.huntarrUI.originalSettings || !window.huntarrUI.originalSettings.general) {
+            return defaultValue;
+        }
+        const prefs = window.huntarrUI.originalSettings.general.ui_preferences || {};
+        const value = prefs[key];
+        return (value !== undefined) ? value : defaultValue;
+    },
+
+    /**
+     * Set a UI preference in the server-side general settings.
+     * Merges with existing preferences and auto-saves.
+     */
+    setUIPreference: function(key, value) {
+        if (!window.huntarrUI || !window.huntarrUI.originalSettings || !window.huntarrUI.originalSettings.general) {
+            console.warn('[HuntarrUtils] Cannot set UI preference: huntarrUI.originalSettings not ready');
+            return;
+        }
+        
+        const prefs = window.huntarrUI.originalSettings.general.ui_preferences || {};
+        prefs[key] = value;
+        window.huntarrUI.originalSettings.general.ui_preferences = prefs;
+        
+        // Use FetchWithTimeout to save just the preferences (server merges them)
+        this.fetchWithTimeout('./api/settings/general', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ui_preferences: prefs })
+        }).catch(err => console.error('[HuntarrUtils] Failed to save UI preference:', err));
     }
 };
 

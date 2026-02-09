@@ -27,14 +27,14 @@ window.HuntarrTheme = {
     initDarkMode: function() {
         const darkModeToggle = document.getElementById('darkModeToggle');
         if (darkModeToggle) {
-            const prefersDarkMode = localStorage.getItem('huntarr-dark-mode') === 'true';
+            const prefersDarkMode = HuntarrUtils.getUIPreference('dark-mode', true);
             darkModeToggle.checked = prefersDarkMode;
             if (prefersDarkMode) document.body.classList.add('dark-theme');
             
             darkModeToggle.addEventListener('change', function() {
                 const isDarkMode = this.checked;
                 document.body.classList.toggle('dark-theme', isDarkMode);
-                localStorage.setItem('huntarr-dark-mode', isDarkMode);
+                HuntarrUtils.setUIPreference('dark-mode', isDarkMode);
             });
         }
     }
