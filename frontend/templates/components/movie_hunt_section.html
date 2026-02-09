@@ -121,7 +121,7 @@
                 <!-- Form column -->
                 <div class="mh-req-form">
                     <div class="mh-req-header">
-                        <span class="mh-req-label">Request Movie</span>
+                        <span class="mh-req-label">Add to Library</span>
                         <h2 class="mh-req-title" id="movie-hunt-request-modal-title"></h2>
                         <div class="mh-req-meta" id="movie-hunt-request-modal-meta"></div>
                     </div>
@@ -140,6 +140,15 @@
                             </select>
                         </div>
                         <div class="mh-req-field">
+                            <label>Minimum Availability</label>
+                            <select id="movie-hunt-request-minimum-availability" aria-label="Minimum Availability">
+                                <option value="released" selected>Released</option>
+                                <option value="inCinemas">In Cinemas</option>
+                                <option value="announced">Announced</option>
+                            </select>
+                            <a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#minimum-availability" class="mh-req-more-info" target="_blank" rel="noopener">More Info</a>
+                        </div>
+                        <div class="mh-req-field">
                             <label>Quality Profile</label>
                             <select id="movie-hunt-request-quality-profile">
                                 <option value="">Loading...</option>
@@ -147,8 +156,14 @@
                         </div>
                     </div>
                     <div class="mh-req-actions">
-                        <button type="button" class="mh-req-btn mh-req-btn-cancel" id="movie-hunt-request-modal-cancel">Cancel</button>
-                        <button type="button" class="mh-req-btn mh-req-btn-submit" id="movie-hunt-request-modal-submit">Request</button>
+                        <label class="mh-req-checkbox-wrap">
+                            <input type="checkbox" id="movie-hunt-request-start-search" checked>
+                            <span>Start search for missing movie</span>
+                        </label>
+                        <div class="mh-req-buttons">
+                            <button type="button" class="mh-req-btn mh-req-btn-cancel" id="movie-hunt-request-modal-cancel">Cancel</button>
+                            <button type="button" class="mh-req-btn mh-req-btn-submit" id="movie-hunt-request-modal-submit">Add Movie</button>
+                        </div>
                     </div>
                 </div>
             </div>

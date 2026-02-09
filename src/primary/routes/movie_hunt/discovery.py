@@ -241,8 +241,9 @@ def _save_collection_config(items_list, instance_id):
     db.save_app_config_for_instance('movie_hunt_collection', instance_id, {'items': items_list})
 
 
-def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None, root_folder=None, quality_profile=None):
-    """Append one entry to Media Collection after successful request."""
+def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None, root_folder=None,
+                      quality_profile=None, minimum_availability=None):
+    """Append one entry to Media Collection (add to library)."""
     items = _get_collection_config(instance_id)
     items.append({
         'title': title,
@@ -251,6 +252,7 @@ def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None,
         'poster_path': poster_path or '',
         'root_folder': root_folder or '',
         'quality_profile': quality_profile or '',
+        'minimum_availability': (minimum_availability or '').strip() or 'released',
         'requested_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
         'status': 'requested'
     })
@@ -362,7 +364,7 @@ def _sort_collection_items(items, sort_key):
 # --- Programmatic request (used by API and by background missing cycle) ---
 
 def perform_movie_hunt_request(instance_id, title, year='', root_folder=None, quality_profile=None,
-                               tmdb_id=None, poster_path=None, runtime_minutes=90):
+                               tmdb_id=None, poster_path=None, runtime_minutes=90, minimum_availability=None):
     """
     Search indexers for a movie and send first matching NZB to first enabled download client.
     Used by the API route and by the background missing cycle.
@@ -455,13 +457,16 @@ def perform_movie_hunt_request(instance_id, title, year='', root_folder=None, qu
     if queue_id:
         client_name = (client.get('name') or 'Download client').strip() or 'Download client'
         _add_requested_queue_id(client_name, queue_id, instance_id, title=title, year=year or '', score=request_score, score_breakdown=request_score_breakdown)
-    _collection_append(title=title, year=year, instance_id=instance_id, tmdb_id=tmdb_id, poster_path=poster_path, root_folder=root_folder)
+    _collection_append(
+        title=title, year=year, instance_id=instance_id, tmdb_id=tmdb_id, poster_path=poster_path,
+        root_folder=root_folder, quality_profile=quality_profile, minimum_availability=minimum_availability
+    )
     return True, f'"{title}" sent to {client.get("name") or "download client"}.'
 
 
 @movie_hunt_bp.route('/api/movie-hunt/request', methods=['POST'])
 def api_movie_hunt_request():
-    """Request a movie via Movie Hunt: search configured indexers, send first NZB to first enabled download client."""
+    """Add movie to library and optionally start search (indexers -> download client)."""
     try:
         data = request.get_json() or {}
         title = (data.get('title') or '').strip()
@@ -472,7 +477,13 @@ def api_movie_hunt_request():
             year = str(year).strip()
         else:
             year = ''
-        movie_hunt_logger.info("Request: received for '%s' (%s)", title, year or 'no year')
+        start_search = data.get('start_search', True)
+        if isinstance(start_search, str):
+            start_search = start_search.strip().lower() not in ('false', '0', 'no', '')
+        elif start_search is None:
+            start_search = True
+        minimum_availability = (data.get('minimum_availability') or '').strip() or 'released'
+        movie_hunt_logger.info("Request: received for '%s' (%s), start_search=%s", title, year or 'no year', start_search)
         instance_id = _get_movie_hunt_instance_id_from_request()
         root_folder = (data.get('root_folder') or '').strip() or None
         quality_profile = (data.get('quality_profile') or '').strip() or None
@@ -486,9 +497,18 @@ def api_movie_hunt_request():
                 runtime_minutes = 90
         else:
             runtime_minutes = 90
+
+        if not start_search:
+            _collection_append(
+                title=title, year=year, instance_id=instance_id, tmdb_id=tmdb_id, poster_path=poster_path,
+                root_folder=root_folder, quality_profile=quality_profile, minimum_availability=minimum_availability
+            )
+            return jsonify({'success': True, 'message': 'Successfully added to library.'}), 200
+
         success, message = perform_movie_hunt_request(
             instance_id, title, year, root_folder=root_folder, quality_profile=quality_profile,
-            tmdb_id=tmdb_id, poster_path=poster_path, runtime_minutes=runtime_minutes
+            tmdb_id=tmdb_id, poster_path=poster_path, runtime_minutes=runtime_minutes,
+            minimum_availability=minimum_availability
         )
         if success:
             return jsonify({'success': True, 'message': message}), 200
@@ -734,65 +754,34 @@ def api_movie_hunt_discover_movies():
 
 @movie_hunt_bp.route('/api/movie-hunt/collection', methods=['GET'])
 def api_movie_hunt_collection_list():
-    """List Media Collection based on root folder detection."""
+    """List Media Collection: only movies the user has requested. Status = available if on disk, else requested."""
     try:
         instance_id = _get_movie_hunt_instance_id_from_request()
         from .storage import _get_detected_movies_from_all_roots
         detected_list = _get_detected_movies_from_all_roots(instance_id)
-        combined = []
-        for d in detected_list:
-            combined.append({
-                'title': d.get('title') or '',
-                'year': d.get('year') or '',
-                'status': 'available',
-                'poster_path': '',
-                'tmdb_id': None,
-                'root_folder': '',
-                'requested_at': '',
-            })
+        detected_key_set = {(_normalize_title_for_key(d.get('title')), str(d.get('year') or '').strip()) for d in detected_list}
         requested_list = _get_collection_config(instance_id)
-        combined_key_set = {(_normalize_title_for_key(item.get('title')), str(item.get('year') or '').strip()) for item in combined}
-        combined_tmdb_set = {item.get('tmdb_id') for item in combined if item.get('tmdb_id') is not None}
+        # Build list from requested items only (no detected-only entries)
+        combined = []
         for req in requested_list:
             if not isinstance(req, dict):
                 continue
             title = (req.get('title') or '').strip()
             year = str(req.get('year') or '').strip()
             norm_key = (_normalize_title_for_key(title), year)
-            req_tmdb = req.get('tmdb_id')
-            try:
-                if req_tmdb is not None:
-                    req_tmdb = int(req_tmdb)
-            except (TypeError, ValueError):
-                req_tmdb = None
-            matched = False
-            if norm_key in combined_key_set:
-                for c in combined:
-                    if (_normalize_title_for_key(c.get('title')), str(c.get('year') or '').strip()) == norm_key:
-                        c['poster_path'] = req.get('poster_path') or c.get('poster_path') or ''
-                        c['tmdb_id'] = req_tmdb if req_tmdb is not None else c.get('tmdb_id')
-                        matched = True
-                        break
-            if not matched and req_tmdb is not None and req_tmdb in combined_tmdb_set:
-                for c in combined:
-                    if c.get('tmdb_id') == req_tmdb:
-                        c['poster_path'] = req.get('poster_path') or c.get('poster_path') or ''
-                        matched = True
-                        break
-            if not matched:
-                combined.append({
-                    'title': title,
-                    'year': year,
-                    'status': 'requested',
-                    'poster_path': req.get('poster_path') or '',
-                    'tmdb_id': req.get('tmdb_id'),
-                    'root_folder': req.get('root_folder') or '',
-                    'requested_at': req.get('requested_at') or '',
-                })
-        combined = _dedupe_collection_items(combined)
+            status = 'available' if norm_key in detected_key_set else 'requested'
+            combined.append({
+                'title': title,
+                'year': year,
+                'status': status,
+                'poster_path': req.get('poster_path') or '',
+                'tmdb_id': req.get('tmdb_id'),
+                'root_folder': req.get('root_folder') or '',
+                'requested_at': req.get('requested_at') or '',
+            })
+        # Persist status updates (e.g. requested -> available when detected on disk)
         items_full = _get_collection_config(instance_id)
         collection_updated = False
-        detected_key_set = {(_normalize_title_for_key(d.get('title')), str(d.get('year') or '').strip()) for d in detected_list}
         for i, full_item in enumerate(items_full):
             if not isinstance(full_item, dict):
                 continue
@@ -894,6 +883,8 @@ def api_movie_hunt_collection_update_by_tmdb():
                     item['quality_profile'] = (data['quality_profile'] or '').strip()
                 if 'status' in data:
                     item['status'] = (data['status'] or '').strip()
+                if 'minimum_availability' in data:
+                    item['minimum_availability'] = (data['minimum_availability'] or '').strip() or 'released'
                 found = True
                 break
 

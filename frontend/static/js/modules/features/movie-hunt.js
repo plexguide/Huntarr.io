@@ -135,9 +135,14 @@
                 metaEl.textContent = parts.join('  \u00B7  ');
             }
 
-            // Compact status badge
+            // Status badge and Add button: if already in library, show "Already in library" and disable Add
+            var inLibrary = !!(item && item.in_library);
             if (statusContainer) {
-                statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
+                if (inLibrary) {
+                    statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> Already in library</span>';
+                } else {
+                    statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to add</span>';
+                }
             }
             if (rootFolderSelect) {
                 rootFolderSelect.innerHTML = '<option value="">Loading...</option>';
@@ -146,8 +151,14 @@
             if (qualitySelect) {
                 qualitySelect.innerHTML = '<option value="">Loading...</option>';
             }
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Request';
+            var minAvailSelect = document.getElementById('movie-hunt-request-minimum-availability');
+            if (minAvailSelect) {
+                minAvailSelect.value = 'released';
+            }
+            var startSearchCb = document.getElementById('movie-hunt-request-start-search');
+            if (startSearchCb) startSearchCb.checked = true;
+            submitBtn.disabled = !!inLibrary;
+            submitBtn.textContent = 'Add Movie';
 
             // Populate instance dropdown
             if (instanceSelect && window.MovieHuntInstanceDropdown) {
@@ -228,24 +239,30 @@
 
         checkMovieStatusForInstance(item, instanceId) {
             var statusContainer = document.getElementById('movie-hunt-request-status-container');
+            var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
             if (!statusContainer || !item || !item.tmdb_id) return;
 
             statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-loading"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
 
-            fetch('./api/movie-hunt/collection?instance_id=' + instanceId, { cache: 'no-store' })
+            var url = './api/movie-hunt/movie-status?tmdb_id=' + encodeURIComponent(item.tmdb_id) + '&instance_id=' + encodeURIComponent(instanceId);
+            fetch(url, { cache: 'no-store' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    var movies = (data && data.movies) ? data.movies : [];
-                    var found = movies.find(function(m) { return m.tmdb_id === item.tmdb_id; });
-
-                    if (found) {
-                        statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-bookmark"></i> Already in Collection</span>';
+                    var inLibrary = data.found && (data.status || '').toLowerCase() === 'downloaded';
+                    if (inLibrary) {
+                        statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> Already in library</span>';
+                        if (submitBtn) { submitBtn.disabled = true; }
+                    } else if (data.found) {
+                        statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-bookmark"></i> In collection (not yet on disk)</span>';
+                        if (submitBtn) { submitBtn.disabled = false; }
                     } else {
-                        statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
+                        statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to add</span>';
+                        if (submitBtn) { submitBtn.disabled = false; }
                     }
                 })
                 .catch(function() {
-                    statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
+                    statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to add</span>';
+                    if (submitBtn) submitBtn.disabled = false;
                 });
         },
 
@@ -332,6 +349,8 @@
             var instanceSelect = document.getElementById('movie-hunt-request-instance');
             var rootFolderSelect = document.getElementById('movie-hunt-request-root-folder');
             var qualitySelect = document.getElementById('movie-hunt-request-quality-profile');
+            var minAvailSelect = document.getElementById('movie-hunt-request-minimum-availability');
+            var startSearchCb = document.getElementById('movie-hunt-request-start-search');
             if (!item || !submitBtn) return;
             var title = (item.title || '').trim();
             if (!title) return;
@@ -339,15 +358,17 @@
             var instance = (instanceSelect && instanceSelect.value) ? String(instanceSelect.value).trim() : (this.selectedInstance || 'default').trim() || 'default';
             var rootFolder = (rootFolderSelect && rootFolderSelect.value) ? String(rootFolderSelect.value).trim() : '';
             var qualityProfile = (qualitySelect && qualitySelect.value) ? String(qualitySelect.value).trim() : '';
+            var minimumAvailability = (minAvailSelect && minAvailSelect.value) ? String(minAvailSelect.value).trim() : 'released';
+            var startSearch = startSearchCb ? startSearchCb.checked : true;
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Requesting...';
+            submitBtn.textContent = startSearch ? 'Requesting...' : 'Adding...';
             var self = this;
-            var payload = { title: title, year: year, instance: instance };
+            var payload = { title: title, year: year, instance: instance, start_search: startSearch, minimum_availability: minimumAvailability };
             if (rootFolder) payload.root_folder = rootFolder;
             if (qualityProfile) payload.quality_profile = qualityProfile;
             if (item.tmdb_id != null) payload.tmdb_id = item.tmdb_id;
             if (item.poster_path) payload.poster_path = item.poster_path;
-            fetch('./api/movie-hunt/request', {
+            fetch('./api/movie-hunt/request?instance_id=' + encodeURIComponent(instance), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -356,7 +377,7 @@
                 .then(function(result) {
                     if (result.ok && result.data && result.data.success) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification(result.data.message || 'Movie sent to download client.', 'success');
+                            window.huntarrUI.showNotification(result.data.message || 'Successfully added to library.', 'success');
                         }
                         self.closeMovieHuntRequestModal();
                     } else {
@@ -365,7 +386,7 @@
                             window.huntarrUI.showNotification(msg, 'error');
                         }
                         submitBtn.disabled = false;
-                        submitBtn.textContent = 'Request';
+                        submitBtn.textContent = 'Add Movie';
                     }
                 })
                 .catch(function(err) {
@@ -373,7 +394,7 @@
                         window.huntarrUI.showNotification(err.message || 'Request failed', 'error');
                     }
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'Request';
+                    submitBtn.textContent = 'Add Movie';
                 });
         },
 
@@ -586,7 +607,7 @@
             const metaClass = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
             const showRequestBtn = hasInstance && !inLibrary && !inCooldown;
             const overlayAction = showRequestBtn
-                ? '<button class="media-card-request-btn"><i class="fas fa-download"></i> Request</button>'
+                ? '<button class="media-card-request-btn"><i class="fas fa-plus-circle"></i> Add</button>'
                 : '';
 
             if (inLibrary) card.classList.add('in-library');
