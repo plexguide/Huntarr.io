@@ -771,7 +771,6 @@ window.SettingsForms = {
                 enable_requestarr: true, // Always enabled (required for Movie Hunt)
 
                 show_trending: getVal('show_trending', true),
-                dashboard_view_mode: getVal('dashboard_view_mode', 'grid'),
                 tmdb_image_cache_days: parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '30'),
                 auth_mode: (container.querySelector('#auth_mode') && container.querySelector('#auth_mode').value) || 'login',
                 ssl_verify: getVal('ssl_verify', true),
@@ -832,7 +831,6 @@ window.SettingsForms = {
             settings.enable_requestarr = true; // Always enabled (required for Movie Hunt)
 
             settings.show_trending = getInputValue("#show_trending", true);
-            settings.dashboard_view_mode = getInputValue("#dashboard_view_mode", "grid");
 
             const authMode = container.querySelector("#auth_mode")?.value || "login";
             settings.auth_mode = authMode;
