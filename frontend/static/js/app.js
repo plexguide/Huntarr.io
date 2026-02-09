@@ -1422,6 +1422,14 @@ let huntarrUI = {
             if (appsNav) appsNav.style.display = '';
             if (systemNav) systemNav.style.display = '';
             if (systemSubGroup) { systemSubGroup.style.display = 'block'; systemSubGroup.classList.add('expanded'); }
+        } else if (onSettings && isDesktop) {
+            // Desktop: keep System, Apps, Requests visible when on Settings
+            if (settingsNav) settingsNav.style.display = '';
+            if (settingsSubGroup) { settingsSubGroup.style.display = 'block'; settingsSubGroup.classList.add('expanded'); }
+            if (requestarrNav) requestarrNav.style.display = '';
+            if (appsNav) appsNav.style.display = '';
+            if (systemNav) systemNav.style.display = '';
+            if (systemSubGroup) { systemSubGroup.style.display = 'none'; systemSubGroup.classList.remove('expanded'); }
         } else {
             if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
             if (settingsSubGroup) settingsSubGroup.style.display = onSystem ? 'none' : (onSettings ? 'block' : 'none');
