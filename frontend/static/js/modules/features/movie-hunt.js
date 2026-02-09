@@ -65,25 +65,7 @@
                 this._scrollSetup = true;
             }
             console.log('[MovieHunt] Initialized (movies only)');
-
-            // If user clicked a movie from Home/Requestarr with Movie Hunt instance, open that movie's detail here
-            try {
-                var pending = sessionStorage.getItem('huntarr-open-movie-hunt-detail');
-                if (pending) {
-                    sessionStorage.removeItem('huntarr-open-movie-hunt-detail');
-                    var data = JSON.parse(pending);
-                    var instanceName = data.instanceName || '';
-                    delete data.instanceName;
-                    var movieData = data;
-                    if (window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
-                        setTimeout(function() {
-                            window.MovieHuntDetail.openDetail(movieData, { instanceName: instanceName });
-                        }, 100);
-                    }
-                }
-            } catch (e) {
-                console.warn('[MovieHunt] Could not open pending detail:', e);
-            }
+            // Note: Movie discovery is under Requestarr; this init is only used if the legacy Movie Home view were shown. Media Collection is the default for this section.
         },
 
         setupRequestModal() {
