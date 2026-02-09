@@ -68,10 +68,10 @@
             '<p class="editor-help-text">Number of items to upgrade in each cycle</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Upgrade Selection Method</label>' +
             '<select id="mh-editor-upgrade-method"><option value="cutoff"' + (safe.upgrade_selection_method === 'cutoff' ? ' selected' : '') + '>Cutoff unmet</option><option value="tags"' + (safe.upgrade_selection_method === 'tags' ? ' selected' : '') + '>Tags</option></select></div>' +
-            '<p class="editor-help-text"><strong>Cutoff unmet:</strong> Items below quality cutoff. <strong>Tags (Upgradinatorr):</strong> Huntarr finds items WITHOUT the tag, runs upgrade searches, then ADDS that tag when done.</p></div>' +
+            '<p class="editor-help-text"><strong>Cutoff unmet:</strong> Items below quality cutoff (default). Huntarr does not add any upgrade tag. <strong>Tags (Upgradinatorr):</strong> Huntarr finds items WITHOUT the tag below, runs upgrade searches, then ADDS that tag when done. <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">Upgradinatorr</a></p></div>' +
             '<div class="editor-field-group editor-upgrade-tag-group" style="display:' + upgradeTagGroupDisplay + ';"><div class="editor-setting-item"><label>Upgrade Tag</label>' +
             '<input type="text" id="mh-editor-upgrade-tag" value="' + escapeAttr(safe.upgrade_tag) + '" placeholder="e.g. upgradinatorr"></div>' +
-            '<p class="editor-help-text">Tag name. Huntarr finds items that don’t have this tag, runs upgrade searches, then adds the tag when done.</p></div>' +
+            '<p class="editor-help-text">Tag name. Huntarr finds movies that don’t have this tag, runs upgrade searches, then adds the tag when done (tracks what\'s been processed). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">Upgradinatorr</a></p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Release Date Delay (Days)</label><input type="number" id="mh-editor-release-date-delay" value="' + safe.release_date_delay_days + '"></div>' +
             '<p class="editor-help-text">Only search for items released at least this many days ago</p></div></div>' +
 
@@ -80,26 +80,42 @@
             '<select id="mh-editor-state-mode"><option value="custom"' + (safe.state_management_mode === 'custom' ? ' selected' : '') + '>Enabled</option><option value="disabled"' + (safe.state_management_mode === 'disabled' ? ' selected' : '') + '>Disabled</option></select></div>' +
             '<p class="editor-help-text">Track processed items to avoid redundant searches</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Reset Interval (Hours)</label><input type="number" id="mh-editor-state-hours" value="' + safe.state_management_hours + '"></div>' +
-            '<p class="editor-help-text">How long to wait before re-searching a previously processed item (default: 72 hours)</p></div>' +
+            '<p class="editor-help-text">How long to wait before re-searching a previously processed item (default: 72 hours / 3 days)</p></div>' +
             '<div id="mh-editor-stateful-block" class="editor-field-group" style="display:' + statefulBlockDisplay + ';">' +
             '<button type="button" class="btn-card delete btn-reset-state" id="mh-editor-reset-state"><i class="fas fa-undo"></i> Reset Processed State Now</button>' +
-            '<p class="editor-help-text" style="text-align: center;">Clears the history of processed items for this instance</p></div></div>' +
+            '<p class="editor-help-text" style="text-align: center; margin-top: -10px !important;">Clears the history of processed items for this instance</p>' +
+            '<div id="mh-state-status-display" style="margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">' +
+            '<div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: #10b981; font-weight: 500; margin-bottom: 4px;"><i class="fas fa-check-circle"></i><span>Active - Tracked Items: <span id="mh-tracked-items-count">Loading...</span></span></div>' +
+            '<div style="text-align: center; color: #94a3b8; font-size: 0.9rem;">Next Reset: <span id="mh-next-reset-time">Loading...</span></div></div></div></div>' +
 
             '<div class="editor-section"><div class="editor-section-title">Additional Settings</div>' +
-            '<div class="editor-field-group" style="margin-bottom: 12px;"><div style="padding: 10px 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 6px; color: #fcd34d; font-size: 0.85rem;"><i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> Do not overwhelm your indexers.</div></div>' +
+            '<div class="editor-field-group" style="margin-bottom: 12px;"><div style="padding: 10px 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 6px; color: #fcd34d; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> Do not overwhelm your indexers. Contact them for advice!</div></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Sleep Duration (Minutes)</label><input type="number" id="mh-editor-sleep-duration" value="' + sleepMins + '" min="' + _sleepMin + '" max="1440"></div>' +
             '<p class="editor-help-text">Time in minutes between processing cycles</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>API Cap - Hourly</label><input type="number" id="mh-editor-hourly-cap" value="' + safe.hourly_cap + '" min="1" max="400"></div>' +
-            '<p class="editor-help-text">Maximum API requests per hour (10-20 recommended)</p></div>' +
-            '<div class="editor-field-group"><div class="editor-setting-item flex-row"><label>Monitored Only</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-monitored-only"' + (safe.monitored_only ? ' checked' : '') + '><span class="toggle-slider"></span></label></div><p class="editor-help-text">Only search for monitored items</p></div>' +
-            '<div class="editor-section" style="border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 10px; padding: 14px; margin-top: 16px;"><div class="editor-section-title">Exempt Tags</div>' +
-            '<p class="editor-help-text" style="margin-bottom: 12px;">Items with any of these tags are skipped for missing and upgrade searches.</p>' +
-            '<div class="editor-field-group"><div class="editor-setting-item"><label>Add exempt tag</label><div style="display: flex; gap: 8px;"><input type="text" id="mh-editor-exempt-tag-input" placeholder="Type a tag..." style="flex: 1;" maxlength="50"><button type="button" class="btn-card" id="mh-editor-exempt-tag-add">Add</button></div></div>' +
-            '<div id="mh-editor-exempt-tags-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">' + exemptTagsHtml + '</div></div></div>' +
+            '<p class="editor-help-text">Maximum API requests per hour for this instance (10-20 recommended, max 400)</p></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item flex-row"><label>Monitored Only</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-monitored-only"' + (safe.monitored_only ? ' checked' : '') + '><span class="toggle-slider"></span></label></div><p class="editor-help-text">Only search for monitored items</p></div></div>' +
+            '<div class="editor-section"><div class="editor-section-title">Tags</div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item flex-row"><label>Tag missing items</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-tag-enable-missing"' + (safe.tag_enable_missing ? ' checked' : '') + '><span class="toggle-slider"></span></label></div>' +
+            '<div class="editor-setting-item" style="margin-top: 6px;"><label>Missing Items Tag</label><input type="text" id="mh-editor-tag-missing" value="' + escapeAttr((safe.custom_tags && safe.custom_tags.missing) ? safe.custom_tags.missing : 'huntarr-missing') + '" placeholder="huntarr-missing" maxlength="25"></div>' +
+            '<p class="editor-help-text">Tag added to movies when they\'re found by a missing search (max 25 characters)</p></div>' +
+            '<div class="editor-field-group mh-editor-upgrade-items-tag-section" style="display:' + (safe.upgrade_selection_method === 'tags' ? 'none' : 'block') + ';"><div class="editor-setting-item flex-row"><label>Tag upgrade items</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-tag-enable-upgrade"' + (safe.tag_enable_upgrade ? ' checked' : '') + '><span class="toggle-slider"></span></label></div>' +
+            '<div class="editor-setting-item" style="margin-top: 6px;"><label>Upgrade Items Tag</label><input type="text" id="mh-editor-tag-upgrade" value="' + escapeAttr((safe.custom_tags && safe.custom_tags.upgrade) ? safe.custom_tags.upgrade : 'huntarr-upgrade') + '" placeholder="huntarr-upgrade" maxlength="25"></div>' +
+            '<p class="editor-help-text">Tag added to movies when they\'re upgraded in cutoff mode (max 25 characters). Not used when Upgrade Selection Method is Tags.</p></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item flex-row"><label>Tag upgraded items</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-tag-enable-upgraded"' + (safe.tag_enable_upgraded ? ' checked' : '') + '><span class="toggle-slider"></span></label></div>' +
+            '<p class="editor-help-text">Tag added to movies after an upgrade completes (tracks what\'s been upgraded)</p></div>' +
+            '<div class="editor-section" style="border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 10px; padding: 14px; background: rgba(231, 76, 60, 0.06); margin-top: 16px;"><div class="editor-section-title">Exempt Tags</div>' +
+            '<p class="editor-help-text" style="margin-bottom: 12px;">Items with any of these tags are skipped for missing and upgrade searches. If the tag is removed in the app, Huntarr will process the item again. <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener" style="color: #94a3b8;">#676</a></p>' +
+            '<div class="editor-field-group"><div class="editor-setting-item"><label>Add exempt tag</label><div style="display: flex; gap: 8px; align-items: center;"><input type="text" id="mh-editor-exempt-tag-input" placeholder="Type a tag to exempt..." style="flex: 1;" maxlength="50"><button type="button" class="btn-card" id="mh-editor-exempt-tag-add" style="padding: 8px 14px; white-space: nowrap;">Add</button></div></div>' +
+            '<p class="editor-help-text" style="color: #94a3b8; font-size: 0.85rem;">Tag &quot;upgradinatorr&quot; cannot be added.</p>' +
+            '<div id="mh-editor-exempt-tags-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; min-height: 24px;">' + exemptTagsHtml + '</div></div></div></div>' +
             '<div class="editor-section"><div class="editor-section-title">Advanced Settings</div>' +
-            '<div class="editor-field-group"><div class="editor-setting-item"><label>API Timeout (seconds)</label><input type="number" id="mh-editor-api-timeout" value="' + safe.api_timeout + '" min="30" max="600"></div></div>' +
-            '<div class="editor-field-group"><div class="editor-setting-item"><label>Command Wait Delay (seconds)</label><input type="number" id="mh-editor-cmd-wait-delay" value="' + safe.command_wait_delay + '" min="1" max="10"></div></div>' +
-            '<div class="editor-field-group"><div class="editor-setting-item"><label>Command Wait Attempts</label><input type="number" id="mh-editor-cmd-wait-attempts" value="' + safe.command_wait_attempts + '" min="0" max="1800"></div></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item"><label>API Timeout (seconds)</label><input type="number" id="mh-editor-api-timeout" value="' + safe.api_timeout + '" min="30" max="600"></div>' +
+            '<p class="editor-help-text">Timeout for API requests (default: 120 seconds)</p></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item"><label>Command Wait Delay (seconds)</label><input type="number" id="mh-editor-cmd-wait-delay" value="' + safe.command_wait_delay + '" min="1" max="10"></div>' +
+            '<p class="editor-help-text">Delay between command status checks (default: 1 second)</p></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item"><label>Command Wait Attempts</label><input type="number" id="mh-editor-cmd-wait-attempts" value="' + safe.command_wait_attempts + '" min="0" max="1800"></div>' +
+            '<p class="editor-help-text">Maximum attempts to wait for command completion (default: 600)</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Max Download Queue Size</label><input type="number" id="mh-editor-max-queue-size" value="' + safe.max_download_queue_size + '" min="-1" max="1000"></div><p class="editor-help-text">Skip processing if queue size meets or exceeds this value (-1 = disabled)</p></div>' +
             '</div></div>';
     }
@@ -116,6 +132,8 @@
                 if (t) tags.push(t);
             });
         }
+        var tagMissing = (get('mh-editor-tag-missing') || '').trim() || 'huntarr-missing';
+        var tagUpgrade = (get('mh-editor-tag-upgrade') || '').trim() || 'huntarr-upgrade';
         return {
             hunt_missing_movies: getNum('mh-editor-missing-count', 1),
             hunt_upgrade_movies: getNum('mh-editor-upgrade-count', 0),
@@ -129,10 +147,10 @@
             exempt_tags: tags,
             monitored_only: getCheck('mh-editor-monitored-only'),
             tag_processed_items: true,
-            tag_enable_missing: true,
-            tag_enable_upgrade: true,
-            tag_enable_upgraded: true,
-            custom_tags: { missing: 'huntarr-missing', upgrade: 'huntarr-upgrade' },
+            tag_enable_missing: getCheck('mh-editor-tag-enable-missing'),
+            tag_enable_upgrade: getCheck('mh-editor-tag-enable-upgrade'),
+            tag_enable_upgraded: getCheck('mh-editor-tag-enable-upgraded'),
+            custom_tags: { missing: tagMissing, upgrade: tagUpgrade },
             api_timeout: getNum('mh-editor-api-timeout', 120),
             command_wait_delay: getNum('mh-editor-cmd-wait-delay', 1),
             command_wait_attempts: getNum('mh-editor-cmd-wait-attempts', 600),
@@ -201,7 +219,26 @@
         if (upgradeMethod) upgradeMethod.addEventListener('change', function() {
             var group = container.querySelector('.editor-upgrade-tag-group');
             if (group) group.style.display = upgradeMethod.value === 'tags' ? 'flex' : 'none';
+            var upgradeItemsSection = container.querySelector('.mh-editor-upgrade-items-tag-section');
+            if (upgradeItemsSection) upgradeItemsSection.style.display = upgradeMethod.value === 'tags' ? 'none' : 'block';
         });
+    }
+
+    function loadMovieHuntStateStatus(instanceName) {
+        var countEl = document.getElementById('mh-tracked-items-count');
+        var nextEl = document.getElementById('mh-next-reset-time');
+        if (!countEl || !nextEl || !instanceName) return;
+        var url = api('./api/stateful/summary?app_type=movie_hunt&instance_name=' + encodeURIComponent(instanceName));
+        fetch(url, { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                countEl.textContent = (data && data.processed_count !== undefined) ? data.processed_count : 0;
+                nextEl.textContent = (data && data.next_reset_time) ? data.next_reset_time : 'N/A';
+            })
+            .catch(function() {
+                countEl.textContent = '0';
+                nextEl.textContent = 'N/A';
+            });
     }
 
     window.MovieHuntInstanceEditor = {
@@ -267,6 +304,7 @@
                         contentEl.innerHTML = buildEditorHtml(settings);
                         setupExemptTagsListeners(contentEl);
                         setupChangeDetection(contentEl);
+                        loadMovieHuntStateStatus(_currentInstanceName);
                     }
                     var backBtn = document.getElementById('movie-hunt-instance-editor-back');
                     var saveBtn = document.getElementById('movie-hunt-instance-editor-save');
