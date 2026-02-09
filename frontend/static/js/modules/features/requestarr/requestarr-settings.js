@@ -201,21 +201,33 @@ export class RequestarrSettings {
         }
 
         try {
-            const [radarrResponse, sonarrResponse] = await Promise.all([
+            const [movieHuntResponse, radarrResponse, sonarrResponse] = await Promise.all([
+                fetch('./api/requestarr/instances/movie_hunt'),
                 fetch('./api/requestarr/instances/radarr'),
                 fetch('./api/requestarr/instances/sonarr')
             ]);
 
+            const movieHuntData = await movieHuntResponse.json();
             const radarrData = await radarrResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const instanceOptions = [];
 
+            // Movie Hunt instances first
+            (movieHuntData.instances || []).forEach(instance => {
+                if (instance && instance.name) {
+                    instanceOptions.push({
+                        value: `movie_hunt::${instance.name}`,
+                        label: `Movie Hunt \u2013 ${instance.name}`
+                    });
+                }
+            });
+
             (radarrData.instances || []).forEach(instance => {
                 if (instance && instance.name) {
                     instanceOptions.push({
                         value: `radarr::${instance.name}`,
-                        label: `Radarr - ${instance.name}`
+                        label: `Radarr \u2013 ${instance.name}`
                     });
                 }
             });
@@ -224,12 +236,10 @@ export class RequestarrSettings {
                 if (instance && instance.name) {
                     instanceOptions.push({
                         value: `sonarr::${instance.name}`,
-                        label: `Sonarr - ${instance.name}`
+                        label: `Sonarr \u2013 ${instance.name}`
                     });
                 }
             });
-
-            instanceOptions.sort((a, b) => a.label.localeCompare(b.label));
 
             instanceSelect.innerHTML = '';
             if (instanceOptions.length === 0) {
@@ -494,11 +504,6 @@ export class RequestarrSettings {
             }
         }
         
-        // Load default instances
-        await this.loadDefaultInstances();
-        // Load default root folders (issue #806)
-        await this.loadDefaultRootFolders();
-        
         // Load discover filters
         await this.loadDiscoverFilters();
         
@@ -508,23 +513,6 @@ export class RequestarrSettings {
         const saveBtn = document.getElementById('save-requestarr-settings');
         if (saveBtn) {
             saveBtn.onclick = () => this.saveSettings();
-        }
-        
-        const saveDefaultInstancesBtn = document.getElementById('save-default-instances');
-        if (saveDefaultInstancesBtn) {
-            saveDefaultInstancesBtn.onclick = () => this.saveDefaultInstances();
-        }
-        const saveDefaultRootFoldersBtn = document.getElementById('save-default-root-folders');
-        if (saveDefaultRootFoldersBtn) {
-            saveDefaultRootFoldersBtn.onclick = () => this.saveDefaultRootFolders();
-        }
-        const movieInstanceSelect = document.getElementById('default-movie-instance');
-        const tvInstanceSelect = document.getElementById('default-tv-instance');
-        if (movieInstanceSelect) {
-            movieInstanceSelect.addEventListener('change', () => this.loadDefaultRootFolders());
-        }
-        if (tvInstanceSelect) {
-            tvInstanceSelect.addEventListener('change', () => this.loadDefaultRootFolders());
         }
         
         const saveFiltersBtn = document.getElementById('save-discover-filters');

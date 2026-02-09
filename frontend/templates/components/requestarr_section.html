@@ -30,6 +30,20 @@
 
         <!-- Discover View -->
         <div id="requestarr-discover-view" class="requestarr-view active" style="display: block;">
+            <!-- Instance Selectors -->
+            <div class="discover-instance-controls">
+                <div class="instance-selector-container">
+                    <select id="discover-movie-instance-select" class="control-select instance-select">
+                        <option value="">Loading movie instances...</option>
+                    </select>
+                </div>
+                <div class="instance-selector-container">
+                    <select id="discover-tv-instance-select" class="control-select instance-select">
+                        <option value="">Loading TV instances...</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- Trending Section -->
             <section class="carousel-section">
                 <div class="section-title-container">
@@ -213,64 +227,6 @@
         <!-- Settings View -->
         <div id="requestarr-settings-view" class="requestarr-view">
             <div class="requestarr-settings-container">
-                <!-- Default Discovery Instances Card -->
-                <div class="settings-card">
-                    <h3>Default Discovery Instances</h3>
-                    <p style="color: #888; margin-bottom: 20px; font-size: 14px;">
-                        Set which instances to use by default when loading the Discovery home view. 
-                        If no instance is selected, the first available instance will be used automatically.
-                    </p>
-                    
-                    <div class="settings-field">
-                        <label for="default-movie-instance">Default Movie Instance</label>
-                        <select id="default-movie-instance" class="settings-select">
-                            <option value="">No instance selected (will use first available)</option>
-                        </select>
-                        <small>Radarr instance used when loading the Discovery home page</small>
-                    </div>
-                    
-                    <div class="settings-field">
-                        <label for="default-tv-instance">Default TV Instance</label>
-                        <select id="default-tv-instance" class="settings-select">
-                            <option value="">No instance selected (will use first available)</option>
-                        </select>
-                        <small>Sonarr instance used when loading the Discovery home page</small>
-                    </div>
-                    
-                    <div class="settings-actions">
-                        <button id="save-default-instances" class="btn-primary">
-                            <i class="fas fa-save"></i> Save Default Instances
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Default Root Folders Card (issue #806) -->
-                <div class="settings-card">
-                    <h3>Default Root Folders</h3>
-                    <p style="color: #888; margin-bottom: 20px; font-size: 14px;">
-                        When requesting movies or TV shows, the chosen root folder is used. If not set, the first root folder in the *arr app is used. Set a default per app so requests go to the correct disk (e.g. when your first root is full).
-                    </p>
-                    <div class="settings-field">
-                        <label for="default-root-folder-radarr">Default Root Folder (Radarr)</label>
-                        <select id="default-root-folder-radarr" class="settings-select">
-                            <option value="">Use first root folder in Radarr</option>
-                        </select>
-                        <small>Root folder used when adding movies via Requests</small>
-                    </div>
-                    <div class="settings-field">
-                        <label for="default-root-folder-sonarr">Default Root Folder (Sonarr)</label>
-                        <select id="default-root-folder-sonarr" class="settings-select">
-                            <option value="">Use first root folder in Sonarr</option>
-                        </select>
-                        <small>Root folder used when adding TV shows via Requests</small>
-                    </div>
-                    <div class="settings-actions">
-                        <button id="save-default-root-folders" class="btn-primary">
-                            <i class="fas fa-save"></i> Save Default Root Folders
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Filters Card -->
                 <div class="settings-card">
                     <h3>Filters</h3>
