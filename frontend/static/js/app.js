@@ -77,8 +77,10 @@ let huntarrUI = {
         this.setupLogoHandling();
         // Auto-save enabled - no unsaved changes handler needed
         
-        // Initialize media stats
-        if (window.location.pathname === '/') {
+        // Initialize media stats (works on root and reverse proxy subpaths like /huntarr/)
+        const basePath = (window.HUNTARR_BASE_URL || '').replace(/\/$/, '');
+        const currentPath = window.location.pathname.replace(/\/$/, '');
+        if (currentPath === '' || currentPath === basePath) {
             this.loadMediaStats();
         }
         
@@ -574,8 +576,8 @@ let huntarrUI = {
             this.checkAppConnections();
             // Load Swaparr status
             this.loadSwaparrStatus();
-            // Stats are already loaded, no need to reload unless data changed
-            // this.loadMediaStats();
+            // Refresh stats when returning to home section
+            this.loadMediaStats();
         } else if (section === 'logs-movie-hunt' && this.elements.logsSection) {
             // Movie Hunt logs - show logsSection under Movie Hunt sidebar (hide tab bar)
             var activitySection = document.getElementById('activitySection');

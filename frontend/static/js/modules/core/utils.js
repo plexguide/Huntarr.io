@@ -38,8 +38,10 @@ const HuntarrUtils = {
             // Handle base URL from window.HUNTARR_BASE_URL if available
             const baseUrl = window.HUNTARR_BASE_URL || '';
             if (baseUrl && !url.startsWith(baseUrl)) {
+                // Strip leading ./ prefix before normalizing (./api/stats → api/stats)
+                let cleanPath = url.replace(/^\.\//, '');
                 // Ensure path starts with a slash
-                const normalizedPath = url.startsWith('/') ? url : '/' + url;
+                const normalizedPath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
                 processedUrl = baseUrl + normalizedPath;
             }
         }

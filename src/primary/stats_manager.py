@@ -527,7 +527,7 @@ def load_hourly_caps_for_api() -> tuple:
         default_caps = get_default_hourly_caps()
         caps_out = {}
         limits_out = {}
-        for app in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
+        for app in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]:
             try:
                 configured = []
                 try:
@@ -567,7 +567,7 @@ def load_hourly_caps_for_api() -> tuple:
         return caps_out, limits_out
     except Exception as e:
         logger.error(f"Error loading hourly caps for API: {e}")
-        return load_hourly_caps(), {app: _get_app_hourly_cap_limit(app) for app in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]}
+        return load_hourly_caps(), {app: _get_app_hourly_cap_limit(app) for app in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]}
 
 def reset_stats(app_type: Optional[str] = None) -> bool:
     """
