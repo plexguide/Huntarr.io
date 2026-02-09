@@ -39,6 +39,13 @@ def get_cycle_activity(app_type: str, instance_name: str) -> Optional[str]:
     with _lock:
         return (_cycle_activity.get(app_type) or {}).get(instance_name)
 
+def _default_next_cycle_iso(user_tz, default_sleep_seconds: int = 900) -> str:
+    """Return next_cycle as ISO string for instances that have no DB value (so UI shows countdown instead of 'Starting Cycle')."""
+    now = datetime.datetime.now(user_tz).replace(microsecond=0)
+    future = now + datetime.timedelta(seconds=default_sleep_seconds)
+    return future.isoformat()
+
+
 def _get_user_timezone():
     """Get the user's configured timezone"""
     try:
@@ -164,6 +171,13 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
                         if "cycle_activity" not in instances[name]:
                             iid = next((inst.get("instance_id") or inst.get("instance_name") for inst in configured if inst.get("instance_name") == name), name)
                             instances[name]["cycle_activity"] = _cycle_activity.get(app_type, {}).get(iid)
+                    # So UI shows countdown instead of "Starting Cycle": if instance has no next_cycle yet, use default (now + 15 min)
+                    user_tz = _get_user_timezone()
+                    default_next = _default_next_cycle_iso(user_tz)
+                    for name in instances:
+                        inst = instances[name]
+                        if inst.get("next_cycle") is None and not inst.get("cyclelock") and not inst.get("pending_reset"):
+                            inst["next_cycle"] = default_next
                     return {"app": app_type, "instances": instances}
                 
                 # Single-app logic (e.g. swaparr)
@@ -258,6 +272,14 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
                                 result[app]["instances"][inst_name]["cycle_activity"] = _cycle_activity.get(app, {}).get(inst_id)
                         if "_id_to_name" in result[app]:
                             del result[app]["_id_to_name"]
+                # So UI shows countdown instead of "Starting Cycle": set default next_cycle for instances with none
+                user_tz = _get_user_timezone()
+                default_next = _default_next_cycle_iso(user_tz)
+                for app in result:
+                    if "instances" in result[app]:
+                        for inst_name, inst in result[app]["instances"].items():
+                            if inst.get("next_cycle") is None and not inst.get("cyclelock") and not inst.get("pending_reset"):
+                                inst["next_cycle"] = default_next
                 return result
         except Exception as e:
             logger.error(f"Error getting cycle status: {e}")
