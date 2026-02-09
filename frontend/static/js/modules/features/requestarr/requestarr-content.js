@@ -1,6 +1,7 @@
 /**
  * Requestarr Content - Content loading and media card creation
  */
+import { encodeInstanceValue, decodeInstanceValue } from './requestarr-core.js';
 
 export class RequestarrContent {
     constructor(core) {
@@ -81,57 +82,72 @@ export class RequestarrContent {
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            const response = await fetch('./api/requestarr/instances/radarr');
-            const data = await response.json();
-            console.log('[RequestarrContent] Radarr API returned', data.instances?.length || 0, 'instances');
+            // Fetch both Movie Hunt and Radarr instances in parallel
+            const [mhResponse, radarrResponse] = await Promise.all([
+                fetch('./api/requestarr/instances/movie_hunt'),
+                fetch('./api/requestarr/instances/radarr')
+            ]);
+            const mhData = await mhResponse.json();
+            const radarrData = await radarrResponse.json();
             
-            if (data.instances && data.instances.length > 0) {
-                // Clear again before adding real instances
+            const mhInstances = (mhData.instances || []).map(inst => ({
+                ...inst,
+                name: String(inst.name).trim(),
+                _appType: 'movie_hunt',
+                _label: `Movie Hunt \u2013 ${String(inst.name).trim()}`
+            }));
+            const radarrInstances = (radarrData.instances || []).map(inst => ({
+                ...inst,
+                name: String(inst.name).trim(),
+                _appType: 'radarr',
+                _label: `Radarr \u2013 ${String(inst.name).trim()}`
+            }));
+            
+            // Combine: Movie Hunt first, then Radarr
+            const allInstances = [...mhInstances, ...radarrInstances];
+            console.log('[RequestarrContent] Movie Hunt instances:', mhInstances.length, 'Radarr instances:', radarrInstances.length);
+            
+            if (allInstances.length > 0) {
+                // Clear before adding real instances
                 select.innerHTML = '';
                 
                 // Priority: 1) Saved settings default, 2) localStorage, 3) First instance
-                let defaultInstanceName = null;
+                let defaultCompoundValue = null;
                 
                 // Try to get default from settings
                 try {
                     const settingsResponse = await fetch('./api/requestarr/settings/default-instances');
                     const settingsData = await settingsResponse.json();
                     if (settingsData.success && settingsData.defaults && settingsData.defaults.movie_instance) {
-                        defaultInstanceName = settingsData.defaults.movie_instance;
+                        defaultCompoundValue = settingsData.defaults.movie_instance;
                     }
                 } catch (error) {
                     console.log('[RequestarrContent] No default movie instance in settings');
                 }
                 
                 // Fall back to localStorage if no settings default
-                if (!defaultInstanceName) {
+                if (!defaultCompoundValue) {
                     const savedInstance = localStorage.getItem('requestarr-selected-movie-instance');
                     if (savedInstance) {
-                        defaultInstanceName = savedInstance;
+                        defaultCompoundValue = savedInstance;
                     }
                 }
                 
+                // Deduplicate by compound key
                 const uniqueInstances = [];
-                const seenNames = new Set();
-                data.instances.forEach((instance) => {
-                    if (!instance || !instance.name) {
-                        return;
-                    }
-                    const normalizedName = String(instance.name).trim();
-                    if (!normalizedName) {
-                        return;
-                    }
-                    const seenKey = normalizedName.toLowerCase();
-                    if (seenNames.has(seenKey)) {
-                        return;
-                    }
-                    uniqueInstances.push({ ...instance, name: normalizedName });
-                    seenNames.add(seenKey);
+                const seenKeys = new Set();
+                allInstances.forEach((instance) => {
+                    if (!instance.name) return;
+                    const compoundVal = encodeInstanceValue(instance._appType, instance.name);
+                    const seenKey = compoundVal.toLowerCase();
+                    if (seenKeys.has(seenKey)) return;
+                    uniqueInstances.push({ ...instance, _compoundValue: compoundVal });
+                    seenKeys.add(seenKey);
                 });
-                console.log('[RequestarrContent] After deduplication:', uniqueInstances.length, 'unique Radarr instances');
+                console.log('[RequestarrContent] After deduplication:', uniqueInstances.length, 'unique movie instances');
                 
                 if (uniqueInstances.length === 0) {
-                    select.innerHTML = '<option value="">No Radarr instances configured</option>';
+                    select.innerHTML = '<option value="">No movie instances configured</option>';
                     this.selectedMovieInstance = null;
                     return;
                 }
@@ -140,22 +156,24 @@ export class RequestarrContent {
                 
                 uniqueInstances.forEach((instance, index) => {
                     const option = document.createElement('option');
-                    option.value = instance.name;
-                    option.textContent = `Radarr - ${instance.name}`;
+                    option.value = instance._compoundValue;
+                    option.textContent = instance._label;
                     
-                    // Select the instance based on priority
-                    if (defaultInstanceName && instance.name === defaultInstanceName) {
-                        option.selected = true;
-                        selectedIndex = index;
-                    } else if (!defaultInstanceName && index === 0) {
+                    // Select the instance based on priority (compound match or backward-compat name match)
+                    if (defaultCompoundValue) {
+                        if (instance._compoundValue === defaultCompoundValue || instance.name === defaultCompoundValue) {
+                            option.selected = true;
+                            selectedIndex = index;
+                        }
+                    } else if (index === 0) {
                         option.selected = true;
                     }
                     
                     select.appendChild(option);
                 });
                 
-                // Set initial selected instance
-                this.selectedMovieInstance = uniqueInstances[selectedIndex].name;
+                // Set initial selected instance (compound value)
+                this.selectedMovieInstance = uniqueInstances[selectedIndex]._compoundValue;
                 console.log(`[RequestarrContent] Using movie instance: ${this.selectedMovieInstance}`);
                 
                 // Setup change handler (remove old listener if any)
@@ -207,7 +225,7 @@ export class RequestarrContent {
                     this.setupMoviesInfiniteScroll();
                 });
             } else {
-                select.innerHTML = '<option value="">No Radarr instances configured</option>';
+                select.innerHTML = '<option value="">No movie instances configured</option>';
                 this.selectedMovieInstance = null;
             }
         } catch (error) {
@@ -437,8 +455,15 @@ export class RequestarrContent {
             carousel.innerHTML = '';
             results.forEach(item => {
                 const suggestedInstance = item.media_type === 'movie' ? (this.defaultMovieInstance || null) : (this.defaultTVInstance || null);
-                const appType = item.media_type === 'movie' ? 'radarr' : 'sonarr';
-                const instanceName = item.media_type === 'movie' ? this.defaultMovieInstance : this.defaultTVInstance;
+                let appType, instanceName;
+                if (item.media_type === 'movie') {
+                    const decoded = decodeInstanceValue(this.defaultMovieInstance);
+                    appType = decoded.appType;
+                    instanceName = decoded.name;
+                } else {
+                    appType = 'sonarr';
+                    instanceName = this.defaultTVInstance;
+                }
                 const tmdbId = item.tmdb_id || item.id;
                 if (tmdbId && instanceName && this.isMediaHidden(tmdbId, item.media_type, appType, instanceName)) return;
                 carousel.appendChild(this.createMediaCard(item, suggestedInstance));
@@ -484,12 +509,12 @@ export class RequestarrContent {
 
     renderPopularMoviesResults(carousel, results) {
         if (!carousel) return;
-        const instanceName = this.defaultMovieInstance;
+        const decoded = decodeInstanceValue(this.defaultMovieInstance);
         if (results && results.length > 0) {
             carousel.innerHTML = '';
             results.forEach(item => {
                 const tmdbId = item.tmdb_id || item.id;
-                if (tmdbId && instanceName && this.isMediaHidden(tmdbId, 'movie', 'radarr', instanceName)) return;
+                if (tmdbId && decoded.name && this.isMediaHidden(tmdbId, 'movie', decoded.appType, decoded.name)) return;
                 carousel.appendChild(this.createMediaCard(item, this.defaultMovieInstance || null));
             });
         } else {
@@ -507,9 +532,9 @@ export class RequestarrContent {
             return;
         }
         try {
-            const instanceName = this.defaultMovieInstance;
+            const decoded = decodeInstanceValue(this.defaultMovieInstance);
             let url = './api/requestarr/discover/movies?page=1';
-            if (instanceName) url += `&app_type=radarr&instance_name=${encodeURIComponent(instanceName)}`;
+            if (decoded.name) url += `&app_type=${decoded.appType}&instance_name=${encodeURIComponent(decoded.name)}`;
             const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
@@ -523,9 +548,9 @@ export class RequestarrContent {
 
     async fetchAndCachePopularMovies() {
         try {
-            const instanceName = this.defaultMovieInstance;
+            const decoded = decodeInstanceValue(this.defaultMovieInstance);
             let url = './api/requestarr/discover/movies?page=1';
-            if (instanceName) url += `&app_type=radarr&instance_name=${encodeURIComponent(instanceName)}`;
+            if (decoded.name) url += `&app_type=${decoded.appType}&instance_name=${encodeURIComponent(decoded.name)}`;
             const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
@@ -640,9 +665,10 @@ export class RequestarrContent {
         try {
             let url = `./api/requestarr/discover/movies?page=${this.moviesPage}&_=${Date.now()}`;
             
-            // Add instance info for library status checking
+            // Add instance info for library status checking (decode compound value)
             if (this.selectedMovieInstance) {
-                url += `&app_type=radarr&instance_name=${encodeURIComponent(this.selectedMovieInstance)}`;
+                const decoded = decodeInstanceValue(this.selectedMovieInstance);
+                url += `&app_type=${decoded.appType}&instance_name=${encodeURIComponent(decoded.name)}`;
             }
             
             // Add filter parameters
@@ -674,10 +700,13 @@ export class RequestarrContent {
             
             if (data.results && data.results.length > 0) {
                 data.results.forEach((item) => {
-                    // Filter out hidden media
+                    // Filter out hidden media (decode compound value for correct app_type)
                     const tmdbId = item.tmdb_id || item.id;
-                    if (tmdbId && this.selectedMovieInstance && this.isMediaHidden(tmdbId, 'movie', 'radarr', this.selectedMovieInstance)) {
-                        return; // Skip hidden items
+                    if (tmdbId && this.selectedMovieInstance) {
+                        const dHidden = decodeInstanceValue(this.selectedMovieInstance);
+                        if (this.isMediaHidden(tmdbId, 'movie', dHidden.appType, dHidden.name)) {
+                            return; // Skip hidden items
+                        }
                     }
                     grid.appendChild(this.createMediaCard(item));
                 });
@@ -1017,19 +1046,36 @@ export class RequestarrContent {
             const item = cardElement.itemData || {};
             const posterPath = item.poster_path || null;
             
-            // Determine app_type and instance from media_type
-            const appType = mediaType === 'movie' ? 'radarr' : 'sonarr';
-            // Use view's selected instance, or card's suggested instance (search/discover), or default, or first available
-            let instanceName = mediaType === 'movie' ? self.selectedMovieInstance : self.selectedTVInstance;
-            if (!instanceName && cardElement.suggestedInstance) {
-                instanceName = cardElement.suggestedInstance;
-            }
-            if (!instanceName) {
-                instanceName = mediaType === 'movie' ? self.defaultMovieInstance : self.defaultTVInstance;
-            }
-            if (!instanceName && self.core && self.core.instances) {
-                const instances = mediaType === 'movie' ? (self.core.instances.radarr || []) : (self.core.instances.sonarr || []);
-                instanceName = instances.length > 0 ? instances[0].name : null;
+            // Determine app_type and instance from media_type (decode compound values for movies)
+            let appType, instanceName;
+            if (mediaType === 'movie') {
+                // Use view's selected instance, or card's suggested instance, or default, or first available
+                let compoundValue = self.selectedMovieInstance;
+                if (!compoundValue && cardElement.suggestedInstance) compoundValue = cardElement.suggestedInstance;
+                if (!compoundValue) compoundValue = self.defaultMovieInstance;
+                if (compoundValue) {
+                    const decoded = decodeInstanceValue(compoundValue);
+                    appType = decoded.appType;
+                    instanceName = decoded.name;
+                } else if (self.core && self.core.instances) {
+                    // Fallback: first available movie_hunt or radarr instance
+                    const mhInst = self.core.instances.movie_hunt || [];
+                    const rInst = self.core.instances.radarr || [];
+                    if (mhInst.length > 0) { appType = 'movie_hunt'; instanceName = mhInst[0].name; }
+                    else if (rInst.length > 0) { appType = 'radarr'; instanceName = rInst[0].name; }
+                    else { appType = 'radarr'; instanceName = null; }
+                } else {
+                    appType = 'radarr'; instanceName = null;
+                }
+            } else {
+                appType = 'sonarr';
+                instanceName = self.selectedTVInstance;
+                if (!instanceName && cardElement.suggestedInstance) instanceName = cardElement.suggestedInstance;
+                if (!instanceName) instanceName = self.defaultTVInstance;
+                if (!instanceName && self.core && self.core.instances) {
+                    const instances = self.core.instances.sonarr || [];
+                    instanceName = instances.length > 0 ? instances[0].name : null;
+                }
             }
             
             if (!instanceName) {
