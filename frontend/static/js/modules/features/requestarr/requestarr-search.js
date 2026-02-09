@@ -63,9 +63,22 @@ export class RequestarrSearch {
         }
         
         try {
+            // Use the selected instances for library status checking
+            let movieAppType = 'radarr';
+            let movieInstanceName = '';
+            const movieCompound = this.core.content ? this.core.content.selectedMovieInstance : null;
+            if (movieCompound && movieCompound.includes(':')) {
+                const idx = movieCompound.indexOf(':');
+                movieAppType = movieCompound.substring(0, idx);
+                movieInstanceName = movieCompound.substring(idx + 1);
+            } else if (movieCompound) {
+                movieInstanceName = movieCompound;
+            }
+            const tvInstanceName = (this.core.content ? this.core.content.selectedTVInstance : '') || '';
+
             const [moviesResponse, tvResponse] = await Promise.all([
-                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=radarr&instance_name=search`),
-                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=sonarr&instance_name=search`)
+                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=${encodeURIComponent(movieAppType)}&instance_name=${encodeURIComponent(movieInstanceName)}`),
+                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=sonarr&instance_name=${encodeURIComponent(tvInstanceName)}`)
             ]);
             
             const moviesData = await moviesResponse.json();
@@ -85,7 +98,8 @@ export class RequestarrSearch {
             if (allResults.length > 0) {
                 resultsGrid.innerHTML = '';
                 allResults.forEach(item => {
-                    resultsGrid.appendChild(this.core.content.createMediaCard(item));
+                    const suggestedInstance = item.media_type === 'movie' ? movieCompound : tvInstanceName;
+                    resultsGrid.appendChild(this.core.content.createMediaCard(item, suggestedInstance));
                 });
             } else {
                 resultsGrid.innerHTML = '<p style="color: #888; text-align: center; padding: 60px; width: 100%;">No results found</p>';

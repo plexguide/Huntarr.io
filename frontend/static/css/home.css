@@ -228,6 +228,49 @@
     letter-spacing: 0.01em !important;
 }
 
+/* ── Home Instance Selectors ──────────────────────────────────── */
+#homeSection .home-instance-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 14px 0;
+    padding: 0;
+}
+
+#homeSection .home-instance-controls .instance-selector-container {
+    flex-shrink: 0;
+}
+
+#homeSection .home-instance-controls .instance-select {
+    background: rgba(30, 41, 59, 0.7) !important;
+    border: 1px solid rgba(148, 163, 184, 0.12) !important;
+    border-radius: 8px !important;
+    color: #e2e8f0 !important;
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+    min-width: 180px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#homeSection .home-instance-controls .instance-select:focus {
+    border-color: rgba(59, 130, 246, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+    outline: none;
+}
+
+@media (max-width: 768px) {
+    #homeSection .home-instance-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    #homeSection .home-instance-controls .instance-select {
+        width: 100%;
+        min-width: unset;
+    }
+}
+
 /* ── Trending bar accent ────────────────────────────────────────── */
 #homeSection .trending-bar {
     height: 2px !important;

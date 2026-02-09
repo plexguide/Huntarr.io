@@ -26,6 +26,14 @@ const HomeRequestarr = {
     // Pending error timeouts - cleared when a new load starts so we don't show error after success
     _pendingErrorTimeout: null,
 
+    // Helpers to encode/decode compound instance values (movie_hunt:Name or radarr:Name)
+    _encodeInstance(appType, name) { return `${appType}:${name}`; },
+    _decodeInstance(compound) {
+        if (!compound || !compound.includes(':')) return { appType: 'radarr', name: compound || '' };
+        const idx = compound.indexOf(':');
+        return { appType: compound.substring(0, idx), name: compound.substring(idx + 1) };
+    },
+
     init() {
         this.cacheElements();
 
@@ -133,6 +141,9 @@ const HomeRequestarr = {
         this.elements.trendingSection = document.getElementById('home-trending-section');
         this.elements.moviesSection = document.getElementById('home-movies-section');
         this.elements.tvSection = document.getElementById('home-tv-section');
+        this.elements.instanceControls = document.getElementById('home-instance-controls');
+        this.elements.movieInstanceSelect = document.getElementById('home-movie-instance-select');
+        this.elements.tvInstanceSelect = document.getElementById('home-tv-instance-select');
     },
     
     getLastSection() {
@@ -269,6 +280,168 @@ const HomeRequestarr = {
             this.defaultMovieInstance = null;
             this.defaultTVInstance = null;
         }
+        // Populate the dropdowns after loading defaults
+        await this._populateInstanceDropdowns();
+    },
+
+    /** Populate both movie and TV instance dropdown selectors on the Home page */
+    async _populateInstanceDropdowns() {
+        await Promise.all([
+            this._populateMovieInstanceDropdown(),
+            this._populateTVInstanceDropdown()
+        ]);
+        // Show the controls row once populated
+        if (this.elements.instanceControls) {
+            this.elements.instanceControls.style.display = 'flex';
+        }
+    },
+
+    async _populateMovieInstanceDropdown() {
+        const select = this.elements.movieInstanceSelect;
+        if (!select) return;
+        try {
+            const [mhResponse, radarrResponse] = await Promise.all([
+                fetch('./api/requestarr/instances/movie_hunt'),
+                fetch('./api/requestarr/instances/radarr')
+            ]);
+            const mhData = await mhResponse.json();
+            const radarrData = await radarrResponse.json();
+
+            const allInstances = [
+                ...(mhData.instances || []).map(inst => ({
+                    name: String(inst.name).trim(), appType: 'movie_hunt',
+                    label: `Movie Hunt \u2013 ${String(inst.name).trim()}`
+                })),
+                ...(radarrData.instances || []).map(inst => ({
+                    name: String(inst.name).trim(), appType: 'radarr',
+                    label: `Radarr \u2013 ${String(inst.name).trim()}`
+                }))
+            ];
+
+            select.innerHTML = '';
+            if (allInstances.length === 0) {
+                select.innerHTML = '<option value="">No movie instances</option>';
+                return;
+            }
+
+            const saved = this.defaultMovieInstance;
+            allInstances.forEach(inst => {
+                const cv = this._encodeInstance(inst.appType, inst.name);
+                const opt = document.createElement('option');
+                opt.value = cv;
+                opt.textContent = inst.label;
+                if (saved && (cv === saved || inst.name === saved)) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            // If no server default existed, use first option
+            if (!this.defaultMovieInstance && select.value) {
+                this.defaultMovieInstance = select.value;
+            }
+
+            select.addEventListener('change', async () => {
+                this.defaultMovieInstance = select.value;
+                console.log('[HomeRequestarr] Movie instance changed:', select.value);
+                // Clear caches so status badges refresh
+                this._clearCache('trending');
+                this._clearCache('movies');
+                await this._saveServerDefaults();
+                // Sync with Requestarr content module
+                this._syncRequestarrContent();
+                // Reload current section
+                this._reloadCurrentSection();
+            });
+        } catch (error) {
+            console.error('[HomeRequestarr] Error populating movie instances:', error);
+        }
+    },
+
+    async _populateTVInstanceDropdown() {
+        const select = this.elements.tvInstanceSelect;
+        if (!select) return;
+        try {
+            const response = await fetch('./api/requestarr/instances/sonarr');
+            const data = await response.json();
+            const instances = (data.instances || []).map(inst => ({ name: String(inst.name).trim() }));
+
+            select.innerHTML = '';
+            if (instances.length === 0) {
+                select.innerHTML = '<option value="">No TV instances</option>';
+                return;
+            }
+
+            const saved = this.defaultTVInstance;
+            instances.forEach(inst => {
+                const opt = document.createElement('option');
+                opt.value = inst.name;
+                opt.textContent = `Sonarr \u2013 ${inst.name}`;
+                if (saved && inst.name === saved) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            if (!this.defaultTVInstance && select.value) {
+                this.defaultTVInstance = select.value;
+            }
+
+            select.addEventListener('change', async () => {
+                this.defaultTVInstance = select.value;
+                console.log('[HomeRequestarr] TV instance changed:', select.value);
+                this._clearCache('trending');
+                this._clearCache('tv');
+                await this._saveServerDefaults();
+                this._syncRequestarrContent();
+                this._reloadCurrentSection();
+            });
+        } catch (error) {
+            console.error('[HomeRequestarr] Error populating TV instances:', error);
+        }
+    },
+
+    /** Save current defaults to the server (same endpoint as Requestarr) */
+    _saveServerDefaults() {
+        return fetch('./api/requestarr/settings/default-instances', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                movie_instance: this.defaultMovieInstance || '',
+                tv_instance: this.defaultTVInstance || ''
+            })
+        }).catch(e => console.warn('[HomeRequestarr] Failed to save defaults:', e));
+    },
+
+    /** Sync the Requestarr content module's state so Discover page stays in sync */
+    _syncRequestarrContent() {
+        if (this.core && this.core.content) {
+            this.core.content.selectedMovieInstance = this.defaultMovieInstance;
+            this.core.content.selectedTVInstance = this.defaultTVInstance;
+            // Sync Requestarr dropdown selectors too
+            ['movies-instance-select', 'discover-movie-instance-select'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.value !== this.defaultMovieInstance) el.value = this.defaultMovieInstance;
+            });
+            ['tv-instance-select', 'discover-tv-instance-select'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.value !== this.defaultTVInstance) el.value = this.defaultTVInstance;
+            });
+        }
+    },
+
+    /** Clear a discovery cache section */
+    _clearCache(section) {
+        const key = this.DISCOVERY_CACHE_KEYS[section];
+        if (key) { try { localStorage.removeItem(key); } catch (e) { /* ignore */ } }
+    },
+
+    /** Reload whichever section is currently visible after an instance change */
+    _reloadCurrentSection() {
+        if (!this.currentSection) return;
+        switch (this.currentSection) {
+            case 'trending': this.loadTrending(); break;
+            case 'movies': this.loadPopularMovies(); break;
+            case 'tv': this.loadPopularTV(); break;
+        }
+        // Also preload the others
+        this.preloadOtherDiscoverySections(this.currentSection);
     },
 
     setupSearch() {
@@ -327,9 +500,13 @@ const HomeRequestarr = {
         this.elements.searchResultsGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
 
         try {
+            // Determine which instances to check library status against
+            const movieDecoded = this._decodeInstance(this.defaultMovieInstance);
+            const tvInstanceName = this.defaultTVInstance || '';
+
             const [moviesResponse, tvResponse] = await Promise.all([
-                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=radarr&instance_name=search`),
-                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=sonarr&instance_name=search`)
+                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=${encodeURIComponent(movieDecoded.appType)}&instance_name=${encodeURIComponent(movieDecoded.name)}`),
+                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=sonarr&instance_name=${encodeURIComponent(tvInstanceName)}`)
             ]);
 
             const moviesData = await moviesResponse.json();
@@ -438,6 +615,42 @@ const HomeRequestarr = {
         }
     },
 
+    /** Build trending URL with current movie + TV instance params */
+    _buildTrendingUrl() {
+        let url = './api/requestarr/discover/trending';
+        const params = [];
+        if (this.defaultMovieInstance) {
+            const d = this._decodeInstance(this.defaultMovieInstance);
+            if (d.appType) params.push(`movie_app_type=${encodeURIComponent(d.appType)}`);
+            if (d.name) params.push(`movie_instance_name=${encodeURIComponent(d.name)}`);
+        }
+        if (this.defaultTVInstance) {
+            params.push(`tv_instance_name=${encodeURIComponent(this.defaultTVInstance)}`);
+        }
+        if (params.length > 0) url += '?' + params.join('&');
+        return url;
+    },
+
+    /** Build popular movies URL with current movie instance params */
+    _buildMoviesUrl() {
+        let url = './api/requestarr/discover/movies?sort_by=popularity.desc';
+        if (this.defaultMovieInstance) {
+            const d = this._decodeInstance(this.defaultMovieInstance);
+            if (d.appType) url += `&app_type=${encodeURIComponent(d.appType)}`;
+            if (d.name) url += `&instance_name=${encodeURIComponent(d.name)}`;
+        }
+        return url;
+    },
+
+    /** Build popular TV URL with current TV instance params */
+    _buildTVUrl() {
+        let url = './api/requestarr/discover/tv?sort_by=popularity.desc';
+        if (this.defaultTVInstance) {
+            url += `&app_type=sonarr&instance_name=${encodeURIComponent(this.defaultTVInstance)}`;
+        }
+        return url;
+    },
+
     async loadTrending() {
         if (!this.enableRequestarr || !this.elements.trendingCarousel) return;
         this._clearPendingError();
@@ -450,7 +663,7 @@ const HomeRequestarr = {
         }
 
         try {
-            const response = await fetch('./api/requestarr/discover/trending');
+            const response = await fetch(this._buildTrendingUrl());
             const data = await response.json();
             const results = data.results && data.results.length > 0 ? data.results : [];
             this.setCachedDiscovery('trending', results);
@@ -469,7 +682,7 @@ const HomeRequestarr = {
 
     async fetchAndCacheTrending() {
         try {
-            const response = await fetch('./api/requestarr/discover/trending');
+            const response = await fetch(this._buildTrendingUrl());
             const data = await response.json();
             const results = data.results && data.results.length > 0 ? data.results : [];
             this.setCachedDiscovery('trending', results);
@@ -491,7 +704,7 @@ const HomeRequestarr = {
         }
 
         try {
-            const response = await fetch('./api/requestarr/discover/movies?sort_by=popularity.desc');
+            const response = await fetch(this._buildMoviesUrl());
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.setCachedDiscovery('movies', results);
@@ -510,7 +723,7 @@ const HomeRequestarr = {
 
     async fetchAndCachePopularMovies() {
         try {
-            const response = await fetch('./api/requestarr/discover/movies?sort_by=popularity.desc');
+            const response = await fetch(this._buildMoviesUrl());
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.setCachedDiscovery('movies', results);
@@ -532,7 +745,7 @@ const HomeRequestarr = {
         }
 
         try {
-            const response = await fetch('./api/requestarr/discover/tv?sort_by=popularity.desc');
+            const response = await fetch(this._buildTVUrl());
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.setCachedDiscovery('tv', results);
@@ -551,7 +764,7 @@ const HomeRequestarr = {
 
     async fetchAndCachePopularTV() {
         try {
-            const response = await fetch('./api/requestarr/discover/tv?sort_by=popularity.desc');
+            const response = await fetch(this._buildTVUrl());
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.setCachedDiscovery('tv', results);

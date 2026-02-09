@@ -1,5 +1,10 @@
 /* Requestarr Discover - Horizontal Scrolling Style */
 
+/* ── Modern blue design — match Home page aesthetic ─────────────── */
+#requestarr-section {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
 /* Space above sponsor = space below (20px); minimal top so it matches bottom */
 #requestarr-section .requestarr-content {
     padding: 0 30px 20px 30px;
@@ -15,7 +20,7 @@
     margin: 0 0 8px 0;
 }
 
-/* Global Search Bar - Full Width (8px below to match app pages) */
+/* Global Search Bar - Full Width — refined blue style */
 .global-search-bar {
     position: relative;
     width: 100%;
@@ -27,7 +32,7 @@
     left: 20px;
     top: 50%;
     transform: translateY(-50%);
-    color: #888;
+    color: #475569;
     font-size: 18px;
     z-index: 1;
     pointer-events: none;
@@ -36,23 +41,24 @@
 .global-search-bar input {
     width: 100%;
     padding: 16px 20px 16px 55px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    border-radius: 14px;
-    color: #fff;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: #e2e8f0;
     font-size: 16px;
-    transition: all 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
     box-sizing: border-box;
 }
 
 .global-search-bar input:focus {
     outline: none;
-    border-color: #667eea;
-    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    background: rgba(30, 41, 59, 0.9);
 }
 
 .global-search-bar input::placeholder {
-    color: #888;
+    color: #475569;
 }
 
 /* Search Results - Full Width Grid Layout */
@@ -166,25 +172,27 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 45px;
-    height: 45px;
-    background: rgba(0, 0, 0, 0.85);
-    border: none;
+    width: 38px;
+    height: 38px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.15);
     border-radius: 50%;
-    color: #fff;
-    font-size: 20px;
+    color: #94a3b8;
+    font-size: 16px;
     cursor: pointer;
     z-index: 20;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s; /* Smooth transition for opacity and hover */
+    transition: all 0.25s ease;
     opacity: 0.8;
 }
 
 .carousel-arrow:hover {
-    background: rgba(0, 0, 0, 0.95);
-    opacity: 1 !important; /* Override hiding on hover */
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+    opacity: 1 !important;
     transform: translateY(-50%) scale(1.1);
 }
 
@@ -230,7 +238,7 @@
     border-radius: 10px;
     overflow: hidden;
     transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(30, 41, 59, 0.5);
     border: 1px solid rgba(148, 163, 184, 0.08);
     position: relative;
 }
@@ -1805,23 +1813,24 @@ input:disabled + .toggle-slider {
 .control-select {
     width: 100%;
     padding: 10px 16px;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(30, 41, 59, 0.7);
     border: 1px solid rgba(148, 163, 184, 0.12);
     border-radius: 8px;
     color: #e2e8f0;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .control-select:hover {
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(30, 41, 59, 0.9);
     border-color: rgba(148, 163, 184, 0.25);
 }
 
 .control-select:focus {
     outline: none;
-    border-color: rgba(245, 158, 11, 0.5);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .control-select option {

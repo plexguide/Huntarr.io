@@ -146,26 +146,34 @@ export class RequestarrContent {
      * Sync every movie-instance dropdown on the page to the current value.
      */
     _syncAllMovieSelectors() {
-        const ids = ['movies-instance-select', 'discover-movie-instance-select'];
+        const ids = ['movies-instance-select', 'discover-movie-instance-select', 'home-movie-instance-select'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el && el.value !== this.selectedMovieInstance) {
                 el.value = this.selectedMovieInstance;
             }
         });
+        // Also sync HomeRequestarr's in-memory default
+        if (window.HomeRequestarr) {
+            window.HomeRequestarr.defaultMovieInstance = this.selectedMovieInstance;
+        }
     }
 
     /**
      * Sync every TV-instance dropdown on the page to the current value.
      */
     _syncAllTVSelectors() {
-        const ids = ['tv-instance-select', 'discover-tv-instance-select'];
+        const ids = ['tv-instance-select', 'discover-tv-instance-select', 'home-tv-instance-select'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el && el.value !== this.selectedTVInstance) {
                 el.value = this.selectedTVInstance;
             }
         });
+        // Also sync HomeRequestarr's in-memory default
+        if (window.HomeRequestarr) {
+            window.HomeRequestarr.defaultTVInstance = this.selectedTVInstance;
+        }
     }
 
     // ----------------------------------------

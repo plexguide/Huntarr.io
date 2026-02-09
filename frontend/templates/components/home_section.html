@@ -22,6 +22,20 @@
                     <input type="text" id="home-requestarr-search-input" placeholder="Search Movies & TV" autocomplete="off">
                 </div>
 
+                <!-- Instance Selectors (same server-side defaults as Requestarr) -->
+                <div class="home-instance-controls" id="home-instance-controls" style="display: none;">
+                    <div class="instance-selector-container">
+                        <select id="home-movie-instance-select" class="control-select instance-select">
+                            <option value="">Loading movie instances...</option>
+                        </select>
+                    </div>
+                    <div class="instance-selector-container">
+                        <select id="home-tv-instance-select" class="control-select instance-select">
+                            <option value="">Loading TV instances...</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div id="home-search-results-view" style="display: none;">
                     <h2 class="search-results-title">Search Results</h2>
                     <div id="home-search-results-grid">
