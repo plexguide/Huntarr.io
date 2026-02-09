@@ -245,11 +245,38 @@ def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None,
                       quality_profile=None, minimum_availability=None):
     """Append one entry to Media Collection (add to library).
     Fetches TMDB release dates for the movie to support minimum availability enforcement.
+    Does not add duplicates if the movie is already in the collection.
     """
+    items = _get_collection_config(instance_id)
+
+    # Check for duplicates using tmdb_id and/or title + year
+    is_duplicate = False
+    norm_title = _normalize_title_for_key(title)
+    year_str = str(year or '').strip()
+    
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        
+        # Match by TMDB ID
+        if tmdb_id and item.get('tmdb_id') == tmdb_id:
+            is_duplicate = True
+            break
+            
+        # Match by Title + Year
+        item_title = _normalize_title_for_key(item.get('title'))
+        item_year = str(item.get('year') or '').strip()
+        if item_title == norm_title and item_year == year_str:
+            is_duplicate = True
+            break
+
+    if is_duplicate:
+        movie_hunt_logger.info("Collection: skipping duplicate add for '%s' (%s)", title, year or 'no year')
+        return
+
     # Fetch release dates from TMDB for availability tracking
     release_dates = _fetch_tmdb_release_dates(tmdb_id)
 
-    items = _get_collection_config(instance_id)
     items.append({
         'title': title,
         'year': year or '',
@@ -928,13 +955,35 @@ def api_movie_hunt_collection_list():
         detected_list = _get_detected_movies_from_all_roots(instance_id)
         detected_key_set = {(_normalize_title_for_key(d.get('title')), str(d.get('year') or '').strip()) for d in detected_list}
         requested_list = _get_collection_config(instance_id)
+        
         # Build list from requested items only (no detected-only entries)
         combined = []
+        seen_tmdb = set()
+        seen_title_year = set()
+        
         for req in requested_list:
             if not isinstance(req, dict):
                 continue
+            
             title = (req.get('title') or '').strip()
             year = str(req.get('year') or '').strip()
+            tmdb_id = req.get('tmdb_id')
+            norm_title = _normalize_title_for_key(title)
+            title_year_key = (norm_title, year)
+            
+            is_dupe = False
+            if tmdb_id and tmdb_id in seen_tmdb:
+                is_dupe = True
+            elif title_year_key in seen_title_year:
+                is_dupe = True
+            
+            if is_dupe:
+                continue
+            
+            if tmdb_id:
+                seen_tmdb.add(tmdb_id)
+            seen_title_year.add(title_year_key)
+            
             norm_key = (_normalize_title_for_key(title), year)
             status = 'available' if norm_key in detected_key_set else 'requested'
             combined.append({
@@ -942,24 +991,51 @@ def api_movie_hunt_collection_list():
                 'year': year,
                 'status': status,
                 'poster_path': req.get('poster_path') or '',
-                'tmdb_id': req.get('tmdb_id'),
+                'tmdb_id': tmdb_id,
                 'root_folder': req.get('root_folder') or '',
                 'requested_at': req.get('requested_at') or '',
             })
-        # Persist status updates (e.g. requested -> available when detected on disk)
+        
+        # Persist status updates and cleanup duplicates in the background config
         items_full = _get_collection_config(instance_id)
         collection_updated = False
+        deduped_items_full = []
+        seen_full_tmdb = set()
+        seen_full_title_year = set()
+        
         for i, full_item in enumerate(items_full):
             if not isinstance(full_item, dict):
                 continue
+            
             t = (full_item.get('title') or '').strip()
             y = str(full_item.get('year') or '').strip()
+            tid = full_item.get('tmdb_id')
+            nt = _normalize_title_for_key(t)
+            tyk = (nt, y)
+            
+            is_full_dupe = False
+            if tid and tid in seen_full_tmdb:
+                is_full_dupe = True
+            elif tyk in seen_full_title_year:
+                is_full_dupe = True
+                
+            if is_full_dupe:
+                collection_updated = True # We found a duplicate to remove
+                continue
+            
+            if tid:
+                seen_full_tmdb.add(tid)
+            seen_full_title_year.add(tyk)
+            
             norm_key = (_normalize_title_for_key(t), y)
             if norm_key in detected_key_set and (full_item.get('status') or '').lower() != 'available':
-                items_full[i]['status'] = 'available'
+                full_item['status'] = 'available'
                 collection_updated = True
+            
+            deduped_items_full.append(full_item)
+            
         if collection_updated:
-            _save_collection_config(items_full, instance_id)
+            _save_collection_config(deduped_items_full, instance_id)
         q = (request.args.get('q') or '').strip().lower()
         items = [x for x in combined if not q or q in ((x.get('title') or '') + ' ' + str(x.get('year') or '')).lower()]
         sort_key = (request.args.get('sort') or 'title.asc').strip()
@@ -1002,22 +1078,38 @@ def api_movie_hunt_collection_patch(index):
 
 @movie_hunt_bp.route('/api/movie-hunt/collection/<int:index>', methods=['DELETE'])
 def api_movie_hunt_collection_delete(index):
-    """Remove item from requested list by index or by title+year in JSON body."""
+    """Remove item from requested list by index or by title+year/tmdb_id in JSON body."""
     try:
         body = request.get_json(silent=True) or {}
         title = (body.get('title') or '').strip()
         year = str(body.get('year') or '').strip()
+        tmdb_id = body.get('tmdb_id')
         instance_id = _get_movie_hunt_instance_id_from_request()
-        if title:
+        
+        if tmdb_id or title:
             items = _get_collection_config(instance_id)
-            for i, it in enumerate(items):
+            new_items = []
+            found = False
+            for it in items:
                 if not isinstance(it, dict):
                     continue
-                if (it.get('title') or '').strip() == title and str(it.get('year') or '') == year:
-                    items.pop(i)
-                    _save_collection_config(items, instance_id)
-                    return jsonify({'success': True}), 200
+                
+                match = False
+                if tmdb_id and it.get('tmdb_id') == tmdb_id:
+                    match = True
+                elif not tmdb_id and (it.get('title') or '').strip() == title and str(it.get('year') or '') == year:
+                    match = True
+                
+                if match:
+                    found = True
+                else:
+                    new_items.append(it)
+            
+            if found:
+                _save_collection_config(new_items, instance_id)
+                return jsonify({'success': True}), 200
             return jsonify({'success': False, 'message': 'Not found in requested list'}), 404
+            
         items = _get_collection_config(instance_id)
         if index < 0 or index >= len(items):
             return jsonify({'success': False, 'message': 'Not found'}), 404
