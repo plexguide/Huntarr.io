@@ -19,8 +19,31 @@
             this.setupInstanceSelect();
             this.setupSort();
             this.setupSearch();
+            this.setupSearchToRequest();
             this.setupPagination();
             this.loadCollection();
+        },
+
+        setupSearchToRequest: function() {
+            var input = document.getElementById('media-collection-search-to-request');
+            var btn = document.getElementById('media-collection-search-to-request-btn');
+            if (!input) return;
+            var run = function() {
+                var query = (input.value || '').trim();
+                if (!query) return;
+                if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
+                    window.huntarrUI.switchSection('requestarr-discover');
+                }
+                setTimeout(function() {
+                    var globalSearch = document.getElementById('global-search-input');
+                    if (globalSearch) {
+                        globalSearch.value = query;
+                        globalSearch.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }, 100);
+            };
+            if (btn) btn.addEventListener('click', run);
+            input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); run(); } });
         },
 
         setupInstanceSelect: function() {

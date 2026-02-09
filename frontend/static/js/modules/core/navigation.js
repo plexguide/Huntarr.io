@@ -49,6 +49,13 @@ window.HuntarrNavigation = {
         if (section.indexOf('%23') >= 0) section = section.split('%23').pop() || section;
         if (section.indexOf('./') === 0) section = section.replace(/^\.?\/*/, '');
         if (!section) section = 'home';
+        // Legacy Movie Hunt home → Media Collection (discovery is under Requestarr)
+        if (section === 'movie-hunt-home') {
+            section = 'movie-hunt-collection';
+            if (window.location.hash !== '#movie-hunt-collection') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#movie-hunt-collection');
+            }
+        }
         // NZB Hunt Settings → open Servers tab when linked from "no server" warning
         if (section === 'nzb-hunt-settings-servers') {
             section = 'nzb-hunt-settings';
@@ -99,7 +106,7 @@ window.HuntarrNavigation = {
             'hunt-manager': { title: 'Hunt Manager', nav: document.getElementById('mainSystemHuntManagerNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'hunt-manager' },
             'logs': { title: 'Logs', nav: document.getElementById('mainSystemLogsNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'logs' },
             'about': { title: 'About', nav: document.getElementById('mainSystemAboutNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'about' },
-            'movie-hunt-home': { title: 'Movie Hunt', nav: document.getElementById('movieHuntHomeNav'), section: document.getElementById('movie-hunt-section'), sidebar: 'moviehunt', view: 'movies' },
+            'movie-hunt-home': { title: 'Media Collection', nav: document.getElementById('movieHuntCollectionNav'), section: document.getElementById('movie-hunt-section'), sidebar: 'moviehunt', view: 'collection' },
             'movie-hunt-collection': { title: 'Media Collection', nav: document.getElementById('movieHuntCollectionNav'), section: document.getElementById('movie-hunt-section'), sidebar: 'moviehunt', view: 'collection' },
             'activity-queue': { title: 'Activity – Queue', nav: document.getElementById('movieHuntActivityQueueNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'queue' },
             'activity-history': { title: 'Activity – History', nav: document.getElementById('movieHuntActivityHistoryNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'history' },
@@ -215,9 +222,6 @@ window.HuntarrNavigation = {
         
         if (config.view && section.startsWith('requestarr') && ui.runWhenRequestarrReady) {
             ui.runWhenRequestarrReady(config.view, () => window.RequestarrDiscover.switchView(config.view));
-        }
-        if (section === 'movie-hunt-home' && window.MovieHunt && typeof window.MovieHunt.init === 'function') {
-            window.MovieHunt.init();
         }
         if (section === 'settings-movie-management' && window.MovieManagement && typeof window.MovieManagement.load === 'function') {
             window.MovieManagement.load();

@@ -63,6 +63,11 @@
 
     <!-- Media Collection View (requested movies, status tracking) -->
     <div id="movie-hunt-collection-view" class="movie-hunt-collection-view" style="display: none;">
+        <div class="media-collection-requestarr-search" style="margin-bottom: 12px;">
+            <i class="fas fa-search"></i>
+            <input id="media-collection-search-to-request" type="text" placeholder="Search movies to request (opens Requestarr)..." autocomplete="off">
+            <button type="button" id="media-collection-search-to-request-btn" class="mh-btn mh-btn-primary"><i class="fas fa-external-link-alt"></i> Search in Requestarr</button>
+        </div>
         <div class="hidden-media-search">
             <i class="fas fa-search"></i>
             <input id="movie-hunt-collection-search" class="hidden-media-search-input" type="text" placeholder="Search requested media...">

@@ -81,9 +81,9 @@
 
         <div class="nav-group" id="main-sidebar-beta-group">
             <div class="nav-group-title">Beta</div>
-            <a href="./#movie-hunt-home" class="nav-item" id="movieHuntSupportNav">
-                <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
-                <span>Movie Hunt</span>
+            <a href="./#movie-hunt-collection" class="nav-item" id="mediaCollectionNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
+                <span>Media Collection</span>
             </a>
             <a href="./#nzb-hunt-home" class="nav-item" id="nzbHuntSupportNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-download"></i></div>
@@ -121,11 +121,7 @@
             </a>
         </div>
         <div class="nav-group">
-            <div class="nav-group-title">Movie Hunt</div>
-            <a href="./#movie-hunt-home" class="nav-item" id="movieHuntHomeNav">
-                <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
-                <span>Movie Home</span>
-            </a>
+            <div class="nav-group-title">Media Collection</div>
             <a href="./#movie-hunt-collection" class="nav-item" id="movieHuntCollectionNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
                 <span>Media Collection</span>
@@ -473,8 +469,7 @@
         else if (currentHash === '#settings-clients') selector = '#movieHuntSettingsClientsNav';
         else if (currentHash === '#settings-root-folders') selector = '#movieHuntSettingsRootFoldersNav';
         // Movie Hunt sections
-        else if (currentHash === '#movie-hunt-home') selector = '#movieHuntHomeNav';
-        else if (currentHash === '#movie-hunt-collection') selector = '#movieHuntCollectionNav';
+        else if (currentHash === '#movie-hunt-home' || currentHash === '#movie-hunt-collection') selector = '#movieHuntCollectionNav';
         else if (currentHash === '#activity-queue') selector = '#movieHuntActivityQueueNav';
         else if (currentHash === '#activity-history') selector = '#movieHuntActivityHistoryNav';
         else if (currentHash === '#activity-blocklist') selector = '#movieHuntActivityBlocklistNav';

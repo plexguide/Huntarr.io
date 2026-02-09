@@ -141,11 +141,12 @@
 
                 const combined = [];
 
-                // Movie Hunt instances first
+                // Movie Hunt instances first (include id for edit/delete)
                 if (mhData.instances) {
                     mhData.instances.forEach(function(inst) {
                         combined.push({
                             name: inst.name,
+                            id: inst.id,
                             appType: 'movie_hunt',
                             compoundValue: _encodeInstanceValue('movie_hunt', inst.name),
                             label: 'Movie Hunt \u2013 ' + inst.name
@@ -246,6 +247,78 @@
             return (bytes / 1024).toFixed(0) + ' KB';
         },
 
+        getToolbarHTML(isMovieHunt) {
+            if (isMovieHunt) {
+                return '<div class="mh-toolbar" id="requestarr-detail-toolbar">' +
+                    '<div class="mh-toolbar-left">' +
+                    '<button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>' +
+                    '<button class="mh-tb" id="requestarr-detail-refresh" title="Refresh"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>' +
+                    '<button class="mh-tb" id="requestarr-detail-search" title="Search Movie"><i class="fas fa-search"></i><span>Search Movie</span></button>' +
+                    '<button class="mh-tb" id="requestarr-detail-interactive" title="Interactive Search"><i class="fas fa-user-astronaut"></i><span>Interactive Search</span></button>' +
+                    '</div>' +
+                    '<div class="mh-toolbar-right">' +
+                    '<button class="mh-tb" id="requestarr-detail-edit" title="Edit"><i class="fas fa-wrench"></i><span>Edit</span></button>' +
+                    '<button class="mh-tb mh-tb-danger" id="requestarr-detail-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>' +
+                    '</div></div>';
+            }
+            return '<div class="mh-toolbar" id="requestarr-detail-toolbar">' +
+                '<div class="mh-toolbar-left">' +
+                '<button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>' +
+                '</div><div class="mh-toolbar-right"></div></div>';
+        },
+
+        replaceAndAttachToolbar(isMovieHunt) {
+            var toolbarEl = document.getElementById('requestarr-detail-toolbar');
+            if (!toolbarEl) return;
+            toolbarEl.outerHTML = this.getToolbarHTML(isMovieHunt);
+            this.attachToolbarHandlers();
+        },
+
+        attachToolbarHandlers() {
+            var backBtn = document.getElementById('requestarr-detail-back');
+            if (backBtn) backBtn.addEventListener('click', () => this.closeDetail());
+            var refreshBtn = document.getElementById('requestarr-detail-refresh');
+            if (refreshBtn) refreshBtn.addEventListener('click', () => { this.updateMovieStatus(); this.updateDetailInfoBar(); });
+            var searchBtn = document.getElementById('requestarr-detail-search');
+            if (searchBtn) searchBtn.addEventListener('click', () => {
+                if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal && this.currentMovie) window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+            });
+            var interactiveBtn = document.getElementById('requestarr-detail-interactive');
+            if (interactiveBtn) interactiveBtn.addEventListener('click', () => {
+                if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal && this.currentMovie) window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+            });
+            var editBtn = document.getElementById('requestarr-detail-edit');
+            if (editBtn) editBtn.addEventListener('click', () => this.openEditModalForMovieHunt());
+            var deleteBtn = document.getElementById('requestarr-detail-delete');
+            if (deleteBtn) deleteBtn.addEventListener('click', () => this.openDeleteModalForMovieHunt());
+        },
+
+        openEditModalForMovieHunt() {
+            var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            if (decoded.appType !== 'movie_hunt' || !decoded.name) return;
+            var inst = this.movieInstances.find(function(i) { return i.compoundValue === this.selectedInstanceName; }.bind(this));
+            var instanceId = inst && inst.id != null ? inst.id : null;
+            if (instanceId == null) return;
+            if (!window.MovieHuntDetail || typeof window.MovieHuntDetail.openEditModal !== 'function') return;
+            window.MovieHuntDetail.currentMovie = this.currentMovie;
+            window.MovieHuntDetail.selectedInstanceId = instanceId;
+            window.MovieHuntDetail.currentMovieStatus = this.currentMovieStatusForMH || null;
+            window.MovieHuntDetail.openEditModal();
+        },
+
+        openDeleteModalForMovieHunt() {
+            var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            if (decoded.appType !== 'movie_hunt' || !decoded.name) return;
+            var inst = this.movieInstances.find(function(i) { return i.compoundValue === this.selectedInstanceName; }.bind(this));
+            var instanceId = inst && inst.id != null ? inst.id : null;
+            if (instanceId == null) return;
+            if (!window.MovieHuntDetail || typeof window.MovieHuntDetail.openDeleteModal !== 'function') return;
+            window.MovieHuntDetail.currentMovie = this.currentMovie;
+            window.MovieHuntDetail.selectedInstanceId = instanceId;
+            window.MovieHuntDetail.currentMovieStatus = this.currentMovieStatusForMH || null;
+            window.MovieHuntDetail.openDeleteModal();
+        },
+
         async updateDetailInfoBar() {
             const pathEl = document.getElementById('requestarr-ib-path');
             const statusEl = document.getElementById('requestarr-ib-status');
@@ -254,6 +327,50 @@
             if (!pathEl || !statusEl) return;
 
             var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            const tmdbId = this.currentMovie && (this.currentMovie.tmdb_id || this.currentMovie.id);
+            if (!tmdbId) return;
+
+            if (decoded.appType === 'movie_hunt' && decoded.name) {
+                var inst = this.movieInstances.find(function(i) { return i.compoundValue === this.selectedInstanceName; }.bind(this));
+                var instanceId = inst && inst.id != null ? inst.id : null;
+                if (instanceId == null) {
+                    pathEl.textContent = '-';
+                    statusEl.innerHTML = '<span class="mh-badge mh-badge-none">Not in Collection</span>';
+                    if (profileEl) profileEl.textContent = '-';
+                    if (sizeEl) sizeEl.textContent = '-';
+                    return;
+                }
+                try {
+                    const resp = await fetch('./api/movie-hunt/movie-status?tmdb_id=' + tmdbId + '&instance_id=' + instanceId);
+                    const data = await resp.json();
+                    this.currentMovieStatusForMH = data;
+                    if (!data.success || !data.found) {
+                        pathEl.textContent = '-';
+                        statusEl.innerHTML = '<span class="mh-badge mh-badge-none">Not in Collection</span>';
+                        if (profileEl) profileEl.textContent = '-';
+                        if (sizeEl) sizeEl.textContent = '-';
+                        return;
+                    }
+                    pathEl.textContent = data.path || data.root_folder_path || '-';
+                    pathEl.title = pathEl.textContent;
+                    var cls = '', icon = '', label = '';
+                    if (data.status === 'downloaded') { cls = 'mh-badge-ok'; icon = 'fa-check-circle'; label = 'Downloaded'; }
+                    else if (data.status === 'missing') { cls = 'mh-badge-warn'; icon = 'fa-exclamation-circle'; label = 'Requested'; }
+                    else { cls = 'mh-badge-warn'; icon = 'fa-clock'; label = 'Requested'; }
+                    statusEl.innerHTML = '<span class="mh-badge ' + cls + '"><i class="fas ' + icon + '"></i> ' + label + '</span>';
+                    if (profileEl) profileEl.textContent = data.quality_profile || '-';
+                    if (sizeEl) sizeEl.textContent = this.formatFileSize(data.file_size || 0);
+                } catch (err) {
+                    console.error('[RequestarrDetail] Movie Hunt detail bar error:', err);
+                    this.currentMovieStatusForMH = null;
+                    pathEl.textContent = '-';
+                    statusEl.innerHTML = '<span class="mh-badge mh-badge-none">Not in Collection</span>';
+                    if (profileEl) profileEl.textContent = '-';
+                    if (sizeEl) sizeEl.textContent = '-';
+                }
+                return;
+            }
+
             if (decoded.appType !== 'radarr' || !decoded.name) {
                 pathEl.textContent = '-';
                 statusEl.innerHTML = '<span class="mh-badge mh-badge-none">Not in Collection</span>';
@@ -261,9 +378,6 @@
                 if (sizeEl) sizeEl.textContent = '-';
                 return;
             }
-
-            const tmdbId = this.currentMovie && (this.currentMovie.tmdb_id || this.currentMovie.id);
-            if (!tmdbId) return;
 
             try {
                 const resp = await fetch('./api/requestarr/movie-detail-status?tmdb_id=' + tmdbId + '&instance=' + encodeURIComponent(decoded.name));
@@ -379,14 +493,37 @@
                 `;
             }
 
-            return `
-                <!-- Toolbar -->
-                <div class="mh-toolbar">
+            // Toolbar: full (Movie Hunt) vs minimal (Radarr)
+            var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            var isMovieHunt = decoded.appType === 'movie_hunt';
+            var toolbarHTML = '';
+            if (isMovieHunt) {
+                toolbarHTML = `
+                <div class="mh-toolbar" id="requestarr-detail-toolbar">
+                    <div class="mh-toolbar-left">
+                        <button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
+                        <button class="mh-tb" id="requestarr-detail-refresh" title="Refresh"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>
+                        <button class="mh-tb" id="requestarr-detail-search" title="Search Movie"><i class="fas fa-search"></i><span>Search Movie</span></button>
+                        <button class="mh-tb" id="requestarr-detail-interactive" title="Interactive Search"><i class="fas fa-user-astronaut"></i><span>Interactive Search</span></button>
+                    </div>
+                    <div class="mh-toolbar-right">
+                        <button class="mh-tb" id="requestarr-detail-edit" title="Edit"><i class="fas fa-wrench"></i><span>Edit</span></button>
+                        <button class="mh-tb mh-tb-danger" id="requestarr-detail-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>`;
+            } else {
+                toolbarHTML = `
+                <div class="mh-toolbar" id="requestarr-detail-toolbar">
                     <div class="mh-toolbar-left">
                         <button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
                     </div>
                     <div class="mh-toolbar-right"></div>
-                </div>
+                </div>`;
+            }
+
+            return `
+                <!-- Toolbar -->
+                ${toolbarHTML}
 
                 <!-- Hero -->
                 <div class="mh-hero" style="background-image: url('${backdropUrl}');">
@@ -529,52 +666,17 @@
         },
 
         setupDetailInteractions() {
-            // Back button
-            const backBtn = document.getElementById('requestarr-detail-back');
-            if (backBtn) {
-                backBtn.addEventListener('click', () => this.closeDetail());
-            }
+            this.attachToolbarHandlers();
 
-            // Instance selector: switching to Movie Hunt opens the Movie Hunt page; Radarr stays and updates status
+            // Instance selector: stay on Requestarr; toolbar and data update by instance type (Movie Hunt vs Radarr)
             const instanceSelect = document.getElementById('requestarr-detail-instance-select');
             if (instanceSelect) {
                 instanceSelect.addEventListener('change', async () => {
                     const newValue = instanceSelect.value;
                     this.selectedInstanceName = newValue;
                     console.log('[RequestarrDetail] Instance changed to:', this.selectedInstanceName);
-
-                    var decoded = _decodeInstanceValue(newValue);
-                    if (decoded.appType === 'movie_hunt' && decoded.name) {
-                        // Switch to Movie Hunt page for this movie so the page reflects Movie Hunt (paths, status, request flow)
-                        var movieData = {
-                            tmdb_id: this.currentMovie.tmdb_id,
-                            id: this.currentMovie.tmdb_id,
-                            title: this.currentMovie.title,
-                            year: this.currentMovie.year,
-                            poster_path: this.currentMovie.poster_path,
-                            backdrop_path: this.currentMovie.backdrop_path,
-                            overview: this.currentMovie.overview,
-                            vote_average: this.currentMovie.vote_average,
-                            in_library: false,
-                            in_cooldown: false
-                        };
-                        try {
-                            sessionStorage.setItem('huntarr-open-movie-hunt-detail', JSON.stringify({
-                                ...movieData,
-                                instanceName: decoded.name
-                            }));
-                        } catch (e) { /* ignore */ }
-                        this.closeDetail(true);
-                        if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
-                            window.huntarrUI.switchSection('movie-hunt-home');
-                        } else {
-                            window.location.hash = 'movie-hunt-home';
-                            window.location.reload();
-                        }
-                        return;
-                    }
-
-                    // Radarr (or other): stay on Requestarr detail and refresh availability/status for selected instance
+                    var isMovieHunt = _decodeInstanceValue(newValue).appType === 'movie_hunt';
+                    this.replaceAndAttachToolbar(isMovieHunt);
                     await this.updateMovieStatus();
                     this.updateDetailInfoBar();
                 });
@@ -582,15 +684,18 @@
                 this.updateDetailInfoBar();
             }
 
-            // Request button
+            // Request button: Movie Hunt instance → Movie Hunt modal; Radarr → Requestarr modal
             const requestBtn = document.getElementById('requestarr-detail-request-btn');
             if (requestBtn && this.currentMovie) {
                 requestBtn.addEventListener('click', () => {
-                    if (window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                    var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+                    if (decoded.appType === 'movie_hunt' && window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal) {
+                        window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+                    } else if (window.RequestarrDiscover && window.RequestarrDiscover.modal) {
                         window.RequestarrDiscover.modal.openModal(
-                            this.currentMovie.tmdb_id,
-                            'movie',
-                            this.selectedInstanceName
+                                this.currentMovie.tmdb_id,
+                                'movie',
+                                this.selectedInstanceName
                         );
                     }
                 });

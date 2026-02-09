@@ -1237,42 +1237,8 @@ export class RequestarrContent {
                 return;
             }
             
-            // For movies: if selected instance is Movie Hunt, open Movie Hunt request page; otherwise Requestarr detail
+            // For movies: always open Requestarr detail (toolbar and data depend on selected instance: Movie Hunt or Radarr)
             if (item.media_type === 'movie') {
-                const compound = card.suggestedInstance || null;
-                const decoded = compound ? decodeInstanceValue(compound) : { appType: '', name: '' };
-                const isMovieHunt = decoded.appType === 'movie_hunt' && decoded.name;
-
-                if (isMovieHunt && window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
-                    // Navigate to Movie Hunt and open its detail/request page (user gets 2nd picture)
-                    const movieData = {
-                        tmdb_id: item.tmdb_id,
-                        id: item.tmdb_id,
-                        title: item.title,
-                        year: item.year,
-                        poster_path: item.poster_path,
-                        backdrop_path: item.backdrop_path,
-                        overview: item.overview,
-                        vote_average: item.vote_average,
-                        in_library: inLibrary,
-                        in_cooldown: inCooldown
-                    };
-                    try {
-                        sessionStorage.setItem('huntarr-open-movie-hunt-detail', JSON.stringify({
-                            ...movieData,
-                            instanceName: decoded.name
-                        }));
-                    } catch (e) { /* ignore */ }
-                    if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
-                        window.huntarrUI.switchSection('movie-hunt-home');
-                    } else {
-                        window.location.hash = 'movie-hunt-home';
-                        window.location.reload();
-                    }
-                    return;
-                }
-
-                // Radarr (or no Movie Hunt instance): open standard Requestarr detail page (3rd picture)
                 if (window.RequestarrDetail && window.RequestarrDetail.openDetail) {
                     const movieData = {
                         tmdb_id: item.tmdb_id,
