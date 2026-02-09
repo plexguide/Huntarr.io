@@ -346,7 +346,7 @@ def user():
     app_type = request.args.get('app', 'all')  # Default to 'all' if no app specified
     web_logger = get_logger("web_server")
 
-    valid_app_types = list(KNOWN_LOG_FILES.keys()) + ['all']
+    valid_app_types = list(APP_LOG_FILES.keys()) + ['all']
     if app_type not in valid_app_types:
         web_logger.warning(f"Invalid app type '{app_type}' requested for logs. Defaulting to 'all'.")
         app_type = 'all'
@@ -406,22 +406,22 @@ def user():
             # Determine which log files to follow
             log_files_to_follow = []
             if app_type == 'all':
-                log_files_to_follow = list(KNOWN_LOG_FILES.items())
+                log_files_to_follow = list(APP_LOG_FILES.items())
             elif app_type == 'system':
                 # For system, only follow main log
-                system_log = KNOWN_LOG_FILES.get('system')
+                system_log = APP_LOG_FILES.get('system')
                 if system_log:
                     log_files_to_follow = [('system', system_log)]
                     web_logger.debug(f"Following system log: {system_log}")
             else:
                 # For specific app, follow that app's log
-                app_log = KNOWN_LOG_FILES.get(app_type)
+                app_log = APP_LOG_FILES.get(app_type)
                 if app_log:
                     log_files_to_follow = [(app_type, app_log)]
                     web_logger.debug(f"Following {app_type} log: {app_log}")
                 
                 # Also include system log for related messages
-                system_log = KNOWN_LOG_FILES.get('system')
+                system_log = APP_LOG_FILES.get('system')
                 if system_log:
                     log_files_to_follow.append(('system', system_log))
                     web_logger.debug(f"Also following system log for {app_type} messages")
