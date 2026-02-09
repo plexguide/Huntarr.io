@@ -22,13 +22,17 @@
     }
 
     window.MovieHuntInstanceManagement = {
+        _initialized: false,
         init: function() {
             var self = this;
-            var addCard = document.getElementById('instance-management-add-card');
-            if (addCard) addCard.addEventListener('click', function() { self.openAddModal(); });
-            this.initAddModal();
-            this.initDeleteModal();
-            this.initRenameModal();
+            if (!this._initialized) {
+                this._initialized = true;
+                var addCard = document.getElementById('instance-management-add-card');
+                if (addCard) addCard.addEventListener('click', function() { self.openAddModal(); });
+                this.initAddModal();
+                this.initDeleteModal();
+                this.initRenameModal();
+            }
             this.loadList();
         },
 
@@ -249,8 +253,9 @@
                             '<div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div>' +
                             '</div>' +
                             '<div class="instance-card-footer">' +
-                            '<button type="button" class="btn-card edit" data-id="' + escapeHtml(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Edit name"><i class="fas fa-pencil-alt"></i> Edit</button>' +
-                            '<button type="button" class="btn-card delete" data-id="' + escapeHtml(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Delete"><i class="fas fa-trash"></i> Delete</button>' +
+                            '<button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Edit settings"><i class="fas fa-cog"></i> Edit</button>' +
+                            '<button type="button" class="btn-card rename" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Rename"><i class="fas fa-pencil-alt"></i> Rename</button>' +
+                            '<button type="button" class="btn-card delete" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Delete"><i class="fas fa-trash"></i> Delete</button>' +
                             '</div>';
                         grid.appendChild(card);
                     });
@@ -261,6 +266,16 @@
                         addCardClone.addEventListener('click', function() { window.MovieHuntInstanceManagement.openAddModal(); });
                     }
                     grid.querySelectorAll('.btn-card.edit').forEach(function(btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            var id = btn.getAttribute('data-id');
+                            var name = btn.getAttribute('data-name') || '';
+                            if (window.MovieHuntInstanceEditor && typeof window.MovieHuntInstanceEditor.openEditor === 'function') {
+                                window.MovieHuntInstanceEditor.openEditor(id, name || ('Instance ' + id));
+                            }
+                        });
+                    });
+                    grid.querySelectorAll('.btn-card.rename').forEach(function(btn) {
                         btn.addEventListener('click', function(e) {
                             e.stopPropagation();
                             window.MovieHuntInstanceManagement.promptRename(btn.getAttribute('data-id'), btn.getAttribute('data-name') || '');

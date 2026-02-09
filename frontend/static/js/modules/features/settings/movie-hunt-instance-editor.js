@@ -252,7 +252,7 @@
                     var list = data.instances || [];
                     grid.innerHTML = '';
                     if (list.length === 0) {
-                        grid.innerHTML = '<p class="editor-help-text">No instances yet. Add one from <strong>Instance Management</strong> in the sidebar.</p>';
+                        grid.innerHTML = '<p class="editor-help-text">No instances yet. Add one using the <strong>Adding Instance</strong> card below.</p>';
                         return;
                     }
                     list.forEach(function(inst) {

@@ -722,23 +722,23 @@ let huntarrUI = {
             if (window.ActivityModule && typeof window.ActivityModule.init === 'function') {
                 window.ActivityModule.init(view);
             }
-        } else if (section === 'movie-hunt-settings' && document.getElementById('movie-hunt-settings-default-section')) {
-            document.getElementById('movie-hunt-settings-default-section').classList.add('active');
-            document.getElementById('movie-hunt-settings-default-section').style.display = 'block';
+        } else if (section === 'movie-hunt-settings' && document.getElementById('instanceManagementSection')) {
+            document.getElementById('instanceManagementSection').classList.add('active');
+            document.getElementById('instanceManagementSection').style.display = 'block';
+            if (document.getElementById('movie-hunt-settings-default-section')) {
+                document.getElementById('movie-hunt-settings-default-section').classList.remove('active');
+                document.getElementById('movie-hunt-settings-default-section').style.display = 'none';
+            }
             if (document.getElementById('movieHuntInstanceEditorSection')) {
                 document.getElementById('movieHuntInstanceEditorSection').classList.remove('active');
                 document.getElementById('movieHuntInstanceEditorSection').style.display = 'none';
-            }
-            if (document.getElementById('instanceManagementSection')) {
-                document.getElementById('instanceManagementSection').classList.remove('active');
-                document.getElementById('instanceManagementSection').style.display = 'none';
             }
             if (document.getElementById('movieHuntSettingsNav')) document.getElementById('movieHuntSettingsNav').classList.add('active');
             newTitle = 'Movie Hunt Settings';
             this.currentSection = 'movie-hunt-settings';
             this.showMovieHuntSidebar();
-            if (window.MovieHuntInstanceEditor && typeof window.MovieHuntInstanceEditor.loadInstanceList === 'function') {
-                window.MovieHuntInstanceEditor.loadInstanceList();
+            if (window.MovieHuntInstanceManagement && typeof window.MovieHuntInstanceManagement.init === 'function') {
+                window.MovieHuntInstanceManagement.init();
             }
         } else if (section === 'movie-hunt-instance-editor' && document.getElementById('movieHuntInstanceEditorSection')) {
             document.getElementById('movieHuntInstanceEditorSection').classList.add('active');
@@ -746,6 +746,10 @@ let huntarrUI = {
             if (document.getElementById('movie-hunt-settings-default-section')) {
                 document.getElementById('movie-hunt-settings-default-section').classList.remove('active');
                 document.getElementById('movie-hunt-settings-default-section').style.display = 'none';
+            }
+            if (document.getElementById('instanceManagementSection')) {
+                document.getElementById('instanceManagementSection').classList.remove('active');
+                document.getElementById('instanceManagementSection').style.display = 'none';
             }
             if (document.getElementById('movieHuntSettingsNav')) document.getElementById('movieHuntSettingsNav').classList.add('active');
             newTitle = 'Movie Hunt';
@@ -970,7 +974,7 @@ let huntarrUI = {
         } else if (section === 'settings-instance-management' && document.getElementById('instanceManagementSection')) {
             document.getElementById('instanceManagementSection').classList.add('active');
             document.getElementById('instanceManagementSection').style.display = 'block';
-            if (document.getElementById('movieHuntSettingsInstanceManagementNav')) document.getElementById('movieHuntSettingsInstanceManagementNav').classList.add('active');
+            if (document.getElementById('movieHuntSettingsNav')) document.getElementById('movieHuntSettingsNav').classList.add('active');
             if (document.getElementById('movie-hunt-settings-default-section')) {
                 document.getElementById('movie-hunt-settings-default-section').classList.remove('active');
                 document.getElementById('movie-hunt-settings-default-section').style.display = 'none';

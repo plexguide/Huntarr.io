@@ -65,6 +65,13 @@ window.HuntarrNavigation = {
             section = 'activity-queue';
             if (window.location.hash !== '#activity-queue') window.location.hash = 'activity-queue';
         }
+        // Instances merged into Settings: old bookmark redirects to Movie Hunt Settings
+        if (section === 'settings-instance-management') {
+            section = 'movie-hunt-settings';
+            if (window.location.hash !== '#movie-hunt-settings') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#movie-hunt-settings');
+            }
+        }
         if (window.huntarrUI) {
             window.huntarrUI.switchSection(section);
         }
@@ -113,7 +120,7 @@ window.HuntarrNavigation = {
             'activity-blocklist': { title: 'Activity – Blocklist', nav: document.getElementById('movieHuntActivityBlocklistNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'blocklist' },
             'activity-logs': { title: 'Activity – Logs', nav: document.getElementById('movieHuntActivityLogsNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'logs' },
             'logs-movie-hunt': { title: 'Logs', nav: document.getElementById('movieHuntActivityLogsNav'), section: document.getElementById('logsSection'), sidebar: 'moviehunt' },
-            'movie-hunt-settings': { title: 'Movie Hunt Settings', nav: document.getElementById('movieHuntSettingsNav'), section: document.getElementById('movie-hunt-settings-default-section'), sidebar: 'moviehunt', view: 'settings' },
+            'movie-hunt-settings': { title: 'Movie Hunt Settings', nav: document.getElementById('movieHuntSettingsNav'), section: document.getElementById('instanceManagementSection'), sidebar: 'moviehunt', view: 'settings' },
             'movie-hunt-instance-editor': { title: 'Movie Hunt', nav: document.getElementById('movieHuntSettingsNav'), section: document.getElementById('movieHuntInstanceEditorSection'), sidebar: 'moviehunt', view: 'settings' },
             'requestarr': { title: 'Discover', nav: document.getElementById('requestarrNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'discover' },
             'requestarr-discover': { title: 'Discover', nav: document.getElementById('requestarrDiscoverNav'), section: document.getElementById('requestarr-section'), sidebar: 'requestarr', view: 'discover' },

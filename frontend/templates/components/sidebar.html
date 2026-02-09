@@ -153,10 +153,6 @@
                 <span>Settings</span>
             </a>
             <div class="nav-sub-group" id="movie-hunt-settings-sub">
-                <a href="./#settings-instance-management" class="nav-item nav-item-sub" id="movieHuntSettingsInstanceManagementNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
-                    <span>Instances</span>
-                </a>
                 <a href="./#settings-movie-management" class="nav-item nav-item-sub" id="movieHuntSettingsMovieManagementNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
                     <span>Movie Management</span>
@@ -461,7 +457,7 @@
         else if (currentHash === '#settings-logs') { selector = '#mainSettingsLogsNav'; expandSub('settings-sub'); }
         else if (currentHash === '#user') { selector = '#mainSettingsUserNav'; expandSub('settings-sub'); }
         // Movie Hunt settings
-        else if (currentHash === '#settings-instance-management') selector = '#movieHuntSettingsInstanceManagementNav';
+        else if (currentHash === '#settings-instance-management') selector = '#movieHuntSettingsNav';
         else if (currentHash === '#settings-movie-management') selector = '#movieHuntSettingsMovieManagementNav';
         else if (currentHash === '#settings-profiles') selector = '#movieHuntSettingsProfilesNav';
         else if (currentHash === '#settings-custom-formats') selector = '#movieHuntSettingsCustomFormatsNav';
