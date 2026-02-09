@@ -20,6 +20,12 @@
         return (sel && sel.value) ? sel.value : '';
     }
 
+    /** Calculate days from the 1st of the current month to today (so calendar starts at current month). */
+    function daysPastForCurrentMonth() {
+        var now = new Date();
+        return now.getDate() - 1; // e.g. Feb 9 → 8 days back → starts Feb 1
+    }
+
     /* ── Formatting helpers ───────────────────────────────── */
 
     function formatDateBadge(dateStr) {
@@ -78,12 +84,11 @@
         return val;
     }
 
-    function renderDateGroup(dateStr, events, scrollTarget) {
+    function renderDateGroup(dateStr, events) {
         var badge = formatDateBadge(dateStr);
         if (!badge) return '';
         var todayClass = badge.isToday ? ' today' : '';
-        var markerClass = scrollTarget ? ' mh-cal-today-marker' : '';
-        var html = '<div class="mh-cal-date-group' + markerClass + '">' +
+        var html = '<div class="mh-cal-date-group">' +
             '<div class="mh-cal-date-header">' +
             '<div class="mh-cal-date-badge' + todayClass + '">' +
             '<span class="mh-cal-date-day">' + badge.day + '</span>' +
@@ -113,7 +118,8 @@
         container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading calendar...</p></div>';
 
         var instanceId = getInstanceId();
-        var url = './api/movie-hunt/calendar?days_past=14&days_future=120';
+        var pastDays = daysPastForCurrentMonth();
+        var url = './api/movie-hunt/calendar?days_past=' + pastDays + '&days_future=120';
         if (instanceId) url += '&instance_id=' + encodeURIComponent(instanceId);
 
         fetch(url)
@@ -123,8 +129,6 @@
                     container.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-calendar-times"></i><p>No upcoming releases in your collection.<br>Add movies to your collection to see their release dates here.</p></div>';
                     return;
                 }
-
-                var today = data.today || new Date().toISOString().slice(0, 10);
 
                 // Group events by date
                 var dated = [];
@@ -151,23 +155,10 @@
                 }
                 dateOrder.sort();
 
-                // Find the scroll target: today or next future date
-                var scrollDate = '';
-                for (var k = 0; k < dateOrder.length; k++) {
-                    if (dateOrder[k] >= today) {
-                        scrollDate = dateOrder[k];
-                        break;
-                    }
-                }
-                if (!scrollDate && dateOrder.length) {
-                    scrollDate = dateOrder[dateOrder.length - 1];
-                }
-
                 var html = '';
                 for (var m = 0; m < dateOrder.length; m++) {
                     var dt = dateOrder[m];
-                    var isTarget = dt === scrollDate;
-                    html += renderDateGroup(dt, groups[dt], isTarget);
+                    html += renderDateGroup(dt, groups[dt], false);
                 }
 
                 // TBA section
@@ -183,14 +174,6 @@
 
                 container.innerHTML = html;
                 _collectionLoaded = true;
-
-                // Scroll to the target date
-                setTimeout(function () {
-                    var marker = container.querySelector('.mh-cal-today-marker');
-                    if (marker) {
-                        marker.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }, 150);
             })
             .catch(function (err) {
                 console.error('Calendar fetch error:', err);
@@ -212,8 +195,6 @@
                     container.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-film"></i><p>No upcoming movies found.</p></div>';
                     return;
                 }
-
-                var today = new Date().toISOString().slice(0, 10);
 
                 // Group by release_date
                 var groups = {};
@@ -239,28 +220,13 @@
                 }
                 dateOrder.sort();
 
-                var scrollDate = '';
-                for (var k = 0; k < dateOrder.length; k++) {
-                    if (dateOrder[k] >= today) {
-                        scrollDate = dateOrder[k];
-                        break;
-                    }
-                }
-
                 var html = '';
                 for (var j = 0; j < dateOrder.length; j++) {
-                    html += renderDateGroup(dateOrder[j], groups[dateOrder[j]], dateOrder[j] === scrollDate);
+                    html += renderDateGroup(dateOrder[j], groups[dateOrder[j]], false);
                 }
 
                 container.innerHTML = html;
                 _upcomingLoaded = true;
-
-                setTimeout(function () {
-                    var marker = container.querySelector('.mh-cal-today-marker');
-                    if (marker) {
-                        marker.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }, 150);
             })
             .catch(function (err) {
                 console.error('Upcoming calendar error:', err);
@@ -291,63 +257,25 @@
         }
     }
 
-    /* ── Instance dropdown ─────────────────────────────────── */
-
-    function populateInstanceDropdown() {
-        var sel = document.getElementById('movie-hunt-calendar-instance-select');
-        if (!sel) return;
-
-        // Copy options from the main Movie Hunt instance selector
-        var mainSel = document.getElementById('movie-hunt-instance-select') ||
-            document.getElementById('movie-hunt-collection-instance-select');
-        if (mainSel && mainSel.options.length > 0) {
-            sel.innerHTML = '';
-            for (var i = 0; i < mainSel.options.length; i++) {
-                var opt = document.createElement('option');
-                opt.value = mainSel.options[i].value;
-                opt.textContent = mainSel.options[i].textContent;
-                sel.appendChild(opt);
-            }
-        } else {
-            // Fetch instances directly
-            fetch('./api/movie-hunt/instances')
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data && data.instances && data.instances.length > 0) {
-                        sel.innerHTML = '';
-                        for (var i = 0; i < data.instances.length; i++) {
-                            var inst = data.instances[i];
-                            var opt = document.createElement('option');
-                            opt.value = inst.id != null ? inst.id : i;
-                            opt.textContent = inst.name || ('Instance ' + (i + 1));
-                            sel.appendChild(opt);
-                        }
-                    }
-                })
-                .catch(function () { /* keep loading text */ });
-        }
-    }
-
     /* ── Init ──────────────────────────────────────────────── */
 
     function init() {
-        populateInstanceDropdown();
-
-        // Tab clicks
-        var tabs = document.querySelectorAll('.mh-calendar-tab');
-        for (var i = 0; i < tabs.length; i++) {
-            tabs[i].addEventListener('click', function () {
-                switchTab(this.getAttribute('data-tab'));
-            });
-        }
-
-        // Instance change
-        var instSel = document.getElementById('movie-hunt-calendar-instance-select');
-        if (instSel) {
-            instSel.addEventListener('change', function () {
+        // Use the shared instance dropdown module (fetches from API, saves current)
+        if (window.MovieHuntInstanceDropdown) {
+            window.MovieHuntInstanceDropdown.attach('movie-hunt-calendar-instance-select', function () {
                 _collectionLoaded = false;
                 loadCollectionCalendar();
             });
+        }
+
+        // Tab clicks (only wire once)
+        if (!_initialized) {
+            var tabs = document.querySelectorAll('.mh-calendar-tab');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].addEventListener('click', function () {
+                    switchTab(this.getAttribute('data-tab'));
+                });
+            }
         }
 
         // Load default tab
