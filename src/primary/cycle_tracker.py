@@ -124,8 +124,8 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
             # Per-instance data for *arr apps (sonarr, radarr, etc.)
             per_instance_all = db.get_all_sleep_data_per_instance()
             
-            # List of apps that support multiple instances
-            arr_apps = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
+            # List of apps that support multiple instances (movie_hunt uses get_configured_instances; no cycle yet)
+            arr_apps = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]
             
             if app_type:
                 # Return data for a specific app
