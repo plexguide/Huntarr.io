@@ -144,17 +144,25 @@
                         <div class="status-container" style="display: none;">
                             <span id="movie_huntHomeStatus" class="status-badge"></span>
                         </div>
-                        <div class="hourly-cap-container movie-hunt-no-cap" style="display: none;">
+                        <div class="hourly-cap-container">
                             <div class="hourly-cap-status" id="movie_hunt-hourly-cap">
                                 <span class="hourly-cap-icon" id="movie_hunt-cap-icon"></span>
-                                <span class="hourly-cap-text">Movie Hunt</span>
+                                <span class="hourly-cap-text">API: <span id="movie_hunt-api-count">0</span> / <span id="movie_hunt-api-limit">—</span></span>
+                            </div>
+                            <div class="api-progress-container">
+                                <div class="api-progress-bar">
+                                    <div class="api-progress-fill" id="movie_hunt-api-progress" style="width: 0%;"></div>
+                                </div>
+                                <div class="api-progress-text">
+                                    API: <span id="movie_hunt-api-used">0</span> / <span id="movie_hunt-api-total">—</span>
+                                </div>
                             </div>
                         </div>
                         <div class="app-content">
                             <div class="app-icon-wrapper">
-                                <img src="./static/logo/256.png" alt="Movie Hunt" class="app-logo" title="Movie Hunt">
+                                <img src="./static/logo/256.png" alt="Movie" class="app-logo" title="Movie">
                             </div>
-                            <h4>Movie Hunt</h4>
+                            <h4>Movie</h4>
                         </div>
                         <div class="stats-numbers">
                             <div class="stat-box">
@@ -926,6 +934,17 @@
         box-shadow: 0 0 20px rgba(195, 0, 230, 0.3);
     }
     
+    /* Movie Hunt amber/gold glowing rings (Huntarr branding) */
+    .app-stats-card.movie_hunt .app-icon-wrapper::before {
+        border-color: rgba(245, 158, 11, 0.8);
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+    }
+    
+    .app-stats-card.movie_hunt .app-icon-wrapper::after {
+        border-color: rgba(245, 158, 11, 0.4);
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+    }
+    
     .app-logo {
         width: 40px;
         height: 40px;
@@ -1025,6 +1044,12 @@
         letter-spacing: 0.7px;
         text-transform: uppercase;
         opacity: 0.8;
+    }
+    
+    /* App-specific accent colors for Movie Hunt (Huntarr gold/amber) */
+    .app-stats-card.movie_hunt .app-icon-wrapper {
+        border-color: rgba(245, 158, 11, 0.5);
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
     }
     
     /* App-specific accent colors for sonarr */

@@ -90,7 +90,8 @@ window.HuntarrStats = {
             const card = document.querySelector(`.app-stats-card.${app}`);
             if (!card) return;
             
-            const appLabel = app.charAt(0).toUpperCase() + app.slice(1);
+            const appDisplayNames = { movie_hunt: 'Movie', whisparr: 'Whisparr', 'whisparr-v3': 'Whisparr V3', eros: 'Eros' };
+            const appLabel = appDisplayNames[app] || app.charAt(0).toUpperCase() + app.slice(1).replace(/_/g, ' ');
             
             if (instances && instances.length > 0) {
                 // Per-instance: show one card per instance with instance name

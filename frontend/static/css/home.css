@@ -107,6 +107,7 @@
 }
 
 /* Keep the colored top accent but make it more subtle */
+#homeSection .app-stats-card.movie_hunt { border-top: 2px solid rgba(245, 158, 11, 0.5) !important; }
 #homeSection .app-stats-card.sonarr  { border-top: 2px solid rgba(59, 130, 246, 0.4) !important; }
 #homeSection .app-stats-card.radarr  { border-top: 2px solid rgba(245, 158, 11, 0.4) !important; }
 #homeSection .app-stats-card.lidarr  { border-top: 2px solid rgba(34, 197, 94, 0.4) !important; }
@@ -120,6 +121,24 @@
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
+}
+/* Movie Hunt (Huntarr) gold ring glow — same ring style as other apps */
+#homeSection .app-stats-card.movie_hunt .app-icon-wrapper::before {
+    content: '' !important;
+    position: absolute !important;
+    top: -4px; left: -4px; right: -4px; bottom: -4px;
+    border-radius: 50%;
+    border: 2px solid rgba(245, 158, 11, 0.8);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+}
+#homeSection .app-stats-card.movie_hunt .app-icon-wrapper::after {
+    content: '' !important;
+    position: absolute !important;
+    top: -8px; left: -8px; right: -8px; bottom: -8px;
+    border-radius: 50%;
+    border: 2px solid rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+    opacity: 0.5;
 }
 
 #homeSection .app-icon-wrapper .app-logo {
