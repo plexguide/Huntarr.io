@@ -172,9 +172,9 @@
 /* Desktop: grid layout for consistent column alignment */
 .import-media-item {
     display: grid;
-    grid-template-columns: 45px 1fr 200px auto;
+    grid-template-columns: 45px 1.5fr 1fr 120px auto;
     align-items: center;
-    gap: 14px;
+    gap: 20px;
     padding: 12px 16px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.06);
@@ -253,9 +253,8 @@
     gap: 4px;
 }
 
-/* Match info */
-.import-media-match {
-    text-align: right;
+/* Match info (Movie title/year) */
+.import-media-match-info {
     min-width: 0;
 }
 
@@ -274,15 +273,27 @@
     color: rgba(148, 163, 184, 0.6);
 }
 
-.import-media-match-score {
-    font-size: 0.75rem;
-    color: rgba(148, 163, 184, 0.4);
-    margin-top: 2px;
+/* Match confidence */
+.import-media-match-confidence {
+    text-align: left;
 }
 
-.import-media-match-score .high { color: #4ade80; }
-.import-media-match-score .medium { color: #fbbf24; }
-.import-media-match-score .low { color: #f87171; }
+.import-media-match-confidence .conf-label {
+    font-size: 0.7rem;
+    color: rgba(148, 163, 184, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1px;
+}
+
+.import-media-match-confidence .conf-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.import-media-match-confidence .conf-value.high { color: #4ade80; }
+.import-media-match-confidence .conf-value.medium { color: #fbbf24; }
+.import-media-match-confidence .conf-value.low { color: #f87171; }
 
 .import-media-no-match-text {
     font-size: 0.88rem;
@@ -301,6 +312,7 @@
     display: flex;
     gap: 6px;
     justify-content: flex-end;
+    min-width: 160px;
 }
 
 .import-media-actions button {
@@ -599,6 +611,16 @@
 }
 
 /* Responsive */
+@media (max-width: 1100px) {
+    .import-media-item {
+        grid-template-columns: 45px 1.2fr 1fr auto;
+        gap: 15px;
+    }
+    .import-media-match-confidence {
+        display: none;
+    }
+}
+
 @media (max-width: 900px) {
     .import-media-item {
         display: flex;
@@ -616,19 +638,28 @@
         min-width: 0;
     }
 
-    .import-media-match {
+    .import-media-match-info {
         text-align: left;
         min-width: auto;
         width: 100%;
+        margin-top: 5px;
     }
 
     .import-media-match-title {
         white-space: normal;
     }
 
+    .import-media-match-confidence {
+        display: block;
+        width: 100%;
+        text-align: left;
+        margin-bottom: 5px;
+    }
+
     .import-media-actions {
         width: 100%;
         justify-content: flex-start;
+        min-width: auto;
     }
 }
 

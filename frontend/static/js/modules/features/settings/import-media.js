@@ -189,10 +189,13 @@
 
                 var scoreClass = m.score >= 70 ? 'high' : (m.score >= 40 ? 'medium' : 'low');
 
-                matchHtml = '<div class="import-media-match">' +
+                matchHtml = '<div class="import-media-match-info">' +
                     '<div class="import-media-match-title">' + self.escapeHtml(m.title) + '</div>' +
                     '<div class="import-media-match-year">' + (m.year || '') + '</div>' +
-                    '<div class="import-media-match-score">Confidence: <span class="' + scoreClass + '">' + m.score + '%</span></div>' +
+                    '</div>' +
+                    '<div class="import-media-match-confidence">' +
+                    '<div class="conf-label">Confidence</div>' +
+                    '<div class="conf-value ' + scoreClass + '">' + m.score + '%</div>' +
                     '</div>';
 
                 actionsHtml = '<div class="import-media-actions">' +
@@ -202,15 +205,21 @@
                     '<button class="import-media-btn-skip" data-path="' + self.escapeAttr(item.folder_path) + '"><i class="fas fa-times"></i></button>' +
                     '</div>';
             } else if (item.status === 'no_match') {
-                matchHtml = '<div class="import-media-match"><div class="import-media-no-match-text"><i class="fas fa-question-circle"></i> No match found</div></div>';
+                matchHtml = '<div class="import-media-match-info status-no-match-cell">' +
+                    '<div class="import-media-no-match-text"><i class="fas fa-question-circle"></i> No match found</div>' +
+                    '</div>' +
+                    '<div class="import-media-match-confidence empty-cell"></div>';
 
                 actionsHtml = '<div class="import-media-actions">' +
                     '<button class="import-media-btn-search" data-path="' + self.escapeAttr(item.folder_path) + '" data-title="' + self.escapeAttr(item.parsed_title) + '" data-year="' + self.escapeAttr(item.parsed_year) + '"><i class="fas fa-search"></i> Find</button>' +
                     '<button class="import-media-btn-skip" data-path="' + self.escapeAttr(item.folder_path) + '"><i class="fas fa-times"></i></button>' +
                     '</div>';
             } else {
-                matchHtml = '<div class="import-media-match"><div class="import-media-pending-text"><i class="fas fa-hourglass-half"></i> Processing...</div></div>';
-                actionsHtml = '';
+                matchHtml = '<div class="import-media-match-info status-pending-cell">' +
+                    '<div class="import-media-pending-text"><i class="fas fa-hourglass-half"></i> Processing...</div>' +
+                    '</div>' +
+                    '<div class="import-media-match-confidence empty-cell"></div>';
+                actionsHtml = '<div class="import-media-actions"></div>';
             }
 
             var sizeStr = item.file_size ? self.formatSize(item.file_size) : '';
