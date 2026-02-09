@@ -11,11 +11,14 @@ MOVIE_HUNT_HUNT_SETTINGS_KEY = "movie_hunt_hunt_settings"
 
 @movie_hunt_bp.route('/api/movie-hunt/instances', methods=['GET'])
 def api_movie_hunt_instances_list():
-    """List all Movie Hunt instances (id, name, created_at)."""
+    """List all Movie Hunt instances (id, name, created_at, enabled)."""
     try:
         from src.primary.utils.database import get_database
         db = get_database()
         instances = db.get_movie_hunt_instances()
+        for inst in instances:
+            settings = _get_movie_hunt_instance_settings(inst['id'])
+            inst['enabled'] = settings.get('enabled', True)
         return jsonify({'instances': instances}), 200
     except Exception as e:
         logger.exception('Movie Hunt instances list error')

@@ -243,11 +243,15 @@
                     var list = data.instances || [];
                     grid.innerHTML = '';
                     list.forEach(function(inst) {
+                        var enabled = inst.enabled !== false;
+                        var statusClass = enabled ? 'status-connected' : 'status-disabled';
+                        var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
                         var card = document.createElement('div');
                         card.className = 'instance-card';
                         card.innerHTML =
                             '<div class="instance-card-header">' +
                             '<span class="instance-name">' + escapeHtml(inst.name || 'Instance ' + inst.id) + '</span>' +
+                            '<div class="instance-status-icon ' + statusClass + '" title="' + (enabled ? 'Enabled' : 'Disabled') + '"><i class="fas ' + statusIcon + '"></i></div>' +
                             '</div>' +
                             '<div class="instance-card-body">' +
                             '<div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div>' +

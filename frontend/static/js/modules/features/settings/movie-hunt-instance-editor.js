@@ -304,10 +304,16 @@
                         return;
                     }
                     list.forEach(function(inst) {
+                        var enabled = inst.enabled !== false;
+                        var statusClass = enabled ? 'status-connected' : 'status-disabled';
+                        var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
                         var card = document.createElement('div');
                         card.className = 'instance-card';
                         card.innerHTML =
-                            '<div class="instance-card-header"><span class="instance-name"><i class="fas fa-film" style="margin-right: 8px;"></i>' + escapeHtml(inst.name || 'Instance ' + inst.id) + '</span></div>' +
+                            '<div class="instance-card-header">' +
+                            '<span class="instance-name"><i class="fas fa-film" style="margin-right: 8px;"></i>' + escapeHtml(inst.name || 'Instance ' + inst.id) + '</span>' +
+                            '<div class="instance-status-icon ' + statusClass + '" title="' + (enabled ? 'Enabled' : 'Disabled') + '"><i class="fas ' + statusIcon + '"></i></div>' +
+                            '</div>' +
                             '<div class="instance-card-body"><div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div></div>' +
                             '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button></div>';
                         grid.appendChild(card);
