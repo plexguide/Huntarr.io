@@ -153,7 +153,7 @@ def increment_hourly_cap(app_type: str, count: int = 1, instance_name: Optional[
     Increment hourly API usage for an app or (app, instance).
     When instance_name is set (or from thread-local in per-instance context), uses per-instance counter.
     """
-    if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
+    if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]:
         logger.error(f"Invalid app_type for hourly cap: {app_type}")
         return False
     if instance_name is None:
@@ -209,7 +209,7 @@ def get_hourly_cap_status(app_type: str, instance_name: Optional[str] = None) ->
     Get current API usage status for an app or (app, instance).
     When instance_name is set, returns that instance's usage and limit.
     """
-    if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
+    if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]:
         return {"error": f"Invalid app_type: {app_type}"}
     with hourly_lock:
         try:
@@ -376,7 +376,7 @@ def increment_stat(app_type: str, stat_type: str, count: int = 1, instance_name:
         count: The amount to increment by (default: 1)
         instance_name: If set, also increment per-instance stat for Home dashboard
     """
-    if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
+    if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]:
         logger.error(f"Invalid app_type: {app_type}")
         return False
         
@@ -406,7 +406,7 @@ def increment_stat_only(app_type: str, stat_type: str, count: int = 1, instance_
     Increment a specific statistic and the hourly API cap (so the API bar matches searches/upgrades).
     Optionally increments per-instance stat for Home dashboard.
     """
-    if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
+    if app_type not in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]:
         logger.error(f"Invalid app_type: {app_type}")
         return False
         

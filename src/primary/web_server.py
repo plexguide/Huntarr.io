@@ -1115,7 +1115,7 @@ def reset_app_cycle(app_name):
     web_logger.info(f"Manual cycle reset requested for {app_name} via API")
     
     # Check if app name is valid
-    if app_name not in ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr']:
+    if app_name not in ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr', 'movie_hunt']:
         return jsonify({
             'success': False,
             'error': f"Invalid app name: {app_name}"
