@@ -127,8 +127,8 @@
                 '</div>';
             
             card.onclick = function() {
-                if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal) {
-                    window.MovieHunt.openMovieHuntRequestModal(movie);
+                if (window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                    window.RequestarrDiscover.modal.openModal(movie.id, 'movie');
                 }
             };
             card.style.cursor = 'pointer';

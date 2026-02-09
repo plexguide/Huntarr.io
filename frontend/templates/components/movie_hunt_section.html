@@ -1,6 +1,6 @@
 <!-- Movie Hunt Section - Movies only, separate from Requestarr -->
 <div id="movie-hunt-section" class="content-section" style="display: none;">
-    <link rel="stylesheet" href="./static/css/movie-hunt.css?v=1.0.4">
+    <link rel="stylesheet" href="./static/css/movie-hunt.css?v=1.1.1">
     <link rel="stylesheet" href="./static/css/movie-hunt-detail.css">
     <link rel="stylesheet" href="./static/css/movie-hunt-calendar.css">
 
@@ -165,72 +165,6 @@
                 <div class="loading-spinner">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading upcoming movies...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Movie Hunt Request Modal – Two-column poster + form layout -->
-    <div id="movie-hunt-request-modal" class="mh-req-modal" style="display: none;">
-        <div class="modal-backdrop" id="movie-hunt-request-modal-backdrop"></div>
-        <div class="mh-req-card">
-            <button type="button" class="mh-req-close" id="movie-hunt-request-modal-close" aria-label="Close">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="mh-req-layout">
-                <!-- Poster column -->
-                <div class="mh-req-poster">
-                    <img id="movie-hunt-request-poster-img" src="./static/images/blackout.jpg" alt="" onerror="this.src='./static/images/blackout.jpg'">
-                </div>
-                <!-- Form column -->
-                <div class="mh-req-form">
-                    <div class="mh-req-header">
-                        <span class="mh-req-label">Add to Library</span>
-                        <h2 class="mh-req-title" id="movie-hunt-request-modal-title"></h2>
-                        <div class="mh-req-meta" id="movie-hunt-request-modal-meta"></div>
-                    </div>
-                    <div class="mh-req-fields">
-                        <div class="mh-req-field" id="movie-hunt-request-status-row">
-                            <label>Status</label>
-                            <div class="mh-req-status" id="movie-hunt-request-status-container"></div>
-                        </div>
-                        <div class="mh-req-field">
-                            <label>Instance</label>
-                            <select id="movie-hunt-request-instance" class="control-select" aria-label="Instance">
-                                <option value="default">Default Instance</option>
-                            </select>
-                        </div>
-                        <div class="mh-req-field">
-                            <label>Root Folder</label>
-                            <select id="movie-hunt-request-root-folder" class="control-select">
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                        <div class="mh-req-field">
-                            <label>Quality Profile</label>
-                            <select id="movie-hunt-request-quality-profile" class="control-select">
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                        <div class="mh-req-field">
-                            <label>Minimum Availability <a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#minimum-availability" class="mh-req-more-info-icon" target="_blank" rel="noopener" title="Learn more about Minimum Availability"><i class="fas fa-info-circle"></i></a></label>
-                            <select id="movie-hunt-request-minimum-availability" class="control-select" aria-label="Minimum Availability">
-                                <option value="released" selected>Released</option>
-                                <option value="inCinemas">In Cinemas</option>
-                                <option value="announced">Announced</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mh-req-actions">
-                        <label class="mh-req-checkbox-wrap">
-                            <input type="checkbox" id="movie-hunt-request-start-search" checked>
-                            <span>Start search for missing movie</span>
-                        </label>
-                        <div class="mh-req-buttons">
-                            <button type="button" class="mh-req-btn mh-req-btn-cancel" id="movie-hunt-request-modal-cancel">Cancel</button>
-                            <button type="button" class="mh-req-btn mh-req-btn-submit" id="movie-hunt-request-modal-submit">Add to Library</button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

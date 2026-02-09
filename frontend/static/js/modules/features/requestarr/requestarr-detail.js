@@ -278,11 +278,15 @@
             if (refreshBtn) refreshBtn.addEventListener('click', () => { this.updateMovieStatus(); this.updateDetailInfoBar(); });
             var searchBtn = document.getElementById('requestarr-detail-search');
             if (searchBtn) searchBtn.addEventListener('click', () => {
-                if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal && this.currentMovie) window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+                if (this.currentMovie && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                    window.RequestarrDiscover.modal.openModal(this.currentMovie.tmdb_id, 'movie', this.selectedInstanceName);
+                }
             });
             var interactiveBtn = document.getElementById('requestarr-detail-interactive');
             if (interactiveBtn) interactiveBtn.addEventListener('click', () => {
-                if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal && this.currentMovie) window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+                if (this.currentMovie && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                    window.RequestarrDiscover.modal.openModal(this.currentMovie.tmdb_id, 'movie', this.selectedInstanceName);
+                }
             });
             var editBtn = document.getElementById('requestarr-detail-edit');
             if (editBtn) editBtn.addEventListener('click', () => this.openEditModalForMovieHunt());
@@ -678,18 +682,15 @@
                 this.updateDetailInfoBar();
             }
 
-            // Request button: Movie Hunt instance → Movie Hunt modal; Radarr → Requestarr modal
+            // Request button → Requestarr modal (unified for all instance types)
             const requestBtn = document.getElementById('requestarr-detail-request-btn');
             if (requestBtn && this.currentMovie) {
                 requestBtn.addEventListener('click', () => {
-                    var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
-                    if (decoded.appType === 'movie_hunt' && window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal) {
-                        window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
-                    } else if (window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                    if (window.RequestarrDiscover && window.RequestarrDiscover.modal) {
                         window.RequestarrDiscover.modal.openModal(
-                                this.currentMovie.tmdb_id,
-                                'movie',
-                                this.selectedInstanceName
+                            this.currentMovie.tmdb_id,
+                            'movie',
+                            this.selectedInstanceName
                         );
                     }
                 });

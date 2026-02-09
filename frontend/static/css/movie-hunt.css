@@ -39,18 +39,15 @@
 /* ── Request Modal – Redesigned two-column layout ───────────── */
 
 /* Blur backgrounds when request modal is open; modal lives on body so it stays sharp */
-body.movie-hunt-request-modal-open .app-container,
-body.movie-hunt-request-modal-open .movie-detail-view,
 body.requestarr-modal-open .app-container,
 body.requestarr-modal-open .movie-detail-view {
     filter: blur(10px);
 }
-body.movie-hunt-request-modal-open,
 body.requestarr-modal-open {
     overflow: hidden;
 }
 
-/* Overlay: own layer so it never inherits blur */
+/* Shared modal layout – used by Requestarr request modal */
 .mh-req-modal {
     position: fixed;
     inset: 0;
@@ -70,8 +67,6 @@ body.requestarr-modal-open {
     -webkit-backdrop-filter: none;
     z-index: 0;
 }
-
-/* Card: sits above backdrop, never blurred */
 .mh-req-card {
     position: relative;
     z-index: 2;
@@ -85,8 +80,6 @@ body.requestarr-modal-open {
     max-height: 90vh;
     overflow-y: auto;
 }
-
-/* Close button */
 .mh-req-close {
     position: absolute;
     top: 10px;
@@ -109,13 +102,7 @@ body.requestarr-modal-open {
     background: rgba(0, 0, 0, 0.7);
     color: #fff;
 }
-
-/* Two-column layout */
-.mh-req-layout {
-    display: flex;
-}
-
-/* Poster column */
+.mh-req-layout { display: flex; }
 .mh-req-poster {
     flex-shrink: 0;
     width: 200px;
@@ -127,8 +114,6 @@ body.requestarr-modal-open {
     object-fit: cover;
     display: block;
 }
-
-/* Form column */
 .mh-req-form {
     flex: 1;
     min-width: 0;
@@ -137,8 +122,6 @@ body.requestarr-modal-open {
     flex-direction: column;
     gap: 16px;
 }
-
-/* Header inside form */
 .mh-req-header {
     display: flex;
     flex-direction: column;
@@ -163,11 +146,152 @@ body.requestarr-modal-open {
     color: rgba(148, 163, 184, 0.7);
     margin-top: 2px;
 }
-
-/* Status badge (compact) */
-.mh-req-status {
+.mh-req-status { display: flex; }
+.mh-req-fields {
     display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
 }
+.mh-req-field {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 0 15px;
+    align-items: center;
+    width: 100%;
+}
+.mh-req-field label {
+    grid-column: 1;
+    grid-row: 1;
+    width: 160px;
+    min-width: 160px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    color: rgba(148, 163, 184, 0.7);
+    font-size: 13px;
+    font-weight: 600;
+}
+.mh-req-field select {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    height: 36px;
+    padding: 0 35px 0 12px;
+    background-color: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 6px;
+    color: #f1f5f9;
+    font-size: 13px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+.mh-req-field select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background-color: rgba(15, 23, 42, 0.8);
+}
+.mh-req-field select option {
+    background-color: #1e293b;
+    color: #f1f5f9;
+}
+.mh-req-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    padding-top: 8px;
+}
+.mh-req-checkbox-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #94a3b8;
+    cursor: pointer;
+    width: 100%;
+}
+.mh-req-checkbox-wrap input { cursor: pointer; }
+.mh-req-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.mh-req-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.mh-req-btn-cancel {
+    background: rgba(148, 163, 184, 0.1);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+}
+.mh-req-btn-cancel:hover {
+    background: rgba(148, 163, 184, 0.15);
+    color: #e2e8f0;
+}
+.mh-req-btn-submit {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #000;
+    font-weight: 700;
+}
+.mh-req-btn-submit:hover:not(:disabled) {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+}
+.mh-req-btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.mh-req-more-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    color: rgba(148, 163, 184, 0.5);
+    font-size: 12px;
+    text-decoration: none;
+}
+.mh-req-more-info-icon:hover { color: #60a5fa; }
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    .mh-req-card { max-width: 95vw; }
+    .mh-req-layout { flex-direction: column; }
+    .mh-req-poster { width: 100%; height: 180px; }
+    .mh-req-poster img { object-position: center 20%; }
+    .mh-req-form { padding: 18px 16px 16px; }
+    .mh-req-field {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    .mh-req-field label {
+        grid-column: 1;
+        grid-row: 1;
+        width: 100%;
+        min-width: 0;
+    }
+    .mh-req-field select {
+        grid-column: 1;
+        grid-row: 2;
+        width: 100%;
+    }
+    .mh-req-close { top: 6px; right: 6px; }
+}
+
+/* Status badge (compact) – used by Requestarr modal */
 .mh-req-badge {
     display: inline-flex;
     align-items: center;
@@ -209,94 +333,6 @@ body.requestarr-modal-open {
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-/* (Forced styles moved to end of file for maximum override) */
-
-/* Actions */
-.mh-req-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 12px;
-    padding-top: 8px;
-}
-.mh-req-checkbox-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #94a3b8;
-    cursor: pointer;
-    width: 100%;
-}
-.mh-req-checkbox-wrap input { cursor: pointer; }
-.mh-req-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
-/* (mh-req-more-info removed – replaced by .mh-req-more-info-icon on label) */
-.mh-req-btn {
-    padding: 8px 20px;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-.mh-req-btn-cancel {
-    background: rgba(148, 163, 184, 0.1);
-    color: #94a3b8;
-    border: 1px solid rgba(148, 163, 184, 0.15);
-}
-.mh-req-btn-cancel:hover {
-    background: rgba(148, 163, 184, 0.15);
-    color: #e2e8f0;
-}
-.mh-req-btn-submit {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #000;
-    font-weight: 700;
-}
-.mh-req-btn-submit:hover:not(:disabled) {
-    filter: brightness(1.1);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
-}
-.mh-req-btn-submit:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* ── Request Modal – Mobile ── */
-@media (max-width: 600px) {
-    .mh-req-card { max-width: 95vw; }
-    .mh-req-layout { flex-direction: column; }
-    .mh-req-poster {
-        width: 100%;
-        height: 180px;
-    }
-    .mh-req-poster img {
-        object-position: center 20%;
-    }
-    .mh-req-form { padding: 18px 16px 16px; }
-
-    /* Override forced grid for mobile stacking */
-    #movie-hunt-request-modal .mh-req-field {
-        grid-template-columns: 1fr !important;
-        gap: 6px !important;
-    }
-    #movie-hunt-request-modal .mh-req-field label {
-        grid-column: 1 !important;
-        grid-row: 1 !important;
-    }
-    #movie-hunt-request-modal .mh-req-field select,
-    #movie-hunt-request-modal .mh-req-field .mh-req-field-input-wrap {
-        grid-column: 1 !important;
-        grid-row: 2 !important;
-    }
-
-    .mh-req-close { top: 6px; right: 6px; }
-}
 
 /* No extra grey around covers - cards fixed width, don't stretch */
 #movie-hunt-movies-grid,
@@ -1239,133 +1275,3 @@ body.requestarr-modal-open {
 .movie-hunt-settings-placeholder .placeholder-title { color: #f1f5f9; font-size: 1.5rem; margin: 0 0 12px 0; font-weight: 600; }
 .movie-hunt-settings-placeholder .placeholder-message { color: #94a3b8; font-size: 1rem; margin: 0; }
 
-/* ===================================================================
-   FORCE ALIGNMENT FOR MOVIE HUNT REQUEST MODAL
-   =================================================================== */
-
-/* Container */
-.mh-req-modal .mh-req-fields,
-#movie-hunt-request-modal .mh-req-fields {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px !important;
-    width: 100% !important;
-}
-
-/* Individual Row - Force Grid */
-.mh-req-modal .mh-req-field,
-#movie-hunt-request-modal .mh-req-field {
-    display: grid !important;
-    grid-template-columns: 160px 1fr !important;
-    gap: 0 15px !important;
-    align-items: center !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Label - Force Col 1 */
-.mh-req-modal .mh-req-field label,
-#movie-hunt-request-modal .mh-req-field label {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    width: 160px !important;
-    min-width: 160px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    white-space: nowrap !important;
-    color: rgba(148, 163, 184, 0.7) !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-}
-
-/* Select - Force Col 2 */
-.mh-req-modal .mh-req-field select,
-#movie-hunt-request-modal .mh-req-field select {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-    height: 36px !important;
-    padding: 0 35px 0 12px !important;
-    background-color: rgba(15, 23, 42, 0.6) !important;
-    border: 1px solid rgba(148, 163, 184, 0.2) !important;
-    border-radius: 6px !important;
-    color: #f1f5f9 !important;
-    font-size: 13px !important;
-    cursor: pointer !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    appearance: none !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
-    background-repeat: no-repeat !important;
-    background-position: right 12px center !important;
-}
-
-.mh-req-modal .mh-req-field select:focus,
-#movie-hunt-request-modal .mh-req-field select:focus {
-    outline: none !important;
-    border-color: #3b82f6 !important;
-    background-color: rgba(15, 23, 42, 0.8) !important;
-}
-
-.mh-req-modal .mh-req-field select option,
-#movie-hunt-request-modal .mh-req-field select option {
-    background-color: #1e293b !important;
-    color: #f1f5f9 !important;
-}
-
-/* Info Icon */
-.mh-req-modal .mh-req-more-info-icon,
-#movie-hunt-request-modal .mh-req-more-info-icon {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin-left: 6px !important;
-    color: rgba(148, 163, 184, 0.5) !important;
-    font-size: 12px !important;
-    text-decoration: none !important;
-}
-
-.mh-req-modal .mh-req-more-info-icon:hover,
-#movie-hunt-request-modal .mh-req-more-info-icon:hover {
-    color: #60a5fa !important;
-}
-
-/* Mobile Stacking - Use even higher specificity */
-@media (max-width: 600px) {
-    html body #movie-hunt-request-modal .mh-req-field {
-        grid-template-columns: 1fr !important;
-        gap: 6px !important;
-    }
-    html body #movie-hunt-request-modal .mh-req-field label {
-        grid-column: 1 !important;
-        grid-row: 1 !important;
-        width: 100% !important;
-        min-width: 0 !important;
-    }
-    html body #movie-hunt-request-modal .mh-req-field select {
-        grid-column: 1 !important;
-        grid-row: 2 !important;
-        width: 100% !important;
-    }
-}
-
-/* Force Status Badge alignment in column 2 */
-#movie-hunt-request-status-row,
-.mh-req-fields > .mh-req-field:first-child:has(#movie-hunt-request-status-container) {
-    margin-bottom: 4px !important;
-}
-
-#movie-hunt-request-status-container {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    display: flex !important;
-    align-items: center !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}

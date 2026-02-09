@@ -345,19 +345,21 @@
             const refreshBtn = document.getElementById('mh-tb-refresh');
             if (refreshBtn) refreshBtn.addEventListener('click', () => this.handleRefresh());
 
-            // Toolbar: Search Movie
+            // Toolbar: Search Movie → Requestarr modal
             const searchBtn = document.getElementById('mh-tb-search');
             if (searchBtn) searchBtn.addEventListener('click', () => {
-                if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal && this.currentMovie) {
-                    window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+                const tmdbId = this.currentMovie && (this.currentMovie.tmdb_id || this.currentMovie.id);
+                if (tmdbId && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                    window.RequestarrDiscover.modal.openModal(tmdbId, 'movie');
                 }
             });
 
-            // Toolbar: Interactive Search (opens search with results visible — same as Search for now)
+            // Toolbar: Interactive Search → Requestarr modal
             const interactiveBtn = document.getElementById('mh-tb-interactive');
             if (interactiveBtn) interactiveBtn.addEventListener('click', () => {
-                if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal && this.currentMovie) {
-                    window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+                const tmdbId = this.currentMovie && (this.currentMovie.tmdb_id || this.currentMovie.id);
+                if (tmdbId && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                    window.RequestarrDiscover.modal.openModal(tmdbId, 'movie');
                 }
             });
 
@@ -418,12 +420,13 @@
                 this.updateMovieStatus();
             }
 
-            // Request button
+            // Request button → Requestarr modal
             const requestBtn = document.getElementById('mh-btn-request');
             if (requestBtn && this.currentMovie) {
                 requestBtn.addEventListener('click', () => {
-                    if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal) {
-                        window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+                    const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
+                    if (tmdbId && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                        window.RequestarrDiscover.modal.openModal(tmdbId, 'movie');
                     }
                 });
             }
@@ -768,8 +771,9 @@
                 const requestBtn = document.getElementById('mh-btn-request');
                 if (requestBtn) {
                     requestBtn.addEventListener('click', () => {
-                        if (window.MovieHunt && window.MovieHunt.openMovieHuntRequestModal) {
-                            window.MovieHunt.openMovieHuntRequestModal(this.currentMovie);
+                        const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
+                        if (tmdbId && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                            window.RequestarrDiscover.modal.openModal(tmdbId, 'movie');
                         }
                     });
                 }
