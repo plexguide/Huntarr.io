@@ -574,23 +574,24 @@ def _run_sync(list_config, instance_id):
 # ---------------------------------------------------------------------------
 
 def run_import_list_sync_cycle():
-    """Check all instances for import lists due for sync. Called periodically from background."""
+    """Check all instances for import lists due for sync. Called periodically from background.
+    Skips disabled Movie Hunt instances (same as main hunt cycle)."""
     from src.primary.utils.database import get_database
+    from .instances import _get_movie_hunt_instance_settings
     db = get_database()
 
-    # Get all Movie Hunt instances
     try:
-        instances = db.get_app_config_for_instance('movie_hunt_instances', 0) or {}
-        instance_list = instances.get('instances', [])
-        if not instance_list:
-            instance_list = [{'id': 0}]
+        instance_list = db.get_movie_hunt_instances()
     except Exception:
-        instance_list = [{'id': 0}]
+        instance_list = []
 
     now = time.time()
 
     for inst in instance_list:
         inst_id = inst.get('id', 0)
+        settings = _get_movie_hunt_instance_settings(inst_id)
+        if not settings.get("enabled", True):
+            continue
         lists = _get_import_lists(inst_id)
         changed = False
 
