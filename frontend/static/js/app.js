@@ -1403,25 +1403,35 @@ let huntarrUI = {
     showMainSidebar: function() {
         this._hideAllSidebars();
         document.getElementById('sidebar').style.display = 'flex';
-        // When on System (Hunt Manager, Logs, About), hide Settings, Requestarr, Apps in main sidebar
+        // When on System (Hunt Manager, Logs, About), hide Settings, Requestarr, Apps in main sidebar (mobile only; desktop keeps all visible)
         var section = this.currentSection;
         var onSystem = section === 'system' || section === 'hunt-manager' || section === 'logs' || section === 'about';
         var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(section) !== -1;
+        var isDesktop = window.innerWidth > 768;
         var settingsNav = document.getElementById('settingsNav');
         var settingsSubGroup = document.getElementById('settings-sub');
         var requestarrNav = document.getElementById('requestarrNav');
         var appsNav = document.getElementById('appsNav');
         var systemNav = document.getElementById('systemNav');
         var systemSubGroup = document.getElementById('system-sub');
-        if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
-        if (settingsSubGroup) settingsSubGroup.style.display = onSystem ? 'none' : (onSettings ? 'block' : 'none');
-        if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
-        if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
-        if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
-        if (systemSubGroup) systemSubGroup.style.display = onSettings ? 'none' : (onSystem ? 'block' : 'none');
-        // Ensure expanded classes match
-        if (settingsSubGroup) settingsSubGroup.classList.toggle('expanded', onSettings);
-        if (systemSubGroup) systemSubGroup.classList.toggle('expanded', onSystem);
+        if (onSystem && isDesktop) {
+            // Desktop: keep Apps, Requests, Settings visible when on System
+            if (settingsNav) settingsNav.style.display = '';
+            if (settingsSubGroup) { settingsSubGroup.style.display = 'none'; settingsSubGroup.classList.remove('expanded'); }
+            if (requestarrNav) requestarrNav.style.display = '';
+            if (appsNav) appsNav.style.display = '';
+            if (systemNav) systemNav.style.display = '';
+            if (systemSubGroup) { systemSubGroup.style.display = 'block'; systemSubGroup.classList.add('expanded'); }
+        } else {
+            if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
+            if (settingsSubGroup) settingsSubGroup.style.display = onSystem ? 'none' : (onSettings ? 'block' : 'none');
+            if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
+            if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
+            if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
+            if (systemSubGroup) systemSubGroup.style.display = onSettings ? 'none' : (onSystem ? 'block' : 'none');
+            if (settingsSubGroup) settingsSubGroup.classList.toggle('expanded', onSettings);
+            if (systemSubGroup) systemSubGroup.classList.toggle('expanded', onSystem);
+        }
         this._updateMainSidebarBetaVisibility();
     },
 

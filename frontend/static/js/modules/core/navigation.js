@@ -312,23 +312,33 @@ window.HuntarrNavigation = {
         if (settingsSidebar) settingsSidebar.style.display = 'none';
         if (requestarrSidebar) requestarrSidebar.style.display = 'none';
 
-        // When on System (Hunt Manager, Logs, About), hide Apps, Requestarr, Settings in main sidebar
+        // When on System (Hunt Manager, Logs, About), hide Apps, Requestarr, Settings in main sidebar on mobile only; desktop keeps all visible
         // When on Settings (Main, Scheduling, etc.), hide Apps, Requestarr, System in main sidebar
         var section = window.huntarrUI && window.huntarrUI.currentSection;
         var onSystem = section === 'system' || section === 'hunt-manager' || section === 'logs' || section === 'about';
         var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(section) !== -1;
+        var isDesktop = window.innerWidth > 768;
         var settingsNav = document.getElementById('settingsNav');
         var requestarrNav = document.getElementById('requestarrNav');
         var appsNav = document.getElementById('appsNav');
         var systemNav = document.getElementById('systemNav');
         var settingsSubGroup = document.getElementById('settings-sub');
         var systemSubGroup = document.getElementById('system-sub');
-        if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
-        if (settingsSubGroup) { settingsSubGroup.style.display = onSystem ? 'none' : (onSettings ? 'block' : 'none'); settingsSubGroup.classList.toggle('expanded', onSettings); }
-        if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
-        if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
-        if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
-        if (systemSubGroup) { systemSubGroup.style.display = onSettings ? 'none' : (onSystem ? 'block' : 'none'); systemSubGroup.classList.toggle('expanded', onSystem); }
+        if (onSystem && isDesktop) {
+            if (settingsNav) settingsNav.style.display = '';
+            if (settingsSubGroup) { settingsSubGroup.style.display = 'none'; settingsSubGroup.classList.remove('expanded'); }
+            if (requestarrNav) requestarrNav.style.display = '';
+            if (appsNav) appsNav.style.display = '';
+            if (systemNav) systemNav.style.display = '';
+            if (systemSubGroup) { systemSubGroup.style.display = 'block'; systemSubGroup.classList.add('expanded'); }
+        } else {
+            if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
+            if (settingsSubGroup) { settingsSubGroup.style.display = onSystem ? 'none' : (onSettings ? 'block' : 'none'); settingsSubGroup.classList.toggle('expanded', onSettings); }
+            if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
+            if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
+            if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
+            if (systemSubGroup) { systemSubGroup.style.display = onSettings ? 'none' : (onSystem ? 'block' : 'none'); systemSubGroup.classList.toggle('expanded', onSystem); }
+        }
         if (window.huntarrUI && typeof window.huntarrUI._updateMainSidebarBetaVisibility === 'function') {
             window.huntarrUI._updateMainSidebarBetaVisibility();
         }
