@@ -359,7 +359,105 @@ def _sort_collection_items(items, sort_key):
     return items
 
 
-# --- Routes ---
+# --- Programmatic request (used by API and by background missing cycle) ---
+
+def perform_movie_hunt_request(instance_id, title, year='', root_folder=None, quality_profile=None,
+                               tmdb_id=None, poster_path=None, runtime_minutes=90):
+    """
+    Search indexers for a movie and send first matching NZB to first enabled download client.
+    Used by the API route and by the background missing cycle.
+    Returns (success: bool, message: str).
+    """
+    title = (title or '').strip()
+    if not title:
+        return False, 'Title is required'
+    year = str(year).strip() if year is not None else ''
+    quality_profile = (quality_profile or '').strip() or None
+    indexers = _get_indexers_config(instance_id)
+    clients = _get_clients_config(instance_id)
+    enabled_indexers = [i for i in indexers if i.get('enabled', True) and (i.get('preset') or '').strip().lower() != 'manual']
+    enabled_clients = [c for c in clients if c.get('enabled', True)]
+    if not enabled_indexers:
+        movie_hunt_logger.warning("Request: no indexers configured or enabled for '%s'", title)
+        return False, 'No indexers configured or enabled. Add indexers in Movie Hunt Settings.'
+    if not enabled_clients:
+        movie_hunt_logger.warning("Request: no download clients configured or enabled for '%s'", title)
+        return False, 'No download clients configured or enabled. Add a client in Movie Hunt Settings.'
+    query = f'{title}'
+    if year:
+        query = f'{title} {year}'
+    profile = _get_profile_by_name_or_default(quality_profile, instance_id)
+    from src.primary.settings_manager import get_ssl_verify_setting
+    verify_ssl = get_ssl_verify_setting()
+    nzb_url = None
+    nzb_title = None
+    indexer_used = None
+    request_score = 0
+    request_score_breakdown = ''
+    for idx in enabled_indexers:
+        preset = (idx.get('preset') or '').strip().lower()
+        base_url = INDEXER_PRESET_URLS.get(preset)
+        if not base_url:
+            continue
+        api_key = (idx.get('api_key') or '').strip()
+        if not api_key:
+            continue
+        categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
+        results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
+        if results:
+            blocklist_titles = _get_blocklist_source_titles(instance_id)
+            if blocklist_titles:
+                results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
+                if not results:
+                    continue
+            chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(
+                results, profile, instance_id, runtime_minutes=runtime_minutes
+            )
+            min_score = profile.get('min_custom_format_score', 0)
+            try:
+                min_score = int(min_score)
+            except (TypeError, ValueError):
+                min_score = 0
+            if chosen and chosen_score >= min_score:
+                nzb_url = chosen.get('nzb_url')
+                nzb_title = chosen.get('title', 'Unknown')
+                indexer_used = idx.get('name') or preset
+                request_score = chosen_score
+                request_score_breakdown = chosen_breakdown or ''
+                movie_hunt_logger.info(
+                    "Request: chosen release for '%s' (%s) — score %s (min %s). %s",
+                    title, year or 'no year', request_score, min_score,
+                    request_score_breakdown if request_score_breakdown else 'No breakdown'
+                )
+                break
+    if not nzb_url:
+        profile_name = (profile.get('name') or 'Standard').strip()
+        min_score = profile.get('min_custom_format_score', 0)
+        try:
+            min_score = int(min_score)
+        except (TypeError, ValueError):
+            min_score = 0
+        movie_hunt_logger.warning("Request: no release found for '%s' (%s) matching profile '%s' (min score %s)", title, year or 'no year', profile_name, min_score)
+        return False, f'No release found matching profile "{profile_name}" (min score {min_score}).'
+    client = enabled_clients[0]
+    raw_cat = (client.get('category') or '').strip()
+    request_category = MOVIE_HUNT_DEFAULT_CATEGORY if raw_cat.lower() in ('default', '*', '') else (raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY)
+    ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl, indexer=indexer_used or '')
+    if not ok:
+        movie_hunt_logger.error("Request: send to download client failed for '%s': %s", title, msg)
+        return False, f'Sent to download client but failed: {msg}'
+    movie_hunt_logger.info(
+        "Request: '%s' (%s) sent to %s. Indexer: %s. Score: %s — %s",
+        title, year or 'no year', client.get('name') or 'download client',
+        indexer_used or '-', request_score,
+        request_score_breakdown if request_score_breakdown else 'no breakdown'
+    )
+    if queue_id:
+        client_name = (client.get('name') or 'Download client').strip() or 'Download client'
+        _add_requested_queue_id(client_name, queue_id, instance_id, title=title, year=year or '', score=request_score, score_breakdown=request_score_breakdown)
+    _collection_append(title=title, year=year, instance_id=instance_id, tmdb_id=tmdb_id, poster_path=poster_path, root_folder=root_folder)
+    return True, f'"{title}" sent to {client.get("name") or "download client"}.'
+
 
 @movie_hunt_bp.route('/api/movie-hunt/request', methods=['POST'])
 def api_movie_hunt_request():
@@ -374,28 +472,12 @@ def api_movie_hunt_request():
             year = str(year).strip()
         else:
             year = ''
-        instance = (data.get('instance') or 'default').strip() or 'default'
+        movie_hunt_logger.info("Request: received for '%s' (%s)", title, year or 'no year')
+        instance_id = _get_movie_hunt_instance_id_from_request()
         root_folder = (data.get('root_folder') or '').strip() or None
         quality_profile = (data.get('quality_profile') or '').strip() or None
-
-        movie_hunt_logger.info("Request: received for '%s' (%s)", title, year or 'no year')
-
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        indexers = _get_indexers_config(instance_id)
-        clients = _get_clients_config(instance_id)
-        enabled_indexers = [i for i in indexers if i.get('enabled', True) and (i.get('preset') or '').strip().lower() != 'manual']
-        enabled_clients = [c for c in clients if c.get('enabled', True)]
-
-        if not enabled_indexers:
-            movie_hunt_logger.warning("Request: no indexers configured or enabled for '%s'", title)
-            return jsonify({'success': False, 'message': 'No indexers configured or enabled. Add indexers in Movie Hunt Settings.'}), 400
-        if not enabled_clients:
-            movie_hunt_logger.warning("Request: no download clients configured or enabled for '%s'", title)
-            return jsonify({'success': False, 'message': 'No download clients configured or enabled. Add a client in Movie Hunt Settings.'}), 400
-
-        query = f'{title}'
-        if year:
-            query = f'{title} {year}'
+        tmdb_id = data.get('tmdb_id')
+        poster_path = (data.get('poster_path') or '').strip() or None
         runtime_minutes = data.get('runtime')
         if runtime_minutes is not None:
             try:
@@ -404,88 +486,17 @@ def api_movie_hunt_request():
                 runtime_minutes = 90
         else:
             runtime_minutes = 90
-        profile = _get_profile_by_name_or_default(quality_profile, instance_id)
-        from src.primary.settings_manager import get_ssl_verify_setting
-        verify_ssl = get_ssl_verify_setting()
-        nzb_url = None
-        nzb_title = None
-        indexer_used = None
-        request_score = 0
-        request_score_breakdown = ''
-        for idx in enabled_indexers:
-            preset = (idx.get('preset') or '').strip().lower()
-            base_url = INDEXER_PRESET_URLS.get(preset)
-            if not base_url:
-                continue
-            api_key = (idx.get('api_key') or '').strip()
-            if not api_key:
-                continue
-            categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
-            results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
-            if results:
-                blocklist_titles = _get_blocklist_source_titles(instance_id)
-                if blocklist_titles:
-                    results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
-                    if not results:
-                        continue
-                chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(
-                    results, profile, instance_id, runtime_minutes=runtime_minutes
-                )
-                min_score = profile.get('min_custom_format_score', 0)
-                try:
-                    min_score = int(min_score)
-                except (TypeError, ValueError):
-                    min_score = 0
-                if chosen and chosen_score >= min_score:
-                    nzb_url = chosen.get('nzb_url')
-                    nzb_title = chosen.get('title', 'Unknown')
-                    indexer_used = idx.get('name') or preset
-                    request_score = chosen_score
-                    request_score_breakdown = chosen_breakdown or ''
-                    movie_hunt_logger.info(
-                        "Request: chosen release for '%s' (%s) — score %s (min %s). %s",
-                        title, year or 'no year', request_score, min_score,
-                        request_score_breakdown if request_score_breakdown else 'No breakdown'
-                    )
-                    break
-        if not nzb_url:
-            profile_name = (profile.get('name') or 'Standard').strip()
-            min_score = profile.get('min_custom_format_score', 0)
-            try:
-                min_score = int(min_score)
-            except (TypeError, ValueError):
-                min_score = 0
-            movie_hunt_logger.warning("Request: no release found for '%s' (%s) matching profile '%s' (min score %s)", title, year or 'no year', profile_name, min_score)
-            return jsonify({
-                'success': False,
-                'message': f'No release found that matches your quality profile "{profile_name}" or meets the minimum custom format score ({min_score}). The indexer had results but none were in the allowed resolutions/sources or had a score at or above the minimum. Try a different profile, lower the minimum score, or search again later.'
-            }), 404
-        client = enabled_clients[0]
-        raw_cat = (client.get('category') or '').strip()
-        request_category = MOVIE_HUNT_DEFAULT_CATEGORY if raw_cat.lower() in ('default', '*', '') else (raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY)
-        ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl, indexer=indexer_used or '')
-        if not ok:
-            movie_hunt_logger.error("Request: send to download client failed for '%s': %s", title, msg)
-            return jsonify({'success': False, 'message': f'Sent to download client but failed: {msg}'}), 500
-        movie_hunt_logger.info(
-            "Request: '%s' (%s) sent to %s. Indexer: %s. Score: %s — %s",
-            title, year or 'no year', client.get('name') or 'download client',
-            indexer_used or '-', request_score,
-            request_score_breakdown if request_score_breakdown else 'no breakdown'
+        success, message = perform_movie_hunt_request(
+            instance_id, title, year, root_folder=root_folder, quality_profile=quality_profile,
+            tmdb_id=tmdb_id, poster_path=poster_path, runtime_minutes=runtime_minutes
         )
-        if queue_id:
-            client_name = (client.get('name') or 'Download client').strip() or 'Download client'
-            _add_requested_queue_id(client_name, queue_id, instance_id, title=title, year=year or '', score=request_score, score_breakdown=request_score_breakdown)
-        tmdb_id = data.get('tmdb_id')
-        poster_path = (data.get('poster_path') or '').strip() or None
-        root_folder = (data.get('root_folder') or '').strip() or None
-        _collection_append(title=title, year=year, instance_id=instance_id, tmdb_id=tmdb_id, poster_path=poster_path, root_folder=root_folder)
-        return jsonify({
-            'success': True,
-            'message': f'"{title}" sent to {client.get("name") or "download client"}.',
-            'indexer': indexer_used,
-            'client': client.get('name') or 'download client'
-        }), 200
+        if success:
+            return jsonify({'success': True, 'message': message}), 200
+        if 'No indexers' in message or 'No download clients' in message:
+            return jsonify({'success': False, 'message': message}), 400
+        if 'No release found' in message:
+            return jsonify({'success': False, 'message': message}), 404
+        return jsonify({'success': False, 'message': message}), 500
     except Exception as e:
         try:
             req_title = (request.get_json() or {}).get('title') or 'unknown'

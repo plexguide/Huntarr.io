@@ -14,8 +14,8 @@ window.CycleCountdown = (function() {
     const pendingResets = {};
     // Per-instance cycle activity (e.g. "Season Search (360/600)" or "Processing missing") when running
     const cycleActivities = {};
-    // List of apps to track
-    const trackedApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'whisparr-v3', 'eros', 'swaparr'];
+    // List of apps to track (movie_hunt first so it appears first when configured)
+    const trackedApps = ['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'whisparr-v3', 'eros', 'swaparr'];
     
     function getBaseUrl() {
         return (window.HUNTARR_BASE_URL || '');

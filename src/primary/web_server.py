@@ -889,7 +889,7 @@ def api_app_status(app_name):
         return jsonify({"configured": False, "connected": False, "error": "Invalid app name"}), 400
     
     try:
-        if app_name in ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros']:
+        if app_name in ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'movie_hunt']:
             # --- Multi-Instance Status Check --- # 
             connected_count = 0
             total_configured = 0
@@ -910,12 +910,12 @@ def api_app_status(app_name):
                         if hasattr(api_module, 'check_connection'):
                             check_connection_func = getattr(api_module, 'check_connection')
                             for instance in instances:
-                                inst_url = instance.get("api_url")
-                                inst_key = instance.get("api_key")
+                                inst_url = instance.get("api_url") or ""
+                                inst_key = instance.get("api_key") or ""
                                 inst_name = instance.get("instance_name", "Default")
                                 try:
-                                    # Use a short timeout per instance check
-                                    if check_connection_func(inst_url, inst_key, min(api_timeout, 5)):
+                                    # Use a short timeout per instance check (Movie Hunt has no API URL/key; check_connection returns True)
+                                    if check_connection_func(inst_url, inst_key, min(api_timeout or 10, 5)):
                                         web_logger.debug(f"{app_name.capitalize()} instance '{inst_name}' connected successfully.")
                                         connected_count += 1
                                     else:

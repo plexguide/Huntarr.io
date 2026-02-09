@@ -139,6 +139,37 @@
                 </div>
 
                 <div class="app-stats-grid">
+                    <!-- Movie Hunt Card (first: Huntarr icon, so users see Movie Hunt upfront) -->
+                    <div class="app-stats-card movie_hunt" style="display: none;">
+                        <div class="status-container" style="display: none;">
+                            <span id="movie_huntHomeStatus" class="status-badge"></span>
+                        </div>
+                        <div class="hourly-cap-container movie-hunt-no-cap" style="display: none;">
+                            <div class="hourly-cap-status" id="movie_hunt-hourly-cap">
+                                <span class="hourly-cap-icon" id="movie_hunt-cap-icon"></span>
+                                <span class="hourly-cap-text">Movie Hunt</span>
+                            </div>
+                        </div>
+                        <div class="app-content">
+                            <div class="app-icon-wrapper">
+                                <img src="./static/logo/256.png" alt="Movie Hunt" class="app-logo" title="Movie Hunt">
+                            </div>
+                            <h4>Movie Hunt</h4>
+                        </div>
+                        <div class="stats-numbers">
+                            <div class="stat-box">
+                                <span class="stat-number" id="movie_hunt-hunted">0</span>
+                                <span class="stat-label">Searches Triggered</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-number" id="movie_hunt-upgraded">0</span>
+                                <span class="stat-label">Upgrades Triggered</span>
+                            </div>
+                        </div>
+                        <div class="reset-button-container">
+                            <button class="cycle-reset-button" data-app="movie_hunt"><i class="fas fa-sync-alt"></i> Reset</button>
+                        </div>
+                    </div>
                     <!-- Sonarr Card -->
                     <div class="app-stats-card sonarr" style="display: none;">
                         <div class="status-container" style="display: none;">

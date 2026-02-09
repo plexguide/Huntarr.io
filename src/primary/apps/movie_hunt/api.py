@@ -7,6 +7,16 @@ movie_hunt_hunt_settings (same blueprint as Radarr instance editor, minus connec
 
 from typing import Dict, Any, List
 
+
+def check_connection(api_url: str, api_key: str, api_timeout: int = 120) -> bool:
+    """Stub: Movie Hunt has no *arr API to check. Always return True so the cycle runs."""
+    return True
+
+
+def get_download_queue_size(api_url: str, api_key: str, api_timeout: int = 120) -> int:
+    """Stub: Movie Hunt uses its own indexers/clients. Return 0 so queue check is skipped."""
+    return 0
+
 # Config key for per-instance hunt settings (must match routes/movie_hunt/instances.py)
 MOVIE_HUNT_HUNT_SETTINGS_KEY = "movie_hunt_hunt_settings"
 

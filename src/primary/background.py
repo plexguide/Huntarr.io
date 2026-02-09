@@ -46,11 +46,11 @@ swaparr_thread = None
 prowlarr_stats_thread = None
 
 # Define which apps have background processing cycles
-CYCLICAL_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]
+CYCLICAL_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]
 
 # Apps that schedule each instance on its own interval (only run an instance when its next_cycle_time is due)
 # All cyclical *arr apps use per-instance scheduling for true independent timing.
-PER_INSTANCE_SCHEDULING_APP_TYPES = {"sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"}
+PER_INSTANCE_SCHEDULING_APP_TYPES = {"sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"}
 
 # Instance list generator has been removed
 
@@ -267,6 +267,11 @@ def app_specific_loop(app_type: str) -> None:
             process_upgrades = getattr(upgrade_module, 'process_cutoff_upgrades')
             hunt_missing_setting = "hunt_missing_items"
             hunt_upgrade_setting = "hunt_upgrade_items"
+        elif app_type == "movie_hunt":
+            process_missing = getattr(missing_module, 'process_missing_movies')
+            process_upgrades = getattr(upgrade_module, 'process_cutoff_upgrades')
+            hunt_missing_setting = "hunt_missing_movies"
+            hunt_upgrade_setting = "hunt_upgrade_movies"
 
         else:
             app_logger.error(f"Unsupported app_type: {app_type}")
@@ -461,58 +466,59 @@ def app_specific_loop(app_type: str) -> None:
                 app_logger.warning(f"Error checking state expiration for {instance_name}: {e}")
                 # Continue processing even if state check fails
 
-            # --- Connection Check --- #
-            if not api_url or not api_key:
-                app_logger.warning(f"Missing API URL or Key for instance '{instance_name}'. Skipping.")
-                if end_cycle:
-                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
-                if clear_instance_log_context:
-                    clear_instance_log_context()
-                return (False, instance_name, False, False)
-            try:
-                # Use instance details for connection check
-                app_logger.debug(f"Checking connection to {app_type} instance '{instance_name}' at {api_url} with timeout {api_timeout}s")
-                connected = check_connection(api_url, api_key, api_timeout=api_timeout)
-                if not connected:
-                    app_logger.warning(f"Failed to connect to {app_type} instance '{instance_name}' at {api_url}. Skipping.")
+            # --- Connection Check (skip for Movie Hunt; no *arr API) --- #
+            if app_type != "movie_hunt":
+                if not api_url or not api_key:
+                    app_logger.warning(f"Missing API URL or Key for instance '{instance_name}'. Skipping.")
                     if end_cycle:
                         end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
                     return (False, instance_name, False, False)
-                app_logger.debug(f"Successfully connected to {app_type} instance: {instance_name}")
-            except Exception as e:
-                app_logger.error(f"Error connecting to {app_type} instance '{instance_name}': {e}", exc_info=True)
-                if end_cycle:
-                    end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
-                if clear_instance_log_context:
-                    clear_instance_log_context()
-                return (False, instance_name, False, False) # Skip this instance if connection fails
-                
-            # --- API Cap Check --- #
-            try:
-                # Check if this instance's hourly API cap is exceeded (per-instance when multiple instances)
-                if check_hourly_cap_exceeded(app_type, instance_name=instance_key):
-                    # Get the current cap status for logging
-                    from src.primary.stats_manager import get_hourly_cap_status
-                    cap_status = get_hourly_cap_status(app_type, instance_name=instance_key)
-                    app_logger.info(f"{app_type.upper()} instance '{instance_name}' hourly cap reached {cap_status.get('current_usage', 0)} of {cap_status.get('limit', 0)}. Skipping cycle!")
+                try:
+                    # Use instance details for connection check
+                    app_logger.debug(f"Checking connection to {app_type} instance '{instance_name}' at {api_url} with timeout {api_timeout}s")
+                    connected = check_connection(api_url, api_key, api_timeout=api_timeout)
+                    if not connected:
+                        app_logger.warning(f"Failed to connect to {app_type} instance '{instance_name}' at {api_url}. Skipping.")
+                        if end_cycle:
+                            end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
+                        if clear_instance_log_context:
+                            clear_instance_log_context()
+                        return (False, instance_name, False, False)
+                    app_logger.debug(f"Successfully connected to {app_type} instance: {instance_name}")
+                except Exception as e:
+                    app_logger.error(f"Error connecting to {app_type} instance '{instance_name}': {e}", exc_info=True)
                     if end_cycle:
                         end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
                     if clear_instance_log_context:
                         clear_instance_log_context()
-                    return (False, instance_name, False, False)  # Skip this instance if API cap is exceeded
-            except Exception as e:
-                app_logger.error(f"Error checking hourly API cap for {app_type}: {e}", exc_info=True)
-                # Continue with the cycle even if cap check fails - safer than skipping
+                    return (False, instance_name, False, False) # Skip this instance if connection fails
 
-            # Capture API usage at start so we can log one summary at end (instead of per-increment spam)
-            api_usage_at_start = 0
-            try:
-                from src.primary.stats_manager import get_hourly_cap_status
-                api_usage_at_start = get_hourly_cap_status(app_type, instance_name=instance_key).get("current_usage", 0)
-            except Exception:
-                pass
+                # --- API Cap Check --- #
+                try:
+                    # Check if this instance's hourly API cap is exceeded (per-instance when multiple instances)
+                    if check_hourly_cap_exceeded(app_type, instance_name=instance_key):
+                        # Get the current cap status for logging
+                        from src.primary.stats_manager import get_hourly_cap_status
+                        cap_status = get_hourly_cap_status(app_type, instance_name=instance_key)
+                        app_logger.info(f"{app_type.upper()} instance '{instance_name}' hourly cap reached {cap_status.get('current_usage', 0)} of {cap_status.get('limit', 0)}. Skipping cycle!")
+                        if end_cycle:
+                            end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
+                        if clear_instance_log_context:
+                            clear_instance_log_context()
+                        return (False, instance_name, False, False)  # Skip this instance if API cap is exceeded
+                except Exception as e:
+                    app_logger.error(f"Error checking hourly API cap for {app_type}: {e}", exc_info=True)
+                    # Continue with the cycle even if cap check fails - safer than skipping
+
+                # Capture API usage at start so we can log one summary at end (instead of per-increment spam)
+                api_usage_at_start = 0
+                try:
+                    from src.primary.stats_manager import get_hourly_cap_status
+                    api_usage_at_start = get_hourly_cap_status(app_type, instance_name=instance_key).get("current_usage", 0)
+                except Exception:
+                    pass
 
             # --- Check if Hunt Modes are Enabled --- #
             # For per-instance settings, get values from instance details
@@ -535,6 +541,9 @@ def app_specific_loop(app_type: str) -> None:
             elif app_type == "eros":
                 hunt_missing_value = instance_details.get("hunt_missing_items", 1)  # Default to 1
                 hunt_upgrade_value = instance_details.get("hunt_upgrade_items", 0)  # Default to 0
+            elif app_type == "movie_hunt":
+                hunt_missing_value = instance_details.get("hunt_missing_movies", 1)  # Default to 1
+                hunt_upgrade_value = instance_details.get("hunt_upgrade_movies", 0)  # Default to 0
             else:
                 # Fall back to global settings for other apps
                 hunt_missing_value = app_settings.get(hunt_missing_setting, 0)
@@ -546,34 +555,30 @@ def app_specific_loop(app_type: str) -> None:
             # Debug logging for per-instance hunt values
             app_logger.info(f"Instance '{instance_name}' - Missing: {hunt_missing_value} (enabled: {hunt_missing_enabled}), Upgrade: {hunt_upgrade_value} (enabled: {hunt_upgrade_enabled})")
 
-            # --- Queue Size Check --- # Now using per-instance setting
-            # Get max queue size from instance settings, fallback to general settings for backward compatibility
-            max_queue_size = instance_details.get("max_download_queue_size", -1)
-            if max_queue_size == -1:
-                # Fallback to general settings if instance doesn't have it set
-                general_settings = settings_manager.load_settings('general')
-                max_queue_size = general_settings.get("minimum_download_queue_size", -1)
-    
-            
-            if max_queue_size >= 0:
-                try:
-                    # Use instance details for queue check
-                    # Get api_timeout from instance settings
-                    instance_api_timeout = instance_details.get("api_timeout", 120)
-                    current_queue_size = get_queue_size(api_url, api_key, instance_api_timeout)
-                    if current_queue_size >= max_queue_size:
-                        app_logger.info(f"Download queue size ({current_queue_size}) meets or exceeds maximum ({max_queue_size}) for {instance_name}. Skipping cycle for this instance.")
-                        if end_cycle:
-                            end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
-                        if clear_instance_log_context:
-                            clear_instance_log_context()
-                        return (False, instance_name, False, False) # Skip processing for this instance
-                    else:
-                        app_logger.info(f"Queue size ({current_queue_size}) is below maximum ({max_queue_size}). Proceeding.")
-                except Exception as e:
-                    app_logger.warning(f"Could not get download queue size for {instance_name}. Proceeding anyway. Error: {e}", exc_info=False) # Log less verbosely
+            # --- Queue Size Check --- # Now using per-instance setting (skip for Movie Hunt)
+            if app_type != "movie_hunt":
+                max_queue_size = instance_details.get("max_download_queue_size", -1)
+                if max_queue_size == -1:
+                    # Fallback to general settings if instance doesn't have it set
+                    general_settings = settings_manager.load_settings('general')
+                    max_queue_size = general_settings.get("minimum_download_queue_size", -1)
+                if max_queue_size >= 0:
+                    try:
+                        instance_api_timeout = instance_details.get("api_timeout", 120)
+                        current_queue_size = get_queue_size(api_url, api_key, instance_api_timeout)
+                        if current_queue_size >= max_queue_size:
+                            app_logger.info(f"Download queue size ({current_queue_size}) meets or exceeds maximum ({max_queue_size}) for {instance_name}. Skipping cycle for this instance.")
+                            if end_cycle:
+                                end_cycle(app_type, next_cycle_naive, instance_name=instance_key, log_name=instance_name)
+                            if clear_instance_log_context:
+                                clear_instance_log_context()
+                            return (False, instance_name, False, False) # Skip processing for this instance
+                        else:
+                            app_logger.info(f"Queue size ({current_queue_size}) is below maximum ({max_queue_size}). Proceeding.")
+                    except Exception as e:
+                        app_logger.warning(f"Could not get download queue size for {instance_name}. Proceeding anyway. Error: {e}", exc_info=False) # Log less verbosely
 
-            # --- Max Seed Queue Check (torrents only) ---
+            # --- Max Seed Queue Check (torrents only; skip for Movie Hunt) ---
             # When disabled (max_seed_queue_size < 0): no network calls, no imports, no side effects.
             # When enabled: call torrent client for seeding count; skip this instance's hunt if count >= limit.
             try:
@@ -581,7 +586,7 @@ def app_specific_loop(app_type: str) -> None:
                 max_seed_queue_size = int(raw) if raw is not None and str(raw).strip() != "" else -1
             except (TypeError, ValueError):
                 max_seed_queue_size = -1
-            if max_seed_queue_size >= 0:
+            if app_type != "movie_hunt" and max_seed_queue_size >= 0:
                 seed_client = instance_details.get("seed_check_torrent_client")
                 if seed_client and isinstance(seed_client, dict) and (seed_client.get("host") or "").strip():
                     try:

@@ -80,7 +80,7 @@ window.HuntarrStats = {
     },
     
     updateStatsDisplay: function(stats, isFromCache = false) {
-        const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
+        const apps = ['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
         const statTypes = ['hunted', 'upgraded'];
         const isLowUsageMode = false;
         
@@ -393,7 +393,7 @@ window.HuntarrStats = {
         if (!window.huntarrUI) return;
         
         // Create array of promises to wait for all checks to complete
-        const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        const apps = ['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
         const checkPromises = apps.map(app => this.checkAppConnection(app));
         
         // After all checks complete, update visibility once
@@ -419,7 +419,7 @@ window.HuntarrStats = {
 
                 // Calculate configured status properly for *arr apps
                 let isConfigured = data.configured === true;
-                if (['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].includes(app)) {
+                if (['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].includes(app)) {
                     isConfigured = (data.total_configured || 0) > 0;
                 }
 
@@ -454,7 +454,7 @@ window.HuntarrStats = {
         let totalConfigured = statusData?.total_configured ?? 0;
         
         // For all *arr apps, 'isConfigured' means at least one instance is configured
-        if (['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].includes(app)) {
+        if (['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].includes(app)) {
             isConfigured = totalConfigured > 0;
             isConnected = isConfigured && connectedCount > 0; 
         }

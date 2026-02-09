@@ -68,7 +68,8 @@ def get_default_stats() -> Dict[str, Dict[str, int]]:
         "lidarr": {"hunted": 0, "upgraded": 0},
         "readarr": {"hunted": 0, "upgraded": 0},
         "whisparr": {"hunted": 0, "upgraded": 0},
-        "eros": {"hunted": 0, "upgraded": 0}
+        "eros": {"hunted": 0, "upgraded": 0},
+        "movie_hunt": {"hunted": 0, "upgraded": 0}
     }
 
 def get_default_hourly_caps() -> Dict[str, Dict[str, int]]:
@@ -79,7 +80,8 @@ def get_default_hourly_caps() -> Dict[str, Dict[str, int]]:
         "lidarr": {"api_hits": 0},
         "readarr": {"api_hits": 0},
         "whisparr": {"api_hits": 0},
-        "eros": {"api_hits": 0}
+        "eros": {"api_hits": 0},
+        "movie_hunt": {"api_hits": 0}
     }
 
 def load_hourly_caps() -> Dict[str, Dict[str, int]]:
@@ -443,7 +445,7 @@ def get_stats() -> Dict[str, Any]:
             from src.primary.settings_manager import load_settings
             db = get_database()
             now_ts = int(time.time())
-            for app_type in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros"]:
+            for app_type in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]:
                 if app_type not in stats:
                     stats[app_type] = {"hunted": 0, "upgraded": 0}
                 # Get configured instances (name + id) so we show cards; DB is keyed by instance_id
