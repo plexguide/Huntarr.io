@@ -74,6 +74,9 @@ def _responsive_sleep(
     Sleep for up to sleep_seconds while checking stop_event and optional per-instance
     reset requests every wait_interval seconds. Uses threading.Event.wait() so the
     thread can be woken quickly on shutdown or manual "run now".
+    
+    When a reset is detected, clears the instance's next_cycle_time in the DB so that
+    _get_instances_due_and_sleep() considers it "due now" on the next loop iteration.
     """
     elapsed = 0
     instances = instances_for_reset or []
@@ -92,6 +95,21 @@ def _responsive_sleep(
                         f"!!! RESET REQUEST DETECTED !!! Manual cycle reset triggered for {app_type} instance {inst.get('instance_name', iname)}. Starting new cycle immediately."
                     )
                     db.mark_reset_request_processed(app_type, iname)
+                    # Set next_cycle_time to NOW so _get_instances_due_and_sleep considers
+                    # this instance "due immediately" on the next loop iteration.
+                    # (set_sleep_data_per_instance treats None as "keep current", so we
+                    #  must pass an explicit past/current time to override the future time)
+                    try:
+                        user_tz = _get_user_timezone()
+                        now_iso = datetime.datetime.now(user_tz).replace(microsecond=0).isoformat()
+                        db.set_sleep_data_per_instance(
+                            app_type, str(iname),
+                            next_cycle_time=now_iso,
+                            cycle_lock=False
+                        )
+                        app_logger.info(f"Set next_cycle_time to NOW for {app_type} instance {inst.get('instance_name', iname)} — will be due immediately.")
+                    except Exception as clear_err:
+                        app_logger.warning(f"Could not update next_cycle_time for reset: {clear_err}")
                     return
         except Exception as e:
             app_logger.error(f"Error checking reset request during sleep for {app_type}: {e}", exc_info=True)
