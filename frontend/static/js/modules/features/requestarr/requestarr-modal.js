@@ -510,9 +510,6 @@ export class RequestarrModal {
 
         const isTVShow = this.core.currentModalData.media_type === 'tv';
 
-            requestBtn.disabled = true;
-            requestBtn.textContent = appType === 'movie_hunt' ? 'Adding...' : 'Requesting...';
-
         try {
             // Decode compound instance value for movies
             let instanceName, appType;
@@ -524,6 +521,9 @@ export class RequestarrModal {
                 instanceName = decoded.name;
                 appType = decoded.appType;
             }
+
+            requestBtn.disabled = true;
+            requestBtn.textContent = appType === 'movie_hunt' ? 'Adding...' : 'Requesting...';
             
             const requestData = {
                 tmdb_id: this.core.currentModalData.tmdb_id,

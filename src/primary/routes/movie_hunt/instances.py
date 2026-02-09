@@ -233,6 +233,32 @@ def api_movie_hunt_instance_reset_state(instance_id):
         return jsonify({'error': str(e)}), 500
 
 
+@movie_hunt_bp.route('/api/movie-hunt/instances/<int:instance_id>/reset-collection', methods=['DELETE'])
+def api_movie_hunt_instance_reset_collection(instance_id):
+    """Permanently delete the entire Media Collection for a Movie Hunt instance."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instances = db.get_movie_hunt_instances()
+        inst = next((i for i in instances if i["id"] == instance_id), None)
+        if not inst:
+            return jsonify({'success': False, 'message': 'Instance not found'}), 404
+        inst_name = inst.get('name', 'Instance %d' % instance_id)
+        # Load current collection to report count
+        config = db.get_app_config_for_instance('movie_hunt_collection', instance_id)
+        count = len(config.get('items', [])) if config and isinstance(config.get('items'), list) else 0
+        # Wipe the collection
+        db.save_app_config_for_instance('movie_hunt_collection', instance_id, {'items': []})
+        logger.info("Movie Hunt collection reset for instance %d (%s): %d items deleted", instance_id, inst_name, count)
+        return jsonify({
+            'success': True,
+            'message': 'Media collection reset. %d item%s deleted from "%s".' % (count, 's' if count != 1 else '', inst_name)
+        }), 200
+    except Exception as e:
+        logger.exception('Movie Hunt collection reset error for instance %d', instance_id)
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @movie_hunt_bp.route('/api/movie-hunt/current-instance', methods=['POST'])
 def api_movie_hunt_current_instance_set():
     """Set current Movie Hunt instance (server-stored). Body: { "instance_id": int }."""

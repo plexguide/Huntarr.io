@@ -147,7 +147,39 @@
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Command Wait Attempts</label><input type="number" id="mh-editor-cmd-wait-attempts" value="' + safe.command_wait_attempts + '" min="0" max="1800"></div>' +
             '<p class="editor-help-text">Maximum attempts to wait for command completion (default: 600)</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Max Download Queue Size</label><input type="number" id="mh-editor-max-queue-size" value="' + safe.max_download_queue_size + '" min="-1" max="1000"></div><p class="editor-help-text">Skip processing if queue size meets or exceeds this value (-1 = disabled)</p></div>' +
-            '</div></div>';
+            '</div>' +
+
+            /* ── Debug Manager ────────────────────────────────── */
+            '<div class="editor-section mh-debug-manager-section" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.06);">' +
+            '<div class="editor-section-title" style="color: #f87171;"><i class="fas fa-bug" style="margin-right: 8px;"></i>Debug Manager</div>' +
+            '<p class="editor-help-text" style="margin-bottom: 16px; line-height: 1.5;">Dangerous operations for troubleshooting. These actions are <strong style="color: #f87171;">irreversible</strong>.</p>' +
+
+            '<div class="editor-field-group" style="border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 16px; background: rgba(239, 68, 68, 0.04);">' +
+            '<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">' +
+            '<div style="flex: 1; min-width: 200px;">' +
+            '<strong style="color: #f1f5f9; font-size: 0.95rem;">Reset Media Collection</strong>' +
+            '<p class="editor-help-text" style="margin-top: 4px;">Permanently deletes <strong>all</strong> movies from this instance\'s Media Collection. Requested movies, status history, and collection data will be wiped. This cannot be undone.</p>' +
+            '</div>' +
+            '<button type="button" class="btn-card delete" id="mh-editor-reset-collection" style="white-space: nowrap; background: #dc2626; color: white; border: 1px solid #dc2626; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;"><i class="fas fa-trash-alt" style="margin-right: 6px;"></i>Reset Library</button>' +
+            '</div></div>' +
+
+            '</div>' +
+
+            /* ── Reset Collection Confirmation Modal (hidden) ── */
+            '<div id="mh-reset-collection-modal" style="display:none; position:fixed; inset:0; z-index:100000; align-items:center; justify-content:center;">' +
+            '<div id="mh-reset-collection-backdrop" style="position:absolute; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);"></div>' +
+            '<div style="position:relative; background:#1e293b; border:1px solid rgba(239,68,68,0.4); border-radius:14px; padding:28px 32px; max-width:460px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.5);">' +
+            '<h3 style="margin:0 0 8px; color:#f87171; font-size:1.15rem;"><i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>Confirm Library Reset</h3>' +
+            '<p style="color:#94a3b8; font-size:0.9rem; line-height:1.5; margin:0 0 18px;">This will permanently delete <strong style="color:#f1f5f9;">all movies</strong> in the Media Collection for this instance. To confirm, type the instance name below:</p>' +
+            '<p style="color:#f1f5f9; font-size:0.95rem; margin:0 0 10px; text-align:center;"><strong id="mh-reset-modal-instance-name">' + escapeHtml(safe.name) + '</strong></p>' +
+            '<input type="text" id="mh-reset-collection-input" placeholder="Type instance name to confirm..." style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(239,68,68,0.3); background:rgba(15,23,42,0.8); color:white; margin-bottom:16px; box-sizing:border-box;" autocomplete="off">' +
+            '<div id="mh-reset-collection-error" style="display:none; color:#f87171; font-size:0.85rem; margin-bottom:12px; text-align:center;"></div>' +
+            '<div style="display:flex; gap:10px; justify-content:flex-end;">' +
+            '<button type="button" id="mh-reset-collection-cancel" style="padding:10px 20px; border-radius:8px; border:1px solid rgba(148,163,184,0.3); background:rgba(148,163,184,0.1); color:#94a3b8; cursor:pointer; font-weight:500;">Cancel</button>' +
+            '<button type="button" id="mh-reset-collection-confirm" style="padding:10px 20px; border-radius:8px; border:1px solid #dc2626; background:#dc2626; color:white; cursor:pointer; font-weight:600; opacity:0.5;" disabled><i class="fas fa-trash-alt" style="margin-right:6px;"></i>Delete All</button>' +
+            '</div></div></div>' +
+
+            '</div>';
     }
 
     function collectFormData() {
@@ -369,6 +401,10 @@
                     if (saveBtn) saveBtn.onclick = function() { self.saveEditor(); };
                     var resetBtn = document.getElementById('mh-editor-reset-state');
                     if (resetBtn) resetBtn.onclick = function() { self.resetState(instanceId); };
+
+                    // Debug Manager: Reset Media Collection
+                    self.setupResetCollectionModal(instanceId, _currentInstanceName);
+
                     if (window.huntarrUI && window.huntarrUI.switchSection) {
                         window.huntarrUI.switchSection('movie-hunt-instance-editor');
                     }
@@ -427,6 +463,103 @@
                 })
                 .catch(function() {
                     if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Reset request failed', 'error');
+                });
+        },
+
+        setupResetCollectionModal: function(instanceId, instanceName) {
+            var resetBtn = document.getElementById('mh-editor-reset-collection');
+            var modal = document.getElementById('mh-reset-collection-modal');
+            var backdrop = document.getElementById('mh-reset-collection-backdrop');
+            var input = document.getElementById('mh-reset-collection-input');
+            var confirmBtn = document.getElementById('mh-reset-collection-confirm');
+            var cancelBtn = document.getElementById('mh-reset-collection-cancel');
+            var errorEl = document.getElementById('mh-reset-collection-error');
+            if (!resetBtn || !modal) return;
+
+            var expectedName = (instanceName || '').trim();
+            var self = this;
+
+            function openModal() {
+                if (input) { input.value = ''; }
+                if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.style.opacity = '0.5'; }
+                if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+                modal.style.display = 'flex';
+            }
+
+            function closeModal() {
+                modal.style.display = 'none';
+                if (input) input.value = '';
+            }
+
+            resetBtn.onclick = openModal;
+            if (cancelBtn) cancelBtn.onclick = closeModal;
+            if (backdrop) backdrop.onclick = closeModal;
+
+            // Enable/disable confirm button based on input match
+            if (input && confirmBtn) {
+                input.addEventListener('input', function() {
+                    var val = (input.value || '').trim();
+                    var match = val === expectedName;
+                    confirmBtn.disabled = !match;
+                    confirmBtn.style.opacity = match ? '1' : '0.5';
+                    if (errorEl) { errorEl.style.display = 'none'; }
+                });
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !confirmBtn.disabled) {
+                        confirmBtn.click();
+                    }
+                });
+            }
+
+            if (confirmBtn) {
+                confirmBtn.onclick = function() {
+                    var val = (input ? input.value : '').trim();
+                    if (val !== expectedName) {
+                        if (errorEl) {
+                            errorEl.textContent = 'Instance name does not match. Please try again.';
+                            errorEl.style.display = 'block';
+                        }
+                        return;
+                    }
+                    confirmBtn.disabled = true;
+                    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Deleting...';
+                    self.resetCollection(instanceId, function(success) {
+                        if (success) {
+                            closeModal();
+                        } else {
+                            confirmBtn.disabled = false;
+                            confirmBtn.innerHTML = '<i class="fas fa-trash-alt" style="margin-right:6px;"></i>Delete All';
+                        }
+                    });
+                };
+            }
+        },
+
+        resetCollection: function(instanceId, callback) {
+            fetch(api('./api/movie-hunt/instances/' + instanceId + '/reset-collection'), {
+                method: 'DELETE'
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification(data.message || 'Media collection has been reset.', 'success');
+                        } else { alert(data.message || 'Media collection has been reset.'); }
+                        if (callback) callback(true);
+                    } else {
+                        var msg = data.message || data.error || 'Failed to reset collection.';
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification(msg, 'error');
+                        } else { alert(msg); }
+                        if (callback) callback(false);
+                    }
+                })
+                .catch(function(err) {
+                    var msg = (err && err.message) ? err.message : 'Request failed.';
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(msg, 'error');
+                    } else { alert(msg); }
+                    if (callback) callback(false);
                 });
         }
     };
