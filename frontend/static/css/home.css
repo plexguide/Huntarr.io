@@ -509,7 +509,7 @@
 
 .app-stats-list .app-group-header.list-header {
     margin-bottom: 0;
-    padding: 10px 16px;
+    padding: 12px 20px;
     background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(22, 30, 45, 0.6));
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 0;
@@ -523,15 +523,16 @@
 }
 
 /* Column widths for alignment */
-.app-list-table colgroup .col-instance { width: 28%; }
-.app-list-table colgroup .col-searches { width: 16%; }
-.app-list-table colgroup .col-upgrades { width: 16%; }
-.app-list-table colgroup .col-api      { width: 28%; }
-.app-list-table colgroup .col-actions  { width: 12%; }
+.app-list-table colgroup .col-instance { width: 22%; }
+.app-list-table colgroup .col-searches { width: 13%; }
+.app-list-table colgroup .col-upgrades { width: 13%; }
+.app-list-table colgroup .col-api      { width: 22%; }
+.app-list-table colgroup .col-status   { width: 20%; }
+.app-list-table colgroup .col-actions  { width: 10%; }
 
 .app-list-table thead th {
     text-align: left;
-    padding: 8px 16px;
+    padding: 8px 20px;
     color: #475569;
     font-size: 0.68rem;
     font-weight: 700;
@@ -554,7 +555,7 @@
 }
 
 .app-list-table tbody td {
-    padding: 10px 16px;
+    padding: 10px 20px;
     color: #cbd5e1;
     border-bottom: 1px solid rgba(255, 255, 255, 0.025);
     white-space: nowrap;
@@ -625,6 +626,34 @@
     font-family: 'SF Mono', 'Fira Code', monospace;
     letter-spacing: 0.02em;
     min-width: 42px;
+}
+
+/* Status column in list mode — inline timer */
+.list-status {
+    white-space: nowrap;
+}
+
+.list-status .cycle-timer {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.76rem;
+    padding: 3px 8px;
+    margin: 0;
+    max-width: none;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 5px;
+}
+
+.list-status .cycle-timer i {
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+.list-status .timer-value {
+    font-size: 0.76rem !important;
+    font-weight: 600;
+    letter-spacing: 0.3px;
 }
 
 .list-actions {

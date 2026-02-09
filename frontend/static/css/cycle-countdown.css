@@ -109,6 +109,11 @@
 
 /* Specific app colorings for borders only - numbers should be white by default */
 /* Colors based on user preferences */
+.movie_hunt .cycle-timer,
+.movie-hunt .cycle-timer {
+    border-left: 2px solid var(--movie-hunt-color, #f59e0b);
+}
+
 .sonarr .cycle-timer {
     border-left: 2px solid var(--sonarr-color, #00c2ce);
 }

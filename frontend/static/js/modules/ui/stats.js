@@ -348,10 +348,10 @@ window.HuntarrStats = {
         // Initialize SortableJS for flat grid
         this._initGridSortable(grid);
 
-        // Refresh cycle timers
-        if (typeof window.CycleCountdown !== 'undefined' && window.CycleCountdown.refreshTimerElements) {
-            window.CycleCountdown.refreshTimerElements();
-        }
+        // Refresh cycle timers — timer elements are already baked into cards,
+        // but CycleCountdown needs to know about them and populate data
+        this._refreshCycleTimers();
+
         setTimeout(function() {
             if (typeof window.loadHourlyCapData === 'function') {
                 window.loadHourlyCapData();
@@ -359,10 +359,11 @@ window.HuntarrStats = {
         }, 200);
     },
 
-    // ─── Create a Card Element (with drag handle) ─────────────────────
+    // ─── Create a Card Element (with drag handle + baked-in timer) ────
     _createCard: function(app, meta) {
         var card = document.createElement('div');
         card.className = 'app-stats-card ' + app;
+        var cssClass = app.replace(/-/g, '');
         card.innerHTML =
             '<div class="card-drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>' +
             '<div class="hourly-cap-container">' +
@@ -384,7 +385,12 @@ window.HuntarrStats = {
                 '<div class="stat-box"><span class="stat-number">0</span><span class="stat-label">Upgrades Triggered</span></div>' +
             '</div>' +
             '<div class="reset-button-container">' +
-                '<button class="cycle-reset-button" data-app="' + app + '"><i class="fas fa-sync-alt"></i> Reset</button>' +
+                '<div class="reset-and-timer-container">' +
+                    '<button class="cycle-reset-button" data-app="' + app + '"><i class="fas fa-sync-alt"></i> Reset</button>' +
+                    '<div class="cycle-timer inline-timer ' + cssClass + '" data-app-type="' + app + '">' +
+                        '<i class="fas fa-clock ' + cssClass + '-icon"></i> <span class="timer-value">Loading...</span>' +
+                    '</div>' +
+                '</div>' +
             '</div>';
         return card;
     },
@@ -538,6 +544,7 @@ window.HuntarrStats = {
                         '<col class="col-searches">' +
                         '<col class="col-upgrades">' +
                         '<col class="col-api">' +
+                        '<col class="col-status">' +
                         '<col class="col-actions">' +
                     '</colgroup>' +
                     '<thead><tr>' +
@@ -545,9 +552,11 @@ window.HuntarrStats = {
                         '<th>Searches</th>' +
                         '<th>Upgrades</th>' +
                         '<th>API Usage</th>' +
+                        '<th>Status</th>' +
                         '<th></th>' +
                     '</tr></thead><tbody>';
 
+            var cssClass = app.replace(/-/g, '');
             instances.forEach(function(inst) {
                 var hunted = Math.max(0, parseInt(inst.hunted) || 0);
                 var upgraded = Math.max(0, parseInt(inst.upgraded) || 0);
@@ -563,6 +572,11 @@ window.HuntarrStats = {
                         '<td class="list-api">' +
                             '<div class="list-api-bar"><div class="list-api-fill ' + app + '" style="width:' + pct + '%;"></div></div>' +
                             '<span class="list-api-text">' + apiHits + '/' + apiLimit + '</span>' +
+                        '</td>' +
+                        '<td class="list-status">' +
+                            '<div class="cycle-timer inline-timer ' + cssClass + '" data-app-type="' + app + '">' +
+                                '<i class="fas fa-clock ' + cssClass + '-icon"></i> <span class="timer-value">Loading...</span>' +
+                            '</div>' +
                         '</td>' +
                         '<td class="list-actions">' +
                             '<button class="cycle-reset-button" data-app="' + app + '" data-instance-name="' + name + '" title="Reset Cycle"><i class="fas fa-sync-alt"></i></button>' +
@@ -598,6 +612,22 @@ window.HuntarrStats = {
         // Hide old static cards & dynamic grid cards
         var oldCards = grid.querySelectorAll(':scope > .app-stats-card, :scope > .app-stats-card-wrapper');
         oldCards.forEach(function(c) { c.style.display = 'none'; });
+
+        // Refresh cycle timers — timer elements are baked into each <tr>
+        this._refreshCycleTimers();
+    },
+
+    // ─── Refresh Cycle Timers after view render ──────────────────────
+    _refreshCycleTimers: function() {
+        if (typeof window.CycleCountdown === 'undefined') return;
+        // Let CycleCountdown discover any new timer elements it doesn't know about
+        if (window.CycleCountdown.refreshTimerElements) {
+            window.CycleCountdown.refreshTimerElements();
+        }
+        // Force an immediate data fetch + display update so timers show current state
+        if (window.CycleCountdown.refreshAllData) {
+            window.CycleCountdown.refreshAllData();
+        }
     },
 
     // ─── SortableJS for Grid (flat cards) ─────────────────────────────

@@ -253,18 +253,22 @@ window.CycleCountdown = (function() {
     }
     
     // Return all timer elements for an app (grid cards AND list-mode rows)
+    // Excludes timers inside hidden (old static) cards.
     function getTimerElements(app) {
-        // Grid mode: timers inside .app-stats-card
-        var cardTimers = document.querySelectorAll('.app-stats-card.' + app + ' .cycle-timer');
+        var results = [];
+        // Grid mode: timers inside VISIBLE .app-stats-card (dynamic-card only)
+        document.querySelectorAll('.app-stats-card.dynamic-card.' + app + ' .cycle-timer').forEach(function(t) {
+            results.push(t);
+        });
+        // Also check swaparr/eros cards that may not be dynamic
+        document.querySelectorAll('.swaparr-stats-grid .app-stats-card.' + app + ' .cycle-timer').forEach(function(t) {
+            if (results.indexOf(t) === -1) results.push(t);
+        });
         // List mode: timers inside <tr> within a list table belonging to this app group
-        var listTimers = document.querySelectorAll('.app-group[data-app="' + app + '"] .cycle-timer');
-        if (listTimers.length === 0) return cardTimers;
-        if (cardTimers.length === 0) return listTimers;
-        // Merge both NodeLists
-        var all = [];
-        cardTimers.forEach(function(t) { all.push(t); });
-        listTimers.forEach(function(t) { if (all.indexOf(t) === -1) all.push(t); });
-        return all;
+        document.querySelectorAll('.app-group[data-app="' + app + '"] .cycle-timer').forEach(function(t) {
+            if (results.indexOf(t) === -1) results.push(t);
+        });
+        return results;
     }
     
     // Get instance name for a timer (from reset button or card/row in same container)
@@ -298,8 +302,11 @@ window.CycleCountdown = (function() {
         if (!resetButtons.length) return;
         
         resetButtons.forEach(resetButton => {
+            // Skip if already wrapped with a timer (grid cards with baked-in timer)
             const container = resetButton.closest('.reset-and-timer-container');
             if (container && container.querySelector('.cycle-timer')) return;
+            // Skip if button is in a table cell (list mode — timer is in adjacent <td>)
+            if (resetButton.closest('td')) return;
             
             const parent = resetButton.parentNode;
             const wrapper = document.createElement('div');
