@@ -396,6 +396,21 @@ def get_movie_status():
         logger.error(f"Error getting movie status: {e}")
         return jsonify({'error': 'Failed to get movie status'}), 500
 
+
+@requestarr_bp.route('/movie-detail-status', methods=['GET'])
+def get_movie_detail_status():
+    """Get movie detail for Requestarr info bar (path, status, quality_profile, size) from Radarr. Same shape as Movie Hunt movie-status."""
+    try:
+        tmdb_id = request.args.get('tmdb_id', type=int)
+        instance_name = request.args.get('instance', '').strip()
+        if not tmdb_id or not instance_name:
+            return jsonify({'success': False, 'error': 'Missing parameters'}), 400
+        detail = requestarr_api.get_radarr_movie_detail_status(tmdb_id, instance_name)
+        return jsonify(detail)
+    except Exception as e:
+        logger.error(f"Error getting movie detail status: {e}")
+        return jsonify({'success': False, 'found': False}), 500
+
 @requestarr_bp.route('/check-seasons', methods=['GET'])
 def check_requested_seasons():
     """Check which seasons of a TV show are already in Sonarr"""

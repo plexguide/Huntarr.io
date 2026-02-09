@@ -239,6 +239,68 @@
             }
         },
 
+        formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GB';
+            if (bytes >= 1048576) return (bytes / 1048576).toFixed(0) + ' MB';
+            return (bytes / 1024).toFixed(0) + ' KB';
+        },
+
+        async updateDetailInfoBar() {
+            const pathEl = document.getElementById('requestarr-ib-path');
+            const statusEl = document.getElementById('requestarr-ib-status');
+            const profileEl = document.getElementById('requestarr-ib-profile');
+            const sizeEl = document.getElementById('requestarr-ib-size');
+            if (!pathEl || !statusEl) return;
+
+            var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            if (decoded.appType !== 'radarr' || !decoded.name) {
+                pathEl.textContent = '-';
+                statusEl.innerHTML = '<span class="mh-badge mh-badge-none">Not in Collection</span>';
+                if (profileEl) profileEl.textContent = '-';
+                if (sizeEl) sizeEl.textContent = '-';
+                return;
+            }
+
+            const tmdbId = this.currentMovie && (this.currentMovie.tmdb_id || this.currentMovie.id);
+            if (!tmdbId) return;
+
+            try {
+                const resp = await fetch('./api/requestarr/movie-detail-status?tmdb_id=' + tmdbId + '&instance=' + encodeURIComponent(decoded.name));
+                const data = await resp.json();
+
+                if (!data.success || !data.found) {
+                    pathEl.textContent = '-';
+                    statusEl.innerHTML = '<span class="mh-badge mh-badge-none">Not in Collection</span>';
+                    if (profileEl) profileEl.textContent = '-';
+                    if (sizeEl) sizeEl.textContent = '-';
+                    return;
+                }
+
+                pathEl.textContent = data.path || '-';
+                pathEl.title = data.path || '';
+
+                var cls = '', icon = '', label = '';
+                if (data.status === 'downloaded') {
+                    cls = 'mh-badge-ok'; icon = 'fa-check-circle'; label = 'Downloaded';
+                } else if (data.status === 'missing') {
+                    cls = 'mh-badge-warn'; icon = 'fa-exclamation-circle'; label = 'Requested';
+                } else {
+                    cls = 'mh-badge-warn'; icon = 'fa-clock'; label = 'Requested';
+                }
+                statusEl.innerHTML = '<span class="mh-badge ' + cls + '"><i class="fas ' + icon + '"></i> ' + label + '</span>';
+
+                if (profileEl) profileEl.textContent = data.quality_profile || '-';
+                if (sizeEl) sizeEl.textContent = this.formatFileSize(data.file_size || 0);
+            } catch (err) {
+                console.error('[RequestarrDetail] Detail info bar error:', err);
+                pathEl.textContent = '-';
+                statusEl.innerHTML = '<span class="mh-badge mh-badge-none">Not in Collection</span>';
+                if (profileEl) profileEl.textContent = '-';
+                if (sizeEl) sizeEl.textContent = '-';
+            }
+        },
+
         renderMovieDetail(details, originalMovie) {
             const backdropUrl = details.backdrop_path
                 ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
@@ -343,6 +405,24 @@
                                 </div>
                                 <div class="mh-hero-genres">${genres}</div>
                                 ${instanceSelectorHTML}
+                                <div class="mh-info-bar" id="requestarr-detail-info-bar">
+                                    <div class="mh-ib mh-ib-path">
+                                        <div class="mh-ib-label">PATH</div>
+                                        <div class="mh-ib-val" id="requestarr-ib-path"><i class="fas fa-spinner fa-spin"></i></div>
+                                    </div>
+                                    <div class="mh-ib">
+                                        <div class="mh-ib-label">STATUS</div>
+                                        <div class="mh-ib-val" id="requestarr-ib-status"><i class="fas fa-spinner fa-spin"></i></div>
+                                    </div>
+                                    <div class="mh-ib">
+                                        <div class="mh-ib-label">QUALITY PROFILE</div>
+                                        <div class="mh-ib-val" id="requestarr-ib-profile">-</div>
+                                    </div>
+                                    <div class="mh-ib">
+                                        <div class="mh-ib-label">SIZE</div>
+                                        <div class="mh-ib-val" id="requestarr-ib-size">-</div>
+                                    </div>
+                                </div>
                                 <p class="mh-hero-overview">${this.escapeHtml(overview)}</p>
                                 <div class="mh-hero-actions">
                                     ${actionButton}
@@ -496,8 +576,10 @@
 
                     // Radarr (or other): stay on Requestarr detail and refresh availability/status for selected instance
                     await this.updateMovieStatus();
+                    this.updateDetailInfoBar();
                 });
                 this.updateMovieStatus();
+                this.updateDetailInfoBar();
             }
 
             // Request button

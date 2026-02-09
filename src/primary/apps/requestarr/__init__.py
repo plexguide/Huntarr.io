@@ -670,7 +670,70 @@ class RequestarrAPI:
                 'previously_requested': already_requested_in_db,
                 'cooldown_status': cooldown_status
             }
-    
+
+    def get_radarr_movie_detail_status(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
+        """Get movie detail for Requestarr info bar: path, status, quality_profile, file_size (same shape as Movie Hunt movie-status)."""
+        try:
+            app_config = self.db.get_app_config('radarr')
+            if not app_config or not app_config.get('instances'):
+                return {'success': True, 'found': False}
+
+            target_instance = None
+            for instance in app_config['instances']:
+                if instance.get('name') == instance_name:
+                    target_instance = instance
+                    break
+
+            if not target_instance:
+                return {'success': True, 'found': False}
+
+            radarr_url = (target_instance.get('api_url') or target_instance.get('url') or '').rstrip('/')
+            radarr_api_key = (target_instance.get('api_key') or '').strip()
+            if not radarr_url or not radarr_api_key:
+                return {'success': True, 'found': False}
+
+            headers = {'X-Api-Key': radarr_api_key}
+            response = requests.get(f"{radarr_url}/api/v3/movie", headers=headers, timeout=10)
+            if response.status_code != 200:
+                logger.error("Radarr movie list failed: %s", response.status_code)
+                return {'success': False, 'found': False}
+
+            movies_list = response.json()
+            for movie in movies_list:
+                if movie.get('tmdbId') != tmdb_id:
+                    continue
+                has_file = movie.get('hasFile', False)
+                movie_file = movie.get('movieFile') or {}
+                path = (movie_file.get('path') or movie_file.get('relativePath') or '').strip() or '-'
+                file_size = movie_file.get('size') or 0
+                quality_profile = '-'
+                quality_profile_obj = movie.get('qualityProfile')
+                if isinstance(quality_profile_obj, dict) and quality_profile_obj.get('name'):
+                    quality_profile = quality_profile_obj['name']
+                elif has_file:
+                    q = (movie_file.get('quality') or {}).get('quality')
+                    if isinstance(q, dict) and q.get('name'):
+                        quality_profile = q['name']
+
+                if has_file:
+                    status = 'downloaded'
+                else:
+                    status = 'missing'  # in Radarr but no file -> requested
+
+                return {
+                    'success': True,
+                    'found': True,
+                    'path': path,
+                    'status': status,
+                    'quality_profile': quality_profile,
+                    'file_size': file_size,
+                }
+
+            return {'success': True, 'found': False}
+        except Exception as e:
+            logger.error("Error getting Radarr movie detail: %s", e)
+            return {'success': False, 'found': False}
+
     def get_movie_status_from_movie_hunt(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get movie status from Movie Hunt's collection - in library, previously requested, etc."""
         try:
