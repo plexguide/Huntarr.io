@@ -1370,6 +1370,41 @@ def _start_import_list_sync_thread():
     logger.info("Import Lists sync thread started")
 
 
+# ---------------------------------------------------------------------------
+# Import Media (unmapped folder scan) background thread
+# ---------------------------------------------------------------------------
+_import_media_scan_thread = None
+
+
+def _import_media_scan_loop():
+    """Background loop: daily scan for unmapped folders in Movie Hunt root folders."""
+    # Wait 2 minutes after startup before first check
+    stop_event.wait(120)
+    while not stop_event.is_set():
+        try:
+            from src.primary.routes.movie_hunt.import_media import run_import_media_background_cycle
+            run_import_media_background_cycle()
+        except Exception as e:
+            logger.error(f"Import Media scan cycle error: {e}")
+        # Wait 1 hour between checks (actual daily logic is inside the cycle)
+        stop_event.wait(3600)
+
+
+def _start_import_media_scan_thread():
+    """Start the Import Media background scan thread."""
+    global _import_media_scan_thread
+    if _import_media_scan_thread and _import_media_scan_thread.is_alive():
+        logger.info("Import Media scan thread already running")
+        return
+    _import_media_scan_thread = threading.Thread(
+        target=_import_media_scan_loop,
+        name="ImportMediaScan",
+        daemon=True,
+    )
+    _import_media_scan_thread.start()
+    logger.info("Import Media scan thread started")
+
+
 def start_swaparr_thread():
     """Start the dedicated Swaparr processing thread"""
     global swaparr_thread
@@ -1429,6 +1464,13 @@ def start_huntarr():
         logger.info("Import Lists sync thread started successfully")
     except Exception as e:
         logger.error(f"Failed to start Import Lists sync thread: {e}")
+
+    # Start Import Media background scan thread
+    try:
+        _start_import_media_scan_thread()
+        logger.info("Import Media scan thread started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start Import Media scan thread: {e}")
 
     # Configuration logging has been disabled to reduce log spam
     # Settings are loaded and used internally without verbose logging

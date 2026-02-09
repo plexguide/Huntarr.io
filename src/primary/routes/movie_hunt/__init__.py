@@ -17,3 +17,4 @@ from . import discovery       # noqa: E402, F401
 from . import storage         # noqa: E402, F401
 from . import sizes           # noqa: E402, F401
 from . import import_lists    # noqa: E402, F401
+from . import import_media    # noqa: E402, F401

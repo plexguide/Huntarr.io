@@ -1,0 +1,88 @@
+<section id="settingsImportMediaSection" class="content-section" style="display: none;">
+    <link rel="stylesheet" href="./static/css/import-media.css?v=1.0.0">
+    <div id="importMediaContainer" class="app-content-panel">
+        <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
+            <select id="import-media-instance-select" class="control-select" aria-label="Instance">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+
+        <div class="settings-group import-media-settings-group">
+            <div class="import-media-header">
+                <div>
+                    <h3>Import Media</h3>
+                    <p class="import-media-help">Import existing movies from your root folders into your Media Collection. Unmapped folders are automatically detected and matched to TMDB.</p>
+                </div>
+                <div class="import-media-header-actions">
+                    <button type="button" class="btn-scan" id="import-media-scan-btn" title="Scan for Unmapped Folders">
+                        <i class="fas fa-search"></i> Scan Folders
+                    </button>
+                    <button type="button" class="btn-import-all" id="import-media-import-all-btn" title="Import All Matched" style="display: none;">
+                        <i class="fas fa-check-double"></i> Import All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status bar -->
+            <div class="import-media-status-bar" id="import-media-status-bar" style="display: none;">
+                <div class="import-media-status-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                <div class="import-media-status-text" id="import-media-status-text">Scanning...</div>
+            </div>
+
+            <!-- Stats summary -->
+            <div class="import-media-stats" id="import-media-stats" style="display: none;">
+                <div class="import-media-stat">
+                    <span class="stat-value" id="import-media-stat-total">0</span>
+                    <span class="stat-label">Unmapped</span>
+                </div>
+                <div class="import-media-stat matched">
+                    <span class="stat-value" id="import-media-stat-matched">0</span>
+                    <span class="stat-label">Matched</span>
+                </div>
+                <div class="import-media-stat pending">
+                    <span class="stat-value" id="import-media-stat-pending">0</span>
+                    <span class="stat-label">Pending</span>
+                </div>
+                <div class="import-media-stat no-match">
+                    <span class="stat-value" id="import-media-stat-nomatch">0</span>
+                    <span class="stat-label">No Match</span>
+                </div>
+                <div class="import-media-stat-last-scan" id="import-media-last-scan"></div>
+            </div>
+
+            <!-- Items list -->
+            <div class="import-media-list" id="import-media-list">
+                <div class="import-media-empty" id="import-media-empty">
+                    <i class="fas fa-folder-open"></i>
+                    <p>Click <strong>Scan Folders</strong> to detect unmapped movies in your root folders.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Search Modal -->
+    <div id="import-media-search-modal" class="import-media-modal" style="display: none;">
+        <div class="import-media-modal-backdrop" id="import-media-search-backdrop"></div>
+        <div class="import-media-modal-content">
+            <div class="import-media-modal-header">
+                <button type="button" class="import-media-modal-close" id="import-media-search-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h2 class="import-media-modal-title">Find Movie Match</h2>
+                <p class="import-media-modal-subtitle" id="import-media-search-folder-name"></p>
+            </div>
+            <div class="import-media-search-form">
+                <div class="import-media-search-row">
+                    <input type="text" id="import-media-search-input" class="control-input" placeholder="Movie title...">
+                    <input type="text" id="import-media-search-year" class="control-input" placeholder="Year" style="max-width: 100px;">
+                    <button type="button" class="btn-search" id="import-media-search-go-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="import-media-search-results" id="import-media-search-results">
+                    <p class="import-media-search-hint">Search for the correct movie title above.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
