@@ -107,17 +107,19 @@ const huntManagerModule = {
                 
                 console.log('Hunt item clicked:', { appType, instanceName, itemId, title });
  
-                // Process clicks for Sonarr, Radarr, and Lidarr
+                // Process clicks for Sonarr, Radarr, Lidarr (open in *arr), or Movie Hunt (navigate to Movie Hunt)
                 if ((appType === 'sonarr' || appType === 'radarr' || appType === 'lidarr') && instanceName) {
                     huntManagerModule.openAppInstance(appType, instanceName, itemId, title);
                 } else if ((appType === 'sonarr' || appType === 'radarr' || appType === 'lidarr') && window.huntarrUI) {
-                    // Fallback to Apps section if no instance name
                     window.huntarrUI.switchSection('apps');
                     window.location.hash = '#apps';
                     console.log(`Navigated to apps section for ${appType}`);
+                } else if (appType === 'movie_hunt' && window.huntarrUI) {
+                    window.huntarrUI.switchSection('movie-hunt-home');
+                    window.location.hash = '#movie-hunt-home';
+                    console.log('Navigated to Movie Hunt');
                 } else {
-                    // For other apps, show a helpful message
-                    console.log(`Clicking disabled for ${appType} - only Sonarr, Radarr, and Lidarr links work currently`);
+                    console.log(`Clicking disabled for ${appType}`);
                 }
             }
         });
@@ -256,8 +258,9 @@ const huntManagerModule = {
         // App instance (formatted as "App Name (Instance Name)")
         const instanceCell = document.createElement('td');
         instanceCell.className = 'col-instance';
-        const appName = entry.app_type.charAt(0).toUpperCase() + entry.app_type.slice(1);
-        instanceCell.textContent = `${appName} (${entry.instance_name})`;
+        const appDisplayNames = { whisparr: 'Whisparr V2', eros: 'Whisparr V3', movie_hunt: 'Movie Hunt' };
+        const appName = appDisplayNames[entry.app_type] || (entry.app_type.charAt(0).toUpperCase() + entry.app_type.slice(1).replace(/_/g, ' '));
+        instanceCell.textContent = `${appName} (${entry.instance_name || 'Default'})`;
         
         // How long ago
         const timeCell = document.createElement('td');
@@ -275,16 +278,17 @@ const huntManagerModule = {
     
     // Format processed info
     formatProcessedInfo: function(entry) {
-        // Sonarr, Radarr, and Lidarr entries are clickable with external linking
-        const isClickable = (entry.app_type === 'sonarr' || entry.app_type === 'radarr' || entry.app_type === 'lidarr') && entry.instance_name;
-        const dataAttributes = isClickable ? 
-            `data-app="${entry.app_type}" data-instance="${entry.instance_name}" data-item-id="${entry.media_id || ''}"` : 
+        // Sonarr, Radarr, Lidarr: clickable to open in *arr app; Movie Hunt: clickable to go to Movie Hunt section
+        const isArrClickable = (entry.app_type === 'sonarr' || entry.app_type === 'radarr' || entry.app_type === 'lidarr') && entry.instance_name;
+        const isMovieHuntClickable = entry.app_type === 'movie_hunt';
+        const isClickable = isArrClickable || isMovieHuntClickable;
+        const dataAttributes = isClickable ?
+            `data-app="${entry.app_type}" data-instance="${entry.instance_name || ''}" data-item-id="${entry.media_id || ''}"` :
             `data-app="${entry.app_type}"`;
-        const title = isClickable ? 
-            `Click to open in ${entry.app_type} (${entry.instance_name})` : 
-            `${entry.app_type} (${entry.instance_name || 'Default'})`;
-        
-        // Only add hunt-item-link class if it's clickable (Sonarr only)
+        const title = isArrClickable ?
+            `Click to open in ${entry.app_type} (${entry.instance_name})` :
+            isMovieHuntClickable ? 'Click to open Movie Hunt' : `${entry.app_type} (${entry.instance_name || 'Default'})`;
+
         const linkClass = isClickable ? 'hunt-item-link' : '';
         let html = `<div class="hunt-info-wrapper">
             <span class="${linkClass}" ${dataAttributes} title="${title}">${this.escapeHtml(entry.processed_info)}</span>`;
