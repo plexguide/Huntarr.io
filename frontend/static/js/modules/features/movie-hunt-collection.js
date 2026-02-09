@@ -70,14 +70,19 @@
             var clearBtn = document.getElementById('media-collection-clear-search-btn');
             if (!resultsContainer || !resultsGrid) return;
             
+            // Get current instance
+            var instanceSelect = document.getElementById('movie-hunt-collection-instance-select');
+            var instanceId = instanceSelect ? instanceSelect.value : '0';
+            
             resultsContainer.style.display = 'block';
             if (clearBtn) clearBtn.style.display = 'inline-block';
             resultsGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
             
-            fetch('./api/search/movies?query=' + encodeURIComponent(query))
+            // Use Requestarr search endpoint (searches both Radarr instance and TMDB)
+            fetch('./api/requestarr/search?q=' + encodeURIComponent(query) + '&app_type=radarr&instance_name=' + encodeURIComponent(instanceId))
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    if (!data.results || data.results.length === 0) {
+                    if (!data.success || !data.results || data.results.length === 0) {
                         resultsGrid.innerHTML = '<p style="text-align: center; color: rgba(148, 163, 184, 0.6); padding: 40px;">No results found</p>';
                         return;
                     }
