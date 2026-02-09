@@ -282,16 +282,18 @@ const huntManagerModule = {
         const isArrClickable = (entry.app_type === 'sonarr' || entry.app_type === 'radarr' || entry.app_type === 'lidarr') && entry.instance_name;
         const isMovieHuntClickable = entry.app_type === 'movie_hunt';
         const isClickable = isArrClickable || isMovieHuntClickable;
+        const escapeAttr = (s) => { if (s == null) return ''; return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
         const dataAttributes = isClickable ?
-            `data-app="${entry.app_type}" data-instance="${entry.instance_name || ''}" data-item-id="${entry.media_id || ''}"` :
-            `data-app="${entry.app_type}"`;
+            `data-app="${escapeAttr(entry.app_type)}" data-instance="${escapeAttr(entry.instance_name || '')}" data-item-id="${escapeAttr(entry.media_id || '')}"` :
+            `data-app="${escapeAttr(entry.app_type)}"`;
         const title = isArrClickable ?
             `Click to open in ${entry.app_type} (${entry.instance_name})` :
             isMovieHuntClickable ? 'Click to open Movie Hunt' : `${entry.app_type} (${entry.instance_name || 'Default'})`;
 
         const linkClass = isClickable ? 'hunt-item-link' : '';
+        const titleAttr = title.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         let html = `<div class="hunt-info-wrapper">
-            <span class="${linkClass}" ${dataAttributes} title="${title}">${this.escapeHtml(entry.processed_info)}</span>`;
+            <span class="${linkClass}" ${dataAttributes} title="${titleAttr}">${this.escapeHtml(entry.processed_info)}</span>`;
         
         if (entry.discovered) {
             html += ' <span class="discovery-badge"><i class="fas fa-search"></i> Discovered</span>';

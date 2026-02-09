@@ -24,6 +24,9 @@
     var _sleepMin = 10;
 
     function buildEditorHtml(s) {
+        if (!s || typeof s !== 'object' || s.error) {
+            s = {};
+        }
         var safe = {
             hunt_missing_movies: s.hunt_missing_movies !== undefined ? s.hunt_missing_movies : 1,
             hunt_upgrade_movies: s.hunt_upgrade_movies !== undefined ? s.hunt_upgrade_movies : 0,
@@ -148,7 +151,10 @@
         function addTag() {
             var tag = (input.value || '').trim();
             if (!tag || tag.toLowerCase() === 'upgradinatorr') return;
-            if (list.querySelector('.exempt-tag-chip[data-tag="' + escapeAttr(tag) + '"]')) return;
+            var existing = list.querySelectorAll('.exempt-tag-chip');
+            for (var i = 0; i < existing.length; i++) {
+                if ((existing[i].getAttribute('data-tag') || '') === tag) return;
+            }
             var chip = document.createElement('span');
             chip.className = 'exempt-tag-chip';
             chip.setAttribute('data-tag', tag);
@@ -242,8 +248,18 @@
             _editorDirty = false;
             var self = this;
             fetch(api('./api/movie-hunt/instances/' + instanceId + '/settings'), { cache: 'no-store' })
-                .then(function(r) { return r.json(); })
-                .then(function(settings) {
+                .then(function(r) {
+                    return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+                })
+                .then(function(result) {
+                    if (!result.ok || result.data.error) {
+                        var msg = (result.data && result.data.error) ? result.data.error : 'Failed to load settings';
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification(msg, 'error');
+                        }
+                        return;
+                    }
+                    var settings = result.data;
                     var titleEl = document.getElementById('movie-hunt-instance-editor-title');
                     if (titleEl) titleEl.textContent = 'Movie Hunt – ' + _currentInstanceName;
                     var contentEl = document.getElementById('movie-hunt-instance-editor-content');

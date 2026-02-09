@@ -101,18 +101,16 @@ def api_movie_hunt_current_instance_get():
 
 
 def _get_movie_hunt_instance_settings(instance_id: int):
-    """Get per-instance hunt settings for a Movie Hunt instance (merged with defaults)."""
+    """Get per-instance hunt settings for a Movie Hunt instance (merged with defaults).
+    Returns only keys from defaults to avoid leaking unknown keys from older schema."""
     from src.primary.utils.database import get_database
     from src.primary.default_settings import get_movie_hunt_instance_settings_defaults
     db = get_database()
     defaults = get_movie_hunt_instance_settings_defaults()
     saved = db.get_app_config_for_instance(MOVIE_HUNT_HUNT_SETTINGS_KEY, instance_id)
     if not saved or not isinstance(saved, dict):
-        return defaults
-    for k, v in defaults.items():
-        if k not in saved:
-            saved[k] = v
-    return saved
+        return dict(defaults)
+    return {k: saved.get(k, defaults[k]) for k in defaults}
 
 
 def _validate_movie_hunt_settings(data: dict) -> tuple:
@@ -130,19 +128,29 @@ def _validate_movie_hunt_settings(data: dict) -> tuple:
                    "state_management_hours", "api_timeout", "command_wait_delay", "command_wait_attempts",
                    "max_download_queue_size", "max_seed_queue_size", "sleep_duration", "hourly_cap"):
             try:
-                out[key] = int(val) if val is not None else defaults[key]
+                n = int(val) if val is not None else defaults[key]
+                # Basic bounds to avoid invalid stored values
+                if key == "sleep_duration" and (n < 60 or n > 86400):
+                    n = max(60, min(86400, n)) if n >= 0 else defaults[key]
+                elif key == "hourly_cap" and (n < 1 or n > 500):
+                    n = max(1, min(500, n)) if n >= 0 else defaults[key]
+                elif key == "state_management_hours" and (n < 1 or n > 8760):
+                    n = max(1, min(8760, n)) if n >= 0 else defaults[key]
+                out[key] = n
             except (TypeError, ValueError):
                 out[key] = defaults[key]
         elif key == "exempt_tags":
-            out[key] = [str(x).strip() for x in val] if isinstance(val, list) else []
+            out[key] = [x for x in ([str(x).strip() for x in val] if isinstance(val, list) else []) if x]
         elif key == "custom_tags":
             out[key] = dict(val) if isinstance(val, dict) else dict(defaults[key])
         elif key == "upgrade_selection_method":
-            out[key] = (str(val) or "cutoff").strip().lower() if val is not None else "cutoff"
+            raw = (str(val) or "cutoff").strip().lower() if val is not None else "cutoff"
+            out[key] = raw if raw in ("cutoff", "tags") else "cutoff"
         elif key == "upgrade_tag":
             out[key] = (str(val) or "").strip()
         elif key == "state_management_mode":
-            out[key] = str(val).strip() if val is not None else "custom"
+            raw = (str(val) or "custom").strip().lower() if val is not None else "custom"
+            out[key] = raw if raw in ("custom", "disabled") else "custom"
         elif key in ("monitored_only", "tag_processed_items", "tag_enable_missing",
                      "tag_enable_upgrade", "tag_enable_upgraded"):
             out[key] = bool(val)
