@@ -131,6 +131,12 @@ def get_movie_hunt_instance_settings_defaults() -> Dict[str, Any]:
     return out
 
 
+# Movie Hunt default configuration (no instances list; uses movie_hunt_instances table)
+MOVIE_HUNT_DEFAULTS = {
+    "sleep_duration": 900,
+    "hourly_cap": 20
+}
+
 # Sonarr default configuration
 SONARR_DEFAULTS = {
     "instances": [],  # No default instances - user creates first instance
@@ -276,6 +282,7 @@ def get_default_config(app_type: str) -> Dict[str, Any]:
         'eros': EROS_DEFAULTS,
         'prowlarr': PROWLARR_DEFAULTS,
         'swaparr': SWAPARR_DEFAULTS,
+        'movie_hunt': MOVIE_HUNT_DEFAULTS,
         'general': GENERAL_DEFAULTS
     }
     

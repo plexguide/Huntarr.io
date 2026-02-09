@@ -466,6 +466,9 @@ def app_specific_loop(app_type: str) -> None:
                 app_logger.warning(f"Error checking state expiration for {instance_name}: {e}")
                 # Continue processing even if state check fails
 
+            # Initialize API usage tracking (overridden below for *arr apps)
+            api_usage_at_start = 0
+
             # --- Connection Check (skip for Movie Hunt; no *arr API) --- #
             if app_type != "movie_hunt":
                 if not api_url or not api_key:
