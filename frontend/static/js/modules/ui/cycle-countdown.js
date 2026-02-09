@@ -154,83 +154,86 @@ window.CycleCountdown = (function() {
         startingCyclePollTimeout = safeSetTimeout(poll, STARTING_CYCLE_POLL_INTERVAL_MS);
     }
 
-    // Set up reset button click listeners
+    // Track active reset polling intervals so we don't stack them
+    const activeResetPolls = {};
+
+    // Set up reset button click listeners (event delegation for dynamically cloned cards)
     function setupResetButtonListeners() {
-        // Find all reset buttons
-        const resetButtons = document.querySelectorAll('button.cycle-reset-button');
-        
-        resetButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const app = this.getAttribute('data-app');
-                if (app) {
-                    console.log(`[CycleCountdown] Reset button clicked for ${app}, will refresh cycle status to show Pending Reset`);
-                    // Refetch cycle status after a short delay so API has recorded the reset; UI will show "Pending Reset" until cycle ends
-                    setTimeout(function() {
-                        fetchAllCycleData().catch(function() {});
-                    }, 800);
-                    const cardTimer = this.closest('.app-stats-card') && this.closest('.app-stats-card').querySelector('.cycle-timer');
-                    const timerElements = cardTimer ? [cardTimer] : Array.from(getTimerElements(app));
-                    timerElements.forEach(timerElement => {
-                        const timerValue = timerElement.querySelector('.timer-value');
-                        if (timerValue) {
-                            const originalNextCycle = nextCycleTimes[app] ? nextCycleTimes[app].getTime() : null;
-                            timerElement.setAttribute('data-original-cycle-time', originalNextCycle);
-                            timerValue.textContent = 'Refreshing';
-                            timerValue.classList.add('refreshing-state');
-                            timerValue.style.color = '#00c2ce';
-                            timerElement.setAttribute('data-waiting-for-reset', 'true');
-                        }
-                    });
-                    startResetPolling(app);
-                }
-            });
+        // Use event delegation on document so cloned per-instance cards also get handled
+        document.addEventListener('click', function(e) {
+            const button = e.target.matches('.cycle-reset-button') ? e.target : e.target.closest('.cycle-reset-button');
+            if (!button) return;
+            
+            const app = button.getAttribute('data-app');
+            const instanceName = button.getAttribute('data-instance-name') || null;
+            if (app) {
+                const key = stateKey(app, instanceName);
+                console.log(`[CycleCountdown] Reset button clicked for ${key}, showing Pending Reset immediately`);
+                
+                // Set pending reset locally for instant UI feedback
+                pendingResets[key] = true;
+                
+                // Update timer display immediately — shows "Pending Reset" (orange)
+                updateTimerDisplay(app);
+                
+                // Fetch latest data after a short delay so API has recorded the reset
+                setTimeout(function() {
+                    fetchAllCycleData().catch(function() {});
+                }, 500);
+                
+                // Start faster polling until reset is complete
+                startResetPolling(app, instanceName);
+            }
         });
     }
     
     // Poll more frequently after a reset until new data is available
-    function startResetPolling(app) {
+    function startResetPolling(app, instanceName) {
+        const key = stateKey(app, instanceName);
+        
+        // Clear any existing polling for this key
+        if (activeResetPolls[key]) {
+            clearInterval(activeResetPolls[key]);
+            delete activeResetPolls[key];
+        }
+        
         let pollAttempts = 0;
-        const maxPollAttempts = 60; // Poll for up to 5 minutes (60 * 5 seconds)
+        const maxPollAttempts = 90; // Poll for up to 3 minutes (90 * 2 seconds)
         
         const pollInterval = setInterval(() => {
             pollAttempts++;
-            console.log(`[CycleCountdown] Polling attempt ${pollAttempts} for ${app} reset data`);
             
             fetchAllCycleData()
                 .then(() => {
-                    const timerElements = getTimerElements(app);
-                    const waiting = Array.from(timerElements).find(el => el.getAttribute('data-waiting-for-reset') === 'true');
-                    if (waiting && nextCycleTimes[app]) {
-                        const currentCycleTime = nextCycleTimes[app].getTime();
-                        const originalCycleTime = parseInt(waiting.getAttribute('data-original-cycle-time'), 10);
-                        if (isNaN(originalCycleTime) || currentCycleTime !== originalCycleTime) {
-                            console.log(`[CycleCountdown] New reset data received for ${app}, stopping polling`);
-                            timerElements.forEach(el => {
-                                el.removeAttribute('data-waiting-for-reset');
-                                el.removeAttribute('data-original-cycle-time');
-                            });
-                            clearInterval(pollInterval);
-                            updateTimerDisplay(app);
-                        }
+                    // Reset is complete when backend says pending_reset is false
+                    // and we have a new countdown time (cycle restarted and is sleeping)
+                    const resetDone = !pendingResets[key];
+                    const hasCountdown = !!nextCycleTimes[key];
+                    const isRunning = !!runningCycles[key];
+                    
+                    if (resetDone && (hasCountdown || isRunning)) {
+                        console.log(`[CycleCountdown] Reset complete for ${key} — ${isRunning ? 'cycle running' : 'countdown available'}`);
+                        clearInterval(pollInterval);
+                        delete activeResetPolls[key];
+                        updateTimerDisplay(app);
+                    } else if (pollAttempts % 5 === 0) {
+                        // Log every 10 seconds (5 * 2s)
+                        console.log(`[CycleCountdown] Waiting for reset to complete for ${key} (attempt ${pollAttempts}, pending=${!!pendingResets[key]}, countdown=${hasCountdown}, running=${isRunning})`);
                     }
                 })
                 .catch(() => {});
             
             if (pollAttempts >= maxPollAttempts) {
-                console.log(`[CycleCountdown] Max polling attempts reached for ${app}, stopping`);
-                getTimerElements(app).forEach(timerElement => {
-                    timerElement.removeAttribute('data-waiting-for-reset');
-                    timerElement.removeAttribute('data-original-cycle-time');
-                    const timerValue = timerElement.querySelector('.timer-value');
-                    if (timerValue) {
-                        timerValue.textContent = 'Starting Cycle';
-                        timerValue.classList.remove('refreshing-state');
-                        timerValue.style.removeProperty('color');
-                    }
-                });
+                console.log(`[CycleCountdown] Max polling attempts reached for ${key}, stopping`);
                 clearInterval(pollInterval);
+                delete activeResetPolls[key];
+                // Clear the local pending state so normal display resumes
+                pendingResets[key] = false;
+                updateTimerDisplay(app);
             }
-        }, 5000);
+        }, 2000); // Poll every 2 seconds for fast feedback
+        
+        activeResetPolls[key] = pollInterval;
     }
     
     // Display initial loading message in the UI when sleep data isn't available yet
@@ -387,13 +390,6 @@ window.CycleCountdown = (function() {
                             cycleActivities[key] = inst.cycle_activity || null;
                             dataProcessed = true;
                         }
-                        getTimerElements(app).forEach(timerElement => {
-                            const timerValue = timerElement.querySelector('.timer-value');
-                            if (timerValue) {
-                                timerValue.classList.remove('refreshing-state');
-                                timerValue.style.removeProperty('color');
-                            }
-                        });
                         runningCycles[app] = false;
                         updateTimerDisplay(app);
                         setupCountdown(app);
@@ -408,13 +404,6 @@ window.CycleCountdown = (function() {
                         }
                         
                         pendingResets[app] = appData.pending_reset === true;
-                        getTimerElements(app).forEach(timerElement => {
-                            const timerValue = timerElement.querySelector('.timer-value');
-                            if (timerValue) {
-                                timerValue.classList.remove('refreshing-state');
-                                timerValue.style.removeProperty('color');
-                            }
-                        });
                         const cyclelock = appData.cyclelock !== undefined ? appData.cyclelock : true;
                         runningCycles[app] = cyclelock;
                         if (cyclelock && !pendingResets[app]) {
@@ -564,7 +553,6 @@ window.CycleCountdown = (function() {
         timerElements.forEach(timerElement => {
             const timerValue = timerElement.querySelector('.timer-value');
             if (!timerValue) return;
-            if (timerElement.getAttribute('data-waiting-for-reset') === 'true') return;
             
             const instanceName = getInstanceNameForTimer(timerElement);
             const key = stateKey(app, instanceName);
@@ -593,19 +581,19 @@ window.CycleCountdown = (function() {
             if (isRunning) {
                 const activity = cycleActivities[key];
                 timerValue.textContent = (activity && String(activity).trim()) ? activity : 'Running Cycle';
-                timerValue.classList.remove('refreshing-state');
+                timerValue.classList.remove('refreshing-state', 'pending-reset-state');
                 timerValue.classList.add('running-state');
                 timerValue.style.color = '#00ff88';
                 return;
             }
             if (!nextCycleTime || isExpired) {
                 timerValue.textContent = 'Starting Cycle';
-                timerValue.classList.remove('refreshing-state', 'running-state');
+                timerValue.classList.remove('refreshing-state', 'running-state', 'pending-reset-state');
                 timerValue.style.removeProperty('color');
                 return;
             }
             timerValue.textContent = formattedTime;
-            timerValue.classList.remove('refreshing-state', 'running-state');
+            timerValue.classList.remove('refreshing-state', 'running-state', 'pending-reset-state');
             updateTimerStyle(timerElement, timeRemaining);
         });
     }

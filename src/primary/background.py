@@ -816,6 +816,15 @@ def app_specific_loop(app_type: str) -> None:
                     app_logger.error(f"Instance worker failed: {e}", exc_info=True)
 
         # --- Cycle End & Sleep --- #
+        
+        # If a reset was requested mid-cycle, skip all post-cycle work and jump straight
+        # to responsive sleep, which will detect the still-pending reset request in ~1s
+        # and immediately start a new cycle.
+        if reset_requested_any:
+            app_logger.info(f"=== {app_type.upper()} cycle interrupted by reset request. Skipping post-cycle work, restarting immediately. ===")
+            _responsive_sleep(app_type, 5, app_logger, all_instances, wait_interval=1)
+            continue
+
         calculate_reset_time(app_type) # Pass app_type here if needed by the function
 
         # Log cycle completion
