@@ -380,7 +380,7 @@ export class RequestarrModal {
                 if (requestBtn) {
                     requestBtn.disabled = false;
                     requestBtn.classList.remove('disabled');
-                    requestBtn.textContent = isMovieHunt ? 'Add Movie' : 'Request';
+                    requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
                 }
             }
         } catch (error) {
@@ -393,13 +393,13 @@ export class RequestarrModal {
             if (requestBtn) {
                 requestBtn.disabled = false;
                 requestBtn.classList.remove('disabled');
-                requestBtn.textContent = isMovieHunt ? 'Add Movie' : 'Request';
+                requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
             }
         }
     }
 
     /**
-     * When selected instance is Movie Hunt (movies), show "Add to Library" / "Add Movie" and
+     * When selected instance is Movie Hunt (movies), show "Add to Library" and
      * the Start search checkbox + Minimum Availability. Otherwise "Request Movie" / "Request".
      */
     _applyMovieHuntModalMode(instanceValue, isTVShow, labelEl, requestBtn) {
@@ -413,7 +413,7 @@ export class RequestarrModal {
         if (minSelect) minSelect.value = 'released';
         if (startCb) startCb.checked = true;
         if (labelEl) labelEl.textContent = isTVShow ? 'Request Series' : (isMovieHunt ? 'Add to Library' : 'Request Movie');
-        if (requestBtn && !requestBtn.disabled) requestBtn.textContent = isMovieHunt ? 'Add Movie' : 'Request';
+        if (requestBtn && !requestBtn.disabled) requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
     }
 
     instanceChanged(instanceName) {
@@ -567,7 +567,7 @@ export class RequestarrModal {
                 this.core.showNotification(errorMsg, 'error');
                 requestBtn.disabled = false;
                 requestBtn.classList.remove('success');
-                requestBtn.textContent = appType === 'movie_hunt' ? 'Add Movie' : 'Request';
+                requestBtn.textContent = appType === 'movie_hunt' ? 'Add to Library' : 'Request';
             }
         } catch (error) {
             console.error('[RequestarrModal] Error submitting request:', error);
@@ -575,7 +575,7 @@ export class RequestarrModal {
             requestBtn.disabled = false;
             requestBtn.classList.remove('success');
             const decoded = !instanceSelect.value ? null : (isTVShow ? { appType: 'sonarr' } : decodeInstanceValue(instanceSelect.value));
-            requestBtn.textContent = (decoded && decoded.appType === 'movie_hunt') ? 'Add Movie' : 'Request';
+            requestBtn.textContent = (decoded && decoded.appType === 'movie_hunt') ? 'Add to Library' : 'Request';
         }
     }
 

@@ -158,7 +158,7 @@
             var startSearchCb = document.getElementById('movie-hunt-request-start-search');
             if (startSearchCb) startSearchCb.checked = true;
             submitBtn.disabled = !!inLibrary;
-            submitBtn.textContent = 'Add Movie';
+            submitBtn.textContent = 'Add to Library';
 
             // Populate instance dropdown
             if (instanceSelect && window.MovieHuntInstanceDropdown) {
@@ -386,7 +386,7 @@
                             window.huntarrUI.showNotification(msg, 'error');
                         }
                         submitBtn.disabled = false;
-                        submitBtn.textContent = 'Add Movie';
+                        submitBtn.textContent = 'Add to Library';
                     }
                 })
                 .catch(function(err) {
@@ -394,7 +394,7 @@
                         window.huntarrUI.showNotification(err.message || 'Request failed', 'error');
                     }
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'Add Movie';
+                    submitBtn.textContent = 'Add to Library';
                 });
         },
 

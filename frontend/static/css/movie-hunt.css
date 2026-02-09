@@ -213,19 +213,19 @@ body.requestarr-modal-open {
 .mh-req-field {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 .mh-req-field label {
     flex-shrink: 0;
-    width: 100px;
+    width: 150px;
     font-size: 12px;
     font-weight: 600;
     color: rgba(148, 163, 184, 0.6);
-    text-align: right;
+    text-align: left;
 }
 .mh-req-field select {
     flex: 1;
-    min-width: 0;
+    min-width: 180px;
     padding: 7px 10px;
     background: rgba(15, 23, 42, 0.5);
     border: 1px solid rgba(148, 163, 184, 0.15);
