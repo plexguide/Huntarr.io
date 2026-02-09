@@ -383,13 +383,12 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   GROUPED LAYOUT — app-group containers
+   GROUPED LAYOUT — app-group containers (list mode only)
    ═══════════════════════════════════════════════════════════════════ */
 .app-group {
     display: flex;
     flex-direction: column;
     gap: 0;
-    /* Full width of grid */
     grid-column: 1 / -1;
 }
 
@@ -416,11 +415,31 @@
     letter-spacing: 0.01em;
 }
 
-/* Cards within a group — use grid for multi-card apps */
-.app-group-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 14px;
+/* ═══════════════════════════════════════════════════════════════════
+   CARD DRAG HANDLE (grid mode — inside each card)
+   ═══════════════════════════════════════════════════════════════════ */
+.card-drag-handle {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    cursor: grab;
+    color: #334155;
+    font-size: 0.82rem;
+    padding: 4px;
+    z-index: 5;
+    transition: color 0.2s;
+    line-height: 1;
+    border-radius: 4px;
+}
+
+.card-drag-handle:hover {
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.card-drag-handle:active {
+    cursor: grabbing;
+    color: #60a5fa;
 }
 
 /* ═══════════════════════════════════════════════════════════════════

@@ -1,13 +1,14 @@
 /**
  * Stats & Dashboard Module
  * Handles media stats, app connections, dashboard display,
- * grouped layout, grid/list view, live polling, and drag-and-drop reordering.
+ * grid/list view, live polling, and drag-and-drop reordering.
  */
 
 window.HuntarrStats = {
     isLoadingStats: false,
     _pollInterval: null,
     _currentViewMode: 'grid', // 'grid' or 'list'
+    _lastRenderedMode: null,  // Track which mode we last rendered
 
     // App metadata: order, display names, icons, accent colors
     APP_META: {
@@ -24,9 +25,9 @@ window.HuntarrStats = {
     // ─── Polling ──────────────────────────────────────────────────────
     startPolling: function() {
         this.stopPolling();
-        // Poll every 15 seconds for live updates
-        this._pollInterval = setInterval(() => {
-            this.loadMediaStats(true); // skipCache = true
+        var self = this;
+        this._pollInterval = setInterval(function() {
+            self.loadMediaStats(true);
         }, 15000);
     },
 
@@ -63,7 +64,6 @@ window.HuntarrStats = {
     _getGroupOrder: function() {
         var layout = this._getLayout();
         if (layout && Array.isArray(layout.groups) && layout.groups.length > 0) {
-            // Merge any new apps that aren't in stored order
             var order = layout.groups.slice();
             this.DEFAULT_APP_ORDER.forEach(function(app) {
                 if (order.indexOf(app) === -1) order.push(app);
@@ -73,34 +73,51 @@ window.HuntarrStats = {
         return this.DEFAULT_APP_ORDER.slice();
     },
 
-    _getInstanceOrder: function(app) {
+    _getCardOrder: function() {
         var layout = this._getLayout();
-        if (layout && layout.instances && Array.isArray(layout.instances[app])) {
-            return layout.instances[app];
+        if (layout && Array.isArray(layout.cards) && layout.cards.length > 0) {
+            return layout.cards;
         }
         return null;
     },
 
-    _collectAndSaveOrder: function() {
+    // Collect card order for grid mode (flat list of {app, instance} pairs)
+    _collectGridOrder: function() {
         var grid = document.getElementById('app-stats-grid');
         if (!grid) return;
-        var groups = grid.querySelectorAll('.app-group');
-        var groupOrder = [];
-        var instanceOrder = {};
-        groups.forEach(function(g) {
-            var app = g.getAttribute('data-app');
-            if (app) {
-                groupOrder.push(app);
-                var cards = g.querySelectorAll('.app-stats-card[data-instance-name]');
-                if (cards.length > 0) {
-                    instanceOrder[app] = [];
-                    cards.forEach(function(c) {
-                        instanceOrder[app].push(c.getAttribute('data-instance-name'));
-                    });
-                }
+        var cards = grid.querySelectorAll('.app-stats-card[data-app][data-instance-name]');
+        var cardOrder = [];
+        cards.forEach(function(c) {
+            cardOrder.push({
+                app: c.getAttribute('data-app'),
+                instance: c.getAttribute('data-instance-name')
+            });
+        });
+        // Also build group order from the card order (for list mode)
+        var seen = {};
+        var groups = [];
+        cardOrder.forEach(function(c) {
+            if (!seen[c.app]) {
+                seen[c.app] = true;
+                groups.push(c.app);
             }
         });
-        this._saveLayout({ groups: groupOrder, instances: instanceOrder });
+        this._saveLayout({ groups: groups, cards: cardOrder });
+    },
+
+    // Collect group order for list mode
+    _collectListOrder: function() {
+        var grid = document.getElementById('app-stats-grid');
+        if (!grid) return;
+        var groupEls = grid.querySelectorAll('.app-group');
+        var groups = [];
+        groupEls.forEach(function(g) {
+            var app = g.getAttribute('data-app');
+            if (app) groups.push(app);
+        });
+        var layout = this._getLayout() || {};
+        layout.groups = groups;
+        this._saveLayout(layout);
     },
 
     // ─── View Mode ────────────────────────────────────────────────────
@@ -130,20 +147,42 @@ window.HuntarrStats = {
         this._currentViewMode = this._getViewMode();
         var toggleGroup = document.getElementById('dashboard-view-toggle');
         if (!toggleGroup) return;
-        var btns = toggleGroup.querySelectorAll('.view-toggle-btn');
+
+        // Remove old listeners by cloning
+        var newToggle = toggleGroup.cloneNode(true);
+        toggleGroup.parentNode.replaceChild(newToggle, toggleGroup);
+
+        var btns = newToggle.querySelectorAll('.view-toggle-btn');
         btns.forEach(function(btn) {
             btn.classList.toggle('active', btn.getAttribute('data-view') === self._currentViewMode);
             btn.addEventListener('click', function() {
                 var mode = this.getAttribute('data-view');
+                if (mode === self._currentViewMode) return; // Already in this mode
                 btns.forEach(function(b) { b.classList.remove('active'); });
                 this.classList.add('active');
                 self._setViewMode(mode);
-                // Re-render with current stats
+                // Force full re-render by clearing state
+                self._clearDynamicContent();
                 if (window.mediaStats) {
                     self.updateStatsDisplay(window.mediaStats);
                 }
             });
         });
+    },
+
+    // Clear all dynamically generated content + sortable instances
+    _clearDynamicContent: function() {
+        // Destroy sortable instances
+        if (this._sortableGrid) {
+            this._sortableGrid.destroy();
+            this._sortableGrid = null;
+        }
+        var grid = document.getElementById('app-stats-grid');
+        if (!grid) return;
+        // Remove all dynamic elements (app-group containers and direct app-stats-cards we created)
+        var dynamicEls = grid.querySelectorAll('.app-group, .app-stats-card.dynamic-card');
+        dynamicEls.forEach(function(el) { el.remove(); });
+        this._lastRenderedMode = null;
     },
 
     // ─── Stats Loading ────────────────────────────────────────────────
@@ -153,7 +192,6 @@ window.HuntarrStats = {
 
         var self = this;
 
-        // Use cache for initial display unless explicitly skipping
         if (!skipCache) {
             var cachedStats = localStorage.getItem('huntarr-stats-cache');
             if (cachedStats) {
@@ -199,18 +237,22 @@ window.HuntarrStats = {
 
     // ─── Main Display Update ──────────────────────────────────────────
     updateStatsDisplay: function(stats, isFromCache) {
+        // If mode changed, clear and rebuild
+        if (this._lastRenderedMode && this._lastRenderedMode !== this._currentViewMode) {
+            this._clearDynamicContent();
+        }
         if (this._currentViewMode === 'list') {
             this._renderListView(stats, isFromCache);
         } else {
             this._renderGridView(stats, isFromCache);
         }
+        this._lastRenderedMode = this._currentViewMode;
     },
 
-    // ─── Grid View (Grouped Cards) ───────────────────────────────────
+    // ─── Grid View (Flat Cards with Drag Handles) ─────────────────────
     _renderGridView: function(stats, isFromCache) {
         var grid = document.getElementById('app-stats-grid');
         if (!grid) {
-            // Fall back: find the old .app-stats-grid and give it an id
             grid = document.querySelector('.app-stats-grid');
             if (grid) grid.id = 'app-stats-grid';
             else return;
@@ -222,105 +264,89 @@ window.HuntarrStats = {
 
         var self = this;
         var groupOrder = this._getGroupOrder();
-        var visibleApps = [];
+        var savedCardOrder = this._getCardOrder();
 
-        // Determine which apps have data
+        // Build a flat list of all cards to render: [{app, meta, inst}, ...]
+        var allCards = [];
         groupOrder.forEach(function(app) {
-            if (stats[app] && (stats[app].instances && stats[app].instances.length > 0 ||
-                stats[app].hunted > 0 || stats[app].upgraded > 0)) {
-                visibleApps.push(app);
-            } else if (stats[app] && window.huntarrUI && window.huntarrUI.configuredApps && window.huntarrUI.configuredApps[app]) {
-                visibleApps.push(app);
-            }
-        });
+            if (!stats[app]) return;
+            var hasInstances = stats[app].instances && stats[app].instances.length > 0;
+            var isConfigured = window.huntarrUI && window.huntarrUI.configuredApps && window.huntarrUI.configuredApps[app];
+            if (!hasInstances && !stats[app].hunted && !stats[app].upgraded && !isConfigured) return;
 
-        // Build or update groups
-        visibleApps.forEach(function(app) {
             var meta = self.APP_META[app] || { label: app, icon: '', accent: '#94a3b8' };
-            var group = grid.querySelector('.app-group[data-app="' + app + '"]');
-
-            if (!group) {
-                group = document.createElement('div');
-                group.className = 'app-group';
-                group.setAttribute('data-app', app);
-                group.innerHTML =
-                    '<div class="app-group-header">' +
-                        '<i class="fas fa-grip-vertical drag-handle group-drag-handle"></i>' +
-                        '<img src="' + meta.icon + '" class="app-group-logo" alt="">' +
-                        '<span class="app-group-label">' + meta.label + '</span>' +
-                    '</div>' +
-                    '<div class="app-group-cards"></div>';
-                grid.appendChild(group);
-            }
-
-            group.style.display = '';
-            var cardsContainer = group.querySelector('.app-group-cards');
-            var instances = (stats[app] && stats[app].instances) || [];
+            var instances = hasInstances ? stats[app].instances : [];
 
             if (instances.length === 0) {
-                // Single card (app-level stats)
-                var singleCard = cardsContainer.querySelector('.app-stats-card');
-                if (!singleCard) {
-                    singleCard = self._createCard(app, meta);
-                    cardsContainer.appendChild(singleCard);
-                }
-                self._updateCard(singleCard, app, meta, {
-                    hunted: (stats[app] && stats[app].hunted) || 0,
-                    upgraded: (stats[app] && stats[app].upgraded) || 0,
-                    api_hits: 0, api_limit: 20,
-                    instance_name: meta.label,
-                    api_url: ''
-                }, isFromCache, meta.label);
-            } else {
-                // Sort instances by saved order
-                var instOrder = self._getInstanceOrder(app);
-                if (instOrder) {
-                    instances = instances.slice().sort(function(a, b) {
-                        var ia = instOrder.indexOf(a.instance_name);
-                        var ib = instOrder.indexOf(b.instance_name);
-                        if (ia === -1) ia = 9999;
-                        if (ib === -1) ib = 9999;
-                        return ia - ib;
-                    });
-                }
-
-                // Remove excess cards
-                while (cardsContainer.children.length > instances.length) {
-                    cardsContainer.lastChild.remove();
-                }
-
-                instances.forEach(function(inst, idx) {
-                    var card = cardsContainer.children[idx];
-                    if (!card) {
-                        card = self._createCard(app, meta);
-                        cardsContainer.appendChild(card);
+                allCards.push({
+                    app: app,
+                    meta: meta,
+                    inst: {
+                        hunted: stats[app].hunted || 0,
+                        upgraded: stats[app].upgraded || 0,
+                        api_hits: 0, api_limit: 20,
+                        instance_name: meta.label,
+                        api_url: ''
                     }
-                    self._updateCard(card, app, meta, inst, isFromCache, meta.label);
+                });
+            } else {
+                instances.forEach(function(inst) {
+                    allCards.push({ app: app, meta: meta, inst: inst });
                 });
             }
         });
 
-        // Hide groups for apps with no data
-        grid.querySelectorAll('.app-group').forEach(function(g) {
-            var app = g.getAttribute('data-app');
-            if (visibleApps.indexOf(app) === -1) {
-                g.style.display = 'none';
+        // Apply saved card order if available
+        if (savedCardOrder && savedCardOrder.length > 0) {
+            allCards.sort(function(a, b) {
+                var keyA = a.app + '|' + (a.inst.instance_name || '');
+                var keyB = b.app + '|' + (b.inst.instance_name || '');
+                var idxA = -1, idxB = -1;
+                for (var i = 0; i < savedCardOrder.length; i++) {
+                    var sk = savedCardOrder[i].app + '|' + (savedCardOrder[i].instance || '');
+                    if (sk === keyA) idxA = i;
+                    if (sk === keyB) idxB = i;
+                }
+                if (idxA === -1) idxA = 9999;
+                if (idxB === -1) idxB = 9999;
+                return idxA - idxB;
+            });
+        }
+
+        // Build/update cards in DOM
+        var existingCards = grid.querySelectorAll('.app-stats-card.dynamic-card');
+        var existingMap = {};
+        existingCards.forEach(function(c) {
+            var key = c.getAttribute('data-app') + '|' + c.getAttribute('data-instance-name');
+            existingMap[key] = c;
+        });
+
+        allCards.forEach(function(entry, idx) {
+            var key = entry.app + '|' + (entry.inst.instance_name || '');
+            var card = existingMap[key];
+            if (!card) {
+                card = self._createCard(entry.app, entry.meta);
+                card.classList.add('dynamic-card');
+                card.setAttribute('data-app', entry.app);
+                grid.appendChild(card);
             }
+            self._updateCard(card, entry.app, entry.meta, entry.inst, isFromCache, entry.meta.label);
+            // Ensure it's in the grid at the right position
+            grid.appendChild(card);
+            delete existingMap[key];
         });
 
-        // Reorder groups to match saved order
-        var currentGroups = Array.from(grid.querySelectorAll('.app-group'));
-        var sorted = currentGroups.slice().sort(function(a, b) {
-            var ia = groupOrder.indexOf(a.getAttribute('data-app'));
-            var ib = groupOrder.indexOf(b.getAttribute('data-app'));
-            if (ia === -1) ia = 9999;
-            if (ib === -1) ib = 9999;
-            return ia - ib;
+        // Remove cards no longer in data
+        Object.keys(existingMap).forEach(function(key) {
+            existingMap[key].remove();
         });
-        sorted.forEach(function(g) { grid.appendChild(g); });
 
-        // Initialize SortableJS if not already
-        this._initSortable(grid);
+        // Hide old static cards from template
+        var oldCards = grid.querySelectorAll(':scope > .app-stats-card:not(.dynamic-card), :scope > .app-stats-card-wrapper, :scope > .app-group');
+        oldCards.forEach(function(c) { c.style.display = 'none'; });
+
+        // Initialize SortableJS for flat grid
+        this._initGridSortable(grid);
 
         // Refresh cycle timers
         if (typeof window.CycleCountdown !== 'undefined' && window.CycleCountdown.refreshTimerElements) {
@@ -331,17 +357,14 @@ window.HuntarrStats = {
                 window.loadHourlyCapData();
             }
         }, 200);
-
-        // Hide old static cards that might still exist
-        var oldCards = grid.querySelectorAll(':scope > .app-stats-card, :scope > .app-stats-card-wrapper');
-        oldCards.forEach(function(c) { c.style.display = 'none'; });
     },
 
-    // ─── Create a Card Element ────────────────────────────────────────
+    // ─── Create a Card Element (with drag handle) ─────────────────────
     _createCard: function(app, meta) {
         var card = document.createElement('div');
         card.className = 'app-stats-card ' + app;
         card.innerHTML =
+            '<div class="card-drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>' +
             '<div class="hourly-cap-container">' +
                 '<div class="hourly-cap-status">' +
                     '<span class="hourly-cap-icon"></span>' +
@@ -377,6 +400,7 @@ window.HuntarrStats = {
 
         card.style.display = '';
         card.setAttribute('data-instance-name', name);
+        card.setAttribute('data-app', app);
 
         // Title
         var h4 = card.querySelector('.app-content h4');
@@ -456,7 +480,7 @@ window.HuntarrStats = {
         }
     },
 
-    // ─── List View (Compact Table) ────────────────────────────────────
+    // ─── List View (Compact Table — grouped) ──────────────────────────
     _renderListView: function(stats, isFromCache) {
         var grid = document.getElementById('app-stats-grid');
         if (!grid) {
@@ -481,7 +505,6 @@ window.HuntarrStats = {
             }
         });
 
-        // Build or update list groups
         visibleApps.forEach(function(app) {
             var meta = self.APP_META[app] || { label: app, icon: '', accent: '#94a3b8' };
             var group = grid.querySelector('.app-group[data-app="' + app + '"]');
@@ -490,21 +513,10 @@ window.HuntarrStats = {
                 group = document.createElement('div');
                 group.className = 'app-group';
                 group.setAttribute('data-app', app);
+                grid.appendChild(group);
             }
 
             var instances = (stats[app] && stats[app].instances) || [];
-            var instOrder = self._getInstanceOrder(app);
-            if (instOrder && instances.length > 0) {
-                instances = instances.slice().sort(function(a, b) {
-                    var ia = instOrder.indexOf(a.instance_name);
-                    var ib = instOrder.indexOf(b.instance_name);
-                    if (ia === -1) ia = 9999;
-                    if (ib === -1) ib = 9999;
-                    return ia - ib;
-                });
-            }
-
-            // If no instances, create a single pseudo-instance
             if (instances.length === 0) {
                 instances = [{
                     instance_name: meta.label,
@@ -514,7 +526,6 @@ window.HuntarrStats = {
                 }];
             }
 
-            // Build table HTML
             var html =
                 '<div class="app-group-header list-header">' +
                     '<i class="fas fa-grip-vertical drag-handle group-drag-handle"></i>' +
@@ -537,7 +548,6 @@ window.HuntarrStats = {
                 var apiLimit = Math.max(1, parseInt(inst.api_limit) || 20);
                 var pct = apiLimit > 0 ? Math.min(100, (apiHits / apiLimit) * 100) : 0;
                 var name = inst.instance_name || 'Default';
-                var pctClass = pct >= 100 ? 'danger' : pct >= 75 ? 'warning' : 'good';
                 html +=
                     '<tr data-instance-name="' + name + '">' +
                         '<td class="list-instance-name">' + name + '</td>' +
@@ -556,7 +566,6 @@ window.HuntarrStats = {
             html += '</tbody></table>';
             group.innerHTML = html;
             group.style.display = '';
-            if (!group.parentNode) grid.appendChild(group);
         });
 
         // Hide groups for non-visible apps
@@ -566,7 +575,7 @@ window.HuntarrStats = {
             }
         });
 
-        // Reorder
+        // Reorder groups
         var currentGroups = Array.from(grid.querySelectorAll('.app-group'));
         var sorted = currentGroups.slice().sort(function(a, b) {
             var ia = groupOrder.indexOf(a.getAttribute('data-app'));
@@ -577,47 +586,57 @@ window.HuntarrStats = {
         });
         sorted.forEach(function(g) { grid.appendChild(g); });
 
-        this._initSortable(grid);
+        this._initListSortable(grid);
 
-        // Hide old static cards
+        // Hide old static cards & dynamic grid cards
         var oldCards = grid.querySelectorAll(':scope > .app-stats-card, :scope > .app-stats-card-wrapper');
         oldCards.forEach(function(c) { c.style.display = 'none'; });
     },
 
-    // ─── SortableJS Initialization ────────────────────────────────────
-    _sortableGroup: null,
-    _sortableCards: [],
+    // ─── SortableJS for Grid (flat cards) ─────────────────────────────
+    _sortableGrid: null,
 
-    _initSortable: function(grid) {
+    _initGridSortable: function(grid) {
         if (typeof Sortable === 'undefined') return;
         var self = this;
 
-        // Group-level sortable (drag groups up/down)
-        if (!this._sortableGroup) {
-            this._sortableGroup = Sortable.create(grid, {
-                animation: 200,
-                handle: '.group-drag-handle',
-                draggable: '.app-group',
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                onEnd: function() {
-                    self._collectAndSaveOrder();
-                }
-            });
+        if (this._sortableGrid) {
+            this._sortableGrid.destroy();
+            this._sortableGrid = null;
         }
 
-        // Card-level sortable within each group (for multi-instance apps)
-        grid.querySelectorAll('.app-group-cards').forEach(function(container) {
-            if (container._sortable) return; // Already initialized
-            if (container.children.length <= 1) return; // No point sorting single cards
-            container._sortable = Sortable.create(container, {
-                animation: 200,
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                onEnd: function() {
-                    self._collectAndSaveOrder();
-                }
-            });
+        this._sortableGrid = Sortable.create(grid, {
+            animation: 200,
+            handle: '.card-drag-handle',
+            draggable: '.app-stats-card.dynamic-card',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            filter: '.app-stats-card:not(.dynamic-card), .app-stats-card-wrapper, .app-group',
+            onEnd: function() {
+                self._collectGridOrder();
+            }
+        });
+    },
+
+    // ─── SortableJS for List (group-level drag) ───────────────────────
+    _initListSortable: function(grid) {
+        if (typeof Sortable === 'undefined') return;
+        var self = this;
+
+        if (this._sortableGrid) {
+            this._sortableGrid.destroy();
+            this._sortableGrid = null;
+        }
+
+        this._sortableGrid = Sortable.create(grid, {
+            animation: 200,
+            handle: '.group-drag-handle',
+            draggable: '.app-group',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            onEnd: function() {
+                self._collectListOrder();
+            }
         });
     },
 
@@ -719,18 +738,7 @@ window.HuntarrStats = {
         localStorage.removeItem('huntarr-dashboard-layout');
         localStorage.removeItem('huntarr-dashboard-view-mode');
         this._currentViewMode = 'grid';
-        // Destroy existing sortable instances
-        if (this._sortableGroup) {
-            this._sortableGroup.destroy();
-            this._sortableGroup = null;
-        }
-        this._sortableCards.forEach(function(s) { try { s.destroy(); } catch (e) {} });
-        this._sortableCards = [];
-        // Clear and re-render
-        var grid = document.getElementById('app-stats-grid');
-        if (grid) {
-            grid.querySelectorAll('.app-group').forEach(function(g) { g.remove(); });
-        }
+        this._clearDynamicContent();
         // Reset toggle
         var toggleGroup = document.getElementById('dashboard-view-toggle');
         if (toggleGroup) {
@@ -744,7 +752,7 @@ window.HuntarrStats = {
         }
     },
 
-    // ─── App Connection Checks (preserved from original) ──────────────
+    // ─── App Connection Checks ────────────────────────────────────────
     checkAppConnections: function() {
         if (!window.huntarrUI) return;
         var self = this;
