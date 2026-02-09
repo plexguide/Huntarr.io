@@ -66,6 +66,17 @@
                 await this.loadMovieHuntInstances();
             }
 
+            // Pre-select instance when opened from Requestarr/Home with a specific Movie Hunt instance
+            const requestedInstanceName = (options && options.instanceName) ? String(options.instanceName).trim() : '';
+            if (requestedInstanceName && this.movieHuntInstances.length > 0) {
+                const match = this.movieHuntInstances.find(function(inst) {
+                    return (inst.name || '').trim().toLowerCase() === requestedInstanceName.toLowerCase();
+                });
+                if (match) {
+                    this.selectedInstanceId = match.id;
+                }
+            }
+
             let detailView = document.getElementById('movie-hunt-detail-view');
             if (!detailView) {
                 detailView = document.createElement('div');
