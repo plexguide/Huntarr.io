@@ -243,7 +243,12 @@ def _save_collection_config(items_list, instance_id):
 
 def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None, root_folder=None,
                       quality_profile=None, minimum_availability=None):
-    """Append one entry to Media Collection (add to library)."""
+    """Append one entry to Media Collection (add to library).
+    Fetches TMDB release dates for the movie to support minimum availability enforcement.
+    """
+    # Fetch release dates from TMDB for availability tracking
+    release_dates = _fetch_tmdb_release_dates(tmdb_id)
+
     items = _get_collection_config(instance_id)
     items.append({
         'title': title,
@@ -253,6 +258,9 @@ def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None,
         'root_folder': root_folder or '',
         'quality_profile': quality_profile or '',
         'minimum_availability': (minimum_availability or '').strip() or 'released',
+        'in_cinemas': release_dates.get('in_cinemas', ''),
+        'digital_release': release_dates.get('digital_release', ''),
+        'physical_release': release_dates.get('physical_release', ''),
         'requested_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
         'status': 'requested'
     })
@@ -262,6 +270,121 @@ def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None,
 def _get_tmdb_api_key_movie_hunt():
     """TMDB API key for Movie Hunt discover only."""
     return "9265b0bd0cd1962f7f3225989fcd7192"
+
+
+def _fetch_tmdb_release_dates(tmdb_id):
+    """Fetch detailed release dates from TMDB for a movie.
+    Returns dict with 'in_cinemas', 'digital_release', 'physical_release' date strings (YYYY-MM-DD or '').
+    Uses US region by default; falls back to earliest global dates.
+    TMDB release_date types: 1=Premiere, 2=Theatrical(limited), 3=Theatrical, 4=Digital, 5=Physical, 6=TV
+    """
+    if not tmdb_id:
+        return {'in_cinemas': '', 'digital_release': '', 'physical_release': ''}
+    api_key = _get_tmdb_api_key_movie_hunt()
+    try:
+        resp = requests.get(
+            f'https://api.themoviedb.org/3/movie/{tmdb_id}/release_dates',
+            params={'api_key': api_key},
+            timeout=10
+        )
+        if resp.status_code != 200:
+            movie_hunt_logger.debug("TMDB release_dates for %s: HTTP %s", tmdb_id, resp.status_code)
+            return {'in_cinemas': '', 'digital_release': '', 'physical_release': ''}
+        data = resp.json()
+        results = data.get('results', [])
+
+        # Collect all dates by type across all countries
+        all_theatrical = []  # types 2, 3
+        all_digital = []     # type 4
+        all_physical = []    # type 5
+
+        # Prefer US dates, then fall back to earliest global date
+        us_theatrical = ''
+        us_digital = ''
+        us_physical = ''
+
+        for country_entry in results:
+            iso = country_entry.get('iso_3166_1', '')
+            for rd in country_entry.get('release_dates', []):
+                rtype = rd.get('type', 0)
+                date_str = (rd.get('release_date') or '')[:10]  # YYYY-MM-DD
+                if not date_str:
+                    continue
+                if rtype in (2, 3):
+                    all_theatrical.append(date_str)
+                    if iso == 'US' and (not us_theatrical or date_str < us_theatrical):
+                        us_theatrical = date_str
+                elif rtype == 4:
+                    all_digital.append(date_str)
+                    if iso == 'US' and (not us_digital or date_str < us_digital):
+                        us_digital = date_str
+                elif rtype == 5:
+                    all_physical.append(date_str)
+                    if iso == 'US' and (not us_physical or date_str < us_physical):
+                        us_physical = date_str
+
+        in_cinemas = us_theatrical or (min(all_theatrical) if all_theatrical else '')
+        digital_release = us_digital or (min(all_digital) if all_digital else '')
+        physical_release = us_physical or (min(all_physical) if all_physical else '')
+
+        return {
+            'in_cinemas': in_cinemas,
+            'digital_release': digital_release,
+            'physical_release': physical_release,
+        }
+    except Exception as e:
+        movie_hunt_logger.debug("TMDB release_dates fetch error for %s: %s", tmdb_id, e)
+        return {'in_cinemas': '', 'digital_release': '', 'physical_release': ''}
+
+
+def check_minimum_availability(item):
+    """Check if a collection item meets its minimum availability threshold.
+    Returns True if the movie is available for download according to its setting.
+    - 'announced': always available
+    - 'inCinemas': available if in_cinemas date has passed (or release_date fallback)
+    - 'released': available if digital_release or physical_release date has passed
+    """
+    min_avail = (item.get('minimum_availability') or 'released').strip()
+    if min_avail == 'announced':
+        return True
+
+    today = datetime.utcnow().strftime('%Y-%m-%d')
+
+    if min_avail == 'inCinemas':
+        in_cinemas = (item.get('in_cinemas') or '').strip()
+        if in_cinemas and in_cinemas <= today:
+            return True
+        # Fallback: if no in_cinemas date, check if digital/physical is set (movie was at least in cinemas)
+        digital = (item.get('digital_release') or '').strip()
+        physical = (item.get('physical_release') or '').strip()
+        if digital and digital <= today:
+            return True
+        if physical and physical <= today:
+            return True
+        return False
+
+    if min_avail == 'released':
+        digital = (item.get('digital_release') or '').strip()
+        physical = (item.get('physical_release') or '').strip()
+        if digital and digital <= today:
+            return True
+        if physical and physical <= today:
+            return True
+        # If no digital/physical dates but in_cinemas was months ago, estimate digital release
+        in_cinemas = (item.get('in_cinemas') or '').strip()
+        if in_cinemas:
+            try:
+                cinema_date = datetime.strptime(in_cinemas, '%Y-%m-%d')
+                # Typical theatrical window is ~90 days before digital
+                estimated_digital = cinema_date + timedelta(days=90)
+                if datetime.utcnow() >= estimated_digital:
+                    return True
+            except (ValueError, TypeError):
+                pass
+        return False
+
+    # Unknown value - default to available
+    return True
 
 
 def _movie_hunt_collection_lookups(instance_id):
@@ -981,4 +1104,146 @@ def api_movie_hunt_collection_remove_by_tmdb():
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.exception('Collection remove error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# --- Calendar: upcoming release dates ---
+
+@movie_hunt_bp.route('/api/movie-hunt/calendar', methods=['GET'])
+def api_movie_hunt_calendar():
+    """Return upcoming and recent release dates for collection items.
+    Combines collection data with TMDB release dates.
+    Query params: instance_id, days_past (default 14), days_future (default 90).
+    """
+    try:
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        days_past = request.args.get('days_past', 14, type=int)
+        days_future = request.args.get('days_future', 90, type=int)
+
+        collection = _get_collection_config(instance_id)
+        today = datetime.utcnow()
+        range_start = (today - timedelta(days=days_past)).strftime('%Y-%m-%d')
+        range_end = (today + timedelta(days=days_future)).strftime('%Y-%m-%d')
+        today_str = today.strftime('%Y-%m-%d')
+
+        events = []
+        for item in collection:
+            if not isinstance(item, dict):
+                continue
+            title = (item.get('title') or '').strip()
+            if not title:
+                continue
+            tmdb_id = item.get('tmdb_id')
+            year = str(item.get('year') or '').strip()
+            poster = item.get('poster_path') or ''
+            status = (item.get('status') or 'requested').strip()
+            min_avail = (item.get('minimum_availability') or 'released').strip()
+
+            # Get release dates - use stored dates or fetch if missing
+            in_cinemas = (item.get('in_cinemas') or '').strip()
+            digital_release = (item.get('digital_release') or '').strip()
+            physical_release = (item.get('physical_release') or '').strip()
+
+            # If no dates stored, try to fetch from TMDB
+            if not in_cinemas and not digital_release and not physical_release and tmdb_id:
+                dates = _fetch_tmdb_release_dates(tmdb_id)
+                in_cinemas = dates.get('in_cinemas', '')
+                digital_release = dates.get('digital_release', '')
+                physical_release = dates.get('physical_release', '')
+
+            base = {
+                'title': title,
+                'year': year,
+                'tmdb_id': tmdb_id,
+                'poster_path': poster,
+                'status': status,
+                'minimum_availability': min_avail,
+            }
+
+            # Add events for each known date within range
+            if in_cinemas and range_start <= in_cinemas <= range_end:
+                events.append({**base, 'date': in_cinemas, 'event_type': 'inCinemas', 'event_label': 'In Cinemas'})
+            if digital_release and range_start <= digital_release <= range_end:
+                events.append({**base, 'date': digital_release, 'event_type': 'digitalRelease', 'event_label': 'Digital Release'})
+            if physical_release and range_start <= physical_release <= range_end:
+                events.append({**base, 'date': physical_release, 'event_type': 'physicalRelease', 'event_label': 'Physical Release'})
+
+            # If no dates at all, still include the movie so user sees it
+            if not in_cinemas and not digital_release and not physical_release:
+                events.append({**base, 'date': '', 'event_type': 'unknown', 'event_label': 'Date TBA'})
+
+        # Sort: events with dates first (chronologically), then TBA items
+        events.sort(key=lambda e: (0 if e['date'] else 1, e['date'] or '9999', e['title']))
+
+        return jsonify({
+            'success': True,
+            'events': events,
+            'range_start': range_start,
+            'range_end': range_end,
+            'today': today_str,
+        }), 200
+
+    except Exception as e:
+        logger.exception('Calendar error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/calendar/upcoming', methods=['GET'])
+def api_movie_hunt_calendar_upcoming():
+    """Return upcoming TMDB releases (not limited to collection) for discovery.
+    Uses TMDB discover/movie with upcoming release dates.
+    """
+    try:
+        api_key = _get_tmdb_api_key_movie_hunt()
+        today = datetime.utcnow()
+        start_date = today.strftime('%Y-%m-%d')
+        end_date = (today + timedelta(days=90)).strftime('%Y-%m-%d')
+        page = request.args.get('page', 1, type=int)
+        region = request.args.get('region', 'US')
+
+        resp = requests.get(
+            'https://api.themoviedb.org/3/discover/movie',
+            params={
+                'api_key': api_key,
+                'primary_release_date.gte': start_date,
+                'primary_release_date.lte': end_date,
+                'sort_by': 'primary_release_date.asc',
+                'page': page,
+                'region': region,
+                'with_release_type': '2|3|4|5',  # Theatrical, Digital, Physical
+            },
+            timeout=10
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        movies = []
+        for item in data.get('results', []):
+            release_date = item.get('release_date') or ''
+            year = ''
+            if release_date:
+                try:
+                    year = str(int(release_date.split('-')[0]))
+                except (ValueError, IndexError):
+                    pass
+            movies.append({
+                'tmdb_id': item.get('id'),
+                'title': (item.get('title') or '').strip(),
+                'year': year,
+                'release_date': release_date,
+                'poster_path': item.get('poster_path') or '',
+                'overview': (item.get('overview') or '').strip(),
+                'vote_average': item.get('vote_average', 0),
+                'popularity': item.get('popularity', 0),
+            })
+
+        return jsonify({
+            'success': True,
+            'movies': movies,
+            'page': data.get('page', 1),
+            'total_pages': data.get('total_pages', 1),
+        }), 200
+
+    except Exception as e:
+        logger.exception('Calendar upcoming error')
         return jsonify({'success': False, 'error': str(e)}), 500

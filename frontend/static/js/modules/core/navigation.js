@@ -115,6 +115,7 @@ window.HuntarrNavigation = {
             'about': { title: 'About', nav: document.getElementById('mainSystemAboutNav'), section: document.getElementById('systemSection'), sidebar: 'main', systemTab: 'about' },
             'movie-hunt-home': { title: 'Media Collection', nav: document.getElementById('movieHuntCollectionNav'), section: document.getElementById('movie-hunt-section'), sidebar: 'moviehunt', view: 'collection' },
             'movie-hunt-collection': { title: 'Media Collection', nav: document.getElementById('movieHuntCollectionNav'), section: document.getElementById('movie-hunt-section'), sidebar: 'moviehunt', view: 'collection' },
+            'movie-hunt-calendar': { title: 'Calendar', nav: document.getElementById('movieHuntCalendarNav'), section: document.getElementById('movie-hunt-section'), sidebar: 'moviehunt', view: 'calendar' },
             'activity-queue': { title: 'Activity – Queue', nav: document.getElementById('movieHuntActivityQueueNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'queue' },
             'activity-history': { title: 'Activity – History', nav: document.getElementById('movieHuntActivityHistoryNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'history' },
             'activity-blocklist': { title: 'Activity – Blocklist', nav: document.getElementById('movieHuntActivityBlocklistNav'), section: document.getElementById('activitySection'), sidebar: 'moviehunt', view: 'blocklist' },

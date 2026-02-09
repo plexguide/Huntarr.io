@@ -43,7 +43,7 @@ def process_missing_movies(
     if stop_check():
         return False
 
-    from ...routes.movie_hunt.discovery import _get_collection_config, perform_movie_hunt_request
+    from ...routes.movie_hunt.discovery import _get_collection_config, perform_movie_hunt_request, check_minimum_availability
     from ...routes.movie_hunt.storage import _get_detected_movies_from_all_roots
 
     collection = _get_collection_config(instance_id)
@@ -68,6 +68,14 @@ def process_missing_movies(
         year = str(it.get("year") or "").strip()
         key = (title.lower(), year)
         if key in detected_set:
+            continue
+        # Check minimum availability before adding to search queue
+        if not check_minimum_availability(it):
+            min_avail = it.get("minimum_availability", "released")
+            movie_hunt_logger.debug(
+                "Movie Hunt missing: skipping '%s' (%s) — minimum availability '%s' not met yet.",
+                title, year or "no year", min_avail
+            )
             continue
         missing_items.append({"title": title, "year": year, "tmdb_id": it.get("tmdb_id"), "root_folder": it.get("root_folder"), "quality_profile": it.get("quality_profile"), "poster_path": it.get("poster_path")})
 

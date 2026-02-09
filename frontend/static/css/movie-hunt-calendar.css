@@ -1,0 +1,343 @@
+/**
+ * Movie Hunt Calendar – Modern list-style upcoming releases view
+ */
+
+/* Calendar view container */
+.movie-hunt-calendar-view {
+    padding: 0 30px 20px 30px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Header */
+.mh-calendar-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.mh-calendar-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.mh-calendar-title i {
+    color: #f59e0b;
+    font-size: 1.1em;
+}
+.mh-calendar-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* Tabs */
+.mh-calendar-tabs {
+    display: flex;
+    gap: 0;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.mh-calendar-tab {
+    padding: 8px 18px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.mh-calendar-tab:hover {
+    color: #e2e8f0;
+    background: rgba(148, 163, 184, 0.08);
+}
+.mh-calendar-tab.active {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+/* Legend */
+.mh-calendar-legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 8px;
+}
+.mh-calendar-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+.mh-cal-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.mh-cal-dot-cinemas { background: #3b82f6; }
+.mh-cal-dot-digital { background: #8b5cf6; }
+.mh-cal-dot-physical { background: #22c55e; }
+.mh-cal-dot-tba { background: #64748b; }
+
+/* Timeline container */
+.mh-calendar-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Date group */
+.mh-cal-date-group {
+    position: relative;
+}
+.mh-cal-date-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0 8px;
+    background: var(--bg-primary, #0f172a);
+}
+.mh-cal-date-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 56px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+}
+.mh-cal-date-badge.today {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.35);
+}
+.mh-cal-date-day {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+}
+.mh-cal-date-badge.today .mh-cal-date-day {
+    color: #f59e0b;
+}
+.mh-cal-date-num {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f1f5f9;
+    line-height: 1.1;
+}
+.mh-cal-date-badge.today .mh-cal-date-num {
+    color: #fbbf24;
+}
+.mh-cal-date-month-year {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+.mh-cal-date-line {
+    flex: 1;
+    height: 1px;
+    background: rgba(148, 163, 184, 0.12);
+}
+
+/* Movie cards in timeline */
+.mh-cal-events {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 0 16px 0;
+    margin-left: 28px;
+    border-left: 2px solid rgba(148, 163, 184, 0.08);
+    padding-left: 24px;
+}
+.mh-cal-event {
+    display: flex;
+    gap: 14px;
+    padding: 12px 16px;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 10px;
+    transition: all 0.15s;
+    cursor: default;
+    align-items: center;
+}
+.mh-cal-event:hover {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(148, 163, 184, 0.15);
+}
+.mh-cal-event-poster {
+    width: 46px;
+    height: 69px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #0f172a;
+}
+.mh-cal-event-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.mh-cal-event-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.mh-cal-event-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mh-cal-event-meta {
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.mh-cal-event-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.mh-cal-event-type.inCinemas {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.mh-cal-event-type.digitalRelease {
+    background: rgba(139, 92, 246, 0.12);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+.mh-cal-event-type.physicalRelease {
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+.mh-cal-event-type.unknown {
+    background: rgba(100, 116, 139, 0.12);
+    color: #94a3b8;
+    border: 1px solid rgba(100, 116, 139, 0.2);
+}
+.mh-cal-event-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.mh-cal-event-status.available {
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+}
+.mh-cal-event-status.requested {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+}
+.mh-cal-event-avail {
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* TBA section */
+.mh-cal-tba-section {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+.mh-cal-tba-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.mh-cal-tba-header i {
+    color: #64748b;
+}
+.mh-cal-tba-events {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Empty state */
+.mh-cal-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+.mh-cal-empty i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+.mh-cal-empty p {
+    font-size: 15px;
+    margin: 0;
+}
+
+/* Today indicator */
+.mh-cal-today-marker {
+    scroll-margin-top: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .movie-hunt-calendar-view {
+        padding: 0 15px 20px;
+    }
+    .mh-calendar-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .mh-cal-events {
+        margin-left: 14px;
+        padding-left: 16px;
+    }
+    .mh-cal-event {
+        padding: 10px 12px;
+    }
+    .mh-cal-event-poster {
+        width: 38px;
+        height: 57px;
+    }
+}

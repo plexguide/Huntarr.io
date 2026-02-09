@@ -2153,7 +2153,7 @@ class RequestarrAPI:
                     }
             else:
                 # Add new media to the app
-                add_result = self._add_media_to_app(tmdb_id, media_type, target_instance, app_type, quality_profile_id, root_folder_path)
+                add_result = self._add_media_to_app(tmdb_id, media_type, target_instance, app_type, quality_profile_id, root_folder_path, minimum_availability=minimum_availability)
                 
                 if add_result['success']:
                     # Save request to database
@@ -2506,7 +2506,7 @@ class RequestarrAPI:
                 'message': f'Error requesting missing episodes: {str(e)}'
             }
     
-    def _add_media_to_app(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str, quality_profile_id: int = None, root_folder_path: str = None) -> Dict[str, Any]:
+    def _add_media_to_app(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str, quality_profile_id: int = None, root_folder_path: str = None, minimum_availability: str = None) -> Dict[str, Any]:
         """Add media to the app instance"""
         try:
             # Database stores URL as 'api_url', map it to 'url' for consistency
@@ -2520,7 +2520,7 @@ class RequestarrAPI:
                 }
             
             if app_type == 'radarr' and media_type == 'movie':
-                return self._add_movie_to_radarr(tmdb_id, url, api_key, quality_profile_id, root_folder_path)
+                return self._add_movie_to_radarr(tmdb_id, url, api_key, quality_profile_id, root_folder_path, minimum_availability=minimum_availability)
             elif app_type == 'sonarr' and media_type == 'tv':
                 return self._add_series_to_sonarr(tmdb_id, url, api_key, quality_profile_id, root_folder_path)
             else:
@@ -2536,7 +2536,7 @@ class RequestarrAPI:
                 'message': f'Error adding media: {str(e)}'
             }
     
-    def _add_movie_to_radarr(self, tmdb_id: int, url: str, api_key: str, quality_profile_id: int = None, root_folder_path: str = None) -> Dict[str, Any]:
+    def _add_movie_to_radarr(self, tmdb_id: int, url: str, api_key: str, quality_profile_id: int = None, root_folder_path: str = None, minimum_availability: str = None) -> Dict[str, Any]:
         """Add movie to Radarr"""
         try:
             # First, get movie details from Radarr's lookup
@@ -2662,6 +2662,11 @@ class RequestarrAPI:
                     'searchForMovie': True
                 }
             }
+            
+            # Pass minimumAvailability to Radarr if provided (Radarr API v3 top-level field)
+            # Valid values: 'announced', 'inCinemas', 'released'
+            if minimum_availability and minimum_availability in ('announced', 'inCinemas', 'released'):
+                add_data['minimumAvailability'] = minimum_availability
             
             # Add additional fields from lookup
             for field in ['imdbId', 'overview', 'images', 'genres', 'runtime']:

@@ -700,13 +700,35 @@ let huntarrUI = {
             if (document.getElementById('movieHuntCollectionNav')) document.getElementById('movieHuntCollectionNav').classList.add('active');
             var mainContent = document.querySelector('#movie-hunt-section .requestarr-content');
             var collectionView = document.getElementById('movie-hunt-collection-view');
+            var calendarView = document.getElementById('movie-hunt-calendar-view');
             if (mainContent) { mainContent.style.display = 'none'; }
             if (collectionView) { collectionView.style.display = 'block'; }
+            if (calendarView) { calendarView.style.display = 'none'; }
             newTitle = 'Media Collection';
             this.currentSection = 'movie-hunt-collection';
             this.showMovieHuntSidebar();
             if (window.MovieHuntCollection && typeof window.MovieHuntCollection.init === 'function') {
                 window.MovieHuntCollection.init();
+            }
+        } else if (section === 'movie-hunt-calendar' && document.getElementById('movie-hunt-section')) {
+            document.getElementById('movie-hunt-section').classList.add('active');
+            document.getElementById('movie-hunt-section').style.display = 'block';
+            if (document.getElementById('activitySection')) {
+                document.getElementById('activitySection').classList.remove('active');
+                document.getElementById('activitySection').style.display = 'none';
+            }
+            if (document.getElementById('movieHuntCalendarNav')) document.getElementById('movieHuntCalendarNav').classList.add('active');
+            var mainContentCal = document.querySelector('#movie-hunt-section .requestarr-content');
+            var collectionViewCal = document.getElementById('movie-hunt-collection-view');
+            var calendarViewCal = document.getElementById('movie-hunt-calendar-view');
+            if (mainContentCal) { mainContentCal.style.display = 'none'; }
+            if (collectionViewCal) { collectionViewCal.style.display = 'none'; }
+            if (calendarViewCal) { calendarViewCal.style.display = 'block'; }
+            newTitle = 'Calendar';
+            this.currentSection = 'movie-hunt-calendar';
+            this.showMovieHuntSidebar();
+            if (window.MovieHuntCalendar && typeof window.MovieHuntCalendar.init === 'function') {
+                window.MovieHuntCalendar.init();
             }
         } else if ((section === 'activity-queue' || section === 'activity-history' || section === 'activity-blocklist' || section === 'activity-logs') && document.getElementById('activitySection')) {
             document.getElementById('activitySection').classList.add('active');
@@ -1531,12 +1553,14 @@ let huntarrUI = {
         var showDisplay = '';
         var huntarrHome = document.getElementById('movie-hunt-sidebar-huntarr-home-group');
         var collectionNav = document.getElementById('movieHuntCollectionNav');
+        var calendarNav = document.getElementById('movieHuntCalendarNav');
         var activityNav = document.getElementById('movieHuntActivityNav');
         var activitySub = document.getElementById('movie-hunt-activity-sub');
         var settingsNav = document.getElementById('movieHuntSettingsNav');
         var settingsSub = document.getElementById('movie-hunt-settings-sub');
         if (huntarrHome) huntarrHome.style.display = (onSettings || onActivity) ? 'none' : showDisplay;
         if (collectionNav) collectionNav.style.display = (onSettings || onActivity) ? 'none' : showDisplay;
+        if (calendarNav) calendarNav.style.display = (onSettings || onActivity) ? 'none' : showDisplay;
         if (activityNav) activityNav.style.display = onSettings ? 'none' : showDisplay;
         if (activitySub) activitySub.style.display = onSettings ? 'none' : showDisplay;
         if (settingsNav) settingsNav.style.display = onActivity ? 'none' : showDisplay;
