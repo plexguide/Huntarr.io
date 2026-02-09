@@ -69,23 +69,9 @@
         },
 
         setupRequestModal() {
-            var self = this;
-            var modal = document.getElementById('movie-hunt-request-modal');
-            var backdrop = document.getElementById('movie-hunt-request-modal-backdrop');
-            var closeBtn = document.getElementById('movie-hunt-request-modal-close');
-            var cancelBtn = document.getElementById('movie-hunt-request-modal-cancel');
-            var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
-            if (!modal || !submitBtn) return;
-            function close() {
-                modal.style.display = 'none';
-                document.body.classList.remove('movie-hunt-request-modal-open');
-            }
-            if (backdrop) backdrop.addEventListener('click', close);
-            if (closeBtn) closeBtn.addEventListener('click', close);
-            if (cancelBtn) cancelBtn.addEventListener('click', close);
-            submitBtn.addEventListener('click', function() {
-                self.submitMovieHuntRequest();
-            });
+            // Handlers are attached/overwritten in openMovieHuntRequestModal via onclick.
+            // This is intentionally minimal — the open function sets all handlers fresh each time.
+            console.log('[MovieHunt] Request modal setup complete');
         },
 
         openMovieHuntRequestModal(item) {
@@ -101,7 +87,12 @@
             var posterImg = document.getElementById('movie-hunt-request-poster-img');
             var metaEl = document.getElementById('movie-hunt-request-modal-meta');
 
-            if (!modal || !titleEl || !submitBtn) return;
+            if (!modal || !titleEl || !submitBtn) {
+                console.error('[MovieHunt] Modal elements missing:', { modal: !!modal, titleEl: !!titleEl, submitBtn: !!submitBtn });
+                return;
+            }
+
+            var self = this;
 
             /* Move modal to body so it sits outside .app-container and is not blurred */
             if (modal.parentNode !== document.body) {
@@ -110,7 +101,7 @@
 
             /* FORCE ALIGNMENT FIX: Move status container into fields list if it's not already there */
             var fieldsList = modal.querySelector('.mh-req-fields');
-            var statusContainer = document.getElementById('movie-hunt-request-status-container');
+            statusContainer = document.getElementById('movie-hunt-request-status-container');
             if (fieldsList && statusContainer && !document.getElementById('movie-hunt-request-status-row')) {
                 var statusRow = document.createElement('div');
                 statusRow.className = 'mh-req-field';
@@ -173,109 +164,100 @@
             submitBtn.disabled = !!inLibrary;
             submitBtn.textContent = 'Add to Library';
 
-            // Populate instance dropdown
-            if (instanceSelect && window.MovieHuntInstanceDropdown) {
-                var self = this;
-                instanceSelect.innerHTML = '<option value="">Loading...</option>';
-                Promise.all([
-                    fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                    fetch('./api/movie-hunt/current-instance', { cache: 'no-store' }).then(function(r) { return r.json(); })
-                ]).then(function(results) {
-                    var list = (results[0].instances || []);
-                    var current = (results[1].instance_id != null ? results[1].instance_id : 1);
-                    instanceSelect.innerHTML = '';
-                    list.forEach(function(inst) {
-                        var opt = document.createElement('option');
-                        opt.value = String(inst.id);
-                        opt.textContent = (inst.name || 'Instance ' + inst.id);
-                        if (inst.id === current) opt.selected = true;
-                        instanceSelect.appendChild(opt);
-                    });
-                    // Check status for the currently selected instance
-                    self.checkMovieStatusForInstance(item, instanceSelect.value);
-                }).catch(function() {
-                    instanceSelect.innerHTML = '<option value="1">Default Instance</option>';
-                });
-
-                // Add change handler to check status when instance changes
-                var newInstanceSelect = instanceSelect.cloneNode(true);
-                instanceSelect.parentNode.replaceChild(newInstanceSelect, instanceSelect);
-                instanceSelect = newInstanceSelect;
-                instanceSelect.addEventListener('change', function() {
-                    self.checkMovieStatusForInstance(item, instanceSelect.value);
-                    self.loadMovieHuntRequestRootFolders(instanceSelect.value);
-                    self.loadMovieHuntQualityProfiles(instanceSelect.value);
-                });
-            }
-
-            // Show modal (class already added above so blur applies to background only)
-            modal.style.display = 'flex';
-
-            // Re-attach close handlers every time modal opens (to ensure they work)
-            var self = this;
+            // Close modal function
             function closeModal() {
                 modal.style.display = 'none';
                 document.body.classList.remove('movie-hunt-request-modal-open');
             }
 
-            // Remove old listeners and add new ones for Cancel, Close, and Backdrop
-            if (cancelBtn) {
-                var newCancelBtn = cancelBtn.cloneNode(true);
-                cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-                newCancelBtn.addEventListener('click', closeModal);
-            }
+            // Use onclick property to cleanly overwrite any previous handlers (no cloneNode needed)
+            if (cancelBtn) cancelBtn.onclick = closeModal;
+            if (closeBtn) closeBtn.onclick = closeModal;
+            if (backdrop) backdrop.onclick = function(e) {
+                if (e.target === backdrop) closeModal();
+            };
 
-            if (closeBtn) {
-                var newCloseBtn = closeBtn.cloneNode(true);
-                closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-                newCloseBtn.addEventListener('click', closeModal);
-            }
+            // Submit button - use onclick to guarantee handler is attached
+            submitBtn.onclick = function() {
+                console.log('[MovieHunt] Submit button clicked');
+                self.submitMovieHuntRequest();
+            };
 
-            if (backdrop) {
-                var newBackdrop = backdrop.cloneNode(true);
-                backdrop.parentNode.replaceChild(newBackdrop, backdrop);
-                newBackdrop.addEventListener('click', closeModal);
-            }
-
-            // Re-attach submit button listener
-            if (submitBtn) {
-                var newSubmitBtn = submitBtn.cloneNode(true);
-                submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
-                newSubmitBtn.addEventListener('click', function() {
-                    self.submitMovieHuntRequest();
+            // Populate instance dropdown
+            if (instanceSelect && window.MovieHuntInstanceDropdown) {
+                instanceSelect.innerHTML = '<option value="">Loading...</option>';
+                Promise.all([
+                    fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                    fetch('./api/movie-hunt/current-instance', { cache: 'no-store' }).then(function(r) { return r.json(); })
+                ]).then(function(results) {
+                    var instEl = document.getElementById('movie-hunt-request-instance');
+                    if (!instEl) return;
+                    var list = (results[0].instances || []);
+                    var current = (results[1].instance_id != null ? results[1].instance_id : 1);
+                    instEl.innerHTML = '';
+                    list.forEach(function(inst) {
+                        var opt = document.createElement('option');
+                        opt.value = String(inst.id);
+                        opt.textContent = (inst.name || 'Instance ' + inst.id);
+                        if (inst.id === current) opt.selected = true;
+                        instEl.appendChild(opt);
+                    });
+                    // Check status for the currently selected instance
+                    self.checkMovieStatusForInstance(item, instEl.value);
+                }).catch(function(err) {
+                    console.error('[MovieHunt] Failed to load instances:', err);
+                    var instEl = document.getElementById('movie-hunt-request-instance');
+                    if (instEl) instEl.innerHTML = '<option value="1">Default Instance</option>';
                 });
+
+                // Use onchange to cleanly overwrite previous handler
+                instanceSelect.onchange = function() {
+                    var val = instanceSelect.value;
+                    self.checkMovieStatusForInstance(item, val);
+                    self.loadMovieHuntRequestRootFolders(val);
+                    self.loadMovieHuntQualityProfiles(val);
+                };
             }
 
-            this.loadMovieHuntRequestRootFolders(instanceSelect ? instanceSelect.value : null);
-            this.loadMovieHuntQualityProfiles(instanceSelect ? instanceSelect.value : null);
+            // Show modal
+            modal.style.display = 'flex';
+
+            // Load root folders and quality profiles for selected instance
+            var currentInstanceVal = instanceSelect ? instanceSelect.value : null;
+            this.loadMovieHuntRequestRootFolders(currentInstanceVal);
+            this.loadMovieHuntQualityProfiles(currentInstanceVal);
         },
 
         checkMovieStatusForInstance(item, instanceId) {
             var statusContainer = document.getElementById('movie-hunt-request-status-container');
             var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
-            if (!statusContainer || !item || !item.tmdb_id) return;
+            var tmdbId = item ? (item.tmdb_id || item.id) : null;
+            if (!statusContainer || !item || !tmdbId) return;
 
             statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-loading"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
 
-            var url = './api/movie-hunt/movie-status?tmdb_id=' + encodeURIComponent(item.tmdb_id) + '&instance_id=' + encodeURIComponent(instanceId);
+            var url = './api/movie-hunt/movie-status?tmdb_id=' + encodeURIComponent(tmdbId) + '&instance_id=' + encodeURIComponent(instanceId);
             fetch(url, { cache: 'no-store' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
+                    // Re-fetch submitBtn from DOM (may have been cloned)
+                    submitBtn = document.getElementById('movie-hunt-request-modal-submit');
                     var inLibrary = data.found && (data.status || '').toLowerCase() === 'downloaded';
                     if (inLibrary) {
                         statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> Already in library</span>';
-                        if (submitBtn) { submitBtn.disabled = true; }
+                        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'In Library'; }
                     } else if (data.found) {
-                        statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-bookmark"></i> In collection (not yet on disk)</span>';
-                        if (submitBtn) { submitBtn.disabled = false; }
+                        statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-requested"><i class="fas fa-bookmark"></i> Already Requested</span>';
+                        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Already Requested'; }
                     } else {
                         statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to add</span>';
-                        if (submitBtn) { submitBtn.disabled = false; }
+                        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Add to Library'; }
                     }
                 })
                 .catch(function() {
+                    submitBtn = document.getElementById('movie-hunt-request-modal-submit');
                     statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to add</span>';
-                    if (submitBtn) submitBtn.disabled = false;
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Add to Library'; }
                 });
         },
 
@@ -357,58 +339,125 @@
         },
 
         submitMovieHuntRequest() {
-            var item = this._pendingRequestItem;
-            var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
-            var instanceSelect = document.getElementById('movie-hunt-request-instance');
-            var rootFolderSelect = document.getElementById('movie-hunt-request-root-folder');
-            var qualitySelect = document.getElementById('movie-hunt-request-quality-profile');
-            var minAvailSelect = document.getElementById('movie-hunt-request-minimum-availability');
-            var startSearchCb = document.getElementById('movie-hunt-request-start-search');
-            if (!item || !submitBtn) return;
-            var title = (item.title || '').trim();
-            if (!title) return;
-            var year = item.year != null ? item.year : '';
-            var instance = (instanceSelect && instanceSelect.value) ? String(instanceSelect.value).trim() : (this.selectedInstance || 'default').trim() || 'default';
-            var rootFolder = (rootFolderSelect && rootFolderSelect.value) ? String(rootFolderSelect.value).trim() : '';
-            var qualityProfile = (qualitySelect && qualitySelect.value) ? String(qualitySelect.value).trim() : '';
-            var minimumAvailability = (minAvailSelect && minAvailSelect.value) ? String(minAvailSelect.value).trim() : 'released';
-            var startSearch = startSearchCb ? startSearchCb.checked : true;
-            submitBtn.disabled = true;
-            submitBtn.textContent = startSearch ? 'Requesting...' : 'Adding...';
-            var self = this;
-            var payload = { title: title, year: year, instance: instance, start_search: startSearch, minimum_availability: minimumAvailability };
-            if (rootFolder) payload.root_folder = rootFolder;
-            if (qualityProfile) payload.quality_profile = qualityProfile;
-            if (item.tmdb_id != null) payload.tmdb_id = item.tmdb_id;
-            if (item.poster_path) payload.poster_path = item.poster_path;
-            fetch('./api/movie-hunt/request?instance_id=' + encodeURIComponent(instance), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-                .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+            try {
+                console.log('[MovieHunt] submitMovieHuntRequest called');
+                var item = this._pendingRequestItem;
+                var submitBtn = document.getElementById('movie-hunt-request-modal-submit');
+                var instanceSelect = document.getElementById('movie-hunt-request-instance');
+                var rootFolderSelect = document.getElementById('movie-hunt-request-root-folder');
+                var qualitySelect = document.getElementById('movie-hunt-request-quality-profile');
+                var minAvailSelect = document.getElementById('movie-hunt-request-minimum-availability');
+                var startSearchCb = document.getElementById('movie-hunt-request-start-search');
+
+                if (!item) {
+                    console.error('[MovieHunt] No pending request item');
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('No movie selected. Please try again.', 'error');
+                    } else { alert('No movie selected. Please try again.'); }
+                    return;
+                }
+                if (!submitBtn) {
+                    console.error('[MovieHunt] Submit button not found');
+                    return;
+                }
+
+                var title = (item.title || '').trim();
+                if (!title) {
+                    console.error('[MovieHunt] No title on item');
+                    return;
+                }
+
+                var year = item.year != null ? item.year : '';
+                var instance = (instanceSelect && instanceSelect.value) ? String(instanceSelect.value).trim() : '1';
+                var rootFolder = (rootFolderSelect && rootFolderSelect.value) ? String(rootFolderSelect.value).trim() : '';
+                var qualityProfile = (qualitySelect && qualitySelect.value) ? String(qualitySelect.value).trim() : '';
+                var minimumAvailability = (minAvailSelect && minAvailSelect.value) ? String(minAvailSelect.value).trim() : 'released';
+                var startSearch = startSearchCb ? startSearchCb.checked : true;
+
+                // Immediately show visual feedback
+                submitBtn.disabled = true;
+                submitBtn.textContent = startSearch ? 'Requesting...' : 'Adding...';
+
+                var self = this;
+                var payload = {
+                    title: title,
+                    year: year,
+                    instance: instance,
+                    start_search: startSearch,
+                    minimum_availability: minimumAvailability
+                };
+                if (rootFolder) payload.root_folder = rootFolder;
+                if (qualityProfile) payload.quality_profile = qualityProfile;
+                // Include tmdb_id from either item.tmdb_id or item.id
+                var tmdbId = item.tmdb_id || item.id;
+                if (tmdbId != null) payload.tmdb_id = tmdbId;
+                if (item.poster_path) payload.poster_path = item.poster_path;
+
+                console.log('[MovieHunt] Sending request:', JSON.stringify(payload));
+
+                fetch('./api/movie-hunt/request?instance_id=' + encodeURIComponent(instance), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(function(r) {
+                    console.log('[MovieHunt] Response status:', r.status);
+                    return r.json().then(function(data) {
+                        return { ok: r.ok, status: r.status, data: data };
+                    });
+                })
                 .then(function(result) {
+                    console.log('[MovieHunt] Response data:', JSON.stringify(result.data));
                     if (result.ok && result.data && result.data.success) {
+                        var successMsg = result.data.message || 'Successfully added to library.';
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification(result.data.message || 'Successfully added to library.', 'success');
+                            window.huntarrUI.showNotification(successMsg, 'success');
+                        } else { alert(successMsg); }
+
+                        // Update local item state so card shows "in library"
+                        if (self._pendingRequestItem) {
+                            self._pendingRequestItem.in_library = true;
+                            var cardTmdbId = self._pendingRequestItem.tmdb_id || self._pendingRequestItem.id;
+                            if (cardTmdbId) {
+                                var cards = document.querySelectorAll('.media-card[data-tmdb-id="' + cardTmdbId + '"]');
+                                cards.forEach(function(card) {
+                                    card.classList.add('in-library');
+                                    var badge = card.querySelector('.media-card-status-badge');
+                                    if (badge) {
+                                        badge.className = 'media-card-status-badge complete';
+                                        badge.innerHTML = '<i class="fas fa-check"></i>';
+                                    }
+                                    var reqBtn = card.querySelector('.media-card-request-btn');
+                                    if (reqBtn) reqBtn.style.display = 'none';
+                                });
+                            }
                         }
                         self.closeMovieHuntRequestModal();
                     } else {
-                        var msg = (result.data && result.data.message) ? result.data.message : 'Request failed';
+                        var msg = (result.data && result.data.message) ? result.data.message : 'Request failed (status ' + result.status + ')';
+                        console.error('[MovieHunt] Request failed:', msg);
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification(msg, 'error');
-                        }
+                        } else { alert(msg); }
                         submitBtn.disabled = false;
                         submitBtn.textContent = 'Add to Library';
                     }
                 })
                 .catch(function(err) {
+                    console.error('[MovieHunt] Request error:', err);
+                    var errMsg = (err && err.message) ? err.message : 'Request failed. Check console for details.';
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification(err.message || 'Request failed', 'error');
-                    }
+                        window.huntarrUI.showNotification(errMsg, 'error');
+                    } else { alert(errMsg); }
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Add to Library';
                 });
+            } catch (e) {
+                console.error('[MovieHunt] submitMovieHuntRequest exception:', e);
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('An error occurred: ' + (e.message || e), 'error');
+                } else { alert('An error occurred: ' + (e.message || e)); }
+            }
         },
 
         setupSearch() {

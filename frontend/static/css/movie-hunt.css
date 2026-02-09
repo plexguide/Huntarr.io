@@ -198,6 +198,11 @@ body.requestarr-modal-open {
     color: #fbbf24;
     border: 1px solid rgba(245, 158, 11, 0.2);
 }
+.mh-req-badge-requested {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
 .mh-req-badge-error {
     background: rgba(239, 68, 68, 0.12);
     color: #f87171;
