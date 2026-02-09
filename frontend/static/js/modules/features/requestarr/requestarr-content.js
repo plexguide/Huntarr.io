@@ -96,7 +96,7 @@ export class RequestarrContent {
      * Save the current movie + TV instance to the server (fire-and-forget).
      */
     _saveServerDefaults() {
-        fetch('./api/requestarr/settings/default-instances', {
+        return fetch('./api/requestarr/settings/default-instances', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -108,20 +108,38 @@ export class RequestarrContent {
 
     /**
      * Update the movie instance in memory + server, then sync all page dropdowns.
+     * Returns a promise that resolves once the server save completes.
      */
-    _setMovieInstance(compoundValue) {
+    async _setMovieInstance(compoundValue) {
         this.selectedMovieInstance = compoundValue;
-        this._saveServerDefaults();
         this._syncAllMovieSelectors();
+        // Clear discovery caches so stale statuses aren't served on next page load
+        this._clearDiscoveryCache('trending');
+        this._clearDiscoveryCache('movies');
+        await this._saveServerDefaults();
     }
 
     /**
      * Update the TV instance in memory + server, then sync all page dropdowns.
+     * Returns a promise that resolves once the server save completes.
      */
-    _setTVInstance(value) {
+    async _setTVInstance(value) {
         this.selectedTVInstance = value;
-        this._saveServerDefaults();
         this._syncAllTVSelectors();
+        // Clear discovery caches so stale statuses aren't served on next page load
+        this._clearDiscoveryCache('trending');
+        this._clearDiscoveryCache('tv');
+        await this._saveServerDefaults();
+    }
+
+    /**
+     * Remove a single section from the discovery localStorage cache.
+     */
+    _clearDiscoveryCache(section) {
+        const key = this.DISCOVERY_CACHE_KEYS[section];
+        if (key) {
+            try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
+        }
     }
 
     /**
@@ -210,8 +228,8 @@ export class RequestarrContent {
                 this._saveServerDefaults();
             }
 
-            select.addEventListener('change', () => {
-                this._setMovieInstance(select.value);
+            select.addEventListener('change', async () => {
+                await this._setMovieInstance(select.value);
                 console.log('[RequestarrContent] Discover movie instance changed:', select.value);
                 this.reloadDiscoverMovies();
             });
@@ -249,8 +267,8 @@ export class RequestarrContent {
                 this._saveServerDefaults();
             }
 
-            select.addEventListener('change', () => {
-                this._setTVInstance(select.value);
+            select.addEventListener('change', async () => {
+                await this._setTVInstance(select.value);
                 console.log('[RequestarrContent] Discover TV instance changed:', select.value);
                 this.reloadDiscoverTV();
             });
@@ -261,6 +279,7 @@ export class RequestarrContent {
 
     /**
      * Re-fetch and render Popular Movies carousel with the current movie instance.
+     * Also refreshes trending since movie statuses depend on the selected instance.
      */
     async reloadDiscoverMovies() {
         const carousel = document.getElementById('popular-movies-carousel');
@@ -278,11 +297,13 @@ export class RequestarrContent {
         } catch (error) {
             console.error('[RequestarrContent] Error reloading discover movies:', error);
         }
-        this.fetchAndCacheTrending();
+        // Refresh trending with updated instance params (status badges depend on selected instance)
+        await this.fetchAndCacheTrending();
     }
 
     /**
      * Re-fetch and render Popular TV carousel with the current TV instance.
+     * Also refreshes trending since TV statuses depend on the selected instance.
      */
     async reloadDiscoverTV() {
         const carousel = document.getElementById('popular-tv-carousel');
@@ -299,7 +320,8 @@ export class RequestarrContent {
         } catch (error) {
             console.error('[RequestarrContent] Error reloading discover TV:', error);
         }
-        this.fetchAndCacheTrending();
+        // Refresh trending with updated instance params (status badges depend on selected instance)
+        await this.fetchAndCacheTrending();
     }
 
     async loadMovieInstances() {
@@ -403,7 +425,7 @@ export class RequestarrContent {
                 }
                 
                 newSelect.addEventListener('change', async () => {
-                    this._setMovieInstance(newSelect.value);
+                    await this._setMovieInstance(newSelect.value);
                     console.log(`[RequestarrContent] Switched to movie instance: ${this.selectedMovieInstance}`);
                     
                     // Clear the grid immediately
@@ -533,7 +555,7 @@ export class RequestarrContent {
                 }
                 
                 newSelect.addEventListener('change', async () => {
-                    this._setTVInstance(newSelect.value);
+                    await this._setTVInstance(newSelect.value);
                     console.log(`[RequestarrContent] Switched to TV instance: ${this.selectedTVInstance}`);
                     
                     // Clear the grid immediately
@@ -648,6 +670,25 @@ export class RequestarrContent {
         }
     }
 
+    /**
+     * Build the trending API URL with current movie + TV instance params.
+     * This sends instances directly to the backend so it doesn't need to read from DB.
+     */
+    _buildTrendingUrl() {
+        let url = './api/requestarr/discover/trending';
+        const params = [];
+        if (this.selectedMovieInstance) {
+            const decoded = decodeInstanceValue(this.selectedMovieInstance);
+            if (decoded.appType) params.push(`movie_app_type=${encodeURIComponent(decoded.appType)}`);
+            if (decoded.name) params.push(`movie_instance_name=${encodeURIComponent(decoded.name)}`);
+        }
+        if (this.selectedTVInstance) {
+            params.push(`tv_instance_name=${encodeURIComponent(this.selectedTVInstance)}`);
+        }
+        if (params.length > 0) url += '?' + params.join('&');
+        return url;
+    }
+
     async loadTrending() {
         const carousel = document.getElementById('trending-carousel');
         if (!carousel) return;
@@ -658,7 +699,8 @@ export class RequestarrContent {
             return;
         }
         try {
-            const response = await fetch('./api/requestarr/discover/trending');
+            const url = this._buildTrendingUrl();
+            const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.setDiscoveryCache('trending', results);
@@ -671,7 +713,8 @@ export class RequestarrContent {
 
     async fetchAndCacheTrending() {
         try {
-            const response = await fetch('./api/requestarr/discover/trending');
+            const url = this._buildTrendingUrl();
+            const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.setDiscoveryCache('trending', results);

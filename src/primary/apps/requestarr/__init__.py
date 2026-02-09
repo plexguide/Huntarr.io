@@ -21,7 +21,7 @@ class RequestarrAPI:
         """Get hardcoded TMDB API key"""
         return "9265b0bd0cd1962f7f3225989fcd7192"
     
-    def get_trending(self, time_window: str = 'week', movie_instance: str = '', tv_instance: str = '') -> List[Dict[str, Any]]:
+    def get_trending(self, time_window: str = 'week', movie_instance: str = '', tv_instance: str = '', movie_app_type: str = 'radarr') -> List[Dict[str, Any]]:
         """Get trending movies and TV shows sorted by popularity"""
         api_key = self.get_tmdb_api_key()
         filters = self.get_discover_filters()
@@ -114,10 +114,10 @@ class RequestarrAPI:
             
             # Check library status separately for movies and TV shows using their respective instances
             if movie_results and movie_instance:
-                logger.info(f"[get_trending] Checking {len(movie_results)} movies against Radarr instance: {movie_instance}")
-                movie_results = self.check_library_status_batch(movie_results, app_type='radarr', instance_name=movie_instance)
+                logger.info(f"[get_trending] Checking {len(movie_results)} movies against {movie_app_type} instance: {movie_instance}")
+                movie_results = self.check_library_status_batch(movie_results, app_type=movie_app_type, instance_name=movie_instance)
             elif movie_results:
-                logger.info(f"[get_trending] Checking {len(movie_results)} movies against all Radarr instances")
+                logger.info(f"[get_trending] Checking {len(movie_results)} movies against all instances")
                 movie_results = self.check_library_status_batch(movie_results)
             
             if tv_results and tv_instance:
@@ -243,8 +243,8 @@ class RequestarrAPI:
             instance_name = kwargs.get('instance_name')
             
             if instance_name:
-                logger.debug(f"Checking library status for Radarr instance: {instance_name}")
-                logger.info(f"[get_popular_movies] Calling check_library_status_batch WITH instance: {instance_name}")
+                logger.debug(f"Checking library status for {app_type} instance: {instance_name}")
+                logger.info(f"[get_popular_movies] Calling check_library_status_batch WITH {app_type} instance: {instance_name}")
                 all_results = self.check_library_status_batch(all_results, app_type, instance_name)
             else:
                 # No instance specified, check all instances (old behavior)
@@ -756,14 +756,14 @@ class RequestarrAPI:
         
         Args:
             items: List of media items to check
-            app_type: Optional app type to check (radarr/sonarr). If None, checks all instances.
+            app_type: Optional app type to check (radarr/sonarr/movie_hunt). If None, checks all instances.
             instance_name: Optional instance name to check. If None, checks all instances.
         """
         try:
             # Get enabled instances
             instances = self.get_enabled_instances()
             
-            if not instances['radarr'] and not instances['sonarr']:
+            if not instances['radarr'] and not instances['sonarr'] and not instances.get('movie_hunt'):
                 # No instances configured, mark all as not in library
                 for item in items:
                     item['in_library'] = False
@@ -774,21 +774,72 @@ class RequestarrAPI:
             # Filter instances based on app_type and instance_name if provided
             radarr_instances = instances['radarr']
             sonarr_instances = instances['sonarr']
+            movie_hunt_instances = instances.get('movie_hunt', [])
+            use_movie_hunt = False
             
             if app_type and instance_name:
                 logger.info(f"Filtering instances - app_type: {app_type}, instance_name: {instance_name}")
-                if app_type == 'radarr':
+                if app_type == 'movie_hunt':
+                    # Movie Hunt handles movies — skip Radarr and Sonarr entirely
+                    movie_hunt_instances = [inst for inst in movie_hunt_instances if inst['name'] == instance_name]
+                    radarr_instances = []
+                    sonarr_instances = []
+                    use_movie_hunt = True
+                    logger.info(f"Using Movie Hunt instance: {[inst['name'] for inst in movie_hunt_instances]}")
+                elif app_type == 'radarr':
                     original_count = len(radarr_instances)
                     radarr_instances = [inst for inst in radarr_instances if inst['name'] == instance_name]
                     sonarr_instances = []  # Don't check Sonarr if Radarr is specified
+                    movie_hunt_instances = []
                     logger.info(f"Filtered Radarr instances from {original_count} to {len(radarr_instances)}: {[inst['name'] for inst in radarr_instances]}")
                 elif app_type == 'sonarr':
                     original_count = len(sonarr_instances)
                     sonarr_instances = [inst for inst in sonarr_instances if inst['name'] == instance_name]
                     radarr_instances = []  # Don't check Radarr if Sonarr is specified
+                    movie_hunt_instances = []
                     logger.info(f"Filtered Sonarr instances from {original_count} to {len(sonarr_instances)}: {[inst['name'] for inst in sonarr_instances]}")
             else:
-                logger.info(f"No instance filtering - checking all instances (Radarr: {len(radarr_instances)}, Sonarr: {len(sonarr_instances)})")
+                logger.info(f"No instance filtering - checking all instances (Radarr: {len(radarr_instances)}, Sonarr: {len(sonarr_instances)}, Movie Hunt: {len(movie_hunt_instances)})")
+            
+            # Get all movies from Movie Hunt instances (batch check)
+            movie_hunt_tmdb_ids = set()
+            if use_movie_hunt or (not app_type and movie_hunt_instances):
+                import os as _os
+                for mh_inst in movie_hunt_instances:
+                    try:
+                        mh_instance_id = mh_inst.get('id')
+                        if mh_instance_id is None:
+                            mh_instance_id = self._resolve_movie_hunt_instance_id(mh_inst['name'])
+                        if mh_instance_id is None:
+                            continue
+                        from src.primary.routes.movie_hunt.discovery import _get_collection_config
+                        collection_items = _get_collection_config(mh_instance_id)
+                        for ci in collection_items:
+                            tmdb_id = ci.get('tmdb_id')
+                            if not tmdb_id:
+                                continue
+                            status_raw = (ci.get('status') or '').lower()
+                            file_path = (ci.get('file_path') or '').strip()
+                            has_file = False
+                            if file_path and _os.path.isfile(file_path):
+                                has_file = True
+                            elif status_raw == 'available':
+                                has_file = True
+                            if has_file:
+                                movie_hunt_tmdb_ids.add(tmdb_id)
+                        # Also check detected movies from root folders
+                        try:
+                            from src.primary.routes.movie_hunt.storage import _get_detected_movies_from_all_roots
+                            detected = _get_detected_movies_from_all_roots(mh_instance_id)
+                            for d in detected:
+                                dtmdb = d.get('tmdb_id')
+                                if dtmdb:
+                                    movie_hunt_tmdb_ids.add(dtmdb)
+                        except Exception:
+                            pass
+                        logger.info(f"Found {len(movie_hunt_tmdb_ids)} movies in Movie Hunt instance {mh_inst['name']}")
+                    except Exception as e:
+                        logger.error(f"Error checking Movie Hunt instance {mh_inst.get('name', '?')}: {e}")
             
             # Get all movies from filtered Radarr instances
             radarr_tmdb_ids = set()
@@ -854,14 +905,22 @@ class RequestarrAPI:
                     item['in_cooldown'] = cooldown_status['in_cooldown']
                 else:
                     # Check ALL instances for cooldown (old behavior)
-                    if instances['radarr'] and media_type == 'movie':
+                    if media_type == 'movie':
+                        # Check Radarr instances
                         for instance in instances['radarr']:
                             instance_name_check = instance['name']
                             cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'radarr', instance_name_check, cooldown_hours)
                             if cooldown_status['in_cooldown']:
                                 item['in_cooldown'] = True
                                 break
-                    elif instances['sonarr'] and media_type == 'tv':
+                        # Also check Movie Hunt instances
+                        if not item['in_cooldown']:
+                            for mh_inst in instances.get('movie_hunt', []):
+                                cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'movie_hunt', mh_inst['name'], cooldown_hours)
+                                if cooldown_status['in_cooldown']:
+                                    item['in_cooldown'] = True
+                                    break
+                    elif media_type == 'tv' and instances['sonarr']:
                         for instance in instances['sonarr']:
                             instance_name_check = instance['name']
                             cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'sonarr', instance_name_check, cooldown_hours)
@@ -871,7 +930,8 @@ class RequestarrAPI:
                 
                 # Set library status
                 if media_type == 'movie':
-                    item['in_library'] = tmdb_id in radarr_tmdb_ids
+                    # Check Movie Hunt first (if applicable), then Radarr
+                    item['in_library'] = tmdb_id in movie_hunt_tmdb_ids or tmdb_id in radarr_tmdb_ids
                     item['partial'] = False
                 elif media_type == 'tv':
                     item['in_library'] = tmdb_id in sonarr_tmdb_ids

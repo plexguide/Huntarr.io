@@ -163,17 +163,34 @@ def get_trending():
     try:
         time_window = request.args.get('time_window', 'week')
         
-        # Get default instances for filtering
-        default_instances = requestarr_api.get_default_instances()
-        movie_instance = default_instances.get('movie_instance', '')
-        tv_instance = default_instances.get('tv_instance', '')
+        # Prefer explicit query params (sent by frontend) to avoid race conditions with DB save
+        movie_app_type = request.args.get('movie_app_type', '')
+        movie_instance_name = request.args.get('movie_instance_name', '')
+        tv_instance_name = request.args.get('tv_instance_name', '')
         
-        logger.info(f"[get_trending] Using default instances - movie: {movie_instance}, tv: {tv_instance}")
+        # Fallback to DB defaults if query params not provided
+        if not movie_instance_name or not movie_app_type:
+            default_instances = requestarr_api.get_default_instances()
+            raw_movie = default_instances.get('movie_instance', '')
+            tv_instance_name = tv_instance_name or default_instances.get('tv_instance', '')
+            
+            # Parse compound movie instance value (e.g. "movie_hunt:First" or "radarr:Radarr Test")
+            if raw_movie and ':' in raw_movie:
+                parts = raw_movie.split(':', 1)
+                movie_app_type = movie_app_type or parts[0]
+                movie_instance_name = movie_instance_name or parts[1]
+            else:
+                # Legacy plain instance name — assume radarr
+                movie_app_type = movie_app_type or 'radarr'
+                movie_instance_name = movie_instance_name or raw_movie
+        
+        logger.info(f"[get_trending] Using instances - movie: {movie_app_type}:{movie_instance_name}, tv: sonarr:{tv_instance_name}")
         
         results = requestarr_api.get_trending(
             time_window,
-            movie_instance=movie_instance,
-            tv_instance=tv_instance
+            movie_instance=movie_instance_name,
+            tv_instance=tv_instance_name,
+            movie_app_type=movie_app_type or 'radarr'
         )
         return jsonify({'results': results})
     except Exception as e:
