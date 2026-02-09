@@ -11,6 +11,7 @@
         currentMovieStatus: null,
         tmdbApiKey: null,
         movieHuntInstances: [],
+        combinedInstances: [],  // Movie Hunt + Radarr for dropdown; value is "mh:<id>" or "radarr:<name>"
         selectedInstanceId: null,
 
         /* ── Init ─────────────────────────────────────────────── */
@@ -65,6 +66,7 @@
             if (this.movieHuntInstances.length === 0) {
                 await this.loadMovieHuntInstances();
             }
+            await this.loadCombinedInstances();
 
             // Pre-select instance when opened from Requestarr/Home with a specific Movie Hunt instance
             const requestedInstanceName = (options && options.instanceName) ? String(options.instanceName).trim() : '';
@@ -190,12 +192,18 @@
                 actionBtnHTML = '<button class="mh-btn mh-btn-primary" id="mh-btn-request"><i class="fas fa-download"></i> Request Movie</button>';
             }
 
-            // Instance selector
+            // Instance selector (Movie Hunt + Radarr); value is "mh:<id>" or "radarr:<name>"
             let instanceOpts = '';
-            if (this.movieHuntInstances.length > 0) {
+            if (this.combinedInstances.length > 0) {
+                const selectedValue = this.selectedInstanceId ? ('mh:' + this.selectedInstanceId) : '';
+                instanceOpts = this.combinedInstances.map(opt => {
+                    const sel = (opt.value === selectedValue) ? ' selected' : '';
+                    return '<option value="' + this.escapeHtml(opt.value) + '"' + sel + '>' + this.escapeHtml(opt.label) + '</option>';
+                }).join('');
+            } else if (this.movieHuntInstances.length > 0) {
                 instanceOpts = this.movieHuntInstances.map(inst => {
                     const sel = inst.id === this.selectedInstanceId ? ' selected' : '';
-                    return '<option value="' + inst.id + '"' + sel + '>' + this.escapeHtml(inst.name) + '</option>';
+                    return '<option value="mh:' + inst.id + '"' + sel + '>' + this.escapeHtml(inst.name) + '</option>';
                 }).join('');
             } else {
                 instanceOpts = '<option>Loading...</option>';
@@ -364,21 +372,52 @@
             const deleteBtn = document.getElementById('mh-tb-delete');
             if (deleteBtn) deleteBtn.addEventListener('click', () => this.openDeleteModal());
 
-            // Instance selector
+            // Instance selector (Movie Hunt: refresh status; Radarr: switch to Requestarr detail)
             const instanceSelect = document.getElementById('mh-detail-instance-select');
             if (instanceSelect) {
                 instanceSelect.addEventListener('change', async () => {
-                    const instanceId = parseInt(instanceSelect.value, 10);
-                    if (!instanceId) return;
-                    this.selectedInstanceId = instanceId;
-                    try {
-                        await fetch('./api/movie-hunt/current-instance', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ instance_id: instanceId })
-                        });
-                    } catch (_) {}
-                    this.updateMovieStatus();
+                    const value = (instanceSelect.value || '').trim();
+                    if (!value) return;
+
+                    if (value.startsWith('radarr:')) {
+                        const movie = this.currentMovie;
+                        if (!movie) return;
+                        const movieData = {
+                            tmdb_id: movie.tmdb_id || movie.id,
+                            id: movie.tmdb_id || movie.id,
+                            title: movie.title,
+                            year: movie.year,
+                            poster_path: movie.poster_path,
+                            backdrop_path: movie.backdrop_path,
+                            overview: movie.overview,
+                            vote_average: movie.vote_average,
+                            in_library: movie.in_library,
+                            in_cooldown: movie.in_cooldown
+                        };
+                        this.closeDetail(true);
+                        if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
+                            window.huntarrUI.switchSection('requestarr-discover');
+                        }
+                        const RequestarrDetail = window.RequestarrDetail || (window.Requestarr && window.Requestarr.RequestarrDetail);
+                        if (RequestarrDetail && typeof RequestarrDetail.openDetail === 'function') {
+                            RequestarrDetail.openDetail(movieData, { suggestedInstance: value }, false);
+                        }
+                        return;
+                    }
+
+                    if (value.startsWith('mh:')) {
+                        const instanceId = parseInt(value.slice(3), 10);
+                        if (!instanceId) return;
+                        this.selectedInstanceId = instanceId;
+                        try {
+                            await fetch('./api/movie-hunt/current-instance', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ instance_id: instanceId })
+                            });
+                        } catch (_) {}
+                        this.updateMovieStatus();
+                    }
                 });
                 this.updateMovieStatus();
             }
@@ -667,6 +706,37 @@
                 this.movieHuntInstances = [];
                 this.selectedInstanceId = null;
             }
+        },
+
+        async loadCombinedInstances() {
+            const combined = [];
+            this.movieHuntInstances.forEach(inst => {
+                combined.push({
+                    type: 'movie_hunt',
+                    value: 'mh:' + inst.id,
+                    label: 'Movie Hunt – ' + (inst.name || ''),
+                    id: inst.id,
+                    name: inst.name
+                });
+            });
+            try {
+                const resp = await fetch('./api/requestarr/instances/radarr');
+                const data = await resp.json();
+                if (data.instances && data.instances.length > 0) {
+                    data.instances.forEach(inst => {
+                        const name = inst.name || '';
+                        combined.push({
+                            type: 'radarr',
+                            value: 'radarr:' + name,
+                            label: 'Radarr – ' + name,
+                            name: name
+                        });
+                    });
+                }
+            } catch (err) {
+                console.warn('[MovieHuntDetail] Could not load Radarr instances for dropdown:', err);
+            }
+            this.combinedInstances = combined;
         },
 
         async checkMovieStatus(tmdbId, instanceId) {
