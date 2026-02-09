@@ -252,19 +252,35 @@ window.CycleCountdown = (function() {
         });
     }
     
-    // Return all timer elements for an app (one per card when multiple instance cards exist)
+    // Return all timer elements for an app (grid cards AND list-mode rows)
     function getTimerElements(app) {
-        return document.querySelectorAll('.app-stats-card.' + app + ' .cycle-timer');
+        // Grid mode: timers inside .app-stats-card
+        var cardTimers = document.querySelectorAll('.app-stats-card.' + app + ' .cycle-timer');
+        // List mode: timers inside <tr> within a list table belonging to this app group
+        var listTimers = document.querySelectorAll('.app-group[data-app="' + app + '"] .cycle-timer');
+        if (listTimers.length === 0) return cardTimers;
+        if (cardTimers.length === 0) return listTimers;
+        // Merge both NodeLists
+        var all = [];
+        cardTimers.forEach(function(t) { all.push(t); });
+        listTimers.forEach(function(t) { if (all.indexOf(t) === -1) all.push(t); });
+        return all;
     }
     
-    // Get instance name for a timer (from reset button or card in same card); returns null for single-app (e.g. swaparr)
+    // Get instance name for a timer (from reset button or card/row in same container)
     function getInstanceNameForTimer(timerElement) {
+        // Grid mode — timer is inside .app-stats-card
         const card = timerElement.closest('.app-stats-card');
-        if (!card) return null;
-        const resetBtn = card.querySelector('.cycle-reset-button[data-instance-name]');
-        const fromBtn = resetBtn ? resetBtn.getAttribute('data-instance-name') : null;
-        const fromCard = card.getAttribute('data-instance-name');
-        return fromBtn || fromCard || null;
+        if (card) {
+            const resetBtn = card.querySelector('.cycle-reset-button[data-instance-name]');
+            const fromBtn = resetBtn ? resetBtn.getAttribute('data-instance-name') : null;
+            const fromCard = card.getAttribute('data-instance-name');
+            return fromBtn || fromCard || null;
+        }
+        // List mode — timer is inside a <tr> with data-instance-name
+        const row = timerElement.closest('tr[data-instance-name]');
+        if (row) return row.getAttribute('data-instance-name') || null;
+        return null;
     }
     
     // Key for per-instance state: "app" for single-app, "app-instanceName" for *arr instances

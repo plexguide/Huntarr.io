@@ -87,6 +87,14 @@
     gap: 14px !important;
 }
 
+/* ── FORCE-HIDE old static template cards ──────────────────────── */
+/* Dynamic JS cards have .dynamic-card; the old HTML template cards
+   must never appear regardless of what checkAppConnections does.   */
+#app-stats-grid > .app-stats-card:not(.dynamic-card),
+#app-stats-grid > .app-stats-card-wrapper {
+    display: none !important;
+}
+
 /* ── App Stat Cards — cleaner modern look ───────────────────────── */
 #homeSection .app-stats-card {
     background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
@@ -420,26 +428,34 @@
    ═══════════════════════════════════════════════════════════════════ */
 .card-drag-handle {
     position: absolute;
-    top: 8px;
-    left: 8px;
+    top: 10px;
+    left: 10px;
     cursor: grab;
     color: #334155;
-    font-size: 0.82rem;
-    padding: 4px;
+    font-size: 0.78rem;
+    padding: 4px 5px;
     z-index: 5;
-    transition: color 0.2s;
+    transition: color 0.2s, background 0.2s;
     line-height: 1;
     border-radius: 4px;
 }
 
 .card-drag-handle:hover {
     color: #94a3b8;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .card-drag-handle:active {
     cursor: grabbing;
     color: #60a5fa;
+}
+
+/* Push card content down so the drag handle doesn't overlap the API bar */
+.app-stats-card.dynamic-card {
+    padding-top: 8px !important;
+}
+.app-stats-card.dynamic-card .hourly-cap-container {
+    margin-top: 18px !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -475,60 +491,74 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   LIST MODE — compact table
+   LIST MODE — polished grouped table
    ═══════════════════════════════════════════════════════════════════ */
 .app-stats-list {
     display: flex !important;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .app-stats-list .app-group {
     grid-column: unset;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(15, 23, 42, 0.5);
 }
 
 .app-stats-list .app-group-header.list-header {
     margin-bottom: 0;
-    padding: 8px 12px;
-    background: rgba(30, 41, 59, 0.5);
-    border-radius: 8px 8px 0 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 10px 16px;
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(22, 30, 45, 0.6));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0;
 }
 
 .app-list-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.82rem;
-    background: rgba(15, 23, 42, 0.4);
-    border-radius: 0 0 8px 8px;
-    overflow: hidden;
+    table-layout: fixed;
 }
+
+/* Column widths for alignment */
+.app-list-table colgroup .col-instance { width: 28%; }
+.app-list-table colgroup .col-searches { width: 16%; }
+.app-list-table colgroup .col-upgrades { width: 16%; }
+.app-list-table colgroup .col-api      { width: 28%; }
+.app-list-table colgroup .col-actions  { width: 12%; }
 
 .app-list-table thead th {
     text-align: left;
-    padding: 6px 12px;
-    color: #64748b;
-    font-size: 0.72rem;
-    font-weight: 600;
+    padding: 8px 16px;
+    color: #475569;
+    font-size: 0.68rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(30, 41, 59, 0.3);
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(15, 23, 42, 0.3);
 }
 
 .app-list-table tbody tr {
     transition: background 0.15s;
 }
 
+.app-list-table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.015);
+}
+
 .app-list-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(59, 130, 246, 0.04);
 }
 
 .app-list-table tbody td {
-    padding: 8px 12px;
-    color: #e2e8f0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    padding: 10px 16px;
+    color: #cbd5e1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.025);
     white-space: nowrap;
+    vertical-align: middle;
 }
 
 .app-list-table tbody tr:last-child td {
@@ -538,16 +568,18 @@
 .list-instance-name {
     font-weight: 600;
     color: #f1f5f9;
+    font-size: 0.84rem;
 }
 
 .list-stat {
-    font-weight: 700;
-    font-size: 0.9rem;
+    font-weight: 800;
+    font-size: 0.95rem;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
 }
 
 /* Per-app stat colors in list mode */
-.list-stat.movie_hunt { color: #f59e0b; }
+.list-stat.movie_hunt { color: #fbbf24; }
 .list-stat.sonarr     { color: #60a5fa; }
 .list-stat.radarr     { color: #fbbf24; }
 .list-stat.lidarr     { color: #4ade80; }
@@ -555,48 +587,63 @@
 .list-stat.whisparr,
 .list-stat.eros       { color: #f472b6; }
 
-/* Mini API bar in list mode */
+/* API usage cell in list mode */
 .list-api {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .list-api-bar {
-    width: 60px;
-    height: 4px;
+    width: 80px;
+    height: 5px;
     background: rgba(15, 23, 42, 0.8);
     border-radius: 4px;
     overflow: hidden;
     flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .list-api-fill {
     height: 100%;
     border-radius: 4px;
-    transition: width 0.4s ease;
+    transition: width 0.5s ease;
 }
 
 /* Per-app progress fill colors in list */
-.list-api-fill.movie_hunt { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-.list-api-fill.sonarr     { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-.list-api-fill.radarr     { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-.list-api-fill.lidarr     { background: linear-gradient(90deg, #22c55e, #4ade80); }
-.list-api-fill.readarr    { background: linear-gradient(90deg, #a855f7, #c084fc); }
+.list-api-fill.movie_hunt { background: linear-gradient(90deg, #f59e0b, #fbbf24); box-shadow: 0 0 4px rgba(245, 158, 11, 0.3); }
+.list-api-fill.sonarr     { background: linear-gradient(90deg, #3b82f6, #60a5fa); box-shadow: 0 0 4px rgba(59, 130, 246, 0.3); }
+.list-api-fill.radarr     { background: linear-gradient(90deg, #f59e0b, #fbbf24); box-shadow: 0 0 4px rgba(245, 158, 11, 0.3); }
+.list-api-fill.lidarr     { background: linear-gradient(90deg, #22c55e, #4ade80); box-shadow: 0 0 4px rgba(34, 197, 94, 0.3); }
+.list-api-fill.readarr    { background: linear-gradient(90deg, #a855f7, #c084fc); box-shadow: 0 0 4px rgba(168, 85, 247, 0.3); }
 .list-api-fill.whisparr,
-.list-api-fill.eros       { background: linear-gradient(90deg, #ec4899, #f472b6); }
+.list-api-fill.eros       { background: linear-gradient(90deg, #ec4899, #f472b6); box-shadow: 0 0 4px rgba(236, 72, 153, 0.3); }
 
 .list-api-text {
     color: #64748b;
-    font-size: 0.72rem;
+    font-size: 0.74rem;
     font-family: 'SF Mono', 'Fira Code', monospace;
     letter-spacing: 0.02em;
+    min-width: 42px;
+}
+
+.list-actions {
+    text-align: right;
 }
 
 .list-actions .cycle-reset-button {
-    padding: 3px 8px !important;
+    padding: 4px 10px !important;
     font-size: 0.72rem !important;
-    border-radius: 5px !important;
+    border-radius: 6px !important;
+    background: rgba(30, 41, 59, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #64748b !important;
+}
+
+.list-actions .cycle-reset-button:hover {
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    color: #f87171 !important;
+    background: rgba(239, 68, 68, 0.08) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════

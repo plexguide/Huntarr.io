@@ -533,6 +533,13 @@ window.HuntarrStats = {
                     '<span class="app-group-label">' + meta.label + '</span>' +
                 '</div>' +
                 '<table class="app-list-table">' +
+                    '<colgroup>' +
+                        '<col class="col-instance">' +
+                        '<col class="col-searches">' +
+                        '<col class="col-upgrades">' +
+                        '<col class="col-api">' +
+                        '<col class="col-actions">' +
+                    '</colgroup>' +
                     '<thead><tr>' +
                         '<th>Instance</th>' +
                         '<th>Searches</th>' +
