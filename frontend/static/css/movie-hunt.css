@@ -1358,3 +1358,18 @@ body.requestarr-modal-open {
         width: 100% !important;
     }
 }
+
+/* Force Status Badge alignment in column 2 */
+#movie-hunt-request-status-row,
+.mh-req-fields > .mh-req-field:first-child:has(#movie-hunt-request-status-container) {
+    margin-bottom: 4px !important;
+}
+
+#movie-hunt-request-status-container {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}

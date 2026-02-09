@@ -107,6 +107,19 @@
             if (modal.parentNode !== document.body) {
                 document.body.appendChild(modal);
             }
+
+            /* FORCE ALIGNMENT FIX: Move status container into fields list if it's not already there */
+            var fieldsList = modal.querySelector('.mh-req-fields');
+            var statusContainer = document.getElementById('movie-hunt-request-status-container');
+            if (fieldsList && statusContainer && !document.getElementById('movie-hunt-request-status-row')) {
+                var statusRow = document.createElement('div');
+                statusRow.className = 'mh-req-field';
+                statusRow.id = 'movie-hunt-request-status-row';
+                statusRow.innerHTML = '<label>Status</label>';
+                statusRow.appendChild(statusContainer);
+                fieldsList.insertBefore(statusRow, fieldsList.firstChild);
+            }
+
             /* Ensure modal is on top: body class triggers blur on .app-container only */
             document.body.classList.add('movie-hunt-request-modal-open');
 
