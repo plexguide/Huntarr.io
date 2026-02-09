@@ -219,9 +219,9 @@ body.requestarr-modal-open {
     font-weight: 600;
     color: rgba(148, 163, 184, 0.6);
     text-align: left;
-    /* Ensure label stays as one grid item even with inline icons */
-    display: flex;
-    align-items: center;
+    /* Keep label text and icon on same line without breaking grid */
+    white-space: nowrap;
+    overflow: visible;
 }
 .mh-req-field select,
 .mh-req-field .mh-req-field-input-wrap {
@@ -349,6 +349,290 @@ body.requestarr-modal-open {
 #movie-hunt-search-results-grid,
 #movie-hunt-collection-grid {
     justify-items: start;
+}
+
+/* ── Requestarr-style Search Bar ───────────────────────────────── */
+.requestarr-search-container {
+    position: relative;
+    width: 100%;
+    margin: 0 20px 20px 20px;
+    padding: 0;
+}
+
+.requestarr-search-container i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #475569;
+    font-size: 18px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.requestarr-search-container input {
+    width: 100%;
+    padding: 16px 55px 16px 55px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: #e2e8f0;
+    font-size: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.requestarr-search-container input:focus {
+    outline: none;
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    background: rgba(30, 41, 59, 0.9);
+}
+
+.requestarr-search-container input::placeholder {
+    color: #475569;
+}
+
+.requestarr-search-container .clear-search-btn {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #475569;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 8px;
+    z-index: 2;
+    transition: color 0.2s;
+}
+
+.requestarr-search-container .clear-search-btn:hover {
+    color: #e2e8f0;
+}
+
+/* ── TMDB Search Results in Collection ───────────────────────────── */
+.media-collection-tmdb-results {
+    margin: 0 20px 20px 20px;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 8px;
+}
+.tmdb-results-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.tmdb-results-title i {
+    color: #818cf8;
+}
+
+/* ── Table View ──────────────────────────────────────────────────── */
+.media-table-container {
+    padding: 0 20px 40px 20px;
+}
+.media-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.media-table thead {
+    background: rgba(15, 23, 42, 0.6);
+}
+.media-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(148, 163, 184, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+.media-table tbody tr {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.05);
+    transition: background 0.15s;
+}
+.media-table tbody tr:hover {
+    background: rgba(59, 130, 246, 0.08);
+}
+.media-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #e2e8f0;
+}
+.media-table td.loading-cell {
+    text-align: center;
+    padding: 40px;
+    color: rgba(148, 163, 184, 0.6);
+}
+.media-table .table-poster {
+    width: 40px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.media-table .table-title {
+    font-weight: 500;
+    color: #f1f5f9;
+}
+.media-table .table-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.media-table .table-status.available {
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+}
+.media-table .table-status.requested {
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+}
+.media-table .table-actions {
+    display: flex;
+    gap: 8px;
+}
+.media-table .table-action-btn {
+    padding: 6px 10px;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 4px;
+    color: #60a5fa;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.media-table .table-action-btn:hover {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+.media-table .table-action-btn.danger {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+.media-table .table-action-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* ── Overview View ───────────────────────────────────────────────── */
+.media-overview-container {
+    padding: 0 20px 40px 20px;
+}
+.media-overview-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 8px;
+    transition: all 0.15s;
+    cursor: pointer;
+}
+.media-overview-item:hover {
+    background: rgba(15, 23, 42, 0.5);
+    border-color: rgba(148, 163, 184, 0.15);
+}
+.media-overview-poster {
+    flex-shrink: 0;
+    width: 80px;
+    height: 120px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+.media-overview-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.media-overview-details {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.media-overview-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+.media-overview-year {
+    color: rgba(148, 163, 184, 0.7);
+    font-size: 14px;
+}
+.media-overview-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+}
+.media-overview-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(148, 163, 184, 0.8);
+}
+.media-overview-meta-item i {
+    font-size: 11px;
+}
+.media-overview-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.media-overview-status.available {
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+}
+.media-overview-status.requested {
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+}
+.media-overview-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+.media-overview-action-btn {
+    padding: 6px 12px;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 4px;
+    color: #60a5fa;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.media-overview-action-btn:hover {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+.media-overview-action-btn.danger {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+.media-overview-action-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.5);
 }
 #movie-hunt-movies-grid .media-card,
 #movie-hunt-search-results-grid .media-card,

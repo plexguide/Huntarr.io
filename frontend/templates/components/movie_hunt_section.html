@@ -64,14 +64,14 @@
 
     <!-- Media Collection View (requested movies, status tracking) -->
     <div id="movie-hunt-collection-view" class="movie-hunt-collection-view" style="display: none;">
-        <div class="media-collection-requestarr-search" style="margin-bottom: 12px;">
+        <div class="requestarr-search-container">
             <i class="fas fa-search"></i>
-            <input id="media-collection-search-to-request" type="text" placeholder="Search movies to request (opens Requestarr)..." autocomplete="off">
-            <button type="button" id="media-collection-search-to-request-btn" class="mh-btn mh-btn-primary"><i class="fas fa-external-link-alt"></i> Search in Requestarr</button>
+            <input id="media-collection-search-to-request" type="text" placeholder="Search movies to add to collection..." autocomplete="off">
+            <button type="button" id="media-collection-clear-search-btn" class="clear-search-btn" style="display: none;"><i class="fas fa-times"></i></button>
         </div>
-        <div class="hidden-media-search">
-            <i class="fas fa-search"></i>
-            <input id="movie-hunt-collection-search" class="hidden-media-search-input" type="text" placeholder="Search requested media...">
+        <div id="media-collection-tmdb-results" class="media-collection-tmdb-results" style="display: none;">
+            <h3 class="tmdb-results-title"><i class="fas fa-film"></i> Search Results</h3>
+            <div id="media-collection-tmdb-grid" class="media-grid"></div>
         </div>
         <div class="movies-controls movie-hunt-collection-controls">
             <div class="instance-selector-container">
@@ -89,11 +89,43 @@
                     <option value="status.desc">Status (Requested first)</option>
                 </select>
             </div>
+            <div class="view-mode-selector">
+                <select id="movie-hunt-collection-view-mode" class="control-select">
+                    <option value="posters">Posters</option>
+                    <option value="table">Table</option>
+                    <option value="overview">Overview</option>
+                </select>
+            </div>
         </div>
         <div id="movie-hunt-collection-grid" class="media-grid">
             <div class="loading-spinner">
                 <i class="fas fa-spinner fa-spin"></i>
                 <p>Loading media collection...</p>
+            </div>
+        </div>
+        <div id="movie-hunt-collection-table" class="media-table-container" style="display: none;">
+            <table class="media-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;"></th>
+                        <th>Title</th>
+                        <th style="width: 80px;">Year</th>
+                        <th style="width: 120px;">Status</th>
+                        <th style="width: 150px;">Quality Profile</th>
+                        <th style="width: 100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="movie-hunt-collection-table-body">
+                    <tr><td colspan="6" class="loading-cell">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="movie-hunt-collection-overview" class="media-overview-container" style="display: none;">
+            <div id="movie-hunt-collection-overview-list">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading media collection...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -172,7 +204,7 @@
                             </select>
                         </div>
                         <div class="mh-req-field">
-                            <label>Minimum Availability <a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#minimum-availability" class="mh-req-more-info-icon" target="_blank" rel="noopener" title="Learn more about Minimum Availability"><i class="fas fa-info-circle"></i></a></label>
+                            <label><span>Minimum Availability</span> <a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#minimum-availability" class="mh-req-more-info-icon" target="_blank" rel="noopener" title="Learn more about Minimum Availability"><i class="fas fa-info-circle"></i></a></label>
                             <select id="movie-hunt-request-minimum-availability" aria-label="Minimum Availability">
                                 <option value="released" selected>Released</option>
                                 <option value="inCinemas">In Cinemas</option>
