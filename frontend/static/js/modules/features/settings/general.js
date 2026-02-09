@@ -236,10 +236,64 @@
                     <p class="setting-help" style="margin-left: -3ch !important;">Display rotating discover content on the home page (Trending This Week, Popular Movies, Popular TV Shows).</p>
                 </div>
             </div>
+
+            <div class="settings-group">
+                <h3>Dashboard</h3>
+                <div class="setting-item">
+                    <label for="dashboard_view_mode">Dashboard View Mode:</label>
+                    <select id="dashboard_view_mode" class="control-select" style="width: 200px;">
+                        <option value="grid" ${(!settings.dashboard_view_mode || settings.dashboard_view_mode === "grid") ? "selected" : ""}>Grid (Default)</option>
+                        <option value="list" ${settings.dashboard_view_mode === "list" ? "selected" : ""}>List</option>
+                    </select>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Choose between grid cards or a compact list table for the Hunt Activity dashboard.</p>
+                </div>
+                <div class="setting-item">
+                    <label>Reset Card Order:</label>
+                    <button type="button" id="reset-dashboard-layout-btn" style="
+                        background: rgba(239, 68, 68, 0.15);
+                        color: #f87171;
+                        border: 1px solid rgba(239, 68, 68, 0.3);
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        font-size: 13px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    "><i class="fas fa-undo"></i> Reset to Defaults</button>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Reset the dashboard card order and view mode to defaults.</p>
+                </div>
+            </div>
         `;
 
         if (window.SettingsForms.setupSettingsManualSave) {
             window.SettingsForms.setupSettingsManualSave(container, settings);
+        }
+
+        // Dashboard: reset layout button
+        const resetLayoutBtn = container.querySelector('#reset-dashboard-layout-btn');
+        if (resetLayoutBtn) {
+            resetLayoutBtn.addEventListener('click', function() {
+                if (window.HuntarrStats && window.HuntarrStats.resetDashboardLayout) {
+                    window.HuntarrStats.resetDashboardLayout();
+                    // Also reset the dropdown in this form
+                    const modeSelect = container.querySelector('#dashboard_view_mode');
+                    if (modeSelect) modeSelect.value = 'grid';
+                } else {
+                    localStorage.removeItem('huntarr-dashboard-layout');
+                    localStorage.removeItem('huntarr-dashboard-view-mode');
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Dashboard layout reset to defaults', 'success');
+                    }
+                }
+            });
+        }
+
+        // Dashboard: sync view mode change to localStorage immediately
+        const viewModeSelect = container.querySelector('#dashboard_view_mode');
+        if (viewModeSelect) {
+            viewModeSelect.addEventListener('change', function() {
+                try { localStorage.setItem('huntarr-dashboard-view-mode', this.value); } catch(e) {}
+            });
         }
 
         // When TMDB cache is disabled, disable the storage location selector

@@ -43,7 +43,7 @@ def process_missing_movies(
     if stop_check():
         return False
 
-    from ...routes.movie_hunt.discovery import _get_collection_config, perform_movie_hunt_request, check_minimum_availability
+    from ...routes.movie_hunt.discovery import _get_collection_config, _save_collection_config, perform_movie_hunt_request, check_minimum_availability
     from ...routes.movie_hunt.storage import _get_detected_movies_from_all_roots
 
     collection = _get_collection_config(instance_id)
@@ -56,6 +56,7 @@ def process_missing_movies(
             detected_set.add((t, y))
 
     missing_items = []
+    dates_backfilled = False
     for it in collection:
         if not isinstance(it, dict):
             continue
@@ -69,6 +70,10 @@ def process_missing_movies(
         key = (title.lower(), year)
         if key in detected_set:
             continue
+
+        # Track if check_minimum_availability backfilled dates (it mutates the item dict)
+        old_dates = (it.get('in_cinemas', ''), it.get('digital_release', ''), it.get('physical_release', ''))
+
         # Check minimum availability before adding to search queue
         if not check_minimum_availability(it):
             min_avail = it.get("minimum_availability", "released")
@@ -76,8 +81,21 @@ def process_missing_movies(
                 "Movie Hunt missing: skipping '%s' (%s) — minimum availability '%s' not met yet.",
                 title, year or "no year", min_avail
             )
-            continue
-        missing_items.append({"title": title, "year": year, "tmdb_id": it.get("tmdb_id"), "root_folder": it.get("root_folder"), "quality_profile": it.get("quality_profile"), "poster_path": it.get("poster_path")})
+        else:
+            missing_items.append({"title": title, "year": year, "tmdb_id": it.get("tmdb_id"), "root_folder": it.get("root_folder"), "quality_profile": it.get("quality_profile"), "poster_path": it.get("poster_path")})
+
+        # If check_minimum_availability fetched and stored new dates on the item, mark for save
+        new_dates = (it.get('in_cinemas', ''), it.get('digital_release', ''), it.get('physical_release', ''))
+        if new_dates != old_dates:
+            dates_backfilled = True
+
+    # Persist any backfilled release dates so future cycles don't re-fetch
+    if dates_backfilled:
+        try:
+            _save_collection_config(collection, instance_id)
+            movie_hunt_logger.info("Movie Hunt instance '%s': backfilled release dates for collection items.", instance_name)
+        except Exception as e:
+            movie_hunt_logger.debug("Could not save backfilled dates: %s", e)
 
     if not missing_items:
         movie_hunt_logger.info("Movie Hunt instance '%s': no missing collection items to process.", instance_name)
@@ -96,6 +114,17 @@ def process_missing_movies(
         quality_profile = item.get("quality_profile") or None
         tmdb_id = item.get("tmdb_id")
         poster_path = item.get("poster_path") or None
+
+        # Increment "hunted" stat on every search ATTEMPT (matches Radarr/Sonarr behavior
+        # where hunted = "triggered search", not just "found and downloaded").
+        # Use str(instance_id) as the key — must match what get_configured_instances returns
+        # as "instance_id" so the stats API lookup finds the right per-instance record.
+        try:
+            from src.primary.stats_manager import increment_stat_only
+            increment_stat_only("movie_hunt", "hunted", 1, str(instance_id))
+        except Exception as e:
+            movie_hunt_logger.debug("Could not increment hunted stat: %s", e)
+
         success, msg = perform_movie_hunt_request(
             instance_id, title, year,
             root_folder=root_folder, quality_profile=quality_profile,
@@ -104,11 +133,6 @@ def process_missing_movies(
         if success:
             processed_any = True
             movie_hunt_logger.info("Movie Hunt missing: '%s' (%s) sent to download client.", title, year or "no year")
-            try:
-                from src.primary.stats_manager import increment_stat_only
-                increment_stat_only("movie_hunt", "hunted", 1, str(instance_id))
-            except Exception as e:
-                movie_hunt_logger.debug("Could not increment stat: %s", e)
             try:
                 from ...utils.history_manager import log_processed_media
                 log_processed_media("movie_hunt", f"{title} ({year})" if year else title, tmdb_id, str(instance_id), "missing", display_name_for_log=instance_name)

@@ -112,16 +112,26 @@
                 </div>
             </div>
         </div>
-        <!-- Live Hunts Executed -->
+        <!-- Hunt Activity -->
         <div class="card stats-card">
             <div class="home-section-bar">
                 <div class="home-section-bar-left">
                     <i class="fas fa-crosshairs home-section-icon"></i>
-                    <span class="home-section-title">Live Hunts Executed</span>
+                    <span class="home-section-title">Hunt Activity</span>
                 </div>
-                <button id="reset-stats" class="home-section-btn" title="Reset Stats">
-                    <i class="fas fa-sync-alt"></i> Reset Stats
-                </button>
+                <div class="home-section-bar-right">
+                    <div class="view-toggle-group" id="dashboard-view-toggle">
+                        <button class="view-toggle-btn active" data-view="grid" title="Grid View">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-toggle-btn" data-view="list" title="List View">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                    <button id="reset-stats" class="home-section-btn" title="Reset Stats">
+                        <i class="fas fa-sync-alt"></i> Reset Stats
+                    </button>
+                </div>
             </div>
             <div class="media-stats-container">
                 <!-- Empty State for Live Hunts -->
@@ -138,7 +148,7 @@
                     </button>
                 </div>
 
-                <div class="app-stats-grid">
+                <div class="app-stats-grid" id="app-stats-grid">
                     <!-- Movie Hunt Card (first: Huntarr icon, so users see Movie Hunt upfront) -->
                     <div class="app-stats-card movie_hunt" style="display: none;">
                         <div class="status-container" style="display: none;">

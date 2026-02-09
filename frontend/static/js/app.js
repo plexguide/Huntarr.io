@@ -82,6 +82,11 @@ let huntarrUI = {
         const currentPath = window.location.pathname.replace(/\/$/, '');
         if (currentPath === '' || currentPath === basePath) {
             this.loadMediaStats();
+            // Initialize view toggle and start live polling on initial home load
+            if (window.HuntarrStats) {
+                window.HuntarrStats.initViewToggle();
+                window.HuntarrStats.startPolling();
+            }
         }
         
         // Check if we need to navigate to a specific section after refresh
@@ -536,6 +541,9 @@ let huntarrUI = {
             }
         }
         
+        // Stop stats polling when leaving home section
+        if (window.HuntarrStats) window.HuntarrStats.stopPolling();
+
         // Update active section
         this.elements.sections.forEach(s => {
             s.classList.remove('active');
@@ -578,6 +586,11 @@ let huntarrUI = {
             this.loadSwaparrStatus();
             // Refresh stats when returning to home section
             this.loadMediaStats();
+            // Initialize view toggle and start live polling
+            if (window.HuntarrStats) {
+                window.HuntarrStats.initViewToggle();
+                window.HuntarrStats.startPolling();
+            }
         } else if (section === 'logs-movie-hunt' && this.elements.logsSection) {
             // Movie Hunt logs - show logsSection under Movie Hunt sidebar (hide tab bar)
             var activitySection = document.getElementById('activitySection');

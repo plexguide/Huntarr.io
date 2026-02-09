@@ -343,20 +343,67 @@ def check_minimum_availability(item):
     - 'announced': always available
     - 'inCinemas': available if in_cinemas date has passed (or release_date fallback)
     - 'released': available if digital_release or physical_release date has passed
+
+    When no release date data is stored, uses a year-based fallback:
+    - If movie year is 2+ years before current year, assume released (clearly old movie)
+    - If movie year is 1 year before current year, assume at least in cinemas
+    - If no year or current/future year and no dates, try TMDB fetch as last resort
     """
     min_avail = (item.get('minimum_availability') or 'released').strip()
     if min_avail == 'announced':
         return True
 
     today = datetime.utcnow().strftime('%Y-%m-%d')
+    current_year = datetime.utcnow().year
 
+    # Gather stored dates
+    in_cinemas = (item.get('in_cinemas') or '').strip()
+    digital = (item.get('digital_release') or '').strip()
+    physical = (item.get('physical_release') or '').strip()
+    has_any_dates = bool(in_cinemas or digital or physical)
+
+    # --- Year-based fallback when NO dates are stored ---
+    if not has_any_dates:
+        movie_year = None
+        try:
+            movie_year = int(str(item.get('year', '')).strip())
+        except (ValueError, TypeError):
+            pass
+
+        if movie_year is not None:
+            year_diff = current_year - movie_year
+            if min_avail == 'released' and year_diff >= 2:
+                # Movie is 2+ years old — definitely released digitally/physically
+                return True
+            if min_avail == 'inCinemas' and year_diff >= 1:
+                # Movie is 1+ years old — definitely been in cinemas
+                return True
+
+        # No dates AND no helpful year — try to fetch from TMDB and cache for future
+        tmdb_id = item.get('tmdb_id')
+        if tmdb_id:
+            try:
+                dates = _fetch_tmdb_release_dates(tmdb_id)
+                in_cinemas = dates.get('in_cinemas', '')
+                digital = dates.get('digital_release', '')
+                physical = dates.get('physical_release', '')
+                # Store fetched dates back on the item dict (caller can persist)
+                item['in_cinemas'] = in_cinemas
+                item['digital_release'] = digital
+                item['physical_release'] = physical
+                has_any_dates = bool(in_cinemas or digital or physical)
+            except Exception:
+                pass
+
+        # Still no dates at all — default to available rather than blocking forever
+        if not has_any_dates:
+            return True
+
+    # --- Date-based checks ---
     if min_avail == 'inCinemas':
-        in_cinemas = (item.get('in_cinemas') or '').strip()
         if in_cinemas and in_cinemas <= today:
             return True
         # Fallback: if no in_cinemas date, check if digital/physical is set (movie was at least in cinemas)
-        digital = (item.get('digital_release') or '').strip()
-        physical = (item.get('physical_release') or '').strip()
         if digital and digital <= today:
             return True
         if physical and physical <= today:
@@ -364,14 +411,11 @@ def check_minimum_availability(item):
         return False
 
     if min_avail == 'released':
-        digital = (item.get('digital_release') or '').strip()
-        physical = (item.get('physical_release') or '').strip()
         if digital and digital <= today:
             return True
         if physical and physical <= today:
             return True
         # If no digital/physical dates but in_cinemas was months ago, estimate digital release
-        in_cinemas = (item.get('in_cinemas') or '').strip()
         if in_cinemas:
             try:
                 cinema_date = datetime.strptime(in_cinemas, '%Y-%m-%d')
