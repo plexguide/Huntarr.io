@@ -171,13 +171,19 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
                         if "cycle_activity" not in instances[name]:
                             iid = next((inst.get("instance_id") or inst.get("instance_name") for inst in configured if inst.get("instance_name") == name), name)
                             instances[name]["cycle_activity"] = _cycle_activity.get(app_type, {}).get(iid)
-                    # So UI shows countdown instead of "Starting Cycle": if instance has no next_cycle yet, use default (now + 15 min)
+                    # So UI shows countdown instead of "Starting Cycle": if instance has no next_cycle yet, set default and persist to DB
+                    # (persisting ensures the next API poll returns the same time so the frontend countdown ticks instead of resetting every 15s)
                     user_tz = _get_user_timezone()
                     default_next = _default_next_cycle_iso(user_tz)
                     for name in instances:
                         inst = instances[name]
                         if inst.get("next_cycle") is None and not inst.get("cyclelock") and not inst.get("pending_reset"):
                             inst["next_cycle"] = default_next
+                            iid = next((i.get("instance_id") or i.get("instance_name") for i in configured if i.get("instance_name") == name), name)
+                            try:
+                                db.set_sleep_data_per_instance(app_type, str(iid), next_cycle_time=default_next, cycle_lock=False)
+                            except Exception as e:
+                                logger.debug("Could not persist default next_cycle for %s/%s: %s", app_type, name, e)
                     return {"app": app_type, "instances": instances}
                 
                 # Single-app logic (e.g. swaparr)
@@ -270,16 +276,23 @@ def get_cycle_status(app_type: Optional[str] = None) -> Dict[str, Any]:
                             if "cycle_activity" not in result[app]["instances"][inst_name]:
                                 inst_id = next((i for i, n in id_to_name.items() if n == inst_name), inst_name)
                                 result[app]["instances"][inst_name]["cycle_activity"] = _cycle_activity.get(app, {}).get(inst_id)
-                        if "_id_to_name" in result[app]:
-                            del result[app]["_id_to_name"]
-                # So UI shows countdown instead of "Starting Cycle": set default next_cycle for instances with none
+                # So UI shows countdown instead of "Starting Cycle": set default next_cycle for instances with none and persist to DB
+                # (persisting ensures the next API poll returns the same time so the frontend countdown ticks instead of resetting every 15s)
                 user_tz = _get_user_timezone()
                 default_next = _default_next_cycle_iso(user_tz)
                 for app in result:
                     if "instances" in result[app]:
+                        id_to_name = result[app].get("_id_to_name", {})
                         for inst_name, inst in result[app]["instances"].items():
                             if inst.get("next_cycle") is None and not inst.get("cyclelock") and not inst.get("pending_reset"):
                                 inst["next_cycle"] = default_next
+                                inst_id = next((i for i, n in id_to_name.items() if n == inst_name), inst_name)
+                                try:
+                                    db.set_sleep_data_per_instance(app, str(inst_id), next_cycle_time=default_next, cycle_lock=False)
+                                except Exception as e:
+                                    logger.debug("Could not persist default next_cycle for %s/%s: %s", app, inst_name, e)
+                        if "_id_to_name" in result[app]:
+                            del result[app]["_id_to_name"]
                 return result
         except Exception as e:
             logger.error(f"Error getting cycle status: {e}")
