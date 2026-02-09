@@ -181,11 +181,6 @@
     text-overflow: ellipsis;
 }
 
-/* Hide redundant Home link in CORE (main content is already home) */
-.nav-item-core-home-hidden {
-    display: none !important;
-}
-
 /* Icon wrapper */
 .nav-icon-wrapper {
     width: 28px;
