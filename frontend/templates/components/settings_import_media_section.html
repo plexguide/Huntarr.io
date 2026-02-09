@@ -1,5 +1,5 @@
 <section id="settingsImportMediaSection" class="content-section" style="display: none;">
-    <link rel="stylesheet" href="./static/css/import-media.css?v=1.0.2">
+    <link rel="stylesheet" href="./static/css/import-media.css?v=1.0.3">
     <div id="importMediaContainer" class="app-content-panel">
         <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
             <select id="import-media-instance-select" class="control-select" aria-label="Instance">
@@ -7,7 +7,7 @@
             </select>
         </div>
 
-        <div class="settings-group import-media-settings-group">
+        <div class="import-media-sticky-toolbar">
             <div class="import-media-header">
                 <div>
                     <h3>Import Media</h3>
@@ -21,12 +21,6 @@
                         <i class="fas fa-check-double"></i> Import All
                     </button>
                 </div>
-            </div>
-
-            <!-- Status bar -->
-            <div class="import-media-status-bar" id="import-media-status-bar" style="display: none;">
-                <div class="import-media-status-icon"><i class="fas fa-spinner fa-spin"></i></div>
-                <div class="import-media-status-text" id="import-media-status-text">Scanning...</div>
             </div>
 
             <!-- Stats summary -->
@@ -48,6 +42,23 @@
                     <span class="stat-label">No Match</span>
                 </div>
                 <div class="import-media-stat-last-scan" id="import-media-last-scan"></div>
+            </div>
+
+            <!-- Table Header for desktop -->
+            <div class="import-media-list-header">
+                <div class="header-col poster-col"></div>
+                <div class="header-col info-col">Folder / File Information</div>
+                <div class="header-col match-col">TMDB Match</div>
+                <div class="header-col conf-col">Confidence</div>
+                <div class="header-col actions-col">Actions</div>
+            </div>
+        </div>
+
+        <div class="settings-group import-media-settings-group">
+            <!-- Status bar -->
+            <div class="import-media-status-bar" id="import-media-status-bar" style="display: none;">
+                <div class="import-media-status-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                <div class="import-media-status-text" id="import-media-status-text">Scanning...</div>
             </div>
 
             <!-- Items list -->
