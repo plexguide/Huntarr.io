@@ -61,10 +61,9 @@ def tmdb_image_proxy():
         # Get cache settings
         general_settings = settings_manager.load_settings('general')
         cache_days = int(general_settings.get('tmdb_image_cache_days', 7))
-        cache_storage = general_settings.get('tmdb_cache_storage', 'server')
         
-        # If caching is disabled or browser-side, just redirect to TMDB
-        if cache_days == 0 or cache_storage == 'browser':
+        # If caching is disabled, just redirect to TMDB
+        if cache_days == 0:
             return redirect(image_url)
         
         # Check if image is cached and valid

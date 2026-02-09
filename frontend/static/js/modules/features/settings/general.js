@@ -217,14 +217,6 @@
                     </select>
                     <p class="setting-help" style="margin-left: -3ch !important;">Cache TMDB images to reduce load times and API usage. Missing images will still attempt to load. Set to "Disabled" to always fetch fresh images.</p>
                 </div>
-                <div class="setting-item">
-                    <label for="tmdb_cache_storage"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#tmdb-cache-storage" class="info-icon" title="Learn more about cache storage location" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Cache Storage Location:</label>
-                    <select id="tmdb_cache_storage" class="control-select" style="width: 200px;" ${settings.tmdb_image_cache_days === 0 ? "disabled" : ""}>
-                        <option value="server" ${(settings.tmdb_cache_storage === "server" || settings.tmdb_cache_storage === undefined) ? "selected" : ""}>Server-Side (Shared)</option>
-                        <option value="browser" ${settings.tmdb_cache_storage === "browser" ? "selected" : ""}>Browser-Side (Per User)</option>
-                    </select>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Server-Side: Images cached on Huntarr server, shared across all users. Browser-Side: Images cached in each user's browser localStorage.</p>
-                </div>
                 <div class="setting-item" id="show_trending_setting_item">
                     <label for="show_trending"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#show-trending" class="info-icon" title="Learn more about rotating discover content on home page" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Show Discover Content:</label>
                     <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
@@ -294,25 +286,6 @@
             viewModeSelect.addEventListener('change', function() {
                 try { localStorage.setItem('huntarr-dashboard-view-mode', this.value); } catch(e) {}
             });
-        }
-
-        // When TMDB cache is disabled, disable the storage location selector
-        const cacheDaysEl = container.querySelector('#tmdb_image_cache_days');
-        const cacheStorageEl = container.querySelector('#tmdb_cache_storage');
-        if (cacheDaysEl && cacheStorageEl) {
-            const updateCacheStorageDisabled = () => {
-                const isDisabled = cacheDaysEl.value === '0';
-                cacheStorageEl.disabled = isDisabled;
-                if (isDisabled) {
-                    cacheStorageEl.style.opacity = '0.5';
-                    cacheStorageEl.style.cursor = 'not-allowed';
-                } else {
-                    cacheStorageEl.style.opacity = '1';
-                    cacheStorageEl.style.cursor = 'pointer';
-                }
-            };
-            cacheDaysEl.addEventListener('change', updateCacheStorageDisabled);
-            updateCacheStorageDisabled();
         }
     };
 

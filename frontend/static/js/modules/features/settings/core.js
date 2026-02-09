@@ -773,7 +773,6 @@ window.SettingsForms = {
                 show_trending: getVal('show_trending', true),
                 dashboard_view_mode: getVal('dashboard_view_mode', 'grid'),
                 tmdb_image_cache_days: parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '30'),
-                tmdb_cache_storage: container.querySelector('#tmdb_cache_storage')?.value || 'server',
                 auth_mode: (container.querySelector('#auth_mode') && container.querySelector('#auth_mode').value) || 'login',
                 ssl_verify: getVal('ssl_verify', true),
                 base_url: getVal('base_url', ''),
