@@ -48,7 +48,7 @@
                         backdrop_path: details.backdrop_path,
                         overview: details.overview,
                         vote_average: details.vote_average,
-                        in_library: false, in_cooldown: false
+                        in_library: false
                     };
                     this.openDetail(movieData, {}, true);
                 }
@@ -182,12 +182,9 @@
 
             // Status
             const inLibrary = originalMovie.in_library || false;
-            const inCooldown = originalMovie.in_cooldown || false;
             let actionBtnHTML = '';
             if (inLibrary) {
                 actionBtnHTML = '<span class="mh-btn mh-btn-success mh-btn-static"><i class="fas fa-check-circle"></i> Already in library</span>';
-            } else if (inCooldown) {
-                actionBtnHTML = '<button class="mh-btn mh-btn-warning" disabled><i class="fas fa-clock"></i> Cooldown</button>';
             } else {
                 actionBtnHTML = '<button class="mh-btn mh-btn-primary" id="mh-btn-request"><i class="fas fa-plus-circle"></i> Add to Library</button>';
             }
@@ -391,8 +388,7 @@
                             backdrop_path: movie.backdrop_path,
                             overview: movie.overview,
                             vote_average: movie.vote_average,
-                            in_library: movie.in_library,
-                            in_cooldown: movie.in_cooldown
+                            in_library: movie.in_library
                         };
                         this.closeDetail(true);
                         if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {

@@ -1135,7 +1135,6 @@ export class RequestarrContent {
         
         const inLibrary = item.in_library || false;
         const partial = item.partial || false;
-        const inCooldown = item.in_cooldown || false;
         const hasInstance = item.media_type === 'movie'
             ? (this.core.instances.radarr || []).length > 0
             : (this.core.instances.sonarr || []).length > 0;
@@ -1144,10 +1143,7 @@ export class RequestarrContent {
         // Determine status badge
         let statusBadgeHTML = '';
         if (hasInstance) {
-            if (inCooldown) {
-                // Red stop sign for cooldown
-                statusBadgeHTML = '<div class="media-card-status-badge cooldown"><i class="fas fa-hand"></i></div>';
-            } else if (inLibrary) {
+            if (inLibrary) {
                 // Green checkmark for complete
                 statusBadgeHTML = '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
             } else if (partial) {
@@ -1162,12 +1158,9 @@ export class RequestarrContent {
         if (inLibrary) {
             card.classList.add('in-library');
         }
-        if (inCooldown) {
-            card.classList.add('in-cooldown');
-        }
         
-        // Only show Request button when not in library AND not in cooldown (badge alone indicates cooldown)
-        const showRequestBtn = !inLibrary && !inCooldown;
+        // Only show Request button when not in library
+        const showRequestBtn = !inLibrary;
         const overlayActionHTML = showRequestBtn
             ? '<button class="media-card-request-btn"><i class="fas fa-download"></i> Request</button>'
             : '';
@@ -1249,8 +1242,7 @@ export class RequestarrContent {
                         backdrop_path: item.backdrop_path,
                         overview: item.overview,
                         vote_average: item.vote_average,
-                        in_library: inLibrary,
-                        in_cooldown: inCooldown
+                        in_library: inLibrary
                     };
                     window.RequestarrDetail.openDetail(movieData, {
                         suggestedInstance: card.suggestedInstance

@@ -9,20 +9,6 @@ export class RequestarrModal {
         this.core = core;
     }
     
-    formatCooldownTime(hours_remaining) {
-        if (hours_remaining <= 24) {
-            const hours = Math.floor(hours_remaining);
-            const minutes = Math.floor((hours_remaining - hours) * 60);
-            return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-        } else {
-            const days = Math.floor(hours_remaining / 24);
-            const remaining_hours = hours_remaining - (days * 24);
-            const hours = Math.floor(remaining_hours);
-            const minutes = Math.floor((remaining_hours - hours) * 60);
-            return `${days}d ${hours}h ${minutes}m`;
-        }
-    }
-
     // ========================================
     // MODAL SYSTEM
     // ========================================
@@ -326,11 +312,7 @@ export class RequestarrModal {
             const requestBtn = document.getElementById('modal-request-btn');
 
             if (status.exists) {
-                if (status.cooldown_status && status.cooldown_status.in_cooldown) {
-                    const timeMsg = this.formatCooldownTime(status.cooldown_status.hours_remaining);
-                    container.innerHTML = `<span class="mh-req-badge mh-req-badge-cooldown"><i class="fas fa-clock"></i> Cooldown \u2013 wait ${timeMsg}</span>`;
-                    if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = `Wait ${timeMsg}`; }
-                } else if (status.missing_episodes === 0 && status.total_episodes > 0) {
+                if (status.missing_episodes === 0 && status.total_episodes > 0) {
                     container.innerHTML = `<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> Complete (${status.available_episodes}/${status.total_episodes} episodes)</span>`;
                     if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Complete'; }
                 } else if (status.missing_episodes > 0) {
@@ -369,10 +351,6 @@ export class RequestarrModal {
             if (status.in_library) {
                 container.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> Already in library</span>';
                 if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Already in library'; }
-            } else if (status.cooldown_status && status.cooldown_status.in_cooldown) {
-                const timeMsg = this.formatCooldownTime(status.cooldown_status.hours_remaining);
-                container.innerHTML = `<span class="mh-req-badge mh-req-badge-cooldown"><i class="fas fa-clock"></i> Cooldown \u2013 wait ${timeMsg}</span>`;
-                if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = `Wait ${timeMsg}`; }
             } else {
                 container.innerHTML = isMovieHunt
                     ? '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to add</span>'
@@ -581,13 +559,12 @@ export class RequestarrModal {
 
     updateCardStatusAfterRequest(tmdbId) {
         const cards = document.querySelectorAll(`.media-card[data-tmdb-id="${tmdbId}"]`);
-        cards.forEach((card, index) => {
+        cards.forEach((card) => {
             const badge = card.querySelector('.media-card-status-badge');
             if (badge) {
-                badge.className = 'media-card-status-badge cooldown';
-                badge.innerHTML = '<i class="fas fa-hand"></i>';
+                badge.className = 'media-card-status-badge partial';
+                badge.innerHTML = '<i class="fas fa-bookmark"></i>';
             }
-            card.classList.add('in-cooldown');
             const requestBtn = card.querySelector('.media-card-request-btn');
             if (requestBtn) requestBtn.remove();
         });

@@ -317,23 +317,36 @@
             var card = document.createElement('div');
             card.className = 'media-card';
             var title = (item.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            var titleRaw = (item.title || '').replace(/</g, '&lt;');
             var year = item.year || 'N/A';
             var status = (item.status || 'requested').toLowerCase();
             var posterUrl = (item.poster_path && item.poster_path.indexOf('http') === 0) ? item.poster_path : (item.poster_path ? 'https://image.tmdb.org/t/p/w500' + (item.poster_path.indexOf('/') === 0 ? item.poster_path : '/' + item.poster_path) : './static/images/blackout.jpg');
             if (!item.poster_path) posterUrl = './static/images/blackout.jpg';
-            // Check = have it (available), yellow exclamation = missing (requested)
-            var statusClass = status === 'available' ? 'complete' : 'missing';
-            var statusIcon = status === 'available' ? 'check' : 'exclamation';
-            var statusLabel = status === 'available' ? 'Available' : 'Missing';
+
+            // Status badge: green check = available, amber bookmark = requested
+            var statusClass = status === 'available' ? 'complete' : 'partial';
+            var statusIcon = status === 'available' ? 'check' : 'bookmark';
+
+            // Rating display
+            var rating = item.vote_average != null ? Number(item.vote_average).toFixed(1) : '';
+            var ratingHtml = rating ? '<span class="media-card-rating"><i class="fas fa-star"></i> ' + rating + '</span>' : '';
+
+            if (status === 'available') card.classList.add('in-library');
+
             card.innerHTML = '<div class="media-card-poster">' +
                 '<div class="media-card-status-badge ' + statusClass + '"><i class="fas fa-' + statusIcon + '"></i></div>' +
                 '<img src="' + posterUrl + '" alt="' + title + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
+                '<div class="media-card-overlay">' +
+                '<div class="media-card-overlay-title">' + titleRaw + '</div>' +
+                '<div class="media-card-overlay-content">' +
+                '<div class="media-card-overlay-year">' + year + '</div>' +
+                '</div></div>' +
                 '</div>' +
                 '<div class="media-card-info">' +
-                '<div class="media-card-title" title="' + title + '">' + (item.title || '').replace(/</g, '&lt;') + '</div>' +
+                '<div class="media-card-title" title="' + title + '">' + titleRaw + '</div>' +
                 '<div class="media-card-meta">' +
                 '<span class="media-card-year">' + year + '</span>' +
-                '<span class="media-card-rating" style="font-size: 12px; color: #94a3b8;">' + statusLabel + '</span>' +
+                ratingHtml +
                 '</div></div>';
 
             // Click anywhere on card opens detail page
@@ -346,13 +359,12 @@
                         title: item.title,
                         year: item.year,
                         poster_path: item.poster_path,
-                        in_library: status === 'available',
-                        in_cooldown: false
+                        in_library: status === 'available'
                     };
                     window.MovieHuntDetail.openDetail(movieData);
                 };
             }
-            
+
             return card;
         },
 

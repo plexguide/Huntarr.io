@@ -650,30 +650,26 @@
             const overview = item.overview || 'No description available.';
             const inLibrary = item.in_library || false;
             const partial = item.partial || false;
-            const inCooldown = item.in_cooldown || false;
             const hasInstance = this.instances && this.instances.length > 0;
 
             let statusBadge = '';
             if (hasInstance) {
-                if (inCooldown) {
-                    statusBadge = '<div class="media-card-status-badge cooldown"><i class="fas fa-hand"></i></div>';
-                } else if (inLibrary) {
+                if (inLibrary) {
                     statusBadge = '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
                 } else if (partial) {
-                    statusBadge = '<div class="media-card-status-badge partial"><i class="fas fa-exclamation"></i></div>';
+                    statusBadge = '<div class="media-card-status-badge partial"><i class="fas fa-bookmark"></i></div>';
                 } else {
                     statusBadge = '<div class="media-card-status-badge available"><i class="fas fa-download"></i></div>';
                 }
             }
 
             const metaClass = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
-            const showRequestBtn = hasInstance && !inLibrary && !inCooldown;
+            const showRequestBtn = hasInstance && !inLibrary;
             const overlayAction = showRequestBtn
                 ? '<button class="media-card-request-btn"><i class="fas fa-plus-circle"></i> Add</button>'
                 : '';
 
             if (inLibrary) card.classList.add('in-library');
-            if (inCooldown) card.classList.add('in-cooldown');
 
             card.innerHTML = `
                 <div class="media-card-poster">

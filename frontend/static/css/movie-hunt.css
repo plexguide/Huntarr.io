@@ -193,7 +193,7 @@ body.requestarr-modal-open {
     color: rgba(148, 163, 184, 0.6);
     border: 1px solid rgba(148, 163, 184, 0.1);
 }
-.mh-req-badge-cooldown {
+.mh-req-badge-requested {
     background: rgba(245, 158, 11, 0.12);
     color: #fbbf24;
     border: 1px solid rgba(245, 158, 11, 0.2);
@@ -939,15 +939,6 @@ body.requestarr-modal-open {
     background: #f97316;
     border: 2px solid #ea580c;
 }
-#movie-hunt-section .media-card-status-badge.cooldown {
-    background: #ef4444;
-    border: 2px solid #dc2626;
-}
-#movie-hunt-section .media-card-status-badge.missing {
-    background: #eab308;
-    border: 2px solid #ca8a04;
-}
-#movie-hunt-section .media-card.in-cooldown .media-card-request-btn,
 #movie-hunt-section .media-card.in-library .media-card-request-btn { display: none; }
 #movie-hunt-section .media-card-info { padding: 8px 10px 10px; }
 #movie-hunt-section .media-card-title {

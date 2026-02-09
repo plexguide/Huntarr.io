@@ -2223,7 +2223,7 @@ class RequestarrAPI:
                 )
                 return {
                     'success': True,
-                    'message': 'Successfully added to library.',
+                    'message': f'"{title}" added to Movie Hunt \u2013 {instance_name}.',
                     'status': 'added'
                 }
             
@@ -2373,7 +2373,7 @@ class RequestarrAPI:
             
             return {
                 'success': True,
-                'message': f'"{title}" sent to {client.get("name") or "download client"} via Movie Hunt.',
+                'message': f'"{title}" sent to {client.get("name") or "download client"} via Movie Hunt \u2013 {instance_name}.',
                 'status': 'requested'
             }
             

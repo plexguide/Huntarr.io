@@ -402,24 +402,11 @@
     border: 2px solid #2563eb;
 }
 
-/* Cooldown - Red with stop sign */
-.media-card-status-badge.cooldown {
-    background: #ef4444;
-    border: 2px solid #dc2626;
-}
-
-/* When media is in cooldown: hide Request button (badge alone indicates cooldown) */
-.media-card.in-cooldown .media-card-request-btn {
-    display: none;
-}
-
-/* In cooldown or in library: no button, so push title and text lower in the overlay */
-.media-card.in-cooldown .media-card-overlay,
+/* In library: no button, so push title and text lower in the overlay */
 .media-card.in-library .media-card-overlay {
     justify-content: flex-end;
 }
 
-.media-card.in-cooldown .media-card-overlay-content,
 .media-card.in-library .media-card-overlay-content {
     padding-bottom: 8px;
 }
@@ -1370,7 +1357,7 @@ input:disabled + .toggle-slider {
     background: #718096;
 }
 
-/* Old settings-select (keep for cooldown dropdown) */
+/* Settings select */
 .settings-select {
     width: 100%;
     padding: 12px 16px;

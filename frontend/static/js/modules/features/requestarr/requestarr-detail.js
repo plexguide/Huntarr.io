@@ -186,7 +186,7 @@
         },
 
         async checkMovieStatus(tmdbId, instanceValue) {
-            if (!instanceValue) return { in_library: false, in_cooldown: false };
+            if (!instanceValue) return { in_library: false };
 
             try {
                 // Decode compound value to get app type and actual name
@@ -196,12 +196,11 @@
                 var data = await response.json();
 
                 return {
-                    in_library: data.in_library || false,
-                    in_cooldown: (data.cooldown_status && data.cooldown_status.in_cooldown) || false
+                    in_library: data.in_library || false
                 };
             } catch (error) {
                 console.error('[RequestarrDetail] Error checking movie status:', error);
-                return { in_library: false, in_cooldown: false };
+                return { in_library: false };
             }
         },
 
@@ -217,8 +216,6 @@
 
                 if (status.in_library) {
                     actionButton = '<button class="mh-btn mh-btn-success" disabled><i class="fas fa-check"></i> Already Available</button>';
-                } else if (status.in_cooldown) {
-                    actionButton = '<button class="mh-btn mh-btn-warning" disabled><i class="fas fa-clock"></i> In Cooldown</button>';
                 } else {
                     actionButton = '<button class="mh-btn mh-btn-primary" id="requestarr-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
                 }
@@ -446,13 +443,10 @@
 
             // Status button
             const inLibrary = originalMovie.in_library || false;
-            const inCooldown = originalMovie.in_cooldown || false;
             let actionButton = '';
 
             if (inLibrary) {
                 actionButton = '<button class="mh-btn mh-btn-success" disabled><i class="fas fa-check"></i> Already Available</button>';
-            } else if (inCooldown) {
-                actionButton = '<button class="mh-btn mh-btn-warning" disabled><i class="fas fa-clock"></i> In Cooldown</button>';
             } else {
                 actionButton = '<button class="mh-btn mh-btn-primary" id="requestarr-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
             }
@@ -719,8 +713,7 @@
                                     backdrop_path: details.backdrop_path,
                                     overview: details.overview,
                                     vote_average: details.vote_average,
-                                    in_library: false,
-                                    in_cooldown: false
+                                    in_library: false
                                 };
                                 this.openDetail(movieData, this.options || {}, false);
                             }
