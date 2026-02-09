@@ -193,23 +193,16 @@ export class RequestarrModal {
         const qualitySelect = document.getElementById('modal-quality-profile');
         if (qualitySelect) {
             // For movies, decode compound value to get the correct profile key
-            let profileKey;
+            let profileKey, isMovieHunt = false;
             if (isTVShow) {
                 profileKey = `sonarr-${defaultInstance}`;
             } else {
                 const decoded = decodeInstanceValue(defaultInstance);
                 profileKey = `${decoded.appType}-${decoded.name}`;
+                isMovieHunt = decoded.appType === 'movie_hunt';
             }
             const profiles = this.core.qualityProfiles[profileKey] || [];
-            qualitySelect.innerHTML = '<option value="">Any (Default)</option>';
-            profiles.forEach(profile => {
-                if (profile.name.toLowerCase() !== 'any') {
-                    const opt = document.createElement('option');
-                    opt.value = profile.id;
-                    opt.textContent = profile.name;
-                    qualitySelect.appendChild(opt);
-                }
-            });
+            this._populateQualityProfiles(qualitySelect, profiles, isMovieHunt);
         }
 
         // Set status to checking
@@ -406,26 +399,19 @@ export class RequestarrModal {
         this.loadModalRootFolders(instanceName, isTVShow);
 
         // Update quality profile dropdown
-        let profileKey;
+        let profileKey, isMovieHunt = false;
         if (isTVShow) {
             profileKey = `sonarr-${instanceName}`;
         } else {
             const decoded = decodeInstanceValue(instanceName);
             profileKey = `${decoded.appType}-${decoded.name}`;
+            isMovieHunt = decoded.appType === 'movie_hunt';
         }
         const profiles = this.core.qualityProfiles[profileKey] || [];
         const qualitySelect = document.getElementById('modal-quality-profile');
 
         if (qualitySelect) {
-            qualitySelect.innerHTML = '<option value="">Any (Default)</option>';
-            profiles.forEach(profile => {
-                if (profile.name.toLowerCase() !== 'any') {
-                    const option = document.createElement('option');
-                    option.value = profile.id;
-                    option.textContent = profile.name;
-                    qualitySelect.appendChild(option);
-                }
-            });
+            this._populateQualityProfiles(qualitySelect, profiles, isMovieHunt);
         }
 
         // Reload status
@@ -433,6 +419,44 @@ export class RequestarrModal {
             this.loadSeriesStatus(instanceName);
         } else {
             this.loadMovieStatus(instanceName);
+        }
+    }
+
+    /**
+     * Populate a quality profile dropdown, handling Movie Hunt vs Radarr/Sonarr differences.
+     * Movie Hunt: no "Any" placeholder, pre-select the default profile.
+     * Radarr/Sonarr: show "Any (Default)" as first option, no pre-selection.
+     */
+    _populateQualityProfiles(selectEl, profiles, isMovieHunt) {
+        selectEl.innerHTML = '';
+        
+        if (isMovieHunt) {
+            // Movie Hunt: list only real profiles, pre-select the default
+            if (profiles.length === 0) {
+                selectEl.innerHTML = '<option value="">No profiles configured</option>';
+                return;
+            }
+            let defaultIdx = profiles.findIndex(p => p.is_default);
+            if (defaultIdx === -1) defaultIdx = 0; // fallback to first
+            
+            profiles.forEach((profile, idx) => {
+                const opt = document.createElement('option');
+                opt.value = profile.id;
+                opt.textContent = profile.name;
+                if (idx === defaultIdx) opt.selected = true;
+                selectEl.appendChild(opt);
+            });
+        } else {
+            // Radarr / Sonarr: "Any (Default)" placeholder, then real profiles
+            selectEl.innerHTML = '<option value="">Any (Default)</option>';
+            profiles.forEach(profile => {
+                if (profile.name.toLowerCase() !== 'any') {
+                    const opt = document.createElement('option');
+                    opt.value = profile.id;
+                    opt.textContent = profile.name;
+                    selectEl.appendChild(opt);
+                }
+            });
         }
     }
 

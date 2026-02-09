@@ -1049,13 +1049,15 @@ class RequestarrAPI:
             
             # Return in same format as Radarr/Sonarr profiles (id + name)
             # Movie Hunt profiles use name-based identification, so use name as both id and name
+            # Include is_default flag so frontend can pre-select the correct profile
             result = []
             for i, profile in enumerate(profiles):
                 profile_name = (profile.get('name') or '').strip()
                 if profile_name:
                     result.append({
                         'id': profile_name,  # Movie Hunt uses names, not integer IDs
-                        'name': profile_name
+                        'name': profile_name,
+                        'is_default': bool(profile.get('is_default', False))
                     })
             return result
         except Exception as e:
