@@ -455,12 +455,46 @@
                 backBtn.addEventListener('click', () => this.closeDetail());
             }
 
-            // Instance selector
+            // Instance selector: switching to Movie Hunt opens the Movie Hunt page; Radarr stays and updates status
             const instanceSelect = document.getElementById('requestarr-detail-instance-select');
             if (instanceSelect) {
                 instanceSelect.addEventListener('change', async () => {
-                    this.selectedInstanceName = instanceSelect.value;
+                    const newValue = instanceSelect.value;
+                    this.selectedInstanceName = newValue;
                     console.log('[RequestarrDetail] Instance changed to:', this.selectedInstanceName);
+
+                    var decoded = _decodeInstanceValue(newValue);
+                    if (decoded.appType === 'movie_hunt' && decoded.name) {
+                        // Switch to Movie Hunt page for this movie so the page reflects Movie Hunt (paths, status, request flow)
+                        var movieData = {
+                            tmdb_id: this.currentMovie.tmdb_id,
+                            id: this.currentMovie.tmdb_id,
+                            title: this.currentMovie.title,
+                            year: this.currentMovie.year,
+                            poster_path: this.currentMovie.poster_path,
+                            backdrop_path: this.currentMovie.backdrop_path,
+                            overview: this.currentMovie.overview,
+                            vote_average: this.currentMovie.vote_average,
+                            in_library: false,
+                            in_cooldown: false
+                        };
+                        try {
+                            sessionStorage.setItem('huntarr-open-movie-hunt-detail', JSON.stringify({
+                                ...movieData,
+                                instanceName: decoded.name
+                            }));
+                        } catch (e) { /* ignore */ }
+                        this.closeDetail(true);
+                        if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
+                            window.huntarrUI.switchSection('movie-hunt-home');
+                        } else {
+                            window.location.hash = 'movie-hunt-home';
+                            window.location.reload();
+                        }
+                        return;
+                    }
+
+                    // Radarr (or other): stay on Requestarr detail and refresh availability/status for selected instance
                     await this.updateMovieStatus();
                 });
                 this.updateMovieStatus();
