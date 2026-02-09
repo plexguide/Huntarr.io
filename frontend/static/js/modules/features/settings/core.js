@@ -768,10 +768,10 @@ window.SettingsForms = {
                 timezone: getVal('timezone', 'UTC'),
                 display_community_resources: getVal('display_community_resources', true),
                 display_huntarr_support: getVal('display_huntarr_support', true),
-                enable_requestarr: getVal('enable_requestarr', true),
+                enable_requestarr: true, // Always enabled (required for Movie Hunt)
 
                 show_trending: getVal('show_trending', true),
-                tmdb_image_cache_days: parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '7'),
+                tmdb_image_cache_days: parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '30'),
                 tmdb_cache_storage: container.querySelector('#tmdb_cache_storage')?.value || 'server',
                 auth_mode: (container.querySelector('#auth_mode') && container.querySelector('#auth_mode').value) || 'login',
                 ssl_verify: getVal('ssl_verify', true),
@@ -829,7 +829,7 @@ window.SettingsForms = {
             settings.timezone = getInputValue("#timezone", "UTC");
             settings.display_community_resources = getInputValue("#display_community_resources", true);
             settings.display_huntarr_support = getInputValue("#display_huntarr_support", true);
-            settings.enable_requestarr = getInputValue("#enable_requestarr", true);
+            settings.enable_requestarr = true; // Always enabled (required for Movie Hunt)
 
             settings.show_trending = getInputValue("#show_trending", true);
 

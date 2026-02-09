@@ -95,13 +95,13 @@ const HomeRequestarr = {
             const response = await fetch('./api/settings');
             const data = await response.json();
             if (data && data.general) {
-                this.enableRequestarr = data.general.enable_requestarr !== false;
+                this.enableRequestarr = true; // Always enabled (required for Movie Hunt)
                 this.showTrending = data.general.show_trending !== false;
                 console.log('[HomeRequestarr] Enable Requestarr:', this.enableRequestarr, 'Show trending:', this.showTrending);
             }
         } catch (error) {
             console.error('[HomeRequestarr] Error loading settings:', error);
-            this.enableRequestarr = true;
+            this.enableRequestarr = true; // Always enabled (required for Movie Hunt)
             this.showTrending = true;
         }
     },

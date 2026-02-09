@@ -63,9 +63,16 @@
             statusHtml = '<span class="mh-cal-event-status ' + sClass + '">' + ev.status + '</span>';
         }
         var yearStr = ev.year ? ' (' + ev.year + ')' : '';
+        
+        // Use TMDB cache if available
+        var imgSrc = poster;
+        var isTmdbUrl = poster && !poster.includes('./static/images/');
+        if (isTmdbUrl && window.tmdbImageCache && window.tmdbImageCache.enabled && window.tmdbImageCache.storage === 'server') {
+            imgSrc = './api/tmdb/image?url=' + encodeURIComponent(poster);
+        }
 
-        return '<div class="mh-cal-event">' +
-            '<div class="mh-cal-event-poster"><img src="' + poster + '" alt="" onerror="this.src=\'' + FALLBACK_POSTER + '\'"></div>' +
+        var html = '<div class="mh-cal-event" data-tmdb-poster="' + (isTmdbUrl ? poster : '') + '">' +
+            '<div class="mh-cal-event-poster"><img src="' + imgSrc + '" alt="" onerror="this.src=\'' + FALLBACK_POSTER + '\'"></div>' +
             '<div class="mh-cal-event-info">' +
             '<div class="mh-cal-event-title">' + escapeHtml(ev.title) + yearStr + '</div>' +
             '<div class="mh-cal-event-meta">' +
@@ -75,6 +82,27 @@
             '</div>' +
             '</div>' +
             '</div>';
+        
+        return html;
+    }
+    
+    /** Apply browser-side TMDB cache to images after render */
+    function applyCacheToImages(container) {
+        if (!window.getCachedTMDBImage || !window.tmdbImageCache || !window.tmdbImageCache.enabled || window.tmdbImageCache.storage !== 'browser') {
+            return;
+        }
+        var events = container.querySelectorAll('.mh-cal-event[data-tmdb-poster]');
+        events.forEach(function(event) {
+            var posterUrl = event.getAttribute('data-tmdb-poster');
+            if (!posterUrl) return;
+            var img = event.querySelector('.mh-cal-event-poster img');
+            if (!img) return;
+            window.getCachedTMDBImage(posterUrl, window.tmdbImageCache).then(function(cachedUrl) {
+                if (cachedUrl && cachedUrl !== posterUrl) {
+                    img.src = cachedUrl;
+                }
+            }).catch(function() {});
+        });
     }
 
     function formatAvailability(val) {
@@ -173,6 +201,7 @@
                 }
 
                 container.innerHTML = html;
+                applyCacheToImages(container); // Apply browser-side TMDB cache
                 _collectionLoaded = true;
             })
             .catch(function (err) {
@@ -226,6 +255,7 @@
                 }
 
                 container.innerHTML = html;
+                applyCacheToImages(container); // Apply browser-side TMDB cache
                 _upcomingLoaded = true;
             })
             .catch(function (err) {

@@ -48,23 +48,19 @@ let huntarrUI = {
         // Cache frequently used DOM elements
         this.cacheElements();
 
-        // Default: Requestarr enabled until we load settings; NZB Hunt always visible (no dev key required)
+        // Requestarr always enabled (required for Movie Hunt); NZB Hunt always visible (no dev key required)
         this._enableRequestarr = true;
         this._enableNzbHunt = true;
         fetch('./api/settings')
             .then(r => r.json())
             .then(all => {
-                const en = !!(all.general && all.general.enable_requestarr !== false);
-                this._enableRequestarr = en;
+                // Requestarr is always enabled now (required for Movie Hunt)
+                this._enableRequestarr = true;
                 const nav = document.getElementById('requestarrNav');
                 if (nav) {
                     var onSystem = this.currentSection === 'system' || this.currentSection === 'hunt-manager' || this.currentSection === 'logs' || this.currentSection === 'about';
                     var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(this.currentSection) !== -1;
-                    nav.style.display = (onSystem || onSettings) ? 'none' : (en ? '' : 'none');
-                }
-                if (!en && /^#?requestarr/.test(window.location.hash)) {
-                    window.location.hash = '#';
-                    this.switchSection('home');
+                    nav.style.display = (onSystem || onSettings) ? 'none' : '';
                 }
                 // NZB Hunt: always visible (desktop and mobile), no dev key required
                 this._enableNzbHunt = true;
@@ -686,9 +682,6 @@ let huntarrUI = {
                     window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-settings');
                 }
             }
-        } else if ((section === 'requestarr' || section.startsWith('requestarr-')) && this._enableRequestarr === false) {
-            this.switchSection('home');
-            return;
         } else if (section === 'movie-hunt-collection' && document.getElementById('movie-hunt-section')) {
             document.getElementById('movie-hunt-section').classList.add('active');
             document.getElementById('movie-hunt-section').style.display = 'block';

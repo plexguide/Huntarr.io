@@ -7,7 +7,7 @@
 
     window.MovieHuntCollection = {
         page: 1,
-        pageSize: 20,
+        pageSize: 9999, // Load all items (no pagination)
         total: 0,
         searchQuery: '',
         sortBy: 'title.asc',
@@ -20,7 +20,7 @@
             this.setupSort();
             this.setupSearch();
             this.setupSearchToRequest();
-            this.setupPagination();
+            // Pagination removed - all items load at once
             this.loadCollection();
         },
 
@@ -90,33 +90,13 @@
             };
         },
 
-        setupPagination: function() {
-            var self = this;
-            var prevBtn = document.getElementById('movie-hunt-collection-prev');
-            var nextBtn = document.getElementById('movie-hunt-collection-next');
-            if (prevBtn) prevBtn.onclick = function() {
-                if (self.page > 1) {
-                    self.page--;
-                    self.loadCollection();
-                }
-            };
-            if (nextBtn) nextBtn.onclick = function() {
-                var totalPages = Math.max(1, Math.ceil(self.total / self.pageSize));
-                if (self.page < totalPages) {
-                    self.page++;
-                    self.loadCollection();
-                }
-            };
-        },
-
         loadCollection: function() {
             var self = this;
             var grid = document.getElementById('movie-hunt-collection-grid');
-            var paginationEl = document.getElementById('movie-hunt-collection-pagination');
             if (!grid) return;
             grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading media collection...</p></div>';
             grid.style.display = 'flex';
-            if (paginationEl) paginationEl.style.display = 'none';
+            // No pagination - load all items at once
             var url = './api/movie-hunt/collection?page=' + this.page + '&page_size=' + this.pageSize + '&sort=' + encodeURIComponent(this.sortBy || 'title.asc');
             if (this.searchQuery) url += '&q=' + encodeURIComponent(this.searchQuery);
             fetch(url)
@@ -133,8 +113,6 @@
 
         renderPage: function() {
             var grid = document.getElementById('movie-hunt-collection-grid');
-            var paginationEl = document.getElementById('movie-hunt-collection-pagination');
-            var pageInfo = document.getElementById('movie-hunt-collection-page-info');
             if (!grid) return;
             if (this.items.length === 0) {
                 grid.style.display = 'flex';
@@ -144,26 +122,16 @@
                     '<i class="fas fa-inbox" style="font-size: 64px; margin-bottom: 30px; opacity: 0.4; display: block;"></i>' +
                     '<p style="font-size: 20px; margin-bottom: 15px; font-weight: 500;">No Requested Media</p>' +
                     '<p style="font-size: 15px; line-height: 1.6; opacity: 0.8;">Movies you request from Movie Home will appear here. Track status as Requested or Available.</p></div>';
-                if (paginationEl) paginationEl.style.display = 'none';
                 return;
             }
             grid.style.display = 'grid';
             grid.style.alignItems = '';
             grid.style.justifyContent = '';
             grid.innerHTML = '';
-            var startIndex = (this.page - 1) * this.pageSize;
+            // Render all items (no pagination)
             for (var i = 0; i < this.items.length; i++) {
-                grid.appendChild(this.createCard(this.items[i], startIndex + i));
+                grid.appendChild(this.createCard(this.items[i], i));
             }
-            var totalPages = Math.max(1, Math.ceil(this.total / this.pageSize));
-            if (paginationEl) {
-                paginationEl.style.display = totalPages > 1 ? 'flex' : 'none';
-                if (pageInfo) pageInfo.textContent = 'Page ' + this.page + ' of ' + totalPages;
-            }
-            var prevBtn = document.getElementById('movie-hunt-collection-prev');
-            var nextBtn = document.getElementById('movie-hunt-collection-next');
-            if (prevBtn) prevBtn.disabled = this.page <= 1;
-            if (nextBtn) nextBtn.disabled = this.page >= totalPages;
         },
 
         createCard: function(item, index) {

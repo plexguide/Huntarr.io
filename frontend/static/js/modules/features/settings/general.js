@@ -212,8 +212,8 @@
                     <select id="tmdb_image_cache_days" class="control-select" style="width: 200px;">
                         <option value="0" ${settings.tmdb_image_cache_days === 0 ? "selected" : ""}>Disabled (Always Load)</option>
                         <option value="1" ${settings.tmdb_image_cache_days === 1 ? "selected" : ""}>1 Day</option>
-                        <option value="7" ${(settings.tmdb_image_cache_days === 7 || settings.tmdb_image_cache_days === undefined) ? "selected" : ""}>7 Days</option>
-                        <option value="30" ${settings.tmdb_image_cache_days === 30 ? "selected" : ""}>30 Days</option>
+                        <option value="7" ${settings.tmdb_image_cache_days === 7 ? "selected" : ""}>7 Days</option>
+                        <option value="30" ${(settings.tmdb_image_cache_days === 30 || settings.tmdb_image_cache_days === undefined) ? "selected" : ""}>30 Days</option>
                     </select>
                     <p class="setting-help" style="margin-left: -3ch !important;">Cache TMDB images to reduce load times and API usage. Missing images will still attempt to load. Set to "Disabled" to always fetch fresh images.</p>
                 </div>
@@ -225,25 +225,15 @@
                     </select>
                     <p class="setting-help" style="margin-left: -3ch !important;">Server-Side: Images cached on Huntarr server, shared across all users. Browser-Side: Images cached in each user's browser localStorage.</p>
                 </div>
-                <div class="setting-item">
-                    <label for="enable_requestarr">Enable Requests:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
-                        <input type="checkbox" id="enable_requestarr" ${
-                          settings.enable_requestarr !== false ? "checked" : ""
-                        }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
-                    </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Show Requests in the menu and enable discover/trending on the home page. When disabled, Requests is hidden and no TMDB/trending APIs are called.</p>
-                </div>
                 <div class="setting-item" id="show_trending_setting_item">
                     <label for="show_trending"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#show-trending" class="info-icon" title="Learn more about rotating discover content on home page" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Show Discover Content:</label>
                     <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
                         <input type="checkbox" id="show_trending" ${
                           settings.show_trending === true ? "checked" : ""
-                        } ${settings.enable_requestarr === false ? "disabled" : ""}>
+                        }>
                         <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
                     </label>
-                    <p class="setting-help" style="margin-left: -3ch !important;">Display rotating discover content on the home page (Trending This Week, Popular Movies, Popular TV Shows). Requires Requests to be enabled.</p>
+                    <p class="setting-help" style="margin-left: -3ch !important;">Display rotating discover content on the home page (Trending This Week, Popular Movies, Popular TV Shows).</p>
                 </div>
             </div>
         `;
@@ -252,18 +242,6 @@
             window.SettingsForms.setupSettingsManualSave(container, settings);
         }
 
-        // When Enable Requestarr is toggled, disable Show Discover Content when Requestarr is off
-        const enableRequestarrEl = container.querySelector('#enable_requestarr');
-        const showTrendingEl = container.querySelector('#show_trending');
-        if (enableRequestarrEl && showTrendingEl) {
-            const updateShowTrendingDisabled = () => {
-                showTrendingEl.disabled = !enableRequestarrEl.checked;
-                if (!enableRequestarrEl.checked) showTrendingEl.checked = false;
-            };
-            enableRequestarrEl.addEventListener('change', updateShowTrendingDisabled);
-            updateShowTrendingDisabled();
-        }
-        
         // When TMDB cache is disabled, disable the storage location selector
         const cacheDaysEl = container.querySelector('#tmdb_image_cache_days');
         const cacheStorageEl = container.querySelector('#tmdb_cache_storage');
