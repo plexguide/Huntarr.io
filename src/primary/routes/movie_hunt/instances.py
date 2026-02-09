@@ -151,6 +151,8 @@ def _validate_movie_hunt_settings(data: dict) -> tuple:
         elif key == "state_management_mode":
             raw = (str(val) or "custom").strip().lower() if val is not None else "custom"
             out[key] = raw if raw in ("custom", "disabled") else "custom"
+        elif key == "enabled":
+            out[key] = bool(val)
         elif key in ("monitored_only", "tag_processed_items", "tag_enable_missing",
                      "tag_enable_upgrade", "tag_enable_upgraded"):
             out[key] = bool(val)
@@ -163,14 +165,17 @@ def _validate_movie_hunt_settings(data: dict) -> tuple:
 
 @movie_hunt_bp.route('/api/movie-hunt/instances/<int:instance_id>/settings', methods=['GET'])
 def api_movie_hunt_instance_settings_get(instance_id):
-    """Get per-instance hunt settings (search, stateful, additional) for a Movie Hunt instance."""
+    """Get per-instance hunt settings plus name and instance_id for the Information section."""
     try:
         from src.primary.utils.database import get_database
         db = get_database()
         instances = db.get_movie_hunt_instances()
-        if not any(i["id"] == instance_id for i in instances):
+        one = next((i for i in instances if i["id"] == instance_id), None)
+        if not one:
             return jsonify({'error': 'Instance not found'}), 404
         settings = _get_movie_hunt_instance_settings(instance_id)
+        settings["name"] = one.get("name", "")
+        settings["instance_id"] = str(instance_id)
         return jsonify(settings), 200
     except Exception as e:
         logger.exception('Movie Hunt instance settings get error')
@@ -179,7 +184,7 @@ def api_movie_hunt_instance_settings_get(instance_id):
 
 @movie_hunt_bp.route('/api/movie-hunt/instances/<int:instance_id>/settings', methods=['PUT', 'PATCH'])
 def api_movie_hunt_instance_settings_put(instance_id):
-    """Save per-instance hunt settings (search, stateful, additional) for a Movie Hunt instance."""
+    """Save per-instance hunt settings (search, stateful, additional) and optional name for a Movie Hunt instance."""
     try:
         data = request.get_json()
         if data is None:
@@ -192,8 +197,15 @@ def api_movie_hunt_instance_settings_put(instance_id):
         instances = db.get_movie_hunt_instances()
         if not any(i["id"] == instance_id for i in instances):
             return jsonify({'error': 'Instance not found'}), 404
+        name = (data.get("name") or "").strip() if isinstance(data.get("name"), str) else None
+        if name is not None and name != "":
+            db.update_movie_hunt_instance(instance_id, name)
         db.save_app_config_for_instance(MOVIE_HUNT_HUNT_SETTINGS_KEY, instance_id, normalized)
-        return jsonify(normalized), 200
+        out = dict(normalized)
+        one = next((i for i in db.get_movie_hunt_instances() if i["id"] == instance_id), None)
+        out["name"] = one.get("name", "") if one else ""
+        out["instance_id"] = str(instance_id)
+        return jsonify(out), 200
     except Exception as e:
         logger.exception('Movie Hunt instance settings save error')
         return jsonify({'error': str(e)}), 500

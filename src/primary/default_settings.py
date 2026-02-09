@@ -101,8 +101,10 @@ def get_movie_hunt_instance_settings_defaults() -> Dict[str, Any]:
     Used for hunt/upgrade/state/cycle; no api_url, api_key, enabled, name (those come from movie_hunt_instances).
     """
     base = get_default_instance_config("radarr")
-    # Drop connection-related keys; keep search, stateful, additional
+    # Drop connection-related keys; keep search, stateful, additional.
+    # Movie Hunt instances default to enabled (unlike Radarr which defaults to false until API is set).
     out = {
+        "enabled": True,
         "hunt_missing_movies": base.get("hunt_missing_movies", 1),
         "hunt_upgrade_movies": base.get("hunt_upgrade_movies", 0),
         "upgrade_selection_method": (base.get("upgrade_selection_method") or "cutoff").strip().lower(),

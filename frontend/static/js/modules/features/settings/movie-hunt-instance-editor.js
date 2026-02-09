@@ -27,7 +27,13 @@
         if (!s || typeof s !== 'object' || s.error) {
             s = {};
         }
+        var enabled = s.enabled !== false;
+        var instanceIdStr = (s.instance_id != null && s.instance_id !== '') ? String(s.instance_id) : (_currentInstanceId != null ? String(_currentInstanceId) : '');
+        var instanceName = (s.name != null && s.name !== '') ? String(s.name).trim() : (_currentInstanceName != null ? String(_currentInstanceName).trim() : '');
         var safe = {
+            enabled: enabled,
+            name: instanceName,
+            instance_id: instanceIdStr,
             hunt_missing_movies: s.hunt_missing_movies !== undefined ? s.hunt_missing_movies : 1,
             hunt_upgrade_movies: s.hunt_upgrade_movies !== undefined ? s.hunt_upgrade_movies : 0,
             upgrade_selection_method: (s.upgrade_selection_method || 'cutoff').toLowerCase(),
@@ -59,7 +65,31 @@
                 '<span class="exempt-tag-remove" style="cursor: pointer;">×</span><span>' + escapeHtml(tag) + '</span></span>';
         }).join('');
 
+        var infoStatusClass = safe.enabled ? 'mh-info-status-enabled' : 'mh-info-status-disabled';
+        var infoStatusText = safe.enabled ? 'Enabled' : 'Disabled';
+        var infoStatusIcon = safe.enabled ? '<i class="fas fa-check-circle" style="margin-right: 6px;"></i>' : '';
+
+        var enableLabelIcon = safe.enabled
+            ? '<span id="mh-editor-enabled-icon"><i class="fas fa-check-circle" style="color: #10b981; margin-right: 6px;"></i></span>'
+            : '<span id="mh-editor-enabled-icon"><i class="fas fa-times-circle" style="color: #6b7280; margin-right: 6px;"></i></span>';
+
         return '<div class="editor-grid">' +
+            '<div class="editor-section mh-information-section">' +
+            '<div class="editor-section-header-inline">' +
+            '<div class="editor-section-title">Information</div>' +
+            '<span class="mh-info-status-pill ' + infoStatusClass + '">' + infoStatusIcon + infoStatusText + '</span>' +
+            '</div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item"><label>' + enableLabelIcon + 'Enable Status</label>' +
+            '<select id="mh-editor-enabled"><option value="true"' + (safe.enabled ? ' selected' : '') + '>Enabled</option><option value="false"' + (!safe.enabled ? ' selected' : '') + '>Disabled</option></select></div>' +
+            '<p class="editor-help-text">Enable or disable this instance</p></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item"><label>Name</label>' +
+            '<input type="text" id="mh-editor-name" value="' + escapeAttr(safe.name) + '" placeholder="e.g. Main" maxlength="64"></div>' +
+            '<p class="editor-help-text">A friendly name to identify this instance</p></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item"><label>Instance Identifier</label>' +
+            '<input type="text" id="mh-editor-instance-id" value="' + escapeAttr(safe.instance_id) + '" readonly disabled style="opacity: 0.8; cursor: not-allowed;"></div>' +
+            '<p class="editor-help-text">Stable identifier for this instance (assigned automatically; cannot be changed)</p></div>' +
+            '</div>' +
             '<div class="editor-section">' +
             '<div class="editor-section-title">Search Settings</div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Missing Search Count</label><input type="number" id="mh-editor-missing-count" value="' + safe.hunt_missing_movies + '"></div>' +
@@ -134,7 +164,12 @@
         }
         var tagMissing = (get('mh-editor-tag-missing') || '').trim() || 'huntarr-missing';
         var tagUpgrade = (get('mh-editor-tag-upgrade') || '').trim() || 'huntarr-upgrade';
+        var enabledVal = get('mh-editor-enabled');
+        var enabled = enabledVal === 'true' || enabledVal === true;
+        var nameVal = (get('mh-editor-name') || '').trim() || 'Unnamed';
         return {
+            enabled: enabled,
+            name: nameVal,
             hunt_missing_movies: getNum('mh-editor-missing-count', 1),
             hunt_upgrade_movies: getNum('mh-editor-upgrade-count', 0),
             upgrade_selection_method: (get('mh-editor-upgrade-method') || 'cutoff').toLowerCase(),
@@ -222,6 +257,19 @@
             var upgradeItemsSection = container.querySelector('.mh-editor-upgrade-items-tag-section');
             if (upgradeItemsSection) upgradeItemsSection.style.display = upgradeMethod.value === 'tags' ? 'none' : 'block';
         });
+        var enabledSelect = document.getElementById('mh-editor-enabled');
+        var statusPill = container ? container.querySelector('.mh-info-status-pill') : null;
+        var enabledIconEl = document.getElementById('mh-editor-enabled-icon');
+        if (enabledSelect && statusPill) {
+            enabledSelect.addEventListener('change', function() {
+                var on = enabledSelect.value === 'true';
+                statusPill.className = 'mh-info-status-pill ' + (on ? 'mh-info-status-enabled' : 'mh-info-status-disabled');
+                statusPill.innerHTML = on ? '<i class="fas fa-check-circle" style="margin-right: 6px;"></i>Enabled' : 'Disabled';
+                if (enabledIconEl) {
+                    enabledIconEl.innerHTML = on ? '<i class="fas fa-check-circle" style="color: #10b981; margin-right: 6px;"></i>' : '<i class="fas fa-times-circle" style="color: #6b7280; margin-right: 6px;"></i>';
+                }
+            });
+        }
     }
 
     function loadMovieHuntStateStatus(instanceName) {

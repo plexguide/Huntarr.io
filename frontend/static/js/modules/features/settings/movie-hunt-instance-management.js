@@ -254,7 +254,6 @@
                             '</div>' +
                             '<div class="instance-card-footer">' +
                             '<button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Edit settings"><i class="fas fa-cog"></i> Edit</button>' +
-                            '<button type="button" class="btn-card rename" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Rename"><i class="fas fa-pencil-alt"></i> Rename</button>' +
                             '<button type="button" class="btn-card delete" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" aria-label="Delete"><i class="fas fa-trash"></i> Delete</button>' +
                             '</div>';
                         grid.appendChild(card);
@@ -273,12 +272,6 @@
                             if (window.MovieHuntInstanceEditor && typeof window.MovieHuntInstanceEditor.openEditor === 'function') {
                                 window.MovieHuntInstanceEditor.openEditor(id, name || ('Instance ' + id));
                             }
-                        });
-                    });
-                    grid.querySelectorAll('.btn-card.rename').forEach(function(btn) {
-                        btn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            window.MovieHuntInstanceManagement.promptRename(btn.getAttribute('data-id'), btn.getAttribute('data-name') || '');
                         });
                     });
                     grid.querySelectorAll('.btn-card.delete').forEach(function(btn) {

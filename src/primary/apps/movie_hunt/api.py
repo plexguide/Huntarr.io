@@ -62,8 +62,10 @@ def get_configured_instances(quiet: bool = False) -> List[Dict[str, Any]]:
         instances = []
         for r in rows:
             instance_id = r["id"]
-            name = (r.get("name") or "").strip() or "Default"
             settings = _get_instance_hunt_settings(instance_id)
+            if not settings.get("enabled", True):
+                continue
+            name = (r.get("name") or "").strip() or "Default"
             instance_details = {
                 "instance_name": name,
                 "instance_id": str(instance_id),
