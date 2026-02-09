@@ -1536,27 +1536,10 @@ let huntarrUI = {
         }
     },
 
-    /** When on Settings subpages: hide Huntarr+Home, Media Collection, Activity. When on Activity (Queue/History/Blocklist/Logs): hide Huntarr+Home, Settings. */
+    /** Keep all Movie Hunt sidebar icons visible - no hiding when navigating between sections. */
     _updateMovieHuntSidebarSettingsOnlyVisibility: function() {
-        var settingsSections = ['movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders'];
-        var activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt'];
-        var onSettings = settingsSections.indexOf(this.currentSection) !== -1;
-        var onActivity = activitySections.indexOf(this.currentSection) !== -1;
-        var showDisplay = '';
-        var huntarrHome = document.getElementById('movie-hunt-sidebar-huntarr-home-group');
-        var collectionNav = document.getElementById('movieHuntCollectionNav');
-        var calendarNav = document.getElementById('movieHuntCalendarNav');
-        var activityNav = document.getElementById('movieHuntActivityNav');
-        var activitySub = document.getElementById('movie-hunt-activity-sub');
-        var settingsNav = document.getElementById('movieHuntSettingsNav');
-        var settingsSub = document.getElementById('movie-hunt-settings-sub');
-        if (huntarrHome) huntarrHome.style.display = (onSettings || onActivity) ? 'none' : showDisplay;
-        if (collectionNav) collectionNav.style.display = (onSettings || onActivity) ? 'none' : showDisplay;
-        if (calendarNav) calendarNav.style.display = (onSettings || onActivity) ? 'none' : showDisplay;
-        if (activityNav) activityNav.style.display = onSettings ? 'none' : showDisplay;
-        if (activitySub) activitySub.style.display = onSettings ? 'none' : showDisplay;
-        if (settingsNav) settingsNav.style.display = onActivity ? 'none' : showDisplay;
-        if (settingsSub) settingsSub.style.display = onActivity ? 'none' : showDisplay;
+        // All navigation items remain visible for easier navigation
+        // User requested: don't hide icons when selecting menu options
     },
 
     /** When in instance-editor for indexer/client, keep Indexers or Clients nav item highlighted. */

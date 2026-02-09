@@ -219,6 +219,9 @@ body.requestarr-modal-open {
     font-weight: 600;
     color: rgba(148, 163, 184, 0.6);
     text-align: left;
+    /* Ensure label stays as one grid item even with inline icons */
+    display: flex;
+    align-items: center;
 }
 .mh-req-field select,
 .mh-req-field .mh-req-field-input-wrap {
@@ -255,7 +258,8 @@ body.requestarr-modal-open {
     font-size: 11px;
     margin-left: 4px;
     text-decoration: none;
-    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
     transition: color 0.15s;
 }
 .mh-req-more-info-icon:hover {
