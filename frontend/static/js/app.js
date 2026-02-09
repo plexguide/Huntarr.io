@@ -125,7 +125,7 @@ let huntarrUI = {
         } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-settings') {
             console.log('[huntarrUI] Initialization - showing nzb hunt sidebar');
             this.showNzbHuntSidebar();
-        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'settings-sizes' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-import-lists' || this.currentSection === 'settings-root-folders') {
+        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'movie-hunt-instance-editor' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'settings-sizes' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-import-lists' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings') {
@@ -525,7 +525,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -725,6 +725,10 @@ let huntarrUI = {
         } else if (section === 'movie-hunt-settings' && document.getElementById('movie-hunt-settings-default-section')) {
             document.getElementById('movie-hunt-settings-default-section').classList.add('active');
             document.getElementById('movie-hunt-settings-default-section').style.display = 'block';
+            if (document.getElementById('movieHuntInstanceEditorSection')) {
+                document.getElementById('movieHuntInstanceEditorSection').classList.remove('active');
+                document.getElementById('movieHuntInstanceEditorSection').style.display = 'none';
+            }
             if (document.getElementById('instanceManagementSection')) {
                 document.getElementById('instanceManagementSection').classList.remove('active');
                 document.getElementById('instanceManagementSection').style.display = 'none';
@@ -732,6 +736,20 @@ let huntarrUI = {
             if (document.getElementById('movieHuntSettingsNav')) document.getElementById('movieHuntSettingsNav').classList.add('active');
             newTitle = 'Movie Hunt Settings';
             this.currentSection = 'movie-hunt-settings';
+            this.showMovieHuntSidebar();
+            if (window.MovieHuntInstanceEditor && typeof window.MovieHuntInstanceEditor.loadInstanceList === 'function') {
+                window.MovieHuntInstanceEditor.loadInstanceList();
+            }
+        } else if (section === 'movie-hunt-instance-editor' && document.getElementById('movieHuntInstanceEditorSection')) {
+            document.getElementById('movieHuntInstanceEditorSection').classList.add('active');
+            document.getElementById('movieHuntInstanceEditorSection').style.display = 'block';
+            if (document.getElementById('movie-hunt-settings-default-section')) {
+                document.getElementById('movie-hunt-settings-default-section').classList.remove('active');
+                document.getElementById('movie-hunt-settings-default-section').style.display = 'none';
+            }
+            if (document.getElementById('movieHuntSettingsNav')) document.getElementById('movieHuntSettingsNav').classList.add('active');
+            newTitle = 'Movie Hunt';
+            this.currentSection = 'movie-hunt-instance-editor';
             this.showMovieHuntSidebar();
         } else if (section === 'requestarr' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
@@ -956,6 +974,10 @@ let huntarrUI = {
             if (document.getElementById('movie-hunt-settings-default-section')) {
                 document.getElementById('movie-hunt-settings-default-section').classList.remove('active');
                 document.getElementById('movie-hunt-settings-default-section').style.display = 'none';
+            }
+            if (document.getElementById('movieHuntInstanceEditorSection')) {
+                document.getElementById('movieHuntInstanceEditorSection').classList.remove('active');
+                document.getElementById('movieHuntInstanceEditorSection').style.display = 'none';
             }
             if (document.getElementById('movieManagementSection')) {
                 document.getElementById('movieManagementSection').classList.remove('active');

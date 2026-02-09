@@ -95,6 +95,40 @@ def get_default_instance_config(app_type: str) -> Dict[str, Any]:
     return base_instance
 
 
+def get_movie_hunt_instance_settings_defaults() -> Dict[str, Any]:
+    """
+    Default per-instance settings for Movie Hunt (same as Radarr instance minus connection).
+    Used for hunt/upgrade/state/cycle; no api_url, api_key, enabled, name (those come from movie_hunt_instances).
+    """
+    base = get_default_instance_config("radarr")
+    # Drop connection-related keys; keep search, stateful, additional
+    out = {
+        "hunt_missing_movies": base.get("hunt_missing_movies", 1),
+        "hunt_upgrade_movies": base.get("hunt_upgrade_movies", 0),
+        "upgrade_selection_method": (base.get("upgrade_selection_method") or "cutoff").strip().lower(),
+        "upgrade_tag": (base.get("upgrade_tag") or "").strip(),
+        "release_date_delay_days": base.get("release_date_delay_days", 0),
+        "state_management_mode": base.get("state_management_mode", "custom"),
+        "state_management_hours": base.get("state_management_hours", 72),
+        "sleep_duration": base.get("sleep_duration", 900),
+        "hourly_cap": base.get("hourly_cap", 20),
+        "exempt_tags": base.get("exempt_tags") or [],
+        "api_timeout": base.get("api_timeout", 120),
+        "command_wait_delay": base.get("command_wait_delay", 1),
+        "command_wait_attempts": base.get("command_wait_attempts", 600),
+        "max_download_queue_size": base.get("max_download_queue_size", -1),
+        "max_seed_queue_size": base.get("max_seed_queue_size", -1),
+        "seed_check_torrent_client": base.get("seed_check_torrent_client"),
+        "monitored_only": base.get("monitored_only", True),
+        "tag_processed_items": base.get("tag_processed_items", True),
+        "tag_enable_missing": base.get("tag_enable_missing", True),
+        "tag_enable_upgrade": base.get("tag_enable_upgrade", True),
+        "tag_enable_upgraded": base.get("tag_enable_upgraded", True),
+        "custom_tags": dict(base.get("custom_tags") or {}),
+    }
+    return out
+
+
 # Sonarr default configuration
 SONARR_DEFAULTS = {
     "instances": [],  # No default instances - user creates first instance

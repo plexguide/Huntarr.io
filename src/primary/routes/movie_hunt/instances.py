@@ -5,6 +5,9 @@ from flask import request, jsonify
 from . import movie_hunt_bp
 from ...utils.logger import logger
 
+# Per-instance settings config key (search, stateful, additional — same as Radarr instance minus connection)
+MOVIE_HUNT_HUNT_SETTINGS_KEY = "movie_hunt_hunt_settings"
+
 
 @movie_hunt_bp.route('/api/movie-hunt/instances', methods=['GET'])
 def api_movie_hunt_instances_list():
@@ -95,6 +98,116 @@ def api_movie_hunt_current_instance_get():
     except Exception as e:
         logger.exception('Movie Hunt current instance get error')
         return jsonify({'instance_id': 1, 'error': str(e)}), 200
+
+
+def _get_movie_hunt_instance_settings(instance_id: int):
+    """Get per-instance hunt settings for a Movie Hunt instance (merged with defaults)."""
+    from src.primary.utils.database import get_database
+    from src.primary.default_settings import get_movie_hunt_instance_settings_defaults
+    db = get_database()
+    defaults = get_movie_hunt_instance_settings_defaults()
+    saved = db.get_app_config_for_instance(MOVIE_HUNT_HUNT_SETTINGS_KEY, instance_id)
+    if not saved or not isinstance(saved, dict):
+        return defaults
+    for k, v in defaults.items():
+        if k not in saved:
+            saved[k] = v
+    return saved
+
+
+def _validate_movie_hunt_settings(data: dict) -> tuple:
+    """Validate and normalize settings. Returns (normalized_dict, error_message or None)."""
+    from src.primary.default_settings import get_movie_hunt_instance_settings_defaults
+    defaults = get_movie_hunt_instance_settings_defaults()
+    out = dict(defaults)
+    if not isinstance(data, dict):
+        return None, "Settings must be an object"
+    for key in out:
+        if key not in data:
+            continue
+        val = data[key]
+        if key in ("hunt_missing_movies", "hunt_upgrade_movies", "release_date_delay_days",
+                   "state_management_hours", "api_timeout", "command_wait_delay", "command_wait_attempts",
+                   "max_download_queue_size", "max_seed_queue_size", "sleep_duration", "hourly_cap"):
+            try:
+                out[key] = int(val) if val is not None else defaults[key]
+            except (TypeError, ValueError):
+                out[key] = defaults[key]
+        elif key == "exempt_tags":
+            out[key] = [str(x).strip() for x in val] if isinstance(val, list) else []
+        elif key == "custom_tags":
+            out[key] = dict(val) if isinstance(val, dict) else dict(defaults[key])
+        elif key == "upgrade_selection_method":
+            out[key] = (str(val) or "cutoff").strip().lower() if val is not None else "cutoff"
+        elif key == "upgrade_tag":
+            out[key] = (str(val) or "").strip()
+        elif key == "state_management_mode":
+            out[key] = str(val).strip() if val is not None else "custom"
+        elif key in ("monitored_only", "tag_processed_items", "tag_enable_missing",
+                     "tag_enable_upgrade", "tag_enable_upgraded"):
+            out[key] = bool(val)
+        elif key == "seed_check_torrent_client":
+            out[key] = val if isinstance(val, dict) and val else None
+        else:
+            out[key] = val
+    return out, None
+
+
+@movie_hunt_bp.route('/api/movie-hunt/instances/<int:instance_id>/settings', methods=['GET'])
+def api_movie_hunt_instance_settings_get(instance_id):
+    """Get per-instance hunt settings (search, stateful, additional) for a Movie Hunt instance."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instances = db.get_movie_hunt_instances()
+        if not any(i["id"] == instance_id for i in instances):
+            return jsonify({'error': 'Instance not found'}), 404
+        settings = _get_movie_hunt_instance_settings(instance_id)
+        return jsonify(settings), 200
+    except Exception as e:
+        logger.exception('Movie Hunt instance settings get error')
+        return jsonify({'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/instances/<int:instance_id>/settings', methods=['PUT', 'PATCH'])
+def api_movie_hunt_instance_settings_put(instance_id):
+    """Save per-instance hunt settings (search, stateful, additional) for a Movie Hunt instance."""
+    try:
+        data = request.get_json()
+        if data is None:
+            return jsonify({'error': 'JSON body required'}), 400
+        normalized, err = _validate_movie_hunt_settings(data)
+        if err:
+            return jsonify({'error': err}), 400
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instances = db.get_movie_hunt_instances()
+        if not any(i["id"] == instance_id for i in instances):
+            return jsonify({'error': 'Instance not found'}), 404
+        db.save_app_config_for_instance(MOVIE_HUNT_HUNT_SETTINGS_KEY, instance_id, normalized)
+        return jsonify(normalized), 200
+    except Exception as e:
+        logger.exception('Movie Hunt instance settings save error')
+        return jsonify({'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/instances/<int:instance_id>/reset-state', methods=['POST'])
+def api_movie_hunt_instance_reset_state(instance_id):
+    """Reset processed state for this Movie Hunt instance (same as Radarr state reset)."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instances = db.get_movie_hunt_instances()
+        if not any(i["id"] == instance_id for i in instances):
+            return jsonify({'error': 'Instance not found'}), 404
+        settings = _get_movie_hunt_instance_settings(instance_id)
+        hours = int(settings.get("state_management_hours", 72))
+        instance_key = str(instance_id)
+        db.reset_instance_state_management("movie_hunt", instance_key, hours)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.exception('Movie Hunt instance reset state error')
+        return jsonify({'error': str(e)}), 500
 
 
 @movie_hunt_bp.route('/api/movie-hunt/current-instance', methods=['POST'])

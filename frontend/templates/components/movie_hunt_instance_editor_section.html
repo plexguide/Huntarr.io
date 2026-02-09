@@ -1,0 +1,30 @@
+<section id="movieHuntInstanceEditorSection" class="content-section">
+    <div id="movieHuntInstanceEditorContainer" class="app-content-panel" style="max-width: 1400px; margin: 0 auto; padding: 30px 20px; padding-bottom: 150px;">
+        <div class="instance-editor-header" style="margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <button type="button" id="movie-hunt-instance-editor-back" class="btn-card" style="width: auto; padding: 8px 15px; background: rgba(148, 163, 184, 0.1); height: 38px;">
+                    <i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Back
+                </button>
+                <h2 id="movie-hunt-instance-editor-title" style="margin: 0; font-size: 1.35rem; font-weight: 600;">Movie Hunt</h2>
+                <button type="button" id="movie-hunt-instance-editor-save" class="btn-card save-btn-dynamic" disabled style="width: auto; padding: 8px 20px; height: 38px;">
+                    <i class="fas fa-save"></i> Save
+                </button>
+            </div>
+        </div>
+        <div id="movie-hunt-instance-editor-content">
+            <!-- Search Settings, Stateful Management, Additional Settings (no Connection) -->
+        </div>
+    </div>
+</section>
+
+<style>
+    #movieHuntInstanceEditorSection { display: none; width: 100%; min-height: 100vh; padding: 0; margin: 0; }
+    #movieHuntInstanceEditorSection.active { display: block !important; }
+    #movie-hunt-instance-editor-content .editor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; }
+    #movie-hunt-instance-editor-content .editor-section { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 12px; padding: 24px; }
+    #movie-hunt-instance-editor-content .editor-section-title { font-size: 1.1rem; font-weight: 600; color: #f8fafc; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.1); }
+    #movie-hunt-instance-editor-content .editor-field-group { margin-bottom: 26px; }
+    #movie-hunt-instance-editor-content .editor-help-text { color: #94a3b8; font-size: 0.85rem; margin: 4px 0 0 0; line-height: 1.4; }
+    #movie-hunt-instance-editor-content input[type="text"], #movie-hunt-instance-editor-content input[type="number"], #movie-hunt-instance-editor-content select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(15, 23, 42, 0.6); color: white; }
+    #movie-hunt-instance-editor-save.enabled { background: #ef4444 !important; color: white !important; cursor: pointer !important; opacity: 1 !important; }
+</style>
