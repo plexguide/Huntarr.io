@@ -204,15 +204,16 @@ body.requestarr-modal-open {
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-/* Form fields: grid so label column and control column align across all rows */
+/* Form fields: flex column with fixed-width labels for guaranteed alignment */
 .mh-req-fields {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 10px 14px;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 .mh-req-field {
-    display: contents;
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 .mh-req-field label {
     font-size: 12px;
@@ -220,12 +221,13 @@ body.requestarr-modal-open {
     color: rgba(148, 163, 184, 0.6);
     text-align: left;
     white-space: nowrap;
-    grid-column: 1;
+    width: 150px;
+    flex-shrink: 0;
 }
 .mh-req-field select,
 .mh-req-field .mh-req-field-input-wrap {
+    flex: 1;
     min-width: 0;
-    grid-column: 2;
 }
 .mh-req-field select {
     width: 100%;
@@ -334,12 +336,13 @@ body.requestarr-modal-open {
         object-position: center 20%;
     }
     .mh-req-form { padding: 18px 16px 16px; }
-    .mh-req-fields {
-        grid-template-columns: 1fr;
+    .mh-req-field {
+        flex-direction: column;
         align-items: stretch;
+        gap: 6px;
     }
     .mh-req-field label {
-        text-align: left;
+        width: auto;
     }
     .mh-req-close { top: 6px; right: 6px; }
 }
