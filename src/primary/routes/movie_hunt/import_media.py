@@ -42,7 +42,10 @@ _ALL_VIDEO_EXTENSIONS = _VIDEO_EXTENSIONS | _EXTRA_VIDEO_EXTENSIONS
 _SKIP_PATTERNS = re.compile(
     r'(?i)(^sample$|^extras?$|^bonus$|^featurettes?$|^behind.?the.?scenes?$'
     r'|^deleted.?scenes?$|^special.?features?$|^trailers?$|^subs?$|^subtitles?$'
-    r'|^screenshots?$|^\..*|^@eaDir$|^#recycle$|^\.Trash|^lost\+found$)',
+    r'|^screenshots?$|^\..*|^@eaDir$|^#recycle$|^\.Trash|^lost\+found$'
+    r'|^movies?$|^films?$|^downloads?$|^temp$|^tmp$|^incoming$|^incomplete$'
+    r'|^moviehunt$|^movie.?hunt$|^plex$|^radarr$|^test$|^new$|^old$'
+    r'|^backup$|^backups$|^archive$|^archives$)',
 )
 
 # Scene/release group tags to strip
