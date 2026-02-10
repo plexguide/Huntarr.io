@@ -372,16 +372,19 @@ let huntarrUI = {
                 if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
                     window.HuntarrConfirm.show({
                         title: 'Unsaved Changes',
-                        message: 'You have unsaved changes. Are you sure you want to leave this page?',
-                        confirmLabel: 'Leave',
-                        cancelLabel: 'Stay',
+                        message: 'You have unsaved changes that will be lost if you leave.',
+                        confirmLabel: 'Go Back',
+                        cancelLabel: 'Leave',
                         onConfirm: () => {
+                            // Stay — navigation already reverted above, modal closes
+                        },
+                        onCancel: () => {
                             window._hasUnsavedChanges = false;
                             window.location.hash = newHash;
                         }
                     });
                 } else {
-                    if (!confirm('You have unsaved changes. Are you sure you want to leave this page?')) {
+                    if (!confirm('You have unsaved changes that will be lost. Leave anyway?')) {
                         return;
                     }
                     window._hasUnsavedChanges = false;

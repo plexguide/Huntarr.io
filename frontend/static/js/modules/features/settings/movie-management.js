@@ -150,22 +150,21 @@
         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
             window.HuntarrConfirm.show({
                 title: 'Unsaved Changes',
-                message: 'You have unsaved changes. Save before leaving?',
-                confirmLabel: 'Save',
-                cancelLabel: 'Discard',
-                onConfirm: function() { callback('save'); },
+                message: 'You have unsaved changes that will be lost if you leave.',
+                confirmLabel: 'Go Back',
+                cancelLabel: 'Leave',
+                onConfirm: function() {
+                    // Stay on the editor — modal just closes, user can save manually
+                    callback('stay');
+                },
                 onCancel: function() { callback('discard'); }
             });
         } else {
-            if (confirm('You have unsaved changes. Save before leaving?')) {
-                callback('save');
-            } else {
-                if (confirm('Discard changes and leave without saving?')) {
-                    callback('discard');
-                } else {
-                    callback('stay');
-                }
+            if (!confirm('You have unsaved changes that will be lost. Leave anyway?')) {
+                callback('stay');
+                return;
             }
+            callback('discard');
         }
     }
 

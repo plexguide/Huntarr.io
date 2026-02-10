@@ -402,14 +402,16 @@
                         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
                             window.HuntarrConfirm.show({
                                 title: 'Unsaved Changes',
-                                message: 'You have unsaved changes. Save before leaving?',
-                                confirmLabel: 'Save',
-                                cancelLabel: 'Discard',
-                                onConfirm: function() { self.saveEditor(); },
+                                message: 'You have unsaved changes that will be lost if you leave.',
+                                confirmLabel: 'Go Back',
+                                cancelLabel: 'Leave',
+                                onConfirm: function() {
+                                    // Stay on the editor — modal just closes, user can save manually
+                                },
                                 onCancel: function() { window.huntarrUI.switchSection('movie-hunt-settings'); }
                             });
                         } else {
-                            if (confirm('You have unsaved changes. Leave anyway?')) {
+                            if (confirm('You have unsaved changes that will be lost. Leave anyway?')) {
                                 window.huntarrUI.switchSection('movie-hunt-settings');
                             }
                         }
