@@ -2,6 +2,268 @@
    Huntarr Settings & Form Styles
    ========================================================================== */
 
+/* ============================================================
+   Main Settings — Modern Layout (.mset-* prefix)
+   ============================================================ */
+
+/* Toolbar */
+.mset-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 12px 18px;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 12px;
+    gap: 16px;
+}
+
+.mset-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.mset-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mset-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary, #e2e8f0);
+}
+
+.mset-breadcrumb i:first-child {
+    color: #818cf8;
+}
+
+.mset-breadcrumb-sep {
+    font-size: 10px;
+    color: var(--text-muted, #64748b);
+}
+
+/* Save button */
+.mset-save-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #4b5563;
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: not-allowed;
+    transition: all 0.2s ease;
+}
+
+.mset-save-btn:disabled {
+    opacity: 0.7;
+}
+
+.mset-save-btn.mset-save-active {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    opacity: 1;
+}
+
+.mset-save-btn.mset-save-active:hover {
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+}
+
+/* Two-column grid */
+.mset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+/* Cards */
+.mset-card {
+    background: rgba(30, 32, 44, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.mset-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mset-card-header h3 {
+    margin: 0;
+    padding: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary, #e2e8f0);
+    border: none;
+    background: none;
+    box-shadow: none;
+    text-shadow: none;
+    border-radius: 0;
+    border-left: none;
+    border-bottom: none;
+    letter-spacing: 0;
+}
+
+.mset-card-header h3::after {
+    display: none;
+}
+
+.mset-card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.mset-icon-blue   { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+.mset-icon-amber  { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+.mset-icon-purple { background: linear-gradient(135deg, #6366f1, #818cf8); }
+.mset-icon-teal   { background: linear-gradient(135deg, #14b8a6, #2dd4bf); }
+
+.mset-card-body {
+    padding: 18px;
+}
+
+/* Override setting-item inside cards to remove old group overrides */
+.mset-card-body .setting-item {
+    margin-bottom: 20px;
+    padding-bottom: 5px;
+}
+
+.mset-card-body .setting-item:last-child {
+    margin-bottom: 0;
+}
+
+.mset-card-body .setting-help {
+    margin-left: 0 !important;
+}
+
+/* Form controls */
+.mset-select {
+    width: 100%;
+    max-width: 320px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(15, 23, 42, 0.6);
+    color: #d1d5db;
+    font-size: 13px;
+    transition: border-color 0.15s ease;
+}
+
+.mset-select:focus {
+    border-color: rgba(99, 102, 241, 0.5);
+    outline: none;
+}
+
+.mset-input {
+    width: 100%;
+    max-width: 320px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(15, 23, 42, 0.6);
+    color: #d1d5db;
+    font-size: 13px;
+    transition: border-color 0.15s ease;
+}
+
+.mset-input:focus {
+    border-color: rgba(99, 102, 241, 0.5);
+    outline: none;
+}
+
+/* Dev mode row */
+.mset-dev-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.mset-dev-label {
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.mset-dev-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mset-dev-on {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.mset-dev-off {
+    background: rgba(100, 116, 139, 0.2);
+    color: #94a3b8;
+    border: 1px solid rgba(100, 116, 139, 0.4);
+}
+
+.mset-dev-help {
+    color: #64748b;
+    font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .mset-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .mset-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .mset-toolbar-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    .mset-select, .mset-input {
+        max-width: 100%;
+    }
+}
+
+/* ============================================================
+   End Main Settings Modern Layout
+   ============================================================ */
+
 /* Settings Section */
 .settings-actions {
     display: flex;
