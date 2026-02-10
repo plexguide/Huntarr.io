@@ -913,26 +913,10 @@ window.SettingsForms = {
     }
 };
 
-// Add CSS for toggle circle
+// Toggle CSS — removed; single source of truth is now style.css.
+// Only non-toggle layout helpers remain.
 const styleEl = document.createElement("style");
 styleEl.innerHTML = `
-    .toggle-switch input:checked + .toggle-slider {
-        background-color: #3498db !important;
-    }
-    .toggle-slider:before {
-        position: absolute;
-        content: "";
-        height: 14px;
-        width: 14px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: .4s;
-        border-radius: 50%;
-    }
-    .toggle-switch input:checked + .toggle-slider:before {
-        transform: translateX(20px);
-    }
     .setting-help {
         margin-left: -3ch !important;
     }

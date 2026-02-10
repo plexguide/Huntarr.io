@@ -596,19 +596,42 @@ button {
     color: var(--text-muted);
 }
 
-/* Toggle Switch for Settings */
+/* ==========================================================
+   Toggle Switch — SINGLE SOURCE OF TRUTH
+   All .toggle-switch / .toggle-slider definitions are HERE.
+   Do NOT redefine these in other CSS files or inline <style>
+   blocks.  Override ONLY the checked background colour when
+   needed, scoped to a parent section ID.
+   
+   Track : 44 × 24 px
+   Knob  : 18 × 18 px, vertically centred (top: 3px)
+   Border: subtle gold / amber
+   ========================================================== */
 .toggle-switch {
     position: relative;
-    display: inline-block;
-    width: 40px; /* Changed to match login page toggle (40px) */
-    height: 20px;
+    display: block;
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    height: 24px;
+    min-height: 24px;
+    max-height: 24px;
     flex-shrink: 0;
+    flex-grow: 0;
+    margin: 0;
+    padding: 0;
+    border-radius: 12px;
+    cursor: pointer;
+    overflow: hidden;
 }
 
-.toggle-switch input {
+.toggle-switch input,
+.toggle-switch input[type="checkbox"] {
     opacity: 0;
     width: 0;
     height: 0;
+    position: absolute;
+    pointer-events: none;
 }
 
 .toggle-slider {
@@ -616,31 +639,40 @@ button {
     cursor: pointer;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--switch-bg);
-    transition: .4s;
-    border-radius: 24px;
+    width: 44px;
+    height: 24px;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 12px;
+    transition: background 0.25s ease, border-color 0.25s ease;
 }
 
 .toggle-slider:before {
     position: absolute;
     content: "";
-    height: 12px; /* Changed to match login page toggle (12px) */
-    width: 12px; /* Changed to match login page toggle (12px) */
-    left: 4px; /* Changed to match login page toggle */
-    bottom: 4px; /* Changed to match login page toggle */
-    background-color: white;
-    transition: .4s;
+    width: 18px;
+    height: 18px;
+    top: 3px;       /* (24 − 18) / 2 = 3px — perfectly centred vertically */
+    left: 3px;
+    background: #e2e8f0;
     border-radius: 50%;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 input:checked + .toggle-slider {
-    background-color: var(--switch-active);
+    background: #3498db;
+    border-color: rgba(52, 152, 219, 0.5);
 }
 
 input:checked + .toggle-slider:before {
-    transform: translateX(20px); /* Changed to match login page toggle (20px) */
+    transform: translateX(20px);
+    background: #fff;
+}
+
+input:disabled + .toggle-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Stateful Management Styling */

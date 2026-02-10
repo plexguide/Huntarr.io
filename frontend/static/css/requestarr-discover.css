@@ -922,42 +922,12 @@
     height: 0;
 }
 
-.toggle-slider {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.2);
-    transition: 0.3s;
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
+/* Toggle slider — base definition is in style.css (single source of truth).
+   Only the season-toggle checked colour override is kept here. */
 
-.toggle-slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 2px;
-    background-color: white;
-    transition: 0.3s;
-    border-radius: 50%;
-}
-
-input:checked + .toggle-slider {
+.season-toggle input:checked + .toggle-slider {
     background-color: #f59e0b;
-    border-color: #f59e0b;
-}
-
-input:checked + .toggle-slider:before {
-    transform: translateX(20px);
-}
-
-input:disabled + .toggle-slider {
-    opacity: 0.5;
-    cursor: not-allowed;
+    border-color: rgba(245, 158, 11, 0.5);
 }
 
 .season-name {

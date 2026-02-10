@@ -278,11 +278,7 @@
     align-items: flex-start;
 }
 
-#instanceEditorSection .editor-setting-item.flex-row {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-}
+/* flex-row override is handled in the "Toggles — PERMANENT FIX" section below */
 
 /* ---- Labels ---- */
 #instanceEditorSection .editor-setting-item label {
@@ -399,11 +395,38 @@
 }
 
 /* ============================================================
-   Toggles (scoped override)
+   Toggles — Instance Editor overrides
+   Base toggle definition is in style.css (single source of truth).
+   Only the flex-row layout and checked-colour override are here.
    ============================================================ */
-#instanceEditorSection .editor-section .toggle-switch {
+
+/* --- Toggle row: label + toggle on the same line --- */
+#instanceEditorSection .editor-setting-item.flex-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 16px !important;
+    justify-content: flex-start !important;
+    width: 100%;
+}
+
+/* Text label fills remaining space; toggle stays at natural width */
+#instanceEditorSection .editor-setting-item.flex-row > label:not(.toggle-switch) {
+    flex: 1 1 0% !important;
+    min-width: 0;
     margin: 0 !important;
-    flex-shrink: 0;
+}
+
+/* Toggle as a flex child — don't grow, don't shrink */
+#instanceEditorSection .toggle-switch {
+    flex: 0 0 44px !important;
+    margin: 0 !important;
+}
+
+/* Instance editor uses indigo checked colour */
+#instanceEditorSection input:checked + .toggle-slider {
+    background: #6366f1 !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
 }
 
 /* ============================================================

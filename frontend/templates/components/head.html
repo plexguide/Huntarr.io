@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="./static/css/logs.css">
 <link rel="stylesheet" href="./static/css/mobile.css">
 <link rel="stylesheet" href="./static/css/instances-card.css">
-<link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.0">
+<link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.1">
 <!-- Better logo visibility handling -->
 <style>
     .logo, .login-logo {
@@ -31,38 +31,8 @@
     .logo.loaded, .login-logo.loaded {
         opacity: 1;
     }
-    
-    /* Fix for toggle button sizing in all instances */
-    .toggle-slider,
-    .toggle-button,
-    input[type="checkbox"] + .slider,
-    .switch {
-        width: 40px !important;
-        height: 20px !important;
-        max-width: 40px !important;
-        max-height: 20px !important;
-        border-radius: 10px !important;
-    }
-    
-    /* Fix the slider circle/knob size */
-    .toggle-slider:before,
-    .toggle-button:before,
-    input[type="checkbox"] + .slider:before,
-    .switch:before {
-        width: 16px !important;
-        height: 16px !important;
-        top: 2px !important;
-        left: 2px !important;
-        border-radius: 50% !important;
-    }
-    
-    /* Fix the position when toggled/active */
-    input:checked + .toggle-slider:before,
-    input:checked + .toggle-button:before,
-    input:checked + .slider:before,
-    .switch.active:before {
-        transform: translateX(20px) !important;
-    }
+    /* Toggle switch — single source of truth is in style.css.
+       Do NOT add toggle overrides here. */
 </style>
 
 <!-- Favicons -->
