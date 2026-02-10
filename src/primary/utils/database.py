@@ -936,6 +936,10 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_date_time ON hunt_history(date_time)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_media_id ON hunt_history(media_id)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_operation_type ON hunt_history(operation_type)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_processed_info ON hunt_history(processed_info)')
+            
+            # Hidden media filter index for requestarr (frequently filtered by media_type + app_type + instance_name)
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_hidden_media_filter ON requestarr_hidden_media(media_type, app_type, instance_name, hidden_at)')
             
             conn.commit()
             logger.info(f"Database initialized at: {self.db_path}")
@@ -1412,6 +1416,23 @@ class HuntarrDatabase:
                     "expiration_hours": row[2]
                 }
             return {}
+    
+    def get_all_instance_lock_info(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
+        """Get all instance lock info in one query. Returns {app_type: {instance_name: {created_at, expires_at, expiration_hours}}}"""
+        with self.get_connection() as conn:
+            cursor = conn.execute('SELECT app_type, instance_name, created_at, expires_at, expiration_hours FROM stateful_instance_locks')
+            result = {}
+            for row in cursor.fetchall():
+                app = row[0]
+                inst = row[1]
+                if app not in result:
+                    result[app] = {}
+                result[app][inst] = {
+                    "created_at": row[2],
+                    "expires_at": row[3],
+                    "expiration_hours": row[4]
+                }
+            return result
     
     def set_instance_lock_info(self, app_type: str, instance_name: str, created_at: int, expires_at: int, expiration_hours: int):
         """Set state management lock information for a specific instance"""
@@ -3691,6 +3712,8 @@ class LogsDatabase:
                 conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_level_num ON logs(level_num)')
                 conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_level ON logs(app_type, level)')
                 conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_level_num ON logs(app_type, level_num)')
+                # Composite index for sorted pagination (most common query: filter by app + sort by time)
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_logs_app_timestamp ON logs(app_type, timestamp DESC)')
                 
                 conn.commit()
                 logger.info(f"Logs database initialized at: {self.db_path}")

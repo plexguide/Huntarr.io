@@ -10,6 +10,7 @@ import json
 import hashlib
 import secrets
 import time
+import threading
 import pathlib
 import base64
 import io
@@ -28,6 +29,18 @@ from src.primary import settings_manager
 
 SESSION_EXPIRY = 60 * 60 * 24 * 7
 SESSION_COOKIE_NAME = "huntarr_session"
+
+# In-memory cache for auth middleware hot-path checks (avoids DB hit per request)
+_auth_cache = {
+    "user_exists": None,           # bool or None
+    "user_exists_ts": 0,           # timestamp
+    "setup_in_progress": None,     # bool or None
+    "setup_in_progress_ts": 0,     # timestamp
+    "auth_settings": None,         # dict or None
+    "auth_settings_ts": 0,         # timestamp
+}
+_AUTH_CACHE_TTL = 10  # seconds — short enough to pick up setup/login changes quickly
+_auth_cache_lock = threading.Lock()
 
 def get_base_url_path():
     try:
@@ -198,6 +211,16 @@ def validate_password_strength(password: str) -> Optional[str]:
     # If check passes
     return None
 
+def invalidate_auth_cache():
+    """Clear the auth middleware cache (call after user creation, setup changes, auth mode changes)."""
+    with _auth_cache_lock:
+        _auth_cache["user_exists"] = None
+        _auth_cache["user_exists_ts"] = 0
+        _auth_cache["setup_in_progress"] = None
+        _auth_cache["setup_in_progress_ts"] = 0
+        _auth_cache["auth_settings"] = None
+        _auth_cache["auth_settings_ts"] = 0
+
 def user_exists() -> bool:
     """Check if a user has been created"""
     db = get_database()
@@ -219,6 +242,7 @@ def create_user(username: str, password: str) -> bool:
 
     if success:
         logger.info("User creation successful")
+        invalidate_auth_cache()
     else:
         logger.error("User creation failed")
 
@@ -379,46 +403,57 @@ def authenticate_request():
                 logger.debug(f"Skipping authentication for login/plex/recovery/2fa/settings path '{request.path}'")
         return None
     
-    # If no user exists, redirect to setup
-    if not user_exists():
+    # Cached auth checks — avoids hitting the database on every single request
+    now = time.time()
+    
+    # Check if user exists (cached for 10s)
+    _user_exists = _auth_cache["user_exists"]
+    if _user_exists is None or (now - _auth_cache["user_exists_ts"]) > _AUTH_CACHE_TTL:
+        _user_exists = user_exists()
+        with _auth_cache_lock:
+            _auth_cache["user_exists"] = _user_exists
+            _auth_cache["user_exists_ts"] = now
+    
+    if not _user_exists:
         if not is_polling_endpoint:
             logger.debug(f"No user exists, redirecting to setup")
         return redirect(get_base_url_path() + url_for("common.setup"))
     
-    # If user exists but setup is in progress, redirect to setup
-    try:
-        from src.primary.utils.database import get_database
-        db = get_database()
-        if db.is_setup_in_progress():
-            if not is_polling_endpoint:
-                logger.debug(f"Setup is in progress, redirecting to setup")
-            return redirect(get_base_url_path() + url_for("common.setup"))
-    except Exception as e:
-        logger.error(f"Error checking setup progress in auth middleware: {e}")
+    # Check if setup is in progress (cached for 10s)
+    _setup_in_progress = _auth_cache["setup_in_progress"]
+    if _setup_in_progress is None or (now - _auth_cache["setup_in_progress_ts"]) > _AUTH_CACHE_TTL:
+        try:
+            db = get_database()
+            _setup_in_progress = db.is_setup_in_progress()
+        except Exception as e:
+            logger.error(f"Error checking setup progress in auth middleware: {e}")
+            _setup_in_progress = False
+        with _auth_cache_lock:
+            _auth_cache["setup_in_progress"] = _setup_in_progress
+            _auth_cache["setup_in_progress_ts"] = now
     
-    # Load general settings
+    if _setup_in_progress:
+        if not is_polling_endpoint:
+            logger.debug(f"Setup is in progress, redirecting to setup")
+        return redirect(get_base_url_path() + url_for("common.setup"))
+    
+    # Load auth settings (cached for 10s — DO NOT clear the settings cache!)
     local_access_bypass = False
     proxy_auth_bypass = False
-    try:
-        # Force reload settings from disk to ensure we have the latest
-        from src.primary.settings_manager import load_settings
-        from src.primary import settings_manager
-        
-        # Ensure we're getting fresh settings by clearing any cache
-        if hasattr(settings_manager, 'settings_cache'):
-            settings_manager.settings_cache = {}
-            
-        settings = load_settings("general")  # Specify 'general' as the app_type
-        general_settings = settings
-        local_access_bypass = general_settings.get("local_access_bypass", False)
-        proxy_auth_bypass = general_settings.get("proxy_auth_bypass", False)
-        
-        # Log settings only for non-polling endpoints to reduce spam
-        if not is_polling_endpoint:
-            pass
-
-    except Exception as e:
-        logger.error(f"Error loading authentication bypass settings: {e}", exc_info=True)
+    _cached_settings = _auth_cache["auth_settings"]
+    if _cached_settings is None or (now - _auth_cache["auth_settings_ts"]) > _AUTH_CACHE_TTL:
+        try:
+            from src.primary.settings_manager import load_settings
+            _cached_settings = load_settings("general")
+        except Exception as e:
+            logger.error(f"Error loading authentication bypass settings: {e}")
+            _cached_settings = {}
+        with _auth_cache_lock:
+            _auth_cache["auth_settings"] = _cached_settings
+            _auth_cache["auth_settings_ts"] = now
+    
+    local_access_bypass = _cached_settings.get("local_access_bypass", False)
+    proxy_auth_bypass = _cached_settings.get("proxy_auth_bypass", False)
     
     # Check if proxy auth bypass is enabled - this completely disables authentication
     # Note: This has highest priority and is checked first (matching the "No Login Mode" in the UI)
@@ -969,6 +1004,7 @@ def create_user_with_plex(plex_token: str, plex_user_data: Dict[str, Any]) -> bo
     try:
         if save_user_data(user_data):
             logger.info(f"Plex user created: {plex_user_data.get('username')}")
+            invalidate_auth_cache()
             return True
         else:
             logger.error("Failed to save Plex user data")

@@ -435,8 +435,8 @@ def get_stats() -> Dict[str, Any]:
     """
     Get the current statistics (app-level + per-instance for Home dashboard).
     Returns dict: app_type -> { hunted, upgraded, instances: [{ instance_name, hunted, upgraded, api_hits, api_limit, state_reset_hours_until? }] }.
-    Per-instance api_hits/api_limit are read directly from the database so all instance cards display correctly.
-    state_reset_hours_until is set when per-instance state reset is active (hours until next reset).
+    
+    Optimized: batches DB queries (4 total instead of ~29).
     """
     import time
     with stats_lock:
@@ -445,50 +445,59 @@ def get_stats() -> Dict[str, Any]:
             from src.primary.settings_manager import load_settings
             db = get_database()
             now_ts = int(time.time())
+            
+            # Batch DB queries: fetch ALL per-instance data in bulk (4 queries total)
+            all_per_instance_stats = db.get_media_stats_per_instance()  # 1 query — all apps
+            all_per_instance_caps = db.get_hourly_caps_per_instance()   # 1 query — all apps
+            all_lock_info = db.get_all_instance_lock_info() if hasattr(db, "get_all_instance_lock_info") else {}  # 1 query
+            # load_stats() above was 1 query — total: 4 queries
+            
             for app_type in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]:
                 if app_type not in stats:
                     stats[app_type] = {"hunted": 0, "upgraded": 0}
-                # Get configured instances (name + id) so we show cards; DB is keyed by instance_id
+                
+                # Get configured instances from settings (uses 30s cache, no DB hit most of the time)
                 configured = []
-                try:
-                    app_module = __import__(f"src.primary.apps.{app_type}", fromlist=["get_configured_instances"])
-                    get_instances = getattr(app_module, "get_configured_instances", None)
-                    if get_instances:
-                        configured = list(get_instances(quiet=True))
-                except Exception:
-                    pass
-                if not configured:
-                    app_settings = load_settings(app_type)
-                    if app_settings and isinstance(app_settings.get("instances"), list):
-                        for inst in app_settings["instances"]:
-                            if inst.get("enabled", True) and inst.get("api_url") and inst.get("api_key"):
-                                name = _normalize_instance_name(inst.get("name") or inst.get("instance_name"))
-                                configured.append({"instance_name": name, "instance_id": inst.get("instance_id") or name})
-                # Get per-instance stats/caps from DB (keyed by instance_id after migration)
-                per_instance = db.get_media_stats_per_instance(app_type) if hasattr(db, "get_media_stats_per_instance") else []
-                per_instance_caps = db.get_hourly_caps_per_instance(app_type) if hasattr(db, "get_hourly_caps_per_instance") else {}
-                by_id = {p["instance_name"]: p for p in per_instance}  # "instance_name" column holds instance_id
+                app_settings = load_settings(app_type)
+                if app_settings and isinstance(app_settings.get("instances"), list):
+                    for inst in app_settings["instances"]:
+                        if inst.get("enabled", True) and inst.get("api_url") and inst.get("api_key"):
+                            name = _normalize_instance_name(inst.get("name") or inst.get("instance_name"))
+                            configured.append({
+                                "instance_name": name,
+                                "instance_id": inst.get("instance_id") or name,
+                                "hourly_cap": int(inst.get("hourly_cap", app_settings.get("hourly_cap", 20))),
+                                "state_management_mode": inst.get("state_management_mode", "custom"),
+                                "api_url": (inst.get("api_url") or "").strip().rstrip("/") or None
+                            })
+                
+                # Extract this app's data from the bulk results
+                per_instance_list = all_per_instance_stats.get(app_type, [])
+                per_instance_caps = all_per_instance_caps.get(app_type, {})
+                lock_info_for_app = all_lock_info.get(app_type, {})
+                
+                by_id = {p["instance_name"]: p for p in per_instance_list} if isinstance(per_instance_list, list) else {}
+                
                 if configured:
                     stats[app_type]["instances"] = []
                     for inst in configured:
-                        display_name = inst.get("instance_name", "Default")
-                        instance_id = inst.get("instance_id") or display_name
+                        display_name = inst["instance_name"]
+                        instance_id = inst["instance_id"]
                         inst_stats = by_id.get(instance_id, {})
                         cap_data = per_instance_caps.get(instance_id, {})
                         api_hits = cap_data.get("api_hits", 0)
-                        api_limit = _get_instance_hourly_cap_limit(app_type, instance_id)
-                        stateful_enabled = inst.get("state_management_mode", "custom") != "disabled"
+                        api_limit = inst["hourly_cap"]
+                        stateful_enabled = inst["state_management_mode"] != "disabled"
                         state_reset_hours_until = None
-                        if stateful_enabled and hasattr(db, "get_instance_lock_info"):
-                            lock_info = db.get_instance_lock_info(app_type, instance_id)
+                        if stateful_enabled:
+                            lock_info = lock_info_for_app.get(instance_id, {})
                             if lock_info:
                                 expires_at = lock_info.get("expires_at") or 0
                                 if expires_at > now_ts:
                                     state_reset_hours_until = round((expires_at - now_ts) / 3600.0, 1)
-                        api_url = (inst.get("api_url") or "").strip().rstrip("/") or None
                         stats[app_type]["instances"].append({
                             "instance_name": display_name,
-                            "api_url": api_url,
+                            "api_url": inst["api_url"],
                             "hunted": inst_stats.get("hunted", 0),
                             "upgraded": inst_stats.get("upgraded", 0),
                             "api_hits": api_hits,
@@ -497,7 +506,7 @@ def get_stats() -> Dict[str, Any]:
                             "state_reset_enabled": stateful_enabled
                         })
                 else:
-                    stats[app_type]["instances"] = per_instance if per_instance else []
+                    stats[app_type]["instances"] = per_instance_list if per_instance_list else []
         except Exception as e:
             logger.error(f"Error attaching per-instance stats: {e}")
         return stats

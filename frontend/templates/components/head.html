@@ -53,10 +53,5 @@
 <!-- CRITICAL: Layout fix must load LAST to override all conflicts -->
 <link rel="stylesheet" href="./static/css/layout-fix.css">
 
-<!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" 
-      integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" 
-      crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-<!-- SortableJS for drag-and-drop dashboard cards -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<!-- SortableJS for drag-and-drop dashboard cards (defer to not block rendering) -->
+<script defer src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
