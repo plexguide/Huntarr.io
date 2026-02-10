@@ -152,25 +152,31 @@ img { max-width: 100%; height: auto; }
     color: var(--text-primary);
     letter-spacing: .4px;
 }
-/* Donate link at top of sidebar (red) — high specificity so it stays red */
+/* Donate link at top of sidebar — red look (glow/border like Become A Sponsor) */
 nav.docs-sidebar .sidebar-donate-link,
 .docs-sidebar .sidebar-donate-link {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 12px 20px;
-    margin: 0;
+    margin: 0 10px 12px 10px;
     color: #e74c3c !important;
     font-weight: 600;
-    text-decoration: none;
-    border-bottom: 1px solid var(--border-subtle);
+    text-decoration: none !important;
+    border: 1px solid rgba(231, 76, 60, 0.5);
+    border-left: 3px solid #e74c3c;
+    border-radius: 8px;
     flex-shrink: 0;
-    transition: background var(--transition), color var(--transition);
+    background: rgba(231, 76, 60, 0.08);
+    box-shadow: 0 0 12px rgba(231, 76, 60, 0.15);
+    transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 nav.docs-sidebar .sidebar-donate-link:hover,
 .docs-sidebar .sidebar-donate-link:hover {
     color: #ff6b6b !important;
-    background: rgba(231,76,60,0.12);
+    background: rgba(231, 76, 60, 0.18);
+    border-color: rgba(231, 76, 60, 0.7);
+    box-shadow: 0 0 16px rgba(231, 76, 60, 0.25);
 }
 nav.docs-sidebar .sidebar-donate-link i,
 .docs-sidebar .sidebar-donate-link i {

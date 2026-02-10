@@ -32,6 +32,7 @@ docs/
 │   └── index.html              # NZB Hunt overview
 ├── requestarr/
 │   └── index.html              # Requests overview
+├── donate.html                 # Donate / support page
 ├── settings/
 │   ├── index.html              # Main settings
 │   ├── scheduling.html
@@ -45,8 +46,7 @@ docs/
 │   └── api.html                # API reference
 └── help/
     ├── faq.html
-    ├── community.html
-    └── donate.html
+    └── community.html
 ```
 
 ## Development
