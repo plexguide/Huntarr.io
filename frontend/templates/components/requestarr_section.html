@@ -226,88 +226,111 @@
 
         <!-- Settings View -->
         <div id="requestarr-settings-view" class="requestarr-view">
-            <div class="requestarr-settings-container">
-                <!-- Filters Card -->
-                <div class="settings-card">
-                    <h3>Filters</h3>
-                    
-                    <div class="settings-field">
-                        <label for="discover-region">Region</label>
-                        <div class="custom-select-wrapper">
-                            <div id="region-select-display" class="custom-select-display">
-                                <span id="region-selected-text">🇺🇸 United States</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                            <div id="region-dropdown" class="custom-select-dropdown" style="display: none;">
-                                <div id="region-list" class="custom-select-list">
-                                    <!-- Options will be populated by JavaScript -->
-                                </div>
-                            </div>
-                        </div>
-                        <small>Filter via Regional Availability</small>
-                    </div>
+            <div class="reqset-container">
 
-                <div class="settings-field">
-                    <label for="discover-providers">Providers</label>
-                    <div class="language-select-wrapper">
-                        <div id="provider-tags" class="language-tags"></div>
-                        <input type="text" id="discover-providers" class="settings-input" placeholder="Select providers..." readonly>
-                        <div id="provider-dropdown" class="language-dropdown" style="display: none;">
-                            <div id="provider-list" class="language-list">
-                                <!-- Options will be populated by JavaScript -->
-                            </div>
+                <!-- Toolbar -->
+                <div class="reqset-toolbar">
+                    <div class="reqset-toolbar-left">
+                        <button class="reqset-back-btn" onclick="window.RequestarrDiscover && window.RequestarrDiscover.switchView('discover')">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <div class="reqset-breadcrumb">
+                            <i class="fas fa-cog"></i>
+                            <span>Requestarr</span>
+                            <i class="fas fa-chevron-right reqset-breadcrumb-sep"></i>
+                            <span>Settings</span>
                         </div>
                     </div>
-                    <small>Filter via Streaming Providers (uses selected region)</small>
-                </div>
-                    
-                    <div class="settings-field">
-                        <label for="discover-language">Language(s)</label>
-                        <div class="language-select-wrapper">
-                            <div id="language-tags" class="language-tags"></div>
-                            <input type="text" id="discover-language" class="settings-input" placeholder="Select languages..." readonly>
-                            <div id="language-dropdown" class="language-dropdown" style="display: none;">
-                                <div id="language-list" class="language-list">
-                                    <div class="language-item" data-code="">All Languages</div>
-                                </div>
-                            </div>
-                        </div>
-                        <small>Filter via Original Language(s)</small>
-                    </div>
-                    
-                    <div class="settings-actions">
-                        <button id="save-discover-filters" class="btn-primary">
-                            <i class="fas fa-save"></i> Save Filters
+                    <div class="reqset-toolbar-right">
+                        <button id="reqset-save-all-btn" class="reqset-save-btn" onclick="window._reqsetSaveAll && window._reqsetSaveAll()">
+                            <i class="fas fa-save"></i> Save
                         </button>
                     </div>
                 </div>
 
-                <!-- Blacklisted Genres Card -->
-                <div class="settings-card">
-                    <h3>Blacklisted Genres</h3>
-                    <p class="settings-card-description">Genres added here are hidden from the Movies and TV filter dropdowns. Users cannot select these genres when filtering discovery; use this to prevent certain genres from being requested.</p>
-                    
-                    <div class="settings-field">
-                        <label for="blacklist-tv-genre-select">Blacklisted TV Genres</label>
-                        <select id="blacklist-tv-genre-select" class="settings-select">
-                            <option value="">Select a genre to blacklist...</option>
-                        </select>
-                        <div id="blacklisted-tv-genres-list" class="blacklisted-genres-pills"></div>
+                <!-- Two-column layout -->
+                <div class="reqset-grid">
+
+                    <!-- Left Column: Filters -->
+                    <div class="reqset-card">
+                        <div class="reqset-card-header">
+                            <div class="reqset-card-icon reqset-icon-blue">
+                                <i class="fas fa-filter"></i>
+                            </div>
+                            <h3>Discovery Filters</h3>
+                        </div>
+                        <div class="reqset-card-body">
+                            <div class="settings-field">
+                                <label for="discover-region">Region</label>
+                                <div class="custom-select-wrapper">
+                                    <div id="region-select-display" class="custom-select-display">
+                                        <span id="region-selected-text">🇺🇸 United States</span>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                    <div id="region-dropdown" class="custom-select-dropdown" style="display: none;">
+                                        <div id="region-list" class="custom-select-list"></div>
+                                    </div>
+                                </div>
+                                <small>Filter via Regional Availability</small>
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="discover-providers">Providers</label>
+                                <div class="language-select-wrapper">
+                                    <div id="provider-tags" class="language-tags"></div>
+                                    <input type="text" id="discover-providers" class="settings-input" placeholder="Select providers..." readonly>
+                                    <div id="provider-dropdown" class="language-dropdown" style="display: none;">
+                                        <div id="provider-list" class="language-list"></div>
+                                    </div>
+                                </div>
+                                <small>Filter via Streaming Providers (uses selected region)</small>
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="discover-language">Language(s)</label>
+                                <div class="language-select-wrapper">
+                                    <div id="language-tags" class="language-tags"></div>
+                                    <input type="text" id="discover-language" class="settings-input" placeholder="Select languages..." readonly>
+                                    <div id="language-dropdown" class="language-dropdown" style="display: none;">
+                                        <div id="language-list" class="language-list">
+                                            <div class="language-item" data-code="">All Languages</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <small>Filter via Original Language(s)</small>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="settings-field">
-                        <label for="blacklist-movie-genre-select">Blacklisted Movie Genres</label>
-                        <select id="blacklist-movie-genre-select" class="settings-select">
-                            <option value="">Select a genre to blacklist...</option>
-                        </select>
-                        <div id="blacklisted-movie-genres-list" class="blacklisted-genres-pills"></div>
+
+                    <!-- Right Column: Blacklisted Genres -->
+                    <div class="reqset-card">
+                        <div class="reqset-card-header">
+                            <div class="reqset-card-icon reqset-icon-red">
+                                <i class="fas fa-ban"></i>
+                            </div>
+                            <h3>Blacklisted Genres</h3>
+                        </div>
+                        <div class="reqset-card-body">
+                            <p class="reqset-card-desc">Genres added here are hidden from the Movies and TV filter dropdowns. Users cannot select these genres when filtering discovery.</p>
+
+                            <div class="settings-field">
+                                <label for="blacklist-tv-genre-select">Blacklisted TV Genres</label>
+                                <select id="blacklist-tv-genre-select" class="settings-select">
+                                    <option value="">Select a genre to blacklist...</option>
+                                </select>
+                                <div id="blacklisted-tv-genres-list" class="blacklisted-genres-pills"></div>
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="blacklist-movie-genre-select">Blacklisted Movie Genres</label>
+                                <select id="blacklist-movie-genre-select" class="settings-select">
+                                    <option value="">Select a genre to blacklist...</option>
+                                </select>
+                                <div id="blacklisted-movie-genres-list" class="blacklisted-genres-pills"></div>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="settings-actions">
-                        <button id="save-blacklisted-genres-btn" class="btn-primary">
-                            <i class="fas fa-save"></i> Save Blacklisted Genres
-                        </button>
-                    </div>
+
                 </div>
             </div>
         </div>

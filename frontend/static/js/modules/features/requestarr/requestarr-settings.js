@@ -490,6 +490,7 @@ export class RequestarrSettings {
         // Load blacklisted genres and wire UI
         await this.loadBlacklistedGenres();
         
+        // Legacy per-section save buttons (kept for backward compat if present)
         const saveFiltersBtn = document.getElementById('save-discover-filters');
         if (saveFiltersBtn) {
             saveFiltersBtn.onclick = () => this.saveDiscoverFilters();
@@ -499,6 +500,33 @@ export class RequestarrSettings {
         if (saveBlacklistedBtn) {
             saveBlacklistedBtn.onclick = () => this.saveBlacklistedGenres();
         }
+
+        // Unified toolbar save button
+        const self = this;
+        window._reqsetSaveAll = async function () {
+            const btn = document.getElementById('reqset-save-all-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            }
+            try {
+                await self.saveDiscoverFilters();
+                await self.saveBlacklistedGenres();
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('All settings saved', 'success');
+                }
+            } catch (e) {
+                console.error('[Requestarr Settings] Save all error:', e);
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Error saving settings', 'error');
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save"></i> Save';
+                }
+            }
+        };
     }
     
     async loadBlacklistedGenres() {

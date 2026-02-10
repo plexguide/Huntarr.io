@@ -1125,14 +1125,192 @@
 }
 
 /* Settings View */
+/* ---- Requestarr Settings: Modern Layout ---- */
+.reqset-container {
+    width: 100%;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+/* Toolbar */
+.reqset-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 12px 18px;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 12px;
+    gap: 16px;
+}
+
+.reqset-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.reqset-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.reqset-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted, #94a3b8);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.reqset-back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary, #e2e8f0);
+}
+
+.reqset-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary, #e2e8f0);
+}
+
+.reqset-breadcrumb i:first-child {
+    color: #818cf8;
+}
+
+.reqset-breadcrumb-sep {
+    font-size: 10px;
+    color: var(--text-muted, #64748b);
+}
+
+.reqset-save-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.reqset-save-btn:hover {
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+}
+
+.reqset-save-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Two-column grid */
+.reqset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+/* Cards */
+.reqset-card {
+    background: rgba(30, 32, 44, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.reqset-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.reqset-card-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary, #e2e8f0);
+    border: none;
+    padding: 0;
+}
+
+.reqset-card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.reqset-icon-blue { background: linear-gradient(135deg, #6366f1, #818cf8); }
+.reqset-icon-red  { background: linear-gradient(135deg, #dc2626, #f87171); }
+
+.reqset-card-body {
+    padding: 18px;
+}
+
+.reqset-card-desc {
+    color: var(--text-muted, #94a3b8);
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .reqset-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .reqset-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .reqset-toolbar-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* Legacy compat — keep old class working if referenced elsewhere */
 .requestarr-settings-container {
-    max-width: 800px;
-    margin: 0 auto;
+    width: 100%;
 }
 
 .settings-card {
-    background: rgba(15, 23, 42, 0.4);
-    border: 1px solid rgba(148, 163, 184, 0.08);
+    background: rgba(30, 32, 44, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 16px;
