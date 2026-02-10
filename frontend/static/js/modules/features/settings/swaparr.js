@@ -103,11 +103,11 @@
                         </a>
                         Enable Swaparr:
                     </label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="swaparr_enabled" ${
                           settings.enabled === true ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Enable automatic removal of stalled downloads</p>
                 </div>
@@ -158,11 +158,11 @@
                         </a>
                         Remove from Client:
                     </label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="swaparr_remove_from_client" ${
                           settings.remove_from_client !== false ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Also remove downloads from the download client (recommended: enabled)</p>
                 </div>
@@ -174,11 +174,11 @@
                         </a>
                         Re-Search Removed Download:
                     </label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="swaparr_research_removed" ${
                           settings.research_removed === true ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">When a download is removed, blocklist it in the *arr app and automatically search for alternatives (retry once)</p>
                 </div>
@@ -190,13 +190,13 @@
                         </a>
                         Handle Failed Imports:
                     </label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="swaparr_failed_import_detection" ${
                           settings.failed_import_detection === true
                             ? "checked"
                             : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically detect failed imports, blocklist them, and search for alternatives</p>
                 </div>
@@ -208,11 +208,11 @@
                         </a>
                         Dry Run Mode:
                     </label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="swaparr_dry_run" ${
                           settings.dry_run === true ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Test mode - logs what would be removed without actually removing anything</p>
                 </div>
@@ -224,11 +224,11 @@
                         </a>
                         Ignore Queued Usenet:
                     </label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="swaparr_ignore_usenet_queued" ${
                           settings.ignore_usenet_queued !== false ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Ignore usenet downloads with 0% progress to avoid false positives from sequential queue ETAs (recommended: enabled)</p>
                 </div>
@@ -240,11 +240,11 @@
                         </a>
                         Remove Completed (100%) Stalled:
                     </label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="swaparr_remove_completed_stalled" ${
                           settings.remove_completed_stalled !== false ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">When enabled (default), Swaparr can remove 100% complete downloads after max strikes if they are stuck. When disabled, downloads that are 100% complete but waiting for manual import (e.g. name/year mismatch) are left alone.</p>
                 </div>
@@ -282,13 +282,13 @@
                         </a>
                         Malicious File Detection:
                     </label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="swaparr_malicious_detection" ${
                           settings.malicious_file_detection === true
                             ? "checked"
                             : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically detect and immediately remove downloads with malicious file types</p>
                 </div>
@@ -345,11 +345,11 @@
                         </a>
                         Enable Age-Based Removal:
                     </label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="swaparr_age_based_removal" ${
                           settings.age_based_removal === true ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Remove downloads that have been stuck longer than the specified age limit</p>
                 </div>
@@ -381,13 +381,13 @@
                         </a>
                         Enable Quality-Based Filtering:
                     </label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="swaparr_quality_based_removal" ${
                           settings.quality_based_removal === true
                             ? "checked"
                             : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically remove downloads with blocked quality patterns in their names</p>
                 </div>

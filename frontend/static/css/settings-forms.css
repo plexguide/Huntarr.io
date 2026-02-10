@@ -512,8 +512,7 @@ input#stateful_management_hours {
     }
     
     .setting-item .toggle-switch {
-        display: block !important;
-        margin-left: 0 !important;
+        /* display:block and margin:0 are in style.css; only mobile layout adjustment here */
         margin-top: 8px;
     }
     
@@ -538,11 +537,11 @@ input#stateful_management_hours {
         width: 100%;
     }
     
-    .toggle-container,
-    .toggle-switch {
+    .toggle-container {
         justify-content: flex-start !important;
         margin-left: 0 !important;
     }
+    /* .toggle-switch margin/display handled globally in style.css */
     
     #userSettingsContainer .settings-group,
     #settingsContent .settings-group {

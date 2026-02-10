@@ -241,14 +241,28 @@
             if (typeof done === 'function') done('discard');
             return true;
         }
-        var saveFirst = window.confirm('You have unsaved changes. Save before leaving?');
-        if (saveFirst) {
-            if (typeof done === 'function') done('save');
-            return false;
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({
+                title: 'Unsaved Changes',
+                message: 'You have unsaved changes. Save before leaving?',
+                confirmLabel: 'Save',
+                cancelLabel: 'Discard',
+                onConfirm: function() {
+                    if (typeof done === 'function') done('save');
+                },
+                onCancel: function() {
+                    if (typeof done === 'function') done('discard');
+                }
+            });
         } else {
-            if (typeof done === 'function') done('discard');
-            return true;
+            var saveFirst = confirm('You have unsaved changes. Save before leaving?');
+            if (saveFirst) {
+                if (typeof done === 'function') done('save');
+            } else {
+                if (typeof done === 'function') done('discard');
+            }
         }
+        return false;
     }
 
     function getCheckedQualityNamesInOrder() {

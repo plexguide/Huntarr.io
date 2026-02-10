@@ -31,9 +31,14 @@
         var cancelBtn = document.getElementById('huntarr-confirm-modal-cancel');
         var confirmBtn = document.getElementById('huntarr-confirm-modal-confirm');
 
-        if (backdrop) backdrop.onclick = closeModal;
-        if (closeBtn) closeBtn.onclick = closeModal;
-        if (cancelBtn) cancelBtn.onclick = closeModal;
+        function handleCancel() {
+            var fn = modal._onCancel;
+            if (typeof fn === 'function') fn();
+            closeModal();
+        }
+        if (backdrop) backdrop.onclick = handleCancel;
+        if (closeBtn) closeBtn.onclick = handleCancel;
+        if (cancelBtn) cancelBtn.onclick = handleCancel;
 
         if (confirmBtn) {
             confirmBtn.onclick = function() {
@@ -51,7 +56,7 @@
         }
 
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
+            if (e.key === 'Escape' && modal.style.display === 'flex') handleCancel();
         });
     }
 
@@ -61,7 +66,9 @@
             var title = opts.title != null ? String(opts.title) : 'Confirm';
             var message = opts.message != null ? String(opts.message) : '';
             var confirmLabel = opts.confirmLabel != null ? String(opts.confirmLabel) : 'OK';
+            var cancelLabel = opts.cancelLabel != null ? String(opts.cancelLabel) : null;
             var onConfirm = typeof opts.onConfirm === 'function' ? opts.onConfirm : function() {};
+            var onCancel = typeof opts.onCancel === 'function' ? opts.onCancel : null;
 
             var modal = ensureModalInBody();
             if (!modal) return;
@@ -71,13 +78,19 @@
             var titleEl = document.getElementById('huntarr-confirm-modal-title');
             var messageEl = document.getElementById('huntarr-confirm-modal-message');
             var confirmBtn = document.getElementById('huntarr-confirm-modal-confirm');
+            var cancelBtn = document.getElementById('huntarr-confirm-modal-cancel');
             if (titleEl) titleEl.textContent = title;
             if (messageEl) messageEl.textContent = message;
             if (confirmBtn) {
                 confirmBtn.textContent = confirmLabel;
                 confirmBtn.innerHTML = confirmLabel;
             }
+            if (cancelBtn && cancelLabel) {
+                cancelBtn.textContent = cancelLabel;
+                cancelBtn.innerHTML = cancelLabel;
+            }
             modal._onConfirm = onConfirm;
+            modal._onCancel = onCancel;
 
             modal.style.display = 'flex';
             document.body.classList.add('huntarr-confirm-modal-open');

@@ -147,13 +147,24 @@
             return;
         }
         if (typeof callback !== 'function') return;
-        if (confirm('You have unsaved changes. Save before leaving?')) {
-            callback('save');
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({
+                title: 'Unsaved Changes',
+                message: 'You have unsaved changes. Save before leaving?',
+                confirmLabel: 'Save',
+                cancelLabel: 'Discard',
+                onConfirm: function() { callback('save'); },
+                onCancel: function() { callback('discard'); }
+            });
         } else {
-            if (confirm('Discard changes and leave without saving?')) {
-                callback('discard');
+            if (confirm('You have unsaved changes. Save before leaving?')) {
+                callback('save');
             } else {
-                callback('stay');
+                if (confirm('Discard changes and leave without saving?')) {
+                    callback('discard');
+                } else {
+                    callback('stay');
+                }
             }
         }
     }

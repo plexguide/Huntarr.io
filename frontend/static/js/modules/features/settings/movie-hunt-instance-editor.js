@@ -395,8 +395,24 @@
                     var backBtn = document.getElementById('movie-hunt-instance-editor-back');
                     var saveBtn = document.getElementById('movie-hunt-instance-editor-save');
                     if (backBtn) backBtn.onclick = function() {
-                        if (_editorDirty && !confirm('You have unsaved changes. Leave anyway?')) return;
-                        window.huntarrUI.switchSection('movie-hunt-settings');
+                        if (!_editorDirty) {
+                            window.huntarrUI.switchSection('movie-hunt-settings');
+                            return;
+                        }
+                        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                            window.HuntarrConfirm.show({
+                                title: 'Unsaved Changes',
+                                message: 'You have unsaved changes. Save before leaving?',
+                                confirmLabel: 'Save',
+                                cancelLabel: 'Discard',
+                                onConfirm: function() { self.saveEditor(); },
+                                onCancel: function() { window.huntarrUI.switchSection('movie-hunt-settings'); }
+                            });
+                        } else {
+                            if (confirm('You have unsaved changes. Leave anyway?')) {
+                                window.huntarrUI.switchSection('movie-hunt-settings');
+                            }
+                        }
                     };
                     if (saveBtn) saveBtn.onclick = function() { self.saveEditor(); };
                     var resetBtn = document.getElementById('mh-editor-reset-state');
@@ -451,8 +467,9 @@
         },
 
         resetState: function(instanceId) {
-            if (!instanceId || !confirm('Reset processed state for this instance? This clears the history of processed items.')) return;
-            fetch(api('./api/movie-hunt/instances/' + instanceId + '/reset-state'), { method: 'POST' })
+            if (!instanceId) return;
+            function doReset() {
+                fetch(api('./api/movie-hunt/instances/' + instanceId + '/reset-state'), { method: 'POST' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.error && window.huntarrUI && window.huntarrUI.showNotification) {
@@ -464,6 +481,18 @@
                 .catch(function() {
                     if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Reset request failed', 'error');
                 });
+            }
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Reset State',
+                    message: 'Reset processed state for this instance? This clears the history of processed items.',
+                    confirmLabel: 'Reset',
+                    onConfirm: doReset
+                });
+            } else {
+                if (!confirm('Reset processed state for this instance? This clears the history of processed items.')) return;
+                doReset();
+            }
         },
 
         setupResetCollectionModal: function(instanceId, instanceName) {

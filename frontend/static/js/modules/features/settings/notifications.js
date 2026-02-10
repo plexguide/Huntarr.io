@@ -32,13 +32,13 @@
                     <h3>Apprise Notifications</h3>
                     <div class="setting-item">
                         <label for="enable_notifications"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#enable-notifications" class="info-icon" title="Enable or disable notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enable Notifications:</label>
-                        <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <label class="toggle-switch">
                             <input type="checkbox" id="enable_notifications" ${
                               settings.enable_notifications === true
                                 ? "checked"
                                 : ""
                             }>
-                            <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                            <span class="toggle-slider"></span>
                         </label>
                         <p class="setting-help" style="margin-left: -3ch !important;">Enable sending notifications via Apprise for media processing events</p>
                     </div>
@@ -88,45 +88,45 @@
                     </div>
                     <div class="setting-item">
                         <label for="notify_on_missing"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notify-on-missing" class="info-icon" title="Send notifications for missing media" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notify on Missing:</label>
-                        <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <label class="toggle-switch">
                             <input type="checkbox" id="notify_on_missing" ${
                               settings.notify_on_missing !== false ? "checked" : ""
                             }>
-                            <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                            <span class="toggle-slider"></span>
                         </label>
                         <p class="setting-help" style="margin-left: -3ch !important;">Send notifications when missing media is processed</p>
                     </div>
                     <div class="setting-item">
                         <label for="notify_on_upgrade"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notify-on-upgrade" class="info-icon" title="Learn more about upgrade notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notify on Upgrade:</label>
-                        <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <label class="toggle-switch">
                             <input type="checkbox" id="notify_on_upgrade" ${
                               settings.notify_on_upgrade !== false ? "checked" : ""
                             }>
-                            <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                            <span class="toggle-slider"></span>
                         </label>
                         <p class="setting-help" style="margin-left: -3ch !important;">Send notifications when media is upgraded</p>
                     </div>
                     <div class="setting-item">
                         <label for="notification_include_instance"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#include-instance" class="info-icon" title="Include instance name in notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Include Instance:</label>
-                        <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <label class="toggle-switch">
                             <input type="checkbox" id="notification_include_instance" ${
                               settings.notification_include_instance !== false
                                 ? "checked"
                                 : ""
                             }>
-                            <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                            <span class="toggle-slider"></span>
                         </label>
                         <p class="setting-help" style="margin-left: -3ch !important;">Include instance name in notification messages</p>
                     </div>
                     <div class="setting-item">
                         <label for="notification_include_app"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#include-app-name" class="info-icon" title="Include app name in notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Include App Name:</label>
-                        <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                        <label class="toggle-switch">
                             <input type="checkbox" id="notification_include_app" ${
                               settings.notification_include_app !== false
                                 ? "checked"
                                 : ""
                             }>
-                            <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                            <span class="toggle-slider"></span>
                         </label>
                         <p class="setting-help" style="margin-left: -3ch !important;">Include app name (Sonarr, Radarr, etc.) in notification messages</p>
                     </div>

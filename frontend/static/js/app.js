@@ -365,14 +365,29 @@ let huntarrUI = {
         window.addEventListener('hashchange', (e) => {
             // Check for unsaved changes before navigation
             if (window._hasUnsavedChanges) {
-                if (!confirm('You have unsaved changes. Are you sure you want to leave this page?')) {
-                    // Prevent navigation by going back to previous hash
-                    e.preventDefault();
-                    history.pushState(null, null, e.oldURL);
-                    return;
+                var newHash = new URL(e.newURL).hash;
+                // Revert navigation immediately
+                history.pushState(null, null, e.oldURL);
+
+                if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                    window.HuntarrConfirm.show({
+                        title: 'Unsaved Changes',
+                        message: 'You have unsaved changes. Are you sure you want to leave this page?',
+                        confirmLabel: 'Leave',
+                        cancelLabel: 'Stay',
+                        onConfirm: () => {
+                            window._hasUnsavedChanges = false;
+                            window.location.hash = newHash;
+                        }
+                    });
+                } else {
+                    if (!confirm('You have unsaved changes. Are you sure you want to leave this page?')) {
+                        return;
+                    }
+                    window._hasUnsavedChanges = false;
+                    window.location.hash = newHash;
                 }
-                // User confirmed, clear the flag
-                window._hasUnsavedChanges = false;
+                return;
             }
             this.handleHashNavigation(window.location.hash);
         });

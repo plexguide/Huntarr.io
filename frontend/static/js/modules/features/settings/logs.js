@@ -35,11 +35,11 @@
                 <h3>Log Rotation</h3>
                 <div class="setting-item">
                     <label for="log_rotation_enabled">Enable Log Rotation:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="log_rotation_enabled" name="log_rotation_enabled" ${
                           settings.log_rotation_enabled !== false ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically rotate log files when they reach a certain size</p>
                 </div>
@@ -73,11 +73,11 @@
                 </div>
                 <div class="setting-item">
                     <label for="log_auto_cleanup">Auto-Cleanup on Startup:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="log_auto_cleanup" name="log_auto_cleanup" ${
                           settings.log_auto_cleanup !== false ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically clean up old logs when Huntarr starts</p>
                 </div>
@@ -87,11 +87,11 @@
                 <h3>Advanced Settings</h3>
                 <div class="setting-item">
                     <label for="enable_debug_logs">Enable Debug Logs:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="enable_debug_logs" name="enable_debug_logs" ${
                           settings.enable_debug_logs !== false ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Store and display DEBUG level logs. When disabled, DEBUG logs are not saved to the database and the Debug level filter is hidden in the log viewer.</p>
                 </div>

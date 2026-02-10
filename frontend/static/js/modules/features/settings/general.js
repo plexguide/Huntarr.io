@@ -170,11 +170,11 @@
                 </div>
                 <div class="setting-item">
                     <label for="ssl_verify"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#enable-ssl-verify" class="info-icon" title="Learn more about SSL verification" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enable SSL Verify:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="ssl_verify" ${
                           settings.ssl_verify === true ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help" style="margin-left: -3ch !important;">Disable SSL certificate verification when using self-signed certificates.</p>
                 </div>
@@ -219,11 +219,11 @@
                 </div>
                 <div class="setting-item" id="show_trending_setting_item">
                     <label for="show_trending"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#show-trending" class="info-icon" title="Learn more about rotating discover content on home page" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Show Discover Content:</label>
-                    <label class="toggle-switch" style="width:40px; height:20px; display:inline-block; position:relative;">
+                    <label class="toggle-switch">
                         <input type="checkbox" id="show_trending" ${
                           settings.show_trending === true ? "checked" : ""
                         }>
-                        <span class="toggle-slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#3d4353; border-radius:20px; transition:0.4s;"></span>
+                        <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help" style="margin-left: -3ch !important;">Display rotating discover content on the home page (Trending This Week, Popular Movies, Popular TV Shows).</p>
                 </div>
