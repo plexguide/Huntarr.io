@@ -182,8 +182,11 @@ window.HuntarrStats = {
                 try {
                     var parsedStats = JSON.parse(cachedStats);
                     var cacheAge = Date.now() - (parsedStats.timestamp || 0);
-                    if (cacheAge < 300000) {
+                    // Use cache if less than 1 hour old for immediate UI
+                    if (cacheAge < 3600000) {
                         this.updateStatsDisplay(parsedStats.stats, true);
+                        // Show grid immediately from cache so it's not blank while checking connections
+                        this.updateEmptyStateVisibility(true);
                     }
                 } catch (e) {}
             }
@@ -852,17 +855,29 @@ window.HuntarrStats = {
         }
     },
 
-    updateEmptyStateVisibility: function() {
-        if (!window.huntarrUI || !window.huntarrUI.configuredAppsInitialized) return;
+    updateEmptyStateVisibility: function(forceShowGrid) {
+        if (!window.huntarrUI) return;
+        
+        // If we don't have a final answer on configuration yet and aren't forcing the grid, stay quiet
+        if (!window.huntarrUI.configuredAppsInitialized && !forceShowGrid) return;
+        
         var anyConfigured = Object.values(window.huntarrUI.configuredApps).some(function(v) { return v === true; });
+        
+        // If we are forcing the grid (from cache), we assume there's something to show
+        if (forceShowGrid) anyConfigured = true;
+        
         var emptyState = document.getElementById('live-hunts-empty-state');
         var statsGrid = document.getElementById('app-stats-grid') || document.querySelector('.app-stats-grid');
+        
         if (anyConfigured) {
             if (emptyState) emptyState.style.display = 'none';
             if (statsGrid) statsGrid.style.display = '';
         } else {
-            if (emptyState) emptyState.style.display = 'flex';
-            if (statsGrid) statsGrid.style.display = 'none';
+            // Only show empty state if we're CERTAIN nothing is configured
+            if (window.huntarrUI.configuredAppsInitialized) {
+                if (emptyState) emptyState.style.display = 'flex';
+                if (statsGrid) statsGrid.style.display = 'none';
+            }
         }
     }
 };

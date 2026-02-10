@@ -188,10 +188,10 @@
     visibility: visible;
 }
 
-/* Hide JSON content for stat numbers until properly loaded */
+/* Show numbers even during loading - transparency caused blank look for 10s */
 .stats-loading .stat-number {
-    color: transparent;
     position: relative;
+    opacity: 0.6;
 }
 
 .stats-loading .stat-number::after {
