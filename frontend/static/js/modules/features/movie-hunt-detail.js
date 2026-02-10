@@ -211,9 +211,9 @@
             '<div class="mh-toolbar">' +
                 '<div class="mh-toolbar-left">' +
                     '<button class="mh-tb" id="mh-tb-back" title="Back"><i class="fas fa-arrow-left"></i></button>' +
-                    '<button class="mh-tb" id="mh-tb-refresh" title="Refresh &amp; Scan"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>' +
-                    '<button class="mh-tb" id="mh-tb-search" title="Search &amp; Download"><i class="fas fa-search"></i><span>Search Movie</span></button>' +
-                    '<button class="mh-tb" id="mh-tb-interactive" title="Interactive Search"><i class="fas fa-user-astronaut"></i><span>Interactive Search</span></button>' +
+                    '<button class="mh-tb" id="mh-tb-refresh" title="Refresh"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>' +
+                    /* Force Search / Force Upgrade — placeholder, updated by updateMovieStatus */
+                    '<span id="mh-tb-force-container"></span>' +
                 '</div>' +
                 '<div class="mh-toolbar-right">' +
                     '<button class="mh-tb" id="mh-tb-edit" title="Edit"><i class="fas fa-wrench"></i><span>Edit</span></button>' +
@@ -245,7 +245,7 @@
                                 '<select id="mh-detail-instance-select">' + instanceOpts + '</select>' +
                             '</div>' +
 
-                            /* ── Info Bar (integrated into hero) ── */
+                            /* ── Info Bar Row 1 ── */
                             '<div class="mh-info-bar" id="mh-info-bar">' +
                                 '<div class="mh-ib mh-ib-path">' +
                                     '<div class="mh-ib-label">Path</div>' +
@@ -262,6 +262,25 @@
                                 '<div class="mh-ib">' +
                                     '<div class="mh-ib-label">Size</div>' +
                                     '<div class="mh-ib-val" id="mh-ib-size">-</div>' +
+                                '</div>' +
+                            '</div>' +
+                            /* ── Info Bar Row 2 (file details, shown when downloaded) ── */
+                            '<div class="mh-info-bar mh-info-bar-row2" id="mh-info-bar-row2" style="display:none">' +
+                                '<div class="mh-ib">' +
+                                    '<div class="mh-ib-label">Resolution</div>' +
+                                    '<div class="mh-ib-val" id="mh-ib-resolution">-</div>' +
+                                '</div>' +
+                                '<div class="mh-ib">' +
+                                    '<div class="mh-ib-label">Codec / Audio</div>' +
+                                    '<div class="mh-ib-val" id="mh-ib-codec">-</div>' +
+                                '</div>' +
+                                '<div class="mh-ib">' +
+                                    '<div class="mh-ib-label">Custom Format Score</div>' +
+                                    '<div class="mh-ib-val" id="mh-ib-score">-</div>' +
+                                '</div>' +
+                                '<div class="mh-ib">' +
+                                    '<div class="mh-ib-label">Min. Availability</div>' +
+                                    '<div class="mh-ib-val" id="mh-ib-availability">-</div>' +
                                 '</div>' +
                             '</div>' +
 
@@ -344,24 +363,6 @@
             // Toolbar: Refresh
             const refreshBtn = document.getElementById('mh-tb-refresh');
             if (refreshBtn) refreshBtn.addEventListener('click', () => this.handleRefresh());
-
-            // Toolbar: Search Movie → Requestarr modal
-            const searchBtn = document.getElementById('mh-tb-search');
-            if (searchBtn) searchBtn.addEventListener('click', () => {
-                const tmdbId = this.currentMovie && (this.currentMovie.tmdb_id || this.currentMovie.id);
-                if (tmdbId && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
-                    window.RequestarrDiscover.modal.openModal(tmdbId, 'movie');
-                }
-            });
-
-            // Toolbar: Interactive Search → Requestarr modal
-            const interactiveBtn = document.getElementById('mh-tb-interactive');
-            if (interactiveBtn) interactiveBtn.addEventListener('click', () => {
-                const tmdbId = this.currentMovie && (this.currentMovie.tmdb_id || this.currentMovie.id);
-                if (tmdbId && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
-                    window.RequestarrDiscover.modal.openModal(tmdbId, 'movie');
-                }
-            });
 
             // Toolbar: Edit
             const editBtn = document.getElementById('mh-tb-edit');
@@ -495,6 +496,7 @@
 
             const currentProfile = (status && status.quality_profile) || '';
             const currentRoot = (status && status.root_folder_path) || '';
+            const currentAvail = (status && status.minimum_availability) || 'released';
 
             const profileOpts = (Array.isArray(profiles) ? profiles : []).map(p => {
                 const name = p.name || 'Unknown';
@@ -506,6 +508,15 @@
                 const path = rf.path || '';
                 const sel = path === currentRoot ? ' selected' : '';
                 return '<option value="' + this.escapeHtml(path) + '"' + sel + '>' + this.escapeHtml(path) + (rf.is_default ? ' (Default)' : '') + '</option>';
+            }).join('');
+
+            const availOpts = [
+                { value: 'announced', label: 'Announced' },
+                { value: 'inCinemas', label: 'In Cinemas' },
+                { value: 'released', label: 'Released' }
+            ].map(a => {
+                const sel = a.value === currentAvail ? ' selected' : '';
+                return '<option value="' + a.value + '"' + sel + '>' + a.label + '</option>';
             }).join('');
 
             const html =
@@ -523,6 +534,10 @@
                             '<div class="mh-form-row">' +
                                 '<label>Quality Profile</label>' +
                                 '<select id="mh-edit-quality-profile" class="mh-select">' + profileOpts + '</select>' +
+                            '</div>' +
+                            '<div class="mh-form-row">' +
+                                '<label>Minimum Availability</label>' +
+                                '<select id="mh-edit-min-availability" class="mh-select">' + availOpts + '</select>' +
                             '</div>' +
                         '</div>' +
                         '<div class="mh-modal-footer">' +
@@ -553,6 +568,7 @@
             const tmdbId = movie.tmdb_id || movie.id;
             const rootFolder = document.getElementById('mh-edit-root-folder').value;
             const qualityProfile = document.getElementById('mh-edit-quality-profile').value;
+            const minAvailability = document.getElementById('mh-edit-min-availability').value;
 
             const saveBtn = document.getElementById('mh-edit-save');
             if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
@@ -561,7 +577,7 @@
                 const resp = await fetch('./api/movie-hunt/collection/update?instance_id=' + this.selectedInstanceId, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tmdb_id: tmdbId, root_folder: rootFolder, quality_profile: qualityProfile })
+                    body: JSON.stringify({ tmdb_id: tmdbId, root_folder: rootFolder, quality_profile: qualityProfile, minimum_availability: minAvailability })
                 });
                 const data = await resp.json();
                 if (data.success) {
@@ -590,10 +606,13 @@
 
             const title = this.escapeHtml(movie.title || '');
             const year = movie.year || '';
-            const path = (status && status.root_folder_path) || (status && status.path) || '';
             const hasFile = status && status.has_file;
-            const folderDisplay = path
-                ? this.escapeHtml(path)
+            // Prefer full file path for available movies, fall back to root folder
+            const filePath = (status && status.path) || '';
+            const rootFolder = (status && status.root_folder_path) || '';
+            const displayPath = filePath || rootFolder;
+            const folderDisplay = displayPath
+                ? this.escapeHtml(displayPath)
                 : (movie.title ? this.escapeHtml(movie.title + (year ? ' (' + year + ')' : '')) : 'Unknown');
 
             const html =
@@ -604,7 +623,7 @@
                             '<button class="mh-modal-x" id="mh-delete-close">&times;</button>' +
                         '</div>' +
                         '<div class="mh-modal-body">' +
-                            '<div class="mh-delete-path"><i class="fas fa-folder"></i> ' + folderDisplay + '</div>' +
+                            '<div class="mh-delete-path" title="' + folderDisplay + '"><i class="fas fa-folder"></i> <span class="mh-delete-path-text">' + folderDisplay + '</span></div>' +
                             '<label class="mh-check-row">' +
                                 '<input type="checkbox" id="mh-delete-blocklist" checked>' +
                                 '<div><strong>Add to Blocklist</strong><div class="mh-help">Prevent movie from being re-added by import lists</div></div>' +
@@ -692,6 +711,86 @@
             }
         },
 
+        /* ── Force Search ──────────────────────────────────────── */
+        async handleForceSearch() {
+            var movie = this.currentMovie;
+            if (!movie) return;
+            var btn = document.getElementById('mh-tb-force-search');
+            if (btn) { btn.disabled = true; var icon = btn.querySelector('i'); if (icon) { icon.className = 'fas fa-spinner fa-spin'; } }
+
+            var notify = function(msg, type) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, type);
+                else alert(msg);
+            };
+
+            try {
+                var resp = await fetch('./api/movie-hunt/request?instance_id=' + this.selectedInstanceId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: movie.title || '',
+                        year: movie.year || '',
+                        tmdb_id: movie.tmdb_id || movie.id,
+                        poster_path: movie.poster_path || '',
+                        start_search: true,
+                        runtime: (this.currentDetails && this.currentDetails.runtime) || 90
+                    })
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    notify('Search complete — ' + (data.message || 'Sent to download client.'), 'success');
+                } else {
+                    notify(data.message || 'No matching release found.', 'error');
+                }
+            } catch (err) {
+                notify('Search failed: ' + err.message, 'error');
+            }
+
+            if (btn) { btn.disabled = false; var icon = btn.querySelector('i'); if (icon) { icon.className = 'fas fa-search'; } }
+            this.updateMovieStatus();
+        },
+
+        /* ── Force Upgrade ─────────────────────────────────────── */
+        async handleForceUpgrade() {
+            var movie = this.currentMovie;
+            var status = this.currentMovieStatus;
+            if (!movie) return;
+            var btn = document.getElementById('mh-tb-force-upgrade');
+            if (btn) { btn.disabled = true; var icon = btn.querySelector('i'); if (icon) { icon.className = 'fas fa-spinner fa-spin'; } }
+
+            var notify = function(msg, type) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, type);
+                else alert(msg);
+            };
+
+            try {
+                var currentScore = (status && status.file_score != null) ? status.file_score : 0;
+                var resp = await fetch('./api/movie-hunt/force-upgrade?instance_id=' + this.selectedInstanceId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: movie.title || '',
+                        year: movie.year || '',
+                        tmdb_id: movie.tmdb_id || movie.id,
+                        current_score: currentScore,
+                        quality_profile: (status && status.quality_profile) || '',
+                        runtime: (this.currentDetails && this.currentDetails.runtime) || 90
+                    })
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    notify(data.message || 'Upgrade sent to download client.', 'success');
+                } else {
+                    notify(data.message || 'No higher-scoring release available.', 'info');
+                }
+            } catch (err) {
+                notify('Upgrade search failed: ' + err.message, 'error');
+            }
+
+            if (btn) { btn.disabled = false; var icon = btn.querySelector('i'); if (icon) { icon.className = 'fas fa-arrow-circle-up'; } }
+            this.updateMovieStatus();
+        },
+
         /* ── Status ────────────────────────────────────────────── */
         async loadMovieHuntInstances() {
             try {
@@ -766,11 +865,13 @@
 
             // Use movie-status API for both info bar and action button so they always match
             const data = await this.fetchMovieHuntStatus(tmdbId, this.selectedInstanceId);
+            const isDownloaded = data && data.found && (data.status || '').toLowerCase() === 'downloaded';
+
+            // Update action button
             const actionsContainer = document.getElementById('mh-detail-actions');
             if (actionsContainer) {
-                const inLibrary = data && data.found && (data.status || '').toLowerCase() === 'downloaded';
                 let btn = '';
-                if (inLibrary) {
+                if (isDownloaded) {
                     btn = '<span class="mh-btn mh-btn-success mh-btn-static"><i class="fas fa-check-circle"></i> Already in library</span>';
                 } else {
                     btn = '<button class="mh-btn mh-btn-primary" id="mh-btn-request"><i class="fas fa-plus-circle"></i> Add to Library</button>';
@@ -779,11 +880,27 @@
                 const requestBtn = document.getElementById('mh-btn-request');
                 if (requestBtn) {
                     requestBtn.addEventListener('click', () => {
-                        const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
-                        if (tmdbId && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
-                            window.RequestarrDiscover.modal.openModal(tmdbId, 'movie');
+                        const id = this.currentMovie.tmdb_id || this.currentMovie.id;
+                        if (id && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                            window.RequestarrDiscover.modal.openModal(id, 'movie');
                         }
                     });
+                }
+            }
+
+            // Update toolbar Force Search / Force Upgrade button
+            const forceContainer = document.getElementById('mh-tb-force-container');
+            if (forceContainer) {
+                if (isDownloaded) {
+                    forceContainer.innerHTML = '<button class="mh-tb" id="mh-tb-force-upgrade" title="Search for a higher-scoring release"><i class="fas fa-arrow-circle-up"></i><span>Force Upgrade</span></button>';
+                    var upgradeBtn = document.getElementById('mh-tb-force-upgrade');
+                    if (upgradeBtn) upgradeBtn.addEventListener('click', () => this.handleForceUpgrade());
+                } else if (data && data.found) {
+                    forceContainer.innerHTML = '<button class="mh-tb" id="mh-tb-force-search" title="Search indexers and download"><i class="fas fa-search"></i><span>Force Search</span></button>';
+                    var searchBtn = document.getElementById('mh-tb-force-search');
+                    if (searchBtn) searchBtn.addEventListener('click', () => this.handleForceSearch());
+                } else {
+                    forceContainer.innerHTML = '';
                 }
             }
         },
@@ -838,6 +955,58 @@
                     sizeEl.innerHTML = this.formatFileSize(data.file_size || 0) +
                         ' <span class="mh-badge mh-badge-quality">' + this.escapeHtml(data.file_quality) + '</span>';
                 }
+
+                // Row 2: resolution, codec, score, availability (only for downloaded files)
+                var row2 = document.getElementById('mh-info-bar-row2');
+                if (data.has_file && row2) {
+                    row2.style.display = '';
+                    var resEl = document.getElementById('mh-ib-resolution');
+                    var codecEl = document.getElementById('mh-ib-codec');
+                    var scoreEl = document.getElementById('mh-ib-score');
+                    var availEl = document.getElementById('mh-ib-availability');
+
+                    if (resEl) resEl.textContent = data.file_resolution || '-';
+                    if (codecEl) codecEl.textContent = data.file_codec || '-';
+
+                    // Score with hover tooltip
+                    if (scoreEl) {
+                        var scoreVal = data.file_score;
+                        if (scoreVal != null) {
+                            var scoreClass = scoreVal >= 0 ? 'mh-score-pos' : 'mh-score-neg';
+                            var breakdown = data.file_score_breakdown || 'No custom format matches';
+                            scoreEl.innerHTML = '<span class="mh-score-badge ' + scoreClass + '" title="' + this.escapeHtml(breakdown) + '">' + scoreVal + '</span>';
+                        } else {
+                            scoreEl.textContent = '-';
+                        }
+                    }
+
+                    // Minimum availability
+                    if (availEl) {
+                        var avail = data.minimum_availability || 'released';
+                        var availMap = { 'announced': 'Announced', 'inCinemas': 'In Cinemas', 'released': 'Released' };
+                        availEl.textContent = availMap[avail] || avail;
+                    }
+                } else if (row2) {
+                    // Show row 2 with just availability for non-downloaded movies
+                    if (data.found) {
+                        row2.style.display = '';
+                        var resEl = document.getElementById('mh-ib-resolution');
+                        var codecEl = document.getElementById('mh-ib-codec');
+                        var scoreEl = document.getElementById('mh-ib-score');
+                        var availEl = document.getElementById('mh-ib-availability');
+                        if (resEl) resEl.textContent = '-';
+                        if (codecEl) codecEl.textContent = '-';
+                        if (scoreEl) scoreEl.textContent = '-';
+                        if (availEl) {
+                            var avail = data.minimum_availability || 'released';
+                            var availMap = { 'announced': 'Announced', 'inCinemas': 'In Cinemas', 'released': 'Released' };
+                            availEl.textContent = availMap[avail] || avail;
+                        }
+                    } else {
+                        row2.style.display = 'none';
+                    }
+                }
+
                 return data;
             } catch (err) {
                 console.error('[MovieHuntDetail] Status fetch error:', err);

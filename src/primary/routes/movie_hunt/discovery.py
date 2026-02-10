@@ -720,6 +720,142 @@ def api_movie_hunt_request():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+@movie_hunt_bp.route('/api/movie-hunt/force-upgrade', methods=['POST'])
+def api_movie_hunt_force_upgrade():
+    """Search indexers for a higher-scoring release than the current file.
+    Only grabs if the best available release scores higher than the current file.
+    """
+    try:
+        data = request.get_json() or {}
+        title = (data.get('title') or '').strip()
+        if not title:
+            return jsonify({'success': False, 'message': 'Title is required'}), 400
+        year = str(data.get('year') or '').strip()
+        tmdb_id = data.get('tmdb_id')
+        current_score = data.get('current_score')
+        if current_score is None:
+            current_score = 0
+        try:
+            current_score = int(current_score)
+        except (TypeError, ValueError):
+            current_score = 0
+
+        instance_id = _get_movie_hunt_instance_id_from_request()
+        quality_profile = (data.get('quality_profile') or '').strip() or None
+        runtime_minutes = data.get('runtime')
+        if runtime_minutes is not None:
+            try:
+                runtime_minutes = max(1, int(runtime_minutes))
+            except (TypeError, ValueError):
+                runtime_minutes = 90
+        else:
+            runtime_minutes = 90
+
+        movie_hunt_logger.info(
+            "Upgrade: searching for '%s' (%s), current score=%s",
+            title, year or 'no year', current_score
+        )
+
+        # Search indexers for candidates
+        from .profiles import _get_profile_by_name_or_default, _best_result_matching_profile
+        from .indexers import _get_indexers_config, INDEXER_PRESET_URLS
+        from .clients import _get_clients_config
+
+        indexers = _get_indexers_config(instance_id)
+        clients = _get_clients_config(instance_id)
+        enabled_indexers = [i for i in indexers if i.get('enabled', True) and (i.get('preset') or '').strip().lower() != 'manual']
+        enabled_clients = [c for c in clients if c.get('enabled', True)]
+
+        if not enabled_indexers:
+            return jsonify({'success': False, 'message': 'No indexers configured or enabled.'}), 400
+        if not enabled_clients:
+            return jsonify({'success': False, 'message': 'No download clients configured or enabled.'}), 400
+
+        query = f'{title} {year}'.strip() if year else title
+        profile = _get_profile_by_name_or_default(quality_profile, instance_id)
+
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+
+        best_result = None
+        best_score = current_score
+        best_breakdown = ''
+        best_indexer = None
+
+        blocklist_titles = _get_blocklist_source_titles(instance_id)
+
+        for idx in enabled_indexers:
+            preset = (idx.get('preset') or '').strip().lower()
+            base_url = INDEXER_PRESET_URLS.get(preset)
+            if not base_url:
+                continue
+            api_key = (idx.get('api_key') or '').strip()
+            if not api_key:
+                continue
+            categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
+            results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
+            if not results:
+                continue
+            if blocklist_titles:
+                results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
+            if not results:
+                continue
+            chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(
+                results, profile, instance_id, runtime_minutes=runtime_minutes
+            )
+            if chosen and chosen_score > best_score:
+                best_result = chosen
+                best_score = chosen_score
+                best_breakdown = chosen_breakdown
+                best_indexer = idx.get('name') or preset
+
+        if not best_result:
+            movie_hunt_logger.info(
+                "Upgrade: no higher-scoring release found for '%s' (current=%s)", title, current_score
+            )
+            return jsonify({
+                'success': False,
+                'message': f'No release found with a score higher than {current_score}.'
+            }), 200
+
+        # Send to download client
+        nzb_url = best_result.get('nzb_url')
+        nzb_title = best_result.get('title', 'Unknown')
+        client = enabled_clients[0]
+        raw_cat = (client.get('category') or '').strip()
+        category = MOVIE_HUNT_DEFAULT_CATEGORY if raw_cat.lower() in ('default', '*', '') else (raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY)
+
+        ok, msg, queue_id = _add_nzb_to_download_client(
+            client, nzb_url, nzb_title or f'{title}.nzb', category, verify_ssl,
+            indexer=best_indexer or ''
+        )
+        if not ok:
+            return jsonify({'success': False, 'message': f'Download client error: {msg}'}), 500
+
+        movie_hunt_logger.info(
+            "Upgrade: '%s' (%s) upgrading from score %s → %s. Release: %s. Indexer: %s",
+            title, year or 'no year', current_score, best_score, nzb_title, best_indexer or '-'
+        )
+
+        if queue_id:
+            client_name = (client.get('name') or 'Download client').strip() or 'Download client'
+            _add_requested_queue_id(
+                client_name, queue_id, instance_id,
+                title=title, year=year or '', score=best_score, score_breakdown=best_breakdown
+            )
+
+        return jsonify({
+            'success': True,
+            'message': f'Upgrade found! Score {current_score} → {best_score}. Sent to download client.',
+            'new_score': best_score,
+            'new_breakdown': best_breakdown,
+        }), 200
+
+    except Exception as e:
+        movie_hunt_logger.exception("Upgrade: error: %s", e)
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @movie_hunt_bp.route('/api/movie-hunt/tmdb-key', methods=['GET'])
 def api_movie_hunt_tmdb_key():
     """Return TMDB API key for Movie Hunt detail page."""
@@ -834,13 +970,42 @@ def api_movie_hunt_movie_status():
             if not quality_profile_name and profiles:
                 quality_profile_name = (profiles[0].get('name') or 'Standard').strip()
 
-        # Extract file quality from filename
+        # Extract file quality, codec, resolution from filename
         file_quality = ''
+        file_codec = ''
+        file_resolution = ''
+        file_score = None
+        file_score_breakdown = ''
         if has_file and file_path:
-            from ._helpers import _extract_quality_from_filename
-            file_quality = _extract_quality_from_filename(os.path.basename(file_path))
+            from ._helpers import _extract_quality_from_filename, _extract_formats_from_filename
+            fname = os.path.basename(file_path)
+            file_quality = _extract_quality_from_filename(fname)
             if file_quality == '-':
                 file_quality = ''
+            file_codec = _extract_formats_from_filename(fname)
+            if file_codec == '-':
+                file_codec = ''
+            # Extract resolution separately
+            fl = fname.lower()
+            if '2160' in fl or '4k' in fl:
+                file_resolution = '2160p'
+            elif '1080' in fl:
+                file_resolution = '1080p'
+            elif '720' in fl:
+                file_resolution = '720p'
+            elif '480' in fl:
+                file_resolution = '480p'
+            # Score the current file against the quality profile's custom formats
+            try:
+                from .profiles import _score_release, _get_profile_by_name_or_default
+                profile = _get_profile_by_name_or_default(quality_profile_name, instance_id)
+                file_score, file_score_breakdown = _score_release(fname, profile, instance_id)
+            except Exception:
+                file_score = None
+                file_score_breakdown = ''
+
+        # Minimum availability
+        min_availability = (movie.get('minimum_availability') or 'released').strip()
 
         return jsonify({
             'success': True,
@@ -852,6 +1017,11 @@ def api_movie_hunt_movie_status():
             'quality_profile': quality_profile_name or 'Standard',
             'file_size': file_size,
             'file_quality': file_quality,
+            'file_codec': file_codec,
+            'file_resolution': file_resolution,
+            'file_score': file_score,
+            'file_score_breakdown': file_score_breakdown,
+            'minimum_availability': min_availability,
             'requested_at': movie.get('requested_at', ''),
         })
 
