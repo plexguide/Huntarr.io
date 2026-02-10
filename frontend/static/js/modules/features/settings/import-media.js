@@ -160,7 +160,7 @@
 
             if (this.items.length === 0) {
                 listEl.innerHTML = '<div class="import-media-empty"><i class="fas fa-folder-open"></i>' +
-                    '<p>No unmapped folders found. Click <strong>Scan Folders</strong> to detect movies in your root folders that aren\'t in your Media Collection yet.</p></div>';
+                    '<p>No unmapped folders found. Click <strong>Scan Folders</strong> to detect movies in your root folders that aren\'t in your Movie Collection yet.</p></div>';
                 return;
             }
 
@@ -386,7 +386,7 @@
             if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
                 window.HuntarrConfirm.show({
                     title: 'Import All Matched',
-                    message: 'Import all ' + matched.length + ' matched movie' + (matched.length !== 1 ? 's' : '') + ' into your Media Collection?\n\nMovies already in your collection will be skipped.',
+                    message: 'Import all ' + matched.length + ' matched movie' + (matched.length !== 1 ? 's' : '') + ' into your Movie Collection?\n\nMovies already in your collection will be skipped.',
                     confirmLabel: 'Import All',
                     onConfirm: function() { self._doImportAll(); }
                 });

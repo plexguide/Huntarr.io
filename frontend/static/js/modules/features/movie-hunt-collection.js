@@ -1,6 +1,6 @@
 /**
- * Movie Hunt Media Collection - requested movies and status (requested / available).
- * Template based on Requestarr hidden media. Attaches to window.MovieHuntCollection.
+ * Movie Hunt Movie Collection - requested movies and status (requested / available).
+ * Users go to Request Movies (#requestarr-movies) to add movies; this view lists the collection.
  */
 (function() {
     'use strict';
@@ -15,124 +15,23 @@
         items: [],
 
         init: function() {
-            var self = this;
             this.page = 1;
-            // Load saved view mode (server-side preference)
             this.viewMode = HuntarrUtils.getUIPreference('movie-hunt-collection-view', 'posters');
             this.setupInstanceSelect();
             this.setupSort();
-            this.setupSearch();
-            this.setupSearchToRequest();
             this.setupViewMode();
-            // Pagination removed - all items load at once
+            this.setupMovieSearchLink();
             this.loadCollection();
         },
 
-        setupSearchToRequest: function() {
-            var self = this;
-            var input = document.getElementById('media-collection-search-to-request');
-            var clearBtn = document.getElementById('media-collection-clear-search-btn');
-            if (!input) return;
-            
-            var searchTimeout;
-            
-            var performSearch = function() {
-                var query = (input.value || '').trim();
-                if (!query) {
-                    clearSearch();
-                    return;
-                }
-                if (clearBtn) clearBtn.style.display = 'block';
-                self.searchTMDB(query);
-            };
-            
-            var clearSearch = function() {
-                input.value = '';
-                var resultsContainer = document.getElementById('media-collection-tmdb-results');
-                if (resultsContainer) resultsContainer.style.display = 'none';
-                if (clearBtn) clearBtn.style.display = 'none';
-            };
-            
-            // Auto-search on input with debounce
-            input.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(performSearch, 400);
+        setupMovieSearchLink: function() {
+            var link = document.getElementById('movie-collection-movie-search-link');
+            if (!link) return;
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                try { sessionStorage.setItem('requestarr-from-movie-collection', '1'); } catch (err) {}
+                window.location.hash = '#requestarr-movies';
             });
-            
-            if (clearBtn) clearBtn.addEventListener('click', clearSearch);
-        },
-
-        searchTMDB: function(query) {
-            var self = this;
-            var resultsContainer = document.getElementById('media-collection-tmdb-results');
-            var resultsGrid = document.getElementById('media-collection-tmdb-grid');
-            var clearBtn = document.getElementById('media-collection-clear-search-btn');
-            if (!resultsContainer || !resultsGrid) return;
-            
-            // Get current instance
-            var instanceSelect = document.getElementById('movie-hunt-collection-instance-select');
-            var instanceId = instanceSelect ? instanceSelect.value : '0';
-            
-            resultsContainer.style.display = 'block';
-            if (clearBtn) clearBtn.style.display = 'inline-block';
-            resultsGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
-            
-            // Use Requestarr search endpoint (searches both Radarr instance and TMDB)
-            fetch('./api/requestarr/search?q=' + encodeURIComponent(query) + '&app_type=radarr&instance_name=' + encodeURIComponent(instanceId))
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (!data.success || !data.results || data.results.length === 0) {
-                        resultsGrid.innerHTML = '<p style="text-align: center; color: rgba(148, 163, 184, 0.6); padding: 40px;">No results found</p>';
-                        return;
-                    }
-                    resultsGrid.innerHTML = '';
-                    for (var i = 0; i < Math.min(data.results.length, 20); i++) {
-                        var movie = data.results[i];
-                        var card = self.createTMDBCard(movie);
-                        resultsGrid.appendChild(card);
-                    }
-                })
-                .catch(function(err) {
-                    console.error('Search error:', err);
-                    resultsGrid.innerHTML = '<p style="text-align: center; color: #ef4444; padding: 40px;">Search failed</p>';
-                });
-        },
-
-        createTMDBCard: function(movie) {
-            var self = this;
-            var card = document.createElement('div');
-            card.className = 'media-card';
-            var title = (movie.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-            var year = movie.release_date ? movie.release_date.split('-')[0] : 'N/A';
-            var posterUrl = movie.poster_path ? 'https://image.tmdb.org/t/p/w500' + movie.poster_path : './static/images/blackout.jpg';
-            
-            // Check if already in collection
-            var inCollection = false;
-            for (var i = 0; i < this.items.length; i++) {
-                if (this.items[i].tmdb_id == movie.id) {
-                    inCollection = true;
-                    break;
-                }
-            }
-            
-            var statusBadge = inCollection ? '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>' : '';
-            
-            card.innerHTML = '<div class="media-card-poster">' + statusBadge +
-                '<img src="' + posterUrl + '" alt="' + title + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
-                '</div>' +
-                '<div class="media-card-info">' +
-                '<div class="media-card-title">' + title + '</div>' +
-                '<div class="media-card-year">' + year + '</div>' +
-                '</div>';
-            
-            card.onclick = function() {
-                if (window.RequestarrDiscover && window.RequestarrDiscover.modal) {
-                    window.RequestarrDiscover.modal.openModal(movie.id, 'movie');
-                }
-            };
-            card.style.cursor = 'pointer';
-            
-            return card;
         },
 
         setupInstanceSelect: function() {
@@ -163,10 +62,6 @@
                 self.page = 1;
                 self.loadCollection();
             };
-        },
-
-        setupSearch: function() {
-            // Old filter search removed - now using TMDB search only
         },
 
         setupViewMode: function() {

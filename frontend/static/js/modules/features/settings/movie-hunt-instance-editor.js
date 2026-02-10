@@ -157,8 +157,8 @@
             '<div class="editor-field-group" style="border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 16px; background: rgba(239, 68, 68, 0.04);">' +
             '<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">' +
             '<div style="flex: 1; min-width: 200px;">' +
-            '<strong style="color: #f1f5f9; font-size: 0.95rem;">Reset Media Collection</strong>' +
-            '<p class="editor-help-text" style="margin-top: 4px;">Permanently deletes <strong>all</strong> movies from this instance\'s Media Collection. Requested movies, status history, and collection data will be wiped. This cannot be undone.</p>' +
+            '<strong style="color: #f1f5f9; font-size: 0.95rem;">Reset Movie Collection</strong>' +
+            '<p class="editor-help-text" style="margin-top: 4px;">Permanently deletes <strong>all</strong> movies from this instance\'s Movie Collection. Requested movies, status history, and collection data will be wiped. This cannot be undone.</p>' +
             '</div>' +
             '<button type="button" class="btn-card delete" id="mh-editor-reset-collection" style="white-space: nowrap; background: #dc2626; color: white; border: 1px solid #dc2626; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;"><i class="fas fa-trash-alt" style="margin-right: 6px;"></i>Reset Library</button>' +
             '</div></div>' +
@@ -170,7 +170,7 @@
             '<div id="mh-reset-collection-backdrop" style="position:absolute; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);"></div>' +
             '<div style="position:relative; background:#1e293b; border:1px solid rgba(239,68,68,0.4); border-radius:14px; padding:28px 32px; max-width:460px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.5);">' +
             '<h3 style="margin:0 0 8px; color:#f87171; font-size:1.15rem;"><i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>Confirm Library Reset</h3>' +
-            '<p style="color:#94a3b8; font-size:0.9rem; line-height:1.5; margin:0 0 18px;">This will permanently delete <strong style="color:#f1f5f9;">all movies</strong> in the Media Collection for this instance. To confirm, type the instance name below:</p>' +
+            '<p style="color:#94a3b8; font-size:0.9rem; line-height:1.5; margin:0 0 18px;">This will permanently delete <strong style="color:#f1f5f9;">all movies</strong> in the Movie Collection for this instance. To confirm, type the instance name below:</p>' +
             '<p style="color:#f1f5f9; font-size:0.95rem; margin:0 0 10px; text-align:center;"><strong id="mh-reset-modal-instance-name">' + escapeHtml(safe.name) + '</strong></p>' +
             '<input type="text" id="mh-reset-collection-input" placeholder="Type instance name to confirm..." style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(239,68,68,0.3); background:rgba(15,23,42,0.8); color:white; margin-bottom:16px; box-sizing:border-box;" autocomplete="off">' +
             '<div id="mh-reset-collection-error" style="display:none; color:#f87171; font-size:0.85rem; margin-bottom:12px; text-align:center;"></div>' +

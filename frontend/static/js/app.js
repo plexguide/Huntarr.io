@@ -726,7 +726,7 @@ let huntarrUI = {
             if (mainContent) { mainContent.style.display = 'none'; }
             if (collectionView) { collectionView.style.display = 'block'; }
             if (calendarView) { calendarView.style.display = 'none'; }
-            newTitle = 'Media Collection';
+            newTitle = 'Movie Collection';
             this.currentSection = 'movie-hunt-collection';
             this.showMovieHuntSidebar();
             if (window.MovieHuntCollection && typeof window.MovieHuntCollection.init === 'function') {
@@ -830,12 +830,19 @@ let huntarrUI = {
         } else if (section === 'requestarr-movies' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
-            if (document.getElementById('requestarrMoviesNav')) document.getElementById('requestarrMoviesNav').classList.add('active');
+            var fromMovieCollection = false;
+            try { fromMovieCollection = sessionStorage.getItem('requestarr-from-movie-collection'); sessionStorage.removeItem('requestarr-from-movie-collection'); } catch (err) {}
+            if (fromMovieCollection) {
+                this.showMovieHuntSidebar();
+                if (document.getElementById('movieHuntCollectionNav')) document.getElementById('movieHuntCollectionNav').classList.add('active');
+                var requestarrNavItems = document.querySelectorAll('#requestarr-sidebar .nav-item');
+                if (requestarrNavItems.length) requestarrNavItems.forEach(function(el) { el.classList.remove('active'); });
+            } else {
+                if (document.getElementById('requestarrMoviesNav')) document.getElementById('requestarrMoviesNav').classList.add('active');
+                this.showRequestarrSidebar();
+            }
             newTitle = 'Movies';
             this.currentSection = 'requestarr-movies';
-            
-            // Switch to Requestarr sidebar
-            this.showRequestarrSidebar();
             
             // Force movies view layout immediately
             const viewIds = [

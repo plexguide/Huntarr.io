@@ -22,10 +22,24 @@ def search_media():
         if not query:
             return jsonify({'results': []})
         
-        if not app_type or not instance_name:
-            return jsonify({'error': 'App type and instance name are required'}), 400
+        if not app_type:
+            return jsonify({'error': 'App type is required'}), 400
         
-        results = requestarr_api.search_media_with_availability(query, app_type, instance_name)
+        # For movie_hunt, instance_name may be empty (TMDB-only search) or numeric id (resolve to name)
+        if app_type == 'movie_hunt' and instance_name and instance_name.isdigit():
+            from src.primary.utils.database import get_database
+            db = get_database()
+            mh_instances = db.get_movie_hunt_instances()
+            resolved = None
+            for inst in (mh_instances or []):
+                if str(inst.get('id')) == instance_name:
+                    resolved = (inst.get('name') or '').strip()
+                    break
+            instance_name = resolved or instance_name
+        elif app_type != 'movie_hunt' and not instance_name:
+            return jsonify({'error': 'Instance name is required'}), 400
+        
+        results = requestarr_api.search_media_with_availability(query, app_type, instance_name or None)
         return jsonify({'results': results})
         
     except Exception as e:

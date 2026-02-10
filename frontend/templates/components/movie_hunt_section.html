@@ -62,16 +62,10 @@
         </div>
     </div>
 
-    <!-- Media Collection View (requested movies, status tracking) -->
+    <!-- Movie Collection View (requested movies, status tracking) -->
     <div id="movie-hunt-collection-view" class="movie-hunt-collection-view" style="display: none;">
-        <div class="requestarr-search-container">
-            <i class="fas fa-search"></i>
-            <input id="media-collection-search-to-request" type="text" placeholder="Search movies to add to collection..." autocomplete="off">
-            <button type="button" id="media-collection-clear-search-btn" class="clear-search-btn" style="display: none;"><i class="fas fa-times"></i></button>
-        </div>
-        <div id="media-collection-tmdb-results" class="media-collection-tmdb-results" style="display: none;">
-            <h3 class="tmdb-results-title"><i class="fas fa-film"></i> Search Results</h3>
-            <div id="media-collection-tmdb-grid" class="media-grid"></div>
+        <div class="movie-collection-request-link">
+            <a href="./#requestarr-movies" class="request-movies-link" id="movie-collection-movie-search-link"><i class="fas fa-search"></i> Movie Search</a>
         </div>
         <div class="movies-controls movie-hunt-collection-controls">
             <div class="instance-selector-container">
