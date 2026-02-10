@@ -1,435 +1,246 @@
 <section id="backupRestoreSection" class="content-section" style="display: none;">
-    <div class="backup-restore-container">
-        <!-- Backup Settings -->
-        <div class="settings-group">
-            <h3><i class="fas fa-clock"></i> Automatic Backup Settings</h3>
+    <div class="br-container">
 
-            <div class="form-group">
-                <label for="backup-frequency">
-                    <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#backup-frequency"
-                        class="info-icon" target="_blank" rel="noopener">ⓘ</a>
-                    Backup Frequency (Days)
-                </label>
-                <input type="number" id="backup-frequency" min="1" max="30" value="3"
-                    placeholder="Enter number of days between backups">
-                <small>How often Huntarr should automatically create database backups (default: 3 days)</small>
-            </div>
-
-            <div class="form-group">
-                <label for="backup-retention">
-                    <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#backup-retention"
-                        class="info-icon" target="_blank" rel="noopener">ⓘ</a>
-                    Backup Retention Count
-                </label>
-                <input type="number" id="backup-retention" min="1" max="10" value="3"
-                    placeholder="Number of backups to keep">
-                <small>Number of backup copies to keep. Older backups are automatically deleted (default: 3)</small>
-            </div>
-
-            <div class="form-group">
-                <label>Next Scheduled Backup</label>
-                <div id="next-backup-time" class="info-display">
-                    <i class="fas fa-spinner fa-spin"></i> Loading...
+        <!-- Automatic Backup Settings -->
+        <div class="br-card">
+            <div class="br-card-header">
+                <div class="br-card-icon br-icon-blue">
+                    <i class="fas fa-clock"></i>
                 </div>
+                <h3>Automatic Backup Settings</h3>
             </div>
-        </div>
-
-        <!-- Manual Backup -->
-        <div class="settings-group">
-            <h3><i class="fas fa-save"></i> Manual Backup</h3>
-
-            <div class="form-group">
-                <label>Create Backup Now</label>
-                <button type="button" id="create-backup-btn" class="action-btn backup-btn">
-                    <i class="fas fa-plus-circle"></i> Create Manual Backup
-                </button>
-                <small>Create an immediate backup of all databases</small>
-            </div>
-
-            <div id="backup-progress" class="progress-container" style="display: none;">
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-                <div class="progress-text">Creating backup...</div>
-            </div>
-        </div>
-
-        <!-- Restore Database -->
-        <div class="settings-group">
-            <h3><i class="fas fa-undo"></i> Restore Database</h3>
-
-            <div class="form-group">
-                <label for="restore-backup-select">
-                    <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#restore-database"
-                        class="info-icon" target="_blank" rel="noopener">ⓘ</a>
-                    Select Backup to Restore
-                </label>
-                <select id="restore-backup-select">
-                    <option value="">Loading available backups...</option>
-                </select>
-                <small>Select a backup to restore. This will overwrite your current database!</small>
-            </div>
-
-            <div class="form-group" id="restore-confirmation-group" style="display: none;">
-                <label for="restore-confirmation">
-                    Type "RESTORE" to confirm (this will overwrite current data)
-                </label>
-                <input type="text" id="restore-confirmation" placeholder="Type RESTORE to confirm"
-                    style="border: 2px solid #e74c3c;">
-                <div class="warning-box">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Warning:</strong> This action will permanently overwrite your current database with the
-                    selected backup.
-                    All current data will be lost. Make sure you have a recent backup before proceeding.
-                </div>
-            </div>
-
-            <div class="form-group" id="restore-action-group" style="display: none;">
-                <button type="button" id="restore-backup-btn" class="action-btn danger-btn" disabled>
-                    <i class="fas fa-exclamation-triangle"></i> Restore Database
-                </button>
-            </div>
-        </div>
-
-        <!-- Download Backup -->
-        <div class="settings-group">
-            <h3><i class="fas fa-download"></i> Download Backup</h3>
-
-            <div class="form-group">
-                <label for="download-backup-select">
-                    <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#download-backup"
-                        class="info-icon" target="_blank" rel="noopener">ⓘ</a>
-                    Select Backup to Download
-                </label>
-                <select id="download-backup-select">
-                    <option value="">Loading available backups...</option>
-                </select>
-                <small>Select a backup to download as a ZIP file</small>
-            </div>
-
-            <div class="form-group">
-                <button type="button" id="download-backup-btn" class="action-btn backup-btn" disabled>
-                    <i class="fas fa-file-download"></i> Download Backup
-                </button>
-            </div>
-        </div>
-
-        <!-- Upload Backup -->
-        <div class="settings-group">
-            <h3><i class="fas fa-upload"></i> Upload Backup</h3>
-
-            <div class="form-group">
-                <label for="upload-backup-file">
-                    <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#upload-backup"
-                        class="info-icon" target="_blank" rel="noopener">ⓘ</a>
-                    Select Backup File (ZIP)
-                </label>
-                <input type="file" id="upload-backup-file" accept=".zip">
-                <small>Upload a ZIP file containing a valid Huntarr backup to restore from</small>
-            </div>
-
-            <div class="form-group" id="upload-confirmation-group" style="display: none;">
-                <label for="upload-confirmation">
-                    Type "UPLOAD" to confirm (this will overwrite current data)
-                </label>
-                <input type="text" id="upload-confirmation" placeholder="Type UPLOAD to confirm"
-                    style="border: 2px solid #e74c3c;">
-                <div class="warning-box">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Warning:</strong> This action will permanently overwrite your current database with the
-                    uploaded backup.
-                    All current data will be lost. Make sure you have a recent backup before proceeding.
-                </div>
-            </div>
-
-            <div class="form-group" id="upload-action-group" style="display: none;">
-                <button type="button" id="upload-backup-btn" class="action-btn danger-btn" disabled>
-                    <i class="fas fa-exclamation-triangle"></i> Upload and Restore Backup
-                </button>
-            </div>
-        </div>
-
-        <!-- Destructive Actions -->
-        <div class="settings-group danger-zone">
-            <h3><i class="fas fa-trash-alt"></i> Danger Zone</h3>
-
-            <div class="form-group">
-                <label>Delete Current Database</label>
-                <p class="danger-description">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    This will permanently delete your current database. Use this for testing or complete reset purposes
-                    only.
-                </p>
-
-                <div id="delete-confirmation-group">
-                    <label for="delete-confirmation">
-                        Type "huntarr" to enable deletion
+            <div class="br-card-body">
+                <div class="br-field">
+                    <label for="backup-frequency">
+                        <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#backup-frequency"
+                            class="br-info-link" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>
+                        Backup Frequency (Days)
                     </label>
-                    <input type="text" id="delete-confirmation" placeholder="Type huntarr to confirm"
-                        style="border: 2px solid #e74c3c;">
+                    <input type="number" id="backup-frequency" min="1" max="30" value="3"
+                        placeholder="Enter number of days between backups">
+                    <span class="br-hint">How often Huntarr should automatically create database backups (default: 3 days)</span>
                 </div>
 
-                <div id="delete-action-group" style="display: none;">
-                    <button type="button" id="delete-database-btn" class="action-btn danger-btn" disabled>
-                        <i class="fas fa-trash-alt"></i> Delete Database
-                    </button>
-                    <div class="warning-box">
-                        <i class="fas fa-skull-crossbones"></i>
-                        <strong>FINAL WARNING:</strong> This action cannot be undone. Your entire Huntarr database will
-                        be permanently deleted.
+                <div class="br-field">
+                    <label for="backup-retention">
+                        <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#backup-retention"
+                            class="br-info-link" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>
+                        Backup Retention Count
+                    </label>
+                    <input type="number" id="backup-retention" min="1" max="10" value="3"
+                        placeholder="Number of backups to keep">
+                    <span class="br-hint">Number of backup copies to keep. Older backups are automatically deleted (default: 3)</span>
+                </div>
+
+                <div class="br-field">
+                    <label>Next Scheduled Backup</label>
+                    <div id="next-backup-time" class="br-schedule-badge">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Backup List -->
-        <div class="settings-group">
-            <h3><i class="fas fa-list"></i> Available Backups</h3>
+        <!-- Manual Backup -->
+        <div class="br-card">
+            <div class="br-card-header">
+                <div class="br-card-icon br-icon-green">
+                    <i class="fas fa-save"></i>
+                </div>
+                <h3>Manual Backup</h3>
+            </div>
+            <div class="br-card-body">
+                <p class="br-description">Create an immediate backup of all databases.</p>
+                <button type="button" id="create-backup-btn" class="br-btn br-btn-primary">
+                    <i class="fas fa-plus-circle"></i> Create Manual Backup
+                </button>
 
-            <div id="backup-list-container">
-                <div class="backup-list-loading">
-                    <i class="fas fa-spinner fa-spin"></i> Loading backup list...
+                <div id="backup-progress" class="br-progress-wrap" style="display: none;">
+                    <div class="br-progress-track">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">Creating backup...</div>
                 </div>
             </div>
         </div>
+
+        <!-- Two-column row for Restore + Download -->
+        <div class="br-row">
+            <!-- Restore Database -->
+            <div class="br-card">
+                <div class="br-card-header">
+                    <div class="br-card-icon br-icon-amber">
+                        <i class="fas fa-undo-alt"></i>
+                    </div>
+                    <h3>Restore Database</h3>
+                </div>
+                <div class="br-card-body">
+                    <div class="br-field">
+                        <label for="restore-backup-select">
+                            <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#restore-database"
+                                class="br-info-link" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>
+                            Select Backup to Restore
+                        </label>
+                        <select id="restore-backup-select">
+                            <option value="">Loading available backups...</option>
+                        </select>
+                        <span class="br-hint">This will overwrite your current database</span>
+                    </div>
+
+                    <div class="br-field" id="restore-confirmation-group" style="display: none;">
+                        <label for="restore-confirmation">
+                            Type "RESTORE" to confirm
+                        </label>
+                        <input type="text" id="restore-confirmation" class="br-input-danger"
+                            placeholder="Type RESTORE to confirm">
+                        <div class="br-warning-box">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div>
+                                <strong>Warning:</strong> This will permanently overwrite your current database.
+                                All current data will be lost.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="restore-action-group" style="display: none;">
+                        <button type="button" id="restore-backup-btn" class="br-btn br-btn-danger" disabled>
+                            <i class="fas fa-undo-alt"></i> Restore Database
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Backup -->
+            <div class="br-card">
+                <div class="br-card-header">
+                    <div class="br-card-icon br-icon-purple">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <h3>Download Backup</h3>
+                </div>
+                <div class="br-card-body">
+                    <div class="br-field">
+                        <label for="download-backup-select">
+                            <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#download-backup"
+                                class="br-info-link" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>
+                            Select Backup to Download
+                        </label>
+                        <select id="download-backup-select">
+                            <option value="">Loading available backups...</option>
+                        </select>
+                        <span class="br-hint">Download a backup as a ZIP file</span>
+                    </div>
+
+                    <button type="button" id="download-backup-btn" class="br-btn br-btn-secondary" disabled>
+                        <i class="fas fa-file-download"></i> Download Backup
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Backup -->
+        <div class="br-card">
+            <div class="br-card-header">
+                <div class="br-card-icon br-icon-teal">
+                    <i class="fas fa-upload"></i>
+                </div>
+                <h3>Upload Backup</h3>
+            </div>
+            <div class="br-card-body">
+                <div class="br-field">
+                    <label for="upload-backup-file">
+                        <a href="https://plexguide.github.io/Huntarr.io/settings/backup-restore.html#upload-backup"
+                            class="br-info-link" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>
+                        Select Backup File (ZIP)
+                    </label>
+                    <div class="br-file-upload">
+                        <input type="file" id="upload-backup-file" accept=".zip">
+                        <div class="br-file-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Choose a ZIP backup file or drag and drop</span>
+                        </div>
+                    </div>
+                    <span class="br-hint">Upload a ZIP file containing a valid Huntarr backup</span>
+                </div>
+
+                <div class="br-field" id="upload-confirmation-group" style="display: none;">
+                    <label for="upload-confirmation">
+                        Type "UPLOAD" to confirm
+                    </label>
+                    <input type="text" id="upload-confirmation" class="br-input-danger"
+                        placeholder="Type UPLOAD to confirm">
+                    <div class="br-warning-box">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <strong>Warning:</strong> This will permanently overwrite your current database.
+                            All current data will be lost.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="upload-action-group" style="display: none;">
+                    <button type="button" id="upload-backup-btn" class="br-btn br-btn-danger" disabled>
+                        <i class="fas fa-upload"></i> Upload and Restore Backup
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="br-card br-card-danger">
+            <div class="br-card-header">
+                <div class="br-card-icon br-icon-red">
+                    <i class="fas fa-skull-crossbones"></i>
+                </div>
+                <h3>Danger Zone</h3>
+            </div>
+            <div class="br-card-body">
+                <p class="br-danger-description">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Permanently delete your current database. Use this for testing or a complete reset only.
+                    This action <strong>cannot be undone</strong>.
+                </p>
+
+                <div class="br-field">
+                    <label for="delete-confirmation">
+                        Type "huntarr" to enable deletion
+                    </label>
+                    <input type="text" id="delete-confirmation" class="br-input-danger"
+                        placeholder="Type huntarr to confirm">
+                </div>
+
+                <div id="delete-action-group" style="display: none;">
+                    <button type="button" id="delete-database-btn" class="br-btn br-btn-danger-solid" disabled>
+                        <i class="fas fa-trash-alt"></i> Delete Database
+                    </button>
+                    <div class="br-warning-box br-warning-critical">
+                        <i class="fas fa-skull-crossbones"></i>
+                        <div>
+                            <strong>FINAL WARNING:</strong> Your entire Huntarr database will be permanently deleted.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Backups List -->
+        <div class="br-card">
+            <div class="br-card-header">
+                <div class="br-card-icon br-icon-slate">
+                    <i class="fas fa-th-list"></i>
+                </div>
+                <h3>Available Backups</h3>
+            </div>
+            <div class="br-card-body">
+                <div id="backup-list-container">
+                    <div class="br-list-empty">
+                        <i class="fas fa-spinner fa-spin"></i> Loading backup list...
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
-
-<style>
-    .backup-restore-container {
-        max-width: 800px;
-        margin: 0 auto;
-    }
-
-    .settings-group {
-        background: rgba(15, 23, 42, 0.4);
-        border: 1px solid rgba(148, 163, 184, 0.08);
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 16px;
-    }
-
-    .settings-group h3 {
-        color: #f1f5f9;
-        margin: 0 0 16px 0;
-        padding: 0 0 12px 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-        background: none;
-        box-shadow: none;
-        text-shadow: none;
-    }
-
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 500;
-        color: var(--text-primary);
-    }
-
-    .form-group input,
-    .form-group select {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        background: var(--bg-primary);
-        color: var(--text-primary);
-        font-size: 14px;
-    }
-
-    .form-group small {
-        display: block;
-        margin-top: 5px;
-        color: var(--text-secondary);
-        font-size: 12px;
-    }
-
-    .action-btn {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 6px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s ease;
-    }
-
-    .backup-btn {
-        background: #10b981;
-        color: white;
-    }
-
-    .backup-btn:hover {
-        background: #059669;
-    }
-
-    .danger-btn {
-        background: #e74c3c;
-        color: white;
-    }
-
-    .danger-btn:hover:not(:disabled) {
-        background: #c0392b;
-    }
-
-    .danger-btn:disabled {
-        background: #6b7280;
-        color: #9ca3af;
-        cursor: not-allowed;
-    }
-
-    .danger-zone {
-        border-color: #e74c3c;
-        background: rgba(231, 76, 60, 0.05);
-    }
-
-    .danger-zone h3 {
-        color: #e74c3c;
-    }
-
-    .danger-description {
-        color: #e74c3c;
-        font-weight: 500;
-        margin-bottom: 15px;
-    }
-
-    .warning-box {
-        background: rgba(231, 76, 60, 0.1);
-        border: 1px solid #e74c3c;
-        border-radius: 4px;
-        padding: 12px;
-        margin-top: 10px;
-        color: #e74c3c;
-        font-size: 14px;
-    }
-
-    .info-display {
-        background: var(--bg-primary);
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        padding: 10px;
-        color: var(--text-secondary);
-    }
-
-    .progress-container {
-        margin-top: 15px;
-    }
-
-    .progress-bar {
-        width: 100%;
-        height: 8px;
-        background: var(--bg-primary);
-        border-radius: 4px;
-        overflow: hidden;
-        margin-bottom: 8px;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: #10b981;
-        width: 0%;
-        transition: width 0.3s ease;
-    }
-
-    .progress-text {
-        font-size: 14px;
-        color: var(--text-secondary);
-        text-align: center;
-    }
-
-    .backup-list-loading {
-        text-align: center;
-        padding: 20px;
-        color: var(--text-secondary);
-    }
-
-    .backup-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        margin-bottom: 8px;
-        background: var(--bg-primary);
-    }
-
-    .backup-info {
-        flex: 1;
-    }
-
-    .backup-name {
-        font-weight: 500;
-        color: var(--text-primary);
-    }
-
-    .backup-details {
-        font-size: 12px;
-        color: var(--text-secondary);
-        margin-top: 4px;
-    }
-
-    .backup-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .backup-actions button {
-        padding: 6px 12px;
-        border: none;
-        border-radius: 4px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .delete-backup-btn {
-        background: #e74c3c;
-        color: white;
-    }
-
-    .delete-backup-btn:hover {
-        background: #c0392b;
-    }
-
-    .info-icon {
-        color: #3b82f6;
-        text-decoration: none;
-        margin-right: 5px;
-        font-weight: bold;
-    }
-
-    .info-icon:hover {
-        color: #1d4ed8;
-    }
-
-    /* Mobile responsiveness */
-    @media (max-width: 768px) {
-        .backup-restore-container {
-            padding: 0 10px;
-        }
-
-        .backup-item {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .backup-actions {
-            width: 100%;
-            justify-content: flex-end;
-        }
-    }
-</style>
 </section>
+
+<link rel="stylesheet" href="./static/css/backup-restore.css">

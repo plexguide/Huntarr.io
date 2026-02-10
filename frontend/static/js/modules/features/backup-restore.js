@@ -396,14 +396,6 @@ const BackupRestore = {
         
         const isValid = confirmationInput.value.toUpperCase() === 'RESTORE';
         restoreBtn.disabled = !isValid;
-        
-        if (isValid) {
-            restoreBtn.style.background = '#e74c3c';
-            restoreBtn.style.cursor = 'pointer';
-        } else {
-            restoreBtn.style.background = '#6b7280';
-            restoreBtn.style.cursor = 'not-allowed';
-        }
     },
 
     restoreBackup: function() {
@@ -429,37 +421,35 @@ const BackupRestore = {
                 restoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Restoring...';
             }
             fetch('./api/backup/restore', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                backup_id: backupId
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    backup_id: backupId
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                this.showSuccess('Database restored successfully! Reloading page...');
-                
-                // Reload the page after a short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-            } else {
-                throw new Error(data.error || 'Failed to restore backup');
-            }
-        })
-        .catch(error => {
-            console.error('[BackupRestore] Error restoring backup:', error);
-            this.showError('Failed to restore backup: ' + error.message);
-        })
-        .finally(() => {
-            if (restoreBtn) {
-                restoreBtn.disabled = false;
-                restoreBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Restore Database';
-            }
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    self.showSuccess('Database restored successfully! Reloading in 3 seconds...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+                } else {
+                    throw new Error(data.error || 'Failed to restore backup');
+                }
+            })
+            .catch(error => {
+                console.error('[BackupRestore] Error restoring backup:', error);
+                self.showError('Failed to restore backup: ' + error.message);
+            })
+            .finally(() => {
+                if (restoreBtn) {
+                    restoreBtn.disabled = false;
+                    restoreBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Restore Database';
+                }
+            });
         };
         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
             window.HuntarrConfirm.show({ title: 'Restore Database', message: 'This will permanently overwrite your current database. Are you absolutely sure?', confirmLabel: 'Restore', onConfirm: doRestore });
@@ -481,8 +471,6 @@ const BackupRestore = {
         if (isValid) {
             actionGroup.style.display = 'block';
             deleteBtn.disabled = false;
-            deleteBtn.style.background = '#e74c3c';
-            deleteBtn.style.cursor = 'pointer';
         } else {
             actionGroup.style.display = 'none';
             deleteBtn.disabled = true;
@@ -506,34 +494,32 @@ const BackupRestore = {
                 deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
             }
             fetch('./api/backup/delete-database', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                this.showSuccess('Database deleted successfully! Redirecting to setup...');
-                
-                // Redirect to setup after a short delay
-                setTimeout(() => {
-                    window.location.href = './setup';
-                }, 2000);
-            } else {
-                throw new Error(data.error || 'Failed to delete database');
-            }
-        })
-        .catch(error => {
-            console.error('[BackupRestore] Error deleting database:', error);
-            this.showError('Failed to delete database: ' + error.message);
-        })
-        .finally(() => {
-            if (deleteBtn) {
-                deleteBtn.disabled = false;
-                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Database';
-            }
-        });
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    self.showSuccess('Database deleted successfully! Redirecting to setup...');
+                    setTimeout(() => {
+                        window.location.href = './setup';
+                    }, 3000);
+                } else {
+                    throw new Error(data.error || 'Failed to delete database');
+                }
+            })
+            .catch(error => {
+                console.error('[BackupRestore] Error deleting database:', error);
+                self.showError('Failed to delete database: ' + error.message);
+            })
+            .finally(() => {
+                if (deleteBtn) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Database';
+                }
+            });
         };
         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
             window.HuntarrConfirm.show({ title: 'Delete Database', message: 'This will PERMANENTLY DELETE your entire Huntarr database. This action CANNOT be undone. Are you absolutely sure?', confirmLabel: 'Delete', onConfirm: doDelete });
@@ -607,68 +593,19 @@ const BackupRestore = {
     },
 
     showSuccess: function(message) {
-        this.showNotification(message, 'success');
+        if (window.huntarrUI && window.huntarrUI.showNotification) {
+            window.huntarrUI.showNotification(message, 'success');
+        } else {
+            alert(message);
+        }
     },
 
     showError: function(message) {
-        this.showNotification(message, 'error');
-    },
-
-    showNotification: function(message, type) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `backup-notification ${type}`;
-        notification.innerHTML = `
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-            <span>${message}</span>
-            <button onclick="this.parentElement.remove()">×</button>
-        `;
-
-        // Add styles
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? '#10b981' : '#e74c3c'};
-            color: white;
-            padding: 12px 16px;
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            max-width: 400px;
-            animation: slideIn 0.3s ease;
-        `;
-
-        // Add animation styles
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            .backup-notification button {
-                background: none;
-                border: none;
-                color: white;
-                font-size: 18px;
-                cursor: pointer;
-                padding: 0;
-                margin-left: auto;
-            }
-        `;
-        document.head.appendChild(style);
-
-        document.body.appendChild(notification);
-
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.remove();
-            }
-        }, 5000);
+        if (window.huntarrUI && window.huntarrUI.showNotification) {
+            window.huntarrUI.showNotification(message, 'error');
+        } else {
+            alert(message);
+        }
     },
 
     // Download backup functions
@@ -738,14 +675,6 @@ const BackupRestore = {
         
         const isValid = confirmationInput.value.toUpperCase() === 'UPLOAD';
         uploadBtn.disabled = !isValid;
-        
-        if (isValid) {
-            uploadBtn.style.background = '#e74c3c';
-            uploadBtn.style.cursor = 'pointer';
-        } else {
-            uploadBtn.style.background = '#6b7280';
-            uploadBtn.style.cursor = 'not-allowed';
-        }
     },
 
     uploadBackup: function() {
@@ -778,30 +707,30 @@ const BackupRestore = {
             const formData = new FormData();
             formData.append('backup_file', file);
             fetch('./api/backup/upload', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                self.showSuccess('Backup uploaded and restored successfully! Reloading page...');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-            } else {
-                throw new Error(data.error || 'Failed to upload backup');
-            }
-        })
-        .catch(error => {
-            console.error('[BackupRestore] Error uploading backup:', error);
-            self.showError('Failed to upload backup: ' + error.message);
-        })
-        .finally(() => {
-            if (uploadBtn) {
-                uploadBtn.disabled = false;
-                uploadBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Upload and Restore Backup';
-            }
-        });
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    self.showSuccess('Backup uploaded and restored successfully! Reloading in 3 seconds...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+                } else {
+                    throw new Error(data.error || 'Failed to upload backup');
+                }
+            })
+            .catch(error => {
+                console.error('[BackupRestore] Error uploading backup:', error);
+                self.showError('Failed to upload backup: ' + error.message);
+            })
+            .finally(() => {
+                if (uploadBtn) {
+                    uploadBtn.disabled = false;
+                    uploadBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Upload and Restore Backup';
+                }
+            });
         };
         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
             window.HuntarrConfirm.show({ title: 'Upload and Restore', message: 'This will permanently overwrite your current database with the uploaded backup. Are you absolutely sure?', confirmLabel: 'Upload', onConfirm: doUpload });

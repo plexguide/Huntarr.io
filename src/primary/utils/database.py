@@ -3807,6 +3807,17 @@ def get_database() -> HuntarrDatabase:
         _database_instance = HuntarrDatabase()
     return _database_instance
 
+def _reset_database_instances():
+    """Reset global database singletons.
+    
+    Called after database deletion so the next get_database() call
+    creates a fresh instance that will properly initialize a new database.
+    """
+    global _database_instance, _logs_database_instance
+    _database_instance = None
+    _logs_database_instance = None
+    logger.info("Database singleton instances reset")
+
 # Logs Database Functions (consolidated from logs_database.py)
 def get_logs_database() -> LogsDatabase:
     """Get the logs database instance for logs operations"""

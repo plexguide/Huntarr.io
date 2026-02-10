@@ -359,9 +359,13 @@ class BackupManager:
                     if hasattr(self.db, 'close_connections'):
                         self.db.close_connections()
                     
-                    # Replace current database with backup
+                    # Replace current database with backup (also clean WAL/SHM)
                     if current_db_path.exists():
                         current_db_path.unlink()
+                    for suffix in ["-wal", "-shm"]:
+                        wal_file = Path(str(current_db_path) + suffix)
+                        if wal_file.exists():
+                            wal_file.unlink()
                     
                     shutil.copy2(backup_db_path, current_db_path)
                     
@@ -371,6 +375,14 @@ class BackupManager:
                         logger.info(f"Restored database: {db_name}")
                     else:
                         raise Exception(f"Restored database {db_name} failed integrity check")
+            
+            # Reset database singletons so they pick up the restored data
+            try:
+                from src.primary.utils.database import _reset_database_instances
+                _reset_database_instances()
+                logger.info("Database singletons reset after restore")
+            except Exception as reset_error:
+                logger.warning(f"Could not reset database singletons after restore: {reset_error}")
             
             logger.info(f"Backup restored successfully: {backup_id}")
             return {
@@ -469,7 +481,11 @@ class BackupManager:
             raise
     
     def delete_database(self):
-        """Delete the current database (destructive operation)"""
+        """Delete the current database (destructive operation).
+        
+        Also cleans up WAL/SHM files and resets the global database singleton
+        so the app properly detects 'no user' state and redirects to setup.
+        """
         try:
             databases = self._get_all_database_paths()
             deleted_databases = []
@@ -480,6 +496,21 @@ class BackupManager:
                     db_file.unlink()
                     deleted_databases.append(db_name)
                     logger.warning(f"Deleted database: {db_name}")
+                
+                # Also delete WAL and SHM files to prevent stale data on next startup
+                for suffix in ["-wal", "-shm"]:
+                    wal_file = Path(str(db_path) + suffix)
+                    if wal_file.exists():
+                        wal_file.unlink()
+                        logger.warning(f"Deleted {db_name}{suffix}")
+            
+            # Reset global database singletons so the app reinitializes cleanly
+            try:
+                from src.primary.utils.database import _reset_database_instances
+                _reset_database_instances()
+                logger.info("Database singletons reset after deletion")
+            except Exception as reset_error:
+                logger.warning(f"Could not reset database singletons: {reset_error}")
             
             logger.warning(f"Database deletion completed: {deleted_databases}")
             return deleted_databases
