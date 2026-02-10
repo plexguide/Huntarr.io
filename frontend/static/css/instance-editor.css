@@ -420,25 +420,25 @@
 
 /* --- Toggle row: label + toggle on the same line --- */
 #instanceEditorSection .editor-setting-item.flex-row {
-    display: flex !important;
-    flex-direction: row !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center !important;
-    gap: 16px !important;
-    justify-content: flex-start !important;
+    column-gap: 16px !important;
     width: 100%;
 }
 
 /* Text label fills remaining space; toggle stays at natural width */
 #instanceEditorSection .editor-setting-item.flex-row > label:not(.toggle-switch) {
-    flex: 1 1 0% !important;
     min-width: 0;
     margin: 0 !important;
+    overflow-wrap: anywhere;
 }
 
 /* Toggle as a flex child — don't grow, don't shrink */
 #instanceEditorSection .toggle-switch {
     flex: 0 0 44px !important;
     margin: 0 !important;
+    justify-self: end;
 }
 
 /* Instance editor uses indigo checked colour */
@@ -548,6 +548,20 @@
     padding: 18px;
     background: rgba(239, 68, 68, 0.04);
     margin-top: 16px;
+}
+
+/* Sub-boxes for tag setting groups (missing/upgrade/shows) */
+#instanceEditorSection .tag-sub-box,
+#movieHuntInstanceEditorSection .tag-sub-box {
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 12px;
+    padding: 14px 14px 10px;
+    background: rgba(15, 23, 42, 0.22);
+    margin-bottom: 24px !important;
+}
+
+#instanceEditorSection .tag-sub-box .editor-help-text {
+    margin-bottom: 0 !important;
 }
 
 /* Indexer category pills */

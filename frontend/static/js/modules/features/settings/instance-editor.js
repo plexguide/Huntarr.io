@@ -537,7 +537,7 @@
                         <div id="connection-status-container"></div>
                     </div>
                     
-                    <div class="editor-field-group">
+                    <div class="editor-field-group tag-sub-box">
                         <div class="editor-setting-item">
                             <label style="display: flex; align-items: center;">
                                 <span>Enable Status </span>
@@ -874,7 +874,7 @@
                 <div class="editor-section">
                     <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-tags"><i class="fas fa-tags"></i></span>Tags</span></div>
                     
-                    <div class="editor-field-group">
+                    <div class="editor-field-group tag-sub-box">
                         <div class="editor-setting-item flex-row">
                             <label>Tag missing items</label>
                             <label class="toggle-switch">
@@ -889,25 +889,23 @@
                         <p class="editor-help-text">Tag added to items when they're found by a missing search (max 25 characters)</p>
                     </div>
                     
-                    <div class="editor-upgrade-items-tag-section" style="display: ${(['sonarr','radarr','lidarr','readarr'].includes(appType) && (safeInstance.upgrade_selection_method || 'cutoff') === 'tags') ? 'none' : 'block'};">
-                        <div class="editor-field-group">
-                            <div class="editor-setting-item flex-row">
-                                <label>Tag upgrade items</label>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="editor-tag-enable-upgrade" ${safeInstance.tag_enable_upgrade ? 'checked' : ''}>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="editor-setting-item" style="margin-top: 6px;">
-                                <label>Upgrade Items Tag</label>
-                                <input type="text" id="editor-tag-upgrade" value="${safeInstance.custom_tags.upgrade || 'huntarr-upgrade'}" placeholder="huntarr-upgrade">
-                            </div>
-                            <p class="editor-help-text">Tag added to items when they're upgraded in cutoff mode (max 25 characters). Not used when Upgrade Selection Method is Tags.</p>
+                    <div class="editor-upgrade-items-tag-section editor-field-group tag-sub-box" style="display: ${(['sonarr','radarr','lidarr','readarr'].includes(appType) && (safeInstance.upgrade_selection_method || 'cutoff') === 'tags') ? 'none' : 'block'};">
+                        <div class="editor-setting-item flex-row">
+                            <label>Tag upgrade items</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="editor-tag-enable-upgrade" ${safeInstance.tag_enable_upgrade ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
+                        <div class="editor-setting-item" style="margin-top: 6px;">
+                            <label>Upgrade Items Tag</label>
+                            <input type="text" id="editor-tag-upgrade" value="${safeInstance.custom_tags.upgrade || 'huntarr-upgrade'}" placeholder="huntarr-upgrade">
+                        </div>
+                        <p class="editor-help-text">Tag added to items when they're upgraded in cutoff mode (max 25 characters). Not used when Upgrade Selection Method is Tags.</p>
                     </div>
                     
                     ${appType === 'sonarr' ? `
-                    <div class="editor-field-group">
+                    <div class="editor-field-group tag-sub-box">
                         <div class="editor-setting-item flex-row">
                             <label>Tag shows missing</label>
                             <label class="toggle-switch">
