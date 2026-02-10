@@ -1,63 +1,54 @@
 ---
-description: Use custom modals for confirmations/additions; use toasts instead of alert(). No native confirm/alert/prompt for user-facing flows.
+description: NEVER use native confirm/alert/prompt. Use HuntarrConfirm modals and toast notifications instead.
 globs: ["**/*.js", "**/*.html"]
 alwaysApply: true
 ---
-# Confirm Modals & Notifications Rule (No Old-School Popups)
+# No Legacy Popups — EVER
 
-## Two Patterns: Modals vs Toasts
+**NEVER use `confirm()`, `alert()`, or `prompt()` in any new or modified code.** These native browser dialogs are banned. The entire codebase has been migrated off them. Do not reintroduce them.
 
-| User interaction | Old (avoid) | New (use) |
-|------------------|-------------|-----------|
-| **User must choose** (OK/Cancel, Delete/Confirm, or enter a value) | `confirm()`, `prompt()` | **Custom modal** (HuntarrConfirm or section-specific add/rename modal) |
-| **One-way message** (error, success, info — no choice) | `alert()` | **Toast notification** via `window.huntarrUI.showNotification(msg, type)` with `alert()` fallback |
+## What to Use Instead
 
-- **Modals** = user must click something (Cancel, Delete, Save, etc.). These are **not** toasts.
-- **Toasts** = auto-dismissing notifications. Use for success/error/info that replaced `alert()`.
+| Need | Banned | Use instead |
+|------|--------|-------------|
+| User must choose (delete, reset, leave, etc.) | `confirm()` | `window.HuntarrConfirm.show()` |
+| User must enter a value | `prompt()` | Custom modal with input field |
+| Show a message (error, success, info) | `alert()` | `window.huntarrUI.showNotification(msg, type)` |
 
 ---
 
-## 1. When the User Must Choose: Use Modals
+## HuntarrConfirm — Full API
 
-### Global Confirm Modal — Full API
-
-`HuntarrConfirm.show()` supports **six options**. Handlers are rebound fresh on every call (no stale closures).
+Handlers are rebound fresh on every `show()` call (no stale closures). A `handled` guard prevents double-fire. `closeModal()` runs automatically before the callback.
 
 ```javascript
 window.HuntarrConfirm.show({
     title:        'Modal Heading',        // required — modal heading
     message:      'Body text here.',       // required — body text
     confirmLabel: 'OK',                    // primary button (right, purple)
-    cancelLabel:  'Cancel',                // secondary button (left, grey) — optional, defaults to "Cancel"
+    cancelLabel:  'Cancel',                // secondary button (left, grey) — defaults to "Cancel"
     onConfirm:    function() { … },        // called when user clicks the confirm button
     onCancel:     function() { … }         // called when user clicks cancel, X, backdrop, or Escape
 });
 ```
 
-- A `handled` guard inside the modal prevents double-fire.
-- `closeModal()` runs automatically before the callback fires — no manual close needed.
-- **Fallback:** If `HuntarrConfirm` is not available, fall back to native `confirm()` in an `else` branch.
+---
 
-### Pattern A — Destructive Actions (Delete / Clear / Reset)
+## Pattern A — Destructive Actions (Delete / Clear / Reset)
 
-Use for: delete confirmations, clear/reset actions, restore/upload backup, unlink Plex, hide/unhide media, etc.
+Use for: delete confirmations, clear/reset actions, restore/upload backup, unlink accounts, hide/unhide media, etc.
 
 ```javascript
 function doDelete() { /* fetch DELETE, then refresh */ }
-if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
-    window.HuntarrConfirm.show({
-        title: 'Delete Something',
-        message: 'Are you sure? This cannot be undone.',
-        confirmLabel: 'Delete',
-        onConfirm: doDelete
-    });
-} else {
-    if (!confirm('Are you sure? This cannot be undone.')) return;
-    doDelete();
-}
+window.HuntarrConfirm.show({
+    title: 'Delete Something',
+    message: 'Are you sure? This cannot be undone.',
+    confirmLabel: 'Delete',
+    onConfirm: doDelete
+});
 ```
 
-### Pattern B — Unsaved Changes (Leave / Go Back)
+## Pattern B — Unsaved Changes (Leave / Go Back)
 
 Use for: navigating away from any editor with dirty state (instance editor, profile editor, movie management, etc.).
 
@@ -65,96 +56,72 @@ Use for: navigating away from any editor with dirty state (instance editor, prof
 - **Message** warns the user their changes will be lost.
 - **"Go Back"** (confirm, right, purple) — closes the modal, keeps the user on the editor so they can save manually.
 - **"Leave"** (cancel, left, grey) — discards changes and navigates away.
-- The X button, backdrop click, and Escape key all behave the same as "Go Back" (stay on page).
+- X button, backdrop click, and Escape all behave the same as "Go Back" (stay on page).
 
 ```javascript
-if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
-    window.HuntarrConfirm.show({
-        title: 'Unsaved Changes',
-        message: 'You have unsaved changes that will be lost if you leave.',
-        confirmLabel: 'Go Back',
-        cancelLabel: 'Leave',
-        onConfirm: function() {
-            // Stay on the editor — modal closes, user can save manually
-        },
-        onCancel: function() {
-            // Navigate away / discard
-            navigateAway();
-        }
-    });
-} else {
-    if (!confirm('You have unsaved changes that will be lost. Leave anyway?')) return;
-    navigateAway();
-}
+window.HuntarrConfirm.show({
+    title: 'Unsaved Changes',
+    message: 'You have unsaved changes that will be lost if you leave.',
+    confirmLabel: 'Go Back',
+    cancelLabel: 'Leave',
+    onConfirm: function() {
+        // Stay on the editor — modal closes, user can save manually
+    },
+    onCancel: function() {
+        // Navigate away / discard changes
+        navigateAway();
+    }
+});
 ```
 
-**DO NOT** use `confirm('Save before leaving?')` with Save/Discard buttons. The correct flow is: warn → Go Back (stay) or Leave (discard). Saving is done via the existing Save button on the editor itself.
+**DO NOT** offer a "Save" button in the leave modal. The user saves via the editor's own Save button, not through the unsaved-changes modal.
 
-### Pattern C — Add / Edit Flows (Custom Modals, Not prompt())
+## Pattern C — Add / Edit Flows (Custom Modals)
 
 - Use **custom modal popups** (backdrop, blur, purple/blue) for:
   - Adding items (Add Instance, Add Profile, Add Remote Path Mapping, Add Client, Add Indexer).
-  - Editing/renaming (e.g. Rename Instance) — use a modal with an input, not `prompt()`.
-- **DO NOT** use `window.prompt()` or `window.confirm()` for these flows.
+  - Editing/renaming (e.g. Rename Instance) — modal with an input field.
 - **Pattern:** Modal in section template or shared component, move to `document.body` when opening, body class for blur, same purple/blue styles as Add Instance / Remote Mapping.
 
----
+## Toasts — Success / Error / Info Messages
 
-## 2. When It's Just a Message: Use Toasts (Not alert)
+For one-way messages that don't require a user decision, use the toast notification system:
 
-- For **success, error, or info** messages that do **not** require the user to click OK, use the **toast** system so the message auto-dismisses.
-- **DO NOT** use `alert()` when the app notification system is available.
-
-**Pattern (always prefer toast, fallback to alert):**
 ```javascript
-if (window.huntarrUI && window.huntarrUI.showNotification) {
-    window.huntarrUI.showNotification(message, 'error');   // or 'success' / 'info'
-} else {
-    alert(message);
-}
+window.huntarrUI.showNotification('Settings saved successfully.', 'success');
+window.huntarrUI.showNotification('Failed to save settings.', 'error');
+window.huntarrUI.showNotification('Connection test in progress...', 'info');
 ```
 
-- Use `'error'` for validation/API failures, `'success'` for success messages, `'info'` for neutral info.
-- This applies to: validation errors ("Please select a host"), save/delete failures, "State reset successfully", 2FA errors, connection errors, etc.
+- `'error'` — validation failures, API errors, connection errors
+- `'success'` — save/delete/reset confirmations
+- `'info'` — neutral informational messages
 
 ---
 
-## Anti-Patterns
+## Absolute Rules
 
-- **DON'T** use `confirm('...')` for delete/clear/reset/destructive actions — use `HuntarrConfirm.show()` (Pattern A).
-- **DON'T** use `confirm('...')` for unsaved-changes — use `HuntarrConfirm.show()` with Go Back / Leave (Pattern B).
-- **DON'T** use `confirm('Save before leaving?')` with a Save action — the user saves via the editor's own Save button, not through the leave-confirmation modal.
-- **DON'T** use `prompt('...')` for add/rename/name inputs — use a custom modal with an input field (Pattern C).
-- **DON'T** use `alert('...')` alone for success/error/info — use `showNotification(msg, type)` with `alert()` fallback (toast).
+1. **NEVER** write `confirm(...)`, `alert(...)`, or `prompt(...)` in new code — not even as a fallback.
+2. **NEVER** use `confirm('Save before leaving?')` — the unsaved-changes flow is Go Back / Leave only (Pattern B).
+3. **NEVER** use `prompt(...)` for user input — use a custom modal with an input field (Pattern C).
+4. **NEVER** use `alert(...)` for messages — use `showNotification()` (toast).
+5. If you see existing legacy fallback code (`else { confirm(...) }` or `else { alert(...) }`), leave it alone — but **never add new ones**.
 
 ---
 
 ## Files to Know
 
 - **Global confirm modal:** `frontend/static/js/modules/core/confirm-modal.js`, `frontend/templates/components/confirm_modal.html`, `frontend/static/css/confirm-modal.css`
-- **Section modals (add/rename/delete):** e.g. Instance Management in `movie_hunt_instance_management_section.html` + `movie-hunt-instance-management.js`
-- **Toasts:** `window.huntarrUI.showNotification(message, 'error'|'success'|'info')` (do not modify the toast component for this rule; use it instead of alert)
+- **Section modals (add/rename/delete):** e.g. `movie_hunt_instance_management_section.html` + `movie-hunt-instance-management.js`
+- **Toasts:** `window.huntarrUI.showNotification(message, 'error'|'success'|'info')`
 
 ---
 
-## Detecting Violations (Before Commits or New Features)
-
-Run these from the project root to find remaining native dialogs:
+## Detecting Violations
 
 ```bash
-# Confirm: should only appear in fallbacks (else branch after HuntarrConfirm check)
-grep -rn "confirm(" frontend/ --include="*.js" --include="*.html" | grep -v "HuntarrConfirm" | grep -v "// fallback" | grep -v "else {"
-
-# Prompt: should be zero (all replaced with modals)
+# These should return ZERO results for any new code:
+grep -rn "confirm(" frontend/ --include="*.js" --include="*.html" | grep -v "HuntarrConfirm" | grep -v "else"
 grep -rn "prompt(" frontend/ --include="*.js"
-
-# Alert: should only appear in "else alert(...)" fallback after showNotification check
-grep -rn "alert(" frontend/ --include="*.js"
+grep -rn "alert(" frontend/ --include="*.js" | grep -v "else"
 ```
-
-**What to replace:**
-- Any **new** `confirm(...)` for user choices → `HuntarrConfirm.show()` (Pattern A or B).
-- Any **new** `prompt(...)` for user input → custom modal with input (Pattern C).
-- Any **new** `alert(...)` used alone → `showNotification(..., 'error'|'success'|'info')` with `else alert(...)` fallback.
-
-**The only acceptable bare `confirm()`** is inside an `else` fallback branch after checking `window.HuntarrConfirm`. Session-expired flows in `user.js` may also use native `confirm()` until given a custom modal.
