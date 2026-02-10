@@ -31,7 +31,7 @@ docs/
 ├── nzb-hunt/
 │   └── index.html              # NZB Hunt overview
 ├── requestarr/
-│   └── index.html              # Requestarr overview
+│   └── index.html              # Requests overview
 ├── settings/
 │   ├── index.html              # Main settings
 │   ├── scheduling.html

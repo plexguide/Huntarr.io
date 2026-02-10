@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Requestarr - Huntarr Docs</title>
+    <title>Requests - Huntarr Docs</title>
     <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
@@ -80,7 +80,7 @@
             <div class="nav-group">
                 <div class="nav-group-title">Requests</div>
                 <div class="nav-group-items">
-                    <a href="../requestarr/index.html" class="active"><i class="fas fa-hand-paper"></i> Requestarr</a>
+                    <a href="../requestarr/index.html" class="active"><i class="fas fa-hand-paper"></i> Requests</a>
                 </div>
             </div>
 
@@ -131,13 +131,17 @@
     <main class="docs-main">
         <div class="docs-content">
 
-            <h1>Requestarr</h1>
-            <p class="page-subtitle">Let friends and family discover and request media through Huntarr.</p>
+            <h1>Requests</h1>
+            <p class="page-subtitle">Discover and request media for your library — for the person running Huntarr, not for other users.</p>
 
-            <h2>What is Requestarr?</h2>
+            <div class="alert alert-info">
+                <strong>Requests is for you, the person running Huntarr.</strong> It is not intended for friends, family, or other end users. Use it to browse and request movies and shows for your own library.
+            </div>
+
+            <h2>What is Requests?</h2>
             <ul>
-                <li>Requestarr is Huntarr's built-in media request system</li>
-                <li>Users can browse trending/popular media and submit requests</li>
+                <li>Requests is Huntarr's built-in media request system</li>
+                <li>You can browse trending/popular media and submit requests for your library</li>
                 <li>Requests are processed by Movie Hunt or your connected *arr apps</li>
                 <li>No separate request service needed (like Overseerr or Petio)</li>
             </ul>
@@ -153,7 +157,7 @@
 
             <h2>How It Works</h2>
             <ol>
-                <li>Users navigate to the Requestarr section</li>
+                <li>Open the Requests section in Huntarr</li>
                 <li>Browse or search for desired media</li>
                 <li>Click "Request" to submit</li>
                 <li>Huntarr processes the request:
@@ -163,11 +167,11 @@
                     </ul>
                 </li>
                 <li>Media is automatically searched and downloaded</li>
-                <li>User sees the status update in their request history</li>
+                <li>You can see the status update in your request history</li>
             </ol>
 
             <h2>Configuration</h2>
-            <p>Settings are managed in Settings &gt; Requestarr:</p>
+            <p>Settings are managed in Settings &gt; Requests:</p>
 
             <h3>Settings Table</h3>
             <table>
@@ -175,7 +179,7 @@
                     <tr><th>Setting</th><th>Description</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><strong>Enabled</strong></td><td>Turn Requestarr on/off</td></tr>
+                    <tr><td><strong>Enabled</strong></td><td>Turn Requests on/off</td></tr>
                     <tr><td><strong>Default Root Folder</strong></td><td>Where requested media is stored</td></tr>
                     <tr><td><strong>Default Quality Profile</strong></td><td>Quality profile for requested media</td></tr>
                     <tr><td><strong>Auto-Approve</strong></td><td>Automatically approve all requests (vs. manual approval)</td></tr>
@@ -185,14 +189,14 @@
 
             <h2>Tips</h2>
             <ul>
-                <li>Enable auto-approve if you trust all your users</li>
+                <li>Enable auto-approve if you want requests to be processed immediately</li>
                 <li>Set appropriate quality profiles to manage disk space</li>
-                <li>Requestarr uses TMDb for metadata — no API key needed from users</li>
+                <li>Requests uses TMDb for metadata — no API key needed</li>
                 <li>Requested items appear in Movie Hunt's library once processed</li>
             </ul>
 
             <div class="alert alert-info">
-                <strong>Requestarr currently focuses on movie requests.</strong> TV show requests route through your Sonarr instance if connected.
+                <strong>Requests currently focuses on movie requests.</strong> TV show requests route through your Sonarr instance if connected.
             </div>
 
         </div><!-- /docs-content -->
