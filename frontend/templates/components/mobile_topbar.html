@@ -3,7 +3,7 @@
 <!-- ===== MOBILE TOPBAR ===== -->
 <div id="mobile-topbar" class="mtb">
     <div class="mtb-inner">
-        <!-- Left: Logo + Hamburger -->
+        <!-- Left: Hamburger + Logo + Title -->
         <div class="mtb-left">
             <button class="mtb-hamburger" id="mobileMenuToggle" aria-label="Open menu">
                 <span></span><span></span><span></span>
@@ -22,14 +22,12 @@
             </a>
         </div>
     </div>
-    <!-- Accent line -->
     <div class="mtb-accent"></div>
 </div>
 
-<!-- ===== MOBILE DRAWER (slide-out) ===== -->
+<!-- ===== MOBILE DRAWER (slide-out, content built dynamically) ===== -->
 <div class="mdrawer-backdrop" id="mobileDrawerBackdrop"></div>
 <nav class="mdrawer" id="mobileDrawer" aria-label="Mobile navigation">
-    <!-- Drawer header -->
     <div class="mdrawer-header">
         <img src="./static/logo/32.png" alt="Huntarr" class="mdrawer-logo" width="28" height="28">
         <span class="mdrawer-brand">Huntarr</span>
@@ -37,145 +35,196 @@
             <i class="fas fa-times"></i>
         </button>
     </div>
-
-    <!-- Drawer nav items (mirroring main sidebar structure) -->
-    <div class="mdrawer-body" id="mobileDrawerBody">
-        <div class="mdrawer-group">
-            <div class="mdrawer-group-title">Core</div>
-            <a href="#home" class="mdrawer-item" data-section="home">
-                <i class="fas fa-home"></i><span>Home</span>
-            </a>
-            <a href="#requestarr" class="mdrawer-item" data-section="requestarr">
-                <i class="fas fa-plus-circle"></i><span>Requests</span>
-            </a>
-            <a href="#apps" class="mdrawer-item" data-section="apps">
-                <i class="fas fa-th-large"></i><span>Apps</span>
-            </a>
-        </div>
-
-        <div class="mdrawer-group">
-            <div class="mdrawer-group-title">System</div>
-            <a href="#hunt-manager" class="mdrawer-item" data-section="hunt-manager">
-                <i class="fas fa-crosshairs"></i><span>Hunt Manager</span>
-            </a>
-            <a href="#logs" class="mdrawer-item" data-section="logs">
-                <i class="fas fa-list-alt"></i><span>Logs</span>
-            </a>
-            <a href="#about" class="mdrawer-item" data-section="about">
-                <i class="fas fa-info-circle"></i><span>About</span>
-            </a>
-        </div>
-
-        <div class="mdrawer-group">
-            <div class="mdrawer-group-title">Settings</div>
-            <a href="#settings" class="mdrawer-item" data-section="settings">
-                <i class="fas fa-sliders-h"></i><span>Main</span>
-            </a>
-            <a href="#scheduling" class="mdrawer-item" data-section="scheduling">
-                <i class="fas fa-calendar-alt"></i><span>Scheduling</span>
-            </a>
-            <a href="#notifications" class="mdrawer-item" data-section="notifications">
-                <i class="fas fa-bell"></i><span>Notifications</span>
-            </a>
-            <a href="#backup-restore" class="mdrawer-item" data-section="backup-restore">
-                <i class="fas fa-database"></i><span>Backup / Restore</span>
-            </a>
-            <a href="#settings-logs" class="mdrawer-item" data-section="settings-logs">
-                <i class="fas fa-file-alt"></i><span>Log Settings</span>
-            </a>
-            <a href="#user" class="mdrawer-item" data-section="user">
-                <i class="fas fa-user"></i><span>User Account</span>
-            </a>
-        </div>
-
-        <div class="mdrawer-group">
-            <div class="mdrawer-group-title">Beta</div>
-            <a href="#movie-hunt-collection" class="mdrawer-item" data-section="movie-hunt-collection">
-                <i class="fas fa-folder-open"></i><span>Movie Hunt</span>
-            </a>
-            <a href="#nzb-hunt-home" class="mdrawer-item" data-section="nzb-hunt-home">
-                <i class="fas fa-download"></i><span>NZB Hunt</span>
-            </a>
-        </div>
-
-        <div class="mdrawer-group">
-            <div class="mdrawer-group-title">Movie Hunt</div>
-            <a href="#movie-hunt-collection" class="mdrawer-item" data-section="movie-hunt-collection">
-                <i class="fas fa-film"></i><span>Media Collection</span>
-            </a>
-            <a href="#movie-hunt-calendar" class="mdrawer-item" data-section="movie-hunt-calendar">
-                <i class="fas fa-calendar"></i><span>Calendar</span>
-            </a>
-            <a href="#activity-queue" class="mdrawer-item" data-section="activity-queue">
-                <i class="fas fa-tasks"></i><span>Activity</span>
-            </a>
-            <a href="#movie-hunt-settings" class="mdrawer-item" data-section="movie-hunt-settings">
-                <i class="fas fa-cog"></i><span>MH Settings</span>
-            </a>
-        </div>
-
-        <!-- Donate link at bottom -->
-        <div class="mdrawer-footer">
-            <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="mdrawer-donate">
-                <i class="fas fa-heart"></i><span>Become a Sponsor</span>
-            </a>
-            <div class="mdrawer-version" id="mobileDrawerVersion"></div>
-        </div>
+    <!-- Dynamic body — populated from the active desktop sidebar -->
+    <div class="mdrawer-body" id="mobileDrawerBody"></div>
+    <div class="mdrawer-footer">
+        <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="mdrawer-donate">
+            <i class="fas fa-heart"></i><span>Become a Sponsor</span>
+        </a>
+        <div class="mdrawer-version" id="mobileDrawerVersion"></div>
     </div>
 </nav>
 
 <script>
 (function() {
-    function initMobileNav() {
-        var toggle   = document.getElementById('mobileMenuToggle');
-        var close    = document.getElementById('mobileMenuClose');
-        var drawer   = document.getElementById('mobileDrawer');
-        var backdrop = document.getElementById('mobileDrawerBackdrop');
-        if (!toggle || !drawer) return;
+    /* ---- helpers ---- */
+    var SIDEBAR_IDS = ['sidebar', 'movie-hunt-sidebar', 'nzb-hunt-sidebar',
+                       'requestarr-sidebar', 'apps-sidebar', 'settings-sidebar'];
 
-        function open()  {
-            drawer.classList.add('open');
-            backdrop.classList.add('open');
-            document.body.classList.add('mdrawer-open');
+    /** Find which desktop sidebar is currently "active" (display != none). */
+    function getActiveSidebar() {
+        for (var i = 0; i < SIDEBAR_IDS.length; i++) {
+            var el = document.getElementById(SIDEBAR_IDS[i]);
+            if (el) {
+                var d = el.style.display;
+                // The main #sidebar starts with no inline style (visible by default)
+                if (SIDEBAR_IDS[i] === 'sidebar' && (d === '' || d === 'block' || d === 'flex')) return el;
+                if (d === 'block' || d === 'flex') return el;
+            }
         }
-        function shut()  {
-            drawer.classList.remove('open');
-            backdrop.classList.remove('open');
-            document.body.classList.remove('mdrawer-open');
+        // Fallback: main sidebar
+        return document.getElementById('sidebar');
+    }
+
+    /** Build mobile drawer content from the given desktop sidebar element. */
+    function buildDrawerContent(sidebar) {
+        var body = document.getElementById('mobileDrawerBody');
+        if (!body || !sidebar) return;
+        body.innerHTML = '';
+
+        var groups = sidebar.querySelectorAll('.nav-group');
+        groups.forEach(function(desktopGroup) {
+            // Skip hidden groups (JS may have set display:none)
+            if (desktopGroup.style.display === 'none') return;
+
+            var mGroup = document.createElement('div');
+            mGroup.className = 'mdrawer-group';
+
+            // Group title
+            var titleEl = desktopGroup.querySelector('.nav-group-title');
+            if (titleEl) {
+                var mTitle = document.createElement('div');
+                mTitle.className = 'mdrawer-group-title';
+                mTitle.textContent = titleEl.textContent;
+                mGroup.appendChild(mTitle);
+            }
+
+            // Direct nav-item children (not inside sub-groups)
+            var items = desktopGroup.querySelectorAll(':scope > a.nav-item');
+            items.forEach(function(navItem) {
+                if (navItem.style.display === 'none') return;
+                // Skip the sponsor/heart link (we have it in the footer)
+                if (navItem.querySelector('.heart-icon')) return;
+                appendDrawerItem(mGroup, navItem);
+            });
+
+            // Expanded sub-groups (system-sub, settings-sub, etc.)
+            var subGroups = desktopGroup.querySelectorAll('.nav-sub-group');
+            subGroups.forEach(function(sub) {
+                // Show sub-group items if expanded or has display:block
+                var isExpanded = sub.classList.contains('expanded') || sub.style.display === 'block';
+                if (!isExpanded) return;
+                var subItems = sub.querySelectorAll('a.nav-item');
+                subItems.forEach(function(navItem) {
+                    if (navItem.style.display === 'none') return;
+                    appendDrawerItem(mGroup, navItem, true);
+                });
+            });
+
+            // Only add group if it has items
+            if (mGroup.querySelectorAll('.mdrawer-item').length > 0) {
+                body.appendChild(mGroup);
+            }
+        });
+
+        // Attach close-on-click to every new item
+        body.querySelectorAll('.mdrawer-item').forEach(function(item) {
+            item.addEventListener('click', shut);
+        });
+
+        // Highlight active item
+        highlightActiveItem();
+    }
+
+    /** Create a single drawer nav item from a desktop sidebar nav-item <a>. */
+    function appendDrawerItem(parent, navItem, isSub) {
+        var a = document.createElement('a');
+        // Normalise href: strip leading "./" so drawer always uses hash links
+        var href = navItem.getAttribute('href') || '#home';
+        if (href.indexOf('./') === 0) href = href.substring(1); // "./#foo" -> "/#foo"
+        if (href.indexOf('/#') === 0) href = href.substring(1); // "/#foo" -> "#foo"
+        // External links (donate, GitHub) — skip
+        if (href.indexOf('http') === 0) return;
+        a.href = href;
+        a.className = 'mdrawer-item' + (isSub ? ' mdrawer-item-sub' : '');
+
+        // Icon — try img first (app icons), then <i>
+        var iconImg = navItem.querySelector('.app-icon-img');
+        var iconI = navItem.querySelector('.nav-icon-wrapper i');
+        if (iconImg) {
+            var img = document.createElement('img');
+            img.src = iconImg.src;
+            img.alt = iconImg.alt || '';
+            img.className = 'mdrawer-app-icon';
+            img.width = 20; img.height = 20;
+            a.appendChild(img);
+        } else if (iconI) {
+            var i = document.createElement('i');
+            i.className = iconI.className;
+            a.appendChild(i);
         }
+
+        // Label
+        var label = navItem.querySelector('span');
+        if (label) {
+            var s = document.createElement('span');
+            s.textContent = label.textContent;
+            a.appendChild(s);
+        }
+
+        parent.appendChild(a);
+    }
+
+    /** Highlight the drawer item matching the current hash. */
+    function highlightActiveItem() {
+        var body = document.getElementById('mobileDrawerBody');
+        if (!body) return;
+        var hash = window.location.hash || '#home';
+        body.querySelectorAll('.mdrawer-item').forEach(function(item) {
+            item.classList.toggle('active', item.getAttribute('href') === hash);
+        });
+    }
+
+    /* ---- open / close ---- */
+    var drawer, backdrop;
+
+    function open() {
+        if (!drawer) return;
+        // Rebuild drawer content from the active sidebar every time we open
+        buildDrawerContent(getActiveSidebar());
+        drawer.classList.add('open');
+        backdrop.classList.add('open');
+        document.body.classList.add('mdrawer-open');
+    }
+    function shut() {
+        if (!drawer) return;
+        drawer.classList.remove('open');
+        backdrop.classList.remove('open');
+        document.body.classList.remove('mdrawer-open');
+    }
+
+    /* ---- init ---- */
+    function initMobileNav() {
+        drawer   = document.getElementById('mobileDrawer');
+        backdrop = document.getElementById('mobileDrawerBackdrop');
+        var toggle = document.getElementById('mobileMenuToggle');
+        var close  = document.getElementById('mobileMenuClose');
+        if (!toggle || !drawer) return;
 
         toggle.addEventListener('click', open);
         close.addEventListener('click', shut);
         backdrop.addEventListener('click', shut);
-
-        // Close drawer when a nav item is tapped
-        drawer.querySelectorAll('.mdrawer-item').forEach(function(item) {
-            item.addEventListener('click', function() {
-                shut();
-            });
-        });
-
-        // Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && drawer.classList.contains('open')) shut();
         });
 
-        // Update version info in drawer
-        function updateDrawerVersion() {
-            var el = document.getElementById('mobileDrawerVersion');
-            if (!el) return;
-            try {
-                var info = JSON.parse(localStorage.getItem('huntarr-version-info') || '{}');
-                if (info.currentVersion) el.textContent = 'v' + info.currentVersion;
-            } catch(e) {}
-        }
+        // Version info in footer
         updateDrawerVersion();
         window.addEventListener('storage', function(e) {
             if (e.key === 'huntarr-version-info') updateDrawerVersion();
         });
     }
 
-    // Update mobile topbar with current section title
+    function updateDrawerVersion() {
+        var el = document.getElementById('mobileDrawerVersion');
+        if (!el) return;
+        try {
+            var info = JSON.parse(localStorage.getItem('huntarr-version-info') || '{}');
+            if (info.currentVersion) el.textContent = 'v' + info.currentVersion;
+        } catch(e) {}
+    }
+
+    /* ---- page title sync ---- */
     function updateMobilePageTitle(title) {
         var el = document.getElementById('mobilePageTitle');
         if (el) el.textContent = title || 'Home';
@@ -185,7 +234,6 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             initMobileNav();
-            // Sync page title
             var pt = document.getElementById('currentPageTitle');
             if (pt) updateMobilePageTitle(pt.textContent);
             var obs = new MutationObserver(function() {

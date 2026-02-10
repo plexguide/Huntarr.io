@@ -249,10 +249,24 @@
         text-align: center;
         font-size: 14px;
         opacity: .7;
+        flex-shrink: 0;
     }
     .mdrawer-item:hover i,
     .mdrawer-item.active i {
         opacity: 1;
+    }
+    /* Sub-items (indented) */
+    .mdrawer-item-sub {
+        padding-left: 28px;
+        font-size: 12.5px;
+    }
+    .mdrawer-item-sub i { font-size: 12px; }
+    /* App icons (Sonarr, Radarr, etc.) */
+    .mdrawer-app-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        flex-shrink: 0;
     }
 
     /* Donate link at bottom */
