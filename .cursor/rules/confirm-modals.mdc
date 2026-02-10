@@ -19,29 +19,78 @@ alwaysApply: true
 
 ## 1. When the User Must Choose: Use Modals
 
-### Global Confirm Modal (Deletions / Destructive Actions)
+### Global Confirm Modal — Full API
 
-- Use **`window.HuntarrConfirm.show()`** for:
-  - Delete confirmations (instances, profiles, indexers, clients, root folders, custom formats, schedules, app instances, backups, etc.)
-  - Clear/reset actions (logs, history, hunt history, blocklist remove, state reset, stats reset, Swaparr reset, etc.)
-  - Other destructive or irreversible actions (restore/upload backup, unlink Plex, hide/unhide media, etc.)
+`HuntarrConfirm.show()` supports **six options**. Handlers are rebound fresh on every call (no stale closures).
 
-**API:**
 ```javascript
 window.HuntarrConfirm.show({
-    title: 'Delete Something',      // Modal heading
-    message: 'Are you sure...?',    // Body text (supports \n for newlines)
-    confirmLabel: 'Delete',        // Button text (e.g. Delete, Clear, Reset, OK)
-    onConfirm: function() {         // Called when user clicks confirm
-        // Perform the action (e.g. fetch DELETE, then refresh)
-    }
+    title:        'Modal Heading',        // required — modal heading
+    message:      'Body text here.',       // required — body text
+    confirmLabel: 'OK',                    // primary button (right, purple)
+    cancelLabel:  'Cancel',                // secondary button (left, grey) — optional, defaults to "Cancel"
+    onConfirm:    function() { … },        // called when user clicks the confirm button
+    onCancel:     function() { … }         // called when user clicks cancel, X, backdrop, or Escape
 });
 ```
 
-- **Fallback:** If `HuntarrConfirm` is not available, fall back to `confirm()` so behavior still works.
-- **Styling:** Purple/blue theme, blur backdrop. CSS: `frontend/static/css/confirm-modal.css`. HTML: `frontend/templates/components/confirm_modal.html`.
+- A `handled` guard inside the modal prevents double-fire.
+- `closeModal()` runs automatically before the callback fires — no manual close needed.
+- **Fallback:** If `HuntarrConfirm` is not available, fall back to native `confirm()` in an `else` branch.
 
-### Add / Edit Flows (Custom Modals, Not prompt())
+### Pattern A — Destructive Actions (Delete / Clear / Reset)
+
+Use for: delete confirmations, clear/reset actions, restore/upload backup, unlink Plex, hide/unhide media, etc.
+
+```javascript
+function doDelete() { /* fetch DELETE, then refresh */ }
+if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+    window.HuntarrConfirm.show({
+        title: 'Delete Something',
+        message: 'Are you sure? This cannot be undone.',
+        confirmLabel: 'Delete',
+        onConfirm: doDelete
+    });
+} else {
+    if (!confirm('Are you sure? This cannot be undone.')) return;
+    doDelete();
+}
+```
+
+### Pattern B — Unsaved Changes (Leave / Go Back)
+
+Use for: navigating away from any editor with dirty state (instance editor, profile editor, movie management, etc.).
+
+**UX rules:**
+- **Message** warns the user their changes will be lost.
+- **"Go Back"** (confirm, right, purple) — closes the modal, keeps the user on the editor so they can save manually.
+- **"Leave"** (cancel, left, grey) — discards changes and navigates away.
+- The X button, backdrop click, and Escape key all behave the same as "Go Back" (stay on page).
+
+```javascript
+if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+    window.HuntarrConfirm.show({
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes that will be lost if you leave.',
+        confirmLabel: 'Go Back',
+        cancelLabel: 'Leave',
+        onConfirm: function() {
+            // Stay on the editor — modal closes, user can save manually
+        },
+        onCancel: function() {
+            // Navigate away / discard
+            navigateAway();
+        }
+    });
+} else {
+    if (!confirm('You have unsaved changes that will be lost. Leave anyway?')) return;
+    navigateAway();
+}
+```
+
+**DO NOT** use `confirm('Save before leaving?')` with Save/Discard buttons. The correct flow is: warn → Go Back (stay) or Leave (discard). Saving is done via the existing Save button on the editor itself.
+
+### Pattern C — Add / Edit Flows (Custom Modals, Not prompt())
 
 - Use **custom modal popups** (backdrop, blur, purple/blue) for:
   - Adding items (Add Instance, Add Profile, Add Remote Path Mapping, Add Client, Add Indexer).
@@ -51,7 +100,7 @@ window.HuntarrConfirm.show({
 
 ---
 
-## 2. When It’s Just a Message: Use Toasts (Not alert)
+## 2. When It's Just a Message: Use Toasts (Not alert)
 
 - For **success, error, or info** messages that do **not** require the user to click OK, use the **toast** system so the message auto-dismisses.
 - **DO NOT** use `alert()` when the app notification system is available.
@@ -66,15 +115,17 @@ if (window.huntarrUI && window.huntarrUI.showNotification) {
 ```
 
 - Use `'error'` for validation/API failures, `'success'` for success messages, `'info'` for neutral info.
-- This applies to: validation errors (“Please select a host”), save/delete failures, “State reset successfully”, 2FA errors, connection errors, etc.
+- This applies to: validation errors ("Please select a host"), save/delete failures, "State reset successfully", 2FA errors, connection errors, etc.
 
 ---
 
 ## Anti-Patterns
 
-- **DON’T** use `confirm('...')` for delete/clear/reset/destructive actions — use `HuntarrConfirm.show()` (modal).
-- **DON’T** use `prompt('...')` for add/rename/name inputs — use a custom modal with an input field.
-- **DON’T** use `alert('...')` alone for success/error/info — use `showNotification(msg, type)` with `alert()` fallback (toast).
+- **DON'T** use `confirm('...')` for delete/clear/reset/destructive actions — use `HuntarrConfirm.show()` (Pattern A).
+- **DON'T** use `confirm('...')` for unsaved-changes — use `HuntarrConfirm.show()` with Go Back / Leave (Pattern B).
+- **DON'T** use `confirm('Save before leaving?')` with a Save action — the user saves via the editor's own Save button, not through the leave-confirmation modal.
+- **DON'T** use `prompt('...')` for add/rename/name inputs — use a custom modal with an input field (Pattern C).
+- **DON'T** use `alert('...')` alone for success/error/info — use `showNotification(msg, type)` with `alert()` fallback (toast).
 
 ---
 
@@ -91,8 +142,8 @@ if (window.huntarrUI && window.huntarrUI.showNotification) {
 Run these from the project root to find remaining native dialogs:
 
 ```bash
-# Confirm: should only appear in fallbacks (else branch after HuntarrConfirm check) or unsaved-changes/session flows
-grep -rn "confirm(" frontend/ --include="*.js" --include="*.html" | grep -v "HuntarrConfirm" | grep -v "// fallback" | grep -v "unsaved changes" | grep -v "session expired"
+# Confirm: should only appear in fallbacks (else branch after HuntarrConfirm check)
+grep -rn "confirm(" frontend/ --include="*.js" --include="*.html" | grep -v "HuntarrConfirm" | grep -v "// fallback" | grep -v "else {"
 
 # Prompt: should be zero (all replaced with modals)
 grep -rn "prompt(" frontend/ --include="*.js"
@@ -102,8 +153,8 @@ grep -rn "alert(" frontend/ --include="*.js"
 ```
 
 **What to replace:**
-- Any **new** `confirm(...)` for user choices → `HuntarrConfirm.show()` or a custom modal.
-- Any **new** `prompt(...)` for user input → custom modal with input.
+- Any **new** `confirm(...)` for user choices → `HuntarrConfirm.show()` (Pattern A or B).
+- Any **new** `prompt(...)` for user input → custom modal with input (Pattern C).
 - Any **new** `alert(...)` used alone → `showNotification(..., 'error'|'success'|'info')` with `else alert(...)` fallback.
 
-**Exception:** Unsaved-changes and session-expired confirmations may stay as `confirm()` until product decides to give them custom modals; leave them out of the “must replace” list when scanning.
+**The only acceptable bare `confirm()`** is inside an `else` fallback branch after checking `window.HuntarrConfirm`. Session-expired flows in `user.js` may also use native `confirm()` until given a custom modal.
