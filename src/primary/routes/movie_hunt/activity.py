@@ -702,7 +702,7 @@ def _ensure_movie_hunt_poller_started():
 
     _movie_hunt_poller_thread = threading.Thread(target=_run, daemon=True)
     _movie_hunt_poller_thread.start()
-    movie_hunt_logger.info("Import: background poll started (every %s s) to detect completed downloads.", _MOVIE_HUNT_POLL_INTERVAL_SEC)
+    movie_hunt_logger.debug("Import: background poll started (every %s s) to detect completed downloads.", _MOVIE_HUNT_POLL_INTERVAL_SEC)
 
 
 def _auto_start_poller():
