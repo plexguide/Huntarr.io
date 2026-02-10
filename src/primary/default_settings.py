@@ -254,6 +254,7 @@ GENERAL_DEFAULTS = {
     "log_backup_count": 5,
     "log_retention_days": 30,
     "log_auto_cleanup": True,
+    "log_max_entries_per_app": 10000,
     "enable_debug_logs": True,
     "ui_preferences": {}
 }

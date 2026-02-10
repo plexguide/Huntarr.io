@@ -3945,10 +3945,25 @@ def schedule_log_cleanup():
         while True:
             try:
                 time.sleep(3600)  # Run every hour
+                # Read user settings instead of using hardcoded values
+                try:
+                    import src.primary.settings_manager as sm
+                    settings = sm.load_settings('general')
+                    days = int(settings.get('log_retention_days', 30))
+                    max_entries = int(settings.get('log_max_entries_per_app', 10000))
+                    auto_cleanup = settings.get('log_auto_cleanup', True)
+                except Exception:
+                    days = 30
+                    max_entries = 10000
+                    auto_cleanup = True
+
+                if not auto_cleanup:
+                    continue
+
                 logs_db = get_logs_database()
-                deleted_count = logs_db.cleanup_old_logs(days_to_keep=30, max_entries_per_app=10000)
+                deleted_count = logs_db.cleanup_old_logs(days_to_keep=days, max_entries_per_app=max_entries)
                 if deleted_count > 0:
-                    logger.info(f"Scheduled cleanup removed {deleted_count} old log entries")
+                    logger.info(f"Scheduled cleanup removed {deleted_count} old log entries (retention={days}d, max_per_app={max_entries})")
             except Exception as e:
                 logger.error(f"Error in scheduled log cleanup: {e}")
     

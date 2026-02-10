@@ -260,6 +260,85 @@
     }
 }
 
+/* ---- Log Storage Stats & Actions ---- */
+.logset-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.logset-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.logset-stat-label {
+    color: var(--text-muted, #94a3b8);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logset-stat-label i {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.logset-stat-value {
+    color: var(--text-primary, #e2e8f0);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.logset-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.logset-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #fff;
+}
+
+.logset-action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.logset-btn-amber {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    color: #1a1a2e;
+}
+
+.logset-btn-amber:hover:not(:disabled) {
+    box-shadow: 0 3px 12px rgba(245, 158, 11, 0.35);
+}
+
+.logset-btn-red {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+.logset-btn-red:hover:not(:disabled) {
+    box-shadow: 0 3px 12px rgba(220, 38, 38, 0.35);
+}
+
 /* ============================================================
    End Main Settings Modern Layout
    ============================================================ */

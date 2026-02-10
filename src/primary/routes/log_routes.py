@@ -221,7 +221,7 @@ def cleanup_logs():
 
 @log_routes_bp.route('/api/logs/stats')
 def get_log_stats():
-    """Get log statistics"""
+    """Get log statistics including database size"""
     try:
         logs_db = get_logs_database()
         
@@ -234,12 +234,33 @@ def get_log_stats():
         for app_type in app_types:
             app_counts[app_type] = logs_db.get_log_count(app_type=app_type)
         
+        # Get database file size
+        db_size = 0
+        db_size_formatted = "0 KB"
+        try:
+            import os
+            db_path = str(logs_db.db_path)
+            if os.path.exists(db_path):
+                db_size = os.path.getsize(db_path)
+                # Also include WAL file if present
+                wal_path = db_path + "-wal"
+                if os.path.exists(wal_path):
+                    db_size += os.path.getsize(wal_path)
+                if db_size > 1024 * 1024:
+                    db_size_formatted = f"{db_size / (1024 * 1024):.2f} MB"
+                else:
+                    db_size_formatted = f"{db_size / 1024:.1f} KB"
+        except Exception:
+            pass
+        
         return jsonify({
             'success': True,
             'app_types': app_types,
             'log_levels': log_levels,
             'app_counts': app_counts,
-            'total_logs': sum(app_counts.values())
+            'total_logs': sum(app_counts.values()),
+            'db_size': db_size,
+            'db_size_formatted': db_size_formatted
         })
         
     except Exception as e:

@@ -794,10 +794,11 @@ window.SettingsForms = {
         if (section === 'logs') {
             return {
                 log_rotation_enabled: getVal('log_rotation_enabled', true),
-                log_max_size_mb: getVal('log_max_size_mb', 10),
+                log_max_size_mb: getVal('log_max_size_mb', 50),
                 log_backup_count: getVal('log_backup_count', 5),
                 log_retention_days: getVal('log_retention_days', 30),
                 log_auto_cleanup: getVal('log_auto_cleanup', true),
+                log_max_entries_per_app: getVal('log_max_entries_per_app', 10000),
                 log_refresh_interval_seconds: getVal('log_refresh_interval_seconds', 30),
                 enable_debug_logs: getVal('enable_debug_logs', true)
             };

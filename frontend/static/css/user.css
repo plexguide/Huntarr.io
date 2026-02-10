@@ -1,0 +1,306 @@
+/* ==========================================================================
+   User Account Page Styles
+   ========================================================================== */
+
+/* Section root */
+#userSection {
+    display: none;
+    width: 100%;
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+}
+
+#userSection.active {
+    display: block;
+}
+
+/* Container */
+.uset-container {
+    width: 100%;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+/* Card grid: 3 columns top, 2 bottom */
+.uset-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+/* Bottom row cards span to fill */
+.uset-grid > .mset-card:nth-child(4),
+.uset-grid > .mset-card:nth-child(5) {
+    /* Recovery & Plex in a 2-col span on bottom row */
+}
+
+/* Plex icon color */
+.uset-icon-orange {
+    background: linear-gradient(135deg, #e69500, #f0a830);
+}
+
+/* Override card body for user page forms */
+.uset-container .mset-card-body .form-group {
+    margin-bottom: 12px;
+}
+
+.uset-container .mset-card-body .form-group:last-of-type {
+    margin-bottom: 8px;
+}
+
+/* Form controls inside user cards */
+.uset-container .form-group label {
+    display: block;
+    margin-bottom: 7px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.uset-container .current-value {
+    display: inline-block;
+    padding: 8px 12px;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+}
+
+.uset-container .form-control {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background-color: rgba(15, 23, 42, 0.6);
+    color: #d1d5db;
+    font-size: 13px;
+    transition: border-color 0.15s ease;
+    box-sizing: border-box;
+}
+
+.uset-container .form-control:focus {
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    outline: none;
+}
+
+/* Action buttons */
+.uset-container .form-actions {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+}
+
+.uset-container .action-button {
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.uset-container .primary-button {
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: white;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.uset-container .primary-button:hover {
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+}
+
+.uset-container .danger-button {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.uset-container .danger-button:hover {
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+}
+
+.uset-container .secondary-button {
+    background: rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.uset-container .secondary-button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #e2e8f0;
+}
+
+/* Status messages */
+.uset-container .status-message {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: none;
+}
+
+.uset-container .status-message.success {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+}
+
+.uset-container .status-message.error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+/* Status badges */
+.uset-container .status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.uset-container .status-badge.enabled {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+}
+
+.uset-container .status-badge.disabled {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+/* 2FA sections spacing */
+.uset-container #enableTwoFactorSection,
+.uset-container #setupTwoFactorSection,
+.uset-container #disableTwoFactorSection {
+    margin-top: 10px;
+}
+
+.uset-container #twoFactorEnabled {
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* QR code */
+.uset-container .qr-container {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+}
+
+.uset-container .qr-code {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.uset-container .qr-code img {
+    display: block;
+    max-width: 180px;
+    height: auto;
+}
+
+/* Secret key & recovery key containers */
+.uset-container .secret-key-container,
+.uset-container .recovery-key-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.uset-container .secret-key,
+.uset-container .recovery-key-value {
+    flex: 1;
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.uset-container .copy-button {
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.uset-container .copy-button:hover {
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.uset-container .copy-button.copied {
+    background: linear-gradient(135deg, #22c55e, #4ade80);
+}
+
+/* Help text */
+.uset-container .help-text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 5px;
+    line-height: 1.3;
+}
+
+/* Plex modal overrides */
+.plex-status.waiting {
+    background: rgba(52, 152, 219, 0.15);
+    border: 1px solid rgba(52, 152, 219, 0.3);
+    color: #3498db;
+}
+
+.plex-status.success {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+}
+
+.plex-status.error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1200px) {
+    .uset-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .uset-grid {
+        grid-template-columns: 1fr;
+    }
+}
