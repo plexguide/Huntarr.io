@@ -4,9 +4,9 @@
 
 /* Container */
 .sched-container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 8px;
+    width: 100%;
+    padding: 0 16px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 18px;
