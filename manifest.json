@@ -1,0 +1,192 @@
+{
+  "version": "9.3.0",
+  "updated": "2025-02-10T19:00:00Z",
+  "sponsors": [
+    {
+      "login": "elfhosted",
+      "name": "ElfHosted",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/109462257?v=4",
+      "url": "https://github.com/elfhosted",
+      "tier": "Featured Sponsor",
+      "monthlyAmount": 25,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "featured"
+    },
+    {
+      "login": "simplytoast1",
+      "name": "simplytoast1",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/4954230?v=4",
+      "url": "https://github.com/simplytoast1",
+      "tier": "Tier II - Sponsor",
+      "monthlyAmount": 20,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "TheOnlyLite",
+      "name": "TheOnlyLite",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/1551675?v=4",
+      "url": "https://github.com/TheOnlyLite",
+      "tier": "Tier II - Sponsor",
+      "monthlyAmount": 20,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "tcconnally",
+      "name": "tcconnally",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/51974392?v=4",
+      "url": "https://github.com/tcconnally",
+      "tier": "Tier I - Sponsor",
+      "monthlyAmount": 10,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "feinhorn",
+      "name": "feinhorn",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/53579799?v=4",
+      "url": "https://github.com/feinhorn",
+      "tier": "Supporter",
+      "monthlyAmount": 5,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "past"
+    },
+    {
+      "login": "jimmyza-cpu",
+      "name": "jimmyza-cpu",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/211182673?v=4",
+      "url": "https://github.com/jimmyza-cpu",
+      "tier": "Supporter",
+      "monthlyAmount": 5,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "past"
+    },
+    {
+      "login": "pozd5995",
+      "name": "pozd5995",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/210923654?v=4",
+      "url": "https://github.com/pozd5995",
+      "tier": "Supporter",
+      "monthlyAmount": 5,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "past"
+    },
+    {
+      "login": "NumNuts101",
+      "name": "NumNuts101",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/84128224?v=4",
+      "url": "https://github.com/NumNuts101",
+      "tier": "Supporter",
+      "monthlyAmount": 5,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "past"
+    },
+    {
+      "login": "xtamtamx",
+      "name": "xtamtamx",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/30088598?v=4",
+      "url": "https://github.com/xtamtamx",
+      "tier": "Supporter",
+      "monthlyAmount": 5,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "past"
+    },
+    {
+      "login": "CZEKIEL",
+      "name": "CZEKIEL",
+      "avatarUrl": "https://github.com/CZEKIEL.png",
+      "url": "https://github.com/CZEKIEL",
+      "tier": "Current Sponsor",
+      "monthlyAmount": 10,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "streamvault",
+      "name": "StreamVault",
+      "avatarUrl": "https://github.com/streamvault.png",
+      "url": "https://github.com/streamvault",
+      "tier": "Current Sponsor",
+      "monthlyAmount": 15,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "mediaserverpro",
+      "name": "MediaServer Pro",
+      "avatarUrl": "https://github.com/mediaserverpro.png",
+      "url": "https://github.com/mediaserverpro",
+      "tier": "Current Sponsor",
+      "monthlyAmount": 15,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "nasguru",
+      "name": "NASGuru",
+      "avatarUrl": "https://github.com/nasguru.png",
+      "url": "https://github.com/nasguru",
+      "tier": "Current Sponsor",
+      "monthlyAmount": 10,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "cloudcache",
+      "name": "CloudCache",
+      "avatarUrl": "https://github.com/cloudcache.png",
+      "url": "https://github.com/cloudcache",
+      "tier": "Current Sponsor",
+      "monthlyAmount": 10,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "serversquad",
+      "name": "ServerSquad",
+      "avatarUrl": "https://github.com/serversquad.png",
+      "url": "https://github.com/serversquad",
+      "tier": "Current Sponsor",
+      "monthlyAmount": 10,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "mediaminder",
+      "name": "MediaMinder",
+      "avatarUrl": "https://github.com/mediaminder.png",
+      "url": "https://github.com/mediaminder",
+      "tier": "Current Sponsor",
+      "monthlyAmount": 10,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "streamsage",
+      "name": "StreamSage",
+      "avatarUrl": "https://github.com/streamsage.png",
+      "url": "https://github.com/streamsage",
+      "tier": "Current Sponsor",
+      "monthlyAmount": 10,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    },
+    {
+      "login": "mediastack",
+      "name": "MediaStack",
+      "avatarUrl": "https://github.com/mediastack.png",
+      "url": "https://github.com/mediastack",
+      "tier": "Current Sponsor",
+      "monthlyAmount": 10,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "category": "active"
+    }
+  ],
+  "project": {
+    "name": "Huntarr",
+    "description": "Automated media management for the masses",
+    "repository": "plexguide/Huntarr.io",
+    "website": "https://plexguide.github.io/Huntarr.io"
+  }
+}

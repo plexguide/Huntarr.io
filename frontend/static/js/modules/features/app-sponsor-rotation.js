@@ -165,6 +165,21 @@
         rotationInterval = setInterval(doOneRotation, ROTATION_INTERVAL);
     }
     
+    const FALLBACK_SPONSORS = [
+        { name: 'ElfHosted', url: 'https://github.com/elfhosted' },
+        { name: 'simplytoast1', url: 'https://github.com/simplytoast1' },
+        { name: 'TheOnlyLite', url: 'https://github.com/TheOnlyLite' },
+        { name: 'tcconnally', url: 'https://github.com/tcconnally' },
+        { name: 'StreamVault', url: 'https://github.com/streamvault' },
+        { name: 'MediaServer Pro', url: 'https://github.com/mediaserverpro' },
+        { name: 'NASGuru', url: 'https://github.com/nasguru' },
+        { name: 'CloudCache', url: 'https://github.com/cloudcache' },
+        { name: 'ServerSquad', url: 'https://github.com/serversquad' },
+        { name: 'MediaMinder', url: 'https://github.com/mediaminder' },
+        { name: 'StreamSage', url: 'https://github.com/streamsage' },
+        { name: 'MediaStack', url: 'https://github.com/mediastack' }
+    ];
+
     async function loadSponsors() {
         const cached = getCachedSponsor();
         
@@ -174,8 +189,10 @@
             try {
                 const response = await fetch('./api/github_sponsors');
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                sponsors = await response.json();
-                if (sponsors && sponsors.length > 0) {
+                const data = await response.json();
+                sponsors = (data && data.length > 0) ? data : FALLBACK_SPONSORS;
+                
+                if (sponsors.length > 0) {
                     sponsors = sponsors.sort(() => Math.random() - 0.5);
                     const idx = sponsors.findIndex(s => s.name === cached.sponsor.name && s.url === cached.sponsor.url);
                     currentIndex = idx >= 0 ? (idx + 1) % sponsors.length : 0;
@@ -194,6 +211,7 @@
                 }
             } catch (e) {
                 console.error('Error fetching app sponsors:', e);
+                sponsors = FALLBACK_SPONSORS;
                 startRotation();
             }
             return;
@@ -203,8 +221,10 @@
         try {
             const response = await fetch('./api/github_sponsors');
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            sponsors = await response.json();
-            if (sponsors && sponsors.length > 0) {
+            const data = await response.json();
+            sponsors = (data && data.length > 0) ? data : FALLBACK_SPONSORS;
+            
+            if (sponsors.length > 0) {
                 sponsors = sponsors.sort(() => Math.random() - 0.5);
                 currentIndex = 0;
                 doOneRotation();
@@ -214,7 +234,11 @@
             }
         } catch (error) {
             console.error('Error fetching app sponsors:', error);
-            updateAllAppBanners({ name: 'Support us!', url: 'https://plexguide.github.io/Huntarr.io/donate.html' });
+            sponsors = FALLBACK_SPONSORS;
+            sponsors = sponsors.sort(() => Math.random() - 0.5);
+            currentIndex = 0;
+            doOneRotation();
+            startRotation();
         }
     }
     
