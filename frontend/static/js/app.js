@@ -838,6 +838,10 @@ let huntarrUI = {
             if (fromMovieSearch) {
                 // Keep Movie Hunt sidebar active with Movie Search highlighted
                 this.showMovieHuntSidebar();
+                // Clear all Movie Hunt nav items first
+                var movieHuntNavItems = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
+                if (movieHuntNavItems.length) movieHuntNavItems.forEach(function(el) { el.classList.remove('active'); });
+                // Then highlight only Movie Search
                 if (document.getElementById('movieHuntMovieSearchNav')) document.getElementById('movieHuntMovieSearchNav').classList.add('active');
             } else {
                 // Normal navigation: show Requestarr sidebar
