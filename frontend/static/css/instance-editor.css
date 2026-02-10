@@ -673,43 +673,50 @@
 }
 
 @media (max-width: 768px) {
-    #instanceEditorContainer {
+    #instanceEditorContainer,
+    #movieHuntInstanceEditorContainer {
         padding: 16px 12px;
         padding-bottom: 100px;
     }
 
-    #instanceEditorSection .instance-editor-header {
-        flex-direction: column;
+    #instanceEditorSection .instance-editor-header,
+    #movieHuntInstanceEditorSection .instance-editor-header {
+        flex-direction: row !important;
+        justify-content: space-between !important;
         gap: 12px;
         padding: 12px 14px;
         border-radius: 12px;
     }
 
     .instance-editor-nav {
-        width: 100%;
-        justify-content: space-between;
+        width: auto !important;
+        justify-content: flex-start !important;
     }
 
     .instance-editor-breadcrumb {
-        display: none;
+        display: none !important;
     }
 
-    #instanceEditorSection .editor-section {
+    #instanceEditorSection .editor-section,
+    #movieHuntInstanceEditorSection .editor-section {
         padding: 20px 18px;
         border-radius: 14px;
     }
 
-    #instanceEditorSection .editor-section-title {
+    #instanceEditorSection .editor-section-title,
+    #movieHuntInstanceEditorSection .editor-section-title {
         flex-direction: column;
         align-items: flex-start !important;
         gap: 10px;
     }
 
-    #instanceEditorSection .connection-status {
+    #instanceEditorSection .connection-status,
+    #movieHuntInstanceEditorSection .connection-status {
         max-width: 100%;
     }
 
-    #instanceEditorSection .ie-btn {
+    #instanceEditorSection .ie-btn,
+    #movieHuntInstanceEditorSection .ie-btn {
         padding: 8px 14px;
         font-size: 0.82rem;
     }

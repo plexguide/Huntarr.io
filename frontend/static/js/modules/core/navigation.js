@@ -162,7 +162,7 @@ window.HuntarrNavigation = {
             'backup-restore': { title: 'Backup / Restore', nav: document.getElementById('mainSettingsBackupRestoreNav'), section: document.getElementById('backupRestoreSection'), sidebar: 'main', init: 'initializeBackupRestore' },
             'prowlarr': { title: 'Prowlarr', nav: document.getElementById('appsProwlarrNav'), section: document.getElementById('prowlarrSection'), sidebar: 'apps', init: 'initializeProwlarr' },
             'user': { title: 'User', nav: document.getElementById('mainSettingsUserNav'), section: document.getElementById('userSection'), sidebar: 'main', init: 'initializeUser' },
-            'instance-editor': { title: 'Instance Editor', section: document.getElementById('instanceEditorSection'), sidebar: 'apps' }
+            'instance-editor': { title: 'App Editor', section: document.getElementById('instanceEditorSection'), sidebar: 'apps' }
         };
 
         const config = sectionMap[section] || sectionMap['home'];

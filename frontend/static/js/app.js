@@ -1438,7 +1438,12 @@ let huntarrUI = {
                 this.showMovieHuntSidebar();
                 this._highlightMovieHuntNavForEditor('client');
             } else {
-                newTitle = 'Instance Editor';
+                var appName = 'Instance Editor';
+                if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType) {
+                    var appType = window.SettingsForms._currentEditing.appType;
+                    appName = appType.charAt(0).toUpperCase() + appType.slice(1);
+                }
+                newTitle = appName;
                 this.showAppsSidebar();
             }
         } else {
