@@ -3,220 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Official Huntarr.io Documentation</title>
+    <title>Huntarr Documentation</title>
+    <link rel="icon" type="image/png" href="images/huntarr-logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="js/main.js" defer></script>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-logo">
-            <img src="images/huntarr-logo.png" alt="Huntarr Logo">
-            <h2>Huntarr.io</h2>
+
+<!-- Mobile Topbar -->
+<div class="docs-mobile-topbar">
+    <button class="mob-hamburger" aria-label="Open navigation"><span></span><span></span><span></span></button>
+    <img src="images/huntarr-logo.png" alt="Huntarr" class="mob-logo">
+    <span class="mob-title">Documentation</span>
+</div>
+
+<!-- Sidebar Backdrop (mobile) -->
+<div class="docs-sidebar-backdrop"></div>
+
+<div class="docs-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <nav class="docs-sidebar" aria-label="Documentation navigation">
+        <a href="index.html" class="sidebar-brand">
+            <img src="images/huntarr-logo.png" alt="Huntarr">
+            <span>Huntarr</span>
+        </a>
+
+        <div class="sidebar-scroll">
+
+            <!-- Getting Started -->
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <div class="nav-group-items">
+                    <a href="index.html"><i class="fas fa-home"></i> Welcome</a>
+                    <a href="getting-started/installation.html"><i class="fas fa-download"></i> Installation</a>
+                    <a href="getting-started/setup-wizard.html"><i class="fas fa-magic"></i> Setup Wizard</a>
+                    <a href="getting-started/first-steps.html"><i class="fas fa-rocket"></i> First Steps</a>
+                </div>
+            </div>
+
+            <!-- Apps -->
+            <div class="nav-group">
+                <div class="nav-group-title">Apps</div>
+                <div class="nav-group-items">
+                    <a href="apps/index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="apps/sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="apps/radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="apps/lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="apps/readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="apps/whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="apps/prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="apps/swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                </div>
+            </div>
+
+            <!-- Movie Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">Movie Hunt</div>
+                <div class="nav-group-items">
+                    <a href="movie-hunt/index.html"><i class="fas fa-clapperboard"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                    <a href="movie-hunt/media-collection.html"><i class="fas fa-photo-film"></i> Media Collection</a>
+                    <a href="movie-hunt/indexers-clients.html"><i class="fas fa-server"></i> Indexers &amp; Clients</a>
+                    <a href="movie-hunt/profiles.html"><i class="fas fa-sliders"></i> Profiles</a>
+                </div>
+            </div>
+
+            <!-- NZB Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">NZB Hunt</div>
+                <div class="nav-group-items">
+                    <a href="nzb-hunt/index.html"><i class="fas fa-newspaper"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                </div>
+            </div>
+
+            <!-- Requestarr -->
+            <div class="nav-group">
+                <div class="nav-group-title">Requests</div>
+                <div class="nav-group-items">
+                    <a href="requestarr/index.html"><i class="fas fa-hand-paper"></i> Requestarr</a>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="nav-group">
+                <div class="nav-group-title">Settings</div>
+                <div class="nav-group-items">
+                    <a href="settings/index.html"><i class="fas fa-cog"></i> Main Settings</a>
+                    <a href="settings/scheduling.html"><i class="fas fa-clock"></i> Scheduling</a>
+                    <a href="settings/notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="settings/backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
+                    <a href="settings/log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
+                    <a href="settings/user-account.html"><i class="fas fa-user-shield"></i> User Account</a>
+                </div>
+            </div>
+
+            <!-- System -->
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <div class="nav-group-items">
+                    <a href="system/hunt-manager.html"><i class="fas fa-tasks"></i> Hunt Manager</a>
+                    <a href="system/logs.html"><i class="fas fa-scroll"></i> Logs</a>
+                    <a href="system/api.html"><i class="fas fa-code"></i> API Reference</a>
+                </div>
+            </div>
+
+            <!-- Help -->
+            <div class="nav-group">
+                <div class="nav-group-title">Help</div>
+                <div class="nav-group-items">
+                    <a href="help/faq.html"><i class="fas fa-question-circle"></i> FAQ</a>
+                    <a href="help/community.html"><i class="fas fa-users"></i> Community</a>
+                    <a href="help/donate.html"><i class="fas fa-heart"></i> Donate</a>
+                </div>
+            </div>
+
+        </div><!-- /sidebar-scroll -->
+
+        <div class="sidebar-footer">
+            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" class="sf-discord" title="Discord"><i class="fab fa-discord"></i></a>
+            <a href="https://www.reddit.com/r/huntarr/" target="_blank" class="sf-reddit" title="Reddit"><i class="fab fa-reddit-alien"></i></a>
+            <a href="https://github.com/plexguide/Huntarr.io" target="_blank" class="sf-github" title="GitHub"><i class="fab fa-github"></i></a>
+            <a href="help/donate.html" class="sf-heart" title="Donate"><i class="fas fa-heart"></i></a>
         </div>
-        
-        <nav class="sidebar-nav">
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Getting Started</h3>
-                <ul>
-                    <li><a href="donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
-                    <li><a href="getting-started/installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
-                </ul>
+    </nav>
+
+    <!-- ===== MAIN ===== -->
+    <main class="docs-main">
+        <div class="docs-content">
+
+            <!-- Hero -->
+            <div class="hero">
+                <img src="images/huntarr-logo.png" alt="Huntarr" class="hero-logo">
+                <h1>Huntarr Documentation</h1>
+                <p class="page-subtitle">The all-in-one companion for your *arr media stack. Automatically hunt missing media, upgrade quality, manage requests, and keep your library perfect.</p>
+                <div class="hero-actions">
+                    <a href="getting-started/installation.html" class="btn btn-primary"><i class="fas fa-download"></i> Install Huntarr</a>
+                    <a href="getting-started/first-steps.html" class="btn btn-secondary"><i class="fas fa-rocket"></i> Quick Start</a>
+                    <a href="https://github.com/plexguide/Huntarr.io" target="_blank" class="btn btn-secondary"><i class="fab fa-github"></i> GitHub</a>
+                </div>
             </div>
 
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Core</h3>
-                <ul>
-                    <li class="active"><a href="index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg> Home</a></li>
-                    <li><a href="apps/index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"></path></svg> Apps</a></li>
-                    <li><a href="settings/settings.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg> Settings</a></li>
-                    <li><a href="features/index.html"><i class="fas fa-star" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Features</a></li>
-                    <li><a href="faq.html"><i class="fas fa-question-circle" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> FAQ</a></li>
-                </ul>
+            <!-- What is Huntarr? -->
+            <h2>What is Huntarr?</h2>
+            <p>Huntarr runs alongside your existing <strong>Sonarr</strong>, <strong>Radarr</strong>, <strong>Lidarr</strong>, <strong>Readarr</strong>, <strong>Whisparr</strong>, and <strong>Prowlarr</strong> instances. It continuously searches for missing media, upgrades existing files to better quality, and manages swap-outs via <strong>Swaparr</strong> — all automatically and on a schedule you control.</p>
+            <p>Beyond the *arr apps, Huntarr also includes <strong>Movie Hunt</strong> (a standalone movie grabber with its own indexers and download clients), <strong>NZB Hunt</strong> (Usenet search), and <strong>Requestarr</strong> (a media request system for your users).</p>
+
+            <!-- Feature cards -->
+            <h2>Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="fc-icon icon-blue"><i class="fas fa-search"></i></div>
+                    <h3>Automated Hunting</h3>
+                    <p>Continuously searches for missing TV shows, movies, music, books, and more across all your *arr instances.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon icon-green"><i class="fas fa-arrow-up"></i></div>
+                    <h3>Quality Upgrades</h3>
+                    <p>Automatically upgrades existing media to higher quality when better releases become available.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon icon-gold"><i class="fas fa-clock"></i></div>
+                    <h3>Smart Scheduling</h3>
+                    <p>Per-app, per-instance schedules with configurable cycles, intervals, and caps so you never overload your indexers.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon icon-purple"><i class="fas fa-bell"></i></div>
+                    <h3>Notifications</h3>
+                    <p>Discord, Telegram, Pushover, Email, Apprise, and more. Know the moment Huntarr finds or grabs something.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon icon-red"><i class="fas fa-clapperboard"></i></div>
+                    <h3>Movie Hunt</h3>
+                    <p>A full standalone movie grabber with indexer support, download client integration, and custom format scoring.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon icon-cyan"><i class="fas fa-exchange-alt"></i></div>
+                    <h3>Swaparr Integration</h3>
+                    <p>Automatically manage stalled or slow downloads by swapping them for better alternatives.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon icon-orange"><i class="fas fa-hand-paper"></i></div>
+                    <h3>Requestarr</h3>
+                    <p>Let friends and family request movies and shows through a clean discovery interface.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon icon-blue"><i class="fas fa-shield-halved"></i></div>
+                    <h3>Secure &amp; Self-Hosted</h3>
+                    <p>Runs on your own hardware. Authentication, 2FA, and Plex SSO keep your setup safe.</p>
+                </div>
             </div>
-            
 
-            
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Resources</h3>
-                <ul>
-                    <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg> GitHub</a></li>
-                    <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
-                    <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
-                </ul>
+            <!-- Quick links -->
+            <h2>Quick Links</h2>
+            <div class="card-grid">
+                <a href="getting-started/installation.html" class="card">
+                    <div class="card-icon icon-blue"><i class="fas fa-download"></i></div>
+                    <h3>Installation</h3>
+                    <p>Docker, Unraid, or run from source — get up and running in minutes.</p>
+                </a>
+                <a href="apps/index.html" class="card">
+                    <div class="card-icon icon-green"><i class="fas fa-plug"></i></div>
+                    <h3>Connect Your Apps</h3>
+                    <p>Add your Sonarr, Radarr, and other *arr instances to Huntarr.</p>
+                </a>
+                <a href="settings/scheduling.html" class="card">
+                    <div class="card-icon icon-gold"><i class="fas fa-clock"></i></div>
+                    <h3>Scheduling</h3>
+                    <p>Configure when and how often Huntarr hunts for your media.</p>
+                </a>
+                <a href="help/faq.html" class="card">
+                    <div class="card-icon icon-purple"><i class="fas fa-question-circle"></i></div>
+                    <h3>FAQ &amp; Troubleshooting</h3>
+                    <p>Common questions, issues, and solutions.</p>
+                </a>
             </div>
-        </nav>
-    </div>
 
-    <div class="main-content">
-        <div class="container">
-            <h1>Welcome to Huntarr.io</h1>
+            <!-- Supported Apps -->
+            <h2>Supported Apps</h2>
+            <table>
+                <thead>
+                    <tr><th>App</th><th>Missing</th><th>Upgrade</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Sonarr</strong></td><td>Yes</td><td>Yes</td><td>TV series — episodes and seasons</td></tr>
+                    <tr><td><strong>Radarr</strong></td><td>Yes</td><td>Yes</td><td>Movies</td></tr>
+                    <tr><td><strong>Lidarr</strong></td><td>Yes</td><td>Yes</td><td>Music — albums and tracks</td></tr>
+                    <tr><td><strong>Readarr</strong></td><td>Yes</td><td>Yes</td><td>Books and audiobooks</td></tr>
+                    <tr><td><strong>Whisparr</strong></td><td>Yes</td><td>Yes</td><td>Adult content</td></tr>
+                    <tr><td><strong>Prowlarr</strong></td><td>—</td><td>—</td><td>Indexer management (sync with Huntarr)</td></tr>
+                    <tr><td><strong>Swaparr</strong></td><td>—</td><td>—</td><td>Stalled download management</td></tr>
+                </tbody>
+            </table>
 
-            <section class="hero-section">
-                <div class="hero-content">
-                    <div class="hero-logo">
-                        <img src="images/admin9705.png" alt="Admin9705" width="120" height="120" style="border-radius: 50%; border: 3px solid #3498db;">
-                    </div>
-                    <div class="hero-text">
-                        <h2>A Message from Admin9705</h2>
-                        <p>Huntarr started as a simple bash script to solve a real problem: *arr apps don't actively search for missing content in your existing library. What you see today evolved from that need, with input from users who discovered they had significant gaps they didn't even know existed. The best validation? My wife finally cancelled our streaming subscriptions because our setup actually works.</p>
-                        <!-- Buttons removed as requested -->
-                    </div>
-                </div>
-            </section>
+        </div><!-- /docs-content -->
 
-            <section class="navigation-section">
-                <h2><i class="fas fa-map-signs" style="margin-right: 10px; color: #3498db;"></i>Where to Find Things in Huntarr</h2>
-                <p>The main sidebar in Huntarr is organized as follows:</p>
-                <ul>
-                    <li><strong>Core:</strong> <strong>Home</strong> (dashboard), <strong>Apps</strong> (Sonarr, Radarr, Lidarr, Readarr, Whisparr V2, Whisparr V3/Eros, Prowlarr), <strong>Requestarr</strong> (discover and request TV/movies), <strong>Hunt Manager</strong> (view hunt history), <strong>Logs</strong>, <strong>Settings</strong>.</li>
-                    <li><strong>Support:</strong> <strong>Swaparr</strong> (stalled download monitoring), <strong>About</strong> (version and links).</li>
-                </ul>
-                <p>Under <strong>Settings</strong> you’ll find: <strong>Main</strong> (general, timezone, auth, etc.), <strong>Scheduling</strong>, <strong>Notifications</strong>, <strong>Backup / Restore</strong>, <strong>Logs</strong>, and <strong>User</strong> (profile and security).</p>
-            </section>
+        <footer class="docs-footer">
+            <p>Huntarr is open source. <a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a> · <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a> · <a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></p>
+        </footer>
+    </main>
 
-            <section class="community-help-section">
-                <h2><i class="fas fa-question" style="margin-right: 10px; color: #3498db;"></i>Need Help Getting Started?</h2>
-                
-                <div class="alert alert-info">
-                    <strong>💡 New to Huntarr?</strong> Most setup issues are Docker-related or simple configuration problems. Check the <a href="faq.html">FAQ</a> for common solutions, or get help from our community below.
-                </div>
+</div><!-- /docs-layout -->
 
-                <div class="app-cards-grid">
-                    <div class="app-card">
-                        <div class="app-card-header">
-                            <div class="app-card-icon" style="background-color: #5865F2;">
-                                <i class="fab fa-discord" style="font-size: 24px;"></i>
-                            </div>
-                            <h3 class="app-card-title">Discord Community</h3>
-                        </div>
-                        <div class="app-card-content">
-                            <p>Get real-time help from the community and developers.</p>
-                        </div>
-                        <div class="app-card-footer">
-                            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Join Discord →</a>
-                        </div>
-                    </div>
-
-                    <div class="app-card">
-                        <div class="app-card-header">
-                            <div class="app-card-icon" style="background-color: #333;">
-                                <i class="fab fa-github" style="font-size: 24px;"></i>
-                            </div>
-                            <h3 class="app-card-title">GitHub Issues</h3>
-                        </div>
-                        <div class="app-card-content">
-                            <p>Report bugs or request features on GitHub.</p>
-                        </div>
-                        <div class="app-card-footer">
-                            <a href="https://github.com/plexguide/Huntarr.io/issues" target="_blank">Open Issue →</a>
-                        </div>
-                    </div>
-
-                    <div class="app-card">
-                        <div class="app-card-header">
-                            <div class="app-card-icon" style="background-color: #FF4500;">
-                                <i class="fab fa-reddit-alien" style="font-size: 24px;"></i>
-                            </div>
-                            <h3 class="app-card-title">Reddit Community</h3>
-                        </div>
-                        <div class="app-card-content">
-                            <p>Discuss with other users and share experiences.</p>
-                        </div>
-                        <div class="app-card-footer">
-                            <a href="https://www.reddit.com/r/huntarr/" target="_blank">Visit Subreddit →</a>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="features-section">
-                <h2><i class="fas fa-crosshairs" style="margin-right: 10px; color: #e74c3c;"></i>What is Huntarr?</h2>
-                <p>Huntarr is a companion app that sits alongside your *arr stack (Sonarr, Radarr, Lidarr, Readarr, Whisparr, Eros). It does one thing your *arr apps don’t: <strong>it actively hunts for missing and upgradable content in your existing library</strong>, then triggers searches in a controlled way so your indexers aren’t overwhelmed and you don’t get banned.</p>
-
-                <h3><i class="fas fa-exclamation-triangle" style="margin-right: 10px; color: #f39c12;"></i>The Problem Huntarr Solves</h3>
-                <p>Your *arr apps are built to <strong>watch RSS feeds and grab new releases</strong> as they appear. They do not go back and search for content that’s already in your library but not yet downloaded. So:</p>
-                <ul>
-                    <li>Shows you added after they finished airing never get missing episodes searched.</li>
-                    <li>Episodes or movies that failed the first time just sit there unless they show up again on RSS.</li>
-                    <li>Content that became available on your indexers later is never re-searched.</li>
-                    <li>Items below your quality cutoff don’t get upgrade searches unless you do it yourself.</li>
-                </ul>
-                <p>Doing that manually is unrealistic for large libraries (hundreds or thousands of items), and firing off bulk searches would hammer your indexers and risk rate limits or bans. <strong>Huntarr exists to fill that gap</strong>: it finds what’s missing or below cutoff and triggers searches in small, configurable batches, continuously and safely.</p>
-
-                <h3><i class="fas fa-cogs" style="margin-right: 10px; color: #3498db;"></i>How Huntarr Works</h3>
-                <p>Huntarr connects to your *arr instances (you can run multiple of each—true multi-instance). For each instance you configure:</p>
-                <ol>
-                    <li><strong>Scan</strong> — Huntarr talks to the *arr API and gets your library: what’s missing, what’s below your quality/custom-format cutoff.</li>
-                    <li><strong>Queue</strong> — It builds a list of items to search (missing content and/or upgrade candidates), using your per-instance settings (e.g. season packs vs episodes, tags vs cutoff unmet).</li>
-                    <li><strong>Trigger searches</strong> — It runs commands (e.g. SeasonSearch, MovieSearch) on the *arr app in small batches. The *arr app does the actual indexer search and grab; Huntarr only tells it <em>what</em> to search.</li>
-                    <li><strong>Respect limits</strong> — You set caps (e.g. searches per cycle, sleep between cycles, hourly API cap). Huntarr stays within those so indexers aren’t overwhelmed and you avoid bans.</li>
-                </ol>
-                <p>So: <strong>Huntarr decides what to search and when; your *arr apps and indexers do the rest.</strong> Huntarr also includes <strong>Requestarr</strong> (discover and request movies/TV from TMDB, add to Radarr/Sonarr), <strong>Swaparr</strong> (monitor and clean stalled downloads), and optional <strong>Prowlarr</strong> integration so your indexers are shared across the stack.</p>
-
-                <h3><i class="fas fa-check-double" style="margin-right: 10px; color: #2ecc71;"></i>Why You Need It</h3>
-                <p>Without Huntarr, you only get <em>new</em> content as it hits RSS. Everything already in your library that’s missing or below cutoff is ignored unless you search by hand. With Huntarr:</p>
-                <ul>
-                    <li>Missing episodes, movies, albums, and books get searched automatically in the background.</li>
-                    <li>Upgrades (better quality / better custom format score) get searched when you use cutoff-unmet or tag-based upgrade modes.</li>
-                    <li>You keep control over how aggressive it is (limits, sleep, which instances are enabled).</li>
-                </ul>
-                <p>So Huntarr is what makes your automation <strong>complete</strong>: it fills gaps and pursues upgrades that the *arr apps alone never would.</p>
-                
-                <h3 id="reddit-explanation"><i class="fab fa-reddit-alien" style="margin-right: 10px; color: #FF4500;"></i>Perfect for Reddit Explanation <a href="#reddit-explanation" class="anchor-link"><i class="fas fa-info-circle"></i></a></h3>
-                
-                <p>Here's a ready-to-copy explanation you can use on Reddit or forums when people ask "What's the point of Huntarr?" or "Why do I need this?":</p>
-                
-                <pre class="terminal"><code>Think of it this way: Sonarr/Radarr are like having a mailman who only delivers new mail as it arrives, but never goes back to get mail that was missed or wasn't available when they first checked. Huntarr is like having someone systematically go through your entire wishlist and actually hunt down all the missing pieces.
-
-Here's the key thing most people don't understand: Your *arr apps only monitor RSS feeds for NEW releases. They don't go back and search for the missing episodes/movies already in your library. This means if you have shows you added after they finished airing, episodes that failed to download initially, or content that wasn't available on your indexers when you first added it, your *arr apps will just ignore them forever.
-
-Huntarr solves this by continuously scanning your entire library, finding all the missing content, and systematically searching for it in small batches that won't overwhelm your indexers or get you banned. It's the difference between having a "mostly complete" library and actually having everything you want.
-
-Most people don't even realize they have missing content because their *arr setup "looks" like it's working perfectly - it's grabbing new releases just fine. But Huntarr will show you exactly how much you're actually missing, and then go get it all for you automatically.
-
-Without Huntarr, you're basically running incomplete automation. You're only getting new stuff as it releases, but missing out on completing existing series, filling gaps in movie collections, and getting quality upgrades when they become available. It's the tool that actually completes your media automation setup.
-
-For more information, check out the full documentation at https://plexguide.github.io/Huntarr.io/index.html - join our Discord community at https://discord.com/invite/PGJJjR5Cww for live support and discussions, or visit our dedicated subreddit at https://www.reddit.com/r/huntarr/ to ask questions and share your experiences with other users!</code></pre>
-                
-
-            </section>
-
-            <!-- 'Why Choose Huntarr?' and 'Supported Applications' sections removed as requested -->
-
-
-
-            <section class="quick-links">
-                <h2><i class="fas fa-rocket" style="margin-right: 10px; color: #2ecc71;"></i>Ready to Get Started?</h2>
-                <p>Follow our installation guide and join thousands of users who've automated their media libraries.</p>
-                
-                <div class="quick-links-grid">
-                    <a href="getting-started/installation.html" class="quick-link-item" style="border-left: 4px solid #2ecc71;">
-                        <h3><i class="fas fa-download" style="margin-right: 10px;"></i> Installation Guide</h3>
-                        <p>Step-by-step setup instructions for all platforms</p>
-                    </a>
-                    
-                    <a href="faq.html" class="quick-link-item" style="border-left: 4px solid #f39c12;">
-                        <h3><i class="fas fa-question-circle" style="margin-right: 10px;"></i> FAQ</h3>
-                        <p>Common issues and solutions for new users</p>
-                    </a>
-                    
-                    <a href="apps/index.html" class="quick-link-item" style="border-left: 4px solid #9b59b6;">
-                        <h3><i class="fas fa-cogs" style="margin-right: 10px;"></i> Configuration</h3>
-                        <p>Learn how to connect your *arr applications</p>
-                    </a>
-                </div>
-            </section>
-            
-            <footer>
-                <div style="text-align: center; margin-bottom: 10px;">
-                    <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" style="margin: 0 15px; color: #5865F2; text-decoration: none;"><i class="fab fa-discord"></i> Discord</a>
-                    <a href="https://github.com/plexguide/Huntarr.io/issues" target="_blank" style="margin: 0 15px; color: #333; text-decoration: none;"><i class="fab fa-github"></i> GitHub</a>
-                    <a href="https://www.reddit.com/r/huntarr/" target="_blank" style="margin: 0 15px; color: #FF4500; text-decoration: none;"><i class="fab fa-reddit-alien"></i> Reddit</a>
-                </div>
-                Huntarr.io | Thanks 4 Using Huntarr - Admin9705
-            </footer>
-        </div>
-    </div>
+<button class="back-to-top" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
+<script src="js/main.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radarr - Huntarr Docs</title>
+    <title>Scheduling - Huntarr Docs</title>
     <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
@@ -46,14 +46,14 @@
             <div class="nav-group">
                 <div class="nav-group-title">Apps</div>
                 <div class="nav-group-items">
-                    <a href="index.html"><i class="fas fa-th-large"></i> Overview</a>
-                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
-                    <a href="radarr.html" class="active"><i class="fas fa-film"></i> Radarr</a>
-                    <a href="lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
-                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
-                    <a href="whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
-                    <a href="prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
-                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                    <a href="../apps/index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="../apps/sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="../apps/radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="../apps/lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="../apps/readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="../apps/whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="../apps/prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="../apps/swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
                 </div>
             </div>
 
@@ -88,12 +88,12 @@
             <div class="nav-group">
                 <div class="nav-group-title">Settings</div>
                 <div class="nav-group-items">
-                    <a href="../settings/index.html"><i class="fas fa-cog"></i> Main Settings</a>
-                    <a href="../settings/scheduling.html"><i class="fas fa-clock"></i> Scheduling</a>
-                    <a href="../settings/notifications.html"><i class="fas fa-bell"></i> Notifications</a>
-                    <a href="../settings/backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
-                    <a href="../settings/log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
-                    <a href="../settings/user-account.html"><i class="fas fa-user-shield"></i> User Account</a>
+                    <a href="index.html"><i class="fas fa-cog"></i> Main Settings</a>
+                    <a href="scheduling.html" class="active"><i class="fas fa-clock"></i> Scheduling</a>
+                    <a href="notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
+                    <a href="log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
+                    <a href="user-account.html"><i class="fas fa-user-shield"></i> User Account</a>
                 </div>
             </div>
 
@@ -131,56 +131,75 @@
     <main class="docs-main">
         <div class="docs-content">
 
-            <h1>Radarr</h1>
-            <p class="page-subtitle">Hunt for missing movies and automatically upgrade quality.</p>
+            <h1>Scheduling</h1>
+            <p class="page-subtitle">Control when and how often Huntarr hunts for your media.</p>
 
             <h2>Overview</h2>
             <ul>
-                <li>Radarr manages movies — Huntarr connects to find missing films and upgrade quality</li>
-                <li>Works with Radarr v3+</li>
-                <li>Multiple Radarr instances supported</li>
+                <li>Each app and instance can have its own schedule</li>
+                <li>Schedules control hunt frequency and item caps</li>
+                <li>The scheduler runs independently for each configured task</li>
             </ul>
 
-            <h2>Configuration</h2>
+            <h2>How Scheduling Works</h2>
+            <ol>
+                <li>Huntarr's scheduler engine checks all active schedules</li>
+                <li>When a schedule's interval has elapsed, a hunt cycle begins</li>
+                <li>The cycle processes up to the configured cap of items</li>
+                <li>After completing, the scheduler waits for the next interval</li>
+            </ol>
 
-            <h3>Instance Settings</h3>
-            <p>URL, API key, name (same pattern)</p>
+            <h2>Creating a Schedule</h2>
+            <ol>
+                <li>Go to Settings &gt; Scheduling</li>
+                <li>Select an App Type (Sonarr, Radarr, Movie Hunt, etc.)</li>
+                <li>Select an Instance (or Global for all instances)</li>
+                <li>Set the schedule type (Interval or Cron)</li>
+                <li>Configure the timing and caps</li>
+                <li>Save</li>
+            </ol>
 
-            <h3>Hunt Settings</h3>
+            <h2>Schedule Settings</h2>
             <table>
                 <thead>
-                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+                    <tr><th>Setting</th><th>Description</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><strong>Hunt Missing</strong></td><td>Enabled</td><td>Search for movies without files</td></tr>
-                    <tr><td><strong>Hunt Upgrades</strong></td><td>Enabled</td><td>Upgrade movies below cutoff quality</td></tr>
-                    <tr><td><strong>Missing Items per Cycle</strong></td><td>1</td><td>Movies to search per hunt cycle</td></tr>
-                    <tr><td><strong>Upgrade Items per Cycle</strong></td><td>1</td><td>Movies to try upgrading per cycle</td></tr>
-                    <tr><td><strong>Monitored Only</strong></td><td>Enabled</td><td>Only hunt monitored movies</td></tr>
-                    <tr><td><strong>Minimum Availability</strong></td><td>Announced</td><td>When a movie becomes searchable (Announced, In Cinemas, Released)</td></tr>
+                    <tr><td><strong>App Type</strong></td><td>Which app this schedule controls</td></tr>
+                    <tr><td><strong>Instance</strong></td><td>Specific instance or "Global" for all</td></tr>
+                    <tr><td><strong>Schedule Type</strong></td><td>Interval (every N minutes) or Custom</td></tr>
+                    <tr><td><strong>Interval</strong></td><td>Minutes between hunt cycles</td></tr>
+                    <tr><td><strong>Missing Cap</strong></td><td>Max missing items to search per cycle</td></tr>
+                    <tr><td><strong>Upgrade Cap</strong></td><td>Max items to upgrade per cycle</td></tr>
+                    <tr><td><strong>Enabled</strong></td><td>Toggle this schedule on/off</td></tr>
                 </tbody>
             </table>
 
-            <h2>How Hunting Works</h2>
-            <p>Similar to Sonarr but for movies. Steps:</p>
-            <ol>
-                <li>Huntarr queries Radarr's API for missing or upgradeable movies</li>
-                <li>Filters by monitored status, minimum availability, and quality cutoff</li>
-                <li>Triggers a search command in Radarr</li>
-                <li>Radarr handles downloading via its configured indexers</li>
-                <li>Repeats on schedule</li>
-            </ol>
+            <h2>Recommended Settings</h2>
+            <table>
+                <thead>
+                    <tr><th>App</th><th>Interval</th><th>Missing Cap</th><th>Upgrade Cap</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Sonarr</strong></td><td>30 min</td><td>5</td><td>3</td><td>Episodes search quickly</td></tr>
+                    <tr><td><strong>Radarr</strong></td><td>60 min</td><td>3</td><td>2</td><td>Movies take longer to find</td></tr>
+                    <tr><td><strong>Lidarr</strong></td><td>60 min</td><td>3</td><td>2</td><td>Music indexers can be slow</td></tr>
+                    <tr><td><strong>Movie Hunt</strong></td><td>30 min</td><td>5</td><td>3</td><td>Uses own indexers</td></tr>
+                </tbody>
+            </table>
 
             <h2>Tips</h2>
             <ul>
-                <li>Minimum Availability is important — searching for "Announced" movies rarely finds results</li>
-                <li>Use "Released" for the best hit rate</li>
-                <li>Radarr's custom formats can help Huntarr find the best quality</li>
-                <li>Multiple instances let you maintain separate quality libraries (e.g., 1080p + 4K)</li>
+                <li>Start conservative and increase caps gradually</li>
+                <li>Too-aggressive schedules may trigger indexer rate limits</li>
+                <li>Use per-instance schedules to stagger load across instances</li>
+                <li>Global schedules apply to all instances of that app type</li>
+                <li>Check the Hunt Manager for schedule execution history</li>
             </ul>
 
-            <div class="alert alert-info">
-                <strong>If movies aren't being found</strong>, check that Radarr's Minimum Availability matches your expectations. A movie marked "Announced" may not have any releases yet.
+            <div class="alert alert-warning">
+                <strong>Rate limits</strong>
+                <p>Setting very low intervals (under 15 minutes) with high caps may cause indexer bans. Start with 30-minute intervals.</p>
             </div>
 
         </div><!-- /docs-content -->

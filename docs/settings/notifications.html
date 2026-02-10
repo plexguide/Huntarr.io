@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Main Settings - Huntarr Docs</title>
+    <title>Notifications - Huntarr Docs</title>
     <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
@@ -88,9 +88,9 @@
             <div class="nav-group">
                 <div class="nav-group-title">Settings</div>
                 <div class="nav-group-items">
-                    <a href="index.html" class="active"><i class="fas fa-cog"></i> Main Settings</a>
+                    <a href="index.html"><i class="fas fa-cog"></i> Main Settings</a>
                     <a href="scheduling.html"><i class="fas fa-clock"></i> Scheduling</a>
-                    <a href="notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="notifications.html" class="active"><i class="fas fa-bell"></i> Notifications</a>
                     <a href="backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
                     <a href="log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
                     <a href="user-account.html"><i class="fas fa-user-shield"></i> User Account</a>
@@ -131,67 +131,141 @@
     <main class="docs-main">
         <div class="docs-content">
 
-            <h1>Main Settings</h1>
-            <p class="page-subtitle">Configure Huntarr's core settings including authentication, UI preferences, and system options.</p>
+            <h1>Notifications</h1>
+            <p class="page-subtitle">Get alerted when Huntarr finds, grabs, or downloads media.</p>
 
-            <h2>Accessing Settings</h2>
-            <p>Navigate to Settings &gt; Main from the sidebar.</p>
+            <h2>Overview</h2>
+            <ul>
+                <li>Huntarr supports multiple notification providers</li>
+                <li>Each connection can be scoped to specific apps and instances</li>
+                <li>Test notifications before relying on them</li>
+            </ul>
 
-            <h2>General Settings</h2>
-            <table>
-                <thead>
-                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td><strong>Timezone</strong></td><td>UTC</td><td>Used for scheduling and log timestamps</td></tr>
-                    <tr><td><strong>Web Server Port</strong></td><td>9705</td><td>Port Huntarr listens on</td></tr>
-                    <tr><td><strong>Web Server Threads</strong></td><td>8</td><td>Number of worker threads (4-32)</td></tr>
-                    <tr><td><strong>Base URL</strong></td><td>/</td><td>For reverse proxy setups (e.g., /huntarr)</td></tr>
-                </tbody>
-            </table>
+            <h2>Supported Providers</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon icon-blue"><i class="fab fa-discord"></i></div>
+                    <h3>Discord</h3>
+                    <p>Webhooks for Discord channels</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon icon-blue"><i class="fab fa-telegram"></i></div>
+                    <h3>Telegram</h3>
+                    <p>Bot messages to Telegram chats</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon icon-green"><i class="fas fa-envelope"></i></div>
+                    <h3>Email</h3>
+                    <p>SMTP email notifications</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon icon-purple"><i class="fas fa-mobile-alt"></i></div>
+                    <h3>Pushover</h3>
+                    <p>Push notifications to devices</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon icon-green"><i class="fas fa-paper-plane"></i></div>
+                    <h3>Pushbullet</h3>
+                    <p>Push notifications across devices</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon icon-cyan"><i class="fas fa-bell"></i></div>
+                    <h3>Apprise</h3>
+                    <p>Universal notification gateway</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon icon-gold"><i class="fab fa-slack"></i></div>
+                    <h3>Slack</h3>
+                    <p>Webhooks for Slack channels</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon icon-orange"><i class="fas fa-bell"></i></div>
+                    <h3>Notifiarr</h3>
+                    <p>Centralized notification management</p>
+                </div>
+            </div>
 
-            <h2>Authentication</h2>
-            <table>
-                <thead>
-                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td><strong>Session Timeout</strong></td><td>24 hours</td><td>How long before requiring re-login</td></tr>
-                    <tr><td><strong>Two-Factor Auth</strong></td><td>Disabled</td><td>Enable 2FA for additional security</td></tr>
-                    <tr><td><strong>Plex SSO</strong></td><td>Disabled</td><td>Allow login via Plex account</td></tr>
-                </tbody>
-            </table>
-
-            <h2>UI Preferences</h2>
-            <table>
-                <thead>
-                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td><strong>Theme</strong></td><td>Dark</td><td>UI color theme</td></tr>
-                    <tr><td><strong>Dashboard View</strong></td><td>List</td><td>Default home page view (List or Grid)</td></tr>
-                    <tr><td><strong>Logo URL</strong></td><td>Default</td><td>Custom logo URL</td></tr>
-                </tbody>
-            </table>
-
-            <h2>Reverse Proxy Setup</h2>
-            <p>If you're running Huntarr behind a reverse proxy (Nginx, Caddy, Traefik):</p>
+            <h2>Adding a Connection</h2>
             <ol>
-                <li>Set the Base URL in Settings (e.g., /huntarr)</li>
-                <li>Configure your proxy to forward to port 9705</li>
-                <li>Example Nginx config:</li>
+                <li>Go to Settings &gt; Notifications</li>
+                <li>Click "Add Connection"</li>
+                <li>Select a provider</li>
+                <li>Configure the provider settings (see below)</li>
+                <li>Set the scope (which apps/instances trigger this notification)</li>
+                <li>Send a test notification</li>
+                <li>Save</li>
             </ol>
-            <pre><code>location /huntarr/ {
-    proxy_pass http://localhost:9705/;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-}</code></pre>
+
+            <h2>Provider Configuration</h2>
+
+            <h3>Discord</h3>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Webhook URL</strong></td><td>Your Discord channel webhook URL</td></tr>
+                </tbody>
+            </table>
+            <p>How to get a webhook: Server Settings &gt; Integrations &gt; Webhooks &gt; New Webhook &gt; Copy URL</p>
+
+            <h3>Telegram</h3>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Bot Token</strong></td><td>From @BotFather on Telegram</td></tr>
+                    <tr><td><strong>Chat ID</strong></td><td>Your chat or group ID</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Email (SMTP)</h3>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>SMTP Server</strong></td><td>Mail server hostname</td></tr>
+                    <tr><td><strong>SMTP Port</strong></td><td>Usually 587 (TLS) or 465 (SSL)</td></tr>
+                    <tr><td><strong>Username</strong></td><td>Email account username</td></tr>
+                    <tr><td><strong>Password</strong></td><td>Email account password</td></tr>
+                    <tr><td><strong>From Address</strong></td><td>Sender email address</td></tr>
+                    <tr><td><strong>To Address</strong></td><td>Recipient email address</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Pushover</h3>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>User Key</strong></td><td>Your Pushover user key</td></tr>
+                    <tr><td><strong>API Token</strong></td><td>Your Pushover application token</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Scoping Notifications</h2>
+            <p>Each connection can be limited to specific apps:</p>
+            <ul>
+                <li><strong>All Apps</strong>: Triggers for any app</li>
+                <li><strong>Specific App Type</strong>: Only triggers for Sonarr, Radarr, etc.</li>
+                <li><strong>Specific Instance</strong>: Only triggers for a particular instance</li>
+            </ul>
+            <p>This lets you route different apps to different channels/recipients.</p>
+
+            <h2>Tips</h2>
+            <ul>
+                <li>Always send a test notification when setting up a new connection</li>
+                <li>Use scoping to avoid notification spam</li>
+                <li>Discord webhooks are the easiest to set up</li>
+                <li>Apprise supports 80+ services if your preferred one isn't listed directly</li>
+            </ul>
 
             <div class="alert alert-info">
-                <strong>Base URL</strong>
-                <p>When using a Base URL, all Huntarr URLs will be prefixed. For example, http://your-server/huntarr/ instead of http://your-server:9705/</p>
+                <strong>Multiple connections</strong>
+                <p>You can have multiple notification connections. For example, Discord for movies and Telegram for TV shows.</p>
             </div>
 
         </div><!-- /docs-content -->

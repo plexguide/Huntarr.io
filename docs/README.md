@@ -1,41 +1,65 @@
-# Huntarr.io Documentation
+# Huntarr Documentation
 
-This directory contains the official documentation for the Huntarr.io project, which is automatically published to [https://plexguide.github.io/Huntarr.io/docs](https://plexguide.github.io/Huntarr.io/docs).
+This is the documentation site for [Huntarr](https://github.com/plexguide/Huntarr.io), served via GitHub Pages.
 
 ## Structure
 
-The documentation is built using GitHub Pages with files directly from the `/docs` folder. The main entry point is `index.html`.
+```
+docs/
+├── index.html                  # Landing page
+├── css/main.css                # Shared stylesheet
+├── js/main.js                  # Shared JavaScript
+├── images/                     # Logos and app icons
+├── getting-started/
+│   ├── installation.html       # Docker, Unraid, source install
+│   ├── setup-wizard.html       # First-launch wizard walkthrough
+│   └── first-steps.html        # Quick start guide
+├── apps/
+│   ├── index.html              # App connections overview
+│   ├── sonarr.html
+│   ├── radarr.html
+│   ├── lidarr.html
+│   ├── readarr.html
+│   ├── whisparr.html
+│   ├── prowlarr.html
+│   └── swaparr.html
+├── movie-hunt/
+│   ├── index.html              # Movie Hunt overview
+│   ├── media-collection.html
+│   ├── indexers-clients.html
+│   └── profiles.html
+├── nzb-hunt/
+│   └── index.html              # NZB Hunt overview
+├── requestarr/
+│   └── index.html              # Requestarr overview
+├── settings/
+│   ├── index.html              # Main settings
+│   ├── scheduling.html
+│   ├── notifications.html
+│   ├── backup-restore.html
+│   ├── log-settings.html
+│   └── user-account.html
+├── system/
+│   ├── hunt-manager.html
+│   ├── logs.html
+│   └── api.html                # API reference
+└── help/
+    ├── faq.html
+    ├── community.html
+    └── donate.html
+```
 
-## Contributing
+## Development
 
-To contribute to the documentation:
-
-1. Make changes to files in the `/docs` directory
-2. Submit a pull request to the main branch
-3. Once approved and merged, GitHub Actions will automatically deploy the changes
-
-## Local Testing
-
-To test documentation locally, you can use Python's built-in HTTP server:
+This is a plain HTML static site — no build step required. Open any HTML file directly in a browser or serve with a simple HTTP server:
 
 ```bash
-cd /path/to/Huntarr.io/docs
+cd docs
 python -m http.server 8000
 ```
 
-Then open your browser to `http://localhost:8000`.
+Then visit http://localhost:8000.
 
-## Documentation Plan
+## GitHub Pages
 
-This documentation will eventually include:
-
-- Installation guides
-- Configuration instructions
-- Feature documentation for all apps (Sonarr, Radarr, Lidarr, Readarr, Whisparr, etc.)
-- Frequently Asked Questions
-- Troubleshooting tips
-- API documentation
-
-## Contact
-
-If you have questions about the documentation, please open an issue on GitHub or join our [Discord](https://discord.com/invite/PGJJjR5Cww).
+The site is deployed automatically from the `docs/` folder on the main branch. The `.nojekyll` file ensures GitHub Pages serves the files as-is without Jekyll processing.

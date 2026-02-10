@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radarr - Huntarr Docs</title>
+    <title>User Account - Huntarr Docs</title>
     <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
@@ -46,14 +46,14 @@
             <div class="nav-group">
                 <div class="nav-group-title">Apps</div>
                 <div class="nav-group-items">
-                    <a href="index.html"><i class="fas fa-th-large"></i> Overview</a>
-                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
-                    <a href="radarr.html" class="active"><i class="fas fa-film"></i> Radarr</a>
-                    <a href="lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
-                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
-                    <a href="whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
-                    <a href="prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
-                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                    <a href="../apps/index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="../apps/sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="../apps/radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="../apps/lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="../apps/readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="../apps/whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="../apps/prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="../apps/swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
                 </div>
             </div>
 
@@ -88,12 +88,12 @@
             <div class="nav-group">
                 <div class="nav-group-title">Settings</div>
                 <div class="nav-group-items">
-                    <a href="../settings/index.html"><i class="fas fa-cog"></i> Main Settings</a>
-                    <a href="../settings/scheduling.html"><i class="fas fa-clock"></i> Scheduling</a>
-                    <a href="../settings/notifications.html"><i class="fas fa-bell"></i> Notifications</a>
-                    <a href="../settings/backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
-                    <a href="../settings/log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
-                    <a href="../settings/user-account.html"><i class="fas fa-user-shield"></i> User Account</a>
+                    <a href="index.html"><i class="fas fa-cog"></i> Main Settings</a>
+                    <a href="scheduling.html"><i class="fas fa-clock"></i> Scheduling</a>
+                    <a href="notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
+                    <a href="log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
+                    <a href="user-account.html" class="active"><i class="fas fa-user-shield"></i> User Account</a>
                 </div>
             </div>
 
@@ -131,57 +131,81 @@
     <main class="docs-main">
         <div class="docs-content">
 
-            <h1>Radarr</h1>
-            <p class="page-subtitle">Hunt for missing movies and automatically upgrade quality.</p>
+            <h1>User Account</h1>
+            <p class="page-subtitle">Manage your admin account, security, and authentication settings.</p>
 
-            <h2>Overview</h2>
+            <h2>Account Settings</h2>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Username</strong></td><td>Your admin username</td></tr>
+                    <tr><td><strong>Change Password</strong></td><td>Update your login password</td></tr>
+                    <tr><td><strong>Recovery Key</strong></td><td>View or regenerate your recovery key</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Two-Factor Authentication (2FA)</h2>
             <ul>
-                <li>Radarr manages movies — Huntarr connects to find missing films and upgrade quality</li>
-                <li>Works with Radarr v3+</li>
-                <li>Multiple Radarr instances supported</li>
+                <li>Enable 2FA for an extra layer of security</li>
+                <li>Scan the QR code with an authenticator app</li>
+                <li>Enter the verification code to activate</li>
+                <li>You'll need the code for every login</li>
             </ul>
 
-            <h2>Configuration</h2>
+            <h3>Setting Up 2FA</h3>
+            <ol>
+                <li>Go to Settings &gt; User Account</li>
+                <li>Click "Enable 2FA"</li>
+                <li>Scan the QR code with your authenticator app</li>
+                <li>Enter the 6-digit code to verify</li>
+                <li>Save your backup codes securely</li>
+            </ol>
 
-            <h3>Instance Settings</h3>
-            <p>URL, API key, name (same pattern)</p>
+            <div class="alert alert-warning">
+                <strong>2FA and backup codes</strong>
+                <p>If you lose access to your authenticator app and don't have backup codes, you'll need to use your recovery key to regain access.</p>
+            </div>
 
-            <h3>Hunt Settings</h3>
+            <h2>Plex SSO</h2>
+            <ul>
+                <li>Link your Plex account for single sign-on</li>
+                <li>Users can log in with their Plex credentials</li>
+                <li>The admin account remains accessible with username/password</li>
+            </ul>
+
+            <h3>Linking Plex</h3>
+            <ol>
+                <li>Click "Link Plex Account" in User Account settings</li>
+                <li>Log in to Plex when prompted</li>
+                <li>Authorize Huntarr</li>
+                <li>Your Plex account is now linked</li>
+            </ol>
+
+            <h2>Recovery Key</h2>
+            <ul>
+                <li>Generated during initial setup</li>
+                <li>The only way to recover access if you forget your password AND lose 2FA</li>
+                <li>Store it securely (password manager, safe location)</li>
+                <li>Can be viewed in Settings &gt; User Account</li>
+            </ul>
+
+            <div class="alert alert-danger">
+                <strong>Your recovery key is your last resort</strong>
+                <p>If you lose both your password and recovery key, you must delete the database and start fresh.</p>
+            </div>
+
+            <h2>Session Management</h2>
             <table>
                 <thead>
                     <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><strong>Hunt Missing</strong></td><td>Enabled</td><td>Search for movies without files</td></tr>
-                    <tr><td><strong>Hunt Upgrades</strong></td><td>Enabled</td><td>Upgrade movies below cutoff quality</td></tr>
-                    <tr><td><strong>Missing Items per Cycle</strong></td><td>1</td><td>Movies to search per hunt cycle</td></tr>
-                    <tr><td><strong>Upgrade Items per Cycle</strong></td><td>1</td><td>Movies to try upgrading per cycle</td></tr>
-                    <tr><td><strong>Monitored Only</strong></td><td>Enabled</td><td>Only hunt monitored movies</td></tr>
-                    <tr><td><strong>Minimum Availability</strong></td><td>Announced</td><td>When a movie becomes searchable (Announced, In Cinemas, Released)</td></tr>
+                    <tr><td><strong>Session Timeout</strong></td><td>24 hours</td><td>How long a login session lasts</td></tr>
+                    <tr><td><strong>Remember Me</strong></td><td>Disabled</td><td>Extend session duration</td></tr>
                 </tbody>
             </table>
-
-            <h2>How Hunting Works</h2>
-            <p>Similar to Sonarr but for movies. Steps:</p>
-            <ol>
-                <li>Huntarr queries Radarr's API for missing or upgradeable movies</li>
-                <li>Filters by monitored status, minimum availability, and quality cutoff</li>
-                <li>Triggers a search command in Radarr</li>
-                <li>Radarr handles downloading via its configured indexers</li>
-                <li>Repeats on schedule</li>
-            </ol>
-
-            <h2>Tips</h2>
-            <ul>
-                <li>Minimum Availability is important — searching for "Announced" movies rarely finds results</li>
-                <li>Use "Released" for the best hit rate</li>
-                <li>Radarr's custom formats can help Huntarr find the best quality</li>
-                <li>Multiple instances let you maintain separate quality libraries (e.g., 1080p + 4K)</li>
-            </ul>
-
-            <div class="alert alert-info">
-                <strong>If movies aren't being found</strong>, check that Radarr's Minimum Availability matches your expectations. A movie marked "Announced" may not have any releases yet.
-            </div>
 
         </div><!-- /docs-content -->
 

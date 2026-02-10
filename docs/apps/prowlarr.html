@@ -3,59 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prowlarr - Huntarr.io Documentation</title>
+    <title>Prowlarr - Huntarr Docs</title>
+    <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="../js/main.js" defer></script>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-logo">
-            <img src="../images/huntarr-logo.png" alt="Huntarr Logo">
-            <h2>Huntarr.io</h2>
+
+<!-- Mobile Topbar -->
+<div class="docs-mobile-topbar">
+    <button class="mob-hamburger" aria-label="Open navigation"><span></span><span></span><span></span></button>
+    <img src="../images/huntarr-logo.png" alt="Huntarr" class="mob-logo">
+    <span class="mob-title">Documentation</span>
+</div>
+
+<!-- Sidebar Backdrop (mobile) -->
+<div class="docs-sidebar-backdrop"></div>
+
+<div class="docs-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <nav class="docs-sidebar" aria-label="Documentation navigation">
+        <a href="../index.html" class="sidebar-brand">
+            <img src="../images/huntarr-logo.png" alt="Huntarr">
+            <span>Huntarr</span>
+        </a>
+
+        <div class="sidebar-scroll">
+
+            <!-- Getting Started -->
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <div class="nav-group-items">
+                    <a href="../index.html"><i class="fas fa-home"></i> Welcome</a>
+                    <a href="../getting-started/installation.html"><i class="fas fa-download"></i> Installation</a>
+                    <a href="../getting-started/setup-wizard.html"><i class="fas fa-magic"></i> Setup Wizard</a>
+                    <a href="../getting-started/first-steps.html"><i class="fas fa-rocket"></i> First Steps</a>
+                </div>
+            </div>
+
+            <!-- Apps -->
+            <div class="nav-group">
+                <div class="nav-group-title">Apps</div>
+                <div class="nav-group-items">
+                    <a href="index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="prowlarr.html" class="active"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                </div>
+            </div>
+
+            <!-- Movie Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">Movie Hunt</div>
+                <div class="nav-group-items">
+                    <a href="../movie-hunt/index.html"><i class="fas fa-clapperboard"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                    <a href="../movie-hunt/media-collection.html"><i class="fas fa-photo-film"></i> Media Collection</a>
+                    <a href="../movie-hunt/indexers-clients.html"><i class="fas fa-server"></i> Indexers &amp; Clients</a>
+                    <a href="../movie-hunt/profiles.html"><i class="fas fa-sliders"></i> Profiles</a>
+                </div>
+            </div>
+
+            <!-- NZB Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">NZB Hunt</div>
+                <div class="nav-group-items">
+                    <a href="../nzb-hunt/index.html"><i class="fas fa-newspaper"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                </div>
+            </div>
+
+            <!-- Requestarr -->
+            <div class="nav-group">
+                <div class="nav-group-title">Requests</div>
+                <div class="nav-group-items">
+                    <a href="../requestarr/index.html"><i class="fas fa-hand-paper"></i> Requestarr</a>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="nav-group">
+                <div class="nav-group-title">Settings</div>
+                <div class="nav-group-items">
+                    <a href="../settings/index.html"><i class="fas fa-cog"></i> Main Settings</a>
+                    <a href="../settings/scheduling.html"><i class="fas fa-clock"></i> Scheduling</a>
+                    <a href="../settings/notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="../settings/backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
+                    <a href="../settings/log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
+                    <a href="../settings/user-account.html"><i class="fas fa-user-shield"></i> User Account</a>
+                </div>
+            </div>
+
+            <!-- System -->
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <div class="nav-group-items">
+                    <a href="../system/hunt-manager.html"><i class="fas fa-tasks"></i> Hunt Manager</a>
+                    <a href="../system/logs.html"><i class="fas fa-scroll"></i> Logs</a>
+                    <a href="../system/api.html"><i class="fas fa-code"></i> API Reference</a>
+                </div>
+            </div>
+
+            <!-- Help -->
+            <div class="nav-group">
+                <div class="nav-group-title">Help</div>
+                <div class="nav-group-items">
+                    <a href="../help/faq.html"><i class="fas fa-question-circle"></i> FAQ</a>
+                    <a href="../help/community.html"><i class="fas fa-users"></i> Community</a>
+                    <a href="../help/donate.html"><i class="fas fa-heart"></i> Donate</a>
+                </div>
+            </div>
+
+        </div><!-- /sidebar-scroll -->
+
+        <div class="sidebar-footer">
+            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" class="sf-discord" title="Discord"><i class="fab fa-discord"></i></a>
+            <a href="https://www.reddit.com/r/huntarr/" target="_blank" class="sf-reddit" title="Reddit"><i class="fab fa-reddit-alien"></i></a>
+            <a href="https://github.com/plexguide/Huntarr.io" target="_blank" class="sf-github" title="GitHub"><i class="fab fa-github"></i></a>
+            <a href="../help/donate.html" class="sf-heart" title="Donate"><i class="fas fa-heart"></i></a>
         </div>
-        <nav class="sidebar-nav">
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Getting Started</h3>
-                <ul>
-                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63;"></i> Donate</a></li>
-                    <li><a href="../getting-started/installation.html">Installation</a></li>
-                </ul>
+    </nav>
+
+    <!-- ===== MAIN ===== -->
+    <main class="docs-main">
+        <div class="docs-content">
+
+            <h1>Prowlarr</h1>
+            <p class="page-subtitle">Centralized indexer management for all your *arr apps.</p>
+
+            <h2>Overview</h2>
+            <ul>
+                <li>Prowlarr is an indexer manager that syncs indexers across all *arr apps</li>
+                <li>Huntarr connects to Prowlarr for centralized indexer health monitoring</li>
+                <li>Not used for hunting directly — Prowlarr manages the indexers that other apps use</li>
+            </ul>
+
+            <h2>What Huntarr Does with Prowlarr</h2>
+            <ul>
+                <li>Monitors indexer health and status</li>
+                <li>Provides visibility into indexer performance on the dashboard</li>
+                <li>Allows Prowlarr configuration from within Huntarr's interface</li>
+            </ul>
+
+            <h2>Configuration</h2>
+            <p>Standard instance settings: URL, API key, name.</p>
+
+            <div class="alert alert-info">
+                <strong>Prowlarr doesn't have 'hunt' capabilities.</strong> It manages indexers that Sonarr, Radarr, and other apps use for searching.
             </div>
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Core</h3>
-                <ul>
-                    <li><a href="../index.html">Home</a></li>
-                    <li class="active"><a href="index.html">Apps</a></li>
-                    <li><a href="../settings/settings.html">Settings</a></li>
-                    <li><a href="../features/index.html">Features</a></li>
-                    <li><a href="../faq.html">FAQ</a></li>
-                </ul>
-            </div>
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Resources</h3>
-                <ul>
-                    <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a></li>
-                    <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a></li>
-                    <li><a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></li>
-                </ul>
-            </div>
-        </nav>
-    </div>
-    <div class="main-content">
-        <div class="container">
-            <h1>Prowlarr in Huntarr</h1>
-            <p>Prowlarr is an indexer manager for the *arr stack. In Huntarr you add a single Prowlarr instance; your Sonarr, Radarr, Lidarr, Readarr, Whisparr, and Eros instances use Prowlarr’s indexers for searches, so you manage indexers in one place.</p>
-            <h2 id="adding-prowlarr">Adding Prowlarr</h2>
-            <p>Go to <strong>Apps</strong> in the sidebar and open <strong>Prowlarr</strong>. Add your Prowlarr URL and API key (from Prowlarr’s Settings → General). Huntarr does not run “missing” or “upgrade” cycles for Prowlarr; it only connects so that other apps can use your Prowlarr-configured indexers when Huntarr triggers searches.</p>
-            <h2>Single instance</h2>
-            <p>Huntarr supports one Prowlarr instance. Configure all your indexers in Prowlarr and sync them to your *arr apps; Huntarr will use those indexers when it triggers searches in Sonarr, Radarr, and the others.</p>
-            <div class="section-nav">
-                <a href="index.html">← Apps</a>
-                <a href="sonarr.html">Sonarr →</a>
-            </div>
-            <footer>Huntarr.io | Prowlarr | Thanks 4 Using Huntarr - Admin9705</footer>
-        </div>
-    </div>
+
+            <h3>Settings Table</h3>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>URL</strong></td><td>—</td><td>Your Prowlarr instance URL (e.g., http://localhost:9696)</td></tr>
+                    <tr><td><strong>API Key</strong></td><td>—</td><td>Found in Prowlarr &gt; Settings &gt; General</td></tr>
+                    <tr><td><strong>Enabled</strong></td><td>Yes</td><td>Monitor this Prowlarr instance</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Tips</h2>
+            <ul>
+                <li>Keep Prowlarr healthy — it affects all your other *arr apps' ability to search</li>
+                <li>Configure indexers in Prowlarr, not in individual *arr apps</li>
+                <li>Huntarr will warn you if Prowlarr reports unhealthy indexers</li>
+            </ul>
+
+        </div><!-- /docs-content -->
+
+        <footer class="docs-footer">
+            <p>Huntarr is open source. <a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a> · <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a> · <a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></p>
+        </footer>
+    </main>
+
+</div><!-- /docs-layout -->
+
+<button class="back-to-top" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
+<script src="../js/main.js"></script>
 </body>
 </html>

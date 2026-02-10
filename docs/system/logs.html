@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radarr - Huntarr Docs</title>
+    <title>Logs - Huntarr Docs</title>
     <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
@@ -46,14 +46,14 @@
             <div class="nav-group">
                 <div class="nav-group-title">Apps</div>
                 <div class="nav-group-items">
-                    <a href="index.html"><i class="fas fa-th-large"></i> Overview</a>
-                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
-                    <a href="radarr.html" class="active"><i class="fas fa-film"></i> Radarr</a>
-                    <a href="lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
-                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
-                    <a href="whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
-                    <a href="prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
-                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                    <a href="../apps/index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="../apps/sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="../apps/radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="../apps/lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="../apps/readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="../apps/whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="../apps/prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="../apps/swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
                 </div>
             </div>
 
@@ -101,9 +101,9 @@
             <div class="nav-group">
                 <div class="nav-group-title">System</div>
                 <div class="nav-group-items">
-                    <a href="../system/hunt-manager.html"><i class="fas fa-tasks"></i> Hunt Manager</a>
-                    <a href="../system/logs.html"><i class="fas fa-scroll"></i> Logs</a>
-                    <a href="../system/api.html"><i class="fas fa-code"></i> API Reference</a>
+                    <a href="hunt-manager.html"><i class="fas fa-tasks"></i> Hunt Manager</a>
+                    <a href="logs.html" class="active"><i class="fas fa-scroll"></i> Logs</a>
+                    <a href="api.html"><i class="fas fa-code"></i> API Reference</a>
                 </div>
             </div>
 
@@ -131,56 +131,82 @@
     <main class="docs-main">
         <div class="docs-content">
 
-            <h1>Radarr</h1>
-            <p class="page-subtitle">Hunt for missing movies and automatically upgrade quality.</p>
+            <h1>Logs</h1>
+            <p class="page-subtitle">View and analyze Huntarr's operational logs for troubleshooting.</p>
 
             <h2>Overview</h2>
             <ul>
-                <li>Radarr manages movies — Huntarr connects to find missing films and upgrade quality</li>
-                <li>Works with Radarr v3+</li>
-                <li>Multiple Radarr instances supported</li>
+                <li>Huntarr maintains detailed logs of all operations</li>
+                <li>Logs are available in the UI and as files on disk</li>
+                <li>Filter by app, level, and time range</li>
             </ul>
 
-            <h2>Configuration</h2>
-
-            <h3>Instance Settings</h3>
-            <p>URL, API key, name (same pattern)</p>
-
-            <h3>Hunt Settings</h3>
-            <table>
-                <thead>
-                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td><strong>Hunt Missing</strong></td><td>Enabled</td><td>Search for movies without files</td></tr>
-                    <tr><td><strong>Hunt Upgrades</strong></td><td>Enabled</td><td>Upgrade movies below cutoff quality</td></tr>
-                    <tr><td><strong>Missing Items per Cycle</strong></td><td>1</td><td>Movies to search per hunt cycle</td></tr>
-                    <tr><td><strong>Upgrade Items per Cycle</strong></td><td>1</td><td>Movies to try upgrading per cycle</td></tr>
-                    <tr><td><strong>Monitored Only</strong></td><td>Enabled</td><td>Only hunt monitored movies</td></tr>
-                    <tr><td><strong>Minimum Availability</strong></td><td>Announced</td><td>When a movie becomes searchable (Announced, In Cinemas, Released)</td></tr>
-                </tbody>
-            </table>
-
-            <h2>How Hunting Works</h2>
-            <p>Similar to Sonarr but for movies. Steps:</p>
+            <h2>Viewing Logs</h2>
             <ol>
-                <li>Huntarr queries Radarr's API for missing or upgradeable movies</li>
-                <li>Filters by monitored status, minimum availability, and quality cutoff</li>
-                <li>Triggers a search command in Radarr</li>
-                <li>Radarr handles downloading via its configured indexers</li>
-                <li>Repeats on schedule</li>
+                <li>Navigate to System &gt; Logs in the sidebar (or Settings &gt; Logs page)</li>
+                <li>The log viewer shows recent entries</li>
+                <li>Use filters to narrow by:
+                    <ul>
+                        <li>App type (Sonarr, Radarr, Movie Hunt, etc.)</li>
+                        <li>Log level (DEBUG, INFO, WARNING, ERROR)</li>
+                        <li>Time range</li>
+                    </ul>
+                </li>
             </ol>
 
-            <h2>Tips</h2>
+            <h2>Log Entry Format</h2>
+            <p>Each entry includes:</p>
             <ul>
-                <li>Minimum Availability is important — searching for "Announced" movies rarely finds results</li>
-                <li>Use "Released" for the best hit rate</li>
-                <li>Radarr's custom formats can help Huntarr find the best quality</li>
-                <li>Multiple instances let you maintain separate quality libraries (e.g., 1080p + 4K)</li>
+                <li>Timestamp</li>
+                <li>App/module that generated the log</li>
+                <li>Log level (color-coded)</li>
+                <li>Message text</li>
             </ul>
 
+            <h2>Log Files</h2>
+            <p>Log files are stored in <code>/config/logs/</code>:</p>
+            <ul>
+                <li><code>huntarr.log</code> — Main application log</li>
+                <li><code>huntarr.log.1</code>, <code>.2</code>, etc. — Rotated log files</li>
+                <li>File rotation happens when a file reaches the configured max size (default 5 MB)</li>
+            </ul>
+
+            <h2>Common Log Messages</h2>
+
+            <h3>Info Messages</h3>
+            <ul>
+                <li>"Starting hunt cycle for Sonarr" — Normal cycle start</li>
+                <li>"Found 3 missing episodes" — Successful detection</li>
+                <li>"Search triggered for Movie Title" — Search sent to the app</li>
+            </ul>
+
+            <h3>Warning Messages</h3>
+            <ul>
+                <li>"No missing items found" — Nothing to search (normal if library is complete)</li>
+                <li>"Rate limited by indexer" — Slow down your schedule</li>
+                <li>"Connection timeout" — Network issue with an *arr app</li>
+            </ul>
+
+            <h3>Error Messages</h3>
+            <ul>
+                <li>"API key invalid" — Check your app's API key</li>
+                <li>"Connection refused" — The *arr app may be down</li>
+                <li>"Database locked" — Usually resolves itself; restart if persistent</li>
+            </ul>
+
+            <h2>Troubleshooting with Logs</h2>
+            <p>Steps:</p>
+            <ol>
+                <li>Set log level to DEBUG in Settings &gt; Log Settings</li>
+                <li>Reproduce the issue</li>
+                <li>Check logs for ERROR or WARNING entries</li>
+                <li>Look for the sequence of events leading to the problem</li>
+                <li>Set log level back to INFO when done</li>
+            </ol>
+
             <div class="alert alert-info">
-                <strong>If movies aren't being found</strong>, check that Radarr's Minimum Availability matches your expectations. A movie marked "Announced" may not have any releases yet.
+                <strong>DEBUG Level</strong>
+                <p>DEBUG level produces a lot of output. Only enable it when actively troubleshooting, then switch back to INFO.</p>
             </div>
 
         </div><!-- /docs-content -->

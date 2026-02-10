@@ -3,246 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Huntarr.io Applications Documentation</title>
+    <title>App Connections - Huntarr Docs</title>
+    <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="../js/main.js" defer></script>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-logo">
-            <img src="../images/huntarr-logo.png" alt="Huntarr Logo">
-            <h2>Huntarr.io</h2>
+
+<!-- Mobile Topbar -->
+<div class="docs-mobile-topbar">
+    <button class="mob-hamburger" aria-label="Open navigation"><span></span><span></span><span></span></button>
+    <img src="../images/huntarr-logo.png" alt="Huntarr" class="mob-logo">
+    <span class="mob-title">Documentation</span>
+</div>
+
+<!-- Sidebar Backdrop (mobile) -->
+<div class="docs-sidebar-backdrop"></div>
+
+<div class="docs-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <nav class="docs-sidebar" aria-label="Documentation navigation">
+        <a href="../index.html" class="sidebar-brand">
+            <img src="../images/huntarr-logo.png" alt="Huntarr">
+            <span>Huntarr</span>
+        </a>
+
+        <div class="sidebar-scroll">
+
+            <!-- Getting Started -->
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <div class="nav-group-items">
+                    <a href="../index.html"><i class="fas fa-home"></i> Welcome</a>
+                    <a href="../getting-started/installation.html"><i class="fas fa-download"></i> Installation</a>
+                    <a href="../getting-started/setup-wizard.html"><i class="fas fa-magic"></i> Setup Wizard</a>
+                    <a href="../getting-started/first-steps.html"><i class="fas fa-rocket"></i> First Steps</a>
+                </div>
+            </div>
+
+            <!-- Apps -->
+            <div class="nav-group">
+                <div class="nav-group-title">Apps</div>
+                <div class="nav-group-items">
+                    <a href="index.html" class="active"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                </div>
+            </div>
+
+            <!-- Movie Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">Movie Hunt</div>
+                <div class="nav-group-items">
+                    <a href="../movie-hunt/index.html"><i class="fas fa-clapperboard"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                    <a href="../movie-hunt/media-collection.html"><i class="fas fa-photo-film"></i> Media Collection</a>
+                    <a href="../movie-hunt/indexers-clients.html"><i class="fas fa-server"></i> Indexers &amp; Clients</a>
+                    <a href="../movie-hunt/profiles.html"><i class="fas fa-sliders"></i> Profiles</a>
+                </div>
+            </div>
+
+            <!-- NZB Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">NZB Hunt</div>
+                <div class="nav-group-items">
+                    <a href="../nzb-hunt/index.html"><i class="fas fa-newspaper"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                </div>
+            </div>
+
+            <!-- Requestarr -->
+            <div class="nav-group">
+                <div class="nav-group-title">Requests</div>
+                <div class="nav-group-items">
+                    <a href="../requestarr/index.html"><i class="fas fa-hand-paper"></i> Requestarr</a>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="nav-group">
+                <div class="nav-group-title">Settings</div>
+                <div class="nav-group-items">
+                    <a href="../settings/index.html"><i class="fas fa-cog"></i> Main Settings</a>
+                    <a href="../settings/scheduling.html"><i class="fas fa-clock"></i> Scheduling</a>
+                    <a href="../settings/notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="../settings/backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
+                    <a href="../settings/log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
+                    <a href="../settings/user-account.html"><i class="fas fa-user-shield"></i> User Account</a>
+                </div>
+            </div>
+
+            <!-- System -->
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <div class="nav-group-items">
+                    <a href="../system/hunt-manager.html"><i class="fas fa-tasks"></i> Hunt Manager</a>
+                    <a href="../system/logs.html"><i class="fas fa-scroll"></i> Logs</a>
+                    <a href="../system/api.html"><i class="fas fa-code"></i> API Reference</a>
+                </div>
+            </div>
+
+            <!-- Help -->
+            <div class="nav-group">
+                <div class="nav-group-title">Help</div>
+                <div class="nav-group-items">
+                    <a href="../help/faq.html"><i class="fas fa-question-circle"></i> FAQ</a>
+                    <a href="../help/community.html"><i class="fas fa-users"></i> Community</a>
+                    <a href="../help/donate.html"><i class="fas fa-heart"></i> Donate</a>
+                </div>
+            </div>
+
+        </div><!-- /sidebar-scroll -->
+
+        <div class="sidebar-footer">
+            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" class="sf-discord" title="Discord"><i class="fab fa-discord"></i></a>
+            <a href="https://www.reddit.com/r/huntarr/" target="_blank" class="sf-reddit" title="Reddit"><i class="fab fa-reddit-alien"></i></a>
+            <a href="https://github.com/plexguide/Huntarr.io" target="_blank" class="sf-github" title="GitHub"><i class="fab fa-github"></i></a>
+            <a href="../help/donate.html" class="sf-heart" title="Donate"><i class="fas fa-heart"></i></a>
         </div>
-        
-        <nav class="sidebar-nav">
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Getting Started</h3>
-                <ul>
-                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
-                    <li><a href="../getting-started/installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
-                </ul>
+    </nav>
+
+    <!-- ===== MAIN ===== -->
+    <main class="docs-main">
+        <div class="docs-content">
+
+            <h1>App Connections</h1>
+            <p class="page-subtitle">Connect and manage your *arr instances with Huntarr.</p>
+
+            <h2>How App Connections Work</h2>
+            <ul>
+                <li>Huntarr communicates with each *arr app via its API</li>
+                <li>You provide the app URL and API key</li>
+                <li>Huntarr monitors missing/upgradeable media and triggers searches</li>
+                <li>Each instance is managed independently with its own settings</li>
+            </ul>
+
+            <h2>Adding an Instance</h2>
+            <ol class="steps">
+                <li>Navigate to the Apps page from the sidebar</li>
+                <li>Select the app type (Sonarr, Radarr, etc.)</li>
+                <li>Click "Add Instance"</li>
+                <li>Enter a friendly name, the app URL, and API key</li>
+                <li>Click "Test Connection" to verify</li>
+                <li>Save the instance</li>
+            </ol>
+
+            <div class="alert alert-info">
+                <strong>Your API key</strong> is found in each *arr app under Settings &gt; General &gt; Security.
             </div>
 
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Core</h3>
-                <ul>
-                    <li><a href="../index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg> Home</a></li>
-                    <li class="active"><a href="index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"></path></svg> Apps</a></li>
-                    <li><a href="../settings/settings.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg> Settings</a></li>
-                    <li><a href="../features/index.html"><i class="fas fa-star" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Features</a></li>
-                    <li><a href="../faq.html"><i class="fas fa-question-circle" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> FAQ</a></li>
-                </ul>
+            <h2>Managing Instances</h2>
+            <ul>
+                <li>Edit instance settings (URL, API key, name)</li>
+                <li>Enable/disable specific instances without deleting</li>
+                <li>Configure per-instance hunt settings</li>
+                <li>Delete instances you no longer need</li>
+            </ul>
+
+            <h2>Supported App Grid</h2>
+            <div class="card-grid">
+                <a href="sonarr.html" class="card">
+                    <div class="card-icon icon-blue"><i class="fas fa-tv"></i></div>
+                    <h3>Sonarr</h3>
+                    <p>TV series — hunt missing episodes and upgrade quality.</p>
+                </a>
+                <a href="radarr.html" class="card">
+                    <div class="card-icon icon-gold"><i class="fas fa-film"></i></div>
+                    <h3>Radarr</h3>
+                    <p>Movies — hunt missing films and upgrade quality.</p>
+                </a>
+                <a href="lidarr.html" class="card">
+                    <div class="card-icon icon-green"><i class="fas fa-music"></i></div>
+                    <h3>Lidarr</h3>
+                    <p>Music — hunt missing albums and tracks.</p>
+                </a>
+                <a href="readarr.html" class="card">
+                    <div class="card-icon icon-red"><i class="fas fa-book"></i></div>
+                    <h3>Readarr</h3>
+                    <p>Books and audiobooks — hunt missing content.</p>
+                </a>
+                <a href="whisparr.html" class="card">
+                    <div class="card-icon icon-purple"><i class="fas fa-mask"></i></div>
+                    <h3>Whisparr</h3>
+                    <p>Adult content — hunt missing and upgrade.</p>
+                </a>
+                <a href="prowlarr.html" class="card">
+                    <div class="card-icon icon-orange"><i class="fas fa-search"></i></div>
+                    <h3>Prowlarr</h3>
+                    <p>Indexer management — sync with Huntarr.</p>
+                </a>
+                <a href="swaparr.html" class="card">
+                    <div class="card-icon icon-cyan"><i class="fas fa-exchange-alt"></i></div>
+                    <h3>Swaparr</h3>
+                    <p>Stalled download management and swap-outs.</p>
+                </a>
             </div>
-            
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Resources</h3>
-                <ul>
-                    <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg> GitHub</a></li>
-                    <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
-                    <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
 
-                </ul>
-            </div>
-        </nav>
-    </div>
+            <h2>Instance Settings</h2>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Name</strong></td><td>A friendly label for this instance</td></tr>
+                    <tr><td><strong>URL</strong></td><td>Full URL including port (e.g., http://localhost:8989)</td></tr>
+                    <tr><td><strong>API Key</strong></td><td>Found in Settings &gt; General of the app</td></tr>
+                    <tr><td><strong>Enabled</strong></td><td>Toggle hunting for this instance on/off</td></tr>
+                    <tr><td><strong>Hunt Missing</strong></td><td>Search for missing media</td></tr>
+                    <tr><td><strong>Hunt Upgrades</strong></td><td>Search for quality upgrades</td></tr>
+                </tbody>
+            </table>
 
-    <div class="main-content">
-        <div class="container">
-            <h1 id="page-title">Huntarr.io Applications</h1>
-            
-            <p>Huntarr.io provides a unified interface to manage your media automation applications. Each application has its own dedicated documentation page with setup instructions, configuration options, and usage guides.</p>
-            
-            <h2>Supported Applications</h2>
-            
-            <div class="app-cards-grid">
-                <div class="app-card sonarr-card">
-                    <div class="app-card-header">
-                        <div class="app-card-icon sonarr">
-                            <img src="../images/arrs/sonarr.png" alt="Sonarr Logo" width="48" height="48" style="object-fit: contain;">
-                        </div>
-                        <h3 class="app-card-title">Sonarr</h3>
-                    </div>
-                    <div class="app-card-content">
-                        <p>Manage and automate TV show downloads.</p>
-                    </div>
-                    <div class="app-card-footer">
-                        <a href="sonarr.html">View Documentation →</a>
-                    </div>
-                </div>
-                
-                <div class="app-card radarr-card">
-                    <div class="app-card-header">
-                        <div class="app-card-icon radarr">
-                            <img src="../images/arrs/radarr.png" alt="Radarr Logo" width="48" height="48" style="object-fit: contain;">
-                        </div>
-                        <h3 class="app-card-title">Radarr</h3>
-                    </div>
-                    <div class="app-card-content">
-                        <p>Manage and automate movie downloads.</p>
-                    </div>
-                    <div class="app-card-footer">
-                        <a href="radarr.html">View Documentation →</a>
-                    </div>
-                </div>
-                
-                <div class="app-card lidarr-card">
-                    <div class="app-card-header">
-                        <div class="app-card-icon lidarr">
-                            <img src="../images/arrs/lidarr.png" alt="Lidarr Logo" width="48" height="48" style="object-fit: contain;">
-                        </div>
-                        <h3 class="app-card-title">Lidarr</h3>
-                    </div>
-                    <div class="app-card-content">
-                        <p>Manage and automate music downloads.</p>
-                    </div>
-                    <div class="app-card-footer">
-                        <a href="lidarr.html">View Documentation →</a>
-                    </div>
-                </div>
-                
-                <div class="app-card readarr-card">
-                    <div class="app-card-header">
-                        <div class="app-card-icon readarr">
-                            <img src="../images/arrs/readarr.png" alt="Readarr Logo" width="48" height="48" style="object-fit: contain;">
-                        </div>
-                        <h3 class="app-card-title">Readarr</h3>
-                    </div>
-                    <div class="app-card-content">
-                        <p>Manage and automate book downloads.</p>
-                    </div>
-                    <div class="app-card-footer">
-                        <a href="readarr.html">View Documentation →</a>
-                    </div>
-                </div>
-                
-                <div class="app-card whisparr-card">
-                    <div class="app-card-header">
-                        <div class="app-card-icon whisparr">
-                            <img src="../images/arrs/whisparr.png" alt="Whisparr Logo" width="48" height="48" style="object-fit: contain;">
-                        </div>
-                        <h3 class="app-card-title">Whisparr V2</h3>
-                    </div>
-                    <div class="app-card-content">
-                        <p>Manage and automate adult content downloads.</p>
-                    </div>
-                    <div class="app-card-footer">
-                        <a href="whisparr.html">View Documentation →</a>
-                    </div>
-                </div>
-                
-                <div class="app-card whisparr-card">
-                    <div class="app-card-header">
-                        <div class="app-card-icon whisparr">
-                            <img src="../images/arrs/whisparr.png" alt="Whisparr V3 Logo" width="48" height="48" style="object-fit: contain;">
-                        </div>
-                        <h3 class="app-card-title">Whisparr V3 (Eros)</h3>
-                    </div>
-                    <div class="app-card-content">
-                        <p>Newer version of Whisparr for managing adult content downloads.</p>
-                    </div>
-                    <div class="app-card-footer">
-                        <a href="eros.html">View Documentation →</a>
-                    </div>
-                </div>
-                
-                <div class="app-card prowlarr-card">
-                    <div class="app-card-header">
-                        <div class="app-card-icon" style="background-color: #3c3c3c;">
-                            <i class="fas fa-search" style="font-size: 24px; color: #fff;"></i>
-                        </div>
-                        <h3 class="app-card-title">Prowlarr</h3>
-                    </div>
-                    <div class="app-card-content">
-                        <p>Indexer manager for the *arr stack. Connect Huntarr to a single Prowlarr instance to use your indexers across apps.</p>
-                    </div>
-                    <div class="app-card-footer">
-                        <a href="prowlarr.html">View Documentation →</a>
-                    </div>
-                </div>
+        </div><!-- /docs-content -->
 
-                <div class="app-card" style="border-left: 4px solid #6c5ce7;">
-                    <div class="app-card-header">
-                        <div class="app-card-icon" style="background-color: #6c5ce7;">
-                            <i class="fas fa-film" style="font-size: 24px; color: #fff;"></i>
-                        </div>
-                        <h3 class="app-card-title">Requestarr</h3>
-                    </div>
-                    <div class="app-card-content">
-                        <p>Discover and request movies and TV from TMDB. Adds requested items to your Radarr and Sonarr instances with full multi-instance support.</p>
-                    </div>
-                    <div class="app-card-footer">
-                        <a href="requestarr.html">View Documentation →</a>
-                    </div>
-                </div>
+        <footer class="docs-footer">
+            <p>Huntarr is open source. <a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a> · <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a> · <a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></p>
+        </footer>
+    </main>
 
-                <div class="app-card" style="border-left: 4px solid #f59e0b;">
-                    <div class="app-card-header">
-                        <div class="app-card-icon" style="background-color: #f59e0b;">
-                            <i class="fas fa-film" style="font-size: 24px; color: #fff;"></i>
-                        </div>
-                        <h3 class="app-card-title">Movie Hunt <span style="font-size: 0.75em; font-weight: 600; color: #fbbf24;">(Beta)</span></h3>
-                    </div>
-                    <div class="app-card-content">
-                        <p>Standalone movie discovery and downloads without Radarr. Uses your indexers and download clients (SABnzbd/NZBGet). See wiki for Docker endpoints and paths.</p>
-                    </div>
-                    <div class="app-card-footer">
-                        <a href="movie-hunt.html">View Documentation →</a>
-                    </div>
-                </div>
+</div><!-- /docs-layout -->
 
-                <div class="app-card swaparr-card">
-                    <div class="app-card-header">
-                        <div class="app-card-icon swaparr">
-                            <img src="../images/arrs/swaparr.png" alt="Swaparr Logo" width="48" height="48" style="object-fit: contain;">
-                        </div>
-                        <h3 class="app-card-title">Swaparr</h3>
-                    </div>
-                    <div class="app-card-content">
-                        <p>Monitor and remove stalled downloads from your *arr applications automatically.</p>
-                    </div>
-                    <div class="app-card-footer">
-                        <a href="swaparr.html">View Documentation →</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="section-nav">
-                <a href="../index.html">← Back to Home</a>
-                <a href="../settings/settings.html">Settings Documentation →</a>
-            </div>
-            
-            <footer>
-                Huntarr.io | Applications Documentation | Thanks 4 Using Huntarr - Admin9705
-            </footer>
-            
-            <a href="#page-title" class="back-to-top" id="back-to-top" title="Back to Top">
-                <i class="fas fa-arrow-up"></i>
-            </a>
-        </div>
-    </div>
-    
-    <script>
-        // Show/hide back-to-top button based on scroll position
-        window.addEventListener('scroll', function() {
-            var backToTopButton = document.getElementById('back-to-top');
-            if (window.pageYOffset > 300) {
-                backToTopButton.classList.add('visible');
-            } else {
-                backToTopButton.classList.remove('visible');
-            }
-        });
-        
-        // Add smooth scrolling for back-to-top button
-        document.getElementById('back-to-top').addEventListener('click', function(e) {
-            e.preventDefault();
-            var targetId = this.getAttribute('href');
-            var targetElement = document.querySelector(targetId);
-            window.scrollTo({
-                top: targetElement.offsetTop - 20,
-                behavior: 'smooth'
-            });
-        });
-    </script>
+<button class="back-to-top" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
+<script src="../js/main.js"></script>
 </body>
-</html> 
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radarr - Huntarr Docs</title>
+    <title>First Steps - Huntarr Docs</title>
     <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
@@ -36,9 +36,9 @@
                 <div class="nav-group-title">Getting Started</div>
                 <div class="nav-group-items">
                     <a href="../index.html"><i class="fas fa-home"></i> Welcome</a>
-                    <a href="../getting-started/installation.html"><i class="fas fa-download"></i> Installation</a>
-                    <a href="../getting-started/setup-wizard.html"><i class="fas fa-magic"></i> Setup Wizard</a>
-                    <a href="../getting-started/first-steps.html"><i class="fas fa-rocket"></i> First Steps</a>
+                    <a href="installation.html"><i class="fas fa-download"></i> Installation</a>
+                    <a href="setup-wizard.html"><i class="fas fa-magic"></i> Setup Wizard</a>
+                    <a href="first-steps.html" class="active"><i class="fas fa-rocket"></i> First Steps</a>
                 </div>
             </div>
 
@@ -46,14 +46,14 @@
             <div class="nav-group">
                 <div class="nav-group-title">Apps</div>
                 <div class="nav-group-items">
-                    <a href="index.html"><i class="fas fa-th-large"></i> Overview</a>
-                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
-                    <a href="radarr.html" class="active"><i class="fas fa-film"></i> Radarr</a>
-                    <a href="lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
-                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
-                    <a href="whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
-                    <a href="prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
-                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                    <a href="../apps/index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="../apps/sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="../apps/radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="../apps/lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="../apps/readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="../apps/whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="../apps/prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="../apps/swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
                 </div>
             </div>
 
@@ -131,56 +131,104 @@
     <main class="docs-main">
         <div class="docs-content">
 
-            <h1>Radarr</h1>
-            <p class="page-subtitle">Hunt for missing movies and automatically upgrade quality.</p>
+            <h1>First Steps</h1>
+            <p class="page-subtitle">You've installed Huntarr and completed setup. Here's what to do next.</p>
 
-            <h2>Overview</h2>
+            <h2>Your Dashboard</h2>
             <ul>
-                <li>Radarr manages movies — Huntarr connects to find missing films and upgrade quality</li>
-                <li>Works with Radarr v3+</li>
-                <li>Multiple Radarr instances supported</li>
+                <li>The home page shows all connected apps and their hunt status</li>
+                <li>Grid view shows app cards with stats (missing, upgrading, completed)</li>
+                <li>List view shows detailed hunt activity entries</li>
+                <li>Toggle between views with the icons in the top-right of the Hunt Activities section</li>
             </ul>
 
-            <h2>Configuration</h2>
+            <h2>Connect All Your Apps</h2>
+            <p>If you only connected one app during setup, add the rest now:</p>
+            <ol>
+                <li>Click on "Apps" in the sidebar</li>
+                <li>Select the app type (Sonarr, Radarr, Lidarr, etc.)</li>
+                <li>Click "Add Instance"</li>
+                <li>Fill in the URL and API key</li>
+                <li>Test and save</li>
+            </ol>
 
-            <h3>Instance Settings</h3>
-            <p>URL, API key, name (same pattern)</p>
+            <div class="alert alert-info">
+                <strong>Multiple instances</strong>
+                <p>Huntarr supports multiple instances of the same app. For example, you can have separate Sonarr instances for 1080p and 4K libraries.</p>
+            </div>
 
-            <h3>Hunt Settings</h3>
+            <h2>Configure Schedules</h2>
+            <p>By default, Huntarr checks all apps on a regular cycle. Customize this:</p>
+            <ol>
+                <li>Go to Settings &gt; Scheduling</li>
+                <li>Select the app and instance</li>
+                <li>Set the cycle interval (how often to hunt)</li>
+                <li>Set caps (max items per cycle) to avoid overloading indexers</li>
+            </ol>
+
+            <p>Recommended starting configuration:</p>
             <table>
                 <thead>
-                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+                    <tr><th>Setting</th><th>Recommended</th><th>Description</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><strong>Hunt Missing</strong></td><td>Enabled</td><td>Search for movies without files</td></tr>
-                    <tr><td><strong>Hunt Upgrades</strong></td><td>Enabled</td><td>Upgrade movies below cutoff quality</td></tr>
-                    <tr><td><strong>Missing Items per Cycle</strong></td><td>1</td><td>Movies to search per hunt cycle</td></tr>
-                    <tr><td><strong>Upgrade Items per Cycle</strong></td><td>1</td><td>Movies to try upgrading per cycle</td></tr>
-                    <tr><td><strong>Monitored Only</strong></td><td>Enabled</td><td>Only hunt monitored movies</td></tr>
-                    <tr><td><strong>Minimum Availability</strong></td><td>Announced</td><td>When a movie becomes searchable (Announced, In Cinemas, Released)</td></tr>
+                    <tr><td>Hunt Interval</td><td>30 minutes</td><td>Time between hunt cycles</td></tr>
+                    <tr><td>Missing Items per Cycle</td><td>5</td><td>How many missing items to search per cycle</td></tr>
+                    <tr><td>Upgrade Items per Cycle</td><td>3</td><td>How many items to attempt upgrading per cycle</td></tr>
                 </tbody>
             </table>
 
-            <h2>How Hunting Works</h2>
-            <p>Similar to Sonarr but for movies. Steps:</p>
+            <h2>Set Up Notifications</h2>
             <ol>
-                <li>Huntarr queries Radarr's API for missing or upgradeable movies</li>
-                <li>Filters by monitored status, minimum availability, and quality cutoff</li>
-                <li>Triggers a search command in Radarr</li>
-                <li>Radarr handles downloading via its configured indexers</li>
-                <li>Repeats on schedule</li>
+                <li>Go to Settings &gt; Notifications</li>
+                <li>Click "Add Connection"</li>
+                <li>Choose your provider (Discord, Telegram, etc.)</li>
+                <li>Configure credentials</li>
+                <li>Send a test notification</li>
+                <li>Choose which apps/instances trigger this notification</li>
             </ol>
 
-            <h2>Tips</h2>
+            <h2>Explore Movie Hunt (Optional)</h2>
+            <p>Movie Hunt is Huntarr's standalone movie grabber — it works independently of Radarr:</p>
+            <ol>
+                <li>Navigate to Movie Hunt in the sidebar</li>
+                <li>Add indexers (NZB or Torrent)</li>
+                <li>Add a download client (SABnzbd, qBittorrent, etc.)</li>
+                <li>Browse, search, and grab movies directly</li>
+            </ol>
+
+            <h2>Tips for Success</h2>
             <ul>
-                <li>Minimum Availability is important — searching for "Announced" movies rarely finds results</li>
-                <li>Use "Released" for the best hit rate</li>
-                <li>Radarr's custom formats can help Huntarr find the best quality</li>
-                <li>Multiple instances let you maintain separate quality libraries (e.g., 1080p + 4K)</li>
+                <li><strong>Start small</strong>: Begin with low caps (3-5 items per cycle) and increase gradually</li>
+                <li><strong>Check logs</strong>: If hunts aren't working, check Settings &gt; Logs for detailed output</li>
+                <li><strong>Multiple instances</strong>: Use separate schedules for different instances to spread the load</li>
+                <li><strong>Backup regularly</strong>: Enable automatic backups under Settings &gt; Backup &amp; Restore</li>
             </ul>
 
-            <div class="alert alert-info">
-                <strong>If movies aren't being found</strong>, check that Radarr's Minimum Availability matches your expectations. A movie marked "Announced" may not have any releases yet.
+            <h2>Next Steps</h2>
+            <p>Explore the rest of the documentation:</p>
+
+            <div class="card-grid">
+                <a href="../apps/index.html" class="card">
+                    <div class="card-icon icon-green"><i class="fas fa-th-large"></i></div>
+                    <h3>Apps</h3>
+                    <p>Learn how to configure each app</p>
+                </a>
+                <a href="../movie-hunt/index.html" class="card">
+                    <div class="card-icon icon-red"><i class="fas fa-clapperboard"></i></div>
+                    <h3>Movie Hunt</h3>
+                    <p>Set up the standalone movie grabber</p>
+                </a>
+                <a href="../settings/scheduling.html" class="card">
+                    <div class="card-icon icon-gold"><i class="fas fa-clock"></i></div>
+                    <h3>Scheduling</h3>
+                    <p>Fine-tune your hunt schedules</p>
+                </a>
+                <a href="../help/faq.html" class="card">
+                    <div class="card-icon icon-purple"><i class="fas fa-question-circle"></i></div>
+                    <h3>FAQ</h3>
+                    <p>Common questions and troubleshooting</p>
+                </a>
             </div>
 
         </div><!-- /docs-content -->

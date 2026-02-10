@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radarr - Huntarr Docs</title>
+    <title>Indexers &amp; Clients - Huntarr Docs</title>
     <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
@@ -46,14 +46,14 @@
             <div class="nav-group">
                 <div class="nav-group-title">Apps</div>
                 <div class="nav-group-items">
-                    <a href="index.html"><i class="fas fa-th-large"></i> Overview</a>
-                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
-                    <a href="radarr.html" class="active"><i class="fas fa-film"></i> Radarr</a>
-                    <a href="lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
-                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
-                    <a href="whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
-                    <a href="prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
-                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                    <a href="../apps/index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="../apps/sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="../apps/radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="../apps/lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="../apps/readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="../apps/whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="../apps/prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="../apps/swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
                 </div>
             </div>
 
@@ -61,10 +61,10 @@
             <div class="nav-group">
                 <div class="nav-group-title">Movie Hunt</div>
                 <div class="nav-group-items">
-                    <a href="../movie-hunt/index.html"><i class="fas fa-clapperboard"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
-                    <a href="../movie-hunt/media-collection.html"><i class="fas fa-photo-film"></i> Media Collection</a>
-                    <a href="../movie-hunt/indexers-clients.html"><i class="fas fa-server"></i> Indexers &amp; Clients</a>
-                    <a href="../movie-hunt/profiles.html"><i class="fas fa-sliders"></i> Profiles</a>
+                    <a href="index.html"><i class="fas fa-clapperboard"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                    <a href="media-collection.html"><i class="fas fa-photo-film"></i> Media Collection</a>
+                    <a href="indexers-clients.html" class="active"><i class="fas fa-server"></i> Indexers &amp; Clients</a>
+                    <a href="profiles.html"><i class="fas fa-sliders"></i> Profiles</a>
                 </div>
             </div>
 
@@ -131,57 +131,67 @@
     <main class="docs-main">
         <div class="docs-content">
 
-            <h1>Radarr</h1>
-            <p class="page-subtitle">Hunt for missing movies and automatically upgrade quality.</p>
+            <h1>Indexers &amp; Clients</h1>
+            <p class="page-subtitle">Configure where Movie Hunt searches for and downloads movies.</p>
 
-            <h2>Overview</h2>
-            <ul>
-                <li>Radarr manages movies — Huntarr connects to find missing films and upgrade quality</li>
-                <li>Works with Radarr v3+</li>
-                <li>Multiple Radarr instances supported</li>
-            </ul>
+            <h2>Indexers</h2>
+            <p>Indexers are the search engines Movie Hunt uses to find movie releases.</p>
 
-            <h2>Configuration</h2>
+            <h3>Adding an Indexer</h3>
+            <ol>
+                <li>Go to Movie Hunt &gt; Settings &gt; Indexers</li>
+                <li>Click "Add Indexer"</li>
+                <li>Select the indexer type (Newznab for Usenet, Torznab for Torrents)</li>
+                <li>Enter the indexer URL and API key</li>
+                <li>Test and save</li>
+            </ol>
 
-            <h3>Instance Settings</h3>
-            <p>URL, API key, name (same pattern)</p>
-
-            <h3>Hunt Settings</h3>
+            <h3>Indexer Settings</h3>
             <table>
                 <thead>
-                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+                    <tr><th>Setting</th><th>Description</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><strong>Hunt Missing</strong></td><td>Enabled</td><td>Search for movies without files</td></tr>
-                    <tr><td><strong>Hunt Upgrades</strong></td><td>Enabled</td><td>Upgrade movies below cutoff quality</td></tr>
-                    <tr><td><strong>Missing Items per Cycle</strong></td><td>1</td><td>Movies to search per hunt cycle</td></tr>
-                    <tr><td><strong>Upgrade Items per Cycle</strong></td><td>1</td><td>Movies to try upgrading per cycle</td></tr>
-                    <tr><td><strong>Monitored Only</strong></td><td>Enabled</td><td>Only hunt monitored movies</td></tr>
-                    <tr><td><strong>Minimum Availability</strong></td><td>Announced</td><td>When a movie becomes searchable (Announced, In Cinemas, Released)</td></tr>
+                    <tr><td><strong>Name</strong></td><td>A friendly label</td></tr>
+                    <tr><td><strong>Type</strong></td><td>Newznab (Usenet) or Torznab (Torrent)</td></tr>
+                    <tr><td><strong>URL</strong></td><td>The indexer's API URL</td></tr>
+                    <tr><td><strong>API Key</strong></td><td>Your indexer API key</td></tr>
+                    <tr><td><strong>Categories</strong></td><td>Movie categories to search (default: 2000, 2010, 2020, 2030, 2040, 2045, 2050)</td></tr>
+                    <tr><td><strong>Priority</strong></td><td>Lower number = higher priority</td></tr>
                 </tbody>
             </table>
 
-            <h2>How Hunting Works</h2>
-            <p>Similar to Sonarr but for movies. Steps:</p>
+            <div class="alert alert-info">
+                <strong>You can add multiple indexers.</strong> Movie Hunt queries all of them and selects the best release based on your quality profile and custom format scoring.
+            </div>
+
+            <h2>Download Clients</h2>
+            <p>Download clients handle the actual downloading of movie files.</p>
+
+            <h3>Adding a Client</h3>
             <ol>
-                <li>Huntarr queries Radarr's API for missing or upgradeable movies</li>
-                <li>Filters by monitored status, minimum availability, and quality cutoff</li>
-                <li>Triggers a search command in Radarr</li>
-                <li>Radarr handles downloading via its configured indexers</li>
-                <li>Repeats on schedule</li>
+                <li>Go to Movie Hunt &gt; Settings &gt; Clients</li>
+                <li>Click "Add Client"</li>
+                <li>Select the client type (SABnzbd, NZBGet, qBittorrent, Deluge, Transmission)</li>
+                <li>Enter the host, port, and credentials</li>
+                <li>Test and save</li>
             </ol>
 
-            <h2>Tips</h2>
-            <ul>
-                <li>Minimum Availability is important — searching for "Announced" movies rarely finds results</li>
-                <li>Use "Released" for the best hit rate</li>
-                <li>Radarr's custom formats can help Huntarr find the best quality</li>
-                <li>Multiple instances let you maintain separate quality libraries (e.g., 1080p + 4K)</li>
-            </ul>
-
-            <div class="alert alert-info">
-                <strong>If movies aren't being found</strong>, check that Radarr's Minimum Availability matches your expectations. A movie marked "Announced" may not have any releases yet.
-            </div>
+            <h3>Client Settings</h3>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Name</strong></td><td>A friendly label</td></tr>
+                    <tr><td><strong>Type</strong></td><td>SABnzbd, NZBGet, qBittorrent, Deluge, Transmission</td></tr>
+                    <tr><td><strong>Host</strong></td><td>Hostname or IP address</td></tr>
+                    <tr><td><strong>Port</strong></td><td>Client's port number</td></tr>
+                    <tr><td><strong>Username/Password</strong></td><td>Authentication credentials</td></tr>
+                    <tr><td><strong>Category</strong></td><td>Download category/label for organization</td></tr>
+                    <tr><td><strong>Priority</strong></td><td>Default download priority</td></tr>
+                </tbody>
+            </table>
 
         </div><!-- /docs-content -->
 

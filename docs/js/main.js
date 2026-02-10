@@ -1,117 +1,156 @@
-// Huntarr.io Documentation JavaScript
+/* ================================================================
+   Huntarr Documentation — Main JS
+   Sidebar toggle, collapsible groups, active page, copy buttons,
+   scroll-to-top, smooth anchor scrolling.
+   ================================================================ */
+(function () {
+    'use strict';
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Get all code blocks
-    const codeBlocks = document.querySelectorAll('pre code');
-    
-    if (codeBlocks.length > 0) {
-        // First pass: detect and enhance terminal command blocks
-        codeBlocks.forEach(function(codeBlock) {
-            const content = codeBlock.textContent.trim();
-            const pre = codeBlock.parentNode;
-            
-            // Detect if this is likely a terminal command (common CLI commands, starts with $, etc)
-            const isTerminalCommand = (
-                content.match(/^(git|npm|yarn|docker|curl|wget|cd|ls|mkdir|touch|rm|cp|mv|sudo|apt|brew)\s/) ||
-                content.startsWith('$') ||
-                content.includes('clone') ||
-                content.includes('install') ||
-                content.includes('://') && (content.includes('curl') || content.includes('wget'))
-            );
-            
-            if (isTerminalCommand) {
-                // Add terminal styling to this code block
-                pre.classList.add('terminal');
-                
-                // If it's a single-line command, add the command prompt
-                if (!content.includes('\n')) {
-                    codeBlock.classList.add('command-prompt');
-                }
-            }
-        });
-        
-        // Second pass: add copy functionality to all code blocks
-        codeBlocks.forEach(function(codeBlock) {
-            const copyButton = document.createElement('button');
-            copyButton.className = 'copy-button';
-            copyButton.textContent = 'Copy';
-            copyButton.addEventListener('click', function() {
-                const code = codeBlock.textContent;
-                navigator.clipboard.writeText(code).then(function() {
-                    copyButton.textContent = 'Copied!';
-                    setTimeout(function() {
-                        copyButton.textContent = 'Copy';
-                    }, 2000);
-                }).catch(function(err) {
-                    console.error('Could not copy text: ', err);
-                });
-            });
-            
-            const pre = codeBlock.parentNode;
-            pre.style.position = 'relative';
-            copyButton.style.position = 'absolute';
-            copyButton.style.right = '10px';
-            copyButton.style.top = '10px';
-            copyButton.style.padding = '5px 10px';
-            copyButton.style.background = '#f1f1f1';
-            copyButton.style.border = '1px solid #ccc';
-            copyButton.style.borderRadius = '3px';
-            copyButton.style.cursor = 'pointer';
-            pre.appendChild(copyButton);
-        });
+    /* --- DOM refs --- */
+    var sidebar     = document.querySelector('.docs-sidebar');
+    var backdrop    = document.querySelector('.docs-sidebar-backdrop');
+    var hamburger   = document.querySelector('.mob-hamburger');
+    var backToTop   = document.querySelector('.back-to-top');
+
+    /* ===============================================================
+       MOBILE SIDEBAR TOGGLE
+       =============================================================== */
+    function openSidebar()  {
+        if (!sidebar) return;
+        sidebar.classList.add('open');
+        if (backdrop) backdrop.classList.add('open');
+        document.body.style.overflow = 'hidden';
     }
-    
-    // Check for info icon links
-    const infoLinks = document.querySelectorAll('.info-link');
-    if (infoLinks.length > 0) {
-        infoLinks.forEach(function(link) {
-            link.setAttribute('title', 'Click for documentation');
-        });
+    function closeSidebar() {
+        if (!sidebar) return;
+        sidebar.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('open');
+        document.body.style.overflow = '';
     }
-    
-    // Add active class to current page in navigation
-    const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('.nav-menu li a');
-    if (navLinks.length > 0) {
-        navLinks.forEach(function(link) {
-            const linkPath = link.getAttribute('href');
-            // Check if the current path contains the link path (for sub-pages)
-            if (currentPath.includes(linkPath) && linkPath !== '../index.html') {
-                link.parentNode.classList.add('active');
-            }
+    if (hamburger) hamburger.addEventListener('click', openSidebar);
+    if (backdrop)  backdrop.addEventListener('click', closeSidebar);
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeSidebar();
+    });
+
+    /* Close sidebar when a nav link is clicked (mobile) */
+    document.querySelectorAll('.nav-group-items a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (window.innerWidth <= 768) closeSidebar();
         });
-    }
-    
-    // Add smooth scrolling for anchor links
-    const anchorLinks = document.querySelectorAll('a[href^="#"]');
-    if (anchorLinks.length > 0) {
-        anchorLinks.forEach(function(link) {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href');
-                if (targetId === '#') return;
-                
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    window.scrollTo({
-                        top: targetElement.offsetTop - 20,
-                        behavior: 'smooth'
-                    });
-                }
-            });
-        });
-    }
-    
-    // Add version check notification
-    const footer = document.querySelector('footer');
-    if (footer) {
-        const versionText = footer.textContent;
-        const versionMatch = versionText.match(/v(\d+\.\d+\.\d+)/);
-        if (versionMatch) {
-            const currentVersion = versionMatch[1];
-            // This would typically check against an API endpoint for the latest version
-            // This is just a placeholder for demonstration
-            console.log(`Current documentation version: ${currentVersion}`);
+    });
+
+    /* ===============================================================
+       COLLAPSIBLE NAV GROUPS
+       =============================================================== */
+    document.querySelectorAll('.nav-group-title').forEach(function (title) {
+        var group = title.parentElement;
+        var items = group.querySelector('.nav-group-items');
+        if (!items) return;
+
+        /* Set initial max-height so the CSS transition works */
+        if (!group.classList.contains('collapsed')) {
+            items.style.maxHeight = items.scrollHeight + 'px';
         }
+
+        title.addEventListener('click', function () {
+            if (group.classList.contains('collapsed')) {
+                group.classList.remove('collapsed');
+                items.style.maxHeight = items.scrollHeight + 'px';
+            } else {
+                items.style.maxHeight = items.scrollHeight + 'px';
+                /* Force reflow before collapsing */
+                void items.offsetHeight;
+                group.classList.add('collapsed');
+                items.style.maxHeight = '0px';
+            }
+        });
+    });
+
+    /* ===============================================================
+       ACTIVE PAGE HIGHLIGHTING
+       =============================================================== */
+    (function highlightActive() {
+        var path = window.location.pathname;
+        /* Normalise: strip trailing index.html */
+        path = path.replace(/index\.html$/, '');
+        var links = document.querySelectorAll('.nav-group-items a');
+        links.forEach(function (a) {
+            var href = a.getAttribute('href');
+            if (!href) return;
+            /* Resolve relative to absolute for comparison */
+            var resolved = new URL(href, window.location.href).pathname.replace(/index\.html$/, '');
+            if (resolved === path) {
+                a.classList.add('active');
+                /* Make sure parent group is expanded */
+                var group = a.closest('.nav-group');
+                if (group && group.classList.contains('collapsed')) {
+                    group.classList.remove('collapsed');
+                    var items = group.querySelector('.nav-group-items');
+                    if (items) items.style.maxHeight = items.scrollHeight + 'px';
+                }
+            }
+        });
+    })();
+
+    /* ===============================================================
+       COPY BUTTONS ON <pre> BLOCKS
+       =============================================================== */
+    document.querySelectorAll('pre').forEach(function (pre) {
+        var btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'Copy';
+        btn.addEventListener('click', function () {
+            var code = pre.querySelector('code');
+            var text = (code || pre).textContent;
+            navigator.clipboard.writeText(text).then(function () {
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(function () {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(function () {
+                /* Fallback for non-secure contexts */
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.cssText = 'position:fixed;opacity:0';
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); btn.textContent = 'Copied!'; btn.classList.add('copied'); }
+                catch(e) { btn.textContent = 'Failed'; }
+                document.body.removeChild(ta);
+                setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+            });
+        });
+        pre.style.position = 'relative';
+        pre.appendChild(btn);
+    });
+
+    /* ===============================================================
+       SCROLL TO TOP
+       =============================================================== */
+    if (backToTop) {
+        window.addEventListener('scroll', function () {
+            backToTop.classList.toggle('visible', window.scrollY > 300);
+        });
+        backToTop.addEventListener('click', function () {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
     }
-}); 
+
+    /* ===============================================================
+       SMOOTH ANCHOR SCROLLING
+       =============================================================== */
+    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            var target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                e.preventDefault();
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                history.replaceState(null, '', this.getAttribute('href'));
+            }
+        });
+    });
+
+})();

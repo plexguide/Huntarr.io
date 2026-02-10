@@ -3,377 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lidarr Documentation - Huntarr.io</title>
+    <title>Lidarr - Huntarr Docs</title>
+    <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="../js/main.js" defer></script>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-logo">
-            <img src="../images/huntarr-logo.png" alt="Huntarr Logo">
-            <h2>Huntarr.io</h2>
+
+<!-- Mobile Topbar -->
+<div class="docs-mobile-topbar">
+    <button class="mob-hamburger" aria-label="Open navigation"><span></span><span></span><span></span></button>
+    <img src="../images/huntarr-logo.png" alt="Huntarr" class="mob-logo">
+    <span class="mob-title">Documentation</span>
+</div>
+
+<!-- Sidebar Backdrop (mobile) -->
+<div class="docs-sidebar-backdrop"></div>
+
+<div class="docs-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <nav class="docs-sidebar" aria-label="Documentation navigation">
+        <a href="../index.html" class="sidebar-brand">
+            <img src="../images/huntarr-logo.png" alt="Huntarr">
+            <span>Huntarr</span>
+        </a>
+
+        <div class="sidebar-scroll">
+
+            <!-- Getting Started -->
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <div class="nav-group-items">
+                    <a href="../index.html"><i class="fas fa-home"></i> Welcome</a>
+                    <a href="../getting-started/installation.html"><i class="fas fa-download"></i> Installation</a>
+                    <a href="../getting-started/setup-wizard.html"><i class="fas fa-magic"></i> Setup Wizard</a>
+                    <a href="../getting-started/first-steps.html"><i class="fas fa-rocket"></i> First Steps</a>
+                </div>
+            </div>
+
+            <!-- Apps -->
+            <div class="nav-group">
+                <div class="nav-group-title">Apps</div>
+                <div class="nav-group-items">
+                    <a href="index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="lidarr.html" class="active"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                </div>
+            </div>
+
+            <!-- Movie Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">Movie Hunt</div>
+                <div class="nav-group-items">
+                    <a href="../movie-hunt/index.html"><i class="fas fa-clapperboard"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                    <a href="../movie-hunt/media-collection.html"><i class="fas fa-photo-film"></i> Media Collection</a>
+                    <a href="../movie-hunt/indexers-clients.html"><i class="fas fa-server"></i> Indexers &amp; Clients</a>
+                    <a href="../movie-hunt/profiles.html"><i class="fas fa-sliders"></i> Profiles</a>
+                </div>
+            </div>
+
+            <!-- NZB Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">NZB Hunt</div>
+                <div class="nav-group-items">
+                    <a href="../nzb-hunt/index.html"><i class="fas fa-newspaper"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                </div>
+            </div>
+
+            <!-- Requestarr -->
+            <div class="nav-group">
+                <div class="nav-group-title">Requests</div>
+                <div class="nav-group-items">
+                    <a href="../requestarr/index.html"><i class="fas fa-hand-paper"></i> Requestarr</a>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="nav-group">
+                <div class="nav-group-title">Settings</div>
+                <div class="nav-group-items">
+                    <a href="../settings/index.html"><i class="fas fa-cog"></i> Main Settings</a>
+                    <a href="../settings/scheduling.html"><i class="fas fa-clock"></i> Scheduling</a>
+                    <a href="../settings/notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="../settings/backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
+                    <a href="../settings/log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
+                    <a href="../settings/user-account.html"><i class="fas fa-user-shield"></i> User Account</a>
+                </div>
+            </div>
+
+            <!-- System -->
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <div class="nav-group-items">
+                    <a href="../system/hunt-manager.html"><i class="fas fa-tasks"></i> Hunt Manager</a>
+                    <a href="../system/logs.html"><i class="fas fa-scroll"></i> Logs</a>
+                    <a href="../system/api.html"><i class="fas fa-code"></i> API Reference</a>
+                </div>
+            </div>
+
+            <!-- Help -->
+            <div class="nav-group">
+                <div class="nav-group-title">Help</div>
+                <div class="nav-group-items">
+                    <a href="../help/faq.html"><i class="fas fa-question-circle"></i> FAQ</a>
+                    <a href="../help/community.html"><i class="fas fa-users"></i> Community</a>
+                    <a href="../help/donate.html"><i class="fas fa-heart"></i> Donate</a>
+                </div>
+            </div>
+
+        </div><!-- /sidebar-scroll -->
+
+        <div class="sidebar-footer">
+            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" class="sf-discord" title="Discord"><i class="fab fa-discord"></i></a>
+            <a href="https://www.reddit.com/r/huntarr/" target="_blank" class="sf-reddit" title="Reddit"><i class="fab fa-reddit-alien"></i></a>
+            <a href="https://github.com/plexguide/Huntarr.io" target="_blank" class="sf-github" title="GitHub"><i class="fab fa-github"></i></a>
+            <a href="../help/donate.html" class="sf-heart" title="Donate"><i class="fas fa-heart"></i></a>
         </div>
-        
-        <nav class="sidebar-nav">
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Getting Started</h3>
-                <ul>
-                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
-                    <li><a href="../getting-started/installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
-                </ul>
-            </div>
+    </nav>
 
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Core</h3>
-                <ul>
-                    <li><a href="../index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg> Home</a></li>
-                    <li class="active"><a href="index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"></path></svg> Apps</a></li>
-                    <li><a href="../settings/settings.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg> Settings</a></li>
-                    <li><a href="../features/index.html"><i class="fas fa-star" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Features</a></li>
-                    <li><a href="../faq.html"><i class="fas fa-question-circle" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> FAQ</a></li>
-                </ul>
-            </div>
-            
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Resources</h3>
-                <ul>
-                    <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg> GitHub</a></li>
-                    <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
-                    <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
+    <!-- ===== MAIN ===== -->
+    <main class="docs-main">
+        <div class="docs-content">
 
-                </ul>
-            </div>
-        </nav>
-    </div>
+            <h1>Lidarr</h1>
+            <p class="page-subtitle">Automatically hunt for missing music albums and upgrade audio quality.</p>
 
-    <div class="main-content">
-        <div class="container">
-            <h1>Lidarr Documentation</h1>
-            
-            <div style="text-align: center; margin: 20px auto;">
-                <img src="../images/arrs/lidarr.png" alt="Lidarr Logo" style="width: 80px; height: 80px; object-fit: contain;">
-            </div>
-            
-            <div class="alert alert-info" style="margin: 20px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
-                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Lidarr?</strong> 
-                Lidarr is an automated music downloading and management application. It monitors for new albums, searches indexers, and automatically downloads music using your preferred download clients.
-            </div>
-            
-            <p>Lidarr automates the process of monitoring and downloading music. It integrates with popular download clients and uses indexers to search for and download albums automatically, making it easy to build and maintain an organized music library.</p>
-            
-            <h2 id="overview">Overview</h2>
-            
-            <h3><i class="fas fa-download" style="margin-right: 10px; color: #3498db;"></i>What Lidarr Does</h3>
-            <p>Lidarr provides automated content management for music by:</p>
+            <h2>Overview</h2>
             <ul>
-                <li><strong>Automatic Searching:</strong> Monitors for new albums and searches configured indexers</li>
-                <li><strong>Quality Management:</strong> Downloads content based on your quality preferences (MP3, FLAC, etc.)</li>
-                <li><strong>Library Organization:</strong> Automatically organizes downloaded music in your media library</li>
-                <li><strong>Upgrade Management:</strong> Can upgrade existing music to better quality when available</li>
-                <li><strong>Download Client Integration:</strong> Works with popular download clients like qBittorrent, Deluge, etc.</li>
+                <li>Lidarr manages music — albums, tracks, and artists</li>
+                <li>Huntarr connects to find missing albums and upgrade quality</li>
+                <li>Works with Lidarr v1+</li>
+                <li>Multiple instances supported (e.g., FLAC library vs MP3 library)</li>
             </ul>
-            
-            <h3><i class="fas fa-cogs" style="margin-right: 10px; color: #e67e22;"></i>How Huntarr Enhances Lidarr</h3>
-            <p>Huntarr adds intelligent automation on top of Lidarr:</p>
-            <ul>
-                <li><strong>Smart Search Timing:</strong> Prevents overwhelming indexers with too many requests</li>
-                <li><strong>Missing Album Detection:</strong> Identifies and prioritizes missing albums and tracks</li>
-                <li><strong>Upgrade Intelligence:</strong> Finds better quality versions of existing music</li>
-                <li><strong>Rate Limiting:</strong> Respects API limits to prevent bans or throttling</li>
-                <li><strong>Multi-Instance Support:</strong> Manage multiple Lidarr instances from one interface</li>
-            </ul>
-            
-            <h2 id="connection-settings">Instance Configuration</h2>
-            
-            <p>Configure your Lidarr instances to connect Huntarr with your Lidarr installation(s).</p>
-            
-            <div class="alert alert-info" style="margin: 15px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
-                <strong><i class="fas fa-server" style="margin-right: 8px;"></i>True multi-instance</strong><br>
-                Huntarr supports multiple Lidarr instances. Each instance has its own connection (URL, API key), and its own per-instance settings: missing/upgrade mode (album vs artist), upgrade selection method, tags, search limits, and Swaparr. You can enable or disable each instance independently.
-            </div>
-            
-            <h3>Adding Your Lidarr Instance</h3>
-            <p>To connect your existing Lidarr instance to Huntarr:</p>
+
+            <h2>Configuration</h2>
+
+            <h3>Instance Settings</h3>
+            <p>Same as general app settings (URL, API key, name)</p>
+
+            <h3>Hunt Settings</h3>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Hunt Missing</strong></td><td>Enabled</td><td>Search for albums without files</td></tr>
+                    <tr><td><strong>Hunt Upgrades</strong></td><td>Enabled</td><td>Upgrade albums below cutoff quality</td></tr>
+                    <tr><td><strong>Missing Items per Cycle</strong></td><td>1</td><td>Albums to search per cycle</td></tr>
+                    <tr><td><strong>Upgrade Items per Cycle</strong></td><td>1</td><td>Albums to try upgrading</td></tr>
+                    <tr><td><strong>Monitored Only</strong></td><td>Enabled</td><td>Only hunt monitored artists/albums</td></tr>
+                </tbody>
+            </table>
+
+            <h2>How Hunting Works</h2>
             <ol>
-                <li>Navigate to the Lidarr section in Huntarr</li>
-                <li>Click "Add Lidarr Instance" if you don't have one configured</li>
-                <li>Fill in your Lidarr connection details</li>
-                <li>Test the connection to ensure Huntarr can communicate with Lidarr</li>
+                <li>Huntarr queries Lidarr's API for missing or upgradeable albums</li>
+                <li>Filters by monitored status</li>
+                <li>Triggers an album search in Lidarr</li>
+                <li>Lidarr handles download via its indexers and clients</li>
+                <li>Repeats on schedule</li>
             </ol>
-            
-            <h3 id="connection-details">Connection Details</h3>
-            <p>These settings match the <strong>Connection Details</strong> section in the instance editor:</p>
-            <table>
-                <tr><th>Setting</th><th>Description</th></tr>
-                <tr><td><strong>Status</strong></td><td>Shows connection status and Lidarr version. Displayed at the top of the section.</td></tr>
-                <tr><td><strong>Enable Status</strong></td><td>Enable or disable this instance. When disabled, Huntarr will not process this instance.</td></tr>
-                <tr><td><strong>Name</strong></td><td>A friendly name to identify this instance (e.g. Main Lidarr, Music-FLAC). Useful when running multiple Lidarr instances.</td></tr>
-                <tr><td><strong>URL</strong></td><td>The full URL including port (e.g. <code>http://localhost:8686</code>). Include protocol (http/https) and port.</td></tr>
-                <tr><td><strong>API Key</strong></td><td>Found in Settings &gt; General in your *arr application (Lidarr: Settings &gt; General &gt; Security).</td></tr>
-                <tr><td><strong>Instance Identifier</strong></td><td>Stable identifier for this instance (assigned automatically; cannot be changed). Used internally so Huntarr can track state per instance.</td></tr>
-            </table>
-            
-            <h2 id="search-settings">Search Settings (Per Instance)</h2>
-            
-            <p>These settings match the <strong>Search Settings</strong> section in the instance editor. Each Lidarr instance has its own values.</p>
-            
-            <h3 id="search-counts">Search counts</h3>
-            <ul>
-                <li><strong>Missing Search Count</strong> — Number of missing items to search for in each cycle. Set to 0 to disable missing searches.</li>
-                <li><strong>Upgrade Search Count</strong> — Number of items to upgrade in each cycle. Set to 0 to disable upgrade searches.</li>
-            </ul>
-            
-            <h3 id="missing-search-mode"><i class="fas fa-search" style="margin-right: 10px; color: #2ecc71;"></i>Missing Search Mode</h3>
-            <p>Determines how Huntarr searches for missing music. In the UI this is typically <strong>Album</strong> (search for individual albums; Artist mode was deprecated in Huntarr 7.5.0+).</p>
-            
-            <h3 id="upgrade-mode"><i class="fas fa-arrow-up" style="margin-right: 10px; color: #2ecc71;"></i>Upgrade Mode</h3>
-            <p>Controls how Huntarr handles quality upgrades:</p>
-            <ul>
-                <li><strong>Albums:</strong> Upgrades entire albums when better quality becomes available</li>
-                <li><strong>Tracks:</strong> Upgrades individual tracks for better quality</li>
-                <li><strong>Artists:</strong> Upgrades at the artist level for consistent quality across discography</li>
-            </ul>
-            
-            <h3 id="upgrade-selection-method"><i class="fas fa-list-check" style="margin-right: 10px; color: #2ecc71;"></i>Upgrade Selection Method</h3>
-            <p>You can choose how Huntarr selects which artists to consider for upgrades:</p>
-            <ul>
-                <li><strong>Cutoff unmet (default):</strong> Uses Lidarr's <strong>Wanted → Cutoff Unmet</strong> list. Only albums that don't meet your quality/custom-format cutoff are eligible. Same behavior as before.</li>
-                <li><strong>Tags (Upgradinatorr-style):</strong> Huntarr finds artists that <strong>DON'T</strong> have your specified tag (e.g. <code>upgradinatorr</code>), searches their albums for upgrades, then <strong>ADDS</strong> the tag to the artist after processing to mark them as complete. This matches <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md" target="_blank" rel="noopener">Upgradinatorr's</a> behavior: the tag tracks which artists have already been processed, not which ones to search. The tag is automatically created in Lidarr if it doesn't exist.</li>
-            </ul>
-            <p>In both cases, Huntarr triggers <strong>AlbumSearch</strong> for the selected albums; Lidarr still decides what to grab based on your quality profile and custom format scores. When using <strong>Tags</strong>, the <strong>Upgrade Tag</strong> field sets the tag name on artists in Lidarr (e.g. <code>upgradinatorr</code>); Huntarr finds artists without this tag, runs upgrade searches on their albums, then adds the tag when done.</p>
-            <p><strong>Cutoff unmet mode</strong> uses Lidarr's Wanted → Cutoff Unmet list every cycle; <strong>Tags (Upgradinatorr) mode</strong> finds artists without your chosen tag, runs upgrade searches on their albums, then adds that tag to the artist so they are not searched again. Custom formats and quality profiles in Lidarr (and <a href="https://trash-guides.info/Lidarr/" target="_blank" rel="noopener">Trash Guides for Lidarr</a> where available) determine what counts as an upgrade when Huntarr triggers the search.</p>
-            
-            <div class="alert alert-success">
-                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/Lidarr/" target="_blank" rel="noopener">TrashGuides (Lidarr)</a> for quality profiles and custom format scoring where supported. Set <strong>Upgrade Until Custom Format Score</strong> in your quality profile so Lidarr will grab better-scoring releases when Huntarr triggers upgrades.
-            </div>
-            
-            <h4 id="upgrade-mode-comparison"><i class="fas fa-balance-scale" style="margin-right: 10px; color: #9b59b6;"></i>Cutoff Unmet vs Tags: Which Should I Use?</h4>
-            <p>Understanding the difference between these two modes will help you choose the right approach for your library:</p>
-            
-            <table>
-                <tr>
-                    <th>Feature</th>
-                    <th>Cutoff Unmet (Huntarr Standard)</th>
-                    <th>Tags (Upgradinatorr-style)</th>
-                </tr>
-                <tr>
-                    <td><strong>How It Works</strong></td>
-                    <td>Queries Lidarr's <code>Wanted → Cutoff Unmet</code> list every cycle</td>
-                    <td>Searches albums by artists WITHOUT the tag, then ADDS tag to artist after processing</td>
-                </tr>
-                <tr>
-                    <td><strong>Re-processing</strong></td>
-                    <td>Same albums appear in every cycle until they meet cutoff</td>
-                    <td>Once tagged, artist's albums are NEVER searched again (unless you manually remove tag)</td>
-                </tr>
-                <tr>
-                    <td><strong>Best For</strong></td>
-                    <td>Dynamic quality targets - continuously searching until perfect quality is found</td>
-                    <td>One-time library upgrade - systematically process entire library once</td>
-                </tr>
-                <tr>
-                    <td><strong>Indexer Impact</strong></td>
-                    <td>Higher - searches same albums repeatedly if upgrades not found</td>
-                    <td>Lower - each artist's albums searched once, then marked complete</td>
-                </tr>
-                <tr>
-                    <td><strong>Progress Tracking</strong></td>
-                    <td>Based on cutoff status - albums drop off list when upgraded</td>
-                    <td>Visual tags in Lidarr UI - see which artists have been processed</td>
-                </tr>
-                <tr>
-                    <td><strong>Use Case Example</strong></td>
-                    <td>"Keep searching until every album reaches my quality target"</td>
-                    <td>"I just set up TRaSH guides - process my entire 1000 artist library once"</td>
-                </tr>
-                <tr>
-                    <td><strong>Stops When</strong></td>
-                    <td>Albums meet quality cutoff or custom format score threshold</td>
-                    <td>Tag is applied to artist (regardless of whether upgrades were found)</td>
-                </tr>
-            </table>
-            
-            <div class="alert alert-info">
-                <strong>📊 Example Scenario:</strong><br>
-                <strong>Cutoff Unmet:</strong> You have 200 albums below cutoff from 50 artists. Huntarr searches 5 albums per cycle, finds upgrades for 3. Next cycle, those 3 are gone (met cutoff), but the other 2 appear again along with 3 new ones from the remaining 195. This continues until all 200 meet cutoff or no more upgrades exist.<br><br>
-                <strong>Tags:</strong> You have 1000 artists with no <code>upgradinatorr</code> tag. Huntarr searches 5 albums per cycle (from different artists), tags those artists after processing (whether upgrades found or not). Next cycle searches albums from 5 different artists. Eventually all 1000 artists have been processed once and tagged - done forever.
-            </div>
-            
-            <div class="alert alert-warning">
-                <strong>⚠️ Important:</strong> With <strong>Tags mode</strong>, artists are marked as "processed" even if no upgrades were found for their albums. If you want to re-process artists later (e.g., after adding new indexers), you must manually remove the tag in Lidarr.
-            </div>
-            
-            <h3 id="custom-format-scores"><i class="fas fa-star" style="margin-right: 10px; color: #f1c40f;"></i>Custom Format Scores & Quality Upgrades</h3>
-            
-            <div class="alert alert-info">
-                <strong>📋 Lidarr Configuration Required:</strong>
-                <ul style="margin-bottom: 0;">
-                    <li><strong>Lidarr → Settings → Profiles → Quality Profile → Upgrade Until Custom Format Score</strong></li>
-                    <li>Set <strong>Upgrade Until Custom Format Score</strong> to at least <code>10000</code></li>
-                </ul>
-            </div>
-            
-            <h4>Why Custom Format Scores Matter</h4>
-            <p><strong>Huntarr does not decide what to upgrade—Lidarr does.</strong> When Huntarr triggers a search for upgrades, Lidarr evaluates the search results using your configured quality profile and custom format scores to determine whether a release is an upgrade worth grabbing.</p>
-            
-            <p><strong>Key Points:</strong></p>
-            <ul>
-                <li><strong>Quality Cutoff:</strong> The minimum quality level you're willing to accept (e.g., MP3-320, FLAC)</li>
-                <li><strong>Custom Formats:</strong> Additional scoring criteria beyond basic quality (e.g., preferred release groups, audio codec preferences, edition types)</li>
-                <li><strong>Upgrade Until Custom Format Score:</strong> The score threshold at which Lidarr stops considering upgrades. Setting this to 10000 (or higher) ensures Lidarr will continue upgrading as long as better-scoring releases are found</li>
-            </ul>
-            
-            <p><strong>How It Works:</strong></p>
-            <ol>
-                <li>Huntarr identifies albums eligible for upgrade (based on your chosen upgrade selection method)</li>
-                <li>Huntarr triggers an <strong>AlbumSearch</strong> command in Lidarr</li>
-                <li>Lidarr searches indexers and scores each result using your quality profile + custom formats</li>
-                <li>Lidarr automatically grabs releases that score higher than your current file (up to your "Upgrade Until" threshold)</li>
-                <li>Without proper custom format scoring configured, Lidarr may not grab upgrades even when better releases are available</li>
-            </ol>
-            
-            <div class="alert alert-success">
-                <strong>💡 Tip:</strong> See <a href="https://trash-guides.info/" target="_blank" rel="noopener">TrashGuides</a> for comprehensive custom format scoring guides, recommended release group scores, and best practices for quality upgrades in Lidarr.
-            </div>
-            
-            <h2 id="stateful-management">Stateful Management</h2>
-            <p>These settings match the <strong>Stateful Management</strong> section in the instance editor. Huntarr can track which items it has already processed so it doesn’t re-search them every cycle.</p>
-            <table>
-                <tr><th>Setting</th><th>Description</th></tr>
-                <tr><td><strong>State Management</strong></td><td>Enabled: track processed items to avoid redundant searches. Disabled: do not track; every cycle may consider the same items again.</td></tr>
-                <tr><td><strong>Reset Interval (Hours)</strong></td><td>How long to wait before re-searching a previously processed item (default: 72 hours / 3 days). After this time, items become eligible again.</td></tr>
-                <tr><td><strong>Reset Processed State Now</strong></td><td>Button that clears the history of processed items for this instance. Use if you want Huntarr to re-consider everything from scratch.</td></tr>
-            </table>
-            <p>When state management is enabled, the UI shows <strong>Active - Tracked Items: <em>N</em></strong> and <strong>Next Reset</strong> (when the next reset cycle runs).</p>
-            
-            <h3 id="additional-settings"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Additional Settings</h3>
-            <p>These match the <strong>Additional Settings</strong> section. Music indexers often have stricter rate limits; do not overwhelm them.</p>
-            <table>
-                <tr><th>Setting</th><th>Description</th><th>Recommended</th></tr>
-                <tr><td><strong>Sleep Duration (Minutes)</strong></td><td>Time in minutes between processing cycles for this instance.</td><td>30 or more; longer intervals reduce indexer load.</td></tr>
-                <tr><td><strong>API Cap - Hourly</strong></td><td>Maximum API requests per hour for this instance.</td><td>10–20 recommended, max 400. Music indexers typically have lower limits.</td></tr>
-            </table>
-            <div class="alert alert-warning">
-                <strong>Important:</strong> Music indexers often have stricter rate limits than movie/TV indexers. Use conservative settings (10–20 hourly) to avoid being banned.
-            </div>
-            
-            <h3 id="additional-options"><i class="fas fa-cogs" style="margin-right: 10px; color: #9b59b6;"></i>Additional Options</h3>
-            <p>Fine-tune Huntarr's behavior with these additional settings:</p>
-            
-                    <h4 id="monitored-only"><i class="fas fa-eye" style="margin-right: 8px; color: #2ecc71;"></i>Monitored Only</h4>
-        <p>When enabled, Huntarr will only search for music that is marked as "Monitored" in Lidarr. This prevents searches for artists or albums you've intentionally unmonitored.</p>
 
-        <h4 id="skip-future-releases"><i class="fas fa-calendar" style="margin-right: 8px; color: #e74c3c;"></i>Skip Future Releases</h4>
-            <p>When enabled, Huntarr will skip albums with future release dates. This prevents unnecessary searches for content that hasn't been released yet.</p>
-            
-            <h4><i class="fas fa-music" style="margin-right: 8px; color: #f39c12;"></i>Quality Profiles</h4>
-            <p>Respects Lidarr's quality profile settings. Huntarr will only search for music that meets your configured quality requirements (MP3, FLAC, etc.).</p>
-            
-            <h4><i class="fas fa-microphone" style="margin-right: 8px; color: #9b59b6;"></i>Artist Monitoring</h4>
-            <p>When enabled, Huntarr will respect your artist monitoring settings in Lidarr, only searching for albums from artists you're actively monitoring.</p>
-            
-            <h2 id="advanced-settings">Advanced Settings</h2>
-            <p>These match the <strong>Advanced Settings</strong> section in the instance editor: <strong>API Timeout (seconds)</strong>, <strong>Command Wait Delay (seconds)</strong>, <strong>Command Wait Attempts</strong>, <strong>Max Download Queue Size</strong>, and <strong>Swaparr Monitoring</strong> (when Swaparr is enabled in Huntarr Settings).</p>
-            
-            <h2 id="custom-tags">Custom Tags</h2>
-            <p>These match the <strong>Custom Tags</strong> section. Huntarr can add tags in Lidarr to mark processed items.</p>
+            <h2>Tips</h2>
             <ul>
-                <li><strong>Tag missing items</strong> / <strong>Missing Items Tag</strong> — Tag (e.g. <code>huntarr-missing</code>) added when items are found by a missing search. Max 25 characters.</li>
-                <li><strong>Tag upgrade items</strong> / <strong>Upgrade Items Tag</strong> — Used only in <strong>cutoff unmet</strong> mode. In <strong>Tags (Upgradinatorr)</strong> mode this option is hidden; Huntarr uses the <strong>Upgrade Tag</strong> (e.g. <code>upgradinatorr</code>) on artists to mark processed content instead.</li>
+                <li>Music indexers can be inconsistent — start with low caps</li>
+                <li>Album searches often return full discographies; Lidarr handles filtering</li>
+                <li>If missing albums aren't found, verify Lidarr has a working indexer</li>
+                <li>Use quality profiles in Lidarr to control FLAC vs MP3 preference</li>
             </ul>
-            <p>Lidarr does not have "Tag shows missing" (Sonarr-only).</p>
-            
-            <h2 id="exempt-tags">Exempt Tags</h2>
-            <p>Items with any of these tags are skipped for missing and upgrade searches. If you remove the tag in Lidarr, Huntarr will process the item again. The tag <code>upgradinatorr</code> cannot be added as an exempt tag. See <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener">#676</a>.</p>
-            
-            <h2 id="swaparr-integration">Swaparr Integration</h2>
-            
-            <p>Enable Swaparr monitoring for this Lidarr instance to automatically clean up stalled downloads.</p>
-            
-            <div class="alert alert-info" style="margin: 15px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
-                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Swaparr?</strong> 
-                Swaparr monitors your download queues and automatically removes stalled, failed, or problematic downloads to keep your automation running smoothly. 
-                <a href="swaparr.html" style="color: #0dcaf0;">Learn more about Swaparr configuration</a>.
-            </div>
-            
-            <h3><i class="fas fa-broom" style="margin-right: 8px; color: #e67e22;"></i>When to Enable Swaparr</h3>
-            <ul>
-                <li>You frequently have stalled music downloads</li>
-                <li>Your download queue gets clogged with failed album downloads</li>
-                <li>You want hands-off automation for your music library</li>
-                <li>You use public trackers where quality varies</li>
-                <li>You download large album collections that sometimes fail</li>
-            </ul>
-            
-            <h3><i class="fas fa-exclamation-triangle" style="margin-right: 8px; color: #f39c12;"></i>When to Be Cautious</h3>
-            <ul>
-                <li>You use private music trackers with strict ratio requirements</li>
-                <li>You prefer manual control over your music downloads</li>
-                <li>You have very slow internet where downloads take a long time</li>
-                <li>You're building ratio on specific music torrents</li>
-                <li>You collect rare or hard-to-find music that shouldn't be removed</li>
-            </ul>
-            
-            <h2 id="troubleshooting">Troubleshooting</h2>
-            
-            <h3>Common Issues</h3>
-            
-            <h4>Connection Failed</h4>
-            <p>If Huntarr can't connect to your Lidarr instance:</p>
-            <ul>
-                <li>Verify the URL is correct and includes the protocol (http/https)</li>
-                <li>Check that the port number is correct (default: 8686)</li>
-                <li>Ensure the API key is copied correctly from Lidarr Settings > General > Security</li>
-                <li>Confirm Lidarr is running and accessible from Huntarr's network</li>
-                <li>Check firewall settings if Huntarr and Lidarr are on different machines</li>
-            </ul>
-            
-            <h4>No Missing Music Found</h4>
-            <p>If Huntarr reports no missing music but you know there are gaps:</p>
-            <ul>
-                <li>Ensure "Monitored Only" is configured correctly for your needs</li>
-                <li>Check that artists and albums are marked as "Monitored" in Lidarr</li>
-                <li>Verify "Skip Future Releases" isn't preventing searches for available content</li>
-                <li>Review your quality profile settings in both Lidarr and Huntarr</li>
-            </ul>
-            
-            <h4>Music Indexer Rate Limiting</h4>
-            <p>If you're getting rate limited by music indexers:</p>
-            <ul>
-                <li>Reduce the "API Cap - Hourly" setting significantly (try 100-200)</li>
-                <li>Increase the "Sleep Duration" to 30+ minutes between cycles</li>
-                <li>Lower the "Missing Search" and "Upgrade Search" limits to 1-2</li>
-                <li>Music indexers are typically more restrictive than movie/TV indexers</li>
-            </ul>
-            
-            <h4>Metadata Issues</h4>
-            <p>If Huntarr isn't finding the right music:</p>
-            <ul>
-                <li>Verify your metadata provider settings in Lidarr (MusicBrainz, etc.)</li>
-                <li>Check that album and artist names are correctly matched</li>
-                <li>Review release group settings for proper album identification</li>
-                <li>Consider adjusting search criteria for international releases</li>
-            </ul>
-            
-            <h4>Quality and Format Issues</h4>
-            <p>If Huntarr isn't finding the right audio quality:</p>
-            <ul>
-                <li>Verify your quality profiles support the formats you want (FLAC, MP3, etc.)</li>
-                <li>Check that your indexers have the quality levels you're seeking</li>
-                <li>Review cutoff settings to ensure upgrades are allowed</li>
-                <li>Consider separate instances for different quality requirements</li>
-            </ul>
-            
-            <div class="section-nav">
-                <a href="radarr.html">← Radarr Documentation</a>
-                <a href="readarr.html">Readarr Documentation →</a>
-            </div>
-            
-            <footer>
-                Huntarr.io | Lidarr Documentation | Thanks 4 Using Huntarr - Admin9705
-            </footer>
-        </div>
-    </div>
+
+        </div><!-- /docs-content -->
+
+        <footer class="docs-footer">
+            <p>Huntarr is open source. <a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a> · <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a> · <a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></p>
+        </footer>
+    </main>
+
+</div><!-- /docs-layout -->
+
+<button class="back-to-top" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
+<script src="../js/main.js"></script>
 </body>
-</html> 
+</html>

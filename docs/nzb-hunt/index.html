@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radarr - Huntarr Docs</title>
+    <title>NZB Hunt - Huntarr Docs</title>
     <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
@@ -46,14 +46,14 @@
             <div class="nav-group">
                 <div class="nav-group-title">Apps</div>
                 <div class="nav-group-items">
-                    <a href="index.html"><i class="fas fa-th-large"></i> Overview</a>
-                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
-                    <a href="radarr.html" class="active"><i class="fas fa-film"></i> Radarr</a>
-                    <a href="lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
-                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
-                    <a href="whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
-                    <a href="prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
-                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                    <a href="../apps/index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="../apps/sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="../apps/radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="../apps/lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="../apps/readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="../apps/whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="../apps/prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="../apps/swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
                 </div>
             </div>
 
@@ -72,7 +72,7 @@
             <div class="nav-group">
                 <div class="nav-group-title">NZB Hunt</div>
                 <div class="nav-group-items">
-                    <a href="../nzb-hunt/index.html"><i class="fas fa-newspaper"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                    <a href="../nzb-hunt/index.html" class="active"><i class="fas fa-newspaper"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
                 </div>
             </div>
 
@@ -131,57 +131,53 @@
     <main class="docs-main">
         <div class="docs-content">
 
-            <h1>Radarr</h1>
-            <p class="page-subtitle">Hunt for missing movies and automatically upgrade quality.</p>
+            <h1>NZB Hunt</h1>
+            <p class="page-subtitle">Search Usenet indexers directly from Huntarr.</p>
 
-            <h2>Overview</h2>
+            <h2>What is NZB Hunt?</h2>
             <ul>
-                <li>Radarr manages movies — Huntarr connects to find missing films and upgrade quality</li>
-                <li>Works with Radarr v3+</li>
-                <li>Multiple Radarr instances supported</li>
+                <li>NZB Hunt is Huntarr's built-in Usenet search tool</li>
+                <li>Search across multiple Newznab-compatible indexers from one interface</li>
+                <li>Browse results, view details, and send NZBs to your download client</li>
+                <li>Currently in Beta</li>
             </ul>
 
-            <h2>Configuration</h2>
+            <h2>Features</h2>
+            <ul>
+                <li><strong>Multi-indexer search:</strong> query multiple indexers simultaneously</li>
+                <li><strong>Category filtering:</strong> Movies, TV, Music, Books, etc.</li>
+                <li><strong>Results sorting:</strong> by age, size, grabs, or indexer</li>
+                <li><strong>Direct download:</strong> send NZBs to SABnzbd or NZBGet with one click</li>
+                <li><strong>Search history:</strong> view past searches</li>
+            </ul>
 
-            <h3>Instance Settings</h3>
-            <p>URL, API key, name (same pattern)</p>
-
-            <h3>Hunt Settings</h3>
-            <table>
-                <thead>
-                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td><strong>Hunt Missing</strong></td><td>Enabled</td><td>Search for movies without files</td></tr>
-                    <tr><td><strong>Hunt Upgrades</strong></td><td>Enabled</td><td>Upgrade movies below cutoff quality</td></tr>
-                    <tr><td><strong>Missing Items per Cycle</strong></td><td>1</td><td>Movies to search per hunt cycle</td></tr>
-                    <tr><td><strong>Upgrade Items per Cycle</strong></td><td>1</td><td>Movies to try upgrading per cycle</td></tr>
-                    <tr><td><strong>Monitored Only</strong></td><td>Enabled</td><td>Only hunt monitored movies</td></tr>
-                    <tr><td><strong>Minimum Availability</strong></td><td>Announced</td><td>When a movie becomes searchable (Announced, In Cinemas, Released)</td></tr>
-                </tbody>
-            </table>
-
-            <h2>How Hunting Works</h2>
-            <p>Similar to Sonarr but for movies. Steps:</p>
+            <h2>Getting Started</h2>
             <ol>
-                <li>Huntarr queries Radarr's API for missing or upgradeable movies</li>
-                <li>Filters by monitored status, minimum availability, and quality cutoff</li>
-                <li>Triggers a search command in Radarr</li>
-                <li>Radarr handles downloading via its configured indexers</li>
-                <li>Repeats on schedule</li>
+                <li>Navigate to NZB Hunt in the sidebar</li>
+                <li>Add Usenet indexers (must be Newznab-compatible)</li>
+                <li>Configure your download client</li>
+                <li>Start searching!</li>
             </ol>
 
-            <h2>Tips</h2>
+            <h2>Adding Indexers</h2>
             <ul>
-                <li>Minimum Availability is important — searching for "Announced" movies rarely finds results</li>
-                <li>Use "Released" for the best hit rate</li>
-                <li>Radarr's custom formats can help Huntarr find the best quality</li>
-                <li>Multiple instances let you maintain separate quality libraries (e.g., 1080p + 4K)</li>
+                <li>Go to NZB Hunt &gt; Settings &gt; Indexers</li>
+                <li>Click "Add Indexer"</li>
+                <li>Enter the Newznab URL and API key</li>
+                <li>Common indexers: NZBGeek, DrunkenSlug, NZBFinder, etc.</li>
             </ul>
 
             <div class="alert alert-info">
-                <strong>If movies aren't being found</strong>, check that Radarr's Minimum Availability matches your expectations. A movie marked "Announced" may not have any releases yet.
+                <strong>NZB Hunt only supports Newznab-compatible indexers (Usenet).</strong> For torrent searching, use Movie Hunt or your *arr apps.
             </div>
+
+            <h2>Search Tips</h2>
+            <ul>
+                <li>Use specific search terms for best results</li>
+                <li>Category filtering helps narrow results</li>
+                <li>Check multiple indexers if one doesn't return results</li>
+                <li>Older content may not be available on all indexers due to retention limits</li>
+            </ul>
 
         </div><!-- /docs-content -->
 

@@ -3,362 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Installation Guide - Huntarr.io Documentation</title>
+    <title>Installation - Huntarr Documentation</title>
+    <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="../js/main.js" defer></script>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-logo">
-            <img src="../images/huntarr-logo.png" alt="Huntarr Logo">
-            <h2>Huntarr.io</h2>
+
+<!-- Mobile Topbar -->
+<div class="docs-mobile-topbar">
+    <button class="mob-hamburger" aria-label="Open navigation"><span></span><span></span><span></span></button>
+    <img src="../images/huntarr-logo.png" alt="Huntarr" class="mob-logo">
+    <span class="mob-title">Documentation</span>
+</div>
+
+<!-- Sidebar Backdrop (mobile) -->
+<div class="docs-sidebar-backdrop"></div>
+
+<div class="docs-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <nav class="docs-sidebar" aria-label="Documentation navigation">
+        <a href="../index.html" class="sidebar-brand">
+            <img src="../images/huntarr-logo.png" alt="Huntarr">
+            <span>Huntarr</span>
+        </a>
+
+        <div class="sidebar-scroll">
+
+            <!-- Getting Started -->
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <div class="nav-group-items">
+                    <a href="../index.html"><i class="fas fa-home"></i> Welcome</a>
+                    <a href="installation.html" class="active"><i class="fas fa-download"></i> Installation</a>
+                    <a href="setup-wizard.html"><i class="fas fa-magic"></i> Setup Wizard</a>
+                    <a href="first-steps.html"><i class="fas fa-rocket"></i> First Steps</a>
+                </div>
+            </div>
+
+            <!-- Apps -->
+            <div class="nav-group">
+                <div class="nav-group-title">Apps</div>
+                <div class="nav-group-items">
+                    <a href="../apps/index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="../apps/sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="../apps/radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="../apps/lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="../apps/readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="../apps/whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="../apps/prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="../apps/swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                </div>
+            </div>
+
+            <!-- Movie Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">Movie Hunt</div>
+                <div class="nav-group-items">
+                    <a href="../movie-hunt/index.html"><i class="fas fa-clapperboard"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                    <a href="../movie-hunt/media-collection.html"><i class="fas fa-photo-film"></i> Media Collection</a>
+                    <a href="../movie-hunt/indexers-clients.html"><i class="fas fa-server"></i> Indexers &amp; Clients</a>
+                    <a href="../movie-hunt/profiles.html"><i class="fas fa-sliders"></i> Profiles</a>
+                </div>
+            </div>
+
+            <!-- NZB Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">NZB Hunt</div>
+                <div class="nav-group-items">
+                    <a href="../nzb-hunt/index.html"><i class="fas fa-newspaper"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                </div>
+            </div>
+
+            <!-- Requestarr -->
+            <div class="nav-group">
+                <div class="nav-group-title">Requests</div>
+                <div class="nav-group-items">
+                    <a href="../requestarr/index.html"><i class="fas fa-hand-paper"></i> Requestarr</a>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="nav-group">
+                <div class="nav-group-title">Settings</div>
+                <div class="nav-group-items">
+                    <a href="../settings/index.html"><i class="fas fa-cog"></i> Main Settings</a>
+                    <a href="../settings/scheduling.html"><i class="fas fa-clock"></i> Scheduling</a>
+                    <a href="../settings/notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="../settings/backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
+                    <a href="../settings/log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
+                    <a href="../settings/user-account.html"><i class="fas fa-user-shield"></i> User Account</a>
+                </div>
+            </div>
+
+            <!-- System -->
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <div class="nav-group-items">
+                    <a href="../system/hunt-manager.html"><i class="fas fa-tasks"></i> Hunt Manager</a>
+                    <a href="../system/logs.html"><i class="fas fa-scroll"></i> Logs</a>
+                    <a href="../system/api.html"><i class="fas fa-code"></i> API Reference</a>
+                </div>
+            </div>
+
+            <!-- Help -->
+            <div class="nav-group">
+                <div class="nav-group-title">Help</div>
+                <div class="nav-group-items">
+                    <a href="../help/faq.html"><i class="fas fa-question-circle"></i> FAQ</a>
+                    <a href="../help/community.html"><i class="fas fa-users"></i> Community</a>
+                    <a href="../help/donate.html"><i class="fas fa-heart"></i> Donate</a>
+                </div>
+            </div>
+
+        </div><!-- /sidebar-scroll -->
+
+        <div class="sidebar-footer">
+            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" class="sf-discord" title="Discord"><i class="fab fa-discord"></i></a>
+            <a href="https://www.reddit.com/r/huntarr/" target="_blank" class="sf-reddit" title="Reddit"><i class="fab fa-reddit-alien"></i></a>
+            <a href="https://github.com/plexguide/Huntarr.io" target="_blank" class="sf-github" title="GitHub"><i class="fab fa-github"></i></a>
+            <a href="../help/donate.html" class="sf-heart" title="Donate"><i class="fas fa-heart"></i></a>
         </div>
-        
-        <nav class="sidebar-nav">
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Getting Started</h3>
-                <ul>
-                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
-                    <li class="active"><a href="installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
-                </ul>
-            </div>
-            
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Core</h3>
-                <ul>
-                    <li><a href="../index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg> Home</a></li>
-                    <li><a href="../apps/index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"></path></svg> Apps</a></li>
-                    <li><a href="../settings/settings.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg> Settings</a></li>
-                    <li><a href="../features/index.html"><i class="fas fa-star" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Features</a></li>
-                    <li><a href="../faq.html"><i class="fas fa-question-circle" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> FAQ</a></li>
-                </ul>
-            </div>
-            
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Resources</h3>
-                <ul>
-                    <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg> GitHub</a></li>
-                    <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
-                    <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
-                </ul>
-            </div>
-        </nav>
-    </div>
+    </nav>
 
-    <div class="main-content">
-        <div class="container">
-            <h1>Installation Guide</h1>
-            
-            <section class="installation-overview">
-                <p>This guide will walk you through the installation process for Huntarr.io. Huntarr.io can be installed in several ways depending on your preference and system configuration.</p>
-            </section>
-            
-            <section id="toc" class="toc">
-                <h3>Table of Contents</h3>
-                <ul>
-                    <li><a href="#installation-methods">Installation Methods</a>
-                        <ul>
-                            <li><a href="#docker-installation">Docker Installation</a></li>
-                            <li><a href="#windows-installation">Windows Installation</a></li>
-                            <li><a href="#macos-installation">macOS Installation</a></li>
-                            <li><a href="#unraid-installation">Unraid Installation</a></li>
-                            <li><a href="#alternative-methods">Alternative Installation Methods</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#post-installation">Post Installation</a></li>
-                    <li><a href="#troubleshooting">Troubleshooting</a></li>
-                </ul>
-            </section>
-            
-            <section id="installation-methods" class="installation-methods">
-                <h2><i class="fas fa-download" style="margin-right: 10px; color: #3498db;"></i>Installation Methods</h2>
-                
-                <div id="docker">
-                    <h3 id="docker-installation"><i class="fab fa-docker" style="margin-right: 10px; color: #2496ed;"></i>Docker Installation</h3>
-                    <p>The recommended way to install Huntarr.io is using Docker. This method ensures that all dependencies are correctly installed and configured.</p>
-                    
-                    <h4><i class="fas fa-list-check" style="margin-right: 8px; color: #e74c3c;"></i>Prerequisites</h4>
-                    <ul>
-                        <li>Docker (1.27 or newer)</li>
-                    </ul>
-                    
-                    <h4><i class="fas fa-terminal" style="margin-right: 8px; color: #2ecc71;"></i>Docker Run Method</h4>
-                    <p>The simplest way to run Huntarr is via Docker (all configuration is done via the web UI):</p>
-                    
-                    <h5><i class="fab fa-docker" style="margin-right: 8px; color: #2496ed;"></i>Option 1: DockerHub</h5>
-                    <pre class="terminal"><code>docker run -d --name huntarr \
-  --restart always \
-  -p 9705:9705 \
-  -v /your-path/huntarr:/config \
-  -e TZ=America/New_York \
-  huntarr/huntarr:latest</code></pre>
+    <!-- ===== MAIN ===== -->
+    <main class="docs-main">
+        <div class="docs-content">
 
-                    <h5><i class="fab fa-github" style="margin-right: 8px; color: #333;"></i>Option 2: GitHub Container Registry</h5>
-                    <pre class="terminal"><code>docker run -d --name huntarr \
-  --restart always \
-  -p 9705:9705 \
-  -v /your-path/huntarr:/config \
-  -e TZ=America/New_York \
-  ghcr.io/plexguide/huntarr:latest</code></pre>
-                    
-                    <p>To check on the status of the program:</p>
-                    <pre class="terminal"><code class="command-prompt">docker logs huntarr</code></pre>
-                    
-                    <h4><i class="fas fa-layer-group" style="margin-right: 8px; color: #f39c12;"></i>Docker Compose Method</h4>
-                    <p>For those who prefer Docker Compose, add this to your <code>docker-compose.yml</code> file:</p>
-                    
-                    <h5><i class="fab fa-docker" style="margin-right: 8px; color: #2496ed;"></i>Option 1: DockerHub</h5>
-                    <pre class="terminal"><code>services:
+            <h1>Installation</h1>
+            <p class="page-subtitle">Get Huntarr running on Docker, Unraid, or from source.</p>
+
+            <h2>Requirements</h2>
+            <ul>
+                <li>Docker and Docker Compose (recommended)</li>
+                <li>OR Python 3.10+ for source installs</li>
+                <li>512MB RAM minimum, 1GB recommended</li>
+                <li>Network access to your *arr instances</li>
+            </ul>
+
+            <h2>Docker (Recommended)</h2>
+            <p>Create a <code>docker-compose.yml</code> file with the following:</p>
+            <pre><code>services:
   huntarr:
     image: huntarr/huntarr:latest
     container_name: huntarr
-    restart: always
     ports:
       - "9705:9705"
     volumes:
-      - /your-path/huntarr:/config
+      - /path/to/huntarr/config:/config
+      - /path/to/media:/media
     environment:
-      - TZ=America/New_York</code></pre>
+      - TZ=America/New_York
+    restart: unless-stopped</code></pre>
+            <p>Replace <code>/path/to/huntarr/config</code> and <code>/path/to/media</code> with your actual paths, then run:</p>
+            <pre><code>docker-compose up -d</code></pre>
 
-                    <h5><i class="fab fa-github" style="margin-right: 8px; color: #333;"></i>Option 2: GitHub Container Registry</h5>
-                    <pre class="terminal"><code>services:
-  huntarr:
-    image: ghcr.io/plexguide/huntarr:latest
-    container_name: huntarr
-    restart: always
-    ports:
-      - "9705:9705"
-    volumes:
-      - /your-path/huntarr:/config
-    environment:
-      - TZ=America/New_York</code></pre>
-                    
-                    <p>Then run:</p>
-                    <pre class="terminal"><code class="command-prompt">docker-compose up -d huntarr</code></pre>
-                </div>
-                
-                <div id="windows">
-                    <h3 id="windows-installation"><i class="fab fa-windows" style="margin-right: 10px; color: #0078d4;"></i>Windows Installation</h3>
-                    <p>Huntarr.io provides native Windows installers for easy setup on Windows systems.</p>
-                    
-                    <h4><i class="fas fa-list-ol" style="margin-right: 8px; color: #3498db;"></i>Installation Steps</h4>
-                    <ol>
-                        <li>Download the Windows installer (.exe) from the <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank">GitHub Releases</a> page.</li>
-                        <li>Double-click the downloaded .exe file to start the installation process.</li>
-                        <li><strong>Important:</strong> When Windows Defender SmartScreen appears, you'll need to click "More info" in the upper left corner, and then click "Run anyway" to proceed with installation.</li>
-                        <li>Follow the on-screen instructions to complete the installation.</li>
-                    </ol>
-                    
-                    <div class="screenshot" style="text-align: center;">
-                        <img src="../images/windows-smartscreen.jpg" alt="Windows SmartScreen Warning" style="max-width: 50%; border: 1px solid #333; border-radius: 5px;">
-                        <p class="caption">Click "More info" and then "Run anyway" to proceed with installation</p>
-                    </div>
-                    
-                    <h4><i class="fas fa-cog" style="margin-right: 8px; color: #9b59b6;"></i>Configuration</h4>
-                    <p>When first launched, Huntarr.io will create the necessary configuration directories in your user folder:</p>
-                    <pre><code>C:\Users\YourUsername\AppData\Roaming\Huntarr\config\</code></pre>
-                    
-                    <h4><i class="fas fa-info-circle" style="margin-right: 8px; color: #f39c12;"></i>Notes about Windows Version</h4>
-                    <ul>
-                        <li>The Windows version is provided as a convenience for users who prefer native applications</li>
-                        <li>The Docker version remains the primary supported deployment method</li>
-                    </ul>
-                </div>
-                
-                <div id="unraid">
-                    <h3 id="unraid-installation"><i class="fas fa-server" style="margin-right: 10px; color: #f15a2c;"></i>Unraid Installation</h3>
-                    <p>You can install Huntarr directly from the Unraid App Store. Special thanks to <a href="https://github.com/nwithan8" target="_blank">Nwithan8</a> for maintaining the Unraid templates and helping us grow by pushing Huntarr to the Unraid Community Applications repository.</p>
-                    
-                    <h4><i class="fas fa-store" style="margin-right: 8px; color: #2ecc71;"></i>Option 1: Unraid App Store (Recommended)</h4>
-                    <p>Search for "Huntarr" in the Unraid Community Applications and install with a few clicks.</p>
-                    
-                    <h4><i class="fas fa-terminal" style="margin-right: 8px; color: #e74c3c;"></i>Option 2: Manual Docker Command</h4>
-                    <p>If you prefer to install manually, you can run this from Command Line in Unraid:</p>
-                    
-                    <h5><i class="fab fa-docker" style="margin-right: 8px; color: #2496ed;"></i>DockerHub Image</h5>
-                    <pre class="terminal"><code>docker run -d --name huntarr \
-  --restart always \
-  -p 9705:9705 \
-  -v /mnt/user/appdata/huntarr:/config \
-  -e TZ=America/New_York \
-  huntarr/huntarr:latest</code></pre>
+            <h2>Unraid</h2>
+            <ul>
+                <li>Huntarr is available in <strong>Community Applications</strong></li>
+                <li>Search for "Huntarr" in the CA store</li>
+                <li>Key settings: port 9705, <code>/config</code> mapping, timezone</li>
+                <li>The template auto-fills most settings — adjust paths as needed for your setup</li>
+            </ul>
 
-                    <h5><i class="fab fa-github" style="margin-right: 8px; color: #333;"></i>GitHub Container Registry</h5>
-                    <pre class="terminal"><code>docker run -d --name huntarr \
-  --restart always \
-  -p 9705:9705 \
-  -v /mnt/user/appdata/huntarr:/config \
-  -e TZ=America/New_York \
-  ghcr.io/plexguide/huntarr:latest</code></pre>
-                </div>
-                
-                <div id="macos">
-                    <h3 id="macos-installation"><i class="fab fa-apple" style="margin-right: 10px; color: #333;"></i>macOS Installation</h3>
-                    <p>Huntarr.io provides native macOS installers for both Intel and Apple Silicon Macs.</p>
-                    
-                    <h4><i class="fas fa-microchip" style="margin-right: 8px; color: #3498db;"></i>Two Types of macOS Installers</h4>
-                    <ul>
-                        <li><strong>Intel (x86_64)</strong> - For Intel-based Macs</li>
-                        <li><strong>ARM (arm64)</strong> - For Apple Silicon Macs (M1, M2, etc.)</li>
-                    </ul>
-                    
-                    <h4><i class="fas fa-list-ol" style="margin-right: 8px; color: #3498db;"></i>Installation Steps</h4>
-                    <ol>
-                        <li>Download the appropriate installer package (.pkg) for your Mac from the <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank">GitHub Releases</a> page.</li>
-                        <li>Double-click the downloaded .pkg file to start the installation process.</li>
-                        <li>When you first try to open the package, you may see a security warning. This is expected as the app isn't signed by Apple.</li>
-                        <li>To proceed with installation, go to System Settings → Privacy & Security, scroll down to the security section, and click "Open Anyway" as shown below:</li>
-                    </ol>
-                    
-                    <div class="screenshot" style="text-align: center;">
-                        <img src="../images/mac-os-warning.jpg" alt="macOS Security Warning" style="max-width: 50%; border: 1px solid #333; border-radius: 5px;">
-                        <p class="caption">The "Open Anyway" button allows you to proceed with installation despite macOS security warnings</p>
-                    </div>
-                    
-                    <h4><i class="fas fa-cog" style="margin-right: 8px; color: #9b59b6;"></i>Configuration</h4>
-                    <p>When first launched, Huntarr.io will create the necessary configuration directories in your user folder:</p>
-                    <pre><code>~/Library/Application Support/Huntarr/config/</code></pre>
-                    
-                    <h4><i class="fas fa-info-circle" style="margin-right: 8px; color: #f39c12;"></i>Notes about macOS Version</h4>
-                    <ul>
-                        <li>The macOS version is provided as a convenience for users who prefer native applications</li>
-                        <li>The Docker version remains the primary supported deployment method</li>
-                    </ul>
-                </div>
-                
-                <div id="alternative">
-                    <h3 id="alternative-methods"><i class="fas fa-code" style="margin-right: 10px; color: #9b59b6;"></i>Alternative Installation Methods</h3>
-                    <p>Although Docker and the native macOS installers are the recommended methods, there are additional ways to install and run Huntarr.</p>
-                    
-                    <div class="alert alert-warning">
-                        <strong>Note:</strong> These methods are provided for advanced users and development purposes only. For most users, we recommend the Docker installation or macOS installer.
-                    </div>
-                    
-                    <h4><i class="fab fa-python" style="margin-right: 8px; color: #3776ab;"></i>From Source (Advanced)</h4>
-                    <p>If you're familiar with Python and want to run Huntarr from source:</p>
-                    
-                    <ol>
-                        <li>Ensure you have Python 3.12+ and Git installed on your system</li>
-                        <li>Clone the repository:
-                            <pre class="terminal"><code class="command-prompt">git clone https://github.com/plexguide/Huntarr.io.git</code></pre>
-                        </li>
-                        <li>Navigate to the directory:
-                            <pre class="terminal"><code class="command-prompt">cd Huntarr.io</code></pre>
-                        </li>
-                        <li><strong>Create and activate a virtual environment (recommended for Ubuntu 24.04+):</strong>
-                            <pre class="terminal"><code class="command-prompt">python3 -m venv huntarr-env
-source huntarr-env/bin/activate  # On Windows: huntarr-env\Scripts\activate</code></pre>
-                        </li>
-                        <li>Install Python dependencies:
-                            <pre class="terminal"><code class="command-prompt">pip install -r requirements.txt</code></pre>
-                        </li>
-                        <li>Run the application:
-                            <pre class="terminal"><code class="command-prompt">python3 main.py</code></pre>
-                        </li>
-                    </ol>
-                    
-                    <div class="alert alert-info">
-                        <strong>Note for Ubuntu 24.04+ users:</strong> Modern Ubuntu versions require the use of virtual environments to prevent conflicts with system packages. The virtual environment step is highly recommended to avoid installation issues.
-                    </div>
-                </div>
-            </section>
-            
-            <section id="post-installation" class="post-installation">
-                <h2><i class="fas fa-rocket" style="margin-right: 10px; color: #e74c3c;"></i>Post Installation</h2>
-                
-                <h3><i class="fas fa-play-circle" style="margin-right: 8px; color: #2ecc71;"></i>Initial Setup</h3>
-                <p>After installing Huntarr.io, you'll need to complete the initial setup:</p>
-                <ol>
-                    <li>Access the web interface (default: <code>http://localhost:9705</code>)</li>
-                    <li>Create an administrator account when prompted</li>
-                    <li>Follow the setup wizard to configure your media paths and integrate with media applications (Sonarr, Radarr, etc.)</li>
-                </ol>
-            </section>
-            
-            <section id="troubleshooting" class="troubleshooting">
-                <h2><i class="fas fa-wrench" style="margin-right: 10px; color: #f39c12;"></i>Troubleshooting</h2>
-                
-                <h3><i class="fas fa-exclamation-triangle" style="margin-right: 8px; color: #e74c3c;"></i>Common Issues</h3>
-                
-                <div class="issue-card">
-                    <h4>Port already in use</h4>
-                    <p>If port 9705 is already in use, you can change it in the docker-compose.yml file or use the <code>--port</code> option in the installation script.</p>
-                </div>
-                
-                
-                <div class="issue-card">
-                    <h4>Connectivity problems</h4>
-                    <p>If you can't connect to Huntarr.io after installation:</p>
-                    <ul>
-                        <li>Check if the service is running: <code>docker ps | grep huntarr</code></li>
-                        <li>Check the logs: <code>docker logs huntarr</code></li>
-                        <li>Ensure your firewall allows traffic on the configured port</li>
-                    </ul>
-                </div>
-            </section>
-            
-            <div class="section-nav">
-                <a href="../index.html">← Back to Home</a>
-                <a href="quick-setup.html">Quick Setup Guide →</a>
+            <h2>From Source</h2>
+            <pre><code>git clone https://github.com/plexguide/Huntarr.io.git
+cd Huntarr.io
+pip install -r requirements.txt
+python main.py</code></pre>
+            <p>Access Huntarr at <a href="http://localhost:9705">http://localhost:9705</a></p>
+
+            <h2>Post-Installation</h2>
+            <p>Open <code>http://your-server:9705</code> in your browser. You'll be greeted by the Setup Wizard to configure your instance. See <a href="setup-wizard.html">Setup Wizard</a> for details.</p>
+
+            <h2>Environment Variables</h2>
+            <table>
+                <thead>
+                    <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>TZ</code></td><td>UTC</td><td>Timezone</td></tr>
+                    <tr><td><code>HUNTARR_PORT</code></td><td>9705</td><td>Web UI port</td></tr>
+                    <tr><td><code>HUNTARR_LOG_LEVEL</code></td><td>INFO</td><td>Log verbosity</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Common Issues</h2>
+
+            <div class="alert alert-warning">
+                <strong>Port conflict</strong>
+                <p>If port 9705 is already in use, change the port mapping in your <code>docker-compose.yml</code> or use a different host port (e.g. <code>9706:9705</code>).</p>
             </div>
-            
-            <footer>
-                Huntarr.io | Installation Guide | Thanks 4 Using Huntarr - Admin9705
-            </footer>
-            
-            <a href="#toc" class="back-to-top" id="back-to-top" title="Back to Top">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"></path>
-                </svg>
-            </a>
-            
-            <script>
-                // Show/hide back-to-top button based on scroll position
-                window.addEventListener('scroll', function() {
-                    var backToTopButton = document.getElementById('back-to-top');
-                    if (window.pageYOffset > 300) {
-                        backToTopButton.classList.add('visible');
-                    } else {
-                        backToTopButton.classList.remove('visible');
-                    }
-                });
-                
-                // Smooth scroll to the target when clicking on table of contents links
-                document.querySelectorAll('.toc a').forEach(function(anchor) {
-                    anchor.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        var targetId = this.getAttribute('href');
-                        var targetElement = document.querySelector(targetId);
-                        window.scrollTo({
-                            top: targetElement.offsetTop - 20,
-                            behavior: 'smooth'
-                        });
-                    });
-                });
-            </script>
-        </div>
-    </div>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Tab functionality
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabPanes = document.querySelectorAll('.tab-pane');
-            
-            tabButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    // Remove active class from all buttons and panes
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabPanes.forEach(pane => pane.classList.remove('active'));
-                    
-                    // Add active class to current button and corresponding pane
-                    this.classList.add('active');
-                    const tabId = this.getAttribute('data-tab');
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-        });
-    </script>
+
+            <div class="alert alert-warning">
+                <strong>Permission errors</strong>
+                <p>Ensure the <code>/config</code> volume is writable by the container. Check ownership and permissions on the host path.</p>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>Can't reach *arr apps</strong>
+                <p>Verify network connectivity between Huntarr and your Sonarr, Radarr, and other *arr instances. When using Docker, ensure they're on the same network or use host networking if needed.</p>
+            </div>
+
+        </div><!-- /docs-content -->
+
+        <footer class="docs-footer">
+            <p>Huntarr is open source. <a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a> · <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a> · <a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></p>
+        </footer>
+    </main>
+
+</div><!-- /docs-layout -->
+
+<button class="back-to-top" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
+<script src="../js/main.js"></script>
 </body>
-</html> 
+</html>

@@ -3,275 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whisparr V2 Documentation - Huntarr.io</title>
+    <title>Whisparr - Huntarr Docs</title>
+    <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="../js/main.js" defer></script>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-logo">
-            <img src="../images/huntarr-logo.png" alt="Huntarr Logo">
-            <h2>Huntarr.io</h2>
+
+<!-- Mobile Topbar -->
+<div class="docs-mobile-topbar">
+    <button class="mob-hamburger" aria-label="Open navigation"><span></span><span></span><span></span></button>
+    <img src="../images/huntarr-logo.png" alt="Huntarr" class="mob-logo">
+    <span class="mob-title">Documentation</span>
+</div>
+
+<!-- Sidebar Backdrop (mobile) -->
+<div class="docs-sidebar-backdrop"></div>
+
+<div class="docs-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <nav class="docs-sidebar" aria-label="Documentation navigation">
+        <a href="../index.html" class="sidebar-brand">
+            <img src="../images/huntarr-logo.png" alt="Huntarr">
+            <span>Huntarr</span>
+        </a>
+
+        <div class="sidebar-scroll">
+
+            <!-- Getting Started -->
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <div class="nav-group-items">
+                    <a href="../index.html"><i class="fas fa-home"></i> Welcome</a>
+                    <a href="../getting-started/installation.html"><i class="fas fa-download"></i> Installation</a>
+                    <a href="../getting-started/setup-wizard.html"><i class="fas fa-magic"></i> Setup Wizard</a>
+                    <a href="../getting-started/first-steps.html"><i class="fas fa-rocket"></i> First Steps</a>
+                </div>
+            </div>
+
+            <!-- Apps -->
+            <div class="nav-group">
+                <div class="nav-group-title">Apps</div>
+                <div class="nav-group-items">
+                    <a href="index.html"><i class="fas fa-th-large"></i> Overview</a>
+                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
+                    <a href="radarr.html"><i class="fas fa-film"></i> Radarr</a>
+                    <a href="lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
+                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
+                    <a href="whisparr.html" class="active"><i class="fas fa-mask"></i> Whisparr</a>
+                    <a href="prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
+                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                </div>
+            </div>
+
+            <!-- Movie Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">Movie Hunt</div>
+                <div class="nav-group-items">
+                    <a href="../movie-hunt/index.html"><i class="fas fa-clapperboard"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                    <a href="../movie-hunt/media-collection.html"><i class="fas fa-photo-film"></i> Media Collection</a>
+                    <a href="../movie-hunt/indexers-clients.html"><i class="fas fa-server"></i> Indexers &amp; Clients</a>
+                    <a href="../movie-hunt/profiles.html"><i class="fas fa-sliders"></i> Profiles</a>
+                </div>
+            </div>
+
+            <!-- NZB Hunt -->
+            <div class="nav-group">
+                <div class="nav-group-title">NZB Hunt</div>
+                <div class="nav-group-items">
+                    <a href="../nzb-hunt/index.html"><i class="fas fa-newspaper"></i> Overview <span class="nav-badge nav-badge-beta">Beta</span></a>
+                </div>
+            </div>
+
+            <!-- Requestarr -->
+            <div class="nav-group">
+                <div class="nav-group-title">Requests</div>
+                <div class="nav-group-items">
+                    <a href="../requestarr/index.html"><i class="fas fa-hand-paper"></i> Requestarr</a>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="nav-group">
+                <div class="nav-group-title">Settings</div>
+                <div class="nav-group-items">
+                    <a href="../settings/index.html"><i class="fas fa-cog"></i> Main Settings</a>
+                    <a href="../settings/scheduling.html"><i class="fas fa-clock"></i> Scheduling</a>
+                    <a href="../settings/notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+                    <a href="../settings/backup-restore.html"><i class="fas fa-database"></i> Backup &amp; Restore</a>
+                    <a href="../settings/log-settings.html"><i class="fas fa-file-alt"></i> Log Settings</a>
+                    <a href="../settings/user-account.html"><i class="fas fa-user-shield"></i> User Account</a>
+                </div>
+            </div>
+
+            <!-- System -->
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <div class="nav-group-items">
+                    <a href="../system/hunt-manager.html"><i class="fas fa-tasks"></i> Hunt Manager</a>
+                    <a href="../system/logs.html"><i class="fas fa-scroll"></i> Logs</a>
+                    <a href="../system/api.html"><i class="fas fa-code"></i> API Reference</a>
+                </div>
+            </div>
+
+            <!-- Help -->
+            <div class="nav-group">
+                <div class="nav-group-title">Help</div>
+                <div class="nav-group-items">
+                    <a href="../help/faq.html"><i class="fas fa-question-circle"></i> FAQ</a>
+                    <a href="../help/community.html"><i class="fas fa-users"></i> Community</a>
+                    <a href="../help/donate.html"><i class="fas fa-heart"></i> Donate</a>
+                </div>
+            </div>
+
+        </div><!-- /sidebar-scroll -->
+
+        <div class="sidebar-footer">
+            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" class="sf-discord" title="Discord"><i class="fab fa-discord"></i></a>
+            <a href="https://www.reddit.com/r/huntarr/" target="_blank" class="sf-reddit" title="Reddit"><i class="fab fa-reddit-alien"></i></a>
+            <a href="https://github.com/plexguide/Huntarr.io" target="_blank" class="sf-github" title="GitHub"><i class="fab fa-github"></i></a>
+            <a href="../help/donate.html" class="sf-heart" title="Donate"><i class="fas fa-heart"></i></a>
         </div>
-        
-        <nav class="sidebar-nav">
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Getting Started</h3>
-                <ul>
-                    <li><a href="../donate.html"><i class="fas fa-heart" style="color: #e91e63; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Donate</a></li>
-                    <li><a href="../getting-started/installation.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg> Installation</a></li>
-                </ul>
-            </div>
+    </nav>
 
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Core</h3>
-                <ul>
-                    <li><a href="../index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg> Home</a></li>
-                    <li class="active"><a href="index.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"></path></svg> Apps</a></li>
-                    <li><a href="../settings/settings.html"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg> Settings</a></li>
-                    <li><a href="../features/index.html"><i class="fas fa-star" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Features</a></li>
-                    <li><a href="../faq.html"><i class="fas fa-question-circle" style="width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> FAQ</a></li>
-                </ul>
-            </div>
-            
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Resources</h3>
-                <ul>
-                    <li><a href="https://github.com/plexguide/Huntarr.io" target="_blank"><svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg> GitHub</a></li>
-                    <li><a href="https://discord.com/invite/PGJJjR5Cww" target="_blank"><i class="fab fa-discord" style="color: #5865F2; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Discord</a></li>
-                    <li><a href="https://www.reddit.com/r/huntarr/" target="_blank"><i class="fab fa-reddit-alien" style="color: #FF4500; font-size: 18px; width: 24px; height: 24px; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;"></i> Reddit</a></li>
+    <!-- ===== MAIN ===== -->
+    <main class="docs-main">
+        <div class="docs-content">
 
-                </ul>
-            </div>
-        </nav>
-    </div>
+            <h1>Whisparr</h1>
+            <p class="page-subtitle">Manage adult content with automated hunting and quality upgrades.</p>
 
-    <div class="main-content">
-        <div class="container">
-            <h1>Whisparr V2 Documentation</h1>
-            
-            <div style="text-align: center; margin: 20px auto;">
-                <img src="../images/arrs/whisparr.png" alt="Whisparr Logo" style="width: 80px; height: 80px; object-fit: contain;">
-            </div>
-            
-            <div class="alert alert-info" style="margin: 20px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
-                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Whisparr V2?</strong> 
-                Whisparr V2 is an automated adult content downloading and management application. It monitors for new content, searches indexers, and automatically downloads content using your preferred download clients.
-            </div>
-            
-            <p>Whisparr V2 automates the process of monitoring and downloading adult content. It integrates with popular download clients and uses indexers to search for and download content automatically, making it easy to build and maintain an organized adult media library.</p>
-            
-            <div class="alert alert-warning">
-                <strong>Note:</strong> This documentation covers Whisparr V2. For the newer Whisparr V3 (Eros), please see the <a href="eros.html">Eros documentation</a>.
-            </div>
-            
-            <h2 id="overview">Overview</h2>
-            
-            <h3><i class="fas fa-download" style="margin-right: 10px; color: #3498db;"></i>What Whisparr V2 Does</h3>
-            <p>Whisparr V2 provides automated content management for adult media by:</p>
+            <h2>Overview</h2>
             <ul>
-                <li><strong>Automatic Searching:</strong> Monitors for new content and searches configured indexers</li>
-                <li><strong>Quality Management:</strong> Downloads content based on your quality preferences</li>
-                <li><strong>Library Organization:</strong> Automatically organizes downloaded content in your media library</li>
-                <li><strong>Upgrade Management:</strong> Can upgrade existing content to better quality when available</li>
-                <li><strong>Download Client Integration:</strong> Works with popular download clients like qBittorrent, Deluge, etc.</li>
+                <li>Whisparr manages adult content</li>
+                <li>Huntarr connects to find missing items and upgrade quality</li>
+                <li>Works with Whisparr v2 and v3</li>
+                <li>Multiple instances supported</li>
             </ul>
-            
-            <h3><i class="fas fa-cogs" style="margin-right: 10px; color: #e67e22;"></i>How Huntarr Enhances Whisparr V2</h3>
-            <p>Huntarr adds intelligent automation on top of Whisparr V2:</p>
-            <ul>
-                <li><strong>Smart Search Timing:</strong> Prevents overwhelming indexers with too many requests</li>
-                <li><strong>Missing Content Detection:</strong> Identifies and prioritizes missing content</li>
-                <li><strong>Upgrade Intelligence:</strong> Finds better quality versions of existing content</li>
-                <li><strong>Rate Limiting:</strong> Respects API limits to prevent bans or throttling</li>
-                <li><strong>Multi-Instance Support:</strong> Manage multiple Whisparr V2 instances from one interface</li>
-            </ul>
-            
-            <h2 id="connection-settings">Instance Configuration</h2>
-            
-            <p>Configure your Whisparr V2 instances to connect Huntarr with your Whisparr V2 installation(s).</p>
-            
-            <div class="alert alert-info" style="margin: 15px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
-                <strong><i class="fas fa-server" style="margin-right: 8px;"></i>True multi-instance</strong><br>
-                Huntarr supports multiple Whisparr V2 instances. Each instance has its own connection (URL, API key), and its own per-instance settings: search mode, upgrade mode, search limits, and Swaparr. You can enable or disable each instance independently.
-            </div>
-            
-            <h3>Adding Your Whisparr V2 Instance</h3>
-            <p>To connect your existing Whisparr V2 instance to Huntarr:</p>
-            <ol>
-                <li>Navigate to the Whisparr V2 section in Huntarr</li>
-                <li>Click "Add Whisparr V2 Instance" if you don't have one configured</li>
-                <li>Fill in your Whisparr V2 connection details</li>
-                <li>Test the connection to ensure Huntarr can communicate with Whisparr V2</li>
-            </ol>
-            
-            <h3 id="connection-details">Connection Details</h3>
-            <p>These settings match the <strong>Connection Details</strong> section in the instance editor:</p>
+
+            <h2>Configuration</h2>
+
+            <h3>Instance Settings</h3>
+            <p>Same as general app settings (URL, API key, name)</p>
+
+            <h3>Hunt Settings</h3>
             <table>
-                <tr><th>Setting</th><th>Description</th></tr>
-                <tr><td><strong>Status</strong></td><td>Shows connection status and Whisparr V2 version. Displayed at the top of the section.</td></tr>
-                <tr><td><strong>Enable Status</strong></td><td>Enable or disable this instance. When disabled, Huntarr will not process this instance.</td></tr>
-                <tr><td><strong>Name</strong></td><td>A friendly name to identify this instance (e.g. Main Whisparr, Adult-4K). Useful when running multiple Whisparr instances.</td></tr>
-                <tr><td><strong>URL</strong></td><td>The full URL including port (e.g. <code>http://localhost:6969</code>). Include protocol (http/https) and port.</td></tr>
-                <tr><td><strong>API Key</strong></td><td>Found in Settings &gt; General in your *arr application (Whisparr V2: Settings &gt; General &gt; Security).</td></tr>
-                <tr><td><strong>Instance Identifier</strong></td><td>Stable identifier for this instance (assigned automatically; cannot be changed). Used internally so Huntarr can track state per instance.</td></tr>
+                <thead>
+                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Hunt Missing</strong></td><td>Enabled</td><td>Search for missing content</td></tr>
+                    <tr><td><strong>Hunt Upgrades</strong></td><td>Enabled</td><td>Upgrade content below cutoff quality</td></tr>
+                    <tr><td><strong>Missing Items per Cycle</strong></td><td>1</td><td>Items to search per cycle</td></tr>
+                    <tr><td><strong>Upgrade Items per Cycle</strong></td><td>1</td><td>Items to try upgrading</td></tr>
+                    <tr><td><strong>Monitored Only</strong></td><td>Enabled</td><td>Only hunt monitored items</td></tr>
+                </tbody>
             </table>
-            
-            <h2 id="search-settings">Search Settings (Per Instance)</h2>
-            
-            <p>These settings match the <strong>Search Settings</strong> section in the instance editor. Each Whisparr V2 instance has its own values.</p>
-            
-            <h3 id="search-counts">Search counts</h3>
-            <ul>
-                <li><strong>Missing Search Count</strong> — Number of missing items to search for in each cycle. Set to 0 to disable missing searches.</li>
-                <li><strong>Upgrade Search Count</strong> — Number of items to upgrade in each cycle. Set to 0 to disable upgrade searches.</li>
-            </ul>
-            
-            <h3 id="missing-search-mode"><i class="fas fa-search" style="margin-right: 10px; color: #e91e63;"></i>Missing Search Mode</h3>
-            <p>Determines how Huntarr searches for missing content:</p>
-            <ul>
-                <li><strong>Movies:</strong> Searches for individual movies/scenes. Standard mode for most collections</li>
-                <li><strong>Performers:</strong> Searches at the performer level for complete works</li>
-                <li><strong>Studios:</strong> Searches by studio for specific production companies</li>
-            </ul>
-            
-            <h3 id="upgrade-mode"><i class="fas fa-arrow-up" style="margin-right: 10px; color: #2ecc71;"></i>Upgrade Mode</h3>
-            <p>Controls how Huntarr handles quality upgrades:</p>
-            <ul>
-                <li><strong>Movies:</strong> Upgrades individual movies/scenes when better quality becomes available</li>
-                <li><strong>Performers:</strong> Upgrades at the performer level for consistent quality</li>
-                <li><strong>Studios:</strong> Upgrades entire studio collections when better quality is found</li>
-            </ul>
-            
-            <h2 id="stateful-management">Stateful Management</h2>
-            <p>These settings match the <strong>Stateful Management</strong> section in the instance editor. Huntarr can track which items it has already processed so it doesn’t re-search them every cycle.</p>
-            <table>
-                <tr><th>Setting</th><th>Description</th></tr>
-                <tr><td><strong>State Management</strong></td><td>Enabled: track processed items to avoid redundant searches. Disabled: do not track; every cycle may consider the same items again.</td></tr>
-                <tr><td><strong>Reset Interval (Hours)</strong></td><td>How long to wait before re-searching a previously processed item (default: 72 hours / 3 days). After this time, items become eligible again.</td></tr>
-                <tr><td><strong>Reset Processed State Now</strong></td><td>Button that clears the history of processed items for this instance. Use if you want Huntarr to re-consider everything from scratch.</td></tr>
-            </table>
-            <p>When state management is enabled, the UI shows <strong>Active - Tracked Items: <em>N</em></strong> and <strong>Next Reset</strong> (when the next reset cycle runs).</p>
-            
-            <h3 id="additional-settings"><i class="fas fa-sliders-h" style="margin-right: 10px; color: #f39c12;"></i>Additional Settings</h3>
-            <p>These match the <strong>Additional Settings</strong> section. Adult content indexers typically have very strict rate limits; use very conservative settings.</p>
-            <table>
-                <tr><th>Setting</th><th>Description</th><th>Recommended</th></tr>
-                <tr><td><strong>Sleep Duration (Minutes)</strong></td><td>Time in minutes between processing cycles for this instance.</td><td>60 or more; adult indexers often have strict limits.</td></tr>
-                <tr><td><strong>API Cap - Hourly</strong></td><td>Maximum API requests per hour for this instance.</td><td>10–20 recommended, max 400. Adult indexers typically have very low limits.</td></tr>
-            </table>
-            <div class="alert alert-warning">
-                <strong>Important:</strong> Adult content indexers typically have very strict rate limits and limited content. Use very conservative settings (10–20 hourly) to avoid being banned.
-            </div>
-            
-            <h3 id="additional-options"><i class="fas fa-cogs" style="margin-right: 10px; color: #9b59b6;"></i>Additional Options</h3>
-            <p>Fine-tune Huntarr's behavior with these additional settings:</p>
-            
-                    <h4 id="monitored-only"><i class="fas fa-eye" style="margin-right: 8px; color: #e91e63;"></i>Monitored Only</h4>
-        <p>When enabled, Huntarr will only search for content that is marked as "Monitored" in Whisparr V2. This prevents searches for performers or content you've intentionally unmonitored.</p>
 
-        <h4 id="skip-future-releases"><i class="fas fa-calendar" style="margin-right: 8px; color: #e74c3c;"></i>Skip Future Releases</h4>
-            <p>When enabled, Huntarr will skip content with future release dates. This prevents unnecessary searches for content that hasn't been released yet.</p>
-            
-            <h4><i class="fas fa-user" style="margin-right: 8px; color: #9b59b6;"></i>Performer Monitoring</h4>
-            <p>When enabled, Huntarr will respect your performer monitoring settings in Whisparr V2, only searching for content from performers you're actively monitoring.</p>
-            
-            <h4><i class="fas fa-building" style="margin-right: 8px; color: #f39c12;"></i>Studio Filtering</h4>
-            <p>Configure which studios Huntarr should prioritize or exclude when searching for content.</p>
-            
-            <h2 id="advanced-settings">Advanced Settings</h2>
-            <p>These match the <strong>Advanced Settings</strong> section: <strong>API Timeout (seconds)</strong>, <strong>Command Wait Delay (seconds)</strong>, <strong>Command Wait Attempts</strong>, <strong>Max Download Queue Size</strong>, and <strong>Swaparr Monitoring</strong> (when Swaparr is enabled in Huntarr Settings).</p>
-            
-            <h2 id="custom-tags">Custom Tags</h2>
-            <p>These match the <strong>Custom Tags</strong> section. Whisparr V2 does not have an Upgrade Selection Method (cutoff vs tags); both tag options are always available.</p>
+            <h2>How Hunting Works</h2>
+            <p>Same general pattern as other *arr apps — query API, filter, trigger searches.</p>
+
+            <h2>Tips</h2>
             <ul>
-                <li><strong>Tag missing items</strong> / <strong>Missing Items Tag</strong> — Tag (e.g. <code>huntarr-missing</code>) added when items are found by a missing search. Max 25 characters.</li>
-                <li><strong>Tag upgrade items</strong> / <strong>Upgrade Items Tag</strong> — Tag (e.g. <code>huntarr-upgrade</code>) added when items are upgraded. Max 25 characters.</li>
+                <li>Whisparr v3 is recommended for the best compatibility</li>
+                <li>Specialized indexers may be required</li>
+                <li>Quality profiles in Whisparr control resolution/format preferences</li>
+                <li>Use Huntarr's scheduling to avoid excessive indexer hits</li>
             </ul>
-            <p>Whisparr V2 does not have "Tag shows missing" (Sonarr-only).</p>
-            
-            <h2 id="exempt-tags">Exempt Tags</h2>
-            <p>Items with any of these tags are skipped for missing and upgrade searches. If you remove the tag in Whisparr V2, Huntarr will process the item again. The tag <code>upgradinatorr</code> cannot be added as an exempt tag. See <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener">#676</a>.</p>
-            
-            <h2 id="swaparr-integration">Swaparr Integration</h2>
-            
-            <p>Enable Swaparr monitoring for this Whisparr V2 instance to automatically clean up stalled downloads.</p>
-            
-            <div class="alert alert-info" style="margin: 15px 0; padding: 15px; background: rgba(13, 202, 240, 0.1); border-left: 4px solid #0dcaf0;">
-                <strong><i class="fas fa-info-circle" style="margin-right: 8px;"></i>What is Swaparr?</strong> 
-                Swaparr monitors your download queues and automatically removes stalled, failed, or problematic downloads to keep your automation running smoothly. 
-                <a href="swaparr.html" style="color: #0dcaf0;">Learn more about Swaparr configuration</a>.
+
+            <div class="alert alert-info">
+                <strong>Huntarr supports both Whisparr v2 and v3.</strong> If you're running v2, consider upgrading for better API compatibility.
             </div>
-            
-            <h3><i class="fas fa-broom" style="margin-right: 8px; color: #e67e22;"></i>When to Enable Swaparr</h3>
-            <ul>
-                <li>You frequently have stalled adult content downloads</li>
-                <li>Your download queue gets clogged with failed downloads</li>
-                <li>You want hands-off automation for your adult media library</li>
-                <li>You use public trackers where quality and availability varies</li>
-                <li>You download content that sometimes has upload issues</li>
-            </ul>
-            
-            <h3><i class="fas fa-exclamation-triangle" style="margin-right: 8px; color: #f39c12;"></i>When to Be Cautious</h3>
-            <ul>
-                <li>You use private adult trackers with strict ratio requirements</li>
-                <li>You prefer manual control over your adult content downloads</li>
-                <li>You have very slow internet where downloads take a long time</li>
-                <li>You're building ratio on specific adult content torrents</li>
-                <li>Adult content indexers have very limited availability</li>
-            </ul>
-            
-            <h2 id="troubleshooting">Troubleshooting</h2>
-            
-            <h3>Common Issues</h3>
-            
-            <h4>Connection Failed</h4>
-            <p>If Huntarr can't connect to your Whisparr V2 instance:</p>
-            <ul>
-                <li>Verify the URL is correct and includes the protocol (http/https)</li>
-                <li>Check that the port number is correct (default: 6969)</li>
-                <li>Ensure the API key is copied correctly from Whisparr V2 Settings > General > Security</li>
-                <li>Confirm Whisparr V2 is running and accessible from Huntarr's network</li>
-                <li>Check firewall settings if Huntarr and Whisparr V2 are on different machines</li>
-            </ul>
-            
-            <h4>No Missing Content Found</h4>
-            <p>If Huntarr reports no missing content but you know there are gaps:</p>
-            <ul>
-                <li>Ensure "Monitored Only" is configured correctly for your needs</li>
-                <li>Check that performers and content are marked as "Monitored" in Whisparr V2</li>
-                <li>Verify "Skip Future Releases" isn't preventing searches for available content</li>
-                <li>Review your performer and studio monitoring settings</li>
-            </ul>
-            
-            <h4>Limited Content Availability</h4>
-            <p>If Huntarr isn't finding content that should be available:</p>
-            <ul>
-                <li>Adult content indexers have much more limited content than mainstream indexers</li>
-                <li>Consider adding more adult-specific indexers to Whisparr V2</li>
-                <li>Check if your indexers support the content types you're seeking</li>
-                <li>Verify your quality profiles match available content</li>
-            </ul>
-            
-            <h4>Rate Limiting Issues</h4>
-            <p>If you're getting rate limited by adult indexers:</p>
-            <ul>
-                <li>Reduce the "API Cap - Hourly" setting to 50-100 requests</li>
-                <li>Increase the "Sleep Duration" to 60+ minutes between cycles</li>
-                <li>Lower the "Missing Search" and "Upgrade Search" limits to 1-2</li>
-                <li>Adult indexers are typically much more restrictive than mainstream ones</li>
-            </ul>
-            
-            <div class="section-nav">
-                <a href="index.html">← Back to Apps</a>
-                <a href="eros.html">Eros Documentation →</a>
-            </div>
-            
-            <footer>
-                Huntarr.io | Whisparr V2 Documentation | Thanks 4 Using Huntarr - Admin9705
-            </footer>
-        </div>
-    </div>
+
+        </div><!-- /docs-content -->
+
+        <footer class="docs-footer">
+            <p>Huntarr is open source. <a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a> · <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a> · <a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></p>
+        </footer>
+    </main>
+
+</div><!-- /docs-layout -->
+
+<button class="back-to-top" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
+<script src="../js/main.js"></script>
 </body>
-</html> 
+</html>
