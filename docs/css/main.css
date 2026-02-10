@@ -152,23 +152,24 @@ img { max-width: 100%; height: auto; }
     color: var(--text-primary);
     letter-spacing: .4px;
 }
-/* Donate link at top of sidebar — red look (glow/border like Become A Sponsor) */
+/* Donate link at top of sidebar — red look, same size as other nav items */
 nav.docs-sidebar .sidebar-donate-link,
 .docs-sidebar .sidebar-donate-link {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
-    margin: 0 10px 12px 10px;
+    gap: 10px;
+    padding: 7px 16px;
+    margin: 4px 10px 6px 10px;
     color: #e74c3c !important;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 500;
     text-decoration: none !important;
     border: 1px solid rgba(231, 76, 60, 0.5);
     border-left: 3px solid #e74c3c;
-    border-radius: 8px;
+    border-radius: 6px;
     flex-shrink: 0;
     background: rgba(231, 76, 60, 0.08);
-    box-shadow: 0 0 12px rgba(231, 76, 60, 0.15);
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.12);
     transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 nav.docs-sidebar .sidebar-donate-link:hover,
@@ -176,11 +177,13 @@ nav.docs-sidebar .sidebar-donate-link:hover,
     color: #ff6b6b !important;
     background: rgba(231, 76, 60, 0.18);
     border-color: rgba(231, 76, 60, 0.7);
-    box-shadow: 0 0 16px rgba(231, 76, 60, 0.25);
+    box-shadow: 0 0 12px rgba(231, 76, 60, 0.2);
 }
 nav.docs-sidebar .sidebar-donate-link i,
 .docs-sidebar .sidebar-donate-link i {
-    font-size: 1.1em;
+    font-size: 13px;
+    width: 16px;
+    text-align: center;
     color: #e74c3c !important;
 }
 nav.docs-sidebar .sidebar-donate-link:hover i,
