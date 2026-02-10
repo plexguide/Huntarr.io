@@ -7,6 +7,15 @@
     <link rel="icon" type="image/png" href="images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/main.css">
+    <!-- Fallback layout if main.css fails to load (e.g. GitHub Pages) -->
+    <style>
+    .docs-layout{display:flex;min-height:100vh}
+    .docs-sidebar{position:fixed;top:0;left:0;bottom:0;width:260px;display:flex;flex-direction:column;z-index:200;background:linear-gradient(180deg,#161e2c 0%,#0f1623 100%);border-right:1px solid rgba(255,255,255,.06)}
+    .docs-main{margin-left:260px;flex:1;min-height:100vh;background:#0f1623}
+    .sidebar-brand img{width:36px;height:36px;max-width:36px}
+    .docs-mobile-topbar{display:none}
+    @media(max-width:768px){.docs-sidebar{transform:translateX(-100%);width:270px}.docs-mobile-topbar{display:flex}.docs-main{margin-left:0}}
+    </style>
 </head>
 <body>
 

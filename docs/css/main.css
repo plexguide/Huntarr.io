@@ -1,7 +1,44 @@
 /* ================================================================
    Huntarr.io Documentation — Design System
    Matches the Huntarr app's dark glassmorphism theme.
+   GitHub Pages: .nojekyll in docs/ = no Jekyll; static files served as-is.
    ================================================================ */
+
+/* --- Critical layout (pixel values so layout works even if vars fail) --- */
+.docs-layout {
+    display: flex !important;
+    min-height: 100vh !important;
+}
+.docs-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 260px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 200 !important;
+}
+.docs-main {
+    margin-left: 260px !important;
+    flex: 1 !important;
+    min-height: 100vh !important;
+}
+nav.docs-sidebar .sidebar-brand img,
+.sidebar-brand img {
+    width: 36px !important;
+    height: 36px !important;
+    max-width: 36px !important;
+    min-width: 36px !important;
+}
+.docs-mobile-topbar {
+    display: none !important;
+}
+.docs-mobile-topbar .mob-logo {
+    width: 26px !important;
+    height: 26px !important;
+    max-width: 26px !important;
+}
 
 /* --- Fonts --- */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -712,26 +749,26 @@ tr:hover td { background: rgba(255,255,255,0.02); }
    RESPONSIVE
    ================================================================ */
 @media (max-width: 768px) {
-    .docs-sidebar {
-        transform: translateX(-100%);
-        transition: transform .28s cubic-bezier(.4,0,.2,1);
-        width: 270px;
-        max-width: 80vw;
-        box-shadow: 4px 0 24px rgba(0,0,0,.4);
-    }
-    .docs-sidebar.open { transform: translateX(0); }
+ .docs-sidebar {
+  transform: translateX(-100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  width: 270px !important;
+  max-width: 80vw;
+  box-shadow: 4px 0 24px rgba(0,0,0,.4);
+ }
+ .docs-sidebar.open { transform: translateX(0); }
 
-    .docs-sidebar-backdrop { display: block; pointer-events: none; }
-    .docs-sidebar-backdrop.open { pointer-events: auto; }
+ .docs-sidebar-backdrop { display: block; pointer-events: none; }
+ .docs-sidebar-backdrop.open { pointer-events: auto; }
 
-    .docs-mobile-topbar { display: flex; }
+ .docs-mobile-topbar { display: flex !important; }
 
-    .docs-main {
-        margin-left: 0;
-    }
-    .docs-content {
-        padding: 24px 16px 60px;
-    }
+ .docs-main {
+  margin-left: 0 !important;
+ }
+ .docs-content {
+ padding: 24px 16px 60px;
+ }
 
     h1 { font-size: 1.6rem; }
     h2 { font-size: 1.2rem; }
