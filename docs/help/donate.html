@@ -7,6 +7,36 @@
     <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
+    <style>
+        .donate-hero { background: linear-gradient(135deg, #2c3e50, #34495e); color: #fff; padding: 28px 32px; margin: 0 0 24px 0; text-align: center; border-radius: var(--radius, 10px); }
+        .donate-hero h1 { font-size: 1.9em; margin: 0; font-weight: 600; }
+        .donate-support-msg { background: var(--bg-card, rgba(255,255,255,0.03)); border-radius: var(--radius, 10px); padding: 24px; margin: 20px 0; border-left: 4px solid #3498db; }
+        .donate-support-msg h2 { margin-top: 0; }
+        .donation-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin: 24px 0; }
+        .donation-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius); padding: 24px; text-align: center; transition: transform .2s, box-shadow .2s; }
+        .donation-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+        .donation-card .donation-icon { font-size: 2.2em; margin-bottom: 12px; display: block; }
+        .donation-card.github-sponsors .donation-icon { color: #ea4aaa; }
+        .donation-card.paypal .donation-icon { color: #0070ba; }
+        .donation-card.crypto .donation-icon { color: #f7931a; }
+        .donate-btn { display: inline-block; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all .2s; border: none; cursor: pointer; font-size: 1em; margin-top: 8px; }
+        .github-btn { background: #ea4aaa; color: #fff; }
+        .github-btn:hover { background: #d63384; color: #fff; }
+        .paypal-btn { background: #0070ba; color: #fff; }
+        .paypal-btn:hover { background: #005ea6; color: #fff; }
+        .crypto-btn { background: #f7931a; color: #fff; }
+        .crypto-btn:hover { background: #e6850e; color: #fff; }
+        .docs-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.8); }
+        .docs-modal.show { display: block; }
+        .docs-modal-content { background: var(--bg-surface); margin: 10% auto; padding: 24px; border-radius: var(--radius); width: 90%; max-width: 480px; position: relative; border: 1px solid var(--border-subtle); }
+        .docs-modal .close { color: var(--text-muted); float: right; font-size: 24px; cursor: pointer; position: absolute; right: 16px; top: 12px; }
+        .docs-modal .close:hover { color: var(--text-primary); }
+        .docs-modal .donate-address { background: var(--bg-base); padding: 12px; border-radius: 8px; margin: 16px 0; font-family: monospace; word-break: break-all; border: 1px solid var(--border-subtle); }
+        .docs-modal .copy-btn { background: #f7931a; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+        .crypto-selection { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+        .crypto-option { background: var(--bg-card); border: 2px solid var(--border-subtle); border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; transition: border-color .2s; }
+        .crypto-option:hover { border-color: #f7931a; }
+    </style>
 </head>
 <body>
 
@@ -30,6 +60,7 @@
         </a>
 
         <div class="sidebar-scroll">
+            <a href="https://plexguide.github.io/Huntarr.io/help/donate.html" target="_blank" rel="noopener" class="sidebar-donate-link"><i class="fas fa-heart"></i> Donate</a>
 
             <!-- Getting Started -->
             <div class="nav-group">
@@ -113,7 +144,7 @@
                 <div class="nav-group-items">
                     <a href="faq.html"><i class="fas fa-question-circle"></i> FAQ</a>
                     <a href="community.html"><i class="fas fa-users"></i> Community</a>
-                    <a href="donate.html" class="active"><i class="fas fa-heart"></i> Donate</a>
+                    <a href="https://plexguide.github.io/Huntarr.io/help/donate.html" class="active"><i class="fas fa-heart"></i> Donate</a>
                 </div>
             </div>
 
@@ -123,7 +154,7 @@
             <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" class="sf-discord" title="Discord"><i class="fab fa-discord"></i></a>
             <a href="https://www.reddit.com/r/huntarr/" target="_blank" class="sf-reddit" title="Reddit"><i class="fab fa-reddit-alien"></i></a>
             <a href="https://github.com/plexguide/Huntarr.io" target="_blank" class="sf-github" title="GitHub"><i class="fab fa-github"></i></a>
-            <a href="donate.html" class="sf-heart" title="Donate"><i class="fas fa-heart"></i></a>
+            <a href="https://plexguide.github.io/Huntarr.io/help/donate.html" class="sf-heart" title="Donate"><i class="fas fa-heart"></i></a>
         </div>
     </nav>
 
@@ -131,39 +162,48 @@
     <main class="docs-main">
         <div class="docs-content">
 
-            <h1>Support Huntarr</h1>
-            <p class="page-subtitle">Huntarr is free and open source. Your support helps keep development active.</p>
-
-            <h2>Why Donate?</h2>
-            <ul>
-                <li>Huntarr is developed and maintained by volunteers</li>
-                <li>Server costs, testing infrastructure, and development time add up</li>
-                <li>Donations help ensure continued updates and new features</li>
-                <li>Every contribution, no matter how small, is appreciated</li>
-            </ul>
-
-            <h2>How to Donate</h2>
-            <div class="card-grid">
-                <a href="https://github.com/sponsors/plexguide" target="_blank" class="card">
-                    <div class="card-icon icon-purple"><i class="fab fa-github"></i></div>
-                    <h3>GitHub Sponsors</h3>
-                    <p>Recurring or one-time sponsorship through GitHub.</p>
-                </a>
-                <a href="https://buymeacoffee.com/plexguide" target="_blank" class="card">
-                    <div class="card-icon icon-gold"><i class="fas fa-mug-hot"></i></div>
-                    <h3>Buy Me a Coffee</h3>
-                    <p>Quick one-time donations.</p>
-                </a>
+            <div class="donate-hero">
+                <h1><i class="fas fa-heart" style="margin-right: 12px;"></i> Awww, We love you too!</h1>
             </div>
 
-            <h2>Other Ways to Help</h2>
-            <ul>
-                <li><strong>Star the repo</strong>: A GitHub star helps with visibility</li>
-                <li><strong>Spread the word</strong>: Tell your friends about Huntarr</li>
-                <li><strong>Contribute code</strong>: Fix bugs or add features</li>
-                <li><strong>Write docs</strong>: Help improve this documentation</li>
-                <li><strong>Help on Discord</strong>: Answer questions from new users</li>
-            </ul>
+            <div class="donate-support-msg">
+                <h2><i class="fas fa-graduation-cap" style="margin-right: 10px; color: #3498db;"></i> Supporting My Daughter's College Fund</h2>
+                <p>Thank you for considering sponsorship of Huntarr! 100% of all donations go directly toward my daughter's college fund, ensuring both the continued development of tools you rely on and investing in the next generation's education.</p>
+            </div>
+
+            <h2>How to Donate</h2>
+            <div class="donation-methods">
+                <div class="donation-card paypal">
+                    <i class="fab fa-paypal donation-icon"></i>
+                    <h3>PayPal</h3>
+                    <p>Make a one-time donation via PayPal. Quick, secure, and supports multiple currencies worldwide.</p>
+                    <a href="https://donate.plex.one" target="_blank" rel="noopener" class="donate-btn paypal-btn"><i class="fas fa-credit-card" style="margin-right: 8px;"></i> Donate with PayPal</a>
+                </div>
+                <div class="donation-card github-sponsors">
+                    <i class="fab fa-github donation-icon"></i>
+                    <h3>GitHub Sponsors</h3>
+                    <p>Monthly or one-time donations through GitHub's secure platform.</p>
+                    <a href="https://github.com/sponsors/plexguide" target="_blank" rel="noopener" class="donate-btn github-btn"><i class="fas fa-heart" style="margin-right: 8px;"></i> Sponsor on GitHub</a>
+                </div>
+                <div class="donation-card crypto">
+                    <i class="fas fa-coins donation-icon"></i>
+                    <h3>CryptoCurrency</h3>
+                    <p>Support with cryptocurrency. Secure, private, and processed directly.</p>
+                    <button type="button" id="cryptoBtn" class="donate-btn crypto-btn"><i class="fas fa-coins" style="margin-right: 8px;"></i> Donate Crypto</button>
+                </div>
+            </div>
+
+            <div class="donate-support-msg">
+                <h2><i class="fas fa-users" style="margin-right: 10px; color: #22c55e;"></i> Other Ways to Support</h2>
+                <p>Can't donate? No problem! There are many other ways to support the Huntarr project:</p>
+                <ul style="margin-top: 12px;">
+                    <li><strong>Star the project</strong> on <a href="https://github.com/plexguide/Huntarr.io" target="_blank" rel="noopener">GitHub</a></li>
+                    <li><strong>Share Huntarr</strong> with friends who use *arr applications</li>
+                    <li><strong>Report bugs</strong> and suggest improvements</li>
+                    <li><strong>Contribute code</strong> or documentation</li>
+                    <li><strong>Join our community</strong> on <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" rel="noopener">Discord</a></li>
+                </ul>
+            </div>
 
             <p>Thank you for using Huntarr!</p>
 
@@ -177,6 +217,88 @@
 </div><!-- /docs-layout -->
 
 <button class="back-to-top" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
+
+<!-- Crypto modals -->
+<div id="cryptoSelectionModal" class="docs-modal" aria-hidden="true">
+    <div class="docs-modal-content">
+        <span class="close" role="button" tabindex="0" aria-label="Close">&times;</span>
+        <h2 style="text-align: center; margin-bottom: 16px;"><i class="fas fa-coins" style="color: #f7931a; margin-right: 8px;"></i> Choose Cryptocurrency</h2>
+        <p style="text-align: center; margin-bottom: 16px;">Select your preferred cryptocurrency:</p>
+        <div class="crypto-selection">
+            <div class="crypto-option" data-crypto="bitcoin"><i class="fab fa-bitcoin" style="color: #f7931a; font-size: 1.5em;"></i><h4 style="margin: 8px 0 0;">Bitcoin</h4></div>
+            <div class="crypto-option" data-crypto="ethereum"><i class="fab fa-ethereum" style="color: #627eea; font-size: 1.5em;"></i><h4 style="margin: 8px 0 0;">Ethereum</h4></div>
+            <div class="crypto-option" data-crypto="dogecoin"><i class="fas fa-dog" style="color: #c2a633; font-size: 1.5em;"></i><h4 style="margin: 8px 0 0;">DogeCoin</h4></div>
+        </div>
+    </div>
+</div>
+<div id="bitcoinModal" class="docs-modal" aria-hidden="true">
+    <div class="docs-modal-content">
+        <span class="close" role="button" aria-label="Close">&times;</span>
+        <h2 style="text-align: center; margin-bottom: 16px;"><i class="fab fa-bitcoin" style="color: #f7931a; margin-right: 8px;"></i> Bitcoin Donation</h2>
+        <p style="text-align: center;">Send Bitcoin to the address below:</p>
+        <div class="donate-address" id="bitcoinAddress">37aoWfTwXXmZXD4ezBJNDDUmchEPvipwvK</div>
+        <div style="text-align: center;"><button type="button" class="copy-btn" data-copy="bitcoinAddress">Copy Address</button></div>
+        <p style="text-align: center; margin-top: 16px; font-size: 0.9em; opacity: 0.9;">Please double-check the address before sending. Crypto transactions are irreversible.</p>
+    </div>
+</div>
+<div id="ethereumModal" class="docs-modal" aria-hidden="true">
+    <div class="docs-modal-content">
+        <span class="close" role="button" aria-label="Close">&times;</span>
+        <h2 style="text-align: center; margin-bottom: 16px;"><i class="fab fa-ethereum" style="color: #627eea; margin-right: 8px;"></i> Ethereum Donation</h2>
+        <p style="text-align: center;">Send Ethereum to the address below:</p>
+        <div class="donate-address" id="ethereumAddress">0xb7147D900f2531880e538E0fa7f860557E2DbEC1</div>
+        <div style="text-align: center;"><button type="button" class="copy-btn" data-copy="ethereumAddress">Copy Address</button></div>
+        <p style="text-align: center; margin-top: 16px; font-size: 0.9em; opacity: 0.9;">Please double-check the address before sending. Crypto transactions are irreversible.</p>
+    </div>
+</div>
+<div id="dogecoinModal" class="docs-modal" aria-hidden="true">
+    <div class="docs-modal-content">
+        <span class="close" role="button" aria-label="Close">&times;</span>
+        <h2 style="text-align: center; margin-bottom: 16px;"><i class="fas fa-dog" style="color: #c2a633; margin-right: 8px;"></i> DogeCoin Donation</h2>
+        <p style="text-align: center;">Send DogeCoin to the address below:</p>
+        <div class="donate-address" id="dogecoinAddress">D6L71CR7aioExLodvrADM7WER7xXU67HY2</div>
+        <div style="text-align: center;"><button type="button" class="copy-btn" data-copy="dogecoinAddress">Copy Address</button></div>
+        <p style="text-align: center; margin-top: 16px; font-size: 0.9em; opacity: 0.9;">Please double-check the address before sending. Crypto transactions are irreversible.</p>
+    </div>
+</div>
+
 <script src="../js/main.js"></script>
+<script>
+(function() {
+    var cryptoBtn = document.getElementById('cryptoBtn');
+    var cryptoSelectionModal = document.getElementById('cryptoSelectionModal');
+    var bitcoinModal = document.getElementById('bitcoinModal');
+    var ethereumModal = document.getElementById('ethereumModal');
+    var dogecoinModal = document.getElementById('dogecoinModal');
+    function showModal(el) { if (el) el.classList.add('show'); }
+    function hideModals() {
+        [cryptoSelectionModal, bitcoinModal, ethereumModal, dogecoinModal].forEach(function(m) { if (m) m.classList.remove('show'); });
+    }
+    if (cryptoBtn) cryptoBtn.addEventListener('click', function() { showModal(cryptoSelectionModal); });
+    document.querySelectorAll('.crypto-option').forEach(function(opt) {
+        opt.addEventListener('click', function() {
+            var c = opt.getAttribute('data-crypto');
+            hideModals();
+            if (c === 'bitcoin') showModal(bitcoinModal);
+            else if (c === 'ethereum') showModal(ethereumModal);
+            else if (c === 'dogecoin') showModal(dogecoinModal);
+        });
+    });
+    document.querySelectorAll('.docs-modal .close').forEach(function(btn) { btn.addEventListener('click', hideModals); });
+    document.querySelectorAll('.docs-modal').forEach(function(m) { m.addEventListener('click', function(e) { if (e.target === m) hideModals(); }); });
+    document.querySelectorAll('.copy-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = btn.getAttribute('data-copy');
+            var el = id ? document.getElementById(id) : null;
+            if (el && navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(el.textContent).then(function() {
+                    var t = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = t; }, 2000);
+                });
+            }
+        });
+    });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') hideModals(); });
+})();
+</script>
 </body>
 </html>
