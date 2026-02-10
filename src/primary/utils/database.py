@@ -7,6 +7,7 @@ Handles both app configurations, general settings, and stateful management data.
 import os
 import json
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Set
 from datetime import datetime, timedelta
@@ -20,6 +21,7 @@ class HuntarrDatabase:
     """Database manager for all Huntarr configurations and settings"""
     
     def __init__(self):
+        self._thread_local = threading.local()
         self.db_path = self._get_database_path()
         self.ensure_database_exists()
     
@@ -47,9 +49,26 @@ class HuntarrDatabase:
     def get_connection(self):
         """Get a configured SQLite connection with Synology NAS compatibility.
         
-        Uses retry logic with WAL recovery before resorting to corruption handling.
+        Uses thread-local connection caching to avoid repeatedly creating new
+        connections and running PRAGMA configuration on every database operation.
+        Falls back to retry logic with WAL recovery before resorting to corruption handling.
         This prevents false-positive corruption detection after unclean shutdowns.
         """
+        # Try to reuse thread-local cached connection (avoids ~5-10ms overhead per operation)
+        cached_conn = getattr(self._thread_local, 'conn', None)
+        if cached_conn is not None:
+            try:
+                cached_conn.execute("SELECT 1")
+                return cached_conn
+            except Exception:
+                # Connection is stale/broken, discard it
+                try:
+                    cached_conn.close()
+                except Exception:
+                    pass
+                self._thread_local.conn = None
+        
+        # No valid cached connection — create a new one with retry logic
         max_retries = 3
         last_error = None
         
@@ -59,6 +78,8 @@ class HuntarrDatabase:
                 self._configure_connection(conn)
                 # Test the connection by running a simple query
                 conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
+                # Cache for this thread
+                self._thread_local.conn = conn
                 return conn
             except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
                 last_error = e
@@ -86,6 +107,7 @@ class HuntarrDatabase:
                         # Try connecting again after recovery
                         conn = sqlite3.connect(self.db_path, timeout=30)
                         self._configure_connection(conn)
+                        self._thread_local.conn = conn
                         return conn
                 elif "database is locked" in error_str:
                     logger.warning(f"Database locked on attempt {attempt + 1}, waiting...")
@@ -96,6 +118,16 @@ class HuntarrDatabase:
         
         # Should not reach here, but just in case
         raise last_error if last_error else sqlite3.OperationalError("Failed to connect to database")
+    
+    def invalidate_connection(self):
+        """Invalidate the thread-local cached connection (call after database reset/delete)."""
+        cached_conn = getattr(self._thread_local, 'conn', None)
+        if cached_conn is not None:
+            try:
+                cached_conn.close()
+            except Exception:
+                pass
+            self._thread_local.conn = None
     
     def _get_database_path(self) -> Path:
         """Get database path - use /config for Docker, Windows AppData, or local data directory"""
@@ -3479,6 +3511,7 @@ class LogsDatabase:
     """Separate database class specifically for logs to keep logs.db separate from huntarr.db"""
     
     def __init__(self):
+        self._thread_local = threading.local()
         self.db_path = self._get_logs_database_path()
         self.ensure_logs_database_exists()
     
@@ -3540,7 +3573,20 @@ class LogsDatabase:
             pass
     
     def get_logs_connection(self):
-        """Get a configured SQLite connection for logs database with retry logic"""
+        """Get a configured SQLite connection for logs database with thread-local caching and retry logic"""
+        # Try to reuse thread-local cached connection
+        cached_conn = getattr(self._thread_local, 'conn', None)
+        if cached_conn is not None:
+            try:
+                cached_conn.execute("SELECT 1")
+                return cached_conn
+            except Exception:
+                try:
+                    cached_conn.close()
+                except Exception:
+                    pass
+                self._thread_local.conn = None
+        
         max_retries = 3
         last_error = None
         
@@ -3550,6 +3596,7 @@ class LogsDatabase:
                 self._configure_logs_connection(conn)
                 # Test connection
                 conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
+                self._thread_local.conn = conn
                 return conn
             except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
                 last_error = e
@@ -3574,6 +3621,7 @@ class LogsDatabase:
                         self._handle_logs_database_corruption()
                         conn = sqlite3.connect(self.db_path, timeout=30)
                         self._configure_logs_connection(conn)
+                        self._thread_local.conn = conn
                         return conn
                 elif "database is locked" in error_str:
                     time.sleep(2)
@@ -3905,15 +3953,18 @@ class LogsDatabase:
             logger.error(f"Error clearing logs: {e}")
             return 0
 
-# Global database instances
+# Global database instances (thread-safe initialization)
 _database_instance = None
 _logs_database_instance = None
+_db_init_lock = threading.Lock()
 
 def get_database() -> HuntarrDatabase:
-    """Get the global database instance"""
+    """Get the global database instance (thread-safe)"""
     global _database_instance
     if _database_instance is None:
-        _database_instance = HuntarrDatabase()
+        with _db_init_lock:
+            if _database_instance is None:  # Double-check locking
+                _database_instance = HuntarrDatabase()
     return _database_instance
 
 def _reset_database_instances():
@@ -3923,16 +3974,22 @@ def _reset_database_instances():
     creates a fresh instance that will properly initialize a new database.
     """
     global _database_instance, _logs_database_instance
-    _database_instance = None
-    _logs_database_instance = None
+    with _db_init_lock:
+        # Invalidate any cached connections on the current thread
+        if _database_instance is not None:
+            _database_instance.invalidate_connection()
+        _database_instance = None
+        _logs_database_instance = None
     logger.info("Database singleton instances reset")
 
 # Logs Database Functions (consolidated from logs_database.py)
 def get_logs_database() -> LogsDatabase:
-    """Get the logs database instance for logs operations"""
+    """Get the logs database instance for logs operations (thread-safe)"""
     global _logs_database_instance
     if _logs_database_instance is None:
-        _logs_database_instance = LogsDatabase()
+        with _db_init_lock:
+            if _logs_database_instance is None:  # Double-check locking
+                _logs_database_instance = LogsDatabase()
     return _logs_database_instance
 
 def schedule_log_cleanup():

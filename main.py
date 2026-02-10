@@ -275,8 +275,18 @@ def run_web_server():
             import time
             web_logger.info("Running with Waitress production server.")
             
+            # Read configurable web server thread count from settings
+            web_threads = 8  # default
+            try:
+                from primary.settings_manager import load_settings
+                general_settings = load_settings('general')
+                web_threads = max(4, min(int(general_settings.get('web_server_threads', 8)), 32))
+            except Exception:
+                pass
+            web_logger.info(f"Waitress configured with {web_threads} worker threads")
+            
             # Create the server instance so we can shut it down gracefully
-            waitress_server = create_server(app, host=host, port=port, threads=8)
+            waitress_server = create_server(app, host=host, port=port, threads=web_threads)
             
             web_logger.info("Waitress server starting...")
             

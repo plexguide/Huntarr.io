@@ -283,11 +283,9 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
         media_id_str = str(media_id)
         is_in_db = db.is_processed(app_type, instance_name, media_id_str)
         
-        # Get total count for logging
-        processed_ids = db.get_processed_ids(app_type, instance_name)
-        total_count = len(processed_ids)
-        
-        stateful_logger.info(f"is_processed check: {app_type}/{instance_name}, ID:{media_id_str}, Found:{is_in_db}, Total IDs:{total_count}")
+        # Only log at debug level — skip the expensive get_processed_ids() call
+        # that was previously fetching ALL IDs just to log the count
+        stateful_logger.debug(f"is_processed check: {app_type}/{instance_name}, ID:{media_id_str}, Found:{is_in_db}")
         
         return is_in_db
     except Exception as e:

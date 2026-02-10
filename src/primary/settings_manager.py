@@ -10,6 +10,7 @@ import json
 import logging
 import hashlib
 import time
+import threading
 from typing import Dict, Any, Optional, List
 
 # SHA-256 hash of the valid Huntarr dev key (constant only; plaintext never stored)
@@ -25,20 +26,25 @@ from src.primary.utils.database import get_database
 # Known app types
 KNOWN_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr", "prowlarr", "movie_hunt", "general"]
 
-# Add a settings cache with timestamps to avoid excessive database reads
-settings_cache = {}  # Format: {app_name: {'timestamp': timestamp, 'data': settings_dict}}
-CACHE_TTL = 5  # Cache time-to-live in seconds
+# Thread-safe settings cache with timestamps to avoid excessive database reads
+_settings_cache = {}  # Format: {app_name: {'timestamp': timestamp, 'data': settings_dict}}
+_cache_lock = threading.Lock()
+CACHE_TTL = 30  # Cache time-to-live in seconds (settings rarely change mid-cycle)
+
+# Legacy alias for any code referencing the old name directly
+settings_cache = _settings_cache
 
 def clear_cache(app_name=None):
     """Clear the settings cache for a specific app or all apps."""
-    global settings_cache
-    if app_name:
-        if app_name in settings_cache:
+    global _settings_cache, settings_cache
+    with _cache_lock:
+        if app_name:
+            _settings_cache.pop(app_name, None)
             settings_logger.debug(f"Clearing cache for {app_name}")
-            settings_cache.pop(app_name, None)
-    else:
-        settings_logger.debug("Clearing entire settings cache")
-        settings_cache = {}
+        else:
+            _settings_cache.clear()
+            settings_logger.debug("Clearing entire settings cache")
+        settings_cache = _settings_cache
 
 def load_default_app_settings(app_name: str) -> Dict[str, Any]:
     """Load default settings for a specific app from default_settings module."""
@@ -101,22 +107,18 @@ def load_settings(app_type, use_cache=True):
     Returns:
         Dict containing the app settings
     """
-    global settings_cache
-    
     # Only log unexpected app types that are not 'general'
     if app_type not in KNOWN_APP_TYPES and app_type != "general":
         settings_logger.warning(f"load_settings called with unexpected app_type: {app_type}")
     
-    # Check if we have a valid cache entry
-    if use_cache and app_type in settings_cache:
-        cache_entry = settings_cache[app_type]
-        cache_age = time.time() - cache_entry.get('timestamp', 0)
-        
-        if cache_age < CACHE_TTL:
-            settings_logger.debug(f"Using cached settings for {app_type} (age: {cache_age:.1f}s)")
-            return cache_entry['data']
-        else:
-            settings_logger.debug(f"Cache expired for {app_type} (age: {cache_age:.1f}s)")
+    # Check if we have a valid cache entry (thread-safe read)
+    if use_cache:
+        with _cache_lock:
+            cache_entry = _settings_cache.get(app_type)
+            if cache_entry:
+                cache_age = time.time() - cache_entry.get('timestamp', 0)
+                if cache_age < CACHE_TTL:
+                    return cache_entry['data']
     
     # No valid cache entry, load from database
     current_settings = {}
@@ -165,11 +167,12 @@ def load_settings(app_type, use_cache=True):
         settings_logger.info(f"Added missing default keys to {app_type} settings")
         save_settings(app_type, current_settings)
     
-    # Update cache
-    settings_cache[app_type] = {
-        'timestamp': time.time(),
-        'data': current_settings
-    }
+    # Update cache (thread-safe write)
+    with _cache_lock:
+        _settings_cache[app_type] = {
+            'timestamp': time.time(),
+            'data': current_settings
+        }
 
     # Update checking is always enabled; remove the toggle but enforce the behavior
     if app_type == 'general':

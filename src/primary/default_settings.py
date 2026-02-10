@@ -256,6 +256,7 @@ GENERAL_DEFAULTS = {
     "log_auto_cleanup": True,
     "log_max_entries_per_app": 10000,
     "enable_debug_logs": True,
+    "web_server_threads": 8,
     "ui_preferences": {}
 }
 

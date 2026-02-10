@@ -174,6 +174,20 @@
                             <span class="mset-dev-badge ${settings.dev_mode === true ? "mset-dev-on" : "mset-dev-off"}" id="dev-mode-indicator">${settings.dev_mode === true ? "ON" : "OFF"}</span>
                             <span class="mset-dev-help">${settings.dev_mode === true ? "Dev mode enabled." : "Valid key + save to enable."}</span>
                         </div>
+                        <div class="setting-item">
+                            <label for="web_server_threads">
+                                Web Server Threads:
+                            </label>
+                            <select id="web_server_threads" class="mset-select" style="width: 200px;">
+                                <option value="4" ${settings.web_server_threads === 4 ? "selected" : ""}>4 (Light)</option>
+                                <option value="8" ${(settings.web_server_threads === 8 || !settings.web_server_threads) ? "selected" : ""}>8 (Default)</option>
+                                <option value="12" ${settings.web_server_threads === 12 ? "selected" : ""}>12 (Moderate)</option>
+                                <option value="16" ${settings.web_server_threads === 16 ? "selected" : ""}>16 (Heavy)</option>
+                                <option value="24" ${settings.web_server_threads === 24 ? "selected" : ""}>24 (High Load)</option>
+                                <option value="32" ${settings.web_server_threads === 32 ? "selected" : ""}>32 (Maximum)</option>
+                            </select>
+                            <p class="setting-help">Number of web server worker threads for handling concurrent requests. Increase if using many apps/instances. Requires restart.</p>
+                        </div>
                     </div>
                 </div>
 
