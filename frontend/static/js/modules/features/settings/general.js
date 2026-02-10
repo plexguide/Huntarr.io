@@ -109,10 +109,7 @@
                     </div>
                     <div class="mset-card-body">
                         <div class="setting-item">
-                            <label for="timezone">
-                                <a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#timezone" class="info-icon" title="Set your timezone for accurate time display" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>
-                                Timezone:
-                            </label>
+                            <label for="timezone">Timezone:</label>
                             <select id="timezone" name="timezone" class="mset-select">${timezoneOptions}</select>
                             <p class="setting-help">Set your timezone for accurate time display in logs and scheduling. Changes are applied immediately.</p>
                         </div>
@@ -127,10 +124,7 @@
                     </div>
                     <div class="mset-card-body">
                         <div class="setting-item">
-                            <label for="auth_mode">
-                                <a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#authentication-mode" class="info-icon" title="Learn more about authentication modes" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>
-                                Authentication Mode:
-                            </label>
+                            <label for="auth_mode">Authentication Mode:</label>
                             <select id="auth_mode" name="auth_mode" class="mset-select">
                                 <option value="login" ${settings.auth_mode === "login" || (!settings.auth_mode && !settings.local_access_bypass && !settings.proxy_auth_bypass) ? "selected" : ""}>Login Mode</option>
                                 <option value="local_bypass" ${settings.auth_mode === "local_bypass" || (!settings.auth_mode && settings.local_access_bypass === true && !settings.proxy_auth_bypass) ? "selected" : ""}>Local Bypass Mode</option>
@@ -138,17 +132,14 @@
                             </select>
                             <p class="setting-help">Login Mode: Standard login. Local Bypass: No login on local network. No Login: Completely open (use behind proxy).</p>
                         </div>
-                        <div class="setting-item">
-                            <label for="ssl_verify">
-                                <a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#enable-ssl-verify" class="info-icon" title="Learn more about SSL verification" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>
-                                Enable SSL Verify:
-                            </label>
+                        <div class="setting-item flex-row">
+                            <label for="ssl_verify">Enable SSL Verify:</label>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="ssl_verify" ${settings.ssl_verify === true ? "checked" : ""}>
                                 <span class="toggle-slider"></span>
                             </label>
-                            <p class="setting-help">Disable SSL certificate verification when using self-signed certificates.</p>
                         </div>
+                        <p class="setting-help">Disable SSL certificate verification when using self-signed certificates.</p>
                     </div>
                 </div>
 
@@ -165,20 +156,13 @@
                             <p class="setting-help">Base URL path for reverse proxy. Requires restart.</p>
                         </div>
                         <div class="setting-item">
-                            <label for="dev_key">Huntarr Dev Key:</label>
+                            <label for="dev_key">Huntarr Dev Key:${settings.dev_mode === true ? ' <i class="fas fa-check-circle" style="color: #22c55e; margin-left: 5px;" title="Dev Mode Active"></i>' : ''}</label>
                             <input type="password" id="dev_key" value="${settings.dev_key || ""}" placeholder="Enter dev key" class="mset-input">
                             <p class="setting-help">Enter development key to enable dev mode.</p>
                         </div>
-                        <div class="setting-item mset-dev-row">
-                            <span class="mset-dev-label">Dev mode:</span>
-                            <span class="mset-dev-badge ${settings.dev_mode === true ? "mset-dev-on" : "mset-dev-off"}" id="dev-mode-indicator">${settings.dev_mode === true ? "ON" : "OFF"}</span>
-                            <span class="mset-dev-help">${settings.dev_mode === true ? "Dev mode enabled." : "Valid key + save to enable."}</span>
-                        </div>
-                        <div class="setting-item">
-                            <label for="web_server_threads">
-                                Web Server Threads:
-                            </label>
-                            <select id="web_server_threads" class="mset-select" style="width: 200px;">
+                        <div class="setting-item" style="margin-top: 15px;">
+                            <label for="web_server_threads">Web Server Threads:</label>
+                            <select id="web_server_threads" class="mset-select">
                                 <option value="4" ${settings.web_server_threads === 4 ? "selected" : ""}>4 (Light)</option>
                                 <option value="8" ${(settings.web_server_threads === 8 || !settings.web_server_threads) ? "selected" : ""}>8 (Default)</option>
                                 <option value="12" ${settings.web_server_threads === 12 ? "selected" : ""}>12 (Moderate)</option>
@@ -199,11 +183,8 @@
                     </div>
                     <div class="mset-card-body">
                         <div class="setting-item">
-                            <label for="tmdb_image_cache_days">
-                                <a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#tmdb-image-cache" class="info-icon" title="Learn more about TMDB image caching" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>
-                                TMDB Image Cache:
-                            </label>
-                            <select id="tmdb_image_cache_days" class="mset-select" style="width: 200px;">
+                            <label for="tmdb_image_cache_days">TMDB Image Cache:</label>
+                            <select id="tmdb_image_cache_days" class="mset-select">
                                 <option value="0" ${settings.tmdb_image_cache_days === 0 ? "selected" : ""}>Disabled (Always Load)</option>
                                 <option value="1" ${settings.tmdb_image_cache_days === 1 ? "selected" : ""}>1 Day</option>
                                 <option value="7" ${settings.tmdb_image_cache_days === 7 ? "selected" : ""}>7 Days</option>
@@ -211,17 +192,14 @@
                             </select>
                             <p class="setting-help">Cache TMDB images to reduce load times and API usage. Missing images will still attempt to load.</p>
                         </div>
-                        <div class="setting-item" id="show_trending_setting_item">
-                            <label for="show_trending">
-                                <a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#show-trending" class="info-icon" title="Learn more about rotating discover content on home page" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>
-                                Show Discover Content:
-                            </label>
+                        <div class="setting-item flex-row" id="show_trending_setting_item">
+                            <label for="show_trending">Show Discover Content:</label>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="show_trending" ${settings.show_trending === true ? "checked" : ""}>
                                 <span class="toggle-slider"></span>
                             </label>
-                            <p class="setting-help">Display rotating discover content on the home page (Trending This Week, Popular Movies, Popular TV Shows).</p>
                         </div>
+                        <p class="setting-help">Display rotating discover content on the home page (Trending This Week, Popular Movies, Popular TV Shows).</p>
                     </div>
                 </div>
 

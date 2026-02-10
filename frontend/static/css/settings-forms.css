@@ -11,20 +11,21 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
-    padding: 12px 18px;
+    margin-bottom: 28px;
+    padding: 14px 20px;
     background: rgba(15, 23, 42, 0.55);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(148, 163, 184, 0.08);
-    border-radius: 12px;
+    border-radius: 14px;
     gap: 16px;
 }
 
 .mset-toolbar-left {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
+    min-width: 0;
 }
 
 .mset-toolbar-right {
@@ -36,85 +37,115 @@
 .mset-breadcrumb {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary, #e2e8f0);
+    gap: 10px;
+    font-size: 0.9rem;
+    color: #64748b;
+    min-width: 0;
 }
 
 .mset-breadcrumb i:first-child {
-    color: #818cf8;
+    font-size: 0.95rem;
+    opacity: 0.7;
+    color: #94a3b8;
+}
+
+.mset-breadcrumb span:last-child {
+    color: #e2e8f0;
+    font-weight: 500;
 }
 
 .mset-breadcrumb-sep {
-    font-size: 10px;
-    color: var(--text-muted, #64748b);
+    font-size: 0.6rem;
+    color: #475569;
 }
 
 /* Save button */
 .mset-save-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 20px;
-    border-radius: 8px;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
     border: none;
-    background: #4b5563;
-    color: #9ca3af;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: not-allowed;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    line-height: 1.2;
+    background: rgba(71, 85, 105, 0.35);
+    color: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(148, 163, 184, 0.06);
 }
 
 .mset-save-btn:disabled {
     opacity: 0.7;
+    cursor: not-allowed;
 }
 
 .mset-save-btn.mset-save-active {
-    background: linear-gradient(135deg, #dc2626, #ef4444);
-    color: #fff;
-    cursor: pointer;
-    font-weight: 600;
-    opacity: 1;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
 .mset-save-btn.mset-save-active:hover {
-    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* Two-column grid */
 .mset-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 22px;
+    padding: 0;
+    width: 100%;
     align-items: start;
 }
 
 /* Cards */
 .mset-card {
-    background: rgba(30, 32, 44, 0.65);
+    background: rgba(30, 41, 59, 0.32);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.07);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
     overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+}
+
+.mset-card:hover {
+    border-color: rgba(148, 163, 184, 0.14);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .mset-card-header {
     display: flex;
+    justify-content: flex-start;
     align-items: center;
-    gap: 12px;
     padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.07);
+    gap: 12px;
 }
 
 .mset-card-header h3 {
     margin: 0;
     padding: 0;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-primary, #e2e8f0);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
     border: none;
     background: none;
     box-shadow: none;
@@ -122,38 +153,69 @@
     border-radius: 0;
     border-left: none;
     border-bottom: none;
-    letter-spacing: 0;
-}
-
-.mset-card-header h3::after {
-    display: none;
 }
 
 .mset-card-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    border-radius: 8px;
+    font-size: 0.8rem;
     color: #fff;
     flex-shrink: 0;
 }
 
-.mset-icon-blue   { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
-.mset-icon-amber  { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
-.mset-icon-purple { background: linear-gradient(135deg, #6366f1, #818cf8); }
-.mset-icon-teal   { background: linear-gradient(135deg, #14b8a6, #2dd4bf); }
+.mset-icon-blue   { background: rgba(99, 102, 241, 0.12); color: #818cf8; }
+.mset-icon-amber  { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+.mset-icon-purple { background: rgba(139, 92, 246, 0.12); color: #a78bfa; }
+.mset-icon-teal   { background: rgba(20, 184, 166, 0.12); color: #2dd4bf; }
 
 .mset-card-body {
-    padding: 18px;
+    padding: 26px 28px;
 }
 
-/* Override setting-item inside cards to remove old group overrides */
+/* Form items grid alignment for toggles */
 .mset-card-body .setting-item {
-    margin-bottom: 20px;
-    padding-bottom: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+    margin-bottom: 22px;
+    width: 100%;
+    text-align: left !important;
+}
+
+.mset-card-body .setting-item.flex-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center !important;
+    column-gap: 16px !important;
+    width: 100%;
+}
+
+.mset-card-body .setting-item label {
+    color: #e2e8f0;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin: 0 !important;
+    width: auto !important;
+    display: block !important;
+    text-align: left !important;
+    letter-spacing: 0.01em;
+}
+
+/* Indigo toggles in settings */
+#settingsSection input:checked + .toggle-slider {
+    background: #6366f1 !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
+}
+
+.mset-card-body .setting-item .toggle-switch {
+    flex: 0 0 44px !important;
+    margin: 0 !important;
+    justify-self: end;
 }
 
 .mset-card-body .setting-item:last-child {
@@ -161,102 +223,68 @@
 }
 
 .mset-card-body .setting-help {
-    margin-left: 0 !important;
-}
-
-/* Form controls */
-.mset-select {
-    width: 100%;
-    max-width: 320px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background-color: rgba(15, 23, 42, 0.6);
-    color: #d1d5db;
-    font-size: 13px;
-    transition: border-color 0.15s ease;
-}
-
-.mset-select:focus {
-    border-color: rgba(99, 102, 241, 0.5);
-    outline: none;
-}
-
-.mset-input {
-    width: 100%;
-    max-width: 320px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background-color: rgba(15, 23, 42, 0.6);
-    color: #d1d5db;
-    font-size: 13px;
-    transition: border-color 0.15s ease;
-}
-
-.mset-input:focus {
-    border-color: rgba(99, 102, 241, 0.5);
-    outline: none;
-}
-
-/* Dev mode row */
-.mset-dev-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.mset-dev-label {
-    color: #94a3b8;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.mset-dev-badge {
-    padding: 4px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.mset-dev-on {
-    background: rgba(34, 197, 94, 0.2);
-    color: #22c55e;
-    border: 1px solid rgba(34, 197, 94, 0.4);
-}
-
-.mset-dev-off {
-    background: rgba(100, 116, 139, 0.2);
-    color: #94a3b8;
-    border: 1px solid rgba(100, 116, 139, 0.4);
-}
-
-.mset-dev-help {
     color: #64748b;
-    font-size: 12px;
+    font-size: 0.82rem;
+    margin: 2px 0 0 0 !important;
+    padding-left: 1px;
+    line-height: 1.5;
+    text-align: left !important;
+    width: 100%;
+    opacity: 1;
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-    .mset-grid {
-        grid-template-columns: 1fr;
-    }
+/* Selects and inputs */
+.mset-select, .mset-input {
+    width: 100%;
+    max-width: 100% !important;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(15, 23, 42, 0.5);
+    color: #f1f5f9;
+    font-size: 0.925rem;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+    margin: 0 !important;
+    line-height: 1.4;
 }
 
-@media (max-width: 600px) {
+.mset-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+}
+
+.mset-select:focus, .mset-input:focus {
+    border-color: rgba(99, 102, 241, 0.45);
+    outline: none;
+    background: rgba(15, 23, 42, 0.7);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08), inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 768px) {
     .mset-toolbar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
     }
-    .mset-toolbar-right {
-        width: 100%;
-        justify-content: flex-end;
+
+    .mset-toolbar-left {
+        width: auto !important;
     }
-    .mset-select, .mset-input {
-        max-width: 100%;
+
+    .mset-breadcrumb span:not(:last-child), 
+    .mset-breadcrumb .mset-breadcrumb-sep {
+        display: none !important;
+    }
+
+    .mset-card-body {
+        padding: 20px 18px;
     }
 }
 

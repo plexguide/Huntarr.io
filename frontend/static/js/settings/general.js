@@ -98,7 +98,7 @@
                     <p class="setting-help" style="margin-left: -3ch !important;">Login Mode: Standard login. Local Bypass: No login on local network. No Login: Completely open (use behind proxy).</p>
                 </div>
                 <div class="setting-item">
-                    <label for="ssl_verify"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#enable-ssl-verify" class="info-icon" title="Learn more about SSL verification" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enable SSL Verify:</label>
+                    <label for="ssl_verify">Enable SSL Verify:</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="ssl_verify" ${
                           settings.ssl_verify === true ? "checked" : ""
@@ -117,20 +117,9 @@
                     <p class="setting-help" style="margin-left: -3ch !important;">Base URL path for reverse proxy. Requires restart.</p>
                 </div>
                 <div class="setting-item">
-                    <label for="dev_key">Huntarr Dev Key:</label>
+                    <label for="dev_key">Huntarr Dev Key:${(settings.dev_mode === true) ? ' <i class="fas fa-check-circle" style="color: #22c55e; margin-left: 5px;" title="Dev Mode Active"></i>' : ''}</label>
                     <input type="password" id="dev_key" value="${settings.dev_key || ""}" placeholder="Enter dev key" style="width: 300px; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
                     <p class="setting-help" style="margin-left: -3ch !important;">Enter development key to enable dev mode (allows per-instance sleep down to 1 minute).</p>
-                </div>
-                <div class="setting-item" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <span style="color: #94a3b8;">Dev mode:</span>
-                    <span id="dev-mode-indicator" class="dev-mode-badge" style="
-                        padding: 4px 12px;
-                        border-radius: 6px;
-                        font-size: 13px;
-                        font-weight: 600;
-                        ${(settings.dev_mode === true) ? "background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4);" : "background: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.4);"}
-                    ">${(settings.dev_mode === true) ? "ON" : "OFF"}</span>
-                    <span class="setting-help" style="margin: 0; color: #64748b;">${(settings.dev_mode === true) ? "Allows per-instance sleep as low as 1 minute." : "Valid key + save to enable."}</span>
                 </div>
             </div>
 
