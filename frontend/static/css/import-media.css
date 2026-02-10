@@ -2,9 +2,10 @@
    Import Media — Unmapped folder import UI
    ========================================================================== */
 
-/* Section - let parent handle scrolling */
-#settingsImportMediaSection {
-    /* No overrides - let parent .main-content handle scrolling */
+/* Override apps_section global .content-section { overflow: hidden } - Import Media must scroll */
+#settingsImportMediaSection.content-section.active {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
 }
 
 #settingsImportMediaSection .import-media-settings-group {

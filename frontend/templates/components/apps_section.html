@@ -637,7 +637,7 @@
 <style>
     /* Apps Section Layout - Complete Redesign */
     /* Remove unwanted background behind app headers */
-    .app-content-panel, .app-apps-panel {
+    #appsSection .app-content-panel, #appsSection .app-apps-panel {
         background-color: transparent !important;
         box-shadow: none !important;
         border: none !important;
@@ -669,10 +669,9 @@
         position: relative;
     }
     
-    /* Force-hide scrollbars on all other elements */
-    body, html, .main-content, .content-section, 
-    .app-apps-panel, .app-content-panel, #appsContainer,
-    .app-panels-container, #appsStatus {
+    /* Apps-only overflow controls (must not affect other sections) */
+    #appsSection .app-apps-panel, #appsSection .app-content-panel, #appsSection #appsContainer,
+    #appsSection .app-panels-container, #appsSection #appsStatus {
         overflow: hidden !important;
         scrollbar-width: none !important; /* Firefox */
         -ms-overflow-style: none !important; /* IE/Edge */
@@ -717,8 +716,8 @@
         overflow: visible;
     }
     
-    /* Prevent scrollbars on all table elements */
-    table, tbody, tr, td {
+    /* Prevent scrollbars on apps table elements only */
+    #appsSection table, #appsSection tbody, #appsSection tr, #appsSection td {
         overflow: visible !important;
     }
     
@@ -728,26 +727,22 @@
         height: 8px;
     }
     
-    /* Hide all scrollbars except on .single-scroll-container */
-    body::-webkit-scrollbar,
-    html::-webkit-scrollbar,
-    .main-content::-webkit-scrollbar,
-    .content-section::-webkit-scrollbar,
+    /* Hide apps scrollbars except on .single-scroll-container */
     #appsSection::-webkit-scrollbar,
-    #appsContainer::-webkit-scrollbar,
-    .app-panels-container::-webkit-scrollbar,
-    .app-content-panel::-webkit-scrollbar,
-    .app-apps-panel::-webkit-scrollbar,
-    #sonarrApps::-webkit-scrollbar,
-    #radarrApps::-webkit-scrollbar,
-    #lidarrApps::-webkit-scrollbar,
-    #readarrApps::-webkit-scrollbar,
-    #whisparrApps::-webkit-scrollbar,
-    #erosApps::-webkit-scrollbar,
-    #swaparrApps::-webkit-scrollbar,
-    table::-webkit-scrollbar,
-    tr::-webkit-scrollbar,
-    td::-webkit-scrollbar {
+    #appsSection #appsContainer::-webkit-scrollbar,
+    #appsSection .app-panels-container::-webkit-scrollbar,
+    #appsSection .app-content-panel::-webkit-scrollbar,
+    #appsSection .app-apps-panel::-webkit-scrollbar,
+    #appsSection #sonarrApps::-webkit-scrollbar,
+    #appsSection #radarrApps::-webkit-scrollbar,
+    #appsSection #lidarrApps::-webkit-scrollbar,
+    #appsSection #readarrApps::-webkit-scrollbar,
+    #appsSection #whisparrApps::-webkit-scrollbar,
+    #appsSection #erosApps::-webkit-scrollbar,
+    #appsSection #swaparrApps::-webkit-scrollbar,
+    #appsSection table::-webkit-scrollbar,
+    #appsSection tr::-webkit-scrollbar,
+    #appsSection td::-webkit-scrollbar {
         display: none !important;
         width: 0 !important;
         height: 0 !important;
@@ -775,20 +770,9 @@
         }
         
         /* Ensure proper section isolation */
-        body, html, .main-content {
+        #appsSection, #appsSection .single-scroll-container {
             overflow-y: auto !important;
             height: auto !important;
-        }
-        
-        /* Prevent other sections from showing */
-        .content-section:not(.active) {
-            display: none !important;
-            height: 0 !important;
-            visibility: hidden !important;
-            position: absolute !important;
-            z-index: -999 !important;
-            overflow: hidden !important;
-            opacity: 0 !important;
         }
         
         /* Extra space for bottom content */

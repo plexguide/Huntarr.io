@@ -32,20 +32,19 @@ html, body {
     }
 }
 
-/* Absolutely prevent any other element from scrolling */
-.content-section,
-.single-scroll-container,
+/* Apps-only overflow behavior (do not affect other sections) */
+#appsSection .single-scroll-container,
 #appsSection,
-.app-panels-container,
-.app-apps-panel,
-.app-content-panel,
+#appsSection .app-panels-container,
+#appsSection .app-apps-panel,
+#appsSection .app-content-panel,
 #appsContainer,
 #sonarrApps, #radarrApps, #lidarrApps, #readarrApps,
 #whisparrApps, #erosApps, #cleanuperrApps,
-.additional-options-section,
-.additional-options,
-.skip-series-refresh,
-table, tr, td, tbody, thead {
+#appsSection .additional-options-section,
+#appsSection .additional-options,
+#appsSection .skip-series-refresh,
+#appsSection table, #appsSection tr, #appsSection td, #appsSection tbody, #appsSection thead {
     overflow: visible !important;
     overflow-y: visible !important;
     overflow-x: visible !important;
@@ -75,7 +74,7 @@ table, tr, td, tbody, thead {
 }
 
 /* Ensure app selectors appear properly */
-.section-header {
+#appsSection .section-header {
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
