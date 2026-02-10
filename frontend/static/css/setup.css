@@ -1,0 +1,1460 @@
+/* =============================================
+   Setup Wizard — Huntarr
+   frontend/static/css/setup.css
+   ============================================= */
+
+/* ===== Page Layout ===== */
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #13171f 0%, #1c2230 100%);
+    margin: 0;
+    padding: 20px;
+}
+
+.login-container {
+    width: 625px;
+    max-width: 90%;
+    background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    border: 1px solid rgba(90, 109, 137, 0.15);
+}
+
+.login-header {
+    background: linear-gradient(180deg, rgba(18, 22, 30, 0.98), rgba(24, 28, 37, 0.95));
+    padding: 25px 0;
+    text-align: center;
+    border-bottom: 1px solid rgba(90, 109, 137, 0.15);
+}
+
+.login-logo {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
+    transition: transform 0.3s ease;
+    opacity: 1;
+}
+
+.login-logo:hover {
+    transform: scale(1.05);
+}
+
+.login-header h1 {
+    margin: 0;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.login-form {
+    padding: 25px;
+}
+
+
+/* ===== Stepper Navigation ===== */
+.setup-stepper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding: 0 10px;
+    position: relative;
+}
+
+.setup-stepper-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    flex: 1;
+}
+
+.setup-step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    background: rgba(28, 36, 54, 0.6);
+    border: 2px solid rgba(90, 109, 137, 0.25);
+    transition: all 0.35s ease;
+    position: relative;
+}
+
+.setup-step-label {
+    margin-top: 8px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 500;
+    text-align: center;
+    transition: color 0.35s ease;
+    white-space: nowrap;
+}
+
+/* Connecting line between circles */
+.setup-stepper-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: calc(50% + 22px);
+    width: calc(100% - 44px);
+    height: 2px;
+    background: rgba(90, 109, 137, 0.2);
+    transition: background 0.35s ease;
+}
+
+/* Active step */
+.setup-stepper-item.active .setup-step-circle {
+    background: rgba(58, 113, 228, 0.15);
+    border-color: #3a71e4;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(58, 113, 228, 0.15), 0 0 16px rgba(58, 113, 228, 0.2);
+}
+
+.setup-stepper-item.active .setup-step-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Completed step */
+.setup-stepper-item.completed .setup-step-circle {
+    background: linear-gradient(135deg, #28a745 0%, #34ce57 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: none;
+}
+
+.setup-stepper-item.completed .setup-step-label {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.setup-stepper-item.completed:not(:last-child)::after {
+    background: rgba(40, 167, 69, 0.5);
+}
+
+
+/* ===== Section Containers ===== */
+.setup-section {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.setup-section.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.setup-section h2 {
+    margin: 0 0 6px 0;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.setup-section > p {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    margin: 0 0 20px 0;
+}
+
+/* Centered text helpers */
+.text-center { text-align: center; }
+
+.setup-finish-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 15px;
+}
+
+/* Centered copy button (recovery key) */
+.copy-button-centered {
+    margin: 10px auto;
+}
+
+
+/* ===== Reusable Card ===== */
+.setup-card {
+    background: rgba(28, 36, 54, 0.6);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid rgba(90, 109, 137, 0.2);
+    margin-bottom: 20px;
+}
+
+.setup-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.setup-card-icon {
+    font-size: 22px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.setup-card-icon.blue  { color: #4a90e2; }
+.setup-card-icon.gold  { color: #e69500; }
+.setup-card-icon.amber { color: #f0ad4e; }
+.setup-card-icon.red   { color: #dc3545; }
+
+.setup-card h3 {
+    margin: 0 0 8px 0;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.setup-card p {
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.5;
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
+
+.setup-card ul {
+    color: rgba(255, 255, 255, 0.75);
+    margin: 8px 0;
+    padding-left: 20px;
+    font-size: 14px;
+}
+
+.setup-card ul li {
+    margin-bottom: 5px;
+}
+
+.setup-card .setup-card-hint {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 12px;
+    margin-bottom: 0;
+}
+
+.setup-card .setup-card-hint i {
+    margin-right: 5px;
+}
+
+
+/* ===== Radio Cards (Auth Mode) ===== */
+.radio-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.radio-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(28, 36, 54, 0.5);
+    border: 2px solid rgba(90, 109, 137, 0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.radio-card:hover {
+    background: rgba(28, 36, 54, 0.8);
+    border-color: rgba(90, 109, 137, 0.4);
+}
+
+.radio-card.selected {
+    background: rgba(58, 113, 228, 0.08);
+    border-color: rgba(58, 113, 228, 0.6);
+    box-shadow: 0 0 0 3px rgba(58, 113, 228, 0.1);
+}
+
+.radio-card-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(90, 109, 137, 0.4);
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.radio-card.selected .radio-card-indicator {
+    border-color: #3a71e4;
+    background: #3a71e4;
+}
+
+.radio-card.selected .radio-card-indicator::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+}
+
+.radio-card-icon {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 2px;
+    flex-shrink: 0;
+    transition: color 0.25s ease;
+}
+
+.radio-card.selected .radio-card-icon {
+    color: #6b9eff;
+}
+
+.radio-card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.radio-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 3px;
+}
+
+.radio-card-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.4;
+}
+
+.auth-warning {
+    display: none;
+    background: rgba(255, 153, 102, 0.1);
+    border: 1px solid rgba(255, 153, 102, 0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #ff9966;
+}
+
+.auth-warning i {
+    margin-right: 5px;
+}
+
+.auth-warning.visible {
+    display: block;
+}
+
+
+/* ===== Forms ===== */
+.form-group {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.form-group label i {
+    margin-right: 8px;
+    color: rgba(65, 105, 225, 0.9);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid rgba(90, 109, 137, 0.2);
+    border-radius: 8px;
+    background-color: rgba(28, 36, 54, 0.6);
+    color: #fff;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    border-color: rgba(65, 105, 225, 0.6);
+    box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.15);
+    outline: none;
+}
+
+.password-requirements {
+    margin-top: 8px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.requirement {
+    display: flex;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+.requirement i {
+    margin-right: 5px;
+    font-size: 12px;
+}
+
+.requirement.valid i   { color: #28a745; }
+.requirement.invalid i { color: #dc3545; }
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 40px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.toggle-password:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+
+/* ===== Buttons ===== */
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 25px;
+    gap: 12px;
+}
+
+.form-actions.centered {
+    justify-content: center;
+}
+
+.next-button,
+.back-button,
+.submit-button {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.next-button,
+.submit-button {
+    background: linear-gradient(135deg, #3a71e4 0%, #5481e6 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 10px rgba(58, 113, 228, 0.25);
+}
+
+.next-button:hover,
+.submit-button:hover {
+    background: linear-gradient(135deg, #4a7deb 0%, #6491fa 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(58, 113, 228, 0.35);
+}
+
+.back-button {
+    background: transparent;
+    border: 1px solid rgba(90, 109, 137, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.back-button:hover {
+    background: rgba(90, 109, 137, 0.1);
+    border-color: rgba(90, 109, 137, 0.5);
+    color: white;
+}
+
+.next-button:active,
+.back-button:active,
+.submit-button:active {
+    transform: translateY(0);
+}
+
+.skip-button {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(220, 53, 69, 0.15);
+    color: #ff6b6b;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.skip-button:hover {
+    background: rgba(220, 53, 69, 0.25);
+    border-color: rgba(220, 53, 69, 0.5);
+    color: #ff8a8a;
+}
+
+.skip-button:active {
+    transform: translateY(0);
+}
+
+.btn-gold {
+    background: linear-gradient(135deg, #e69500 0%, #f4a942 100%) !important;
+    box-shadow: 0 4px 10px rgba(230, 149, 0, 0.25) !important;
+    border: none !important;
+    color: #fff !important;
+}
+
+.btn-gold:hover {
+    background: linear-gradient(135deg, #f4a942 0%, #ffbc5c 100%) !important;
+    box-shadow: 0 6px 15px rgba(230, 149, 0, 0.35) !important;
+}
+
+.btn-green {
+    background: linear-gradient(135deg, #28a745 0%, #34ce57 100%) !important;
+    box-shadow: 0 4px 10px rgba(40, 167, 69, 0.25) !important;
+    border: none !important;
+    color: #fff !important;
+}
+
+.btn-green:hover {
+    background: linear-gradient(135deg, #34ce57 0%, #44de67 100%) !important;
+    box-shadow: 0 6px 15px rgba(40, 167, 69, 0.35) !important;
+}
+
+
+/* ===== Messages ===== */
+.error-message {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #ff6b6b;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    border-left: 4px solid #dc3545;
+    display: none;
+    font-size: 14px;
+}
+
+.success-message {
+    background-color: rgba(40, 167, 69, 0.15);
+    color: #2ecc71;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    border-left: 4px solid #28a745;
+    font-size: 14px;
+}
+
+
+/* ===== QR Code ===== */
+.qr-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.qr-container > p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0 0 10px 0;
+    text-align: center;
+}
+
+.qr-code {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    width: 64px;
+    height: 64px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.qr-code:hover {
+    transform: scale(1.05);
+}
+
+.qr-code img {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.qr-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 14px;
+}
+
+/* QR Modal */
+.qr-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+}
+
+.qr-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.qr-modal img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    min-width: 200px;
+    min-height: 200px;
+}
+
+.qr-modal-close {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.qr-modal-close:hover {
+    background: #c82333;
+}
+
+
+/* ===== Secret Key & Copy ===== */
+.secret-key-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.secret-key {
+    font-family: 'Courier New', monospace;
+    padding: 10px 15px;
+    background: rgba(28, 36, 54, 0.8);
+    border-radius: 8px;
+    border: 1px solid rgba(90, 109, 137, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    user-select: all;
+    word-break: break-all;
+    min-width: 0;
+}
+
+.copy-button {
+    background: transparent;
+    border: 1px solid rgba(90, 109, 137, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.copy-button:hover {
+    background: rgba(90, 109, 137, 0.1);
+    border-color: rgba(90, 109, 137, 0.5);
+    color: white;
+}
+
+
+/* ===== Verification Code Input ===== */
+.verify-input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 18px 0;
+}
+
+.verify-input-group label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.verify-input-group label i {
+    margin-right: 8px;
+    color: #4a90e2;
+}
+
+.verify-input-group input {
+    text-align: center;
+    width: 60%;
+    max-width: 280px;
+    padding: 12px 15px;
+    border: 1px solid rgba(90, 109, 137, 0.2);
+    border-radius: 8px;
+    background-color: rgba(28, 36, 54, 0.6);
+    color: #fff;
+    font-size: 18px;
+    letter-spacing: 4px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.verify-input-group input:focus {
+    border-color: rgba(65, 105, 225, 0.6);
+    box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.15);
+    outline: none;
+}
+
+
+/* ===== Recovery Key Display ===== */
+.setup-key-display {
+    background: rgba(28, 36, 54, 0.7);
+    border-radius: 10px;
+    padding: 22px;
+    border: 1px solid rgba(240, 173, 78, 0.2);
+    text-align: center;
+    margin: 20px 0;
+}
+
+.setup-key-display h3 {
+    color: #f0ad4e;
+    margin: 0 0 14px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.setup-key-display h3 i {
+    margin-right: 6px;
+}
+
+.setup-key-value {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 14px;
+    margin: 12px 0;
+    overflow-x: auto;
+}
+
+.setup-key-value span {
+    font-family: 'Courier New', monospace;
+    font-size: 22px;
+    font-weight: bold;
+    color: #f0ad4e;
+    letter-spacing: 2px;
+    word-break: break-all;
+}
+
+.setup-key-warning {
+    color: #dc3545;
+    font-weight: 600;
+    font-size: 13px;
+    margin-top: 14px;
+}
+
+.setup-key-warning i {
+    margin-right: 4px;
+}
+
+/* Countdown section */
+.setup-countdown {
+    background: rgba(240, 173, 78, 0.1);
+    border-radius: 8px;
+    padding: 14px;
+    border: 1px solid rgba(240, 173, 78, 0.2);
+    margin: 16px 0;
+}
+
+.setup-countdown p {
+    color: #f0ad4e;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.setup-countdown p i {
+    margin-right: 5px;
+}
+
+.setup-countdown .countdown-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #f0ad4e;
+}
+
+/* Confirmation section */
+.setup-confirm-prompt {
+    background: rgba(58, 113, 228, 0.08);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(58, 113, 228, 0.2);
+    margin: 16px 0;
+}
+
+.setup-confirm-prompt p {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    margin: 0 0 14px 0;
+    font-size: 15px;
+}
+
+.setup-confirm-prompt p i {
+    margin-right: 5px;
+    color: #6b9eff;
+}
+
+.setup-confirm-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+
+/* ===== Finish Step ===== */
+.setup-finish-icon {
+    font-size: 56px;
+    color: #28a745;
+    margin-bottom: 12px;
+}
+
+.setup-finish-card {
+    background: rgba(28, 36, 54, 0.6);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid rgba(90, 109, 137, 0.15);
+    margin: 20px 0;
+    text-align: left;
+}
+
+.setup-finish-card .thankyou-heart {
+    color: #ff4d6d;
+    font-size: 24px;
+}
+
+.setup-finish-card .finish-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: #fff;
+    margin-top: 8px;
+}
+
+.setup-finish-card .finish-body {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 13.5px;
+    line-height: 1.5;
+    margin-top: 8px;
+}
+
+.setup-finish-card .finish-sig {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+.setup-finish-status {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    margin-top: 16px;
+}
+
+.setup-finish-status i {
+    color: #28a745;
+    margin-right: 5px;
+}
+
+
+/* ===== Plex Modal ===== */
+.plex-modal-overlay {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.plex-modal-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
+    border-radius: 15px;
+    padding: 30px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(90, 109, 137, 0.15);
+    color: #f8f9fa;
+}
+
+.plex-modal-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.plex-modal-header i {
+    font-size: 40px;
+    color: #e69500;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.plex-pin-display {
+    background: rgba(90, 109, 137, 0.1);
+    border: 2px solid rgba(204, 123, 25, 0.5);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.plex-pin-display p:first-child {
+    margin: 0 0 10px 0;
+}
+
+.plex-pin-code {
+    font-size: 13px;
+    font-weight: bold;
+    color: #e69500;
+    letter-spacing: 2px;
+    margin: 10px 0;
+    word-wrap: break-word;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.plex-status {
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.plex-status.waiting {
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.25);
+    color: #ffc107;
+}
+
+.plex-status.success {
+    background: rgba(40, 167, 69, 0.15);
+    border: 1px solid rgba(40, 167, 69, 0.25);
+    color: #2ecc71;
+}
+
+.plex-status.error {
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid rgba(220, 53, 69, 0.25);
+    color: #ff6b6b;
+}
+
+
+/* ===== Spinner ===== */
+.spinner {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+/* ===== Plex center prompt ===== */
+.plex-center-prompt {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.plex-center-prompt p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 18px;
+    font-size: 15px;
+}
+
+.plex-center-prompt .form-actions {
+    justify-content: center;
+}
+
+
+/* Hidden select for auth mode (keeps existing JS working) */
+#auth_mode {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+}
+
+
+/* =========================================================
+   RESPONSIVE — Tablet  (max-width: 768px)
+   ========================================================= */
+@media (max-width: 768px) {
+    .login-page {
+        padding: 12px;
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 12px;
+    }
+
+    .login-form {
+        padding: 18px;
+    }
+
+    .login-header {
+        padding: 18px 0;
+    }
+
+    .login-logo {
+        width: 56px;
+        height: 56px;
+    }
+
+    .login-header h1 {
+        font-size: 21px;
+    }
+
+    /* Stepper: hide labels, shrink circles */
+    .setup-step-label {
+        display: none;
+    }
+
+    .setup-step-circle {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+
+    .setup-stepper-item:not(:last-child)::after {
+        top: 15px;
+        left: calc(50% + 19px);
+        width: calc(100% - 38px);
+    }
+
+    .setup-stepper {
+        margin-bottom: 20px;
+        padding: 0 4px;
+    }
+
+    /* Section headings */
+    .setup-section h2 {
+        font-size: 18px;
+    }
+
+    /* Buttons: full-width stacked */
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .next-button,
+    .back-button,
+    .submit-button,
+    .skip-button {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 20px;
+    }
+
+    /* Cards: tighter padding */
+    .setup-card {
+        padding: 16px;
+    }
+
+    .setup-card-header {
+        gap: 10px;
+    }
+
+    .setup-card-icon {
+        font-size: 20px;
+    }
+
+    .setup-card h3 {
+        font-size: 16px;
+    }
+
+    /* Radio cards */
+    .radio-card {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .radio-card-icon {
+        display: none;
+    }
+
+    .radio-card-title {
+        font-size: 14px;
+    }
+
+    .radio-card-desc {
+        font-size: 12px;
+    }
+
+    /* QR code */
+    .qr-code {
+        width: 80px;
+        height: 80px;
+    }
+
+    .qr-modal img {
+        min-width: 200px;
+        min-height: 200px;
+    }
+
+    /* Verification input wider */
+    .verify-input-group input {
+        width: 80%;
+        max-width: none;
+    }
+
+    /* Secret key */
+    .secret-key-container {
+        max-width: 100%;
+    }
+
+    .secret-key {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+
+    /* Recovery key */
+    .setup-key-display {
+        padding: 16px;
+    }
+
+    .setup-key-value span {
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+
+    .setup-countdown .countdown-number {
+        font-size: 28px;
+    }
+
+    .setup-confirm-buttons {
+        flex-direction: column;
+    }
+
+    .setup-confirm-buttons .next-button,
+    .setup-confirm-buttons .back-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Finish step */
+    .setup-finish-icon {
+        font-size: 44px;
+    }
+
+    .setup-finish-card {
+        padding: 16px;
+    }
+
+    /* Plex modal */
+    .plex-modal-box {
+        padding: 20px;
+        width: 92%;
+    }
+
+    .plex-modal-header i {
+        font-size: 32px;
+    }
+
+    /* Plex center prompt: stack buttons */
+    .plex-center-prompt .form-actions {
+        flex-direction: column;
+    }
+}
+
+
+/* =========================================================
+   RESPONSIVE — Small phone  (max-width: 480px)
+   ========================================================= */
+@media (max-width: 480px) {
+    .login-page {
+        padding: 8px;
+        padding-top: 12px;
+    }
+
+    .login-container {
+        border-radius: 10px;
+    }
+
+    .login-form {
+        padding: 14px;
+    }
+
+    .login-header {
+        padding: 14px 0;
+    }
+
+    .login-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .login-header h1 {
+        font-size: 19px;
+    }
+
+    /* Stepper: even smaller */
+    .setup-step-circle {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+        border-width: 1.5px;
+    }
+
+    .setup-stepper-item:not(:last-child)::after {
+        top: 13px;
+        left: calc(50% + 17px);
+        width: calc(100% - 34px);
+    }
+
+    .setup-stepper {
+        margin-bottom: 16px;
+        padding: 0;
+    }
+
+    /* Tighter section */
+    .setup-section h2 {
+        font-size: 17px;
+    }
+
+    .setup-section > p {
+        font-size: 13px;
+    }
+
+    /* Form inputs — keep 16px to prevent iOS zoom */
+    .form-group input {
+        padding: 10px 12px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+    }
+
+    /* Buttons */
+    .next-button,
+    .back-button,
+    .submit-button,
+    .skip-button {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    /* Cards */
+    .setup-card {
+        padding: 14px;
+    }
+
+    .setup-card p,
+    .setup-card ul {
+        font-size: 13px;
+    }
+
+    .setup-card h3 {
+        font-size: 15px;
+    }
+
+    .setup-card-icon {
+        font-size: 18px;
+    }
+
+    /* Radio cards: simplified */
+    .radio-card {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .radio-card-indicator {
+        width: 18px;
+        height: 18px;
+    }
+
+    .radio-card.selected .radio-card-indicator::after {
+        width: 7px;
+        height: 7px;
+    }
+
+    /* Verification */
+    .verify-input-group input {
+        width: 90%;
+        font-size: 16px;
+        letter-spacing: 3px;
+    }
+
+    /* Secret key — stack copy below */
+    .secret-key-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .secret-key {
+        font-size: 11px;
+        padding: 10px;
+    }
+
+    .copy-button {
+        justify-content: center;
+    }
+
+    /* Recovery key */
+    .setup-key-display {
+        padding: 14px;
+    }
+
+    .setup-key-value {
+        padding: 10px;
+    }
+
+    .setup-key-value span {
+        font-size: 15px;
+        letter-spacing: 1px;
+    }
+
+    .setup-key-display h3 {
+        font-size: 14px;
+    }
+
+    .setup-countdown .countdown-number {
+        font-size: 24px;
+    }
+
+    .setup-confirm-prompt {
+        padding: 12px;
+    }
+
+    .setup-confirm-prompt p {
+        font-size: 14px;
+    }
+
+    /* Finish */
+    .setup-finish-icon {
+        font-size: 36px;
+    }
+
+    .setup-finish-card .finish-body {
+        font-size: 13px;
+    }
+
+    /* Auth warning */
+    .auth-warning {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+
+    /* Error messages */
+    .error-message,
+    .success-message {
+        font-size: 13px;
+        padding: 10px;
+    }
+
+    /* Plex modal */
+    .plex-modal-box {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .plex-pin-display {
+        padding: 14px;
+    }
+}
+
+
+/* =========================================================
+   RESPONSIVE — Very small phone  (max-width: 360px)
+   ========================================================= */
+@media (max-width: 360px) {
+    .login-form {
+        padding: 12px;
+    }
+
+    .setup-step-circle {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+
+    .setup-stepper-item:not(:last-child)::after {
+        top: 12px;
+        left: calc(50% + 16px);
+        width: calc(100% - 32px);
+    }
+
+    .setup-key-value span {
+        font-size: 13px;
+    }
+
+    .verify-input-group input {
+        width: 100%;
+    }
+
+    .setup-card-header {
+        flex-direction: column;
+        gap: 8px;
+    }
+}

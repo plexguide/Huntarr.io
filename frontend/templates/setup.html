@@ -14,506 +14,50 @@
     <link rel="preload" href="./static/logo/256.png" as="image" fetchpriority="high">
     <link rel="stylesheet" href="./static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Special thankyou heart styling */
-        .thankyou-heart {
-            color: #ff4d6d;
-            font-size: 28px;
-        }
-        
-        /* Logo styling */
-        .huntarr-logo {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(52, 152, 219, 0.4);
-            transition: all 0.3s ease;
-            margin-bottom: 5px;
-        }
-        
-        /* Spinner animation for Plex status */
-        .spinner {
-            animation: spin 1s linear infinite;
-            display: inline-block;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
     <link rel="icon" href="./static/logo/16.png">
     <!-- Preload script to prevent flashing -->
     <script src="./static/js/modules/core/theme-preload.js"></script>
-    <style>
-        /* Modern setup page styles */
-        .login-page {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #13171f 0%, #1c2230 100%);
-            margin: 0;
-            padding: 20px;
-        }
-        
-        .login-container {
-            width: 625px; /* Increased by 25% */
-            max-width: 90%;
-            background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
-            border-radius: 15px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            border: 1px solid rgba(90, 109, 137, 0.15);
-        }
-        
-        .login-header {
-            background: linear-gradient(180deg, rgba(18, 22, 30, 0.98), rgba(24, 28, 37, 0.95));
-            padding: 25px 0;
-            text-align: center;
-            border-bottom: 1px solid rgba(90, 109, 137, 0.15);
-        }
-        
-        .login-logo {
-            width: 70px;
-            height: 70px;
-            margin-bottom: 10px;
-            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
-            transition: transform 0.3s ease;
-            opacity: 1;
-        }
-        
-        .login-logo:hover {
-            transform: scale(1.05);
-        }
-        
-        .login-header h1 {
-            margin: 0;
-            color: #fff;
-            font-size: 24px;
-            font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-        
-        .login-form {
-            padding: 25px;
-        }
-        
-        /* Setup steps navigation */
-        .setup-steps {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            gap: 10px;
-        }
-        
-        .step {
-            padding: 10px;
-            background: rgba(28, 36, 54, 0.6);
-            border-radius: 10px;
-            font-weight: 500;
-            flex: 1;
-            text-align: center;
-            margin: 0;
-            opacity: 0.6;
-            font-size: 0.85em;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(90, 109, 137, 0.2);
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .step.active {
-            background: linear-gradient(135deg, #3a71e4 0%, #5481e6 100%);
-            color: white;
-            opacity: 1;
-            border-color: rgba(90, 109, 137, 0.3);
-            box-shadow: 0 4px 10px rgba(58, 113, 228, 0.2);
-            transform: translateY(-2px);
-        }
-        
-        .step.completed {
-            background: linear-gradient(135deg, #28a745 0%, #34ce57 100%);
-            color: white;
-            opacity: 1;
-            border-color: rgba(40, 167, 69, 0.3);
-        }
-        
-        /* Form styling */
-        .setup-section {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .setup-section.active {
-            display: block;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-            position: relative;
-        }
-        
-        .form-group label {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
-        }
-        
-        .form-group label i {
-            margin-right: 8px;
-            color: rgba(65, 105, 225, 0.9);
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid rgba(90, 109, 137, 0.2);
-            border-radius: 8px;
-            background-color: rgba(28, 36, 54, 0.6);
-            color: #fff;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-group input:focus {
-            border-color: rgba(65, 105, 225, 0.6);
-            box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.2);
-            outline: none;
-        }
-        
-        .password-requirements {
-            margin-top: 8px;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .requirement {
-            display: flex;
-            align-items: center;
-            margin-bottom: 3px;
-        }
-        
-        .requirement i {
-            margin-right: 5px;
-            font-size: 12px;
-        }
-        
-        .requirement.valid i {
-            color: #28a745;
-        }
-        
-        .requirement.invalid i {
-            color: #dc3545;
-        }
-        
-        .toggle-password {
-            position: absolute;
-            right: 12px;
-            top: 40px;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.6);
-        }
-        
-        .toggle-password:hover {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        /* Buttons and actions */
-        .form-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 25px;
-        }
-        
-        .next-button, .back-button, .submit-button {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .next-button, .submit-button {
-            background: linear-gradient(135deg, #3a71e4 0%, #5481e6 100%);
-            color: white;
-            border: none;
-            box-shadow: 0 4px 10px rgba(58, 113, 228, 0.3);
-        }
-        
-        .next-button:hover, .submit-button:hover {
-            background: linear-gradient(135deg, #4a7deb 0%, #6491fa 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(58, 113, 228, 0.4);
-        }
-        
-        .back-button {
-            background: transparent;
-            border: 1px solid rgba(90, 109, 137, 0.3);
-            color: rgba(255, 255, 255, 0.8);
-        }
-        
-        .back-button:hover {
-            background: rgba(90, 109, 137, 0.1);
-            border-color: rgba(90, 109, 137, 0.5);
-            color: white;
-        }
-        
-        .next-button:active, .back-button:active, .submit-button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(58, 113, 228, 0.3);
-        }
-        
-        /* Skip button styling */
-        .skip-button {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: linear-gradient(135deg, rgba(220, 53, 69, 0.9) 0%, rgba(220, 53, 69, 0.8) 100%);
-            color: white;
-            border: none;
-            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
-            cursor: pointer;
-        }
-        
-        .skip-button:hover {
-            background: linear-gradient(135deg, rgba(220, 53, 69, 1) 0%, rgba(220, 53, 69, 0.9) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(220, 53, 69, 0.4);
-        }
-        
-        .skip-button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
-        }
-        
-        /* Error message styling */
-        .error-message {
-            background-color: rgba(220, 53, 69, 0.2);
-            color: #ff6b6b;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            border-left: 4px solid #dc3545;
-            display: none;
-        }
-        
-        /* Success message */
-        .success-message {
-            background-color: rgba(40, 167, 69, 0.2);
-            color: #2ecc71;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            border-left: 4px solid #28a745;
-        }
-        
-        /* QR code styling */
-        .qr-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 20px 0;
-        }
-        
-        .qr-code {
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 15px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-        
-        .qr-code:hover {
-            transform: scale(1.05);
-        }
-        
-        .qr-code img {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        
-        /* QR Code Modal for enlargement */
-        .qr-modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            cursor: pointer;
-        }
-        
-        .qr-modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            max-width: 90vw;
-            max-height: 90vh;
-        }
-        
-        .qr-modal img {
-            display: block;
-            max-width: 100%;
-            height: auto;
-            min-width: 256px;
-            min-height: 256px;
-        }
-        
-        .qr-modal-close {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            font-size: 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        
-        .qr-modal-close:hover {
-            background: #c82333;
-        }
-        
-        /* Responsive QR code for mobile */
-        @media (max-width: 768px) {
-            .qr-code {
-                width: 30%;
-                height: auto;
-            }
-        }
-        
-        .secret-key-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .secret-key {
-            font-family: monospace;
-            padding: 10px 15px;
-            background: rgba(28, 36, 54, 0.8);
-            border-radius: 8px;
-            border: 1px solid rgba(90, 109, 137, 0.3);
-            color: rgba(255, 255, 255, 0.9);
-            flex: 1;
-            text-align: center;
-            font-size: 14px;
-            user-select: all;
-        }
-        
-        .copy-button {
-            background: transparent;
-            border: 1px solid rgba(90, 109, 137, 0.3);
-            color: rgba(255, 255, 255, 0.8);
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-        
-        .copy-button:hover {
-            background: rgba(90, 109, 137, 0.1);
-            border-color: rgba(90, 109, 137, 0.5);
-            color: white;
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .login-container {
-                width: 95%;
-            }
-            
-            .login-form {
-                padding: 20px;
-            }
-            
-            .login-header {
-                padding: 20px 0;
-            }
-            
-            .login-logo {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .form-actions {
-                flex-direction: column-reverse;
-                gap: 10px;
-            }
-            
-            .next-button, .back-button, .submit-button {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .step {
-                font-size: 0.75em;
-                padding: 8px 5px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="./static/css/setup.css">
 </head>
 <body class="login-page dark-mode">
     <div class="login-container">
         <div class="login-header">
-            <img src="./static/logo/256.png" alt="Huntarr Logo" class="login-logo huntarr-logo">
+            <img src="./static/logo/256.png" alt="Huntarr Logo" class="login-logo">
             <h1>Huntarr</h1>
         </div>
         <div class="login-form">
-            <div class="setup-steps">
-                <div id="step1" class="step active">Create Account</div>
-                <div id="step2" class="step">Setup 2FA</div>
-                <div id="step3" class="step">Plex Setup</div>
-                <div id="step4" class="step">Auth Mode</div>
-                <div id="step5" class="step">Recovery Key</div>
-                <div id="step6" class="step">Finish</div>
+            <!-- Stepper Navigation -->
+            <div class="setup-stepper">
+                <div id="step1" class="setup-stepper-item active">
+                    <div class="setup-step-circle">1</div>
+                    <span class="setup-step-label">Account</span>
+                </div>
+                <div id="step2" class="setup-stepper-item">
+                    <div class="setup-step-circle">2</div>
+                    <span class="setup-step-label">2FA</span>
+                </div>
+                <div id="step3" class="setup-stepper-item">
+                    <div class="setup-step-circle">3</div>
+                    <span class="setup-step-label">Plex</span>
+                </div>
+                <div id="step4" class="setup-stepper-item">
+                    <div class="setup-step-circle">4</div>
+                    <span class="setup-step-label">Auth</span>
+                </div>
+                <div id="step5" class="setup-stepper-item">
+                    <div class="setup-step-circle">5</div>
+                    <span class="setup-step-label">Recovery</span>
+                </div>
+                <div id="step6" class="setup-stepper-item">
+                    <div class="setup-step-circle">6</div>
+                    <span class="setup-step-label">Finish</span>
+                </div>
             </div>
-            
+
+            <!-- Step 1: Create Account -->
             <div id="accountSetup" class="setup-section active">
                 <h2>Create Your Account</h2>
+                <p>Set up your Huntarr admin credentials.</p>
                 <div class="form-group">
                     <label for="username">
                         <i class="fas fa-user"></i>
@@ -535,9 +79,6 @@
                     </label>
                     <input type="password" id="confirm_password" name="confirm_password" required>
                 </div>
-                
-
-                
                 <div class="error-message" id="errorMessage" style="display: none;"></div>
                 <div class="form-actions">
                     <button type="button" id="accountNextButton" class="next-button">
@@ -545,119 +86,127 @@
                     </button>
                 </div>
             </div>
-            
+
+            <!-- Step 2: Setup 2FA -->
             <div id="twoFactorSetup" class="setup-section">
-                <h2>Setup Two-Factor Authentication</h2>
+                <h2>Two-Factor Authentication</h2>
+                <p>Secure your account with an authenticator app.</p>
                 <div class="qr-container">
                     <p>Scan this QR code with your auth app:</p>
                     <div class="qr-code" id="qrCode" title="Click to enlarge">
-                        <img src="" alt="QR Code" style="display: none;"> <!-- Add img tag, initially hidden -->
+                        <img src="" alt="QR Code" style="display: none;">
                     </div>
-                    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-top: -10px;">Click QR code to enlarge</p>
-                    <p>Or enter this code manually in your app:</p>
+                    <span class="qr-hint">Click QR code to enlarge</span>
+                    <p>Or enter this code manually:</p>
                     <div class="secret-key-container">
                         <div class="secret-key" id="secretKey">Generating...</div>
                         <button class="copy-button" onclick="copySecretKeySetup()">
                             <i class="fas fa-copy"></i> Copy
                         </button>
                     </div>
-                    
-                    <div class="form-group" style="display: flex; flex-direction: column; align-items: center; margin: 20px 0;">
-                        <label for="verificationCode" style="display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-                            <i class="fas fa-shield-alt" style="margin-right: 8px; color: #4a90e2;"></i>
+
+                    <div class="verify-input-group">
+                        <label for="verificationCode">
+                            <i class="fas fa-shield-alt"></i>
                             <span>Verification Code</span>
                         </label>
-                        <input type="text" id="verificationCode" placeholder="Enter 6-digit code" maxlength="6" autocomplete="off" style="text-align: center; width: 60%; max-width: 300px;">
+                        <input type="text" id="verificationCode" placeholder="Enter 6-digit code" maxlength="6" autocomplete="off">
                     </div>
-                    
+
                     <div class="error-message" id="twoFactorErrorMessage" style="display: none;"></div>
-                    <div class="form-actions">
-                        <button type="button" id="twoFactorNextButton" class="next-button" style="margin-right: 10px;">
+                    <div class="form-actions centered">
+                        <button type="button" id="twoFactorNextButton" class="next-button">
                             <i class="fas fa-check"></i> Verify & Continue
                         </button>
                         <button id="skip2FALink" class="skip-button">
-                            <i class="fas fa-times"></i> Skip 2FA setup
+                            <i class="fas fa-forward"></i> Skip 2FA
                         </button>
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Step 3: Plex Setup -->
             <div id="plexSetup" class="setup-section">
-                <h2>Link Plex Account (Optional)</h2>
-                <div style="background-color: rgba(28, 36, 54, 0.8); border-radius: 10px; padding: 20px; border: 1px solid rgba(65, 105, 225, 0.3); margin-bottom: 20px;">
-                    <div style="display: flex; align-items: flex-start;">
-                        <div style="margin-right: 15px; margin-top: 5px;">
-                            <i class="fas fa-tv" style="color: #e69500; font-size: 24px;"></i>
-                        </div>
+                <h2>Link Plex Account</h2>
+                <p>Optional - connect your Plex account for seamless sign-in.</p>
+                <div class="setup-card">
+                    <div class="setup-card-header">
+                        <i class="fas fa-tv setup-card-icon gold"></i>
                         <div>
-                            <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 18px;">Connect Your Plex Account</h3>
-                            <p style="margin-bottom: 12px; color: rgba(255, 255, 255, 0.9); line-height: 1.5;">
-                                Link your Plex account to enable seamless authentication. Once linked, you can:
-                            </p>
-                            <ul style="color: rgba(255, 255, 255, 0.8); margin: 10px 0; padding-left: 20px;">
-                                <li style="margin-bottom: 5px;"><strong>Login with Plex:</strong> Use your Plex credentials instead of your local username/password</li>
-                                <li style="margin-bottom: 5px;"><strong>Single Sign-On:</strong> Streamlined access across your media ecosystem</li>
-                                <li style="margin-bottom: 5px;"><strong>Enhanced Security:</strong> Leverage Plex's secure authentication system</li>
+                            <h3>Connect Your Plex Account</h3>
+                            <p>Link your Plex account to enable seamless authentication. Once linked, you can:</p>
+                            <ul>
+                                <li><strong>Login with Plex:</strong> Use your Plex credentials instead of local username/password</li>
+                                <li><strong>Single Sign-On:</strong> Streamlined access across your media ecosystem</li>
+                                <li><strong>Enhanced Security:</strong> Leverage Plex's secure authentication system</li>
                             </ul>
-                            <p style="margin-top: 15px; font-size: 14px; color: rgba(255, 255, 255, 0.7);">
-                                <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
-                                This is completely optional - you can always link your Plex account later in the user settings.
+                            <p class="setup-card-hint">
+                                <i class="fas fa-info-circle"></i>
+                                This is completely optional - you can always link your Plex account later in user settings.
                             </p>
                         </div>
                     </div>
                 </div>
-                
-                <div style="text-align: center; margin: 25px 0;">
-                    <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 20px; font-size: 16px;">
-                        Would you like to link your Plex account now?
-                    </p>
-                    <div class="form-actions" style="justify-content: center; gap: 15px;">
-                        <button type="button" id="linkPlexButton" class="next-button" style="background: linear-gradient(135deg, #e69500 0%, #f4a942 100%); box-shadow: 0 4px 10px rgba(230, 149, 0, 0.3);">
-                            <i class="fas fa-link"></i> Yes, Link Plex Account
+
+                <div class="plex-center-prompt">
+                    <p>Would you like to link your Plex account now?</p>
+                    <div class="form-actions">
+                        <button type="button" id="linkPlexButton" class="next-button btn-gold">
+                            <i class="fas fa-link"></i> Yes, Link Plex
                         </button>
                         <button type="button" id="skipPlexButton" class="back-button">
                             <i class="fas fa-arrow-right"></i> Skip for Now
                         </button>
                     </div>
                 </div>
-                
-                <div id="plexLinkStatus" class="error-message" style="display: none; background-color: rgba(40, 167, 69, 0.2); color: #2ecc71; border-left-color: #28a745;"></div>
+
+                <div id="plexLinkStatus" class="error-message" style="display: none;"></div>
             </div>
-            
+
+            <!-- Step 4: Auth Mode -->
             <div id="authModeSetup" class="setup-section">
-                <h2>Choose Authentication Mode</h2>
-                <p>Select how users will authenticate with Huntarr</p>
-                
-                <div class="form-group" style="margin-top: 25px;">
-                    <div style="background-color: rgba(28, 36, 54, 0.8); border-radius: 10px; padding: 15px; border: 1px solid rgba(65, 105, 225, 0.3);">
-                        <div style="display: flex; align-items: flex-start;">
-                            <div style="margin-right: 12px; margin-top: 2px;">
-                                <i class="fas fa-shield-alt" style="color: #4a90e2; font-size: 18px;"></i>
-                            </div>
-                            <div>
-                                <label for="auth_mode" style="font-weight: 600; display: flex; align-items: center; margin-bottom: 8px;">
-                                    <span>Authentication Mode</span>
-                                </label>
-                                <div style="margin-bottom: 10px;">
-                                    <select id="auth_mode" style="width: 100%; padding: 8px; background-color: rgba(28, 36, 54, 0.8); color: #fff; border: 1px solid rgba(65, 105, 225, 0.6); border-radius: 5px;">
-                                        <option value="login" selected>Login Mode</option>
-                                        <option value="local_bypass">Local Bypass Mode</option>
-                                        <option value="no_login">No Login Mode</option>
-                                    </select>
-                                </div>
-                                <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7); margin-top: 5px;">
-                                    <p><strong>Login Mode:</strong> Standard login required for all connections</p>
-                                    <p><strong>Local Bypass Mode:</strong> Only local network connections (192.168.x.x, 10.x.x.x) bypass login</p>
-                                    <p><strong>No Login Mode:</strong> Completely disable authentication</p>
-                                </div>
-                                <p style="font-size: 13px; color: #ff9966; margin-top: 5px;">
-                                    <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> Only use No Login Mode if your reverse proxy (e.g., Cloudflare, Nginx) is properly securing access!
-                                </p>
-                            </div>
+                <h2>Authentication Mode</h2>
+                <p>Choose how users will access Huntarr.</p>
+
+                <!-- Hidden select to keep existing JS working -->
+                <select id="auth_mode">
+                    <option value="login" selected>Login Mode</option>
+                    <option value="local_bypass">Local Bypass Mode</option>
+                    <option value="no_login">No Login Mode</option>
+                </select>
+
+                <div class="radio-cards" id="authModeCards">
+                    <div class="radio-card selected" data-value="login">
+                        <div class="radio-card-indicator"></div>
+                        <i class="fas fa-shield-alt radio-card-icon"></i>
+                        <div class="radio-card-body">
+                            <div class="radio-card-title">Login Mode</div>
+                            <div class="radio-card-desc">Standard login required for all connections. Recommended for most users.</div>
+                        </div>
+                    </div>
+                    <div class="radio-card" data-value="local_bypass">
+                        <div class="radio-card-indicator"></div>
+                        <i class="fas fa-house-signal radio-card-icon"></i>
+                        <div class="radio-card-body">
+                            <div class="radio-card-title">Local Bypass Mode</div>
+                            <div class="radio-card-desc">Local network connections (192.168.x.x, 10.x.x.x) bypass login. External access still requires authentication.</div>
+                        </div>
+                    </div>
+                    <div class="radio-card" data-value="no_login">
+                        <div class="radio-card-indicator"></div>
+                        <i class="fas fa-lock-open radio-card-icon"></i>
+                        <div class="radio-card-body">
+                            <div class="radio-card-title">No Login Mode</div>
+                            <div class="radio-card-desc">Completely disable authentication. Only recommended when behind a secured reverse proxy.</div>
                         </div>
                     </div>
                 </div>
-                
+
+                <div class="auth-warning" id="authWarning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> Only use No Login Mode if your reverse proxy (e.g., Cloudflare, Nginx) is properly securing access!
+                </div>
+
                 <div class="error-message" id="authModeErrorMessage" style="display: none;"></div>
                 <div class="form-actions">
                     <button type="button" id="authModeNextButton" class="next-button">
@@ -665,94 +214,88 @@
                     </button>
                 </div>
             </div>
-            
+
+            <!-- Step 5: Recovery Key -->
             <div id="recoveryKeySetup" class="setup-section">
-                <h2>Generate Recovery Key</h2>
-                <div style="background-color: rgba(28, 36, 54, 0.8); border-radius: 10px; padding: 20px; border: 1px solid rgba(255, 193, 7, 0.3); margin-bottom: 20px;">
-                    <div style="display: flex; align-items: flex-start;">
-                        <div style="margin-right: 15px; margin-top: 5px;">
-                            <i class="fas fa-key" style="color: #ffc107; font-size: 24px;"></i>
-                        </div>
+                <h2>Recovery Key</h2>
+                <p>Save this key to recover your account if you lose access.</p>
+                <div class="setup-card">
+                    <div class="setup-card-header">
+                        <i class="fas fa-key setup-card-icon amber"></i>
                         <div>
-                            <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 18px;">Secure Your Account</h3>
-
-                            <ul style="color: rgba(255, 255, 255, 0.8); margin: 10px 0; padding-left: 20px;">
-                                <li style="margin-bottom: 5px;"><strong>Account Recovery:</strong> Reset password without external help</li>
-                                <li style="margin-bottom: 5px;"><strong>2FA Bypass:</strong> Regain access if 2FA device is lost</li>
+                            <h3>Secure Your Account</h3>
+                            <ul>
+                                <li><strong>Account Recovery:</strong> Reset password without external help</li>
+                                <li><strong>2FA Bypass:</strong> Regain access if your 2FA device is lost</li>
                             </ul>
-
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="recoveryKeyDisplay">
-                    <div style="background-color: rgba(52, 152, 219, 0.2); border-radius: 10px; padding: 20px; border: 1px solid #3498db; margin: 20px 0; text-align: center; box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);">
-                        <h3 style="color: #3498db; margin-bottom: 15px; text-shadow: 0 0 10px rgba(52, 152, 219, 0.6);">
-                            <i class="fas fa-key"></i> Your Recovery Key
-                        </h3>
-                        <div style="background-color: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin: 15px 0;">
-                            <div style="font-family: 'Courier New', monospace; font-size: 24px; font-weight: bold; color: #ffc107; letter-spacing: 2px;" id="recoveryKeyValue">
-                                Generating...
-                            </div>
+                    <div class="setup-key-display">
+                        <h3><i class="fas fa-key"></i> Your Recovery Key</h3>
+                        <div class="setup-key-value">
+                            <span id="recoveryKeyValue">Generating...</span>
                         </div>
-                        <button type="button" id="copyRecoveryKeyButton" class="copy-button" style="margin: 10px 0;">
+                        <button type="button" id="copyRecoveryKeyButton" class="copy-button copy-button-centered">
                             <i class="fas fa-copy"></i> Copy Recovery Key
                         </button>
-                        
-                        <div id="countdownSection" style="margin: 20px 0; display: none;">
-                            <div style="background-color: rgba(255, 193, 7, 0.2); border-radius: 8px; padding: 15px; border: 1px solid #ffc107;">
-                                <p style="color: #ffc107; font-weight: bold; margin-bottom: 10px;">
-                                    <i class="fas fa-clock"></i> Please copy/save your recovery key
-                                </p>
-                                <div style="font-size: 36px; font-weight: bold; color: #ffc107;" id="countdownTimer">10</div>
+
+                        <div id="countdownSection" style="display: none;">
+                            <div class="setup-countdown">
+                                <p><i class="fas fa-clock"></i> Please copy/save your recovery key</p>
+                                <div class="countdown-number" id="countdownTimer">10</div>
                             </div>
                         </div>
-                        
-                        <div id="confirmationSection" style="margin: 20px 0; display: none;">
-                            <div style="background-color: rgba(52, 152, 219, 0.2); border-radius: 8px; padding: 15px; border: 1px solid #3498db; box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);">
-                                <p style="color: #3498db; font-weight: bold; margin-bottom: 15px; font-size: 18px; text-shadow: 0 0 10px rgba(52, 152, 219, 0.6);">
-                                    <i class="fas fa-question-circle"></i> Have you copied your recovery key?
-                                </p>
-                                <div style="display: flex; gap: 10px; justify-content: center;">
-                                    <button type="button" id="confirmCopiedButton" class="next-button" style="background: linear-gradient(135deg, #28a745 0%, #34ce57 100%); box-shadow: 0 0 15px rgba(40, 167, 69, 0.4); font-size: 16px;">
+
+                        <div id="confirmationSection" style="display: none;">
+                            <div class="setup-confirm-prompt">
+                                <p><i class="fas fa-question-circle"></i> Have you copied your recovery key?</p>
+                                <div class="setup-confirm-buttons">
+                                    <button type="button" id="confirmCopiedButton" class="next-button btn-green">
                                         <i class="fas fa-check"></i> Yes, I've copied it
                                     </button>
-                                    <button type="button" id="needMoreTimeButton" class="back-button" style="box-shadow: 0 0 15px rgba(108, 117, 125, 0.4); font-size: 16px;">
-                                        <i class="fas fa-clock"></i> No, give me more time
+                                    <button type="button" id="needMoreTimeButton" class="back-button">
+                                        <i class="fas fa-clock"></i> More time
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
-                        <p style="color: #dc3545; font-weight: bold; margin-top: 15px;">
-                            <i class="fas fa-exclamation-triangle"></i> 
+
+                        <p class="setup-key-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
                             Save this key safely - it will not be shown again!
                         </p>
                     </div>
                 </div>
-                
+
                 <div id="recoveryKeyStatus" class="error-message" style="display: none;"></div>
             </div>
-            
+
+            <!-- Step 6: Finish -->
             <div id="setupComplete" class="setup-section">
-                <h2>Setup Complete</h2>
-                <p>Your Huntarr account has been created successfully!</p>
-                <div style="text-align: center; margin-top: 20px;">
-                    <div style="background-color: #2c2c2c; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                        <p>
-                            <i class="fas fa-heart thankyou-heart"></i>
-                        </p>
-                        <p style="font-weight: bold; margin-top: 10px;">Thank You For Using Huntarr</p>
-                        <p style="color: #bbb; font-size: 0.95em; margin-top: 10px; line-height: 1.4; text-align: left;">
+                <h2 class="text-center">Setup Complete</h2>
+                <div class="text-center">
+                    <div class="setup-finish-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <p class="setup-finish-subtitle">Your Huntarr account is ready to go.</p>
+
+                    <div class="setup-finish-card">
+                        <i class="fas fa-heart thankyou-heart"></i>
+                        <p class="finish-title">Thank You For Using Huntarr</p>
+                        <p class="finish-body">
                             If you love the program, any future donation to my daughter's college fund would make her day! Regardless, enjoy Huntarr and please join us on Discord and Reddit for community support.
                         </p>
-                        <p style="color: #aaa; font-size: 0.9em; margin-top: 10px; text-align: left;">
-                            - Admin9705 & Huntarr Crew
-                        </p>
+                        <p class="finish-sig">- Admin9705 & Huntarr Crew</p>
                     </div>
-                    <p><i class="fas fa-check-circle" style="color: #4CAF50;"></i> You can now proceed to the main interface.</p>
+
+                    <p class="setup-finish-status">
+                        <i class="fas fa-check-circle"></i> You can now proceed to the main interface.
+                    </p>
                 </div>
-                <div class="form-actions" style="justify-content: center;">
+                <div class="form-actions centered">
                     <button type="button" id="finishSetupButton" class="submit-button">
                         <i class="fas fa-home"></i> Go to Dashboard
                     </button>
@@ -770,19 +313,17 @@
     </div>
 
     <!-- Plex Link Modal -->
-    <div class="modal" id="plexLinkModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);">
-        <div class="modal-content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95)); border-radius: 15px; padding: 30px; width: 400px; max-width: 90%; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); border: 1px solid rgba(90, 109, 137, 0.15); color: #f8f9fa;">
-            <div class="modal-header" style="text-align: center; margin-bottom: 20px;">
-                <div style="font-size: 40px; color: #e69500; margin-bottom: 10px;">
-                    <i class="fas fa-tv"></i>
-                </div>
+    <div class="plex-modal-overlay" id="plexLinkModal">
+        <div class="plex-modal-box">
+            <div class="plex-modal-header">
+                <i class="fas fa-tv"></i>
                 <h2>Link Plex Account</h2>
             </div>
-            <div class="plex-pin-display" style="background: rgba(90, 109, 137, 0.1); border: 2px solid rgba(204, 123, 25, 0.5); border-radius: 10px; padding: 20px; text-align: center; margin: 20px 0;">
+            <div class="plex-pin-display">
                 <p>PIN Code:</p>
-                <p id="plexLinkPinCode" style="font-size: 13px; font-weight: bold; color: #e69500; letter-spacing: 2px; margin: 10px 0; word-wrap: break-word; word-break: break-all; line-height: 1.4;"></p>
+                <p class="plex-pin-code" id="plexLinkPinCode"></p>
             </div>
-            <div class="plex-status waiting" id="plexLinkStatusModal" style="margin: 15px 0; padding: 10px; border-radius: 8px; text-align: center; background: rgba(255, 193, 7, 0.2); border: 1px solid rgba(255, 193, 7, 0.3); color: #ffc107; display: block;">
+            <div class="plex-status waiting" id="plexLinkStatusModal">
                 <i class="fas fa-hourglass-half"></i> Initializing Plex authentication...
             </div>
         </div>
@@ -998,7 +539,7 @@
                             document.getElementById('plexSetup').classList.remove('active');
                             document.getElementById('authModeSetup').classList.add('active');
                             // Update step indicators
-                            const steps = document.querySelectorAll('.step');
+                            const steps = document.querySelectorAll('.setup-stepper-item');
                             steps.forEach((s, index) => {
                                 if (index + 1 < 4) {
                                     s.classList.remove('active');
@@ -1053,7 +594,7 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             // Elements
-            const steps = document.querySelectorAll('.step');
+            const steps = document.querySelectorAll('.setup-stepper-item');
             const screens = document.querySelectorAll('.setup-section');
             const errorMessage = document.getElementById('errorMessage');
             
@@ -1080,6 +621,27 @@
             const authModeSelect = document.getElementById('auth_mode');
             const authModeNextButton = document.getElementById('authModeNextButton');
             const authModeErrorMessage = document.getElementById('authModeErrorMessage');
+            
+            // Radio card click handling for auth mode
+            const authModeCards = document.getElementById('authModeCards');
+            const authWarning = document.getElementById('authWarning');
+            if (authModeCards) {
+                authModeCards.addEventListener('click', function(e) {
+                    const card = e.target.closest('.radio-card');
+                    if (!card) return;
+                    // Deselect all
+                    authModeCards.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+                    // Select clicked
+                    card.classList.add('selected');
+                    // Sync hidden select
+                    const val = card.dataset.value;
+                    authModeSelect.value = val;
+                    // Toggle warning
+                    if (authWarning) {
+                        authWarning.classList.toggle('visible', val === 'no_login');
+                    }
+                });
+            }
             
             // Plex setup elements
             const linkPlexButton = document.getElementById('linkPlexButton');
@@ -1159,12 +721,21 @@
                     if (index + 1 < step) {
                         s.classList.remove('active');
                         s.classList.add('completed');
+                        // Replace number with checkmark for completed steps
+                        const circle = s.querySelector('.setup-step-circle');
+                        if (circle) circle.innerHTML = '<i class="fas fa-check" style="font-size: 14px;"></i>';
                     } else if (index + 1 === step) {
                         s.classList.add('active');
                         s.classList.remove('completed');
+                        // Restore number for active step
+                        const circle = s.querySelector('.setup-step-circle');
+                        if (circle) circle.textContent = String(index + 1);
                     } else {
                         s.classList.remove('active');
                         s.classList.remove('completed');
+                        // Restore number for future steps
+                        const circle = s.querySelector('.setup-step-circle');
+                        if (circle) circle.textContent = String(index + 1);
                     }
                 });
                 
@@ -1502,21 +1073,43 @@
             
             copyRecoveryKeyButton.addEventListener('click', function() {
                 const recoveryKey = document.getElementById('recoveryKeyValue').textContent;
+                if (!recoveryKey || recoveryKey === 'Generating...') return;
                 
-                if (recoveryKey && recoveryKey !== 'Generating...' && navigator.clipboard) {
-                    navigator.clipboard.writeText(recoveryKey).then(() => {
-                        const originalText = this.innerHTML;
-                        this.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                        this.style.backgroundColor = '#28a745';
-                        setTimeout(() => {
-                            this.innerHTML = originalText;
-                            this.style.backgroundColor = '';
-                        }, 2000);
-                    }).catch(err => {
-                        console.error('Failed to copy to clipboard:', err);
+                const btn = this;
+                function showCopied() {
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    btn.style.backgroundColor = '#28a745';
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.backgroundColor = '';
+                    }, 2000);
+                }
+                
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(recoveryKey).then(showCopied).catch(function() {
+                        fallbackCopy(recoveryKey, showCopied);
                     });
+                } else {
+                    fallbackCopy(recoveryKey, showCopied);
                 }
             });
+            
+            function fallbackCopy(text, onSuccess) {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    if (onSuccess) onSuccess();
+                } catch (err) {
+                    console.error('Fallback copy failed:', err);
+                }
+                document.body.removeChild(textArea);
+            }
             
             confirmCopiedButton.addEventListener('click', function() {
                 if (countdownInterval) {
@@ -1696,7 +1289,7 @@
             
             function getCompletedSteps() {
                 const completed = [];
-                const stepElements = document.querySelectorAll('.step.completed');
+                const stepElements = document.querySelectorAll('.setup-stepper-item.completed');
                 stepElements.forEach((step, index) => {
                     completed.push(index + 1);
                 });
@@ -1785,42 +1378,42 @@
         // Copy secret key to clipboard function for setup page
         function copySecretKeySetup() {
             const secretKey = document.getElementById('secretKey').textContent;
-            if (secretKey && secretKey !== 'Generating...') {
-                navigator.clipboard.writeText(secretKey).then(function() {
-                    const copyButton = document.querySelector('.copy-button');
-                    const originalText = copyButton.innerHTML;
-                    
-                    copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                    copyButton.style.color = '#28a745';
-                    
-                    setTimeout(function() {
-                        copyButton.innerHTML = originalText;
-                        copyButton.style.color = '';
-                    }, 2000);
-                }).catch(function(err) {
-                    console.error('Failed to copy text: ', err);
-                    // Fallback for older browsers
-                    const textArea = document.createElement('textarea');
-                    textArea.value = secretKey;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        const copyButton = document.querySelector('.copy-button');
-                        const originalText = copyButton.innerHTML;
-                        
-                        copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                        copyButton.style.color = '#28a745';
-                        
-                        setTimeout(function() {
-                            copyButton.innerHTML = originalText;
-                            copyButton.style.color = '';
-                        }, 2000);
-                    } catch (err) {
-                        console.error('Fallback copy failed: ', err);
-                    }
-                    document.body.removeChild(textArea);
+            if (!secretKey || secretKey === 'Generating...') return;
+            
+            function showCopied() {
+                const copyButton = document.querySelector('#twoFactorSetup .copy-button');
+                if (!copyButton) return;
+                const originalText = copyButton.innerHTML;
+                copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                copyButton.style.color = '#28a745';
+                setTimeout(function() {
+                    copyButton.innerHTML = originalText;
+                    copyButton.style.color = '';
+                }, 2000);
+            }
+            
+            function fallbackCopySecret(text, onSuccess) {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    if (onSuccess) onSuccess();
+                } catch (err) {
+                    console.error('Fallback copy failed:', err);
+                }
+                document.body.removeChild(textArea);
+            }
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(secretKey).then(showCopied).catch(function() {
+                    fallbackCopySecret(secretKey, showCopied);
                 });
+            } else {
+                fallbackCopySecret(secretKey, showCopied);
             }
         }
     </script>
