@@ -68,6 +68,7 @@
                         <label for="scheduleAppType">App</label>
                         <select id="scheduleAppType">
                             <option value="global">All Apps (Global)</option>
+                            <option value="movie_hunt">Movie Hunt</option>
                             <option value="sonarr">Sonarr</option>
                             <option value="radarr">Radarr</option>
                             <option value="lidarr">Lidarr</option>
@@ -199,7 +200,22 @@
             allOpt.textContent = 'All Instances';
             instanceSelect.appendChild(allOpt);
 
-            // Get instances from settings cache
+            // Movie Hunt: instances come from a dedicated API, not settings cache
+            if (appType === 'movie_hunt') {
+                const cached = window._movieHuntInstances;
+                if (cached && Array.isArray(cached)) {
+                    cached.forEach(function(inst) {
+                        const opt = document.createElement('option');
+                        opt.value = String(inst.id);
+                        opt.textContent = inst.name || ('Instance ' + inst.id);
+                        instanceSelect.appendChild(opt);
+                    });
+                }
+                updateHiddenApp();
+                return;
+            }
+
+            // Other apps: get instances from settings cache
             const settings = (window.huntarrUI && window.huntarrUI.originalSettings) ? window.huntarrUI.originalSettings : {};
             const appSettings = settings[appType] || {};
             const instances = Array.isArray(appSettings.instances) ? appSettings.instances : [];

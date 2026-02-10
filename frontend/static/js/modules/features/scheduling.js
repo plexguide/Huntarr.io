@@ -16,7 +16,8 @@ window.huntarrSchedules = window.huntarrSchedules || {
     lidarr: [],
     readarr: [],
     whisparr: [],
-    eros: []
+    eros: [],
+    movie_hunt: []
 };
 
 (function() {
@@ -87,20 +88,33 @@ window.huntarrSchedules = window.huntarrSchedules || {
         if (!appTypeSelect || !instanceSelect) return;
 
         try {
-            const response = await HuntarrUtils.fetchWithTimeout('./api/settings');
-            if (!response.ok) throw new Error('Failed to load settings');
-            const settings = await response.json();
+            // Fetch standard app settings and Movie Hunt instances in parallel
+            const [settingsResp, movieHuntResp] = await Promise.all([
+                HuntarrUtils.fetchWithTimeout('./api/settings'),
+                HuntarrUtils.fetchWithTimeout('./api/movie-hunt/instances').catch(function() { return null; })
+            ]);
 
-            // Cache settings for later use
-            if (window.huntarrUI) {
-                window.huntarrUI.originalSettings = window.huntarrUI.originalSettings || {};
-                const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
-                appTypes.forEach(function(at) {
-                    if (settings[at]) {
-                        window.huntarrUI.originalSettings[at] = window.huntarrUI.originalSettings[at] || {};
-                        window.huntarrUI.originalSettings[at].instances = settings[at].instances || [];
-                    }
-                });
+            if (settingsResp.ok) {
+                const settings = await settingsResp.json();
+                if (window.huntarrUI) {
+                    window.huntarrUI.originalSettings = window.huntarrUI.originalSettings || {};
+                    const appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+                    appTypes.forEach(function(at) {
+                        if (settings[at]) {
+                            window.huntarrUI.originalSettings[at] = window.huntarrUI.originalSettings[at] || {};
+                            window.huntarrUI.originalSettings[at].instances = settings[at].instances || [];
+                        }
+                    });
+                }
+            }
+
+            // Cache Movie Hunt instances separately (they come from a different API)
+            if (movieHuntResp && movieHuntResp.ok) {
+                const mhData = await movieHuntResp.json();
+                window._movieHuntInstances = Array.isArray(mhData.instances) ? mhData.instances : [];
+                console.debug('[Scheduler] Movie Hunt instances loaded:', window._movieHuntInstances.length);
+            } else {
+                window._movieHuntInstances = [];
             }
 
             // Trigger instance dropdown population based on current app selection
@@ -108,6 +122,7 @@ window.huntarrSchedules = window.huntarrSchedules || {
             console.debug('[Scheduler] Instance dropdowns populated from API');
         } catch (err) {
             console.warn('[Scheduler] Could not fetch settings for instances', err);
+            window._movieHuntInstances = window._movieHuntInstances || [];
             populateInstanceDropdown();
         }
     }
@@ -134,6 +149,21 @@ window.huntarrSchedules = window.huntarrSchedules || {
         allOpt.textContent = 'All Instances';
         instanceSelect.appendChild(allOpt);
 
+        // Movie Hunt uses a dedicated instance list (numeric IDs from DB)
+        if (appType === 'movie_hunt') {
+            var mhInstances = window._movieHuntInstances || [];
+            mhInstances.forEach(function(inst) {
+                if (!inst || typeof inst !== 'object') return;
+                var opt = document.createElement('option');
+                opt.value = String(inst.id);
+                opt.textContent = inst.name || ('Instance ' + inst.id);
+                instanceSelect.appendChild(opt);
+            });
+            updateHiddenApp();
+            return;
+        }
+
+        // Standard apps: get instances from settings cache
         const settings = (window.huntarrUI && window.huntarrUI.originalSettings) ? window.huntarrUI.originalSettings : {};
         const appSettings = settings[appType] || {};
         const instances = Array.isArray(appSettings.instances) ? appSettings.instances : [];
@@ -423,20 +453,31 @@ window.huntarrSchedules = window.huntarrSchedules || {
             base = parts[0];
             instanceId = parts[1];
         }
-        // Legacy format: app-id
-        else if (appValue.indexOf('-') > 0) {
+        // Legacy format: app-id (but NOT movie_hunt which uses underscores)
+        else if (appValue.indexOf('-') > 0 && appValue.indexOf('movie_hunt') !== 0) {
             var dashParts = appValue.split('-', 2);
             base = dashParts[0];
             instanceId = dashParts[1];
         } else {
-            return capitalizeFirst(appValue);
+            return formatAppLabel(appValue);
         }
 
-        var label = capitalizeFirst(base);
+        var label = formatAppLabel(base);
 
         if (instanceId === 'all') return 'All ' + label + ' Instances';
 
-        // Try to resolve instance name from settings
+        // Movie Hunt: resolve from dedicated instance cache
+        if (base === 'movie_hunt') {
+            var mhInstances = window._movieHuntInstances || [];
+            for (var m = 0; m < mhInstances.length; m++) {
+                if (String(mhInstances[m].id) === instanceId) {
+                    return label + ' — ' + (mhInstances[m].name || 'Instance ' + mhInstances[m].id);
+                }
+            }
+            return label + ' — Instance ' + instanceId;
+        }
+
+        // Standard apps: try to resolve instance name from settings
         var settings = (window.huntarrUI && window.huntarrUI.originalSettings) ? window.huntarrUI.originalSettings : {};
         var instances = (settings[base] && settings[base].instances) ? settings[base].instances : [];
 
@@ -456,6 +497,11 @@ window.huntarrSchedules = window.huntarrSchedules || {
         }
 
         return label + ' — Instance ' + instanceId;
+    }
+
+    function formatAppLabel(appName) {
+        if (appName === 'movie_hunt') return 'Movie Hunt';
+        return capitalizeFirst(appName);
     }
 
     // ---------------------------------------------------------------

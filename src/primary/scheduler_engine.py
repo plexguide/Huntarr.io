@@ -32,7 +32,7 @@ EXECUTION_WINDOW_MINUTES = 2  # minutes after scheduled time to still execute
 COOLDOWN_MINUTES = 5          # minutes before same schedule can re-execute
 
 # Supported app types
-SUPPORTED_APPS = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros']
+SUPPORTED_APPS = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'movie_hunt']
 
 # Track last executed actions to prevent duplicates
 last_executed_actions = {}
@@ -157,11 +157,14 @@ def _apply_to_all_apps(action_fn, action_label: str) -> Tuple[bool, str]:
     errors = []
     for app in SUPPORTED_APPS:
         try:
-            config = load_settings(app)
-            if config:
-                action_fn(config, app, None)
-                save_settings(app, config)
-                clear_cache(app)
+            if app == 'movie_hunt':
+                _apply_to_movie_hunt(None, action_fn, action_label)
+            else:
+                config = load_settings(app)
+                if config:
+                    action_fn(config, app, None)
+                    save_settings(app, config)
+                    clear_cache(app)
         except Exception as e:
             errors.append(f"{app}: {e}")
 
@@ -172,6 +175,9 @@ def _apply_to_all_apps(action_fn, action_label: str) -> Tuple[bool, str]:
 
 def _apply_to_app(base_app: str, instance_id: Optional[str], action_fn, action_label: str) -> Tuple[bool, str]:
     """Apply an action to a specific app/instance. Returns (success, message)."""
+    if base_app == 'movie_hunt':
+        return _apply_to_movie_hunt(instance_id, action_fn, action_label)
+
     config = load_settings(base_app)
     if not config:
         return False, f"Settings not found for {base_app}"
@@ -185,6 +191,50 @@ def _apply_to_app(base_app: str, instance_id: Optional[str], action_fn, action_l
         return True, f"{action_label} for {target}"
     except Exception as e:
         return False, f"Error in {action_label} for {base_app}: {e}"
+
+
+def _apply_to_movie_hunt(instance_id: Optional[str], action_fn, action_label: str) -> Tuple[bool, str]:
+    """Apply an action to Movie Hunt instances.
+    
+    Movie Hunt uses a different config model: instances are in a DB table
+    and per-instance settings are stored via save_app_config_for_instance().
+    """
+    try:
+        db = get_database()
+        from src.primary.routes.movie_hunt.instances import _get_movie_hunt_instance_settings
+        SETTINGS_KEY = "movie_hunt_hunt_settings"
+
+        all_instances = db.get_movie_hunt_instances()
+
+        if instance_id:
+            # Target a specific instance by its numeric ID
+            int_id = int(instance_id)
+            target = next((i for i in all_instances if i['id'] == int_id), None)
+            if not target:
+                return False, f"Movie Hunt instance {instance_id} not found"
+            
+            settings = _get_movie_hunt_instance_settings(int_id)
+            # Use a wrapper config so the action_fn can modify it
+            wrapper = {"enabled": settings.get("enabled", True), "hourly_cap": settings.get("hourly_cap", 20)}
+            action_fn(wrapper, 'movie_hunt', None)  # None instance_id since we're already targeting
+            settings["enabled"] = wrapper.get("enabled", settings.get("enabled"))
+            settings["hourly_cap"] = wrapper.get("hourly_cap", settings.get("hourly_cap"))
+            db.save_app_config_for_instance(SETTINGS_KEY, int_id, settings)
+            return True, f"{action_label} for Movie Hunt instance {target.get('name', int_id)}"
+        else:
+            # Target all Movie Hunt instances
+            for inst in all_instances:
+                int_id = inst['id']
+                settings = _get_movie_hunt_instance_settings(int_id)
+                wrapper = {"enabled": settings.get("enabled", True), "hourly_cap": settings.get("hourly_cap", 20)}
+                action_fn(wrapper, 'movie_hunt', None)
+                settings["enabled"] = wrapper.get("enabled", settings.get("enabled"))
+                settings["hourly_cap"] = wrapper.get("hourly_cap", settings.get("hourly_cap"))
+                db.save_app_config_for_instance(SETTINGS_KEY, int_id, settings)
+            return True, f"{action_label} for all Movie Hunt instances"
+
+    except Exception as e:
+        return False, f"Error in {action_label} for movie_hunt: {e}"
 
 
 def _set_enabled(config, app_name, instance_id, enabled_value):
