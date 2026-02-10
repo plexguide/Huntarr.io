@@ -144,7 +144,7 @@
                     window.MovieHuntCollection.loadCollection();
                 });
             } else {
-                select.innerHTML = '<option value="1">Default Instance</option>';
+                select.innerHTML = '<option value="">No Movie Hunt instances</option>';
             }
         },
 
@@ -210,6 +210,26 @@
             if (grid) grid.style.display = 'none';
             if (table) table.style.display = 'none';
             if (overview) overview.style.display = 'none';
+
+            var instanceSelect = document.getElementById('movie-hunt-collection-instance-select');
+            var opt = instanceSelect && instanceSelect.options[instanceSelect.selectedIndex];
+            var noInstances = instanceSelect && (!instanceSelect.value || instanceSelect.value === '') &&
+                (!opt || (opt.value === '' && (opt.textContent || '').trim().indexOf('No Movie Hunt') !== -1));
+
+            if (noInstances) {
+                if (grid) {
+                    grid.style.display = 'flex';
+                    grid.style.alignItems = 'center';
+                    grid.style.justifyContent = 'center';
+                    grid.innerHTML = '<div style="text-align: center; color: #9ca3af; max-width: 600px;">' +
+                        '<i class="fas fa-cube" style="font-size: 64px; margin-bottom: 30px; opacity: 0.4; display: block;"></i>' +
+                        '<p style="font-size: 20px; margin-bottom: 15px; font-weight: 500;">No Movie Hunt instance</p>' +
+                        '<p style="font-size: 15px; line-height: 1.6; opacity: 0.8; margin-bottom: 20px;">Create a Movie Hunt instance to manage your media collection and requested movies.</p>' +
+                        '<a href="./#movie-hunt-settings" class="action-button" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: all 0.2s ease;">' +
+                        '<i class="fas fa-cog"></i> Set up Movie Hunt instance</a></div>';
+                }
+                return;
+            }
 
             if (this.items.length === 0) {
                 if (grid) {

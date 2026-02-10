@@ -720,6 +720,8 @@ _auto_start_poller()
 
 def _get_activity_queue(instance_id):
     """Fetch queue from Movie Hunt download clients only. 100% independent of Radarr."""
+    if not instance_id:
+        return [], 0
     _ensure_movie_hunt_poller_started()
     clients = _get_clients_config(instance_id)
     enabled = [c for c in clients if c.get('enabled', True)]

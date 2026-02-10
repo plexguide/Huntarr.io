@@ -28,22 +28,28 @@
             fetch(api('./api/movie-hunt/current-instance') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var list = (results[0].instances || []);
-            var current = results[1].instance_id != null ? Number(results[1].instance_id) : 1;
+            var current = results[1].instance_id != null ? Number(results[1].instance_id) : 0;
             select.innerHTML = '';
-            list.forEach(function(inst) {
-                var opt = document.createElement('option');
-                opt.value = String(inst.id);
-                opt.textContent = (inst.name || 'Instance ' + inst.id);
-                select.appendChild(opt);
-            });
-            // Set value explicitly - this is the reliable way to select an option
-            select.value = String(current);
-            // Fallback: if value didn't match any option, select the first one
-            if (select.selectedIndex < 0 && select.options.length) {
-                select.selectedIndex = 0;
+            if (list.length === 0) {
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No Movie Hunt instances';
+                select.appendChild(emptyOpt);
+                select.value = '';
+            } else {
+                list.forEach(function(inst) {
+                    var opt = document.createElement('option');
+                    opt.value = String(inst.id);
+                    opt.textContent = (inst.name || 'Instance ' + inst.id);
+                    select.appendChild(opt);
+                });
+                select.value = String(current);
+                if (select.selectedIndex < 0 && select.options.length) {
+                    select.selectedIndex = 0;
+                }
             }
         }).catch(function() {
-            select.innerHTML = '<option value="1">Default Instance</option>';
+            select.innerHTML = '<option value="">No Movie Hunt instances</option>';
         });
     }
 
@@ -102,8 +108,8 @@
         getCurrentInstanceId: function() {
             return fetch(api('./api/movie-hunt/current-instance') + '?t=' + Date.now(), { cache: 'no-store' })
                 .then(function(r) { return r.json(); })
-                .then(function(data) { return data.instance_id != null ? Number(data.instance_id) : 1; })
-                .catch(function() { return 1; });
+                .then(function(data) { return data.instance_id != null ? Number(data.instance_id) : 0; })
+                .catch(function() { return 0; });
         },
 
         /** Refresh dropdown list and selection (e.g. after Instance Management add/delete). */

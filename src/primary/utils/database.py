@@ -502,7 +502,6 @@ class HuntarrDatabase:
         # Create all tables with corruption recovery
         try:
             self._create_all_tables()
-            self.ensure_movie_hunt_default_instance()
         except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
             error_str = str(e).lower()
             if "file is not a database" in error_str or "database disk image is malformed" in error_str:
@@ -511,7 +510,6 @@ class HuntarrDatabase:
                 if self._attempt_wal_recovery():
                     try:
                         self._create_all_tables()
-                        self.ensure_movie_hunt_default_instance()
                         logger.info("WAL recovery succeeded during table creation")
                         return
                     except Exception:
@@ -520,7 +518,6 @@ class HuntarrDatabase:
                 self._handle_database_corruption()
                 # Try creating tables again after recovery
                 self._create_all_tables()
-                self.ensure_movie_hunt_default_instance()
             else:
                 raise
                 
@@ -1008,17 +1005,8 @@ class HuntarrDatabase:
             return [dict(row) for row in cursor.fetchall()]
 
     def ensure_movie_hunt_default_instance(self):
-        """Create default instance (id=1, name='Default Instance') if no instances exist."""
-        with self.get_connection() as conn:
-            cursor = conn.execute('SELECT COUNT(*) FROM movie_hunt_instances')
-            if cursor.fetchone()[0] > 0:
-                return
-            conn.execute(
-                'INSERT INTO movie_hunt_instances (id, name, created_at) VALUES (1, ?, CURRENT_TIMESTAMP)',
-                ('Default Instance',)
-            )
-            conn.commit()
-            logger.info('Movie Hunt: created default instance (id=1, name=Default Instance)')
+        """No-op: new installations do not get a default Movie Hunt instance. User creates instances explicitly."""
+        pass
 
     def create_movie_hunt_instance(self, name: str) -> int:
         """Create a new Movie Hunt instance. Returns new id (never reused). Name made unique by appending -1, -2 if needed."""
@@ -1067,14 +1055,18 @@ class HuntarrDatabase:
             return cursor.rowcount > 0
 
     def get_current_movie_hunt_instance_id(self) -> int:
-        """Current Movie Hunt instance (server-stored). Default 1."""
+        """Current Movie Hunt instance (server-stored). Returns 0 when no instances exist or stored id is invalid."""
+        ids = [i['id'] for i in self.get_movie_hunt_instances()]
+        if not ids:
+            return 0
         val = self.get_general_setting('movie_hunt_current_instance_id')
         if val is None:
-            return 1
+            return 0
         try:
-            return int(val)
+            iid = int(val)
+            return iid if iid in ids else 0
         except (TypeError, ValueError):
-            return 1
+            return 0
 
     def set_current_movie_hunt_instance_id(self, instance_id: int):
         """Set current Movie Hunt instance (server-stored)."""

@@ -28,7 +28,7 @@
                     window.ImportMedia.loadItems();
                 });
             } else {
-                select.innerHTML = '<option value="1">Default Instance</option>';
+                select.innerHTML = '<option value="">No Movie Hunt instances</option>';
             }
         },
 

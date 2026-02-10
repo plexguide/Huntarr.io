@@ -100,7 +100,7 @@ def api_movie_hunt_current_instance_get():
         return jsonify({'instance_id': instance_id}), 200
     except Exception as e:
         logger.exception('Movie Hunt current instance get error')
-        return jsonify({'instance_id': 1, 'error': str(e)}), 200
+        return jsonify({'instance_id': 0, 'error': str(e)}), 200
 
 
 def _get_movie_hunt_instance_settings(instance_id: int):
