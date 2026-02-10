@@ -328,12 +328,12 @@
     .mdrawer-donate:hover { background: rgba(231,76,60,.16); text-decoration: none; }
     .mdrawer-donate i { font-size: 14px; }
 
-    /* Version row in footer - own line, right-aligned, clickable */
+    /* Version row in footer - all aligned left */
     .mdrawer-version-row {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        gap: 8px;
+        justify-content: flex-start;
+        gap: 6px;
         margin-top: 10px;
         font-size: 11px;
         font-weight: 600;
@@ -344,6 +344,9 @@
     .mdrawer-version-row:hover { opacity: 0.8; text-decoration: none; }
     .mdrawer-ver-current {
         color: #7cb8e4;
+    }
+    .mdrawer-ver-dash {
+        color: rgba(255,255,255,.4);
     }
     .mdrawer-ver-latest {
         display: inline-flex;
