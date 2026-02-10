@@ -219,11 +219,11 @@ select.form-control {
     opacity: 0.7;
 }
 
-/* Any container elements that might have overflow: hidden */
-.app-container, 
-.content-section, 
+/* Scheduling-only containers that might have overflow: hidden */
 .scheduler-container, 
-.scheduler-panel {
+.scheduler-panel,
+#schedulingSection,
+#schedulingPage {
     overflow: auto !important;
 }
 

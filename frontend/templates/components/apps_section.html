@@ -656,7 +656,7 @@
     }
     
     /* Single scroll container - ONLY this element should scroll */
-    .single-scroll-container {
+    #appsSection .single-scroll-container {
         display: block;
         width: 100%;
         overflow-y: auto; 
@@ -678,7 +678,7 @@
     }
     
     /* Proper table positioning at bottom */
-    .app-panels-container {
+    #appsSection .app-panels-container {
         margin-top: auto;
         padding: 10px 0 0;
         width: 100%;
@@ -691,19 +691,19 @@
     }
     
     /* Add explicit styling for the Additional Options section */
-    .additional-options-section, .additional-options {
+    #appsSection .additional-options-section, #appsSection .additional-options {
         margin-bottom: 100px;
         padding-bottom: 100px;
     }
     
     /* Ensure Skip Series Refresh is visible */
-    .skip-series-refresh {
+    #appsSection .skip-series-refresh {
         margin-bottom: 50px;
         padding-bottom: 50px;
     }
     
     /* Panel styling */
-    .app-apps-panel {
+    #appsSection .app-apps-panel {
         padding-bottom: 10px;
         min-height: 0;
         height: auto;
@@ -722,7 +722,7 @@
     }
     
     /* Hide scrollbars except the main content wrapper */
-    ::-webkit-scrollbar {
+    #appsSection ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
     }
@@ -760,7 +760,7 @@
         }
         
         /* Completely redesign scroll container for mobile */
-        .single-scroll-container {
+        #appsSection .single-scroll-container {
             display: block;
             position: relative;
             overflow-y: visible;
@@ -776,12 +776,12 @@
         }
         
         /* Extra space for bottom content */
-        .app-panels-container {
+        #appsSection .app-panels-container {
             margin-bottom: 100px;
         }
         
         /* Force bottom option visibility */
-        .additional-options, .skip-series-refresh {
+        #appsSection .additional-options, #appsSection .skip-series-refresh {
             margin-bottom: 150px !important;
             padding-bottom: 150px !important;
         }
@@ -842,7 +842,7 @@
         }
         
         /* Override any flex or space-between properties */
-        .apps-app-filter,
+        #appsSection .apps-app-filter,
         #appsSection .apps-app-filter,
         #appsSection .section-header > .apps-app-filter {
             display: block !important;
@@ -853,7 +853,7 @@
         }
         
         /* Fix specific dropdown menu positioning for mobile */
-        .log-dropdown .log-dropdown-content {
+        #appsSection .log-dropdown .log-dropdown-content {
             left: 0 !important;
             right: auto !important;
             transform: none !important;
@@ -861,11 +861,11 @@
     }
     
     /* Default desktop padding */
-    .single-scroll-container {
+    #appsSection .single-scroll-container {
         padding-bottom: 200px;
     }
     
-    .additional-options, .skip-series-refresh {
+    #appsSection .additional-options, #appsSection .skip-series-refresh {
         margin-bottom: 150px;
         padding-bottom: 150px;
     }
