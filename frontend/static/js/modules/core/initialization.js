@@ -59,30 +59,14 @@ window.HuntarrInit = {
 
     initializeNotifications: function() {
         console.log('[HuntarrInit] initializeNotifications called');
-        const notificationsContainer = document.getElementById('notificationsContainer');
-        if (!notificationsContainer) return;
-        
-        const currentContent = notificationsContainer.innerHTML.trim();
-        if (currentContent !== '' && !currentContent.includes('<!-- Notifications content will be loaded here -->')) return;
-
-        fetch('./api/settings')
-            .then(response => response.json())
-            .then(settings => {
-                if (window.huntarrUI) {
-                    window.huntarrUI.originalSettings.general = settings.general;
-                    window.huntarrUI.originalSettings.notifications = settings.general; 
-                }
-                
-                if (typeof SettingsForms !== 'undefined' && SettingsForms.generateNotificationsForm) {
-                    SettingsForms.generateNotificationsForm(notificationsContainer, settings.general || {});
-                } else {
-                    notificationsContainer.innerHTML = '<p>Error: Notifications forms not loaded</p>';
-                }
-            })
-            .catch(error => {
-                console.error('[HuntarrInit] Error loading notifications settings:', error);
-                notificationsContainer.innerHTML = '<p>Error loading notifications settings</p>';
-            });
+        // New notification system initializes itself via generateNotificationsForm
+        // which is called by the settings loader, or we can trigger it directly.
+        if (typeof SettingsForms !== 'undefined' && SettingsForms.generateNotificationsForm) {
+            var container = document.getElementById('notificationsSection');
+            if (container) {
+                SettingsForms.generateNotificationsForm(container, {});
+            }
+        }
     },
 
     initializeBackupRestore: function() {

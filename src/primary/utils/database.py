@@ -855,6 +855,22 @@ class HuntarrDatabase:
                 )
             ''')
             
+            # Notification connections table — multi-provider notification system
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS notification_connections (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    enabled INTEGER DEFAULT 1,
+                    settings TEXT NOT NULL DEFAULT '{}',
+                    triggers TEXT NOT NULL DEFAULT '{}',
+                    include_app_name INTEGER DEFAULT 1,
+                    include_instance_name INTEGER DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             # Create indexes for better performance
             conn.execute('CREATE INDEX IF NOT EXISTS idx_app_configs_type ON app_configs(app_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_general_settings_key ON general_settings(setting_key)')
@@ -3364,6 +3380,96 @@ class HuntarrDatabase:
                 'page_size': page_size,
                 'total_pages': 0
             }
+
+    # ------------------------------------------------------------------
+    # Notification Connections CRUD
+    # ------------------------------------------------------------------
+
+    def get_notification_connections(self) -> List[Dict[str, Any]]:
+        """Return all notification connections."""
+        with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                'SELECT * FROM notification_connections ORDER BY id'
+            ).fetchall()
+            results = []
+            for row in rows:
+                d = dict(row)
+                # Parse JSON fields
+                for key in ('settings', 'triggers'):
+                    if isinstance(d.get(key), str):
+                        try:
+                            d[key] = json.loads(d[key])
+                        except (json.JSONDecodeError, TypeError):
+                            d[key] = {}
+                d['enabled'] = bool(d.get('enabled', 1))
+                d['include_app_name'] = bool(d.get('include_app_name', 1))
+                d['include_instance_name'] = bool(d.get('include_instance_name', 1))
+                results.append(d)
+            return results
+
+    def get_notification_connection(self, conn_id: int) -> Optional[Dict[str, Any]]:
+        """Return a single notification connection by ID."""
+        with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                'SELECT * FROM notification_connections WHERE id = ?', (conn_id,)
+            ).fetchone()
+            if not row:
+                return None
+            d = dict(row)
+            for key in ('settings', 'triggers'):
+                if isinstance(d.get(key), str):
+                    try:
+                        d[key] = json.loads(d[key])
+                    except (json.JSONDecodeError, TypeError):
+                        d[key] = {}
+            d['enabled'] = bool(d.get('enabled', 1))
+            d['include_app_name'] = bool(d.get('include_app_name', 1))
+            d['include_instance_name'] = bool(d.get('include_instance_name', 1))
+            return d
+
+    def save_notification_connection(self, data: Dict[str, Any]) -> int:
+        """Create or update a notification connection. Returns the connection ID."""
+        conn_id = data.get('id')
+        name = data.get('name', 'Unnamed')
+        provider = data.get('provider', '')
+        enabled = 1 if data.get('enabled', True) else 0
+        settings_json = json.dumps(data.get('settings', {}))
+        triggers_json = json.dumps(data.get('triggers', {}))
+        include_app = 1 if data.get('include_app_name', True) else 0
+        include_inst = 1 if data.get('include_instance_name', True) else 0
+
+        with self.get_connection() as conn:
+            if conn_id:
+                conn.execute('''
+                    UPDATE notification_connections
+                    SET name = ?, provider = ?, enabled = ?, settings = ?,
+                        triggers = ?, include_app_name = ?, include_instance_name = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                ''', (name, provider, enabled, settings_json, triggers_json,
+                      include_app, include_inst, conn_id))
+                conn.commit()
+                return conn_id
+            else:
+                cursor = conn.execute('''
+                    INSERT INTO notification_connections
+                    (name, provider, enabled, settings, triggers, include_app_name, include_instance_name)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (name, provider, enabled, settings_json, triggers_json,
+                      include_app, include_inst))
+                conn.commit()
+                return cursor.lastrowid
+
+    def delete_notification_connection(self, conn_id: int) -> bool:
+        """Delete a notification connection by ID."""
+        with self.get_connection() as conn:
+            cursor = conn.execute(
+                'DELETE FROM notification_connections WHERE id = ?', (conn_id,)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
 
 # Separate LogsDatabase class for logs.db
 class LogsDatabase:

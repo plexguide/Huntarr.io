@@ -1,5 +1,66 @@
-<section id="notificationsSection" class="content-section">
-    <div id="notificationsContainer" class="settings-container">
-        <!-- Notifications content will be loaded here -->
+<section id="notificationsSection" class="content-section" style="display: none;">
+    <div class="notif-container">
+
+        <!-- Add New Connection -->
+        <div class="notif-card" id="addConnectionPanel">
+            <div class="notif-card-header">
+                <div class="notif-card-header-left">
+                    <div class="notif-card-icon notif-icon-blue">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <h3>Add Connection</h3>
+                </div>
+            </div>
+            <div class="notif-card-body">
+                <div class="notif-provider-grid" id="providerGrid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Connections -->
+        <div class="notif-card" id="connectionsPanel">
+            <div class="notif-card-header">
+                <div class="notif-card-header-left">
+                    <div class="notif-card-icon notif-icon-slate">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3>Connections</h3>
+                </div>
+                <div id="connectionCount" style="font-size: 12px; color: var(--text-muted, #94a3b8);"></div>
+            </div>
+            <div class="notif-card-body">
+                <div class="notif-connection-list" id="connectionList"></div>
+                <div class="notif-empty-state" id="noConnectionsMessage">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No notification connections configured. Add one above to get started.</p>
+                </div>
+            </div>
+        </div>
+
     </div>
-</section> 
+
+    <!-- Edit / Add Modal Overlay -->
+    <div class="notif-modal-overlay" id="notifModalOverlay">
+        <div class="notif-modal" id="notifModal">
+            <div class="notif-modal-header">
+                <div class="notif-modal-header-left">
+                    <div class="notif-card-icon" id="notifModalIcon" style="width:32px;height:32px;border-radius:8px;">
+                        <i id="notifModalIconI" class="fas fa-bell"></i>
+                    </div>
+                    <h3 id="notifModalTitle">Add Connection</h3>
+                </div>
+                <button class="notif-modal-close" id="notifModalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="notif-modal-body" id="notifModalBody">
+                <!-- Dynamically populated -->
+            </div>
+            <div class="notif-modal-footer">
+                <button class="notif-btn notif-btn-cancel" id="notifModalCancelBtn">Cancel</button>
+                <button class="notif-btn notif-btn-save" id="notifModalSaveBtn"><i class="fas fa-save"></i> Save</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<link rel="stylesheet" href="./static/css/notifications.css">

@@ -1,526 +1,560 @@
-(function() {
+/**
+ * Huntarr Notifications — Modern multi-provider notification management
+ *
+ * Manages notification connections (Discord, Slack, Telegram, etc.)
+ * with per-connection trigger configuration.
+ */
+
+(function () {
+    'use strict';
+
+    // ------------------------------------------------------------------
+    // State
+    // ------------------------------------------------------------------
+    let providerMeta = {};       // provider definitions from API
+    let triggerKeys = [];
+    let defaultTriggers = {};
+    let connections = [];        // current connections from DB
+    let editingId = null;        // null = new, number = editing
+    let editingProvider = null;  // provider key when modal is open
+
+    // Human-readable trigger labels
+    var TRIGGER_LABELS = {
+        on_grab:            'On Grab',
+        on_import:          'On Import',
+        on_upgrade:         'On Upgrade',
+        on_missing:         'On Missing',
+        on_rename:          'On Rename',
+        on_delete:          'On Delete',
+        on_health_issue:    'On Health Issue',
+        on_app_update:      'On App Update',
+        on_manual_required: 'On Manual Required',
+    };
+
+    // ------------------------------------------------------------------
+    // Initialization
+    // ------------------------------------------------------------------
+
+    // The old generateNotificationsForm is replaced — we use direct init
     window.SettingsForms = window.SettingsForms || {};
 
-    window.SettingsForms.generateNotificationsForm = function (container, settings = {}) {
-        // Add data-app-type attribute to container
-        container.setAttribute("data-app-type", "notifications");
+    window.SettingsForms.generateNotificationsForm = function (container, settings) {
+        // This is called by the existing settings loader.
+        // We no longer generate a form; instead, init our notification UI.
+        initNotifications();
+    };
 
-        const saveButtonTopHtml = `
-            <div style="margin-bottom: 20px;">
-                <button type="button" id="notifications-save-button" disabled style="
-                    background: #6b7280;
-                    color: #9ca3af;
-                    border: 1px solid #4b5563;
-                    padding: 8px 16px;
-                    border-radius: 6px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    cursor: not-allowed;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    transition: all 0.2s ease;
-                ">
-                    <i class="fas fa-save"></i>
-                    Save Changes
-                </button>
-            </div>
-        `;
+    // Also allow standalone initialization
+    window.SettingsForms.setupNotificationsManualSave = function () {
+        // No-op — the new system auto-saves per connection
+    };
 
-        container.innerHTML = saveButtonTopHtml + `
-            <div class="settings-group">
-                    <h3>Apprise Notifications</h3>
-                    <div class="setting-item">
-                        <label for="enable_notifications"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#enable-notifications" class="info-icon" title="Enable or disable notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Enable Notifications:</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="enable_notifications" ${
-                              settings.enable_notifications === true
-                                ? "checked"
-                                : ""
-                            }>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <p class="setting-help" style="margin-left: -3ch !important;">Enable sending notifications via Apprise for media processing events</p>
-                    </div>
-                    <div class="setting-item">
-                        <label for="notification_level"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notification-level" class="info-icon" title="Set minimum notification level" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notification Level:</label>
-                        <select id="notification_level" name="notification_level" style="width: 200px; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">
-                            <option value="info" ${
-                              settings.notification_level === "info" ||
-                              !settings.notification_level
-                                ? "selected"
-                                : ""
-                            }>Info</option>
-                            <option value="success" ${
-                              settings.notification_level === "success"
-                                ? "selected"
-                                : ""
-                            }>Success</option>
-                            <option value="warning" ${
-                              settings.notification_level === "warning"
-                                ? "selected"
-                                : ""
-                            }>Warning</option>
-                            <option value="error" ${
-                              settings.notification_level === "error"
-                                ? "selected"
-                                : ""
-                            }>Error</option>
-                        </select>
-                        <p class="setting-help" style="margin-left: -3ch !important;">Minimum level of events that will trigger notifications</p>
-                    </div>
-                    <div class="setting-item">
-                        <label for="apprise_urls"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#apprise-urls" class="info-icon" title="Learn about Apprise URL formats" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Apprise URLs:</label>
-                        <textarea id="apprise_urls" rows="4" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #1f2937; color: #d1d5db;">${(
-                          settings.apprise_urls || []
-                        ).join("\n")}</textarea>
-                        <p class="setting-help" style="margin-left: -3ch !important;">Enter one Apprise URL per line (e.g., discord://, telegram://, etc)</p>
-                        <p class="setting-help"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#apprise-urls" target="_blank">Click here for detailed Apprise URL documentation</a></p>
-                        <div style="margin-top: 10px;">
-                            <button type="button" id="testNotificationBtn" class="btn btn-secondary" style="background-color: #6366f1; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
-                                <i class="fas fa-bell"></i> Test Notification
-                            </button>
-                            <span id="testNotificationStatus" style="margin-left: 10px; font-size: 14px;"></span>
-                        </div>
-                        <p class="setting-help" style="margin-left: -3ch !important; margin-top: 8px; font-style: italic; color: #9ca3af;">
-                            <i class="fas fa-magic" style="margin-right: 4px;"></i>Testing will automatically save your current settings first
-                        </p>
-                    </div>
-                    <div class="setting-item">
-                        <label for="notify_on_missing"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notify-on-missing" class="info-icon" title="Send notifications for missing media" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notify on Missing:</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notify_on_missing" ${
-                              settings.notify_on_missing !== false ? "checked" : ""
-                            }>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <p class="setting-help" style="margin-left: -3ch !important;">Send notifications when missing media is processed</p>
-                    </div>
-                    <div class="setting-item">
-                        <label for="notify_on_upgrade"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#notify-on-upgrade" class="info-icon" title="Learn more about upgrade notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Notify on Upgrade:</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notify_on_upgrade" ${
-                              settings.notify_on_upgrade !== false ? "checked" : ""
-                            }>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <p class="setting-help" style="margin-left: -3ch !important;">Send notifications when media is upgraded</p>
-                    </div>
-                    <div class="setting-item">
-                        <label for="notification_include_instance"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#include-instance" class="info-icon" title="Include instance name in notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Include Instance:</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notification_include_instance" ${
-                              settings.notification_include_instance !== false
-                                ? "checked"
-                                : ""
-                            }>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <p class="setting-help" style="margin-left: -3ch !important;">Include instance name in notification messages</p>
-                    </div>
-                    <div class="setting-item">
-                        <label for="notification_include_app"><a href="https://plexguide.github.io/Huntarr.io/settings/settings.html#include-app-name" class="info-icon" title="Include app name in notifications" target="_blank" rel="noopener"><i class="fas fa-info-circle"></i></a>Include App Name:</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notification_include_app" ${
-                              settings.notification_include_app !== false
-                                ? "checked"
-                                : ""
-                            }>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <p class="setting-help" style="margin-left: -3ch !important;">Include app name (Sonarr, Radarr, etc.) in notification messages</p>
-                    </div>
-                </div>
-            `;
+    function initNotifications() {
+        if (window._notifInitialized) return;
+        window._notifInitialized = true;
 
-        // Set up Apprise notifications toggle functionality
-        const enableNotificationsCheckbox = container.querySelector(
-          "#enable_notifications"
-        );
-        if (enableNotificationsCheckbox) {
-          // Function to toggle notification settings visibility
-          const toggleNotificationSettings = function (enabled) {
-            const settingsToToggle = [
-              "notification_level",
-              "apprise_urls",
-              "testNotificationBtn",
-              "notify_on_missing",
-              "notify_on_upgrade",
-              "notification_include_instance",
-              "notification_include_app",
-            ];
+        loadProviders()
+            .then(function () { return loadConnections(); })
+            .then(function () {
+                renderProviderGrid();
+                renderConnections();
+                bindModalEvents();
+            })
+            .catch(function (err) {
+                console.error('[Notifications] Init error:', err);
+            });
+    }
 
-            // Find parent setting-item containers for each setting
-            settingsToToggle.forEach((settingId) => {
-              const element = container.querySelector(`#${settingId}`);
-              if (element) {
-                // Find the parent setting-item div
-                const settingItem = element.closest(".setting-item");
-                if (settingItem) {
-                  if (enabled) {
-                    settingItem.style.opacity = "1";
-                    settingItem.style.pointerEvents = "";
-                    // Re-enable form elements
-                    const inputs = settingItem.querySelectorAll(
-                      "input, select, textarea, button"
-                    );
-                    inputs.forEach((input) => {
-                      input.disabled = false;
-                      input.style.cursor = "";
-                    });
-                  } else {
-                    settingItem.style.opacity = "0.4";
-                    settingItem.style.pointerEvents = "none";
-                    // Disable form elements
-                    const inputs = settingItem.querySelectorAll(
-                      "input, select, textarea, button"
-                    );
-                    inputs.forEach((input) => {
-                      input.disabled = true;
-                      input.style.cursor = "not-allowed";
-                    });
-                  }
-                }
-              }
+    // ------------------------------------------------------------------
+    // API calls
+    // ------------------------------------------------------------------
+
+    function loadProviders() {
+        return HuntarrUtils.fetchWithTimeout('./api/notifications/providers')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                providerMeta = data.providers || {};
+                triggerKeys = data.trigger_keys || [];
+                defaultTriggers = data.default_triggers || {};
+            });
+    }
+
+    function loadConnections() {
+        return HuntarrUtils.fetchWithTimeout('./api/notifications/connections')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                connections = data.connections || [];
+            });
+    }
+
+    function apiSaveConnection(payload) {
+        var method = payload.id ? 'PUT' : 'POST';
+        var url = payload.id
+            ? './api/notifications/connections/' + payload.id
+            : './api/notifications/connections';
+
+        return HuntarrUtils.fetchWithTimeout(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        }).then(function (r) { return r.json(); });
+    }
+
+    function apiDeleteConnection(connId) {
+        return HuntarrUtils.fetchWithTimeout('./api/notifications/connections/' + connId, {
+            method: 'DELETE',
+        }).then(function (r) { return r.json(); });
+    }
+
+    function apiTestConnection(connId) {
+        return HuntarrUtils.fetchWithTimeout('./api/notifications/connections/' + connId + '/test', {
+            method: 'POST',
+        }).then(function (r) { return r.json(); });
+    }
+
+    // ------------------------------------------------------------------
+    // Render — Provider Grid
+    // ------------------------------------------------------------------
+
+    function renderProviderGrid() {
+        var grid = document.getElementById('providerGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        var order = ['discord', 'telegram', 'slack', 'pushover', 'pushbullet', 'email', 'notifiarr', 'webhook', 'apprise'];
+
+        order.forEach(function (key) {
+            var meta = providerMeta[key];
+            if (!meta) return;
+
+            var card = document.createElement('div');
+            card.className = 'notif-provider-card';
+            card.setAttribute('data-provider', key);
+            card.innerHTML =
+                '<div class="notif-provider-card-icon" style="background:' + meta.color + '">' +
+                    '<i class="' + meta.icon + '"></i>' +
+                '</div>' +
+                '<div class="notif-provider-card-name">' + meta.name + '</div>' +
+                '<div class="notif-provider-card-desc">' + meta.description + '</div>';
+
+            card.addEventListener('click', function () {
+                openModal(key, null);
             });
 
-            // Special handling for test notification button and its container
-            const testBtn = container.querySelector("#testNotificationBtn");
-            if (testBtn) {
-              testBtn.disabled = !enabled;
-              testBtn.style.opacity = enabled ? "1" : "0.4";
-              testBtn.style.cursor = enabled ? "pointer" : "not-allowed";
+            grid.appendChild(card);
+        });
+    }
 
-              // Also handle the button container div
-              const buttonContainer = testBtn.closest("div");
-              if (buttonContainer) {
-                buttonContainer.style.opacity = enabled ? "1" : "0.4";
-                buttonContainer.style.pointerEvents = enabled ? "" : "none";
-              }
-            }
-          };
+    // ------------------------------------------------------------------
+    // Render — Connection List
+    // ------------------------------------------------------------------
 
-          // Set initial state
-          toggleNotificationSettings(enableNotificationsCheckbox.checked);
+    function renderConnections() {
+        var list = document.getElementById('connectionList');
+        var empty = document.getElementById('noConnectionsMessage');
+        var countEl = document.getElementById('connectionCount');
+        if (!list || !empty) return;
 
-          // Add change event listener
-          enableNotificationsCheckbox.addEventListener("change", function () {
-            toggleNotificationSettings(this.checked);
-          });
-        }
+        list.innerHTML = '';
 
-        // Set up test notification button
-        const testBtn = container.querySelector("#testNotificationBtn");
-        if (testBtn) {
-          testBtn.addEventListener("click", function () {
-            const statusSpan = container.querySelector("#testNotificationStatus");
-
-            console.log(
-              "[SettingsForms] Test notification - ensure settings are saved first"
-            );
-
-            // Show testing status
-            if (statusSpan) {
-              statusSpan.textContent = "Testing...";
-              statusSpan.style.color = "#6366f1";
-            }
-
-            // Send test notification
-            fetch("./api/test-notification", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            })
-              .then((response) => response.json())
-              .then((data) => {
-                if (statusSpan) {
-                  if (data.success) {
-                    statusSpan.textContent = "✓ Test sent successfully!";
-                    statusSpan.style.color = "#10b981";
-                  } else {
-                    statusSpan.textContent = `✗ Test failed: ${
-                      data.error || "Unknown error"
-                    }`;
-                    statusSpan.style.color = "#ef4444";
-                  }
-
-                  // Clear status after 5 seconds
-                  setTimeout(() => {
-                    statusSpan.textContent = "";
-                  }, 5000);
-                }
-              })
-              .catch((error) => {
-                console.error("Test notification error:", error);
-                if (statusSpan) {
-                  statusSpan.textContent = "✗ Test failed: Network error";
-                  statusSpan.style.color = "#ef4444";
-
-                  // Clear status after 5 seconds
-                  setTimeout(() => {
-                    statusSpan.textContent = "";
-                  }, 5000);
-                }
-              });
-          });
-        }
-
-        // Use standard setupAppManualSave with section so save/refresh target notifications only
-        if (window.SettingsForms.setupAppManualSave) {
-            window.SettingsForms.setupAppManualSave(container, "general", settings, { section: "notifications" });
-        }
-    };
-
-    window.SettingsForms.setupNotificationsManualSave = function (container, originalSettings = {}) {
-        console.log(
-          "[SettingsForms] Setting up manual save for Notifications with original settings:",
-          originalSettings
-        );
-
-        const saveButton = container.querySelector("#notifications-save-button");
-        if (!saveButton) {
-          console.error("[SettingsForms] Notifications save button not found!");
-          return;
-        }
-
-        let hasChanges = false;
-        let suppressInitialDetection = true; // Suppress change detection during initial setup
-
-        // Clear any existing unsaved changes state and warnings when setting up
-        window.notificationsUnsavedChanges = false;
-        if (this.removeUnsavedChangesWarning) this.removeUnsavedChangesWarning();
-
-        // Capture the actual form state as baseline instead of guessing defaults
-        let normalizedSettings = {};
-
-        // Initialize button in disabled/grey state immediately
-        saveButton.disabled = true;
-        saveButton.style.background = "#6b7280";
-        saveButton.style.color = "#9ca3af";
-        saveButton.style.borderColor = "#4b5563";
-        saveButton.style.cursor = "not-allowed";
-        console.log(
-          "[SettingsForms] Notifications save button initialized as disabled (grey)"
-        );
-
-        // Function to update save button state
-        const updateSaveButtonState = (changesDetected) => {
-          hasChanges = changesDetected;
-          window.notificationsUnsavedChanges = changesDetected;
-          console.log(
-            `[SettingsForms] Updating notifications save button state: hasChanges=${hasChanges}, global unsaved=${window.notificationsUnsavedChanges}`
-          );
-
-          if (hasChanges) {
-            // Red/white bold enabled state
-            saveButton.disabled = false;
-            saveButton.style.background = "#dc2626";
-            saveButton.style.color = "#ffffff";
-            saveButton.style.borderColor = "#b91c1c";
-            saveButton.style.fontWeight = "600";
-            saveButton.style.cursor = "pointer";
-            console.log("[SettingsForms] Notifications save button enabled (red)");
-
-            // Add beforeunload warning for page refresh
-            if (window.SettingsForms.addUnsavedChangesWarning) window.SettingsForms.addUnsavedChangesWarning();
-          } else {
-            // Grey disabled state
-            saveButton.disabled = true;
-            saveButton.style.background = "#6b7280";
-            saveButton.style.color = "#9ca3af";
-            saveButton.style.borderColor = "#4b5563";
-            saveButton.style.fontWeight = "500";
-            saveButton.style.cursor = "not-allowed";
-            console.log(
-              "[SettingsForms] Notifications save button disabled (grey)"
-            );
-
-            // Remove beforeunload warning when no changes
-            if (window.SettingsForms.removeUnsavedChangesWarning) window.SettingsForms.removeUnsavedChangesWarning();
-          }
-        };
-
-        // Function to detect changes in form elements
-        const detectChanges = () => {
-          // Skip change detection if still in initial setup phase
-          if (suppressInitialDetection) {
-            console.log(
-              "[SettingsForms] Notifications change detection suppressed during initial setup"
-            );
+        if (connections.length === 0) {
+            list.style.display = 'none';
+            empty.style.display = 'block';
+            if (countEl) countEl.textContent = '';
             return;
-          }
+        }
 
-          // Check regular form inputs
-          const inputs = container.querySelectorAll("input, select, textarea");
-          let formChanged = false;
+        list.style.display = 'flex';
+        empty.style.display = 'none';
+        if (countEl) countEl.textContent = connections.length + ' connection' + (connections.length !== 1 ? 's' : '');
 
-          inputs.forEach((input) => {
-            // Skip disabled inputs or inputs without IDs
-            if (!input.id || input.disabled) {
-              return;
-            }
+        connections.forEach(function (conn) {
+            var meta = providerMeta[conn.provider] || {};
+            var color = meta.color || '#64748b';
+            var icon = meta.icon || 'fas fa-bell';
+            var providerName = meta.name || conn.provider;
 
-            let key = input.id;
-            let originalValue, currentValue;
+            var triggers = conn.triggers || {};
+            var activeCount = 0;
+            for (var k in triggers) { if (triggers[k]) activeCount++; }
 
-            if (input.type === "checkbox") {
-              originalValue =
-                normalizedSettings[key] !== undefined
-                  ? normalizedSettings[key]
-                  : false;
-              currentValue = input.checked;
-            } else if (input.type === "number") {
-              // Get default from input attributes or use 0
-              const defaultValue =
-                parseInt(input.getAttribute("value")) || parseInt(input.min) || 0;
-              originalValue =
-                normalizedSettings[key] !== undefined
-                  ? parseInt(normalizedSettings[key])
-                  : defaultValue;
-              currentValue = parseInt(input.value) || 0;
+            var statusDot = conn.enabled ? 'active' : 'disabled';
+            var statusText = conn.enabled ? 'Enabled' : 'Disabled';
+
+            var el = document.createElement('div');
+            el.className = 'notif-connection-item';
+            el.innerHTML =
+                '<div class="notif-connection-left">' +
+                    '<div class="notif-connection-icon" style="background:' + color + '">' +
+                        '<i class="' + icon + '"></i>' +
+                    '</div>' +
+                    '<div class="notif-connection-info">' +
+                        '<div class="notif-connection-name">' + escapeHtml(conn.name || providerName) + '</div>' +
+                        '<div class="notif-connection-meta">' +
+                            '<span class="notif-connection-provider-badge"><i class="' + icon + '" style="font-size:10px"></i> ' + providerName + '</span>' +
+                            '<span class="notif-connection-status"><span class="notif-status-dot ' + statusDot + '"></span> ' + statusText + '</span>' +
+                            '<span>' + activeCount + ' trigger' + (activeCount !== 1 ? 's' : '') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="notif-connection-actions">' +
+                    '<button class="notif-btn-icon test-btn" data-id="' + conn.id + '" title="Test"><i class="fas fa-paper-plane"></i></button>' +
+                    '<button class="notif-btn-icon edit-btn" data-id="' + conn.id + '" title="Edit"><i class="fas fa-pen"></i></button>' +
+                    '<button class="notif-btn-icon delete-btn" data-id="' + conn.id + '" title="Delete"><i class="fas fa-trash"></i></button>' +
+                '</div>';
+
+            // Test button
+            el.querySelector('.test-btn').addEventListener('click', function (e) {
+                e.stopPropagation();
+                handleTest(conn.id, this);
+            });
+
+            // Edit button
+            el.querySelector('.edit-btn').addEventListener('click', function (e) {
+                e.stopPropagation();
+                openModal(conn.provider, conn);
+            });
+
+            // Delete button
+            el.querySelector('.delete-btn').addEventListener('click', function (e) {
+                e.stopPropagation();
+                handleDelete(conn.id, conn.name || providerName);
+            });
+
+            list.appendChild(el);
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Modal — Open / Close
+    // ------------------------------------------------------------------
+
+    function openModal(providerKey, existingConn) {
+        var overlay = document.getElementById('notifModalOverlay');
+        var body = document.getElementById('notifModalBody');
+        var titleEl = document.getElementById('notifModalTitle');
+        var iconEl = document.getElementById('notifModalIcon');
+        var iconI = document.getElementById('notifModalIconI');
+        var saveBtn = document.getElementById('notifModalSaveBtn');
+
+        if (!overlay || !body) return;
+
+        var meta = providerMeta[providerKey] || {};
+        editingProvider = providerKey;
+        editingId = existingConn ? existingConn.id : null;
+
+        // Header
+        titleEl.textContent = existingConn ? 'Edit ' + meta.name : 'Add ' + (meta.name || providerKey);
+        iconEl.style.background = meta.color || '#64748b';
+        iconI.className = meta.icon || 'fas fa-bell';
+
+        // Build form
+        var html = '';
+
+        // Connection name
+        html += '<div class="notif-name-group">';
+        html += '<div class="notif-form-group">';
+        html += '<label>Connection Name <span class="required">*</span></label>';
+        html += '<input type="text" id="notifFieldName" placeholder="My ' + (meta.name || '') + ' Notification" value="' + escapeAttr(existingConn ? existingConn.name : '') + '">';
+        html += '</div>';
+
+        // Enabled toggle
+        html += '<div class="notif-checkbox-row">';
+        html += '<input type="checkbox" id="notifFieldEnabled" ' + (existingConn ? (existingConn.enabled ? 'checked' : '') : 'checked') + '>';
+        html += '<label for="notifFieldEnabled" style="margin-bottom:0;cursor:pointer">Enabled</label>';
+        html += '</div>';
+        html += '</div>';
+
+        // Provider-specific fields
+        var fields = meta.fields || [];
+        var existingSettings = (existingConn && existingConn.settings) || {};
+
+        fields.forEach(function (field) {
+            html += '<div class="notif-form-group">';
+
+            if (field.type === 'checkbox') {
+                html += '<div class="notif-checkbox-row">';
+                html += '<input type="checkbox" id="notifField_' + field.key + '" ' + (existingSettings[field.key] ? 'checked' : '') + '>';
+                html += '<label for="notifField_' + field.key + '" style="margin-bottom:0;cursor:pointer">' + field.label + '</label>';
+                html += '</div>';
             } else {
-              originalValue = normalizedSettings[key] || "";
-              currentValue = input.value.trim();
+                html += '<label>' + field.label;
+                if (field.required) html += ' <span class="required">*</span>';
+                html += '</label>';
+
+                if (field.type === 'select') {
+                    html += '<select id="notifField_' + field.key + '">';
+                    (field.options || []).forEach(function (opt) {
+                        var sel = (String(existingSettings[field.key]) === String(opt.value)) ? ' selected' : '';
+                        html += '<option value="' + escapeAttr(opt.value) + '"' + sel + '>' + opt.label + '</option>';
+                    });
+                    html += '</select>';
+                } else if (field.type === 'textarea') {
+                    html += '<textarea id="notifField_' + field.key + '" placeholder="' + escapeAttr(field.placeholder || '') + '">' + escapeHtml(existingSettings[field.key] || '') + '</textarea>';
+                } else {
+                    var inputType = field.type === 'password' ? 'password' : (field.type === 'number' ? 'number' : 'text');
+                    html += '<input type="' + inputType + '" id="notifField_' + field.key + '" placeholder="' + escapeAttr(field.placeholder || '') + '" value="' + escapeAttr(existingSettings[field.key] || '') + '">';
+                }
             }
 
-            if (originalValue !== currentValue) {
-              console.log(
-                `[SettingsForms] Notifications change detected in ${key}: ${originalValue} -> ${currentValue}`
-              );
-              formChanged = true;
+            if (field.help) {
+                html += '<div class="notif-form-help">' + field.help + '</div>';
             }
-          });
+            html += '</div>';
+        });
 
-          // Special handling for apprise_urls which is a textarea with newlines
-          const appriseUrlsElement = container.querySelector("#apprise_urls");
-          if (appriseUrlsElement) {
-            const originalUrls = normalizedSettings.apprise_urls || [];
-            const currentUrls = appriseUrlsElement.value
-              .split("\n")
-              .map((url) => url.trim())
-              .filter((url) => url.length > 0);
+        // Notification Triggers
+        html += '<div class="notif-triggers-section">';
+        html += '<div class="notif-triggers-title">Notification Triggers</div>';
+        html += '<div class="notif-triggers-grid">';
 
-            if (
-              JSON.stringify(originalUrls.sort()) !==
-              JSON.stringify(currentUrls.sort())
-            ) {
-              console.log(
-                "[SettingsForms] Notifications apprise_urls change detected"
-              );
-              formChanged = true;
+        var existingTriggers = (existingConn && existingConn.triggers) || defaultTriggers;
+
+        // Filter out on_test from the displayed triggers
+        var displayTriggers = triggerKeys.filter(function (k) { return k !== 'on_test'; });
+        displayTriggers.forEach(function (key) {
+            var label = TRIGGER_LABELS[key] || key.replace('on_', '').replace(/_/g, ' ');
+            // capitalize first letter of each word
+            label = label.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+            var checked = existingTriggers[key] !== false && existingTriggers[key] !== undefined
+                ? (existingTriggers[key] ? 'checked' : '')
+                : (defaultTriggers[key] ? 'checked' : '');
+
+            html += '<label class="notif-trigger-item">';
+            html += '<input type="checkbox" id="notifTrigger_' + key + '" ' + checked + '>';
+            html += '<span class="notif-trigger-label">' + label + '</span>';
+            html += '</label>';
+        });
+        html += '</div></div>';
+
+        // Include options
+        html += '<div class="notif-options-row">';
+        html += '<label><input type="checkbox" id="notifOptAppName" ' + (existingConn ? (existingConn.include_app_name ? 'checked' : '') : 'checked') + '> Include App Name</label>';
+        html += '<label><input type="checkbox" id="notifOptInstance" ' + (existingConn ? (existingConn.include_instance_name ? 'checked' : '') : 'checked') + '> Include Instance Name</label>';
+        html += '</div>';
+
+        body.innerHTML = html;
+
+        // Show
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Focus first field
+        setTimeout(function () {
+            var first = body.querySelector('input[type="text"], input[type="password"]');
+            if (first) first.focus();
+        }, 200);
+    }
+
+    function closeModal() {
+        var overlay = document.getElementById('notifModalOverlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        editingId = null;
+        editingProvider = null;
+    }
+
+    function bindModalEvents() {
+        var overlay = document.getElementById('notifModalOverlay');
+        var closeBtn = document.getElementById('notifModalClose');
+        var cancelBtn = document.getElementById('notifModalCancelBtn');
+        var saveBtn = document.getElementById('notifModalSaveBtn');
+
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+        if (overlay) {
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay) closeModal();
+            });
+        }
+
+        if (saveBtn) saveBtn.addEventListener('click', handleSave);
+    }
+
+    // ------------------------------------------------------------------
+    // Modal — Save
+    // ------------------------------------------------------------------
+
+    function handleSave() {
+        var meta = providerMeta[editingProvider] || {};
+        var fields = meta.fields || [];
+
+        // Gather name
+        var nameEl = document.getElementById('notifFieldName');
+        var name = nameEl ? nameEl.value.trim() : '';
+        if (!name) {
+            name = meta.name || editingProvider;
+        }
+
+        var enabled = document.getElementById('notifFieldEnabled');
+        var isEnabled = enabled ? enabled.checked : true;
+
+        // Gather provider settings
+        var settings = {};
+        var missingRequired = false;
+
+        fields.forEach(function (field) {
+            var el = document.getElementById('notifField_' + field.key);
+            if (!el) return;
+
+            if (field.type === 'checkbox') {
+                settings[field.key] = el.checked;
+            } else {
+                settings[field.key] = el.value.trim();
             }
-          }
 
-          console.log(
-            `[SettingsForms] Notifications change detection result: ${formChanged}`
-          );
-          updateSaveButtonState(formChanged);
+            if (field.required && !settings[field.key]) {
+                missingRequired = true;
+                el.style.borderColor = '#f87171';
+            } else if (el.style) {
+                el.style.borderColor = '';
+            }
+        });
+
+        if (missingRequired) {
+            notify('Please fill in all required fields', 'error');
+            return;
+        }
+
+        // Gather triggers
+        var triggers = {};
+        var displayTriggers = triggerKeys.filter(function (k) { return k !== 'on_test'; });
+        displayTriggers.forEach(function (key) {
+            var el = document.getElementById('notifTrigger_' + key);
+            triggers[key] = el ? el.checked : false;
+        });
+
+        // Include options
+        var inclApp = document.getElementById('notifOptAppName');
+        var inclInst = document.getElementById('notifOptInstance');
+
+        var payload = {
+            name: name,
+            provider: editingProvider,
+            enabled: isEnabled,
+            settings: settings,
+            triggers: triggers,
+            include_app_name: inclApp ? inclApp.checked : true,
+            include_instance_name: inclInst ? inclInst.checked : true,
         };
 
-        // Add event listeners to all form elements
-        const inputs = container.querySelectorAll("input, select, textarea");
-        inputs.forEach((input) => {
-          input.addEventListener("change", detectChanges);
-          if (
-            input.type === "text" ||
-            input.type === "number" ||
-            input.tagName.toLowerCase() === "textarea"
-          ) {
-            input.addEventListener("input", detectChanges);
-          }
-        });
+        if (editingId) {
+            payload.id = editingId;
+        }
 
-        // Save button click handler
-        saveButton.addEventListener("click", () => {
-          if (!hasChanges) return;
+        // Disable save button
+        var saveBtn = document.getElementById('notifModalSaveBtn');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        }
 
-          console.log("[SettingsForms] Manual save triggered for Notifications");
-
-          // Show saving state
-          saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-          saveButton.disabled = true;
-
-          // Get settings and save (section-scoped: only notification fields are sent)
-          if (window.huntarrUI && window.huntarrUI.autoSaveGeneralSettings) {
-            window.huntarrUI
-              .autoSaveGeneralSettings(true)
-              .then((data) => {
-                console.log("[SettingsForms] Notifications manual save successful");
-
-                // Reset button state and clear unsaved changes warning
-                saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
-                updateSaveButtonState(false);
-
-                // Update baseline from server response so change detection matches saved state
-                if (data && data.general) {
-                  const g = data.general;
-                  if (g.enable_notifications !== undefined) normalizedSettings.enable_notifications = g.enable_notifications;
-                  if (g.notification_level !== undefined) normalizedSettings.notification_level = g.notification_level;
-                  if (g.apprise_urls !== undefined) normalizedSettings.apprise_urls = Array.isArray(g.apprise_urls) ? g.apprise_urls : [];
-                  if (g.notify_on_missing !== undefined) normalizedSettings.notify_on_missing = g.notify_on_missing;
-                  if (g.notify_on_upgrade !== undefined) normalizedSettings.notify_on_upgrade = g.notify_on_upgrade;
-                  if (g.notification_include_instance !== undefined) normalizedSettings.notification_include_instance = g.notification_include_instance;
-                  if (g.notification_include_app !== undefined) normalizedSettings.notification_include_app = g.notification_include_app;
+        apiSaveConnection(payload)
+            .then(function (data) {
+                if (data.error) {
+                    notify('Failed to save: ' + data.error, 'error');
+                    return;
                 }
-              })
-              .catch((error) => {
-                console.error(
-                  "[SettingsForms] Notifications manual save failed:",
-                  error
-                );
+                notify('Connection saved successfully', 'success');
+                closeModal();
+                return loadConnections().then(renderConnections);
+            })
+            .catch(function (err) {
+                notify('Failed to save connection', 'error');
+                console.error('[Notifications] Save error:', err);
+            })
+            .finally(function () {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+                }
+            });
+    }
 
-                // Reset button state
-                saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
-                updateSaveButtonState(hasChanges);
-              });
-          }
-        });
+    // ------------------------------------------------------------------
+    // Actions — Test / Delete
+    // ------------------------------------------------------------------
 
-        // Initial setup - capture actual form state as baseline
-        // Use a longer timeout to ensure all form elements are properly initialized
-        setTimeout(() => {
-          console.log(
-            "[SettingsForms] Capturing actual form state as notifications baseline"
-          );
+    function handleTest(connId, btnEl) {
+        var iconEl = btnEl.querySelector('i');
+        var origClass = iconEl.className;
+        iconEl.className = 'fas fa-spinner fa-spin';
+        btnEl.classList.add('testing');
 
-          // Capture the current form state as our baseline instead of guessing defaults
-          const inputs = container.querySelectorAll("input, select, textarea");
-          inputs.forEach((input) => {
-            if (!input.id || input.disabled) return;
+        apiTestConnection(connId)
+            .then(function (data) {
+                if (data.success) {
+                    notify('Test notification sent!', 'success');
+                    iconEl.className = 'fas fa-check';
+                    setTimeout(function () { iconEl.className = origClass; }, 2000);
+                } else {
+                    notify('Test failed: ' + (data.error || 'Unknown error'), 'error');
+                    iconEl.className = origClass;
+                }
+            })
+            .catch(function () {
+                notify('Test failed: Network error', 'error');
+                iconEl.className = origClass;
+            })
+            .finally(function () {
+                btnEl.classList.remove('testing');
+            });
+    }
 
-            let value;
-            if (input.type === "checkbox") {
-              value = input.checked;
-            } else if (input.type === "number") {
-              value = parseInt(input.value) || 0;
-            } else if (input.id === "apprise_urls") {
-              // Special handling for textarea - convert to array for comparison
-              value = input.value
-                .split("\n")
-                .map((url) => url.trim())
-                .filter((url) => url.length > 0);
-            } else {
-              value = input.value.trim();
+    function handleDelete(connId, connName) {
+        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+            window.HuntarrConfirm.show({
+                title: 'Delete Connection',
+                message: 'Are you sure you want to delete "' + connName + '"?',
+                confirmLabel: 'Delete',
+                onConfirm: function () { doDelete(connId); },
+            });
+        } else {
+            if (confirm('Delete "' + connName + '"?')) {
+                doDelete(connId);
             }
+        }
+    }
 
-            normalizedSettings[input.id] = value;
-          });
+    function doDelete(connId) {
+        apiDeleteConnection(connId)
+            .then(function (data) {
+                if (data.error) {
+                    notify('Failed to delete: ' + data.error, 'error');
+                    return;
+                }
+                notify('Connection deleted', 'success');
+                return loadConnections().then(renderConnections);
+            })
+            .catch(function () {
+                notify('Failed to delete connection', 'error');
+            });
+    }
 
-          // Force button to grey state and clear any changes
-          saveButton.disabled = true;
-          saveButton.style.background = "#6b7280";
-          saveButton.style.color = "#9ca3af";
-          saveButton.style.borderColor = "#4b5563";
-          saveButton.style.cursor = "not-allowed";
-          window.notificationsUnsavedChanges = false;
-          hasChanges = false;
+    // ------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------
 
-          // Enable change detection now that baseline is captured
-          suppressInitialDetection = false;
-          console.log(
-            "[SettingsForms] Notifications baseline captured, change detection enabled"
-          );
-        }, 500);
-    };
+    function notify(msg, type) {
+        if (window.huntarrUI && window.huntarrUI.showNotification) {
+            window.huntarrUI.showNotification(msg, type || 'info');
+        } else {
+            alert(msg);
+        }
+    }
+
+    function escapeHtml(s) {
+        if (!s) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(s));
+        return div.innerHTML;
+    }
+
+    function escapeAttr(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
 })();

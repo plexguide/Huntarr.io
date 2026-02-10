@@ -49,6 +49,9 @@ from src.primary.routes.history_routes import history_blueprint
 # Import scheduler blueprint
 from src.primary.routes.scheduler_routes import scheduler_api
 
+# Import notification blueprint
+from src.primary.routes.notification_routes import notification_api
+
 # Import backup blueprint
 from src.routes.backup_routes import backup_bp
 
@@ -278,6 +281,7 @@ app.register_blueprint(requestarr_bp)
 app.register_blueprint(stateful_api, url_prefix='/api/stateful')
 app.register_blueprint(history_blueprint, url_prefix='/api/hunt-manager')
 app.register_blueprint(scheduler_api)
+app.register_blueprint(notification_api)
 app.register_blueprint(log_routes_bp)
 app.register_blueprint(nzb_hunt_bp)
 app.register_blueprint(backup_bp)
@@ -706,53 +710,34 @@ def save_general_settings():
 
 @app.route('/api/test-notification', methods=['POST'])
 def test_notification():
-    """Test notification endpoint with enhanced Windows debugging"""
+    """Legacy test notification endpoint — kept for backward compatibility."""
     import platform
     web_logger = get_logger("web_server")
     
     try:
-        from src.primary.notification_manager import send_notification, get_notification_config, apprise_import_error
+        from src.primary.notification_manager import send_notification, get_notification_config
         
-        # Enhanced debugging for Windows issues
         system_info = {
             "platform": platform.system(),
-            "platform_release": platform.release(),
             "python_version": platform.python_version(),
-            "apprise_available": apprise_import_error is None
         }
         
         web_logger.info(f"Test notification requested on {system_info}")
         
-        # Check for Apprise import issues first (common Windows problem)
-        if apprise_import_error:
-            error_msg = f"Apprise library not available: {apprise_import_error}"
-            if platform.system() == "Windows":
-                error_msg += " (Common on Windows - try: pip install apprise)"
-            web_logger.error(error_msg)
-            return jsonify({
-                "success": False, 
-                "error": error_msg,
-                "system_info": system_info
-            }), 500, {'Content-Type': 'application/json'}
-        
-        # Get the user's configured notification level
         config = get_notification_config()
         user_level = config.get('level', 'info')
         
-        # Send a test notification using the user's configured level
         success = send_notification(
-            title="🧪 Huntarr Test Notification",
-            message="This is a test notification to verify your Apprise configuration is working correctly! If you see this, your notifications are set up properly. 🎉",
+            title="Huntarr Test Notification",
+            message="This is a test notification to verify your configuration is working correctly! If you see this, your notifications are set up properly.",
             level=user_level
         )
         
         if success:
-            web_logger.info(f"Test notification sent successfully on {platform.system()}")
+            web_logger.info("Test notification sent successfully")
             return jsonify({"success": True, "message": "Test notification sent successfully!"}), 200, {'Content-Type': 'application/json'}
         else:
-            error_msg = "Failed to send test notification. Check your Apprise URLs and settings."
-            if platform.system() == "Windows":
-                error_msg += " On Windows, ensure Apprise is properly installed and all dependencies are available."
+            error_msg = "Failed to send test notification. Check your notification connections."
             web_logger.warning(f"Test notification failed: {error_msg}")
             return jsonify({
                 "success": False, 
