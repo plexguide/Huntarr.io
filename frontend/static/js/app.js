@@ -83,12 +83,12 @@ let huntarrUI = {
                     window.applyLogoToAllElements();
                 }
 
-                // Settings are now loaded — initialize view toggle if on home (uses ui_preferences)
-                const basePath2 = (window.HUNTARR_BASE_URL || '').replace(/\/$/, '');
-                const currentPath2 = window.location.pathname.replace(/\/$/, '');
-                if (currentPath2 === '' || currentPath2 === basePath2) {
-                    if (window.HuntarrStats) {
-                        window.HuntarrStats.initViewToggle();
+                // Settings are now loaded — re-initialize view toggle with correct preference
+                if (window.HuntarrStats && (this.currentSection === 'home' || !this.currentSection)) {
+                    window.HuntarrStats.initViewToggle();
+                    // Re-render stats if they loaded before settings were ready
+                    if (window.mediaStats) {
+                        window.HuntarrStats.updateStatsDisplay(window.mediaStats);
                     }
                 }
             })
@@ -99,16 +99,8 @@ let huntarrUI = {
         this.setupLogoHandling();
         // Auto-save enabled - no unsaved changes handler needed
         
-        // Initialize media stats immediately (doesn't depend on settings)
-        const basePath = (window.HUNTARR_BASE_URL || '').replace(/\/$/, '');
-        const currentPath = window.location.pathname.replace(/\/$/, '');
-        if (currentPath === '' || currentPath === basePath) {
-            this.loadMediaStats();
-            // Start live polling (view toggle init moved to settings .then() above)
-            if (window.HuntarrStats) {
-                window.HuntarrStats.startPolling();
-            }
-        }
+        // NOTE: loadMediaStats() + initViewToggle() + startPolling() are called
+        // by switchSection('home') via handleHashNavigation below — no need to duplicate here.
         
         // Check if we need to navigate to a specific section after refresh
         const targetSection = localStorage.getItem('huntarr-target-section');

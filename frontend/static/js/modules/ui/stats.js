@@ -120,7 +120,10 @@ window.HuntarrStats = {
 
     initViewToggle: function() {
         var self = this;
-        this._currentViewMode = this._getViewMode();
+        var savedMode = this._getViewMode();
+        var needsRerender = (this._lastRenderedMode && savedMode !== this._lastRenderedMode);
+        this._currentViewMode = savedMode;
+
         var toggleGroup = document.getElementById('dashboard-view-toggle');
         if (!toggleGroup) return;
 
@@ -133,17 +136,22 @@ window.HuntarrStats = {
             btn.classList.toggle('active', btn.getAttribute('data-view') === self._currentViewMode);
             btn.addEventListener('click', function() {
                 var mode = this.getAttribute('data-view');
-                if (mode === self._currentViewMode) return; // Already in this mode
+                if (mode === self._currentViewMode) return;
                 btns.forEach(function(b) { b.classList.remove('active'); });
                 this.classList.add('active');
                 self._setViewMode(mode);
-                // Force full re-render by clearing state
                 self._clearDynamicContent();
                 if (window.mediaStats) {
                     self.updateStatsDisplay(window.mediaStats);
                 }
             });
         });
+
+        // If the saved view mode differs from what was rendered, re-render now
+        if (needsRerender && window.mediaStats) {
+            this._clearDynamicContent();
+            this.updateStatsDisplay(window.mediaStats);
+        }
     },
 
     // Clear all dynamically generated content + sortable instances
