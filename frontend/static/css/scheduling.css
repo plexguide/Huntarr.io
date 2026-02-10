@@ -1,239 +1,526 @@
-/* ==========================================================================
-   Huntarr Scheduling Styles
-   ========================================================================== */
+/* ============================================================
+   Scheduling — Modernized Huntarr Theme
+   ============================================================ */
 
-/* Login logo */
-.login-logo {
-    width: 64px;
-    height: 64px;
-    margin-bottom: 10px;
-    object-fit: contain;
-    transition: none !important;
+/* Container */
+.sched-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 }
 
-/* Scheduling specific styles */
-#schedulingSection, #schedulingPage, section[id*="scheduling"], div[id*="scheduling"] {
-    padding: 0 20px !important;
-    margin-left: 20px !important;
-    margin-right: 20px !important;
+/* ---- Card ---- */
+.sched-card {
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px solid rgba(148, 163, 184, 0.10);
+    border-radius: 14px;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* Scheduling minimalist header */
-.scheduling-minimalist-header {
-    padding: 15px 0;
-    margin-bottom: 15px;
+.sched-card:hover {
+    border-color: rgba(148, 163, 184, 0.18);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
 }
 
-.scheduling-minimalist-header h2 {
-    font-size: 24px;
-    margin-bottom: 10px;
+/* ---- Card header ---- */
+.sched-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    flex-wrap: wrap;
+}
+
+.sched-card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sched-card-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    letter-spacing: -0.01em;
+    padding: 0;
+    border-bottom: none;
+    background: none;
+    box-shadow: none;
+    text-shadow: none;
+    display: block;
+}
+
+/* ---- Card icon ---- */
+.sched-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.sched-icon-blue {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+.sched-icon-slate {
+    background: rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+}
+
+/* ---- Card body ---- */
+.sched-card-body {
+    padding: 18px 22px 22px;
+}
+
+/* ---- Timezone display ---- */
+.sched-timezone-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.18);
+    border-radius: 8px;
+    color: #93bbfc;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.sched-timezone-display .timezone-label {
+    color: #64748b;
+    margin-right: 2px;
+}
+
+.sched-timezone-display .timezone-separator {
+    color: rgba(148, 163, 184, 0.3);
+    margin: 0 2px;
+}
+
+/* ---- Form layout ---- */
+.sched-form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.sched-form-group {
+    margin-bottom: 18px;
+}
+
+.sched-form-group:last-child {
+    margin-bottom: 0;
+}
+
+.sched-form-group label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 0.813rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sched-form-time { flex: 0 0 auto; }
+.sched-form-action { flex: 1; }
+.sched-form-app { flex: 1; }
+.sched-form-instance { flex: 1; }
+
+/* ---- Time picker ---- */
+.sched-time-picker {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sched-time-select {
+    width: 70px;
+    padding: 10px 8px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 8px;
+    color: #f1f5f9;
+    font-size: 1rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    text-align: center;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sched-time-select:focus {
+    outline: none;
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.sched-time-colon {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #64748b;
+    padding: 0 2px;
+}
+
+/* ---- Select inputs ---- */
+.sched-form-group select:not(.sched-time-select) {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 8px;
+    color: #f1f5f9;
+    font-size: 0.875rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+}
+
+.sched-form-group select:not(.sched-time-select):focus {
+    outline: none;
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.sched-form-group select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sched-form-group select optgroup {
+    background: #1e293b;
+    color: #94a3b8;
     font-weight: 600;
 }
 
-/* Force hide all descriptions and redundant headers in scheduling sections */
-.section-header p,
-.settings-header p,
-div[class*="header"] p,
-#schedulingSection p:not(.no-schedules-message p),
-#schedulingPage p:not(.no-schedules-message p),
-section[id*="scheduling"] p:not(.no-schedules-message p),
-div[id*="scheduling"] p:not(.no-schedules-message p),
-#schedulingPage .scheduling-minimalist-header,
-#schedulingSection .scheduling-minimalist-header {
-    display: none !important;
+.sched-form-group select option {
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 6px;
 }
 
-/* Ensure color-shift-dividers are visible */
-.color-shift-divider {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 0.7 !important;
+/* ---- Day pills ---- */
+.sched-day-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
 }
 
-/* Special highlighted dividers that need to be more prominent */
-.highlight-divider {
-    height: 2px !important;
-    opacity: 1 !important;
-    margin: 20px 0 !important;
-    background-size: 300% 100% !important;
-    box-shadow: 0 0 5px rgba(255, 255, 255, 0.2) !important;
+.sched-day-pill {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* Schedule button styling */
-.schedule-button {
-    background-color: #3498db !important;
-    border: none !important;
-    padding: 10px 15px !important;
-    border-radius: 6px !important;
-    color: white !important;
-    font-weight: 500 !important;
-    font-size: 14px !important;
-    transition: background-color 0.2s ease !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: auto !important;
-    text-align: center !important;
-    height: 40px !important;
-    box-shadow: none !important;
-    cursor: pointer !important;
-    min-width: 150px !important;
-    max-width: 180px !important;
+.sched-day-pill input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
-.schedule-button:hover {
-    background-color: #2980b9 !important;
+.sched-day-pill span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.813rem;
+    font-weight: 500;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+    transition: all 0.2s ease;
 }
 
-.schedule-button i {
-    margin-right: 8px !important;
-    font-size: 16px !important;
+.sched-day-pill:hover span {
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #cbd5e1;
 }
 
-/* Keep old class references for backward compatibility */
-#addScheduleButton, 
-#saveSchedulesButton, 
-button.save-button, 
-button.action-button {
-    background-color: #3498db !important;
-    border: none !important;
-    padding: 10px 15px !important;
-    border-radius: 6px !important;
-    color: white !important;
+.sched-day-pill input:checked + span {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.45);
+    color: #60a5fa;
 }
 
-/* Form area enhancements */
-.form-actions {
-    display: flex !important;
-    width: 100% !important;
-    margin-top: 30px !important;
-    padding: 0 !important;
-    justify-content: flex-start !important;
+.sched-day-daily span {
+    font-weight: 600;
 }
 
-.panel-content {
-    padding: 20px !important;
-    border-radius: 0 0 8px 8px !important;
-    overflow: visible !important;
+.sched-day-daily input:checked + span {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.45);
+    color: #a78bfa;
 }
 
-/* Enhanced form field styling */
-.scheduler-panel .form-control,
-#schedulingSection .form-control,
-#schedulingPage .form-control {
-    background-color: rgba(30, 39, 56, 0.8) !important;
-    border: 1px solid rgba(52, 152, 219, 0.3) !important;
-    border-radius: 5px !important;
-    color: #ffffff !important;
-    font-size: 14px !important;
-    height: 38px !important;
-    padding: 8px 12px !important;
-    transition: all 0.3s ease !important;
+.sched-day-divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(148, 163, 184, 0.15);
+    margin: 0 4px;
 }
 
-.scheduler-panel .form-control:focus,
-#schedulingSection .form-control:focus,
-#schedulingPage .form-control:focus {
-    border-color: rgba(52, 152, 219, 0.8) !important;
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2) !important;
-    outline: none !important;
-}
-
-/* Checkbox styling enhancements */
-.day-checkbox input[type='checkbox'] {
-    position: relative !important;
-    cursor: pointer !important;
-    margin-right: 5px !important;
-    width: 18px !important;
-    height: 18px !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    appearance: none !important;
-    outline: none !important;
-    background-color: rgba(30, 39, 56, 0.8) !important;
-    border: 1px solid rgba(52, 152, 219, 0.3) !important;
-    border-radius: 3px !important;
-    vertical-align: middle !important;
-}
-
-.day-checkbox input[type='checkbox']:checked {
-    background-color: #3498db !important;
-    border-color: #3498db !important;
-}
-
-.day-checkbox input[type='checkbox']:checked:after {
-    content: '\2714' !important;
-    font-size: 12px !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 4px !important;
-    color: white !important;
-}
-
-/* Label styling */
-.scheduler-panel label,
-#schedulingSection label,
-#schedulingPage label {
-    font-weight: 500 !important;
-    color: rgba(255, 255, 255, 0.9) !important;
-    margin-bottom: 8px !important;
-    display: block !important;
-    font-size: 14px !important;
-}
-
-/* Make dropdown selects in scheduling section fit content */
-#schedulingSection select.form-control,
-#schedulingPage select.form-control,
-section[id*="scheduling"] select.form-control,
-.scheduler-container select.form-control {
-    width: auto !important;
-    min-width: 160px !important;
-    max-width: 300px !important;
-}
-
-/* Make all dropdown selects across the app fit their content */
-select.form-control {
-    width: auto !important;
-    min-width: 160px !important;
-    max-width: 300px !important;
-    display: inline-block !important;
-}
-
-/* Scheduler Container - vertical layout */
-.scheduler-container {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 20px !important;
-    margin-left: 15px !important;
-    margin-right: 15px !important;
-    width: calc(100% - 30px) !important;
-    overflow: auto !important;
-}
-
-/* Color divider line */
-.color-shift-divider {
-    height: 1px;
-    background: linear-gradient(to right, #3498db, #9b59b6, #2ecc71, #f1c40f, #e74c3c);
-    margin: 15px 0;
+/* ---- Add button ---- */
+.sched-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 24px;
     border: none;
-    opacity: 0.7;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    margin-top: 8px;
 }
 
-/* Scheduling-only containers that might have overflow: hidden */
-.scheduler-container, 
-.scheduler-panel,
-#schedulingSection,
-#schedulingPage {
-    overflow: auto !important;
+.sched-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
 }
 
-#schedulingPage, 
-#schedulingSection {
-    overflow-y: auto !important;
+.sched-btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    width: 100%;
+    justify-content: center;
 }
 
-/* Special case for panels that should show their content */
-.panel-content,
-.schedules-list {
-    overflow: visible !important;
+.sched-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+    transform: translateY(-1px);
+}
+
+/* ---- Schedule list ---- */
+.sched-empty-state {
+    text-align: center;
+    padding: 36px 16px;
+    color: #475569;
+}
+
+.sched-empty-state i {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    display: block;
+    opacity: 0.5;
+}
+
+.sched-empty-state p {
+    margin: 0;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+/* Schedule item */
+.schedule-item {
+    display: grid;
+    grid-template-columns: 70px 1fr 1fr 1fr 44px;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.schedule-item:hover {
+    border-color: rgba(148, 163, 184, 0.18);
+    background: rgba(15, 23, 42, 0.50);
+}
+
+.schedule-item-time {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    text-align: center;
+    padding: 6px 0;
+    background: rgba(59, 130, 246, 0.08);
+    border-radius: 6px;
+}
+
+.schedule-item-days {
+    font-size: 0.813rem;
+    color: #94a3b8;
+}
+
+.schedule-item-action {
+    font-size: 0.813rem;
+    font-weight: 500;
+}
+
+.schedule-item-action[data-action="enable"],
+.schedule-item-action.action-enable {
+    color: #4ade80;
+}
+
+.schedule-item-action[data-action="disable"],
+.schedule-item-action.action-disable {
+    color: #f87171;
+}
+
+.schedule-item-app {
+    font-size: 0.813rem;
+    color: #cbd5e1;
+}
+
+.schedule-item-actions {
+    display: flex;
+    justify-content: center;
+}
+
+/* Delete button */
+.schedule-item .delete-schedule,
+.schedule-item .icon-button {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.08);
+    color: #f87171;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.schedule-item .delete-schedule:hover,
+.schedule-item .icon-button:hover {
+    background: rgba(239, 68, 68, 0.20);
+    border-color: rgba(239, 68, 68, 0.50);
+    color: #fecaca;
+}
+
+/* ---- Legacy class overrides (used by JS renderSchedules) ---- */
+.schedule-item-checkbox { display: none; }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 768px) {
+    .sched-container {
+        padding: 0 4px;
+        gap: 14px;
+    }
+
+    .sched-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px 16px 12px;
+    }
+
+    .sched-timezone-display {
+        font-size: 0.75rem;
+    }
+
+    .sched-timezone-display .timezone-label,
+    .sched-timezone-display .timezone-separator,
+    #serverTimezone {
+        display: none;
+    }
+
+    .sched-card-body {
+        padding: 14px 16px 18px;
+    }
+
+    .sched-form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .sched-form-time,
+    .sched-form-action,
+    .sched-form-app,
+    .sched-form-instance {
+        flex: unset;
+        width: 100%;
+        margin-bottom: 18px;
+    }
+
+    .sched-day-pills {
+        gap: 6px;
+    }
+
+    .sched-day-pill span {
+        padding: 7px 10px;
+        font-size: 0.75rem;
+    }
+
+    .sched-day-divider {
+        display: none;
+    }
+
+    .schedule-item {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 12px 14px;
+    }
+
+    .schedule-item-time {
+        grid-column: 1 / -1;
+        text-align: left;
+        display: inline-block;
+        width: auto;
+        padding: 4px 10px;
+    }
+
+    .schedule-item-actions {
+        grid-column: 2;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    .sched-card-header h3 {
+        font-size: 0.95rem;
+    }
+
+    .sched-card-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+        border-radius: 8px;
+    }
+
+    .sched-time-select {
+        width: 60px;
+        padding: 8px 6px;
+        font-size: 0.9rem;
+    }
+
+    .sched-day-pill span {
+        padding: 6px 8px;
+        font-size: 0.7rem;
+    }
 }
