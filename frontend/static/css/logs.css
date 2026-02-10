@@ -2,7 +2,8 @@
    Huntarr Logs — Modern Compact Layout
    ═══════════════════════════════════════════════════════════════════════ */
 
-#logsSection {
+#logsSection,
+#activitySection {
     padding-bottom: 80px !important;
 }
 

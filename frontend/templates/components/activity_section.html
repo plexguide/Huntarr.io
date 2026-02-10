@@ -1,62 +1,66 @@
 <section id="activitySection" class="content-section" style="display: none;">
-    <div class="activity-header">
-        <div class="activity-controls">
-            <div class="control-group activity-instance-group">
-                <select id="activity-instance-select" class="control-select activity-instance-select" aria-label="Instance">
-                    <option value="">Loading...</option>
-                </select>
-            </div>
-            <div class="control-group main-search">
-                <div class="log-search">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="activitySearchInput" placeholder="Search...">
-                    <button id="activitySearchButton">Search</button>
+    <!-- Toolbar: same design as main system Logs -->
+    <div id="activityQueueToolbar" class="logs-toolbar">
+        <div class="logs-toolbar-row">
+            <div class="logs-filters">
+                <div class="logs-filter-chip">
+                    <i class="fas fa-film"></i>
+                    <select id="activity-instance-select" class="chip-select" aria-label="Instance">
+                        <option value="">Loading...</option>
+                    </select>
                 </div>
             </div>
-            <div class="control-group">
-                <button id="activityRefreshButton" class="btn-primary-outline">
-                    <i class="fas fa-sync-alt"></i> Refresh Data
-                </button>
-                <button id="activityRemoveSelectedButton" class="btn-danger-outline" style="display: none;">
-                    <i class="fas fa-trash-alt"></i> Remove Selected
-                </button>
+            <div class="logs-search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="activitySearchInput" placeholder="Search...">
             </div>
+            <button type="button" id="activitySearchButton" class="logs-btn logs-btn-search" title="Search">
+                <i class="fas fa-search"></i>
+            </button>
+            <button type="button" id="activityRefreshButton" class="logs-btn" title="Refresh">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button type="button" id="activityRemoveSelectedButton" class="logs-btn logs-btn-danger" title="Remove Selected" style="display: none;">
+                <i class="fas fa-trash-alt"></i>
+            </button>
         </div>
-
-        <div class="activity-pagination">
-            <div class="pagination-info">
-                <span id="activityPageInfo">Page <span id="activityCurrentPage">1</span> of <span id="activityTotalPages">1</span></span>
+        <div class="logs-toolbar-meta">
+            <div class="logs-connection-dot">
+                <span class="logs-page-info" style="color: #64748b;">Queue</span>
             </div>
-            <div class="pagination-actions">
-                <button id="activityPrevPage" class="pagination-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
-                <button id="activityNextPage" class="pagination-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
-            </div>
-            <div class="page-size-selector">
-                <span>Show:</span>
-                <select id="activityPageSize" class="mini-select">
-                    <option value="10">10</option>
-                    <option value="20" selected>20</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
+            <div class="logs-pagination">
+                <span class="logs-page-size">
+                    Show
+                    <select id="activityPageSize" class="chip-select chip-select-sm">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </span>
+                <div class="logs-page-nav">
+                    <button type="button" id="activityPrevPage" class="logs-page-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
+                    <span id="activityPageInfo" class="logs-page-info">Page <span id="activityCurrentPage">1</span> of <span id="activityTotalPages">1</span></span>
+                    <button type="button" id="activityNextPage" class="logs-page-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Queue view -->
     <div id="activity-queue-view" class="activity-view" style="display: none;">
-        <div class="activity-table-wrapper">
-            <table class="activity-data-table">
+        <div class="logs-table-wrapper">
+            <table class="logs-data-table">
                 <thead>
                     <tr>
-                        <th class="col-select"><input type="checkbox" id="activityQueueSelectAll" title="Select all"></th>
-                        <th class="col-movie">Movie</th>
-                        <th class="col-languages">Languages</th>
-                        <th class="col-quality">Quality</th>
-                        <th class="col-formats">Formats</th>
-                        <th class="col-scoring">Scoring</th>
-                        <th class="col-time-left">Time Left</th>
-                        <th class="col-progress">Progress</th>
+                        <th class="col-select" style="width: 40px;"><input type="checkbox" id="activityQueueSelectAll" title="Select all"></th>
+                        <th class="col-movie">MOVIE</th>
+                        <th class="col-languages">LANGUAGES</th>
+                        <th class="col-quality">QUALITY</th>
+                        <th class="col-formats">FORMATS</th>
+                        <th class="col-scoring">SCORING</th>
+                        <th class="col-time-left">TIME LEFT</th>
+                        <th class="col-progress">PROGRESS</th>
                     </tr>
                 </thead>
                 <tbody id="activityQueueTableBody"></tbody>
@@ -66,15 +70,15 @@
 
     <!-- History view -->
     <div id="activity-history-view" class="activity-view" style="display: none;">
-        <div class="activity-table-wrapper">
-            <table class="activity-data-table">
+        <div class="logs-table-wrapper">
+            <table class="logs-data-table">
                 <thead>
                     <tr>
-                        <th class="col-movie">Movie</th>
-                        <th class="col-languages">Languages</th>
-                        <th class="col-quality">Quality</th>
-                        <th class="col-formats">Formats</th>
-                        <th class="col-date">Date</th>
+                        <th class="col-movie">MOVIE</th>
+                        <th class="col-languages">LANGUAGES</th>
+                        <th class="col-quality">QUALITY</th>
+                        <th class="col-formats">FORMATS</th>
+                        <th class="col-date">DATE</th>
                     </tr>
                 </thead>
                 <tbody id="activityHistoryTableBody"></tbody>
@@ -84,14 +88,14 @@
 
     <!-- Blocklist view -->
     <div id="activity-blocklist-view" class="activity-view" style="display: none;">
-        <div class="activity-table-wrapper">
-            <table class="activity-data-table">
+        <div class="logs-table-wrapper">
+            <table class="logs-data-table">
                 <thead>
                     <tr>
-                        <th class="col-movie">Movie Title</th>
-                        <th class="col-source">Source Title</th>
-                        <th class="col-reason">Reason Failed</th>
-                        <th class="col-date">Date</th>
+                        <th class="col-movie">MOVIE TITLE</th>
+                        <th class="col-source">SOURCE TITLE</th>
+                        <th class="col-reason">REASON FAILED</th>
+                        <th class="col-date">DATE</th>
                         <th class="col-actions" style="width: 90px;"></th>
                     </tr>
                 </thead>
@@ -204,195 +208,10 @@
 </section>
 
 <style>
-#activitySection {
-    padding-bottom: 80px !important;
-}
-
-.activity-header {
-    padding: 10px 0 20px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.activity-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-#activitySection .control-group.main-search {
-    flex: 1;
-    min-width: 300px;
-}
-
-#activitySection .log-search {
-    position: relative;
-    width: 100%;
-    display: flex;
-    gap: 12px;
-    background: transparent !important;
-    border: none !important;
-}
-
-#activitySection .search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #64748b;
-    pointer-events: none;
-    z-index: 5;
-}
-
-#activitySection .log-search input {
-    background: #1e293b;
-    border: 1px solid #334155;
-    color: #f1f5f9;
-    padding: 10px 12px 10px 38px;
-    border-radius: 8px;
-    width: 100%;
-    outline: none;
-    transition: all 0.2s;
-    height: 42px;
-}
-
-#activitySection .log-search input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-#activitySection .log-search button {
-    background: #3b82f6;
-    color: white;
-    border: none;
-    padding: 0 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s;
-    white-space: nowrap;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#activitySection .log-search button:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-}
-
-#activitySection .btn-danger-outline {
-    background: transparent;
-    border: 1px solid #ef4444;
-    color: #ef4444;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-#activitySection .btn-danger-outline:hover {
-    background: #ef4444;
-    color: white;
-}
-
-#activitySection .btn-primary-outline {
-    background: transparent;
-    border: 1px solid #3b82f6;
-    color: #3b82f6;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-#activitySection .btn-primary-outline:hover {
-    background: #3b82f6;
-    color: white;
-}
-
-.activity-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 20px;
-    padding-top: 15px;
-}
-
-#activitySection .pagination-info { color: #94a3b8; font-size: 0.9em; }
-#activitySection .pagination-actions { display: flex; gap: 8px; }
-#activitySection .pagination-btn {
-    background: #1e293b;
-    border: 1px solid #334155;
-    color: #f1f5f9;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-#activitySection .pagination-btn:hover:not(:disabled) { border-color: #3b82f6; color: #3b82f6; }
-#activitySection .pagination-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-#activitySection .page-size-selector { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 0.9em; }
-#activitySection .mini-select {
-    background: #1e293b;
-    border: 1px solid #334155;
-    color: #f1f5f9;
-    padding: 4px 8px;
-    border-radius: 6px;
-    outline: none;
-}
-
-.activity-table-wrapper {
-    margin-top: 10px;
-    border-radius: 12px;
-    overflow: visible;
-}
-
-.activity-data-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-.activity-data-table thead { position: sticky; top: -20px; z-index: 10; }
-.activity-data-table th {
-    background: #1e293b;
-    color: #94a3b8;
-    text-align: left;
-    padding: 14px 20px;
-    font-size: 0.8em;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-    border-bottom: 2px solid #0f172a;
-}
-.activity-data-table th:first-child { border-radius: 8px 0 0 8px; }
-.activity-data-table th:last-child { border-radius: 0 8px 8px 0; }
-.activity-data-table td {
-    padding: 16px 20px;
-    color: #e2e8f0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-    font-size: 0.9em;
-}
-#activitySection .col-select { width: 40px; text-align: center; padding-left: 12px; padding-right: 12px; }
+/* Activity: empty state, loading, blocklist modal — toolbar/table use logs.css */
+#activitySection .logs-table-wrapper { margin-top: 0; margin-bottom: 16px; }
+#activitySection .col-select { width: 40px; text-align: center; }
 #activitySection .col-select input[type="checkbox"] { cursor: pointer; }
-.activity-data-table tbody tr:hover { background: rgba(59, 130, 246, 0.05); }
 #activitySection .empty-state-card {
     text-align: center;
     padding: 60px 20px;

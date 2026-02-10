@@ -50,10 +50,8 @@
         if (viewEl) viewEl.style.display = 'block';
         var removeBtn = el('activityRemoveSelectedButton');
         if (removeBtn) removeBtn.style.display = view === 'queue' ? '' : 'none';
-        var header = document.querySelector('#activitySection .activity-header');
-        var pagination = document.querySelector('#activitySection .activity-pagination');
-        if (header) header.style.display = view === 'logs' ? 'none' : '';
-        if (pagination) pagination.style.display = view === 'logs' ? 'none' : '';
+        var toolbar = document.getElementById('activityQueueToolbar');
+        if (toolbar) toolbar.style.display = view === 'logs' ? 'none' : 'flex';
         currentPage = 1;
         if (view === 'logs') {
             logPage = 1;
