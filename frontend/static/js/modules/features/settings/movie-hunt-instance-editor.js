@@ -132,8 +132,6 @@
             '<div class="editor-field-group tag-sub-box mh-editor-upgrade-items-tag-section" style="display:' + (safe.upgrade_selection_method === 'tags' ? 'none' : 'block') + ';"><div class="editor-setting-item flex-row"><label>Tag upgrade items</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-tag-enable-upgrade"' + (safe.tag_enable_upgrade ? ' checked' : '') + '><span class="toggle-slider"></span></label></div>' +
             '<div class="editor-setting-item" style="margin-top: 6px;"><label>Upgrade Items Tag</label><input type="text" id="mh-editor-tag-upgrade" value="' + escapeAttr((safe.custom_tags && safe.custom_tags.upgrade) ? safe.custom_tags.upgrade : 'huntarr-upgrade') + '" placeholder="huntarr-upgrade" maxlength="25"></div>' +
             '<p class="editor-help-text">Tag added to movies when they\'re upgraded in cutoff mode (max 25 characters). Not used when Upgrade Selection Method is Tags.</p></div>' +
-            '<div class="editor-field-group tag-sub-box"><div class="editor-setting-item flex-row"><label>Tag upgraded items</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-tag-enable-upgraded"' + (safe.tag_enable_upgraded ? ' checked' : '') + '><span class="toggle-slider"></span></label></div>' +
-            '<p class="editor-help-text">Tag added to movies after an upgrade completes (tracks what\'s been upgraded)</p></div>' +
             '<div class="editor-section" style="border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 10px; padding: 14px; background: rgba(231, 76, 60, 0.06); margin-top: 16px;"><div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-exempt"><i class="fas fa-ban"></i></span>EXEMPT TAGS</div></div>' +
             '<p class="editor-help-text" style="margin-bottom: 12px;">Items with any of these tags are skipped for missing and upgrade searches. If the tag is removed in the app, Huntarr will process the item again. <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener" style="color: #94a3b8;">#676</a></p>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Add exempt tag</label><div style="display: flex; gap: 8px; align-items: center;"><input type="text" id="mh-editor-exempt-tag-input" placeholder="Type a tag to exempt..." style="flex: 1;" maxlength="50"><button type="button" class="btn-card" id="mh-editor-exempt-tag-add" style="padding: 8px 14px; white-space: nowrap;">Add</button></div></div>' +
@@ -216,7 +214,6 @@
             tag_processed_items: true,
             tag_enable_missing: getCheck('mh-editor-tag-enable-missing'),
             tag_enable_upgrade: getCheck('mh-editor-tag-enable-upgrade'),
-            tag_enable_upgraded: getCheck('mh-editor-tag-enable-upgraded'),
             custom_tags: { missing: tagMissing, upgrade: tagUpgrade },
             api_timeout: getNum('mh-editor-api-timeout', 120),
             command_wait_delay: getNum('mh-editor-cmd-wait-delay', 1),
