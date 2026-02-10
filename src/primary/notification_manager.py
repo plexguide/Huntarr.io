@@ -490,6 +490,10 @@ def dispatch_notification(event: str, title: str, message: str, extra_data: Opti
         if event != "on_test" and not triggers.get(event, False):
             continue
 
+        # Check app/instance scope filtering
+        if event != "on_test" and extra_data and not _matches_scope(conn, extra_data):
+            continue
+
         provider = conn.get("provider", "")
         settings = conn.get("settings", {})
         if isinstance(settings, str):
@@ -549,6 +553,25 @@ def test_connection(conn_id: int) -> tuple:
         return ok, err
     except Exception as e:
         return False, str(e)
+
+
+def _matches_scope(conn: dict, extra_data: dict) -> bool:
+    """Check if a connection's app/instance scope matches the event's source."""
+    app_scope = conn.get("app_scope", "all")
+    instance_scope = conn.get("instance_scope", "all")
+
+    if app_scope == "all":
+        return True
+
+    event_app = extra_data.get("app_type", "")
+    if app_scope != event_app:
+        return False
+
+    if instance_scope == "all":
+        return True
+
+    event_instance = str(extra_data.get("instance_name", "") or extra_data.get("instance_id", ""))
+    return instance_scope == event_instance
 
 
 def _build_title(base_title: str, conn: dict, extra_data: Optional[dict] = None) -> str:

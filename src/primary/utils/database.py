@@ -866,10 +866,18 @@ class HuntarrDatabase:
                     triggers TEXT NOT NULL DEFAULT '{}',
                     include_app_name INTEGER DEFAULT 1,
                     include_instance_name INTEGER DEFAULT 1,
+                    app_scope TEXT NOT NULL DEFAULT 'all',
+                    instance_scope TEXT NOT NULL DEFAULT 'all',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            # Migration: add app_scope/instance_scope if table already existed
+            try:
+                conn.execute('SELECT app_scope FROM notification_connections LIMIT 1')
+            except sqlite3.OperationalError:
+                conn.execute("ALTER TABLE notification_connections ADD COLUMN app_scope TEXT NOT NULL DEFAULT 'all'")
+                conn.execute("ALTER TABLE notification_connections ADD COLUMN instance_scope TEXT NOT NULL DEFAULT 'all'")
             
             # Create indexes for better performance
             conn.execute('CREATE INDEX IF NOT EXISTS idx_app_configs_type ON app_configs(app_type)')
@@ -3385,28 +3393,29 @@ class HuntarrDatabase:
     # Notification Connections CRUD
     # ------------------------------------------------------------------
 
+    def _parse_notification_row(self, d: dict) -> dict:
+        """Parse a notification connection row from the database."""
+        for key in ('settings', 'triggers'):
+            if isinstance(d.get(key), str):
+                try:
+                    d[key] = json.loads(d[key])
+                except (json.JSONDecodeError, TypeError):
+                    d[key] = {}
+        d['enabled'] = bool(d.get('enabled', 1))
+        d['include_app_name'] = bool(d.get('include_app_name', 1))
+        d['include_instance_name'] = bool(d.get('include_instance_name', 1))
+        d.setdefault('app_scope', 'all')
+        d.setdefault('instance_scope', 'all')
+        return d
+
     def get_notification_connections(self) -> List[Dict[str, Any]]:
         """Return all notification connections."""
         with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
-                'SELECT * FROM notification_connections ORDER BY id'
+                'SELECT * FROM notification_connections ORDER BY app_scope, id'
             ).fetchall()
-            results = []
-            for row in rows:
-                d = dict(row)
-                # Parse JSON fields
-                for key in ('settings', 'triggers'):
-                    if isinstance(d.get(key), str):
-                        try:
-                            d[key] = json.loads(d[key])
-                        except (json.JSONDecodeError, TypeError):
-                            d[key] = {}
-                d['enabled'] = bool(d.get('enabled', 1))
-                d['include_app_name'] = bool(d.get('include_app_name', 1))
-                d['include_instance_name'] = bool(d.get('include_instance_name', 1))
-                results.append(d)
-            return results
+            return [self._parse_notification_row(dict(row)) for row in rows]
 
     def get_notification_connection(self, conn_id: int) -> Optional[Dict[str, Any]]:
         """Return a single notification connection by ID."""
@@ -3417,17 +3426,7 @@ class HuntarrDatabase:
             ).fetchone()
             if not row:
                 return None
-            d = dict(row)
-            for key in ('settings', 'triggers'):
-                if isinstance(d.get(key), str):
-                    try:
-                        d[key] = json.loads(d[key])
-                    except (json.JSONDecodeError, TypeError):
-                        d[key] = {}
-            d['enabled'] = bool(d.get('enabled', 1))
-            d['include_app_name'] = bool(d.get('include_app_name', 1))
-            d['include_instance_name'] = bool(d.get('include_instance_name', 1))
-            return d
+            return self._parse_notification_row(dict(row))
 
     def save_notification_connection(self, data: Dict[str, Any]) -> int:
         """Create or update a notification connection. Returns the connection ID."""
@@ -3439,6 +3438,8 @@ class HuntarrDatabase:
         triggers_json = json.dumps(data.get('triggers', {}))
         include_app = 1 if data.get('include_app_name', True) else 0
         include_inst = 1 if data.get('include_instance_name', True) else 0
+        app_scope = data.get('app_scope', 'all')
+        instance_scope = data.get('instance_scope', 'all')
 
         with self.get_connection() as conn:
             if conn_id:
@@ -3446,19 +3447,21 @@ class HuntarrDatabase:
                     UPDATE notification_connections
                     SET name = ?, provider = ?, enabled = ?, settings = ?,
                         triggers = ?, include_app_name = ?, include_instance_name = ?,
+                        app_scope = ?, instance_scope = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 ''', (name, provider, enabled, settings_json, triggers_json,
-                      include_app, include_inst, conn_id))
+                      include_app, include_inst, app_scope, instance_scope, conn_id))
                 conn.commit()
                 return conn_id
             else:
                 cursor = conn.execute('''
                     INSERT INTO notification_connections
-                    (name, provider, enabled, settings, triggers, include_app_name, include_instance_name)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (name, provider, enabled, settings, triggers, include_app_name,
+                     include_instance_name, app_scope, instance_scope)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (name, provider, enabled, settings_json, triggers_json,
-                      include_app, include_inst))
+                      include_app, include_inst, app_scope, instance_scope))
                 conn.commit()
                 return cursor.lastrowid
 
