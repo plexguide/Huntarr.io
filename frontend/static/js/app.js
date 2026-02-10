@@ -830,17 +830,21 @@ let huntarrUI = {
         } else if (section === 'requestarr-movies' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
-            var fromMovieCollection = false;
-            try { fromMovieCollection = sessionStorage.getItem('requestarr-from-movie-collection'); sessionStorage.removeItem('requestarr-from-movie-collection'); } catch (err) {}
-            if (fromMovieCollection) {
+            
+            // Check if we came from Movie Search in Movie Hunt sidebar
+            var fromMovieSearch = false;
+            try { fromMovieSearch = sessionStorage.getItem('requestarr-from-movie-search'); sessionStorage.removeItem('requestarr-from-movie-search'); } catch (err) {}
+            
+            if (fromMovieSearch) {
+                // Keep Movie Hunt sidebar active with Movie Search highlighted
                 this.showMovieHuntSidebar();
-                if (document.getElementById('movieHuntCollectionNav')) document.getElementById('movieHuntCollectionNav').classList.add('active');
-                var requestarrNavItems = document.querySelectorAll('#requestarr-sidebar .nav-item');
-                if (requestarrNavItems.length) requestarrNavItems.forEach(function(el) { el.classList.remove('active'); });
+                if (document.getElementById('movieHuntMovieSearchNav')) document.getElementById('movieHuntMovieSearchNav').classList.add('active');
             } else {
+                // Normal navigation: show Requestarr sidebar
                 if (document.getElementById('requestarrMoviesNav')) document.getElementById('requestarrMoviesNav').classList.add('active');
                 this.showRequestarrSidebar();
             }
+            
             newTitle = 'Movies';
             this.currentSection = 'requestarr-movies';
             

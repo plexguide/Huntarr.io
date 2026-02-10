@@ -126,6 +126,10 @@
                 <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
                 <span>Movie Collection</span>
             </a>
+            <a href="./#requestarr-movies" class="nav-item" id="movieHuntMovieSearchNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-search"></i></div>
+                <span>Movie Search</span>
+            </a>
             <a href="./#movie-hunt-calendar" class="nav-item" id="movieHuntCalendarNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
                 <span>Calendar</span>
@@ -508,6 +512,16 @@
         var el = document.getElementById(id);
         if (el) el.classList.remove('expanded');
     }
+
+    // Movie Search link: set flag so sidebar stays on Movie Hunt when navigating to requestarr-movies
+    (function() {
+        var movieSearchLink = document.getElementById('movieHuntMovieSearchNav');
+        if (movieSearchLink) {
+            movieSearchLink.addEventListener('click', function(e) {
+                try { sessionStorage.setItem('requestarr-from-movie-search', '1'); } catch (err) {}
+            });
+        }
+    })();
 
     window.addEventListener('hashchange', setActiveNavItem);
 </script>

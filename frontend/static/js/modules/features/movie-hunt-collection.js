@@ -20,18 +20,7 @@
             this.setupInstanceSelect();
             this.setupSort();
             this.setupViewMode();
-            this.setupMovieSearchLink();
             this.loadCollection();
-        },
-
-        setupMovieSearchLink: function() {
-            var link = document.getElementById('movie-collection-movie-search-link');
-            if (!link) return;
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                try { sessionStorage.setItem('requestarr-from-movie-collection', '1'); } catch (err) {}
-                window.location.hash = '#requestarr-movies';
-            });
         },
 
         setupInstanceSelect: function() {

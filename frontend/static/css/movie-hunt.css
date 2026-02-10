@@ -348,35 +348,6 @@
     box-sizing: border-box;
 }
 
-#movie-hunt-collection-view .movie-collection-request-link {
-    margin-bottom: 20px;
-}
-
-#movie-hunt-collection-view .request-movies-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: #a5b4fc;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1rem;
-    padding: 10px 16px;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.35);
-    border-radius: 8px;
-    transition: background 0.2s, border-color 0.2s;
-}
-
-#movie-hunt-collection-view .request-movies-link:hover {
-    background: rgba(99, 102, 241, 0.25);
-    border-color: rgba(99, 102, 241, 0.5);
-    color: #c7d2fe;
-}
-
-#movie-hunt-collection-view .request-movies-link i {
-    font-size: 0.95em;
-}
-
 #movie-hunt-collection-view .hidden-media-search {
     position: relative;
     width: 100%;
