@@ -115,19 +115,29 @@
     }
     .mtb-chip-version i { color: #3498db; }
 
-    /* Heart button */
+    /* Icon buttons (Discord, Reddit, Heart) */
     .mtb-icon-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         text-decoration: none;
         transition: background .15s, transform .15s;
         font-size: 13px;
     }
     .mtb-icon-btn:active { transform: scale(.9); }
+    .mtb-discord {
+        color: #5865f2;
+        background: rgba(88,101,242,.1);
+    }
+    .mtb-discord:hover { background: rgba(88,101,242,.2); color: #7289da; }
+    .mtb-reddit {
+        color: #ff4500;
+        background: rgba(255,69,0,.1);
+    }
+    .mtb-reddit:hover { background: rgba(255,69,0,.2); color: #ff6633; }
     .mtb-heart {
         color: #e74c3c;
         background: rgba(231,76,60,.1);
@@ -398,12 +408,14 @@
 @media (max-width: 480px) {
     .mtb-inner { height: 44px; padding: 0 8px; }
     .mtb-title { font-size: 13px; }
-    .mtb-right { gap: 5px; }
+    .mtb-right { gap: 4px; }
     .mtb-chip { padding: 0 5px; font-size: 10px; height: 22px; }
     .mtb-chip i { font-size: 8px; }
+    .mtb-icon-btn { width: 26px; height: 26px; font-size: 12px; }
     .mdrawer { width: 260px; }
 }
 @media (max-width: 380px) {
-    /* Very small: hide stars chip to save space */
+    /* Very small: hide stars + social icons to save space */
     .mtb-chip-stars { display: none; }
+    .mtb-discord, .mtb-reddit { display: none; }
 }
