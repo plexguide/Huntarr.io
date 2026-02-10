@@ -71,6 +71,8 @@
                             if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance added.', 'success');
                             closeModal();
                             self.loadList();
+                            // Update sidebar settings visibility (show now that we have an instance)
+                            if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
                             if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.refresh) {
                                 ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-import-lists-instance-select', 'import-media-instance-select', 'settings-root-folders-instance-select'].forEach(function(id) {
                                     if (document.getElementById(id)) window.MovieHuntInstanceDropdown.refresh(id);
@@ -121,6 +123,8 @@
                             if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance deleted.', 'success');
                             closeModal();
                             self.loadList();
+                            // Update sidebar settings visibility (hide if no more instances)
+                            if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
                             if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.refresh) {
                                 ['movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select', 'movie-management-instance-select', 'settings-profiles-instance-select', 'settings-custom-formats-instance-select', 'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-import-lists-instance-select', 'import-media-instance-select', 'settings-root-folders-instance-select'].forEach(function(sid) {
                                     if (document.getElementById(sid)) window.MovieHuntInstanceDropdown.refresh(sid);

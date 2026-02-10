@@ -156,7 +156,8 @@
                 <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
                 <span>Settings</span>
             </a>
-            <div class="nav-sub-group" id="movie-hunt-settings-sub">
+            <!-- Hidden by default until we know instances exist -->
+            <div class="nav-sub-group" id="movie-hunt-settings-sub" style="display: none;">
                 <a href="./#settings-movie-management" class="nav-item nav-item-sub" id="movieHuntSettingsMovieManagementNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
                     <span>Movie Management</span>
@@ -194,6 +195,35 @@
                     <span>Root Folders</span>
                 </a>
             </div>
+            <script>
+            // Check for Movie Hunt instances and show/hide settings sub-group
+            (function() {
+                function updateMovieHuntSettingsVisibility() {
+                    var subGroup = document.getElementById('movie-hunt-settings-sub');
+                    if (!subGroup) return;
+                    
+                    fetch('./api/movie-hunt/instances')
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            var instances = data.instances || [];
+                            subGroup.style.display = instances.length > 0 ? '' : 'none';
+                        })
+                        .catch(function() {
+                            subGroup.style.display = 'none';
+                        });
+                }
+                
+                // Run on page load
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', updateMovieHuntSettingsVisibility);
+                } else {
+                    updateMovieHuntSettingsVisibility();
+                }
+                
+                // Expose globally so it can be called after instance creation/deletion
+                window.updateMovieHuntSettingsVisibility = updateMovieHuntSettingsVisibility;
+            })();
+            </script>
         </div>
     </nav>
     <div class="dev-mode-indicator" id="sidebar-dev-indicator-movie-hunt">
