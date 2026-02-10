@@ -206,7 +206,8 @@
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
                             var instances = data.instances || [];
-                            subGroup.style.display = instances.length > 0 ? '' : 'none';
+                            // Use 'block' so mobile drawer also picks it up (checks for 'block')
+                            subGroup.style.display = instances.length > 0 ? 'block' : 'none';
                         })
                         .catch(function() {
                             subGroup.style.display = 'none';

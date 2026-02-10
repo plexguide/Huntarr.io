@@ -55,12 +55,14 @@
     <!-- Dynamic body — populated from the active desktop sidebar -->
     <div class="mdrawer-body" id="mobileDrawerBody"></div>
     <div class="mdrawer-footer">
-        <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="mdrawer-donate">
-            <i class="fas fa-heart"></i><span>Become a Sponsor</span>
-        </a>
-        <div class="mdrawer-version-row" id="mobileDrawerVersionRow">
-            <span class="mdrawer-ver-current" id="mobileDrawerVersion">--</span>
-            <span class="mdrawer-ver-latest" id="mobileDrawerLatest"></span>
+        <div class="mdrawer-footer-row">
+            <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="mdrawer-donate">
+                <i class="fas fa-heart"></i><span>Become a Sponsor</span>
+            </a>
+            <a href="#settings-updates" class="mdrawer-version-row" id="mobileDrawerVersionRow">
+                <span class="mdrawer-ver-current" id="mobileDrawerVersion">--</span>
+                <span class="mdrawer-ver-latest" id="mobileDrawerLatest"></span>
+            </a>
         </div>
     </div>
 </nav>
@@ -114,6 +116,8 @@
 
             var subGroups = desktopGroup.querySelectorAll('.nav-sub-group');
             subGroups.forEach(function(sub) {
+                // Skip sub-groups that are explicitly hidden (e.g., no instances configured)
+                if (sub.style.display === 'none') return;
                 var isExpanded = sub.classList.contains('expanded') || sub.style.display === 'block';
                 if (!isExpanded) return;
                 var subItems = sub.querySelectorAll('a.nav-item');
@@ -246,6 +250,12 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && drawer.classList.contains('open')) shut();
         });
+
+        // Version row click closes drawer and navigates to updates
+        var versionRow = document.getElementById('mobileDrawerVersionRow');
+        if (versionRow) {
+            versionRow.addEventListener('click', shut);
+        }
 
         updateVersionUI();
         window.addEventListener('storage', function(e) {
