@@ -14,8 +14,17 @@
             <span class="mtb-title" id="mobilePageTitle">Home</span>
         </div>
 
-        <!-- Right: Heart donate -->
+        <!-- Right: Stars + Version + Heart -->
         <div class="mtb-right">
+            <a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener"
+               class="mtb-chip mtb-chip-stars" title="GitHub Stars">
+                <i class="fas fa-star"></i>
+                <span id="mtb-stars">--</span>
+            </a>
+            <div class="mtb-chip mtb-chip-version" title="Current version">
+                <i class="fas fa-code-branch"></i>
+                <span id="mtb-version">--</span>
+            </div>
             <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer"
                class="mtb-icon-btn mtb-heart" title="Become a Sponsor" aria-label="Donate">
                 <i class="fas fa-heart"></i>
@@ -41,7 +50,10 @@
         <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="mdrawer-donate">
             <i class="fas fa-heart"></i><span>Become a Sponsor</span>
         </a>
-        <div class="mdrawer-version" id="mobileDrawerVersion"></div>
+        <div class="mdrawer-version-row" id="mobileDrawerVersionRow">
+            <span class="mdrawer-ver-current" id="mobileDrawerVersion">--</span>
+            <span class="mdrawer-ver-latest" id="mobileDrawerLatest"></span>
+        </div>
     </div>
 </nav>
 
@@ -57,12 +69,10 @@
             var el = document.getElementById(SIDEBAR_IDS[i]);
             if (el) {
                 var d = el.style.display;
-                // The main #sidebar starts with no inline style (visible by default)
                 if (SIDEBAR_IDS[i] === 'sidebar' && (d === '' || d === 'block' || d === 'flex')) return el;
                 if (d === 'block' || d === 'flex') return el;
             }
         }
-        // Fallback: main sidebar
         return document.getElementById('sidebar');
     }
 
@@ -74,13 +84,11 @@
 
         var groups = sidebar.querySelectorAll('.nav-group');
         groups.forEach(function(desktopGroup) {
-            // Skip hidden groups (JS may have set display:none)
             if (desktopGroup.style.display === 'none') return;
 
             var mGroup = document.createElement('div');
             mGroup.className = 'mdrawer-group';
 
-            // Group title
             var titleEl = desktopGroup.querySelector('.nav-group-title');
             if (titleEl) {
                 var mTitle = document.createElement('div');
@@ -89,19 +97,15 @@
                 mGroup.appendChild(mTitle);
             }
 
-            // Direct nav-item children (not inside sub-groups)
             var items = desktopGroup.querySelectorAll(':scope > a.nav-item');
             items.forEach(function(navItem) {
                 if (navItem.style.display === 'none') return;
-                // Skip the sponsor/heart link (we have it in the footer)
                 if (navItem.querySelector('.heart-icon')) return;
                 appendDrawerItem(mGroup, navItem);
             });
 
-            // Expanded sub-groups (system-sub, settings-sub, etc.)
             var subGroups = desktopGroup.querySelectorAll('.nav-sub-group');
             subGroups.forEach(function(sub) {
-                // Show sub-group items if expanded or has display:block
                 var isExpanded = sub.classList.contains('expanded') || sub.style.display === 'block';
                 if (!isExpanded) return;
                 var subItems = sub.querySelectorAll('a.nav-item');
@@ -111,34 +115,27 @@
                 });
             });
 
-            // Only add group if it has items
             if (mGroup.querySelectorAll('.mdrawer-item').length > 0) {
                 body.appendChild(mGroup);
             }
         });
 
-        // Attach close-on-click to every new item
         body.querySelectorAll('.mdrawer-item').forEach(function(item) {
             item.addEventListener('click', shut);
         });
-
-        // Highlight active item
         highlightActiveItem();
     }
 
     /** Create a single drawer nav item from a desktop sidebar nav-item <a>. */
     function appendDrawerItem(parent, navItem, isSub) {
         var a = document.createElement('a');
-        // Normalise href: strip leading "./" so drawer always uses hash links
         var href = navItem.getAttribute('href') || '#home';
-        if (href.indexOf('./') === 0) href = href.substring(1); // "./#foo" -> "/#foo"
-        if (href.indexOf('/#') === 0) href = href.substring(1); // "/#foo" -> "#foo"
-        // External links (donate, GitHub) — skip
+        if (href.indexOf('./') === 0) href = href.substring(1);
+        if (href.indexOf('/#') === 0) href = href.substring(1);
         if (href.indexOf('http') === 0) return;
         a.href = href;
         a.className = 'mdrawer-item' + (isSub ? ' mdrawer-item-sub' : '');
 
-        // Icon — try img first (app icons), then <i>
         var iconImg = navItem.querySelector('.app-icon-img');
         var iconI = navItem.querySelector('.nav-icon-wrapper i');
         if (iconImg) {
@@ -154,14 +151,12 @@
             a.appendChild(i);
         }
 
-        // Label
         var label = navItem.querySelector('span');
         if (label) {
             var s = document.createElement('span');
             s.textContent = label.textContent;
             a.appendChild(s);
         }
-
         parent.appendChild(a);
     }
 
@@ -180,7 +175,6 @@
 
     function open() {
         if (!drawer) return;
-        // Rebuild drawer content from the active sidebar every time we open
         buildDrawerContent(getActiveSidebar());
         drawer.classList.add('open');
         backdrop.classList.add('open');
@@ -191,6 +185,43 @@
         drawer.classList.remove('open');
         backdrop.classList.remove('open');
         document.body.classList.remove('mdrawer-open');
+    }
+
+    /* ---- version + stars (topbar chips & drawer footer) ---- */
+    function updateVersionUI() {
+        try {
+            var info = JSON.parse(localStorage.getItem('huntarr-version-info') || '{}');
+            var stars = localStorage.getItem('huntarr-github-stars');
+
+            // Topbar chips
+            var mtbVer = document.getElementById('mtb-version');
+            if (mtbVer && info.currentVersion) mtbVer.textContent = 'v' + info.currentVersion;
+
+            var mtbStars = document.getElementById('mtb-stars');
+            if (mtbStars && stars) {
+                try {
+                    var p = JSON.parse(stars);
+                    mtbStars.textContent = (p && p.stars !== undefined) ? Number(p.stars).toLocaleString() : stars;
+                } catch(e) { mtbStars.textContent = stars; }
+            }
+
+            // Drawer footer — current version
+            var dvCur = document.getElementById('mobileDrawerVersion');
+            if (dvCur && info.currentVersion) dvCur.textContent = 'v' + info.currentVersion;
+
+            // Drawer footer — latest version + update hint
+            var dvLatest = document.getElementById('mobileDrawerLatest');
+            if (dvLatest && info.latestVersion) {
+                var isNewer = info.latestVersion !== info.currentVersion;
+                if (isNewer) {
+                    dvLatest.innerHTML = '<i class="fas fa-arrow-circle-up"></i> v' + info.latestVersion + ' available';
+                    dvLatest.className = 'mdrawer-ver-latest mdrawer-update-available';
+                } else {
+                    dvLatest.innerHTML = '<i class="fas fa-check-circle"></i> Up to date';
+                    dvLatest.className = 'mdrawer-ver-latest mdrawer-up-to-date';
+                }
+            }
+        } catch(e) {}
     }
 
     /* ---- init ---- */
@@ -208,20 +239,12 @@
             if (e.key === 'Escape' && drawer.classList.contains('open')) shut();
         });
 
-        // Version info in footer
-        updateDrawerVersion();
+        updateVersionUI();
         window.addEventListener('storage', function(e) {
-            if (e.key === 'huntarr-version-info') updateDrawerVersion();
+            if (e.key === 'huntarr-version-info' || e.key === 'huntarr-github-stars') updateVersionUI();
         });
-    }
-
-    function updateDrawerVersion() {
-        var el = document.getElementById('mobileDrawerVersion');
-        if (!el) return;
-        try {
-            var info = JSON.parse(localStorage.getItem('huntarr-version-info') || '{}');
-            if (info.currentVersion) el.textContent = 'v' + info.currentVersion;
-        } catch(e) {}
+        // Also poll once after a delay (version info may load asynchronously)
+        setTimeout(updateVersionUI, 3000);
     }
 
     /* ---- page title sync ---- */
@@ -230,6 +253,8 @@
         if (el) el.textContent = title || 'Home';
     }
     window.updateMobilePageTitle = updateMobilePageTitle;
+    // Expose version update for external callers
+    window.updateMobileVersionUI = updateVersionUI;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {

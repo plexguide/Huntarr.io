@@ -87,17 +87,45 @@
         letter-spacing: .3px;
     }
 
+    /* Topbar chips (stars, version) */
+    .mtb-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 24px;
+        padding: 0 7px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        text-decoration: none;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+    .mtb-chip i { font-size: 9px; opacity: .8; }
+    .mtb-chip-stars {
+        background: rgba(255,193,7,.1);
+        border-color: rgba(255,193,7,.25);
+        color: #f5d060;
+    }
+    .mtb-chip-stars i { color: #ffd700; }
+    .mtb-chip-version {
+        background: rgba(52,152,219,.08);
+        border-color: rgba(52,152,219,.18);
+        color: #7cb8e4;
+    }
+    .mtb-chip-version i { color: #3498db; }
+
     /* Heart button */
     .mtb-icon-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 34px;
-        height: 34px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         text-decoration: none;
         transition: background .15s, transform .15s;
-        font-size: 15px;
+        font-size: 13px;
     }
     .mtb-icon-btn:active { transform: scale(.9); }
     .mtb-heart {
@@ -291,12 +319,36 @@
     .mdrawer-donate:hover { background: rgba(231,76,60,.16); text-decoration: none; }
     .mdrawer-donate i { font-size: 14px; }
 
-    .mdrawer-version {
+    /* Version row in footer */
+    .mdrawer-version-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
         margin-top: 8px;
         padding: 0 12px;
         font-size: 11px;
-        color: #4a5568;
         font-weight: 600;
+    }
+    .mdrawer-ver-current {
+        color: #7cb8e4;
+    }
+    .mdrawer-ver-latest {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .mdrawer-ver-latest i { font-size: 11px; }
+    .mdrawer-update-available {
+        color: #f59e0b;
+        background: rgba(245,158,11,.1);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 700;
+    }
+    .mdrawer-up-to-date {
+        color: #2ecc71;
+        font-size: 10px;
     }
 
     /* ===== HIDE ALL DESKTOP SIDEBARS ON MOBILE ===== */
@@ -345,6 +397,13 @@
 /* ===== SMALL PHONES ===== */
 @media (max-width: 480px) {
     .mtb-inner { height: 44px; padding: 0 8px; }
-    .mtb-title { font-size: 14px; }
+    .mtb-title { font-size: 13px; }
+    .mtb-right { gap: 5px; }
+    .mtb-chip { padding: 0 5px; font-size: 10px; height: 22px; }
+    .mtb-chip i { font-size: 8px; }
     .mdrawer { width: 260px; }
+}
+@media (max-width: 380px) {
+    /* Very small: hide stars chip to save space */
+    .mtb-chip-stars { display: none; }
 }

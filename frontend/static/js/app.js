@@ -82,6 +82,15 @@ let huntarrUI = {
                 if (typeof window.applyLogoToAllElements === 'function') {
                     window.applyLogoToAllElements();
                 }
+
+                // Settings are now loaded — initialize view toggle if on home (uses ui_preferences)
+                const basePath2 = (window.HUNTARR_BASE_URL || '').replace(/\/$/, '');
+                const currentPath2 = window.location.pathname.replace(/\/$/, '');
+                if (currentPath2 === '' || currentPath2 === basePath2) {
+                    if (window.HuntarrStats) {
+                        window.HuntarrStats.initViewToggle();
+                    }
+                }
             })
             .catch(() => {});
         
@@ -90,14 +99,13 @@ let huntarrUI = {
         this.setupLogoHandling();
         // Auto-save enabled - no unsaved changes handler needed
         
-        // Initialize media stats (works on root and reverse proxy subpaths like /huntarr/)
+        // Initialize media stats immediately (doesn't depend on settings)
         const basePath = (window.HUNTARR_BASE_URL || '').replace(/\/$/, '');
         const currentPath = window.location.pathname.replace(/\/$/, '');
         if (currentPath === '' || currentPath === basePath) {
             this.loadMediaStats();
-            // Initialize view toggle and start live polling on initial home load
+            // Start live polling (view toggle init moved to settings .then() above)
             if (window.HuntarrStats) {
-                window.HuntarrStats.initViewToggle();
                 window.HuntarrStats.startPolling();
             }
         }
