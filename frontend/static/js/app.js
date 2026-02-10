@@ -726,6 +726,14 @@ let huntarrUI = {
             if (mainContent) { mainContent.style.display = 'none'; }
             if (collectionView) { collectionView.style.display = 'block'; }
             if (calendarView) { calendarView.style.display = 'none'; }
+            
+            // Clear search when switching to collection view
+            var searchInput = document.getElementById('movie-hunt-collection-search-input');
+            if (searchInput) searchInput.value = '';
+            if (window.MovieHuntCollection && typeof window.MovieHuntCollection.showMainView === 'function') {
+                window.MovieHuntCollection.showMainView();
+            }
+
             newTitle = 'Movie Collection';
             this.currentSection = 'movie-hunt-collection';
             this.showMovieHuntSidebar();

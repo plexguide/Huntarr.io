@@ -64,7 +64,22 @@
 
     <!-- Movie Collection View (requested movies, status tracking) -->
     <div id="movie-hunt-collection-view" class="movie-hunt-collection-view" style="display: none;">
-        <div class="movies-controls movie-hunt-collection-controls">
+        <!-- Search bar: movies only -->
+        <div class="global-search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="movie-hunt-collection-search-input" placeholder="Search Movies">
+        </div>
+
+        <!-- Search Results View (movies only) -->
+        <div id="movie-hunt-collection-search-results-view" class="requestarr-view" style="display: none;">
+            <h2 class="search-results-title">Search Results</h2>
+            <div id="movie-hunt-collection-search-results-grid" class="search-results-grid">
+                <!-- Results populated by Movie Hunt JS -->
+            </div>
+        </div>
+
+        <div id="movie-hunt-collection-main-content">
+            <div class="movies-controls movie-hunt-collection-controls">
             <div class="instance-selector-container">
                 <select id="movie-hunt-collection-instance-select" class="control-select instance-select">
                     <option value="">Loading instances...</option>
@@ -118,6 +133,7 @@
                     <p>Loading media collection...</p>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 

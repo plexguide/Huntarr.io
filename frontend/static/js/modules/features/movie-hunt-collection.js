@@ -20,7 +20,130 @@
             this.setupInstanceSelect();
             this.setupSort();
             this.setupViewMode();
+            this.setupSearch();
             this.loadCollection();
+        },
+
+        setupSearch: function() {
+            var self = this;
+            var input = document.getElementById('movie-hunt-collection-search-input');
+            if (!input) return;
+
+            input.addEventListener('input', function() {
+                if (self.searchTimeout) clearTimeout(self.searchTimeout);
+                var query = (input.value || '').trim();
+
+                if (!query) {
+                    self.showMainView();
+                    return;
+                }
+
+                self.searchTimeout = setTimeout(function() {
+                    self.performSearch(query);
+                }, 500);
+            });
+        },
+
+        showMainView: function() {
+            var resultsView = document.getElementById('movie-hunt-collection-search-results-view');
+            var mainContent = document.getElementById('movie-hunt-collection-main-content');
+            if (resultsView) resultsView.style.display = 'none';
+            if (mainContent) mainContent.style.display = 'block';
+        },
+
+        showResultsView: function() {
+            var resultsView = document.getElementById('movie-hunt-collection-search-results-view');
+            var mainContent = document.getElementById('movie-hunt-collection-main-content');
+            if (resultsView) resultsView.style.display = 'block';
+            if (mainContent) mainContent.style.display = 'none';
+        },
+
+        performSearch: function(query) {
+            var self = this;
+            var grid = document.getElementById('movie-hunt-collection-search-results-grid');
+            if (!grid) return;
+
+            self.showResultsView();
+            grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching movies...</p></div>';
+
+            // Use the currently selected Movie Hunt instance for library status check
+            var instanceSelect = document.getElementById('movie-hunt-collection-instance-select');
+            var instanceName = instanceSelect ? instanceSelect.value : '';
+
+            var url = './api/requestarr/search?q=' + encodeURIComponent(query) + '&app_type=movie_hunt&instance_name=' + encodeURIComponent(instanceName);
+            
+            fetch(url)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var results = data.results || [];
+                    grid.innerHTML = '';
+
+                    if (results.length === 0) {
+                        grid.innerHTML = '<p style="color: #888; text-align: center; padding: 40px; width: 100%;">No movies found matching "' + query + '"</p>';
+                        return;
+                    }
+
+                    results.forEach(function(item) {
+                        var card = self.createSearchCard(item);
+                        if (card) grid.appendChild(card);
+                    });
+                })
+                .catch(function(err) {
+                    console.error('[MovieHuntCollection] Search failed:', err);
+                    grid.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 40px; width: 100%;">Search failed. Please try again.</p>';
+                });
+        },
+
+        createSearchCard: function(item) {
+            var self = this;
+            // Use the global createMediaCard if available (via HomeRequestarr/RequestarrContent)
+            // or fall back to a simplified version if not
+            if (window.HomeRequestarr && typeof window.HomeRequestarr.createMediaCard === 'function') {
+                // Determine suggested instance
+                var instanceSelect = document.getElementById('movie-hunt-collection-instance-select');
+                var suggestedInstance = instanceSelect ? instanceSelect.value : null;
+                // If the value doesn't already have the prefix, add it
+                if (suggestedInstance && suggestedInstance.indexOf('movie_hunt:') !== 0) {
+                    suggestedInstance = 'movie_hunt:' + suggestedInstance;
+                }
+                return window.HomeRequestarr.createMediaCard(item, suggestedInstance);
+            }
+
+            // Fallback simplified card
+            var card = document.createElement('div');
+            card.className = 'media-card';
+            var title = (item.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            var year = item.year || 'N/A';
+            var posterUrl = item.poster_path || './static/images/blackout.jpg';
+            
+            card.innerHTML = '<div class="media-card-poster">' +
+                '<img src="' + posterUrl + '" alt="' + title + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
+                '<div class="media-card-overlay">' +
+                '<div class="media-card-overlay-title">' + title + '</div>' +
+                '<div class="media-card-overlay-content">' +
+                '<div class="media-card-overlay-year">' + year + '</div>' +
+                '<button class="media-card-request-btn"><i class="fas fa-download"></i> Request</button>' +
+                '</div></div>' +
+                '</div>' +
+                '<div class="media-card-info">' +
+                '<div class="media-card-title" title="' + title + '">' + title + '</div>' +
+                '<div class="media-card-meta">' +
+                '<span class="media-card-year">' + year + '</span>' +
+                '</div></div>';
+
+            card.onclick = function() {
+                var instanceSelect = document.getElementById('movie-hunt-collection-instance-select');
+                var suggestedInstance = instanceSelect ? instanceSelect.value : null;
+                if (suggestedInstance && suggestedInstance.indexOf('movie_hunt:') !== 0) {
+                    suggestedInstance = 'movie_hunt:' + suggestedInstance;
+                }
+                
+                if (window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
+                    window.MovieHuntDetail.openDetail(item, { suggestedInstance: suggestedInstance });
+                }
+            };
+
+            return card;
         },
 
         setupInstanceSelect: function() {
