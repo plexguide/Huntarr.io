@@ -867,24 +867,24 @@
             const data = await this.fetchMovieHuntStatus(tmdbId, this.selectedInstanceId);
             const isDownloaded = data && data.found && (data.status || '').toLowerCase() === 'downloaded';
 
-            // Update action button
+            // Update action button — hide if already downloaded or already requested
             const actionsContainer = document.getElementById('mh-detail-actions');
             if (actionsContainer) {
-                let btn = '';
-                if (isDownloaded) {
-                    btn = '<span class="mh-btn mh-btn-success mh-btn-static"><i class="fas fa-check-circle"></i> Already in library</span>';
+                var isRequested = data && data.found && !isDownloaded;
+                if (isDownloaded || isRequested) {
+                    // Status badge in the info bar already communicates the state
+                    actionsContainer.innerHTML = '';
                 } else {
-                    btn = '<button class="mh-btn mh-btn-primary" id="mh-btn-request"><i class="fas fa-plus-circle"></i> Add to Library</button>';
-                }
-                actionsContainer.innerHTML = btn;
-                const requestBtn = document.getElementById('mh-btn-request');
-                if (requestBtn) {
-                    requestBtn.addEventListener('click', () => {
-                        const id = this.currentMovie.tmdb_id || this.currentMovie.id;
-                        if (id && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
-                            window.RequestarrDiscover.modal.openModal(id, 'movie');
-                        }
-                    });
+                    actionsContainer.innerHTML = '<button class="mh-btn mh-btn-primary" id="mh-btn-request"><i class="fas fa-plus-circle"></i> Add to Library</button>';
+                    const requestBtn = document.getElementById('mh-btn-request');
+                    if (requestBtn) {
+                        requestBtn.addEventListener('click', () => {
+                            const id = this.currentMovie.tmdb_id || this.currentMovie.id;
+                            if (id && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                                window.RequestarrDiscover.modal.openModal(id, 'movie');
+                            }
+                        });
+                    }
                 }
             }
 
