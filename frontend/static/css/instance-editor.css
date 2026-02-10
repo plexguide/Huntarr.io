@@ -1,0 +1,650 @@
+/* ============================================================
+   Instance Editor — Modern Redesign
+   Scoped to #instanceEditorSection to avoid global leaks.
+   ============================================================ */
+
+/* ---- Section root ---- */
+#instanceEditorSection {
+    display: none;
+    width: 100%;
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: visible !important;
+    overflow-x: hidden;
+    padding: 0;
+    margin: 0;
+    position: relative !important;
+    z-index: 1;
+}
+
+#instanceEditorSection.active {
+    display: block !important;
+}
+
+#instanceEditorContainer {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px 24px;
+    padding-bottom: 150px;
+    min-height: 100%;
+}
+
+/* ============================================================
+   Header / Toolbar
+   ============================================================ */
+#instanceEditorSection .instance-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding: 14px 20px;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 14px;
+    gap: 16px;
+}
+
+.instance-editor-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+/* Breadcrumb */
+.instance-editor-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: #64748b;
+    min-width: 0;
+}
+
+.ie-breadcrumb-app {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #94a3b8;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ie-breadcrumb-app i {
+    font-size: 0.95rem;
+    opacity: 0.7;
+}
+
+.instance-editor-breadcrumb .fa-chevron-right {
+    font-size: 0.6rem;
+    color: #475569;
+}
+
+.ie-breadcrumb-name {
+    color: #e2e8f0;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 260px;
+}
+
+/* ---- Buttons ---- */
+#instanceEditorSection .ie-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+/* Ghost back button */
+#instanceEditorSection .ie-btn-ghost {
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+}
+
+#instanceEditorSection .ie-btn-ghost:hover {
+    background: rgba(148, 163, 184, 0.15);
+    border-color: rgba(148, 163, 184, 0.22);
+    color: #e2e8f0;
+    transform: translateX(-2px);
+}
+
+/* Save button — disabled */
+#instanceEditorSection .save-btn-dynamic {
+    background: rgba(71, 85, 105, 0.35) !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+    cursor: not-allowed !important;
+    border: 1px solid rgba(148, 163, 184, 0.06) !important;
+    opacity: 0.7;
+    box-shadow: none !important;
+}
+
+/* Save button — enabled */
+#instanceEditorSection .save-btn-dynamic.enabled {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+#instanceEditorSection .save-btn-dynamic.enabled:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ============================================================
+   Grid Layout
+   ============================================================ */
+#instance-editor-content * {
+    box-sizing: border-box !important;
+}
+
+#instanceEditorSection .editor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 22px;
+    padding: 0;
+    width: 100%;
+    align-items: start;
+}
+
+/* ============================================================
+   Section Cards — Glass-morphism
+   ============================================================ */
+#instanceEditorSection .editor-section {
+    background: rgba(30, 41, 59, 0.32);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(148, 163, 184, 0.07);
+    border-radius: 16px;
+    padding: 26px 28px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+}
+
+#instanceEditorSection .editor-section:hover {
+    border-color: rgba(148, 163, 184, 0.14);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================================
+   Section Titles
+   ============================================================ */
+#instanceEditorSection .editor-section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.07);
+}
+
+#instanceEditorSection .editor-section-title .section-title-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}
+
+#instanceEditorSection .editor-section-title .section-title-icon {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0.8rem;
+}
+
+/* Per-section accent colors */
+.section-title-icon.accent-connection {
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+}
+.section-title-icon.accent-search {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+}
+.section-title-icon.accent-stateful {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+}
+.section-title-icon.accent-additional {
+    background: rgba(249, 115, 22, 0.12);
+    color: #fb923c;
+}
+.section-title-icon.accent-tags {
+    background: rgba(139, 92, 246, 0.12);
+    color: #a78bfa;
+}
+.section-title-icon.accent-advanced {
+    background: rgba(100, 116, 139, 0.12);
+    color: #94a3b8;
+}
+.section-title-icon.accent-seed {
+    background: rgba(6, 182, 212, 0.12);
+    color: #22d3ee;
+}
+.section-title-icon.accent-exempt {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+}
+
+/* ============================================================
+   Field Groups & Setting Items
+   ============================================================ */
+#instanceEditorSection .editor-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 22px;
+    width: 100%;
+}
+
+#instanceEditorSection .editor-field-group:last-child {
+    margin-bottom: 0;
+}
+
+#instanceEditorSection .editor-setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    align-items: flex-start;
+}
+
+#instanceEditorSection .editor-setting-item.flex-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ---- Labels ---- */
+#instanceEditorSection .editor-setting-item label {
+    color: #e2e8f0;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin: 0 !important;
+    width: auto !important;
+    display: block !important;
+    text-align: left !important;
+    letter-spacing: 0.01em;
+}
+
+/* ---- Inputs / Selects ---- */
+#instanceEditorSection .editor-setting-item input[type="text"],
+#instanceEditorSection .editor-setting-item input[type="number"],
+#instanceEditorSection .editor-setting-item input[type="password"],
+#instanceEditorSection .editor-field-group input[type="text"],
+#instanceEditorSection .editor-field-group input[type="number"],
+#instanceEditorSection .editor-field-group input[type="password"],
+#instanceEditorSection .editor-setting-item select,
+#instanceEditorSection .editor-field-group select {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(15, 23, 42, 0.5);
+    color: #f1f5f9;
+    font-size: 0.925rem;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+    margin: 0 !important;
+    line-height: 1.4;
+}
+
+#instanceEditorSection .editor-setting-item select,
+#instanceEditorSection .editor-field-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+}
+
+#instanceEditorSection .editor-setting-item input:focus,
+#instanceEditorSection .editor-setting-item select:focus,
+#instanceEditorSection .editor-field-group input:focus,
+#instanceEditorSection .editor-field-group select:focus {
+    border-color: rgba(99, 102, 241, 0.45);
+    outline: none;
+    background: rgba(15, 23, 42, 0.7);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08), inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+#instanceEditorSection .editor-setting-item input::placeholder,
+#instanceEditorSection .editor-field-group input::placeholder {
+    color: #4a5568;
+}
+
+/* ---- Help Text ---- */
+#instanceEditorSection .editor-help-text {
+    color: #64748b;
+    font-size: 0.82rem;
+    margin: 2px 0 0 0 !important;
+    padding-left: 1px;
+    line-height: 1.5;
+    text-align: left !important;
+    width: 100%;
+}
+
+#instanceEditorSection .editor-help-text a {
+    transition: opacity 0.2s ease;
+}
+#instanceEditorSection .editor-help-text a:hover {
+    opacity: 0.8;
+}
+
+/* ============================================================
+   Connection Status Badges
+   ============================================================ */
+#instanceEditorSection .connection-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 13px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    text-transform: none;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+#instanceEditorSection .connection-status.checking {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+#instanceEditorSection .connection-status.success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.08);
+}
+
+#instanceEditorSection .connection-status.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ============================================================
+   Toggles (scoped override)
+   ============================================================ */
+#instanceEditorSection .editor-section .toggle-switch {
+    margin: 0 !important;
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   Reset State Button
+   ============================================================ */
+#instanceEditorSection .btn-reset-state {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    transition: all 0.25s ease;
+}
+
+/* ============================================================
+   State Status Display (green box)
+   ============================================================ */
+#instanceEditorSection #state-status-display {
+    border-radius: 12px !important;
+}
+
+/* ============================================================
+   Warning / Info Boxes
+   ============================================================ */
+#instanceEditorSection .ie-warning-box {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+#instanceEditorSection .ie-warning-box.warn-amber {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fcd34d;
+}
+
+#instanceEditorSection .ie-warning-box.warn-red {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+/* ============================================================
+   Disabled / Readonly Fields
+   ============================================================ */
+#instanceEditorSection .editor-field-disabled input,
+#instanceEditorSection .editor-field-disabled select,
+#instanceEditorSection .editor-field-disabled .toggle-switch {
+    opacity: 0.45;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+#instanceEditorSection .editor-field-disabled label {
+    opacity: 0.45;
+}
+
+#instanceEditorSection .editor-field-readonly .editor-input-readonly,
+#instanceEditorSection input.editor-input-readonly {
+    background: rgba(71, 85, 105, 0.3) !important;
+    color: rgba(148, 163, 184, 0.85) !important;
+    cursor: not-allowed !important;
+    border-color: rgba(148, 163, 184, 0.1) !important;
+}
+
+/* ============================================================
+   Exempt Tags
+   ============================================================ */
+#instanceEditorSection .exempt-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: rgba(220, 38, 38, 0.85);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+#instanceEditorSection .exempt-tag-chip:hover {
+    background: rgba(220, 38, 38, 1);
+}
+
+#instanceEditorSection .exempt-tag-chip .exempt-tag-remove {
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.15s ease;
+}
+
+#instanceEditorSection .exempt-tag-chip .exempt-tag-remove:hover {
+    opacity: 1;
+}
+
+/* Exempt tags nested section */
+#instanceEditorSection .editor-section .editor-section.exempt-tags-subsection {
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: 12px;
+    padding: 18px;
+    background: rgba(239, 68, 68, 0.04);
+    margin-top: 16px;
+}
+
+/* Indexer category pills */
+#instanceEditorSection .indexer-categories-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    min-height: 24px;
+}
+
+#instanceEditorSection .indexer-category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: #fca5a5;
+    font-size: 0.8125rem;
+}
+
+#instanceEditorSection .indexer-category-pill .indexer-category-remove {
+    cursor: pointer;
+    color: #fca5a5;
+    font-size: 14px;
+    padding: 0 2px;
+    transition: color 0.2s;
+}
+
+#instanceEditorSection .indexer-category-pill .indexer-category-remove:hover {
+    color: #fff;
+}
+
+/* ============================================================
+   Hourly Cap Warning
+   ============================================================ */
+#instanceEditorSection .editor-hourly-cap-warning {
+    margin-top: 8px;
+    padding: 12px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 10px;
+    color: #fca5a5;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* ============================================================
+   Enable-status icon (inline with label)
+   ============================================================ */
+#instanceEditorSection #enable-status-icon {
+    margin-left: 6px;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 900px) {
+    #instanceEditorSection .editor-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    #instanceEditorContainer {
+        padding: 16px 12px;
+        padding-bottom: 100px;
+    }
+
+    #instanceEditorSection .instance-editor-header {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+    }
+
+    .instance-editor-nav {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .instance-editor-breadcrumb {
+        display: none;
+    }
+
+    #instanceEditorSection .editor-section {
+        padding: 20px 18px;
+        border-radius: 14px;
+    }
+
+    #instanceEditorSection .editor-section-title {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+
+    #instanceEditorSection .connection-status {
+        max-width: 100%;
+    }
+
+    #instanceEditorSection .ie-btn {
+        padding: 8px 14px;
+        font-size: 0.82rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #instanceEditorSection .editor-grid {
+        gap: 16px;
+    }
+
+    #instanceEditorSection .editor-section {
+        padding: 18px 14px;
+    }
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes ie-pulse-success {
+    0%, 100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.08); }
+    50% { box-shadow: 0 0 18px rgba(16, 185, 129, 0.15); }
+}
+
+#instanceEditorSection .connection-status.success {
+    animation: ie-pulse-success 3s ease-in-out infinite;
+}
+
+@keyframes ie-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   Client editor title styling
+   ============================================================ */
+.client-editor-title-app {
+    color: #f59e0b;
+    font-weight: 700;
+}

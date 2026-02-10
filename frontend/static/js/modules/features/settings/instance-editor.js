@@ -137,6 +137,16 @@
         this._currentEditing = { appType, index, originalInstance: JSON.parse(JSON.stringify(instance)) };
         _instanceEditorDirty = false;
 
+        // Update breadcrumb in the header
+        const bcAppName = document.getElementById('ie-breadcrumb-app-name');
+        const bcInstanceName = document.getElementById('ie-breadcrumb-instance-name');
+        const bcAppIcon = document.querySelector('.ie-breadcrumb-app i');
+        if (bcAppName) bcAppName.textContent = appType.charAt(0).toUpperCase() + appType.slice(1);
+        if (bcInstanceName) bcInstanceName.textContent = instance.name || (isEdit ? 'Edit Instance' : 'New Instance');
+        if (bcAppIcon) {
+            bcAppIcon.className = 'fas ' + this.getAppIcon(appType);
+        }
+
         const contentEl = document.getElementById('instance-editor-content');
         if (contentEl) {
             try {
@@ -262,8 +272,7 @@
         const chip = document.createElement('span');
         chip.className = 'exempt-tag-chip';
         chip.setAttribute('data-tag', tag);
-        chip.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: #dc2626; color: #fff; border-radius: 6px; font-size: 0.875rem;';
-        chip.innerHTML = '<span class="exempt-tag-remove" style="cursor: pointer; opacity: 0.9;" title="Remove" aria-label="Remove">×</span><span>' + String(tag).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+        chip.innerHTML = '<span class="exempt-tag-remove" title="Remove" aria-label="Remove">×</span><span>' + String(tag).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
         listEl.appendChild(chip);
         inputEl.value = '';
         _instanceEditorDirty = true;
@@ -507,131 +516,13 @@
         const placeholderUrl = `http://192.168.1.100:${defaultPort}`;
 
         let html = `
-            <style>
-                #instance-editor-content * {
-                    box-sizing: border-box !important;
-                }
-                .editor-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-                    gap: 25px;
-                    padding: 10px;
-                    width: 100%;
-                }
-                .editor-section {
-                    background: rgba(30, 41, 59, 0.4);
-                    border: 1px solid rgba(148, 163, 184, 0.1);
-                    border-radius: 12px;
-                    padding: 24px;
-                    display: flex;
-                    flex-direction: column;
-                    width: 100%;
-                    overflow: hidden;
-                }
-                .editor-section-title {
-                    font-size: 1.1rem;
-                    font-weight: 600;
-                    color: #f8fafc;
-                    margin-bottom: 20px;
-                    padding-bottom: 12px;
-                    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                .editor-field-group {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                    margin-bottom: 26px;
-                    width: 100%;
-                }
-                .editor-field-group:last-child {
-                    margin-bottom: 0;
-                }
-                .editor-setting-item {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                    width: 100%;
-                    align-items: flex-start;
-                    padding-right: 21px;
-                }
-                .editor-setting-item.flex-row {
-                    flex-direction: row;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding-right: 29px;
-                }
-                .editor-setting-item label {
-                    color: #f8fafc;
-                    font-weight: 500;
-                    font-size: 0.95rem;
-                    margin: 0 !important;
-                    width: auto !important;
-                    display: block !important;
-                    text-align: left !important;
-                }
-                .editor-setting-item input[type="text"],
-                .editor-setting-item input[type="number"],
-                .editor-setting-item select {
-                    width: 100%;
-                    padding: 12px;
-                    border-radius: 8px;
-                    border: 1px solid rgba(148, 163, 184, 0.2);
-                    background: rgba(15, 23, 42, 0.6);
-                    color: white;
-                    font-size: 0.95rem;
-                    transition: all 0.2s ease;
-                    margin: 0 !important;
-                }
-                .editor-setting-item input:focus,
-                .editor-setting-item select:focus {
-                    border-color: #6366f1;
-                    outline: none;
-                    background: rgba(15, 23, 42, 0.8);
-                }
-                .editor-help-text {
-                    color: #94a3b8;
-                    font-size: 0.85rem;
-                    margin: 0 !important;
-                    padding-left: 2px;
-                    line-height: 1.4;
-                    text-align: left !important;
-                    width: 100%;
-                }
-                .editor-section .toggle-switch {
-                    margin: 0 !important;
-                    flex-shrink: 0;
-                }
-                .btn-reset-state {
-                    width: 100%; 
-                    justify-content: center; 
-                    padding: 12px;
-                    margin-bottom: 15px;
-                }
-                .editor-field-disabled input,
-                .editor-field-disabled select,
-                .editor-field-disabled .toggle-switch {
-                    opacity: 0.5;
-                    pointer-events: none;
-                    cursor: not-allowed;
-                }
-                .editor-field-disabled label {
-                    opacity: 0.5;
-                }
-                .editor-field-readonly .editor-input-readonly,
-                input.editor-input-readonly {
-                    background: rgba(71, 85, 105, 0.4) !important;
-                    color: rgba(148, 163, 184, 0.9) !important;
-                    cursor: not-allowed !important;
-                    border-color: rgba(148, 163, 184, 0.15) !important;
-                }
-            </style>
             <div class="editor-grid">
                 <div class="editor-section">
                     <div class="editor-section-title">
-                        <span>Connection Details</span>
+                        <span class="section-title-text">
+                            <span class="section-title-icon accent-connection"><i class="fas fa-plug"></i></span>
+                            Connection Details
+                        </span>
                         <div id="connection-status-container"></div>
                     </div>
                     
@@ -686,7 +577,7 @@
         if (appType === 'sonarr') {
             html += `
                 <div class="editor-section">
-                    <div class="editor-section-title">Search Settings</div>
+                    <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-search"><i class="fas fa-search"></i></span>Search Settings</span></div>
                     
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
@@ -764,7 +655,7 @@
         } else if (['radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(appType)) {
              html += `
                 <div class="editor-section">
-                    <div class="editor-section-title">Search Settings</div>
+                    <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-search"><i class="fas fa-search"></i></span>Search Settings</span></div>
                     
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
@@ -877,7 +768,7 @@
         // Stateful Management Section (separate from Advanced)
         html += `
                 <div class="editor-section">
-                    <div class="editor-section-title">Stateful Management</div>
+                    <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-stateful"><i class="fas fa-database"></i></span>Stateful Management</span></div>
                     
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
@@ -918,10 +809,10 @@
                 </div>
                 
                 <div class="editor-section">
-                    <div class="editor-section-title">Additional Settings</div>
+                    <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-additional"><i class="fas fa-sliders-h"></i></span>Additional Settings</span></div>
                     
                     <div class="editor-field-group" style="margin-bottom: 12px;">
-                        <div style="padding: 10px 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 6px; color: #fcd34d; font-size: 0.85rem; line-height: 1.4;">
+                        <div class="ie-warning-box warn-amber">
                             <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> Do not overwhelm your indexers. Contact them for advice!
                         </div>
                     </div>
@@ -970,7 +861,7 @@
                 </div>
                 
                 <div class="editor-section">
-                    <div class="editor-section-title">Tags</div>
+                    <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-tags"><i class="fas fa-tags"></i></span>Tags</span></div>
                     
                     <div class="editor-field-group">
                         <div class="editor-setting-item flex-row">
@@ -1021,8 +912,8 @@
                     </div>
                     ` : ''}
                     
-                    <div class="editor-section" style="border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 10px; padding: 14px; background: rgba(231, 76, 60, 0.06); margin-top: 16px;">
-                        <div class="editor-section-title">Exempt Tags</div>
+                    <div class="editor-section exempt-tags-subsection" style="margin-top: 16px;">
+                        <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-exempt"><i class="fas fa-shield-alt"></i></span>Exempt Tags</span></div>
                         <p class="editor-help-text" style="margin-bottom: 12px;">Items with any of these tags are skipped for missing and upgrade searches. If the tag is removed in the app, Huntarr will process the item again. <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener" style="color: #94a3b8;">#676</a></p>
                         <div class="editor-field-group">
                             <div class="editor-setting-item">
@@ -1035,8 +926,8 @@
                             <p class="editor-help-text" style="color: #94a3b8; font-size: 0.85rem;">Tag &quot;upgradinatorr&quot; cannot be added.</p>
                             <div id="editor-exempt-tags-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; min-height: 24px;">
                                 ${(safeInstance.exempt_tags || []).map(tag => `
-                                    <span class="exempt-tag-chip" data-tag="${(tag || '').replace(/"/g, '&quot;')}" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: #dc2626; color: #fff; border-radius: 6px; font-size: 0.875rem;">
-                                        <span class="exempt-tag-remove" style="cursor: pointer; opacity: 0.9;" title="Remove" aria-label="Remove">×</span>
+                                    <span class="exempt-tag-chip" data-tag="${(tag || '').replace(/"/g, '&quot;')}">
+                                        <span class="exempt-tag-remove" title="Remove" aria-label="Remove">×</span>
                                         <span>${(tag || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
                                     </span>
                                 `).join('')}
@@ -1046,7 +937,7 @@
                 </div>
                 
                 <div class="editor-section">
-                    <div class="editor-section-title">Advanced Settings</div>
+                    <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-advanced"><i class="fas fa-wrench"></i></span>Advanced Settings</span></div>
                     
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
@@ -1099,7 +990,7 @@
                 </div>
                 
                 <div class="editor-section">
-                    <div class="editor-section-title">Max Seed Queue (torrents only)</div>
+                    <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-seed"><i class="fas fa-seedling"></i></span>Max Seed Queue (torrents only)</span></div>
                     <p class="editor-help-text" style="margin-bottom: 10px;">Skip hunts when this many torrents are actively seeding. Configure the torrent client below so Huntarr can read the seeding count.</p>
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
