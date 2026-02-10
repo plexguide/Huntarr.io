@@ -622,7 +622,9 @@ button {
     padding: 0;
     border-radius: 12px;
     cursor: pointer;
-    overflow: hidden;
+    /* NO overflow:hidden — it clips the knob shadow asymmetrically
+       and makes the knob appear to droop. */
+    overflow: visible;
 }
 
 .toggle-switch input,
@@ -641,6 +643,8 @@ button {
     left: 0;
     width: 44px;
     height: 24px;
+    /* border-box so the 1px border is INSIDE the 24px height */
+    box-sizing: border-box;
     background: rgba(30, 41, 59, 0.7);
     border: 1px solid rgba(245, 158, 11, 0.3);
     border-radius: 12px;
@@ -649,15 +653,22 @@ button {
 
 .toggle-slider:before {
     position: absolute;
+    /* border-box on both the slider and the knob for consistency */
+    box-sizing: border-box;
     content: "";
     width: 18px;
     height: 18px;
-    top: 3px;       /* (24 − 18) / 2 = 3px — perfectly centred vertically */
-    left: 3px;
+    /* With border-box on the slider, the 1px border is inside the 24px.
+       The padding-box (where abs children are placed) is 22px tall.
+       Centre the 18px knob in 22px: (22 − 18) / 2 = 2px */
+    top: 2px;
+    left: 2px;
+    bottom: auto;
+    right: auto;
     background: #e2e8f0;
     border-radius: 50%;
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    box-shadow: none;
 }
 
 input:checked + .toggle-slider {
