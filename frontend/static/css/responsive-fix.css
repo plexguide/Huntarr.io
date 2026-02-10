@@ -19,35 +19,12 @@
 
 /* Auto-save enabled - save button removed */
 
-/* Mobile-specific settings adjustments */
+/* Mobile-specific settings adjustments — sidebar hidden (mobile.css) */
 @media (max-width: 768px) {
-    /* Force mobile mode at this breakpoint for consistency - moved from tablet view */
-    .sidebar {
-        width: 60px !important;
-        min-width: 60px !important;
-        max-width: 60px !important;
-    }
-    
     .main-content {
         margin-left: 0 !important;
-        width: calc(100% - 60px) !important;
+        width: 100% !important;
     }
-    
-    /* Navbar item adjustments - moved from tablet view */
-    .nav-item {
-        padding: 10px 0;
-        justify-content: center;
-    }
-    
-    .nav-item span {
-        display: none !important;
-    }
-    
-    .nav-icon-wrapper {
-        margin-right: 0 !important;
-    }
-    
-    /* Auto-save enabled - save button styles removed */
     
     /* SWAPARR MOBILE RESPONSIVE FIX - Force vertical layout on mobile */
     .app-stats-card.swaparr .stats-numbers {

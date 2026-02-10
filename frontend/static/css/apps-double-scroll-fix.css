@@ -24,11 +24,11 @@ html, body {
     width: calc(100% - 218px) !important;
 }
 
-/* Mobile adjustments */
+/* Mobile: sidebar hidden, full-width (see mobile.css) */
 @media (max-width: 768px) {
     .main-content {
-        left: 60px !important; /* Mobile sidebar width */
-        width: calc(100% - 60px) !important;
+        left: 0 !important;
+        width: 100% !important;
     }
 }
 

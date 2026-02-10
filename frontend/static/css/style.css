@@ -174,11 +174,6 @@ button {
         padding: 0;
     }
     
-    .top-bar {
-        display: flex;
-        align-items: center;
-        flex-wrap: nowrap;
-    }
 }
 
 /* Phone-specific height adjustments - FLEX BASED */
@@ -850,81 +845,15 @@ input:disabled + .toggle-slider {
 }
 
 /* Responsive Adjustments */
+/* Mobile layout — sidebar hidden, full-width content (see mobile.css) */
 @media (max-width: 768px) {
-    .sidebar {
-        width: 60px !important;
-        min-width: 60px !important;
-        max-width: 60px !important;
-    }
-    
     .main-content {
         margin-left: 0 !important;
-        width: calc(100% - 60px) !important;
+        width: 100% !important;
         flex: 1;
         display: flex;
         flex-direction: column;
-        height: 100vh;
-        overflow: hidden;
-    }
-    
-    /* Ensure content sections use flex properly on mobile */
-    .content-section {
-        flex: 1;
-        height: 0; /* Force flex calculation */
-        overflow-y: auto;
-        padding: 15px;
-        box-sizing: border-box;
-    }
-    
-    .content-section.active {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    /* Navbar item adjustments */
-    .nav-item {
-        padding: 10px 0;
-        justify-content: center;
-    }
-    
-    .nav-item span {
-        display: none !important;
-    }
-    
-    .nav-icon-wrapper {
-        margin-right: 0 !important;
-    }
-    
-    /* Logo container */
-    .logo-container {
-        justify-content: center !important;
-        padding: 15px 0 !important;
-    }
-    
-    .logo-container h1 {
-        display: none !important;
-    }
-    
-    .logo {
-        width: 40px !important;
-        height: 40px !important;
-    }
-    
-    /* Fix active/hover state */
-    .nav-item:hover,
-    .nav-item.active {
-        background: rgba(65, 105, 225, 0.2) !important;
-        width: 50px !important;
-        margin: 0 auto !important;
-        border-radius: 8px !important;
-    }
-    
-    /* Topbar adjustments */
-    .topbar-section.center {
-        position: relative !important;
-        left: 0 !important;
-        transform: none !important;
-        justify-content: center !important;
+        min-height: 0;
     }
 }
 

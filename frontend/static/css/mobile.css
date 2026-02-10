@@ -1,154 +1,336 @@
 /*
  * Huntarr Mobile CSS
- * Handles all mobile-specific styling and sidebar behavior
+ * Modern hamburger-drawer navigation — no persistent sidebar on mobile.
  */
 
-/* Mobile viewport adjustments */
+/* ===============================================================
+   MOBILE TOPBAR (.mtb)
+   =============================================================== */
+.mtb { display: none; }  /* hidden on desktop */
+
 @media (max-width: 768px) {
-    /* Sidebar behavior - exactly like desktop but with mobile styling */
-    .sidebar {
-        width: 60px !important;
-        padding: 20px 0 !important;
-    }
-    
-    /* Hide sidebar text and labels in mobile */
-    .sidebar h1, 
-    .nav-item span, 
-    .switch-label {
-        display: none !important;
-    }
-    
-    /* Adjust nav item icons for mobile */
-    .nav-item i {
-        margin-right: 0 !important;
-        font-size: 22px !important;
-    }
-    
-    /* Fix hover effect causing layout shift - disable all transitions and size changes */
-    .sidebar .nav-item {
-        transition: none !important;
-        margin-bottom: 10px !important;
-    }
-    
-    .sidebar .nav-item:hover,
-    .sidebar .nav-item.active {
-        width: auto !important;
-        margin: 0 !important;
-        margin-bottom: 10px !important;
-        padding: 14px 24px !important;
-        transform: none !important;
-    }
-    
-    /* Add spacer below sponsor icon on mobile - half space */
-    .sidebar .sponsor-nav::after {
-        content: '';
+    .mtb {
         display: block;
-        height: 24px;
+        position: sticky;
+        top: 0;
+        z-index: 200;
+        background: linear-gradient(135deg, rgba(22,30,44,.98), rgba(15,22,35,.98));
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255,255,255,.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,.3);
     }
-    
-    /* Add spacing between nav items on mobile */
-    .sidebar .nav-menu {
-        gap: 0 !important;
+    .mtb-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 48px;
+        padding: 0 12px;
     }
-    
-    /* Add spacing between nav groups */
-    .sidebar .nav-group {
-        margin-bottom: 10px !important;
+    .mtb-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
     }
-    
-    /* Remove extra spacing from last nav item in groups */
-    .sidebar .nav-group .nav-item:last-child {
-        margin-bottom: 0 !important;
-    }
-    
-    /* Respect JavaScript visibility control on mobile — when JS sets
-       display:none on nav items/groups (e.g. hiding Apps, Settings,
-       Requestarr when on System view), it must override flex !important. */
-    .nav-item[style*="display: none"],
-    .nav-group[style*="display: none"],
-    .nav-sub-group[style*="display: none"] {
-        display: none !important;
-    }
-
-    /* Hide most sub-groups on mobile — sub-items are meaningless as
-       unlabeled icons. Exception: System sub-group matches desktop. */
-    .nav-sub-group {
-        display: none !important;
+    .mtb-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
     }
 
-    /* Show System sub-group on mobile when expanded (matches desktop) */
-    #system-sub.expanded {
-        display: block !important;
+    /* Hamburger button */
+    .mtb-hamburger {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        width: 32px;
+        height: 32px;
+        padding: 6px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        border-radius: 6px;
+        transition: background .15s;
     }
-    
-    /* Center logo in mobile */
-    .logo-container {
-        justify-content: center !important;
+    .mtb-hamburger:active { background: rgba(255,255,255,.08); }
+    .mtb-hamburger span {
+        display: block;
+        width: 18px;
+        height: 2px;
+        background: #c8d0dc;
+        border-radius: 1px;
+        transition: .2s;
     }
-    
-    .logo {
-        margin-right: 0 !important;
+
+    /* Logo link */
+    .mtb-logo-link {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
     }
-    
-    /* Requestarr and Movie Hunt sidebars - same JavaScript behavior as desktop */
-    #requestarr-sidebar,
-    #movie-hunt-sidebar {
-        width: 60px !important;
-        padding: 20px 0 !important;
+    .mtb-logo {
+        border-radius: 6px;
     }
-    
-    /* When JavaScript sets display: none, enforce it */
-    #sidebar[style*="display: none"],
-    #requestarr-sidebar[style*="display: none"],
-    #movie-hunt-sidebar[style*="display: none"] {
-        display: none !important;
+
+    /* Page title */
+    .mtb-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #e8ecf2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: .3px;
     }
-    
-    /* When JavaScript sets display: block/flex, show as flex */
-    #sidebar[style*="display: block"],
-    #requestarr-sidebar[style*="display: block"],
-    #requestarr-sidebar[style*="display: flex"],
-    #movie-hunt-sidebar[style*="display: block"],
-    #movie-hunt-sidebar[style*="display: flex"] {
-        display: flex !important;
-        flex-direction: column !important;
+
+    /* Heart button */
+    .mtb-icon-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        text-decoration: none;
+        transition: background .15s, transform .15s;
+        font-size: 15px;
     }
-    
-    /* Ensure only one sidebar shows at a time - default state */
-    #requestarr-sidebar:not([style*="display: block"]):not([style*="display: flex"]),
-    #movie-hunt-sidebar:not([style*="display: block"]):not([style*="display: flex"]) {
-        display: none !important;
+    .mtb-icon-btn:active { transform: scale(.9); }
+    .mtb-heart {
+        color: #e74c3c;
+        background: rgba(231,76,60,.1);
     }
-    
-    /* User nav hiding for local bypass mode */
-    #userNav[style*="display: none"] {
-        display: none !important;
-    }
-    
-    .hide-for-bypass {
-        display: none !important;
-    }
-    
-    /* Hide original topbar in mobile view */
-    .top-bar {
-        display: none !important;
-    }
-    
-    /* Adjust main content padding when mobile topbar is active */
-    .main-content {
-        padding-top: 0 !important;
+    .mtb-heart:hover { background: rgba(231,76,60,.2); color: #ff6b6b; }
+
+    /* Accent line */
+    .mtb-accent {
+        height: 2px;
+        background: linear-gradient(90deg, #1a5276, #2980b9, #5dade2, #2980b9, #1a5276);
+        opacity: .8;
     }
 }
 
-/* Very small screens */
-@media (max-width: 480px) {
+/* ===============================================================
+   MOBILE DRAWER (.mdrawer)
+   =============================================================== */
+.mdrawer,
+.mdrawer-backdrop { display: none; }
+
+@media (max-width: 768px) {
+    /* Backdrop */
+    .mdrawer-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 299;
+        background: rgba(0,0,0,.55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .25s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .mdrawer-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Drawer panel */
+    .mdrawer {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 270px;
+        max-width: 80vw;
+        z-index: 300;
+        background: linear-gradient(180deg, #161e2c 0%, #0f1623 100%);
+        transform: translateX(-100%);
+        transition: transform .28s cubic-bezier(.4,0,.2,1);
+        overflow: hidden;
+        box-shadow: 4px 0 24px rgba(0,0,0,.4);
+    }
+    .mdrawer.open {
+        transform: translateX(0);
+    }
+
+    /* Prevent body scroll when drawer is open */
+    body.mdrawer-open {
+        overflow: hidden;
+    }
+
+    /* Header */
+    .mdrawer-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+        flex-shrink: 0;
+    }
+    .mdrawer-logo { border-radius: 6px; }
+    .mdrawer-brand {
+        font-size: 17px;
+        font-weight: 800;
+        color: #e8ecf2;
+        flex: 1;
+        letter-spacing: .5px;
+    }
+    .mdrawer-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: rgba(255,255,255,.05);
+        color: #8892a4;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background .15s, color .15s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .mdrawer-close:hover { background: rgba(255,255,255,.1); color: #e8ecf2; }
+
+    /* Body / scrollable */
+    .mdrawer-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Groups */
+    .mdrawer-group {
+        padding: 0 12px;
+        margin-bottom: 4px;
+    }
+    .mdrawer-group-title {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: #556070;
+        padding: 10px 8px 4px;
+    }
+
+    /* Nav items */
+    .mdrawer-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        color: #b0b8c8;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        transition: background .12s, color .12s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .mdrawer-item:hover,
+    .mdrawer-item:active {
+        background: rgba(65,105,225,.12);
+        color: #e8ecf2;
+        text-decoration: none;
+    }
+    .mdrawer-item.active {
+        background: rgba(65,105,225,.18);
+        color: #7cb8e4;
+    }
+    .mdrawer-item i {
+        width: 18px;
+        text-align: center;
+        font-size: 14px;
+        opacity: .7;
+    }
+    .mdrawer-item:hover i,
+    .mdrawer-item.active i {
+        opacity: 1;
+    }
+
+    /* Donate link at bottom */
+    .mdrawer-footer {
+        flex-shrink: 0;
+        padding: 12px 16px;
+        border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .mdrawer-donate {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: rgba(231,76,60,.08);
+        color: #e74c3c;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        transition: background .15s;
+    }
+    .mdrawer-donate:hover { background: rgba(231,76,60,.16); text-decoration: none; }
+    .mdrawer-donate i { font-size: 14px; }
+
+    .mdrawer-version {
+        margin-top: 8px;
+        padding: 0 12px;
+        font-size: 11px;
+        color: #4a5568;
+        font-weight: 600;
+    }
+
+    /* ===== HIDE ALL DESKTOP SIDEBARS ON MOBILE ===== */
     .sidebar,
+    #sidebar,
+    #movie-hunt-sidebar,
+    #nzb-hunt-sidebar,
     #requestarr-sidebar,
-    #movie-hunt-sidebar {
-        width: 50px !important;
+    #apps-sidebar,
+    #settings-sidebar {
+        display: none !important;
     }
-    
-    .nav-item i {
-        font-size: 20px !important;
+
+    /* ===== FULL-WIDTH CONTENT ===== */
+    .app-container {
+        display: flex;
+        flex-direction: column !important;
     }
-} 
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    /* ===== HIDE DESKTOP TOPBAR ===== */
+    .top-bar {
+        display: none !important;
+    }
+
+    /* ===== CONTENT SECTIONS ===== */
+    .content-section {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        box-sizing: border-box;
+    }
+    .content-section.active {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+/* ===== SMALL PHONES ===== */
+@media (max-width: 480px) {
+    .mtb-inner { height: 44px; padding: 0 8px; }
+    .mtb-title { font-size: 14px; }
+    .mdrawer { width: 260px; }
+}
