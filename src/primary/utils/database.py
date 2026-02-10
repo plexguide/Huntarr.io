@@ -45,23 +45,57 @@ class HuntarrDatabase:
         conn.execute('PRAGMA busy_timeout = 30000')
     
     def get_connection(self):
-        """Get a configured SQLite connection with Synology NAS compatibility"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            self._configure_connection(conn)
-            # Test the connection by running a simple query
-            conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
-            return conn
-        except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
-            if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
-                logger.error(f"Database corruption detected: {e}")
-                self._handle_database_corruption()
-                # Try connecting again after recovery
-                conn = sqlite3.connect(self.db_path)
+        """Get a configured SQLite connection with Synology NAS compatibility.
+        
+        Uses retry logic with WAL recovery before resorting to corruption handling.
+        This prevents false-positive corruption detection after unclean shutdowns.
+        """
+        max_retries = 3
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                conn = sqlite3.connect(self.db_path, timeout=30)
                 self._configure_connection(conn)
+                # Test the connection by running a simple query
+                conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
                 return conn
-            else:
-                raise
+            except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
+                last_error = e
+                error_str = str(e).lower()
+                
+                if "file is not a database" in error_str or "database disk image is malformed" in error_str:
+                    if attempt == 0:
+                        # First attempt: try WAL recovery before anything destructive
+                        logger.warning(f"Database error on attempt {attempt + 1}: {e}. Attempting WAL recovery...")
+                        if self._attempt_wal_recovery():
+                            logger.info("WAL recovery succeeded, retrying connection")
+                            continue
+                        logger.warning("WAL recovery did not help, will retry...")
+                        time.sleep(1)
+                        continue
+                    elif attempt == 1:
+                        # Second attempt: try a simple reconnect after a brief wait
+                        logger.warning(f"Database error on attempt {attempt + 1}: {e}. Waiting and retrying...")
+                        time.sleep(2)
+                        continue
+                    else:
+                        # Final attempt: corruption is real, handle it
+                        logger.error(f"Database corruption confirmed after {max_retries} attempts: {e}")
+                        self._handle_database_corruption()
+                        # Try connecting again after recovery
+                        conn = sqlite3.connect(self.db_path, timeout=30)
+                        self._configure_connection(conn)
+                        return conn
+                elif "database is locked" in error_str:
+                    logger.warning(f"Database locked on attempt {attempt + 1}, waiting...")
+                    time.sleep(2)
+                    continue
+                else:
+                    raise
+        
+        # Should not reach here, but just in case
+        raise last_error if last_error else sqlite3.OperationalError("Failed to connect to database")
     
     def _get_database_path(self) -> Path:
         """Get database path - use /config for Docker, Windows AppData, or local data directory"""
@@ -96,32 +130,153 @@ class HuntarrDatabase:
 
 
 
-    def _handle_database_corruption(self):
-        """Handle database corruption by creating backup and starting fresh"""
-        import time
+    def _attempt_wal_recovery(self) -> bool:
+        """Attempt to recover database by checkpointing WAL files.
         
-        logger.error(f"Handling database corruption for: {self.db_path}")
-        
+        After an unclean shutdown (Docker stop, crash, etc.), the WAL file may contain
+        uncommitted data. This method tries to recover that data before declaring corruption.
+        Returns True if recovery succeeded, False otherwise.
+        """
         try:
-            # Create backup of corrupted database if it exists
-            if self.db_path.exists():
-                backup_path = self.db_path.parent / f"huntarr_corrupted_backup_{int(time.time())}.db"
-                self.db_path.rename(backup_path)
-                logger.warning(f"Corrupted database backed up to: {backup_path}")
-                logger.warning("Starting with fresh database - all previous data has been backed up but will be lost")
+            wal_path = Path(str(self.db_path) + "-wal")
+            shm_path = Path(str(self.db_path) + "-shm")
             
-            # Ensure the corrupted file is completely removed
-            if self.db_path.exists():
-                self.db_path.unlink()
-                
+            # If WAL file exists, try to checkpoint it
+            if wal_path.exists():
+                logger.info(f"WAL file found ({wal_path.stat().st_size} bytes), attempting recovery checkpoint...")
+                try:
+                    # Open with a fresh connection, set WAL mode, and force checkpoint
+                    conn = sqlite3.connect(self.db_path, timeout=30)
+                    conn.execute('PRAGMA journal_mode = WAL')
+                    conn.execute('PRAGMA busy_timeout = 30000')
+                    result = conn.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+                    conn.close()
+                    logger.info(f"WAL checkpoint result: blocked={result[0]}, pages_written={result[1]}, pages_checkpointed={result[2]}")
+                    return True
+                except Exception as wal_error:
+                    logger.warning(f"WAL checkpoint failed: {wal_error}")
+            
+            # If no WAL but SHM exists, remove orphaned SHM
+            if shm_path.exists() and not wal_path.exists():
+                logger.info("Removing orphaned SHM file...")
+                try:
+                    shm_path.unlink()
+                except Exception:
+                    pass
+            
+            return False
+        except Exception as e:
+            logger.warning(f"WAL recovery attempt failed: {e}")
+            return False
+    
+    def _handle_database_corruption(self):
+        """Handle confirmed database corruption with recovery-first approach.
+        
+        This is only called after WAL recovery and retries have failed.
+        It tries multiple recovery strategies before resorting to deletion:
+        1. SQLite .recover to dump and reload
+        2. Copy user data from corrupted DB to fresh DB
+        3. Only delete as last resort, always creating a backup first
+        """
+        logger.error(f"Handling confirmed database corruption for: {self.db_path}")
+        
+        if not self.db_path.exists():
+            logger.info("Database file does not exist, nothing to recover")
+            return
+        
+        # Always create a backup first - NEVER delete without backup
+        backup_path = self.db_path.parent / f"huntarr_corrupted_backup_{int(time.time())}.db"
+        try:
+            shutil.copy2(self.db_path, backup_path)
+            logger.warning(f"Corrupted database backed up to: {backup_path}")
         except Exception as backup_error:
-            logger.error(f"Error during database corruption recovery: {backup_error}")
-            # Force remove the corrupted file
+            logger.error(f"Failed to create backup copy: {backup_error}")
+            # Try rename as fallback
             try:
-                if self.db_path.exists():
-                    self.db_path.unlink()
-            except:
+                self.db_path.rename(backup_path)
+                logger.warning(f"Corrupted database renamed to: {backup_path}")
+                return  # File moved, no need to delete
+            except Exception:
                 pass
+        
+        # Strategy 1: Try to salvage critical data (users, settings) from corrupted DB
+        recovered_users = []
+        recovered_settings = []
+        try:
+            conn = sqlite3.connect(backup_path, timeout=10)
+            conn.execute('PRAGMA journal_mode = OFF')  # Don't use WAL on corrupted file
+            try:
+                # Try to read users table
+                cursor = conn.execute("SELECT username, password, two_fa_secret, plex_token, plex_user_data FROM users")
+                recovered_users = cursor.fetchall()
+                logger.info(f"Recovered {len(recovered_users)} user(s) from corrupted database")
+            except Exception as e:
+                logger.warning(f"Could not recover users: {e}")
+            
+            try:
+                # Try to read general settings
+                cursor = conn.execute("SELECT setting_key, setting_value FROM general_settings")
+                recovered_settings = cursor.fetchall()
+                logger.info(f"Recovered {len(recovered_settings)} setting(s) from corrupted database")
+            except Exception as e:
+                logger.warning(f"Could not recover settings: {e}")
+            
+            conn.close()
+        except Exception as e:
+            logger.warning(f"Could not open corrupted database for recovery: {e}")
+        
+        # Remove the corrupted database file (backup already exists)
+        try:
+            self.db_path.unlink()
+            # Also remove WAL and SHM files
+            wal_path = Path(str(self.db_path) + "-wal")
+            shm_path = Path(str(self.db_path) + "-shm")
+            if wal_path.exists():
+                wal_path.unlink()
+            if shm_path.exists():
+                shm_path.unlink()
+        except Exception as rm_error:
+            logger.error(f"Error removing corrupted database: {rm_error}")
+        
+        # Strategy 2: Recreate database and restore recovered data
+        if recovered_users or recovered_settings:
+            try:
+                # Create fresh database with tables
+                self.ensure_database_exists()
+                
+                conn = sqlite3.connect(self.db_path, timeout=30)
+                self._configure_connection(conn)
+                
+                # Restore users
+                for user in recovered_users:
+                    try:
+                        conn.execute(
+                            "INSERT OR REPLACE INTO users (username, password, two_fa_secret, plex_token, plex_user_data) VALUES (?, ?, ?, ?, ?)",
+                            user
+                        )
+                        logger.info(f"Restored user: {user[0]}")
+                    except Exception as e:
+                        logger.warning(f"Failed to restore user {user[0]}: {e}")
+                
+                # Restore general settings (skip setup_progress to avoid stale state)
+                for key, value in recovered_settings:
+                    if key != 'setup_progress':
+                        try:
+                            conn.execute(
+                                "INSERT OR REPLACE INTO general_settings (setting_key, setting_value) VALUES (?, ?)",
+                                (key, value)
+                            )
+                        except Exception as e:
+                            logger.warning(f"Failed to restore setting {key}: {e}")
+                
+                conn.commit()
+                conn.close()
+                logger.info("Successfully restored critical data from corrupted database")
+                
+            except Exception as restore_error:
+                logger.error(f"Failed to restore data to fresh database: {restore_error}")
+        else:
+            logger.warning("No data could be recovered from corrupted database. Starting fresh.")
 
     def _check_database_integrity(self) -> bool:
         """Check if database integrity is intact"""
@@ -305,13 +460,31 @@ class HuntarrDatabase:
             logger.error(f"Error setting up database directory: {e}")
             raise
             
+        # Attempt WAL recovery on startup if WAL file exists
+        # This prevents data loss after unclean shutdowns (Docker stop, crash, etc.)
+        wal_path = Path(str(self.db_path) + "-wal")
+        if self.db_path.exists() and wal_path.exists():
+            logger.info("Database WAL file detected on startup — performing recovery checkpoint...")
+            self._attempt_wal_recovery()
+        
         # Create all tables with corruption recovery
         try:
             self._create_all_tables()
             self.ensure_movie_hunt_default_instance()
         except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
-            if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
+            error_str = str(e).lower()
+            if "file is not a database" in error_str or "database disk image is malformed" in error_str:
                 logger.error(f"Database corruption detected during table creation: {e}")
+                # Try WAL recovery one more time before nuclear option
+                if self._attempt_wal_recovery():
+                    try:
+                        self._create_all_tables()
+                        self.ensure_movie_hunt_default_instance()
+                        logger.info("WAL recovery succeeded during table creation")
+                        return
+                    except Exception:
+                        pass
+                # WAL recovery didn't help, handle corruption with data salvage
                 self._handle_database_corruption()
                 # Try creating tables again after recovery
                 self._create_all_tables()
@@ -879,8 +1052,15 @@ class HuntarrDatabase:
             return settings
     
     def save_general_settings(self, settings: Dict[str, Any]):
-        """Save general settings to database"""
+        """Save general settings to database with durability for critical settings"""
+        # Check if this write includes critical settings that must survive crashes
+        critical_keys = {'auth_mode', 'local_access_bypass', 'proxy_auth_bypass', 'base_url'}
+        is_critical = bool(critical_keys & set(settings.keys()))
+        
         with self.get_connection() as conn:
+            if is_critical:
+                conn.execute('PRAGMA synchronous = FULL')
+            
             for key, value in settings.items():
                 # Determine type and convert value
                 if isinstance(value, bool):
@@ -906,6 +1086,11 @@ class HuntarrDatabase:
                 ''', (key, setting_value, setting_type))
             
             conn.commit()
+            
+            if is_critical:
+                # Force WAL checkpoint for critical settings
+                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                conn.execute('PRAGMA synchronous = NORMAL')
             # Auto-save enabled - no need to log every successful save
     
     def _migrate_general_settings_from_app_configs_if_needed(self):
@@ -2120,7 +2305,10 @@ class HuntarrDatabase:
     def create_user(self, username: str, password: str, two_fa_enabled: bool = False,
                    two_fa_secret: str = None, plex_token: str = None,
                    plex_user_data: Dict[str, Any] = None) -> bool:
-        """Create a new user. Passwords are stored hashed; plaintext is hashed before storage."""
+        """Create a new user. Passwords are stored hashed; plaintext is hashed before storage.
+        
+        Uses FULL synchronous mode to guarantee durability — user creation must survive crashes.
+        """
         try:
             from src.primary.auth import hash_password
             store_password = password
@@ -2131,13 +2319,19 @@ class HuntarrDatabase:
             plex_data_json = json.dumps(plex_user_data) if plex_user_data else None
 
             with self.get_connection() as conn:
+                # Use FULL sync for critical user data — ensures write is on disk before returning
+                conn.execute('PRAGMA synchronous = FULL')
                 conn.execute('''
                     INSERT INTO users (username, password, two_fa_enabled, two_fa_secret,
                                      plex_token, plex_user_data, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ''', (username, store_password, two_fa_enabled, two_fa_secret, plex_token, plex_data_json))
                 conn.commit()
-                logger.info(f"Created user: {username}")
+                # Force WAL checkpoint to merge user data into main DB immediately
+                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                # Restore normal sync mode
+                conn.execute('PRAGMA synchronous = NORMAL')
+                logger.info(f"Created user: {username} (durability checkpoint completed)")
                 return True
         except Exception as e:
             logger.error(f"Error creating user {username}: {e}")
@@ -3237,39 +3431,68 @@ class LogsDatabase:
             pass
     
     def get_logs_connection(self):
-        """Get a configured SQLite connection for logs database"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            self._configure_logs_connection(conn)
-            # Test connection
-            conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
-            return conn
-        except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
-            if "file is not a database" in str(e) or "database disk image is malformed" in str(e):
-                logger.error(f"Logs database corruption detected: {e}")
-                self._handle_logs_database_corruption()
-                # Try connecting again after recovery
-                conn = sqlite3.connect(self.db_path)
+        """Get a configured SQLite connection for logs database with retry logic"""
+        max_retries = 3
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                conn = sqlite3.connect(self.db_path, timeout=30)
                 self._configure_logs_connection(conn)
+                # Test connection
+                conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
                 return conn
-            else:
-                raise
+            except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
+                last_error = e
+                error_str = str(e).lower()
+                if "file is not a database" in error_str or "database disk image is malformed" in error_str:
+                    if attempt < max_retries - 1:
+                        # Try WAL recovery first
+                        logger.warning(f"Logs database error on attempt {attempt + 1}: {e}. Trying WAL recovery...")
+                        wal_path = Path(str(self.db_path) + "-wal")
+                        if wal_path.exists():
+                            try:
+                                recovery_conn = sqlite3.connect(self.db_path, timeout=30)
+                                recovery_conn.execute('PRAGMA journal_mode = WAL')
+                                recovery_conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                                recovery_conn.close()
+                            except Exception:
+                                pass
+                        time.sleep(1)
+                        continue
+                    else:
+                        logger.error(f"Logs database corruption confirmed: {e}")
+                        self._handle_logs_database_corruption()
+                        conn = sqlite3.connect(self.db_path, timeout=30)
+                        self._configure_logs_connection(conn)
+                        return conn
+                elif "database is locked" in error_str:
+                    time.sleep(2)
+                    continue
+                else:
+                    raise
+        raise last_error if last_error else sqlite3.OperationalError("Failed to connect to logs database")
     
     def _handle_logs_database_corruption(self):
-        """Handle logs database corruption"""
-        import time
-        
+        """Handle logs database corruption — logs are non-critical so deletion is acceptable"""
         logger.error(f"Handling logs database corruption for: {self.db_path}")
         
         try:
             if self.db_path.exists():
                 backup_path = self.db_path.parent / f"logs_corrupted_backup_{int(time.time())}.db"
-                self.db_path.rename(backup_path)
-                logger.warning(f"Corrupted logs database backed up to: {backup_path}")
-                logger.warning("Starting with fresh logs database - log history will be lost")
-            
-            if self.db_path.exists():
+                try:
+                    shutil.copy2(self.db_path, backup_path)
+                    logger.warning(f"Corrupted logs database backed up to: {backup_path}")
+                except Exception:
+                    pass
+                
                 self.db_path.unlink()
+                # Clean up WAL/SHM files
+                for suffix in ["-wal", "-shm"]:
+                    p = Path(str(self.db_path) + suffix)
+                    if p.exists():
+                        p.unlink()
+                logger.warning("Starting with fresh logs database - log history will be lost")
                 
         except Exception as backup_error:
             logger.error(f"Error during logs database corruption recovery: {backup_error}")

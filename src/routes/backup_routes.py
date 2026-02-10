@@ -183,9 +183,11 @@ class BackupManager:
                     backup_db_path = backup_folder / f"{db_name}.db"
                     logger.info(f"Backing up {db_name} from {db_path} to {backup_db_path}")
                     
-                    # Force WAL checkpoint before backup
+                    # Force WAL checkpoint before backup (with WAL mode enabled)
                     try:
-                        conn = sqlite3.connect(db_path)
+                        conn = sqlite3.connect(db_path, timeout=30)
+                        conn.execute("PRAGMA journal_mode = WAL")
+                        conn.execute("PRAGMA busy_timeout = 30000")
                         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
                         conn.close()
                     except Exception as e:
@@ -256,7 +258,9 @@ class BackupManager:
     def _verify_database_integrity(self, db_path):
         """Verify database integrity"""
         try:
-            conn = sqlite3.connect(db_path)
+            conn = sqlite3.connect(db_path, timeout=30)
+            conn.execute("PRAGMA journal_mode = WAL")
+            conn.execute("PRAGMA busy_timeout = 30000")
             result = conn.execute("PRAGMA integrity_check").fetchone()
             conn.close()
             return result and result[0] == "ok"

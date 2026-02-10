@@ -62,8 +62,8 @@ def get_user_data(username: str = None) -> Dict[str, Any]:
         # For backward compatibility, return first user if no username specified
         # This is used in legacy code that expects single user
         try:
-            # Get the first user from the database
-            with sqlite3.connect(db.db_path) as conn:
+            # Get the first user from the database using configured connection
+            with db.get_connection() as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.execute('SELECT * FROM users LIMIT 1')
                 row = cursor.fetchone()

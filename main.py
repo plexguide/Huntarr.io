@@ -367,21 +367,21 @@ def main_shutdown_handler(signum, frame):
         
         huntarr_logger.info("Performing emergency database checkpoint...")
         
-        # Emergency checkpoint for main database
+        # Emergency checkpoint for main database — use TRUNCATE to fully merge WAL
         try:
             main_db = get_database()
             with main_db.get_connection() as conn:
-                conn.execute("PRAGMA wal_checkpoint(RESTART)")
-                huntarr_logger.info("Main database emergency checkpoint completed")
+                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                huntarr_logger.info("Main database emergency checkpoint (TRUNCATE) completed")
         except Exception as e:
             huntarr_logger.warning(f"Main database emergency checkpoint failed: {e}")
         
-        # Emergency checkpoint for logs database
+        # Emergency checkpoint for logs database — use TRUNCATE to fully merge WAL
         try:
             logs_db = get_logs_database()
             with logs_db.get_logs_connection() as conn:
-                conn.execute("PRAGMA wal_checkpoint(RESTART)")
-                huntarr_logger.info("Logs database emergency checkpoint completed")
+                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                huntarr_logger.info("Logs database emergency checkpoint (TRUNCATE) completed")
         except Exception as e:
             huntarr_logger.warning(f"Logs database emergency checkpoint failed: {e}")
             
