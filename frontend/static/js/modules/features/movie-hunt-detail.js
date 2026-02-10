@@ -569,11 +569,15 @@
                     if (modal) modal.remove();
                     this.updateMovieStatus(); // refresh info bar
                 } else {
-                    alert('Save failed: ' + (data.error || 'Unknown error'));
+                    var msg = 'Save failed: ' + (data.error || 'Unknown error');
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, 'error');
+                    else alert(msg);
                     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
                 }
             } catch (err) {
-                alert('Save failed: ' + err.message);
+                var msg = 'Save failed: ' + err.message;
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, 'error');
+                else alert(msg);
                 if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
             }
         },
@@ -661,11 +665,15 @@
                     if (modal) modal.remove();
                     this.closeDetail();
                 } else {
-                    alert('Delete failed: ' + (data.error || 'Unknown error'));
+                    var msg = 'Delete failed: ' + (data.error || 'Unknown error');
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, 'error');
+                    else alert(msg);
                     if (delBtn) { delBtn.disabled = false; delBtn.textContent = 'Delete'; }
                 }
             } catch (err) {
-                alert('Delete failed: ' + err.message);
+                var msg = 'Delete failed: ' + err.message;
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, 'error');
+                else alert(msg);
                 if (delBtn) { delBtn.disabled = false; delBtn.textContent = 'Delete'; }
             }
         },
