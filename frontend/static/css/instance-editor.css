@@ -4,7 +4,8 @@
    ============================================================ */
 
 /* ---- Section root ---- */
-#instanceEditorSection {
+#instanceEditorSection,
+#movieHuntInstanceEditorSection {
     display: none;
     width: 100%;
     height: auto !important;
@@ -17,11 +18,13 @@
     z-index: 1;
 }
 
-#instanceEditorSection.active {
+#instanceEditorSection.active,
+#movieHuntInstanceEditorSection.active {
     display: block !important;
 }
 
-#instanceEditorContainer {
+#instanceEditorContainer,
+#movieHuntInstanceEditorContainer {
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
@@ -33,7 +36,8 @@
 /* ============================================================
    Header / Toolbar
    ============================================================ */
-#instanceEditorSection .instance-editor-header {
+#instanceEditorSection .instance-editor-header,
+#movieHuntInstanceEditorSection .instance-editor-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -93,7 +97,8 @@
 }
 
 /* ---- Buttons ---- */
-#instanceEditorSection .ie-btn {
+#instanceEditorSection .ie-btn,
+#movieHuntInstanceEditorSection .ie-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -110,13 +115,15 @@
 }
 
 /* Ghost back button */
-#instanceEditorSection .ie-btn-ghost {
+#instanceEditorSection .ie-btn-ghost,
+#movieHuntInstanceEditorSection .ie-btn-ghost {
     background: rgba(148, 163, 184, 0.08);
     border: 1px solid rgba(148, 163, 184, 0.12);
     color: #94a3b8;
 }
 
-#instanceEditorSection .ie-btn-ghost:hover {
+#instanceEditorSection .ie-btn-ghost:hover,
+#movieHuntInstanceEditorSection .ie-btn-ghost:hover {
     background: rgba(148, 163, 184, 0.15);
     border-color: rgba(148, 163, 184, 0.22);
     color: #e2e8f0;
@@ -124,7 +131,8 @@
 }
 
 /* Save button — disabled */
-#instanceEditorSection .save-btn-dynamic {
+#instanceEditorSection .save-btn-dynamic,
+#movieHuntInstanceEditorSection .save-btn-dynamic {
     background: rgba(71, 85, 105, 0.35) !important;
     color: rgba(255, 255, 255, 0.3) !important;
     cursor: not-allowed !important;
@@ -134,7 +142,8 @@
 }
 
 /* Save button — enabled */
-#instanceEditorSection .save-btn-dynamic.enabled {
+#instanceEditorSection .save-btn-dynamic.enabled,
+#movieHuntInstanceEditorSection .save-btn-dynamic.enabled {
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
     color: #fff !important;
     cursor: pointer !important;
@@ -143,7 +152,8 @@
     box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
-#instanceEditorSection .save-btn-dynamic.enabled:hover {
+#instanceEditorSection .save-btn-dynamic.enabled:hover,
+#movieHuntInstanceEditorSection .save-btn-dynamic.enabled:hover {
     background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15) !important;
@@ -152,11 +162,13 @@
 /* ============================================================
    Grid Layout
    ============================================================ */
-#instance-editor-content * {
+#instance-editor-content *,
+#movie-hunt-instance-editor-content * {
     box-sizing: border-box !important;
 }
 
-#instanceEditorSection .editor-grid {
+#instanceEditorSection .editor-grid,
+#movieHuntInstanceEditorSection .editor-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
     gap: 22px;
@@ -168,7 +180,8 @@
 /* ============================================================
    Section Cards — Glass-morphism
    ============================================================ */
-#instanceEditorSection .editor-section {
+#instanceEditorSection .editor-section,
+#movieHuntInstanceEditorSection .editor-section {
     background: rgba(30, 41, 59, 0.32);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -183,7 +196,8 @@
     position: relative;
 }
 
-#instanceEditorSection .editor-section:hover {
+#instanceEditorSection .editor-section:hover,
+#movieHuntInstanceEditorSection .editor-section:hover {
     border-color: rgba(148, 163, 184, 0.14);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
@@ -191,7 +205,8 @@
 /* ============================================================
    Section Titles
    ============================================================ */
-#instanceEditorSection .editor-section-title {
+#instanceEditorSection .editor-section-title,
+#movieHuntInstanceEditorSection .editor-section-title {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -205,13 +220,15 @@
     border-bottom: 1px solid rgba(148, 163, 184, 0.07);
 }
 
-#instanceEditorSection .editor-section-title .section-title-text {
+#instanceEditorSection .editor-section-title .section-title-text,
+#movieHuntInstanceEditorSection .editor-section-title .section-title-text {
     display: inline-flex;
     align-items: center;
     gap: 9px;
 }
 
-#instanceEditorSection .editor-section-title .section-title-icon {
+#instanceEditorSection .editor-section-title .section-title-icon,
+#movieHuntInstanceEditorSection .editor-section-title .section-title-icon {
     width: 28px;
     height: 28px;
     display: inline-flex;
@@ -258,7 +275,8 @@
 /* ============================================================
    Field Groups & Setting Items
    ============================================================ */
-#instanceEditorSection .editor-field-group {
+#instanceEditorSection .editor-field-group,
+#movieHuntInstanceEditorSection .editor-field-group {
     display: flex;
     flex-direction: column;
     gap: 8px;

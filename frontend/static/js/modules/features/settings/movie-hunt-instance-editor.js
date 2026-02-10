@@ -76,7 +76,7 @@
         return '<div class="editor-grid">' +
             '<div class="editor-section mh-information-section">' +
             '<div class="editor-section-header-inline">' +
-            '<div class="editor-section-title">Information</div>' +
+            '<div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-connection"><i class="fas fa-info-circle"></i></span>INFORMATION</div></div>' +
             '<span class="mh-info-status-pill ' + infoStatusClass + '">' + infoStatusIcon + infoStatusText + '</span>' +
             '</div>' +
             '<div class="editor-field-group">' +
@@ -91,7 +91,7 @@
             '<p class="editor-help-text">Stable identifier for this instance (assigned automatically; cannot be changed)</p></div>' +
             '</div>' +
             '<div class="editor-section">' +
-            '<div class="editor-section-title">Search Settings</div>' +
+            '<div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-search"><i class="fas fa-search"></i></span>SEARCH SETTINGS</div></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Missing Search Count</label><input type="number" id="mh-editor-missing-count" value="' + safe.hunt_missing_movies + '"></div>' +
             '<p class="editor-help-text">Number of missing items to search for in each cycle</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Upgrade Search Count</label><input type="number" id="mh-editor-upgrade-count" value="' + safe.hunt_upgrade_movies + '"></div>' +
@@ -105,7 +105,7 @@
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Release Date Delay (Days)</label><input type="number" id="mh-editor-release-date-delay" value="' + safe.release_date_delay_days + '"></div>' +
             '<p class="editor-help-text">Only search for items released at least this many days ago</p></div></div>' +
 
-            '<div class="editor-section"><div class="editor-section-title">Stateful Management</div>' +
+            '<div class="editor-section"><div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-stateful"><i class="fas fa-sync"></i></span>STATEFUL MANAGEMENT</div></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>State Management</label>' +
             '<select id="mh-editor-state-mode"><option value="custom"' + (safe.state_management_mode === 'custom' ? ' selected' : '') + '>Enabled</option><option value="disabled"' + (safe.state_management_mode === 'disabled' ? ' selected' : '') + '>Disabled</option></select></div>' +
             '<p class="editor-help-text">Track processed items to avoid redundant searches</p></div>' +
@@ -118,14 +118,14 @@
             '<div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: #10b981; font-weight: 500; margin-bottom: 4px;"><i class="fas fa-check-circle"></i><span>Active - Tracked Items: <span id="mh-tracked-items-count">Loading...</span></span></div>' +
             '<div style="text-align: center; color: #94a3b8; font-size: 0.9rem;">Next Reset: <span id="mh-next-reset-time">Loading...</span></div></div></div></div>' +
 
-            '<div class="editor-section"><div class="editor-section-title">Additional Settings</div>' +
+            '<div class="editor-section"><div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-additional"><i class="fas fa-sliders-h"></i></span>ADDITIONAL SETTINGS</div></div>' +
             '<div class="editor-field-group" style="margin-bottom: 12px;"><div style="padding: 10px 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 6px; color: #fcd34d; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> Do not overwhelm your indexers. Contact them for advice!</div></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Sleep Duration (Minutes)</label><input type="number" id="mh-editor-sleep-duration" value="' + sleepMins + '" min="' + _sleepMin + '" max="1440"></div>' +
             '<p class="editor-help-text">Time in minutes between processing cycles</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>API Cap - Hourly</label><input type="number" id="mh-editor-hourly-cap" value="' + safe.hourly_cap + '" min="1" max="400"></div>' +
             '<p class="editor-help-text">Maximum API requests per hour for this instance (10-20 recommended, max 400)</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item flex-row"><label>Monitored Only</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-monitored-only"' + (safe.monitored_only ? ' checked' : '') + '><span class="toggle-slider"></span></label></div><p class="editor-help-text">Only search for monitored items</p></div></div>' +
-            '<div class="editor-section"><div class="editor-section-title">Tags</div>' +
+            '<div class="editor-section"><div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-tags"><i class="fas fa-tags"></i></span>TAGS</div></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item flex-row"><label>Tag missing items</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-tag-enable-missing"' + (safe.tag_enable_missing ? ' checked' : '') + '><span class="toggle-slider"></span></label></div>' +
             '<div class="editor-setting-item" style="margin-top: 6px;"><label>Missing Items Tag</label><input type="text" id="mh-editor-tag-missing" value="' + escapeAttr((safe.custom_tags && safe.custom_tags.missing) ? safe.custom_tags.missing : 'huntarr-missing') + '" placeholder="huntarr-missing" maxlength="25"></div>' +
             '<p class="editor-help-text">Tag added to movies when they\'re found by a missing search (max 25 characters)</p></div>' +
@@ -134,12 +134,12 @@
             '<p class="editor-help-text">Tag added to movies when they\'re upgraded in cutoff mode (max 25 characters). Not used when Upgrade Selection Method is Tags.</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item flex-row"><label>Tag upgraded items</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-tag-enable-upgraded"' + (safe.tag_enable_upgraded ? ' checked' : '') + '><span class="toggle-slider"></span></label></div>' +
             '<p class="editor-help-text">Tag added to movies after an upgrade completes (tracks what\'s been upgraded)</p></div>' +
-            '<div class="editor-section" style="border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 10px; padding: 14px; background: rgba(231, 76, 60, 0.06); margin-top: 16px;"><div class="editor-section-title">Exempt Tags</div>' +
+            '<div class="editor-section" style="border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 10px; padding: 14px; background: rgba(231, 76, 60, 0.06); margin-top: 16px;"><div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-exempt"><i class="fas fa-ban"></i></span>EXEMPT TAGS</div></div>' +
             '<p class="editor-help-text" style="margin-bottom: 12px;">Items with any of these tags are skipped for missing and upgrade searches. If the tag is removed in the app, Huntarr will process the item again. <a href="https://github.com/plexguide/Huntarr.io/issues/676" target="_blank" rel="noopener" style="color: #94a3b8;">#676</a></p>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Add exempt tag</label><div style="display: flex; gap: 8px; align-items: center;"><input type="text" id="mh-editor-exempt-tag-input" placeholder="Type a tag to exempt..." style="flex: 1;" maxlength="50"><button type="button" class="btn-card" id="mh-editor-exempt-tag-add" style="padding: 8px 14px; white-space: nowrap;">Add</button></div></div>' +
             '<p class="editor-help-text" style="color: #94a3b8; font-size: 0.85rem;">Tag &quot;upgradinatorr&quot; cannot be added.</p>' +
             '<div id="mh-editor-exempt-tags-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; min-height: 24px;">' + exemptTagsHtml + '</div></div></div></div>' +
-            '<div class="editor-section"><div class="editor-section-title">Advanced Settings</div>' +
+            '<div class="editor-section"><div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-advanced"><i class="fas fa-code"></i></span>ADVANCED SETTINGS</div></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>API Timeout (seconds)</label><input type="number" id="mh-editor-api-timeout" value="' + safe.api_timeout + '" min="30" max="600"></div>' +
             '<p class="editor-help-text">Timeout for API requests (default: 120 seconds)</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Command Wait Delay (seconds)</label><input type="number" id="mh-editor-cmd-wait-delay" value="' + safe.command_wait_delay + '" min="1" max="10"></div>' +
@@ -151,7 +151,7 @@
 
             /* ── Debug Manager ────────────────────────────────── */
             '<div class="editor-section mh-debug-manager-section" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.06);">' +
-            '<div class="editor-section-title" style="color: #f87171;"><i class="fas fa-bug" style="margin-right: 8px;"></i>Debug Manager</div>' +
+            '<div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-exempt"><i class="fas fa-bug"></i></span>DEBUG MANAGER</div></div>' +
             '<p class="editor-help-text" style="margin-bottom: 16px; line-height: 1.5;">Dangerous operations for troubleshooting. These actions are <strong style="color: #f87171;">irreversible</strong>.</p>' +
 
             '<div class="editor-field-group" style="border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 16px; background: rgba(239, 68, 68, 0.04);">' +
@@ -383,8 +383,6 @@
                         return;
                     }
                     var settings = result.data;
-                    var titleEl = document.getElementById('movie-hunt-instance-editor-title');
-                    if (titleEl) titleEl.textContent = 'Movie Hunt – ' + _currentInstanceName;
                     var contentEl = document.getElementById('movie-hunt-instance-editor-content');
                     if (contentEl) {
                         contentEl.innerHTML = buildEditorHtml(settings);
@@ -392,6 +390,9 @@
                         setupChangeDetection(contentEl);
                         loadMovieHuntStateStatus(_currentInstanceName);
                     }
+                    // Update breadcrumb
+                    var breadcrumbName = document.getElementById('mh-ie-breadcrumb-instance-name');
+                    if (breadcrumbName && _currentInstanceName) breadcrumbName.textContent = _currentInstanceName;
                     var backBtn = document.getElementById('movie-hunt-instance-editor-back');
                     var saveBtn = document.getElementById('movie-hunt-instance-editor-save');
                     if (backBtn) backBtn.onclick = function() {
