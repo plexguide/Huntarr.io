@@ -53,6 +53,7 @@
             var saveBtn = document.getElementById('mh-universal-video-save-btn');
             var editBtn = document.getElementById('mh-universal-video-edit-btn');
             var analyzeToggle = document.getElementById('mh-universal-analyze-video-files');
+            var strategyGroup = document.getElementById('mh-universal-video-scan-strategy-group');
             var profileGroup = document.getElementById('mh-universal-video-scan-profile-group');
             if (!modal) return;
 
@@ -66,9 +67,11 @@
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
             });
-            if (analyzeToggle && profileGroup) {
+            if (analyzeToggle) {
                 analyzeToggle.addEventListener('change', function() {
-                    profileGroup.style.display = analyzeToggle.checked ? 'block' : 'none';
+                    var show = analyzeToggle.checked;
+                    if (strategyGroup) strategyGroup.style.display = show ? 'block' : 'none';
+                    if (profileGroup) profileGroup.style.display = show ? 'block' : 'none';
                 });
             }
             if (editBtn) editBtn.addEventListener('click', function() { self.openUniversalVideoModal(); });
@@ -78,6 +81,8 @@
         openUniversalVideoModal: function() {
             var modal = document.getElementById('mh-universal-video-modal');
             var analyzeToggle = document.getElementById('mh-universal-analyze-video-files');
+            var strategySelect = document.getElementById('mh-universal-video-scan-strategy');
+            var strategyGroup = document.getElementById('mh-universal-video-scan-strategy-group');
             var profileSelect = document.getElementById('mh-universal-video-scan-profile');
             var profileGroup = document.getElementById('mh-universal-video-scan-profile-group');
             if (!modal) return;
@@ -85,13 +90,18 @@
             fetch(api('./api/movie-hunt/universal-video-settings'), { cache: 'no-store' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    if (analyzeToggle) analyzeToggle.checked = data.analyze_video_files !== false;
+                    var enabled = data.analyze_video_files !== false;
+                    if (analyzeToggle) analyzeToggle.checked = enabled;
+                    if (strategySelect) strategySelect.value = (data.video_scan_strategy || 'trust_filename').toLowerCase();
                     if (profileSelect) profileSelect.value = (data.video_scan_profile || 'default').toLowerCase();
-                    if (profileGroup) profileGroup.style.display = (analyzeToggle && analyzeToggle.checked) ? 'block' : 'none';
+                    if (strategyGroup) strategyGroup.style.display = enabled ? 'block' : 'none';
+                    if (profileGroup) profileGroup.style.display = enabled ? 'block' : 'none';
                 })
                 .catch(function() {
                     if (analyzeToggle) analyzeToggle.checked = true;
+                    if (strategySelect) strategySelect.value = 'trust_filename';
                     if (profileSelect) profileSelect.value = 'default';
+                    if (strategyGroup) strategyGroup.style.display = 'block';
                     if (profileGroup) profileGroup.style.display = 'block';
                 })
                 .finally(function() {
@@ -104,12 +114,14 @@
         saveUniversalVideoSettings: function(closeModalFn) {
             var self = this;
             var analyzeToggle = document.getElementById('mh-universal-analyze-video-files');
+            var strategySelect = document.getElementById('mh-universal-video-scan-strategy');
             var profileSelect = document.getElementById('mh-universal-video-scan-profile');
             var saveBtn = document.getElementById('mh-universal-video-save-btn');
             if (!analyzeToggle || !profileSelect) return;
 
             var payload = {
                 analyze_video_files: !!analyzeToggle.checked,
+                video_scan_strategy: (strategySelect ? strategySelect.value : 'trust_filename').toLowerCase(),
                 video_scan_profile: (profileSelect.value || 'default').toLowerCase()
             };
             if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
@@ -140,18 +152,22 @@
         loadUniversalVideoCard: function() {
             var statusIcon = document.getElementById('mh-universal-video-status-icon');
             var profileLabel = document.getElementById('mh-universal-video-profile-label');
+            var strategyLabel = document.getElementById('mh-universal-video-strategy-label');
             fetch(api('./api/movie-hunt/universal-video-settings'), { cache: 'no-store' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var enabled = data.analyze_video_files !== false;
                     var profile = (data.video_scan_profile || 'default');
+                    var strategy = (data.video_scan_strategy || 'trust_filename');
                     var profileMap = { light: 'Light', 'default': 'Default', moderate: 'Moderate', heavy: 'Heavy', maximum: 'Maximum' };
+                    var strategyMap = { trust_filename: 'Trust Filename', always_verify: 'Always Verify' };
                     if (statusIcon) {
                         statusIcon.className = 'instance-status-icon ' + (enabled ? 'status-connected' : 'status-disabled');
                         statusIcon.title = enabled ? 'Enabled' : 'Disabled';
                         statusIcon.innerHTML = enabled ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-minus-circle"></i>';
                     }
                     if (profileLabel) profileLabel.textContent = profileMap[profile] || 'Default';
+                    if (strategyLabel) strategyLabel.textContent = strategyMap[strategy] || 'Trust Filename';
                 })
                 .catch(function() {});
         },

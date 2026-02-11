@@ -21,8 +21,8 @@
                         </div>
                     </div>
                     <div class="instance-card-body">
+                        <div class="instance-detail"><i class="fas fa-shield-alt"></i><span>Strategy: <strong id="mh-universal-video-strategy-label">Trust Filename</strong></span></div>
                         <div class="instance-detail"><i class="fas fa-microscope"></i><span>Scan Power: <strong id="mh-universal-video-profile-label">Default</strong></span></div>
-                        <div class="instance-detail"><i class="fas fa-database"></i><span>Cached per file, re-scans on change</span></div>
                     </div>
                     <div class="instance-card-footer">
                         <button type="button" class="btn-card edit" id="mh-universal-video-edit-btn"><i class="fas fa-cog"></i> Edit</button>
@@ -52,6 +52,14 @@
                             </label>
                         </div>
                         <p class="editor-help-text">Use ffprobe to extract resolution, video codec, and audio codec. Results are cached and only re-scanned when the file changes.</p>
+                    </div>
+                    <div class="editor-field-group" id="mh-universal-video-scan-strategy-group">
+                        <label style="display: block; margin-bottom: 8px; font-size: 0.9rem; color: #f1f5f9;">Scan Strategy</label>
+                        <select id="mh-universal-video-scan-strategy" style="width: 100%; padding: 10px 12px; font-size: 1rem; color: #f8fafc; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px;">
+                            <option value="trust_filename" selected>Trust Filename</option>
+                            <option value="always_verify">Always Verify</option>
+                        </select>
+                        <p class="editor-help-text" style="margin-top: 8px;"><strong>Trust Filename:</strong> use info from the filename; only scan when it can't determine resolution or codec. <strong>Always Verify:</strong> always scan the file to confirm what's actually inside.</p>
                     </div>
                     <div class="editor-field-group" id="mh-universal-video-scan-profile-group">
                         <label style="display: block; margin-bottom: 8px; font-size: 0.9rem; color: #f1f5f9;">Video Scan Power</label>

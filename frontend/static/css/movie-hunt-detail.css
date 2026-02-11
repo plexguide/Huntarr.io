@@ -307,6 +307,36 @@
     border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
+/* Rescannable hover state */
+.mh-rescannable {
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+    font-size: inherit;
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    background: transparent;
+}
+.mh-rescannable:not(.mh-probe-failed) {
+    color: inherit;
+}
+.mh-rescan-icon {
+    font-size: 9px !important;
+    opacity: 0;
+    margin-left: 2px;
+    transition: opacity 0.15s;
+}
+.mh-rescannable:hover {
+    background: rgba(99, 102, 241, 0.10);
+    border-color: rgba(99, 102, 241, 0.25);
+}
+.mh-rescannable:hover .mh-rescan-icon {
+    opacity: 0.7;
+}
+.mh-rescannable:active {
+    background: rgba(99, 102, 241, 0.18);
+}
+
 /* Info bar row 2 — sits directly below row 1 */
 .mh-info-bar-row2 {
     margin-top: -1px;  /* merge borders with row 1 */

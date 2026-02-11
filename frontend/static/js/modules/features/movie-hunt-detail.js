@@ -979,27 +979,30 @@
                         if (resEl) resEl.innerHTML = '<span class="mh-probe-badge mh-probe-pending"><i class="fas fa-clock"></i> Pending</span>';
                         if (codecEl) codecEl.innerHTML = '<span class="mh-probe-badge mh-probe-pending"><i class="fas fa-clock"></i> Pending</span>';
                     } else if (probeStatus === 'failed') {
-                        if (resEl) resEl.innerHTML = data.file_resolution
-                            ? data.file_resolution
-                            : '<span class="mh-probe-badge mh-probe-failed"><i class="fas fa-exclamation-triangle"></i> Failed</span>';
-                        if (codecEl) codecEl.innerHTML = (data.file_codec && data.file_codec !== '-')
-                            ? this.escapeHtml(data.file_codec)
-                            : '<span class="mh-probe-badge mh-probe-failed"><i class="fas fa-exclamation-triangle"></i> Failed</span>';
+                        var resText = data.file_resolution || '';
+                        var codecText = (data.file_codec && data.file_codec !== '-') ? data.file_codec : '';
+                        if (resEl) resEl.innerHTML = resText
+                            ? this._wrapRescannable(this.escapeHtml(resText), 'mh-probe-failed')
+                            : this._wrapRescannable('<i class="fas fa-exclamation-triangle"></i> Failed', 'mh-probe-failed');
+                        if (codecEl) codecEl.innerHTML = codecText
+                            ? this._wrapRescannable(this.escapeHtml(codecText), 'mh-probe-failed')
+                            : this._wrapRescannable('<i class="fas fa-exclamation-triangle"></i> Failed', 'mh-probe-failed');
                     } else if (probeStatus === 'disabled') {
-                        // Analyze off — show filename-based data or "Disabled"
+                        // Analyze off — show filename-based data, no rescan
                         if (resEl) resEl.textContent = data.file_resolution || '-';
                         if (codecEl) {
                             var codecStr = this._buildCodecString(data);
                             codecEl.textContent = codecStr || '-';
                         }
                     } else {
-                        // cached or scanned — show real data
-                        if (resEl) resEl.textContent = data.file_resolution || '-';
-                        if (codecEl) {
-                            var codecStr = this._buildCodecString(data);
-                            codecEl.textContent = codecStr || '-';
-                        }
+                        // cached, scanned, or filename — show data with rescan on hover
+                        var resText = data.file_resolution || '-';
+                        var codecStr = this._buildCodecString(data);
+                        if (resEl) resEl.innerHTML = this._wrapRescannable(this.escapeHtml(resText));
+                        if (codecEl) codecEl.innerHTML = this._wrapRescannable(this.escapeHtml(codecStr || '-'));
                     }
+                    // Bind rescan click handlers on the row
+                    this._bindRescanHandlers();
 
                     // Score with hover tooltip
                     if (scoreEl) {
@@ -1048,6 +1051,83 @@
         },
 
         /* ── Probe helpers ─────────────────────────────────────── */
+
+        _wrapRescannable(innerHtml, badgeClass) {
+            // Wrap content in a clickable rescan container with a subtle icon on hover
+            var cls = 'mh-probe-badge mh-rescannable';
+            if (badgeClass) cls += ' ' + badgeClass;
+            return '<span class="' + cls + '" title="Click to rescan">' +
+                '<span class="mh-rescan-content">' + innerHtml + '</span>' +
+                '<i class="fas fa-redo-alt mh-rescan-icon"></i>' +
+                '</span>';
+        },
+
+        _bindRescanHandlers() {
+            var self = this;
+            var btns = document.querySelectorAll('#mh-info-bar-row2 .mh-rescannable');
+            btns.forEach(function(btn) {
+                if (btn._rescanBound) return;
+                btn._rescanBound = true;
+                btn.addEventListener('click', function() {
+                    if (!self.currentMovie || !self.selectedInstanceId) return;
+                    var tmdbId = self.currentMovie.tmdb_id || self.currentMovie.id;
+                    self._triggerForceProbe(tmdbId, self.selectedInstanceId);
+                });
+            });
+        },
+
+        async _triggerForceProbe(tmdbId, instanceId) {
+            // Show "Scanning" while waiting for the force re-probe
+            var resEl = document.getElementById('mh-ib-resolution');
+            var codecEl = document.getElementById('mh-ib-codec');
+            if (resEl) resEl.innerHTML = '<span class="mh-probe-badge mh-probe-scanning"><i class="fas fa-spinner fa-spin"></i> Scanning</span>';
+            if (codecEl) codecEl.innerHTML = '<span class="mh-probe-badge mh-probe-scanning"><i class="fas fa-spinner fa-spin"></i> Scanning</span>';
+
+            // Force re-probe (skip cache)
+            try {
+                var url = './api/movie-hunt/movie-status?tmdb_id=' + tmdbId + '&instance_id=' + instanceId + '&force_probe=true';
+                var resp = await fetch(url);
+                var data = await resp.json();
+                this.currentMovieStatus = data;
+
+                // Update resolution/codec/score cells with fresh data
+                if (data && data.has_file) {
+                    var probeStatus = data.probe_status || '';
+                    if (probeStatus === 'failed') {
+                        var resText = data.file_resolution || '';
+                        var codecText = (data.file_codec && data.file_codec !== '-') ? data.file_codec : '';
+                        if (resEl) resEl.innerHTML = resText
+                            ? this._wrapRescannable(this.escapeHtml(resText), 'mh-probe-failed')
+                            : this._wrapRescannable('<i class="fas fa-exclamation-triangle"></i> Failed', 'mh-probe-failed');
+                        if (codecEl) codecEl.innerHTML = codecText
+                            ? this._wrapRescannable(this.escapeHtml(codecText), 'mh-probe-failed')
+                            : this._wrapRescannable('<i class="fas fa-exclamation-triangle"></i> Failed', 'mh-probe-failed');
+                    } else {
+                        var resText = data.file_resolution || '-';
+                        var codecStr = this._buildCodecString(data);
+                        if (resEl) resEl.innerHTML = this._wrapRescannable(this.escapeHtml(resText));
+                        if (codecEl) codecEl.innerHTML = this._wrapRescannable(this.escapeHtml(codecStr || '-'));
+                    }
+                    this._bindRescanHandlers();
+
+                    // Update score (may have changed due to probe-enriched scoring)
+                    var scoreEl = document.getElementById('mh-ib-score');
+                    if (scoreEl) {
+                        var scoreVal = data.file_score;
+                        if (scoreVal != null) {
+                            var scoreClass = scoreVal >= 0 ? 'mh-score-pos' : 'mh-score-neg';
+                            var breakdown = data.file_score_breakdown || 'No custom format matches';
+                            scoreEl.innerHTML = '<span class="mh-score-badge ' + scoreClass + '" title="' + this.escapeHtml(breakdown) + '">' + scoreVal + '</span>';
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('[MovieHuntDetail] Force probe error:', err);
+                if (resEl) resEl.innerHTML = this._wrapRescannable('<i class="fas fa-exclamation-triangle"></i> Error', 'mh-probe-failed');
+                if (codecEl) codecEl.innerHTML = this._wrapRescannable('<i class="fas fa-exclamation-triangle"></i> Error', 'mh-probe-failed');
+                this._bindRescanHandlers();
+            }
+        },
 
         _buildCodecString(data) {
             if (data.file_video_codec || data.file_audio_codec) {

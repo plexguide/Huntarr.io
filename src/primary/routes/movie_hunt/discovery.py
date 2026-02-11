@@ -872,6 +872,7 @@ def api_movie_hunt_movie_status():
     tmdb_id = request.args.get('tmdb_id', type=int)
     instance_id = _get_movie_hunt_instance_id_from_request()
     skip_probe = request.args.get('skip_probe', 'false').lower() == 'true'
+    force_probe = request.args.get('force_probe', 'false').lower() == 'true'
 
     if not tmdb_id:
         return jsonify({'success': False, 'error': 'tmdb_id required'}), 400
@@ -1017,29 +1018,46 @@ def api_movie_hunt_movie_status():
             # Read from universal video settings (shared across all instances)
             analyze_enabled = True  # default
             scan_profile = 'default'
+            scan_strategy = 'trust_filename'
             try:
                 from .instances import get_universal_video_settings
                 uvs = get_universal_video_settings()
                 analyze_enabled = uvs.get('analyze_video_files', True)
                 scan_profile = (uvs.get('video_scan_profile') or 'default').strip().lower()
+                scan_strategy = (uvs.get('video_scan_strategy') or 'trust_filename').strip().lower()
             except Exception:
                 pass
 
-            if not analyze_enabled:
+            # Decide whether to probe:
+            # - "trust_filename": only probe when filename can't provide resolution/codec
+            # - "always_verify": always probe to confirm actual file contents
+            # - force_probe: user explicitly clicked rescan, always probe
+            filename_has_info = bool(file_resolution) or bool(file_codec)
+            should_probe = (
+                force_probe
+                or scan_strategy == 'always_verify'
+                or not filename_has_info
+            )
+
+            if not analyze_enabled and not force_probe:
                 probe_status = 'disabled'
             elif skip_probe:
                 # Quick-load mode: caller will make a second request for the actual probe
                 probe_status = 'pending'
+            elif not should_probe:
+                # trust_filename strategy and filename provided enough info — skip probe
+                probe_status = 'filename'
             else:
                 current_mtime = 0
                 try:
                     current_mtime = int(os.path.getmtime(file_path))
                 except OSError:
                     current_mtime = 0
-                # Check for cached media_info on the collection item
+                # Check for cached media_info on the collection item (skip cache on force_probe)
                 cached_info = movie.get('media_info')
                 if (
-                    cached_info
+                    not force_probe
+                    and cached_info
                     and isinstance(cached_info, dict)
                     and cached_info.get('file_size') == file_size
                     and cached_info.get('file_mtime') == current_mtime
@@ -1049,7 +1067,7 @@ def api_movie_hunt_movie_status():
                     probe_data = cached_info
                     probe_status = 'cached'
                 else:
-                    # Cache miss — probe the file
+                    # Cache miss or force_probe — probe the file
                     try:
                         from src.primary.utils.media_probe import probe_media_file
                         probe_data = probe_media_file(file_path, scan_profile=scan_profile)
@@ -1074,7 +1092,6 @@ def api_movie_hunt_movie_status():
                                     break
                             if saved:
                                 _save_collection_config(all_items, instance_id)
-                                movie_hunt_logger.debug("Cached media_info for tmdb_id=%s (instance=%s)", tmdb_id, instance_id)
                             else:
                                 movie_hunt_logger.debug("Could not cache: tmdb_id=%s not found in collection reload", tmdb_id)
                         except Exception as cache_err:
@@ -1103,6 +1120,38 @@ def api_movie_hunt_movie_status():
                         parts.append(audio_str)
                     if parts:
                         file_codec = ' / '.join(parts)
+
+                    # Re-score using enriched title (probe-verified resolution/codec)
+                    # so the custom format score reflects the actual file, not just filename
+                    try:
+                        enriched = fname
+                        # Append probe-detected tokens that may be missing from filename
+                        tokens_to_add = []
+                        fl_lower = fname.lower()
+                        if file_resolution and file_resolution.replace('p', '') not in fl_lower:
+                            tokens_to_add.append(file_resolution)
+                        if file_video_codec:
+                            # Normalize codec for filename matching (H.265 -> x265/hevc)
+                            vc_lower = file_video_codec.lower().replace('.', '').replace('-', '')
+                            if vc_lower not in fl_lower and vc_lower.replace('h', 'x') not in fl_lower:
+                                tokens_to_add.append(file_video_codec)
+                        if file_audio_codec:
+                            ac_lower = file_audio_codec.lower().replace('-', '').replace(' ', '')
+                            if ac_lower not in fl_lower.replace('-', '').replace(' ', ''):
+                                tokens_to_add.append(file_audio_codec)
+                        if file_audio_channels:
+                            ch_lower = file_audio_channels.lower().replace('.', '').replace(' ', '')
+                            if ch_lower not in fl_lower.replace('.', '').replace(' ', ''):
+                                tokens_to_add.append(file_audio_channels)
+                        if tokens_to_add:
+                            enriched = fname + ' ' + ' '.join(tokens_to_add)
+                        from .profiles import _score_release, _get_profile_by_name_or_default
+                        profile = _get_profile_by_name_or_default(quality_profile_name, instance_id)
+                        probe_score, probe_breakdown = _score_release(enriched, profile, instance_id)
+                        file_score = probe_score
+                        file_score_breakdown = probe_breakdown
+                    except Exception:
+                        pass  # keep filename-based score
 
         # Minimum availability
         min_availability = (movie.get('minimum_availability') or 'released').strip()

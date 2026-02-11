@@ -293,9 +293,11 @@ MOVIE_HUNT_UNIVERSAL_VIDEO_KEY = "movie_hunt_universal_video"
 _UNIVERSAL_VIDEO_DEFAULTS = {
     "analyze_video_files": True,
     "video_scan_profile": "default",
+    "video_scan_strategy": "trust_filename",
 }
 
 _VALID_SCAN_PROFILES = {"light", "default", "moderate", "heavy", "maximum"}
+_VALID_SCAN_STRATEGIES = {"trust_filename", "always_verify"}
 
 
 def get_universal_video_settings() -> dict:
@@ -331,6 +333,9 @@ def api_movie_hunt_universal_video_put():
         if 'video_scan_profile' in data:
             raw = (str(data['video_scan_profile']) or 'default').strip().lower()
             out['video_scan_profile'] = raw if raw in _VALID_SCAN_PROFILES else 'default'
+        if 'video_scan_strategy' in data:
+            raw = (str(data['video_scan_strategy']) or 'trust_filename').strip().lower()
+            out['video_scan_strategy'] = raw if raw in _VALID_SCAN_STRATEGIES else 'trust_filename'
         from src.primary.utils.database import get_database
         db = get_database()
         db.save_app_config(MOVIE_HUNT_UNIVERSAL_VIDEO_KEY, out)
