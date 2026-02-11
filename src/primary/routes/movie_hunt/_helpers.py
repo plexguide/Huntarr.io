@@ -98,7 +98,7 @@ def _extract_formats_from_filename(filename):
         parts.append('XviD')
     if 'ATMOS' in t:
         parts.append('Atmos')
-    if 'DDP' in t or 'DOLBY' in t and 'DIGITAL' in t_flat:
+    if 'DDP' in t or ('DOLBY' in t and 'DIGITAL' in t_flat):
         if 'Atmos' not in parts:
             parts.append('DDP')
     elif 'DTS' in t:

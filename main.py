@@ -109,7 +109,6 @@ try:
     from primary.background import start_huntarr, stop_event, shutdown_threads
     # Configure logging first
     import logging
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
     from primary.utils.logger import setup_main_logger, get_logger
     from primary.utils.clean_logger import setup_clean_logging
     
@@ -239,8 +238,6 @@ def run_web_server():
 
     # Log the current authentication mode once at startup
     try:
-        import sys
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
         from primary.settings_manager import load_settings
         
         settings = load_settings("general")

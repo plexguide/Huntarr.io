@@ -18,6 +18,7 @@ import json
 
 from flask import Blueprint, request, jsonify
 from src.primary.utils.logger import get_logger
+from src.primary.utils.config_paths import CONFIG_DIR
 
 logger = get_logger("nzb_hunt")
 
@@ -28,14 +29,8 @@ nzb_hunt_bp = Blueprint("nzb_hunt", __name__)
 # ──────────────────────────────────────────────────────────────────
 
 def _config_dir():
-    """Return the config directory - /config in Docker, <project>/data locally."""
-    if os.path.isdir("/config"):
-        return "/config"
-    # Local dev fallback
-    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    data_dir = os.path.join(base, "data")
-    os.makedirs(data_dir, exist_ok=True)
-    return data_dir
+    """Return the config directory — uses centralized CONFIG_DIR from config_paths."""
+    return CONFIG_DIR
 
 
 def _nzb_config_path():
@@ -484,11 +479,16 @@ def browse_nzb_dirs():
         return jsonify({"path": "/", "directories": [], "error": "Invalid path"}), 400
 
     path = os.path.abspath(os.path.normpath(path))
+    
+    # Security: restrict browsing to allowed root directories to prevent directory traversal
+    ALLOWED_ROOTS = ["/media", "/downloads", "/data", "/mnt", "/config", "/share", "/shares"]
+    if path != "/" and not any(path == root or path.startswith(root + os.sep) for root in ALLOWED_ROOTS):
+        return jsonify({"path": "/", "directories": [], "error": "Access denied: path outside allowed directories"}), 403
 
     try:
         entries = sorted(os.listdir(path))
     except Exception as e:
-        return jsonify({"path": path, "directories": [], "error": str(e)})
+        return jsonify({"path": path, "directories": [], "error": "Cannot list directory"})
 
     dirs = []
     for entry in entries:
@@ -496,9 +496,9 @@ def browse_nzb_dirs():
         if os.path.isdir(full):
             dirs.append({"name": entry, "path": full})
 
-    # At root, always include /media and /downloads if they exist
+    # At root, always include common directories if they exist
     if path == "/":
-        for special in ["/media", "/downloads"]:
+        for special in ALLOWED_ROOTS:
             if os.path.isdir(special) and not any(d["path"] == special for d in dirs):
                 dirs.append({"name": os.path.basename(special), "path": special})
         dirs.sort(key=lambda d: d["name"])

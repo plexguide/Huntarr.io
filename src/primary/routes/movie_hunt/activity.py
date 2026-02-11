@@ -670,6 +670,7 @@ def _delete_from_download_client(client, item_ids):
 
 _movie_hunt_poller_thread = None
 _movie_hunt_poller_started = False
+_movie_hunt_poller_lock = threading.Lock()
 _MOVIE_HUNT_POLL_INTERVAL_SEC = 90
 
 
@@ -685,11 +686,15 @@ def _movie_hunt_poll_completions():
 
 
 def _ensure_movie_hunt_poller_started():
-    """Start the Movie Hunt completion poller thread once."""
+    """Start the Movie Hunt completion poller thread once (thread-safe)."""
     global _movie_hunt_poller_thread, _movie_hunt_poller_started
     if _movie_hunt_poller_started:
         return
-    _movie_hunt_poller_started = True
+    with _movie_hunt_poller_lock:
+        # Double-check after acquiring lock
+        if _movie_hunt_poller_started:
+            return
+        _movie_hunt_poller_started = True
 
     def _run():
         import time

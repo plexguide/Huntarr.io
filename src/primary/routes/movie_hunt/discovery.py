@@ -1549,8 +1549,11 @@ def api_movie_hunt_collection_remove_by_tmdb():
             movie_year = str(removed_item.get('year') or '').strip()
 
             if file_path and os.path.isfile(file_path):
-                folder = os.path.dirname(file_path)
-                if os.path.isdir(folder):
+                folder = os.path.dirname(os.path.abspath(file_path))
+                # Safety: ensure the folder is under a known root folder to prevent deleting arbitrary paths
+                if root_folder and not folder.startswith(os.path.abspath(root_folder)):
+                    movie_hunt_logger.warning("Refusing to delete folder outside root: %s", folder)
+                elif os.path.isdir(folder):
                     try:
                         shutil.rmtree(folder)
                         movie_hunt_logger.info("Deleted movie folder: %s", folder)
@@ -1558,8 +1561,11 @@ def api_movie_hunt_collection_remove_by_tmdb():
                         movie_hunt_logger.error("Failed to delete folder %s: %s", folder, e)
             elif root_folder and movie_title:
                 folder_name = '%s (%s)' % (movie_title, movie_year) if movie_year else movie_title
-                folder_path = os.path.join(root_folder, folder_name)
-                if os.path.isdir(folder_path):
+                folder_path = os.path.join(os.path.abspath(root_folder), folder_name)
+                # Safety: ensure the constructed path stays under root_folder
+                if not folder_path.startswith(os.path.abspath(root_folder)):
+                    movie_hunt_logger.warning("Refusing to delete folder outside root: %s", folder_path)
+                elif os.path.isdir(folder_path):
                     try:
                         shutil.rmtree(folder_path)
                         movie_hunt_logger.info("Deleted movie folder: %s", folder_path)

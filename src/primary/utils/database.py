@@ -25,26 +25,33 @@ class HuntarrDatabase:
         self.db_path = self._get_database_path()
         self.ensure_database_exists()
     
-    def execute_query(self, query: str, params: tuple = None) -> List[tuple]:
-        """Execute a raw SQL query and return results"""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            if params:
-                cursor.execute(query, params)
-            else:
-                cursor.execute(query)
-            return cursor.fetchall()
-    
+    @staticmethod
+    def _use_row_factory(conn):
+        """Context manager that temporarily sets row_factory = sqlite3.Row on a connection,
+        then resets it to None on exit. Prevents row_factory leaking to other callers
+        sharing the same thread-local connection."""
+        import contextlib
+        @contextlib.contextmanager
+        def _ctx():
+            old = conn.row_factory
+            conn.row_factory = sqlite3.Row
+            try:
+                yield conn
+            finally:
+                conn.row_factory = old
+        return _ctx()
+
     def _configure_connection(self, conn):
         """Configure SQLite connection with Synology NAS compatible settings"""
         conn.execute('PRAGMA foreign_keys = ON')
         conn.execute('PRAGMA journal_mode = WAL')
         conn.execute('PRAGMA synchronous = NORMAL')
-        conn.execute('PRAGMA cache_size = 10000')
+        conn.execute('PRAGMA cache_size = -16000')  # 16MB cache (negative = KB)
         conn.execute('PRAGMA temp_store = MEMORY')
         conn.execute('PRAGMA mmap_size = 268435456')
         conn.execute('PRAGMA wal_autocheckpoint = 1000')
         conn.execute('PRAGMA busy_timeout = 30000')
+        conn.execute('PRAGMA auto_vacuum = INCREMENTAL')
     
     def get_connection(self):
         """Get a configured SQLite connection with Synology NAS compatibility.
@@ -59,6 +66,8 @@ class HuntarrDatabase:
         if cached_conn is not None:
             try:
                 cached_conn.execute("SELECT 1")
+                # Reset row_factory to prevent leaking Row mode across callers
+                cached_conn.row_factory = None
                 return cached_conn
             except Exception:
                 # Connection is stale/broken, discard it
@@ -449,10 +458,37 @@ class HuntarrDatabase:
                     # Clean up expired rate limit entries
                     self.cleanup_expired_rate_limits()
                     
+                    # Clean up old hunt history entries (keep last 90 days)
+                    try:
+                        cutoff = int(time.time()) - (90 * 24 * 60 * 60)
+                        with self.get_connection() as conn:
+                            cursor = conn.execute(
+                                "DELETE FROM hunt_history WHERE date_time < ?", (cutoff,)
+                            )
+                            if cursor.rowcount > 0:
+                                conn.commit()
+                                logger.info(f"Cleaned up {cursor.rowcount} old hunt history entries")
+                    except Exception as e:
+                        logger.warning(f"Hunt history cleanup failed: {e}")
+                    
+                    # Clean up old processed reset requests
+                    try:
+                        with self.get_connection() as conn:
+                            for table in ('reset_requests', 'reset_requests_per_instance'):
+                                cursor = conn.execute(
+                                    f"DELETE FROM {table} WHERE processed = 1 AND processed_at < datetime('now', '-30 days')"
+                                )
+                                if cursor.rowcount > 0:
+                                    logger.info(f"Cleaned up {cursor.rowcount} old processed entries from {table}")
+                            conn.commit()
+                    except Exception as e:
+                        logger.warning(f"Reset requests cleanup failed: {e}")
+                    
                     # Optimize database
                     with self.get_connection() as conn:
                         conn.execute("PRAGMA optimize")
                         conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+                        conn.execute("PRAGMA incremental_vacuum(100)")
                     
                     logger.info("Scheduled database maintenance completed")
                     
@@ -909,8 +945,9 @@ class HuntarrDatabase:
                 conn.execute("ALTER TABLE notification_connections ADD COLUMN instance_scope TEXT NOT NULL DEFAULT 'all'")
             
             # Create indexes for better performance
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_app_configs_type ON app_configs(app_type)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_general_settings_key ON general_settings(setting_key)')
+            # Note: indexes on UNIQUE columns (app_configs.app_type, general_settings.setting_key,
+            # swaparr_stats.stat_key, users.username, sponsors.login) and PRIMARY KEY columns
+            # (movie_hunt_instances.id) are redundant — SQLite auto-creates implicit indexes for these.
             conn.execute('CREATE INDEX IF NOT EXISTS idx_stateful_processed_app_instance ON stateful_processed_ids(app_type, instance_name)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_stateful_processed_media_id ON stateful_processed_ids(media_id)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_stateful_instance_locks_app_instance ON stateful_instance_locks(app_type, instance_name)')
@@ -919,21 +956,20 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hourly_caps_per_instance_app ON hourly_caps_per_instance(app_type, instance_name)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_sleep_data_app_type ON sleep_data(app_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_sleep_data_per_instance_app ON sleep_data_per_instance(app_type, instance_name)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_swaparr_stats_key ON swaparr_stats(stat_key)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_schedules_app_type ON schedules(app_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_schedules_enabled ON schedules(enabled)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_schedules_time ON schedules(time_hour, time_minute)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_state_data_app_type ON state_data(app_type, state_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_swaparr_state_app_name ON swaparr_state(app_name, state_type)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_sponsors_login ON sponsors(login)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_movie_hunt_instances_id ON movie_hunt_instances(id)')
             # Logs indexes moved to logs.db
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_app_instance ON hunt_history(app_type, instance_name)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_date_time ON hunt_history(date_time)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_media_id ON hunt_history(media_id)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_operation_type ON hunt_history(operation_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hunt_history_processed_info ON hunt_history(processed_info)')
+            # Reset request indexes for pending lookups (queried by app_type + processed)
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_reset_requests_app_processed ON reset_requests(app_type, processed)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_reset_requests_per_instance_app ON reset_requests_per_instance(app_type, instance_name, processed)')
             
             # Hidden media filter index for requestarr (frequently filtered by media_type + app_type + instance_name)
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hidden_media_filter ON requestarr_hidden_media(media_type, app_type, instance_name, hidden_at)')
@@ -1004,10 +1040,6 @@ class HuntarrDatabase:
             )
             return [dict(row) for row in cursor.fetchall()]
 
-    def ensure_movie_hunt_default_instance(self):
-        """No-op: new installations do not get a default Movie Hunt instance. User creates instances explicitly."""
-        pass
-
     def create_movie_hunt_instance(self, name: str) -> int:
         """Create a new Movie Hunt instance. Returns new id (never reused). Name made unique by appending -1, -2 if needed."""
         name = (name or '').strip() or 'Unnamed'
@@ -1019,14 +1051,13 @@ class HuntarrDatabase:
             while display_name in existing_names:
                 suffix += 1
                 display_name = f'{name}-{suffix}'
-            cursor = conn.execute('SELECT COALESCE(MAX(id), 0) + 1 FROM movie_hunt_instances')
-            new_id = cursor.fetchone()[0]
-            conn.execute(
-                'INSERT INTO movie_hunt_instances (id, name, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-                (new_id, display_name)
+            # Let SQLite AUTOINCREMENT assign the id to avoid TOCTOU race conditions
+            cursor = conn.execute(
+                'INSERT INTO movie_hunt_instances (name, created_at) VALUES (?, CURRENT_TIMESTAMP)',
+                (display_name,)
             )
             conn.commit()
-            return new_id
+            return cursor.lastrowid
 
     def update_movie_hunt_instance(self, instance_id: int, name: str) -> bool:
         """Rename a Movie Hunt instance. Enforces unique name (auto-append -1, -2 if needed)."""
@@ -1381,14 +1412,6 @@ class HuntarrDatabase:
             conn.execute('DELETE FROM stateful_instance_locks')
             conn.commit()
             logger.info("Cleared all stateful management data from database")
-    
-    def get_stateful_summary(self, app_type: str, instance_name: str) -> Dict[str, Any]:
-        """Get summary of stateful data for an app instance"""
-        processed_ids = self.get_processed_ids(app_type, instance_name)
-        return {
-            "processed_count": len(processed_ids),
-            "has_processed_items": len(processed_ids) > 0
-        }
     
     # Per-Instance State Management Methods
     
@@ -1786,32 +1809,24 @@ class HuntarrDatabase:
             return result
     
     def increment_hourly_cap_per_instance(self, app_type: str, instance_name: str, increment: int = 1):
-        """Increment hourly API usage for an instance (resets if new hour). Instance name normalized for consistent keys."""
+        """Increment hourly API usage for an instance (resets if new hour). Instance name normalized for consistent keys.
+        Uses atomic INSERT OR REPLACE to avoid read-then-write race conditions."""
         import datetime
         # Normalize so write key matches read key (from settings) and counts persist across refresh
         key = (instance_name or "Default").strip() if isinstance(instance_name, str) else "Default"
         key = key if key else "Default"
         current_hour = datetime.datetime.now().hour
-        # Use same connection pattern as increment_media_stat_per_instance (working per-instance write)
         with self.get_connection() as conn:
-            cursor = conn.execute('''
-                SELECT api_hits, last_reset_hour FROM hourly_caps_per_instance WHERE app_type = ? AND instance_name = ?
-            ''', (app_type, key))
-            row = cursor.fetchone()
-            if row:
-                prev_hits, last_hour = row[0], row[1]
-                if last_hour != current_hour:
-                    prev_hits = 0
-                new_hits = prev_hits + increment
-                conn.execute('''
-                    UPDATE hourly_caps_per_instance SET api_hits = ?, last_reset_hour = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE app_type = ? AND instance_name = ?
-                ''', (new_hits, current_hour, app_type, key))
-            else:
-                conn.execute('''
-                    INSERT INTO hourly_caps_per_instance (app_type, instance_name, api_hits, last_reset_hour, updated_at)
-                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ''', (app_type, key, increment, current_hour))
+            # Atomic upsert: if row exists and same hour, add increment; if different hour or missing, start fresh
+            conn.execute('''
+                INSERT INTO hourly_caps_per_instance (app_type, instance_name, api_hits, last_reset_hour, updated_at)
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(app_type, instance_name) DO UPDATE SET
+                    api_hits = CASE WHEN last_reset_hour = ? THEN api_hits + ? ELSE ? END,
+                    last_reset_hour = ?,
+                    updated_at = CURRENT_TIMESTAMP
+            ''', (app_type, key, increment, current_hour,
+                  current_hour, increment, increment, current_hour))
             conn.commit()
 
     def get_sleep_data(self, app_type: str = None) -> Dict[str, Any]:
@@ -1876,7 +1891,7 @@ class HuntarrDatabase:
                     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ''', (app_type, next_cycle_time, cycle_lock, last_cycle_start, last_cycle_end))
             
-                conn.commit()
+            conn.commit()
     
     def get_sleep_data_per_instance(self, app_type: str, instance_name: str = None) -> Dict[str, Any]:
         """Get sleep/cycle data for an instance or all instances of an app"""
@@ -2515,18 +2530,26 @@ class HuntarrDatabase:
         """Generate a new recovery key for a user"""
         import hashlib
         import secrets
-        import random
         
-        # Word lists for generating human-readable recovery keys
-        adjectives = ['ocean', 'storm', 'frost', 'light', 'dark', 'swift', 'calm', 'wild', 'bright', 'deep']
-        nouns = ['tower', 'bridge', 'quest', 'dream', 'flame', 'river', 'mountain', 'crystal', 'shadow', 'star']
+        # Expanded word lists for better entropy
+        adjectives = [
+            'ocean', 'storm', 'frost', 'light', 'dark', 'swift', 'calm', 'wild', 'bright', 'deep',
+            'lunar', 'solar', 'amber', 'coral', 'ivory', 'azure', 'cedar', 'maple', 'polar', 'tidal',
+            'rapid', 'vivid', 'noble', 'prime', 'stark', 'brave', 'crisp', 'grand', 'keen', 'bold'
+        ]
+        nouns = [
+            'tower', 'bridge', 'quest', 'dream', 'flame', 'river', 'mountain', 'crystal', 'shadow', 'star',
+            'falcon', 'canyon', 'harbor', 'meadow', 'summit', 'valley', 'beacon', 'cipher', 'prism', 'anvil',
+            'atlas', 'delta', 'forge', 'haven', 'nexus', 'orbit', 'pulse', 'spark', 'vault', 'zenith'
+        ]
         
         try:
             # Generate a human-readable recovery key like "ocean-light-tower-51"
-            adj = random.choice(adjectives)
-            noun1 = random.choice(nouns)
-            noun2 = random.choice(nouns)
-            number = random.randint(10, 99)
+            # Uses secrets module for cryptographically secure randomness
+            adj = secrets.choice(adjectives)
+            noun1 = secrets.choice(nouns)
+            noun2 = secrets.choice(nouns)
+            number = secrets.randbelow(90) + 10  # 10-99
             recovery_key = f"{adj}-{noun1}-{noun2}-{number}"
             
             # Hash the recovery key for secure storage
@@ -2752,175 +2775,7 @@ class HuntarrDatabase:
             
             logger.info(f"Saved {len(sponsors_data)} sponsors to database")
     
-    def add_sponsor(self, sponsor_data: Dict[str, Any]):
-        """Add a new sponsor to the database"""
-        try:
-            with self.get_connection() as conn:
-                conn.execute('''
-                    INSERT OR REPLACE INTO sponsors 
-                    (login, name, avatar_url, url, tier, monthly_amount, category)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    sponsor_data.get('login'),
-                    sponsor_data.get('name', sponsor_data.get('login')),
-                    sponsor_data.get('avatar_url'),
-                    sponsor_data.get('url'),
-                    sponsor_data.get('tier'),
-                    sponsor_data.get('monthly_amount', 0),
-                    sponsor_data.get('category', 'individual')
-                ))
-                conn.commit()
-        except Exception as e:
-            logger.error(f"Error adding sponsor: {e}")
-
-    # Logs Database Methods
-    def insert_log(self, timestamp: datetime, level: str, app_type: str, message: str, logger_name: str = None):
-        """Insert a new log entry"""
-        try:
-            with self.get_connection() as conn:
-                conn.execute('''
-                    INSERT INTO logs (timestamp, level, app_type, message, logger_name)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (timestamp.isoformat(), level, app_type, message, logger_name))
-                conn.commit()
-        except Exception as e:
-            logger.error(f"Error inserting log entry: {e}")
-    
-    def get_logs(self, app_type: str = None, level: str = None, limit: int = 100, offset: int = 0, search: str = None) -> List[Dict[str, Any]]:
-        """Get logs with optional filtering"""
-        try:
-            with self.get_connection() as conn:
-                conn.row_factory = sqlite3.Row
-                
-                # Build query with filters
-                query = "SELECT * FROM logs WHERE 1=1"
-                params = []
-                
-                if app_type:
-                    query += " AND app_type = ?"
-                    params.append(app_type)
-                
-                if level:
-                    query += " AND level = ?"
-                    params.append(level)
-                
-                if search:
-                    query += " AND message LIKE ?"
-                    params.append(f"%{search}%")
-                
-                query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
-                params.extend([limit, offset])
-                
-                cursor = conn.execute(query, params)
-                rows = cursor.fetchall()
-                
-                return [dict(row) for row in rows]
-        except Exception as e:
-            logger.error(f"Error getting logs: {e}")
-            return []
-    
-    def get_log_count(self, app_type: str = None, level: str = None, search: str = None) -> int:
-        """Get total count of logs matching filters"""
-        try:
-            with self.get_connection() as conn:
-                query = "SELECT COUNT(*) FROM logs WHERE 1=1"
-                params = []
-                
-                if app_type:
-                    query += " AND app_type = ?"
-                    params.append(app_type)
-                
-                if level:
-                    query += " AND level = ?"
-                    params.append(level)
-                
-                if search:
-                    query += " AND message LIKE ?"
-                    params.append(f"%{search}%")
-                
-                cursor = conn.execute(query, params)
-                return cursor.fetchone()[0]
-        except Exception as e:
-            logger.error(f"Error getting log count: {e}")
-            return 0
-    
-    def cleanup_old_logs(self, days_to_keep: int = 30, max_entries_per_app: int = 10000):
-        """Clean up old logs based on age and count limits"""
-        try:
-            with self.get_connection() as conn:
-                # Time-based cleanup
-                cutoff_date = datetime.now() - timedelta(days=days_to_keep)
-                cursor = conn.execute(
-                    "DELETE FROM logs WHERE timestamp < ?",
-                    (cutoff_date.isoformat(),)
-                )
-                deleted_by_age = cursor.rowcount
-                
-                # Count-based cleanup per app type
-                app_types = ['system', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr']
-                total_deleted_by_count = 0
-                
-                for app_type in app_types:
-                    cursor = conn.execute('''
-                        DELETE FROM logs 
-                        WHERE app_type = ? AND id NOT IN (
-                            SELECT id FROM logs 
-                            WHERE app_type = ? 
-                            ORDER BY timestamp DESC 
-                            LIMIT ?
-                        )
-                    ''', (app_type, app_type, max_entries_per_app))
-                    total_deleted_by_count += cursor.rowcount
-                
-                conn.commit()
-                
-                if deleted_by_age > 0 or total_deleted_by_count > 0:
-                    logger.info(f"Cleaned up logs: {deleted_by_age} by age, {total_deleted_by_count} by count")
-                
-                return deleted_by_age + total_deleted_by_count
-        except Exception as e:
-            logger.error(f"Error cleaning up logs: {e}")
-            return 0
-    
-    def get_app_types_from_logs(self) -> List[str]:
-        """Get list of all app types that have logs"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.execute("SELECT DISTINCT app_type FROM logs ORDER BY app_type")
-                return [row[0] for row in cursor.fetchall()]
-        except Exception as e:
-            logger.error(f"Error getting app types from logs: {e}")
-            return []
-    
-    def get_log_levels(self) -> List[str]:
-        """Get list of all log levels that exist"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.execute("SELECT DISTINCT level FROM logs ORDER BY level")
-                return [row[0] for row in cursor.fetchall()]
-        except Exception as e:
-            logger.error(f"Error getting log levels: {e}")
-            return []
-    
-    def clear_logs(self, app_type: str = None):
-        """Clear logs for a specific app type or all logs"""
-        try:
-            with self.get_connection() as conn:
-                if app_type:
-                    cursor = conn.execute("DELETE FROM logs WHERE app_type = ?", (app_type,))
-                else:
-                    cursor = conn.execute("DELETE FROM logs")
-                
-                deleted_count = cursor.rowcount
-                conn.commit()
-                
-                logger.info(f"Cleared {deleted_count} logs" + (f" for {app_type}" if app_type else ""))
-                return deleted_count
-        except Exception as e:
-            logger.error(f"Error clearing logs: {e}")
-            return 0
-
-    # Hunt History/Manager Database Methods (logs methods removed - now in LogsDatabase)
+    # Hunt History/Manager Database Methods
     def add_hunt_history_entry(self, app_type: str, instance_name: str, media_id: str, 
                          processed_info: str, operation_type: str = "missing", 
                          discovered: bool = False, date_time: int = None) -> Dict[str, Any]:

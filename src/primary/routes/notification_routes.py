@@ -203,7 +203,7 @@ def list_connections():
         return jsonify({"connections": connections})
     except Exception as e:
         logger.exception("Error listing notification connections")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Failed to list notification connections"}), 500
 
 
 @notification_api.route("/api/notifications/connections", methods=["POST"])
@@ -232,7 +232,7 @@ def create_connection():
         return jsonify({"connection": conn, "id": conn_id}), 201
     except Exception as e:
         logger.exception("Error creating notification connection")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Failed to create notification connection"}), 500
 
 
 @notification_api.route("/api/notifications/connections/<int:conn_id>", methods=["PUT"])
@@ -253,7 +253,7 @@ def update_connection(conn_id):
         return jsonify({"connection": conn})
     except Exception as e:
         logger.exception("Error updating notification connection")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Failed to update notification connection"}), 500
 
 
 @notification_api.route("/api/notifications/connections/<int:conn_id>", methods=["DELETE"])
@@ -266,7 +266,7 @@ def remove_connection(conn_id):
         return jsonify({"success": True})
     except Exception as e:
         logger.exception("Error deleting notification connection")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Failed to delete notification connection"}), 500
 
 
 @notification_api.route("/api/notifications/connections/<int:conn_id>/test", methods=["POST"])
@@ -280,4 +280,4 @@ def test_conn(conn_id):
             return jsonify({"success": False, "error": err}), 400
     except Exception as e:
         logger.exception("Error testing notification connection")
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Failed to test notification connection"}), 500

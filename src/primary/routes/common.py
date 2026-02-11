@@ -9,7 +9,6 @@ import base64
 import secrets
 import string
 import io
-import xml.etree.ElementTree as ET
 import qrcode
 import pyotp
 import logging
@@ -58,6 +57,12 @@ def tmdb_image_proxy():
         if not image_url:
             return jsonify({'error': 'Missing url parameter'}), 400
         
+        # Security: only allow TMDB image URLs to prevent open redirect / SSRF
+        ALLOWED_PREFIXES = ('https://image.tmdb.org/', 'http://image.tmdb.org/')
+        if not image_url.startswith(ALLOWED_PREFIXES):
+            logger.warning(f"[TMDBCache] Blocked non-TMDB URL: {image_url}")
+            return jsonify({'error': 'Only TMDB image URLs are allowed'}), 400
+        
         # Get cache settings
         general_settings = settings_manager.load_settings('general')
         cache_days = int(general_settings.get('tmdb_image_cache_days', 7))
@@ -83,8 +88,7 @@ def tmdb_image_proxy():
     
     except Exception as e:
         logger.error(f"Error in TMDB image proxy: {e}")
-        # Fallback to direct TMDB URL on error
-        return redirect(request.args.get('url', ''))
+        return jsonify({'error': 'Image proxy error'}), 500
 
 # --- API Routes --- #
 
@@ -99,7 +103,7 @@ def health_check():
         try:
             import main
             is_shutting_down = main.is_shutting_down()
-        except:
+        except Exception:
             is_shutting_down = stop_event.is_set()
         
         if is_shutting_down:
@@ -121,7 +125,7 @@ def health_check():
             "status": "healthy",
             "message": "Application is running normally",
             "ready": True,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now().isoformat()
         }), 200
         
     except Exception as e:
@@ -143,7 +147,7 @@ def readiness_check():
         try:
             import main
             is_shutting_down = main.is_shutting_down()
-        except:
+        except Exception:
             is_shutting_down = stop_event.is_set()
         
         if is_shutting_down:
@@ -722,7 +726,8 @@ def generate_recovery_key():
                 return jsonify({"success": False, "error": "Current password is required"}), 400
 
             # Verify current password
-            if not verify_user(username, current_password):
+            auth_success, _ = verify_user(username, current_password)
+            if not auth_success:
                 logger.warning(f"Recovery key generation for '{username}' failed: Invalid password.")
                 return jsonify({"success": False, "error": "Invalid current password"}), 400
 
@@ -980,7 +985,7 @@ def get_stats_api():
         return jsonify({"success": True, "stats": stats})
     except Exception as e:
         logger.error(f"Error retrieving stats: {e}", exc_info=True)
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Failed to retrieve stats"}), 500
 
 def _allow_stats_reset():
     """Return True if request is allowed to reset stats (session, bypass, or No Login Mode)."""
@@ -1027,7 +1032,7 @@ def reset_stats_api():
             return jsonify({"success": False, "error": error_msg}), 500
     except Exception as e:
         logger.error(f"Error resetting stats: {e}", exc_info=True)
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Failed to reset stats"}), 500
 
 # Ensure all routes previously in this file that interact with settings
 # are either moved to web_server.py or updated here using the new settings_manager functions.
