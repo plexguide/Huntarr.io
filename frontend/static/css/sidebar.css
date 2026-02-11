@@ -385,15 +385,47 @@
     filter: drop-shadow(0 0 4px rgba(0, 188, 212, 0.5));
 }
 
-/* ===== DEV MODE INDICATOR ===== */
-.dev-mode-indicator {
+/* ===== SIDEBAR FOOTER ===== */
+.sidebar-footer {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 6px 12px;
-    background: rgba(0, 0, 0, 0.2);
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    background: transparent;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10;
+}
+
+.sidebar-footer-sponsor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    color: #e74c3c;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+}
+.sidebar-footer-sponsor:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(231, 76, 60, 0.5);
+    text-decoration: none;
+    color: #e74c3c;
+}
+.sidebar-footer-sponsor i {
+    font-size: 14px;
+}
+
+.dev-mode-indicator {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -401,7 +433,6 @@
     color: #64748b;
     font-size: 11px;
     font-weight: 500;
-    transition: all 0.2s ease;
 }
 
 .dev-mode-indicator i {
@@ -424,13 +455,9 @@
     color: #94a3b8;
 }
 
-.dev-mode-indicator:hover {
-    background: rgba(0, 0, 0, 0.3);
-}
-
-/* Adjust nav-menu bottom padding for dev indicator */
+/* Adjust nav-menu bottom padding for sidebar footer */
 .nav-menu {
-    padding-bottom: 36px;
+    padding-bottom: 100px;
 }
 
 /* ===== SETTINGS SUBPANEL ===== */

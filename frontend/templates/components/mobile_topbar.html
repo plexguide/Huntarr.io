@@ -58,11 +58,11 @@
         <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="mdrawer-donate">
             <i class="fas fa-heart"></i><span>Become a Sponsor</span>
         </a>
-        <a href="#settings-updates" class="mdrawer-version-row" id="mobileDrawerVersionRow">
-            <span class="mdrawer-ver-current" id="mobileDrawerVersion">--</span>
-            <span class="mdrawer-ver-dash" id="mobileDrawerDash" style="display: none;">—</span>
-            <span class="mdrawer-ver-latest" id="mobileDrawerLatest"></span>
-        </a>
+        <div class="mdrawer-version-row">
+            <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="mdrawer-ver-current" id="mobileDrawerVersion">--</a>
+            <span class="mdrawer-ver-dash">—</span>
+            <span class="mdrawer-dev-info"><i class="fas fa-code"></i> The Anti-Dev: <a href="https://github.com/Admin9705/" target="_blank" rel="noopener">9705</a></span>
+        </div>
     </div>
 </nav>
 
@@ -220,22 +220,7 @@
             var dvCur = document.getElementById('mobileDrawerVersion');
             if (dvCur && info.currentVersion) dvCur.textContent = 'v' + info.currentVersion;
 
-            // Drawer footer — latest version (only show if update available)
-            var dvLatest = document.getElementById('mobileDrawerLatest');
-            var dvDash = document.getElementById('mobileDrawerDash');
-            if (dvLatest && info.latestVersion) {
-                var isNewer = info.latestVersion !== info.currentVersion;
-                if (isNewer) {
-                    dvLatest.innerHTML = '<i class="fas fa-arrow-circle-up"></i> v' + info.latestVersion + ' available';
-                    dvLatest.className = 'mdrawer-ver-latest mdrawer-update-available';
-                    dvLatest.style.display = '';
-                    if (dvDash) dvDash.style.display = '';
-                } else {
-                    // Hide when up to date
-                    dvLatest.style.display = 'none';
-                    if (dvDash) dvDash.style.display = 'none';
-                }
-            }
+            // Mobile footer only shows current version (no update indicator)
         } catch(e) {}
     }
 

@@ -315,6 +315,7 @@
     .mdrawer-donate {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 10px;
         padding: 10px 12px;
         border-radius: 8px;
@@ -328,7 +329,7 @@
     .mdrawer-donate:hover { background: rgba(231,76,60,.16); text-decoration: none; }
     .mdrawer-donate i { font-size: 14px; }
 
-    /* Version row in footer - all aligned left */
+    /* Version row in footer - aligned left */
     .mdrawer-version-row {
         display: flex;
         align-items: center;
@@ -344,9 +345,30 @@
     .mdrawer-version-row:hover { opacity: 0.8; text-decoration: none; }
     .mdrawer-ver-current {
         color: #7cb8e4;
+        text-decoration: none;
+    }
+    .mdrawer-ver-current:hover {
+        color: #9dcbf0;
+        text-decoration: none;
     }
     .mdrawer-ver-dash {
         color: rgba(255,255,255,.4);
+    }
+    .mdrawer-dev-info {
+        color: #64748b;
+        font-size: 11px;
+    }
+    .mdrawer-dev-info i {
+        color: #3498db;
+        opacity: 0.6;
+        margin-right: 4px;
+    }
+    .mdrawer-dev-info a {
+        color: #64748b;
+        text-decoration: none;
+    }
+    .mdrawer-dev-info a:hover {
+        color: #94a3b8;
     }
     .mdrawer-ver-latest {
         display: inline-flex;
