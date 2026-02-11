@@ -27,6 +27,7 @@ SMARTHUNT_DEFAULTS = {
     "enabled": True,
     "hide_library_items": True,
     "min_tmdb_rating": 6.0,
+    "min_vote_count": 50,
     "year_start": 2000,
     "year_end": datetime.now().year + 1,
     "percentages": {
@@ -134,6 +135,7 @@ class SmartHuntEngine:
 
         pcts = settings.get("percentages", SMARTHUNT_DEFAULTS["percentages"])
         min_rating = float(settings.get("min_tmdb_rating", SMARTHUNT_DEFAULTS["min_tmdb_rating"]))
+        min_votes = int(settings.get("min_vote_count", SMARTHUNT_DEFAULTS["min_vote_count"]))
         year_start = int(settings.get("year_start", SMARTHUNT_DEFAULTS["year_start"]))
         year_end = int(settings.get("year_end", SMARTHUNT_DEFAULTS["year_end"]))
         api_key = self._get_api_key()
@@ -160,6 +162,7 @@ class SmartHuntEngine:
             "bl_movie": bl_movie,
             "bl_tv": bl_tv,
             "min_rating": min_rating,
+            "min_votes": min_votes,
             "year_start": year_start,
             "year_end": year_end,
         }
@@ -253,6 +256,10 @@ class SmartHuntEngine:
         # Apply minimum rating filter
         if min_rating > 0:
             deduped = [i for i in deduped if (i.get("vote_average") or 0) >= min_rating]
+
+        # Apply minimum vote count filter (for items from recommendations etc.)
+        if min_votes > 0:
+            deduped = [i for i in deduped if (i.get("vote_count") or 0) >= min_votes]
 
         # Trim to total target
         if len(deduped) > total_target:
@@ -562,6 +569,10 @@ class SmartHuntEngine:
             if region:
                 params["watch_region"] = region
             params["with_watch_providers"] = "|".join(str(p) for p in providers)
+        # Apply minimum vote count at the API level
+        min_votes = common.get("min_votes", 0)
+        if min_votes and min_votes > 0:
+            params["vote_count.gte"] = str(min_votes)
         return params
 
     def _apply_year_filter(self, params: dict, media_type: str, common: dict):
@@ -621,6 +632,7 @@ class SmartHuntEngine:
                 "poster_path": poster_url,
                 "backdrop_path": backdrop_url,
                 "vote_average": item.get("vote_average", 0),
+                "vote_count": item.get("vote_count", 0),
                 "popularity": item.get("popularity", 0),
             })
         return parsed

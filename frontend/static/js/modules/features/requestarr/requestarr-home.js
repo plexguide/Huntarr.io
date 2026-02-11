@@ -16,8 +16,6 @@ const HomeRequestarr = {
 
     /** SmartHunt instance (created after core is ready) */
     _smartHunt: null,
-    /** Whether Smart Hunt is enabled in main settings */
-    enableSmartHunt: true,
 
     // Helpers to encode/decode compound instance values (movie_hunt:Name or radarr:Name)
     _encodeInstance(appType, name) { return `${appType}:${name}`; },
@@ -80,12 +78,7 @@ const HomeRequestarr = {
 
     /** Create and load the SmartHunt carousel */
     _initSmartHunt() {
-        // Hide Smart Hunt section if disabled in main settings
         const section = document.getElementById('home-smarthunt-section');
-        if (!this.enableSmartHunt) {
-            if (section) section.style.display = 'none';
-            return;
-        }
         if (section) section.style.display = 'block';
 
         if (!window.SmartHunt) {
@@ -111,14 +104,12 @@ const HomeRequestarr = {
             if (data && data.general) {
                 this.enableRequestarr = true; // Always enabled (required for Movie Hunt)
                 this.showTrending = data.general.show_trending !== false;
-                this.enableSmartHunt = data.general.enable_smarthunt !== false;
-                console.log('[HomeRequestarr] Show trending:', this.showTrending, 'Smart Hunt:', this.enableSmartHunt);
+                console.log('[HomeRequestarr] Show Smart Hunt on Home:', this.showTrending);
             }
         } catch (error) {
             console.error('[HomeRequestarr] Error loading settings:', error);
             this.enableRequestarr = true;
             this.showTrending = true;
-            this.enableSmartHunt = true;
         }
     },
 

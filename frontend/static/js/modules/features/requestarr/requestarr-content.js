@@ -670,17 +670,6 @@ export class RequestarrContent {
     /** Initialize Smart Hunt carousel on the Discover page */
     async _initDiscoverSmartHunt() {
         const section = document.getElementById('discover-smarthunt-section');
-        // Check main settings for enable_smarthunt toggle
-        try {
-            const resp = await fetch('./api/settings');
-            const data = await resp.json();
-            if (data && data.general && data.general.enable_smarthunt === false) {
-                if (section) section.style.display = 'none';
-                return;
-            }
-        } catch (e) {
-            // Default to showing if we can't reach settings
-        }
         if (section) section.style.display = '';
 
         if (!window.SmartHunt) return;

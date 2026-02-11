@@ -176,11 +176,6 @@ export class SmartHunt {
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
 
-        if (data.enabled === false) {
-            this.hasMore = false;
-            return [];
-        }
-
         return data.results || [];
     }
 

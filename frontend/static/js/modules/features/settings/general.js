@@ -193,21 +193,13 @@
                             <p class="setting-help">Cache TMDB images to reduce load times and API usage. Missing images will still attempt to load.</p>
                         </div>
                         <div class="setting-item flex-row" id="show_trending_setting_item">
-                            <label for="show_trending">Show Discover Content:</label>
+                            <label for="show_trending">Show Smart Hunt on Home:</label>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="show_trending" ${settings.show_trending === true ? "checked" : ""}>
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-                        <p class="setting-help">Display discover content on the home page (Smart Hunt, Trending, Popular Movies, Popular TV Shows).</p>
-                        <div class="setting-item flex-row" id="enable_smarthunt_setting_item">
-                            <label for="enable_smarthunt">Enable Smart Hunt:</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="enable_smarthunt" ${settings.enable_smarthunt !== false ? "checked" : ""}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <p class="setting-help">Enable the Smart Hunt discovery engine on Home and Requestarr pages. Configure mix settings in Requestarr &gt; Smart Hunt.</p>
+                        <p class="setting-help">Display the Smart Hunt carousel on the Home page. Configure mix settings in Requestarr &gt; Smart Hunt.</p>
                     </div>
                 </div>
 

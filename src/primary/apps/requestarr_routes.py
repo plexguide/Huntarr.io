@@ -818,8 +818,6 @@ def get_smarthunt():
                 movie_instance_name = movie_instance_name or raw_movie
 
         settings = get_smarthunt_settings()
-        if not settings.get('enabled', True):
-            return jsonify({'results': [], 'page': page, 'has_more': False, 'enabled': False})
 
         discover_filters = requestarr_api.get_discover_filters()
         blacklisted_genres = requestarr_api.get_blacklisted_genres()
@@ -835,12 +833,19 @@ def get_smarthunt():
             blacklisted_genres=blacklisted_genres,
         )
 
+        # Strip library status fields — they come from the cached generation run
+        # and may be stale. The frontend determines status badges from live instance data.
+        for r in results:
+            r.pop('in_library', None)
+            r.pop('partial', None)
+            r.pop('in_cooldown', None)
+            r.pop('_score', None)
+
         has_more = page < 5 and len(results) > 0
         return jsonify({
             'results': results,
             'page': page,
             'has_more': has_more,
-            'enabled': True,
         })
     except Exception as e:
         logger.error(f"Error getting Smart Hunt results: {e}")

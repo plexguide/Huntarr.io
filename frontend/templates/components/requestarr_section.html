@@ -70,9 +70,8 @@
             <!-- Trending Section -->
             <section class="carousel-section">
                 <div class="section-title-container">
-                    <h2 class="section-title">Trending This Week <span class="fire-emoji">🔥</span></h2>
+                    <h2 class="section-title">Trending This Week <span class="fire-emoji">📈</span></h2>
                 </div>
-                <div class="trending-bar"></div>
                 <div class="carousel-container">
                     <button class="carousel-arrow left" data-target="trending-carousel">
                         <i class="fas fa-chevron-left"></i>
@@ -94,7 +93,6 @@
                 <div class="section-title-container">
                     <h2 class="section-title">Popular TV Shows <span class="tv-emoji">📺</span></h2>
                 </div>
-                <div class="trending-bar"></div>
                 <div class="carousel-container">
                     <button class="carousel-arrow left" data-target="popular-tv-carousel">
                         <i class="fas fa-chevron-left"></i>
@@ -116,7 +114,6 @@
                 <div class="section-title-container">
                     <h2 class="section-title">Popular Movies <span class="movie-emoji">🎬</span></h2>
                 </div>
-                <div class="trending-bar"></div>
                 <div class="carousel-container">
                     <button class="carousel-arrow left" data-target="popular-movies-carousel">
                         <i class="fas fa-chevron-left"></i>
@@ -586,16 +583,6 @@
                     <div class="reqset-card-body">
                         <div class="settings-field">
                             <label class="toggle-label">
-                                <span>Enable Smart Hunt</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="smarthunt-enabled" checked>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </label>
-                            <small>Show Smart Hunt carousel on Home and Discover pages</small>
-                        </div>
-                        <div class="settings-field">
-                            <label class="toggle-label">
                                 <span>Hide Library Items</span>
                                 <label class="toggle-switch">
                                     <input type="checkbox" id="smarthunt-hide-library" checked>
@@ -606,8 +593,13 @@
                         </div>
                         <div class="settings-field">
                             <label for="smarthunt-min-rating">Minimum TMDB Rating</label>
-                            <input type="number" id="smarthunt-min-rating" min="0" max="10" step="0.5" value="6.0" class="settings-input">
-                            <small>Only include items rated at or above this score</small>
+                            <input type="number" id="smarthunt-min-rating" min="0" max="10" step="0.1" value="6.0" class="settings-input">
+                            <small>TMDB ratings range from 0 to 10 (decimals allowed). Only items rated at or above this score are included.</small>
+                        </div>
+                        <div class="settings-field">
+                            <label for="smarthunt-min-votes">Minimum Vote Count</label>
+                            <input type="number" id="smarthunt-min-votes" min="0" max="100000" step="1" value="50" class="settings-input">
+                            <small>Minimum number of TMDB votes required. Filters out obscure titles with too few ratings. Set to 0 to disable.</small>
                         </div>
                         <div class="settings-field">
                             <label>Year Range</label>
@@ -617,6 +609,15 @@
                                 <input type="number" id="smarthunt-year-end" min="1900" max="2030" value="2027" class="settings-input" style="flex:1;">
                             </div>
                             <small>Filter results to this release year range</small>
+                        </div>
+                        <div class="settings-field" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(90, 109, 137, 0.15);">
+                            <small style="color: #9ca3af;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                <a href="#requestarr-settings" style="color: #818cf8; text-decoration: none;">Discovery Filters</a>
+                                (region, languages, providers) and
+                                <a href="#requestarr-settings" style="color: #818cf8; text-decoration: none;">Blacklisted Genres</a>
+                                from Requestarr Settings also apply to Smart Hunt results.
+                            </small>
                         </div>
                     </div>
                 </div>

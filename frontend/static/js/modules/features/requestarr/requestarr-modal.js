@@ -282,13 +282,8 @@ export class RequestarrModal {
             }
         }
 
-        // Set status to checking
+        // Status container and request button
         const statusContainer = document.getElementById('requestarr-modal-status-container');
-        if (statusContainer) {
-            statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-loading"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
-        }
-
-        // Reset request button and apply Movie Hunt vs Radarr wording/options
         const requestBtn = document.getElementById('modal-request-btn');
         if (requestBtn) {
             requestBtn.disabled = false;
@@ -297,21 +292,24 @@ export class RequestarrModal {
         }
         this._applyMovieHuntModalMode(defaultInstance, isTVShow, labelEl, requestBtn);
 
-        // Load root folders for selected instance
         if (defaultInstance) {
+            // Instance exists — show checking status and load data
+            if (statusContainer) {
+                statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-loading"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
+            }
             this.loadModalRootFolders(defaultInstance, isTVShow);
-        } else {
-            const rootSelect = document.getElementById('modal-root-folder');
-            if (rootSelect) rootSelect.innerHTML = '<option value="">Select an instance first</option>';
-        }
-
-        // Load status
-        if (defaultInstance) {
             if (isTVShow) {
                 this.loadSeriesStatus(defaultInstance);
             } else {
                 this.loadMovieStatus(defaultInstance);
             }
+        } else {
+            // No instance — clear status, show placeholder for root folder
+            if (statusContainer) {
+                statusContainer.innerHTML = '';
+            }
+            const rootSelect = document.getElementById('modal-root-folder');
+            if (rootSelect) rootSelect.innerHTML = '<option value="">Select an instance first</option>';
         }
 
         // Disable request button if no instances configured

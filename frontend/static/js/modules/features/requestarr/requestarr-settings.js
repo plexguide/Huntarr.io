@@ -1603,14 +1603,14 @@ export class RequestarrSettings {
             const s = data.settings;
 
             // Populate toggles
-            const enabledEl = document.getElementById('smarthunt-enabled');
-            if (enabledEl) enabledEl.checked = s.enabled !== false;
             const hideLibEl = document.getElementById('smarthunt-hide-library');
             if (hideLibEl) hideLibEl.checked = s.hide_library_items !== false;
 
             // Populate number fields
             const minRating = document.getElementById('smarthunt-min-rating');
             if (minRating) minRating.value = s.min_tmdb_rating ?? 6.0;
+            const minVotes = document.getElementById('smarthunt-min-votes');
+            if (minVotes) minVotes.value = s.min_vote_count ?? 50;
             const ys = document.getElementById('smarthunt-year-start');
             if (ys) ys.value = s.year_start ?? 2000;
             const ye = document.getElementById('smarthunt-year-end');
@@ -1711,9 +1711,10 @@ export class RequestarrSettings {
             }
 
             const settings = {
-                enabled: document.getElementById('smarthunt-enabled')?.checked ?? true,
+                enabled: true,  // Smart Hunt is always enabled
                 hide_library_items: document.getElementById('smarthunt-hide-library')?.checked ?? true,
                 min_tmdb_rating: parseFloat(document.getElementById('smarthunt-min-rating')?.value) || 6.0,
+                min_vote_count: parseInt(document.getElementById('smarthunt-min-votes')?.value) || 0,
                 year_start: parseInt(document.getElementById('smarthunt-year-start')?.value) || 2000,
                 year_end: parseInt(document.getElementById('smarthunt-year-end')?.value) || (new Date().getFullYear() + 1),
                 percentages: percentages,
