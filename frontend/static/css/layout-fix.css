@@ -45,12 +45,12 @@ html, body {
 }
 
 /* FORCE CONTENT SECTIONS TO FILL REMAINING SPACE */
-/* 36px padding matches Smart Hunt layout (reference for consistency) */
+/* 40px padding: doubled from 20px for more space from sidebar, consistent across all pages */
 .content-section {
     display: none !important;
     flex: 1 !important;
     overflow-y: auto !important;
-    padding: 36px !important;
+    padding: 40px !important;
     box-sizing: border-box !important;
     height: 0 !important; /* Critical for flex calculation */
 }
