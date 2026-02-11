@@ -11,7 +11,7 @@ import ssl
 import socket
 import threading
 import time
-from typing import Optional, List, Tuple, Dict
+from typing import Optional, List, Tuple, Dict, Any
 
 from src.primary.utils.logger import get_logger
 
@@ -239,14 +239,28 @@ class NNTPConnectionPool:
         """Reset bandwidth counter."""
         with self._bandwidth_lock:
             self._bandwidth_bytes = 0
+    
+    def get_connection_stats(self) -> Tuple[int, int]:
+        """Get (active_connections, max_connections) for this pool."""
+        with self._lock:
+            total = len(self._connections)
+            available = len(self._available)
+            active = total - available
+        return active, self.max_connections
 
 
 class NNTPManager:
-    """Manages connections to multiple NNTP servers with priority-based fallback."""
+    """Manages connections to multiple NNTP servers with priority-based fallback.
+    
+    Same-priority servers work together: connection requests are distributed
+    round-robin across same-priority pools so all connections are used in parallel
+    (like SABnzbd), rather than saturating one server before using the next.
+    """
     
     def __init__(self):
         self._pools: List[NNTPConnectionPool] = []
         self._lock = threading.Lock()
+        self._round_robin_index = 0  # For distributing across same-priority pools
     
     def configure(self, servers: List[dict]):
         """Configure server pools from server config list."""
@@ -285,6 +299,8 @@ class NNTPManager:
         
         Uses a short connection timeout for parallel downloading so threads
         quickly fall through to the next available server when a pool is full.
+        Same-priority servers are tried in round-robin order so connections
+        are distributed across all servers (maxing out total throughput like SABnzbd).
         Also tracks bandwidth per server.
         
         Args:
@@ -295,38 +311,55 @@ class NNTPManager:
         Returns:
             Tuple of (article body bytes or None, server name that provided it)
         """
-        for pool in self._pools:
-            conn = pool.get_connection(timeout=conn_timeout)
-            if not conn:
-                continue
+        with self._lock:
+            pools = list(self._pools)
+        
+        # Group pools by priority (lower = higher priority)
+        by_priority: Dict[int, List[NNTPConnectionPool]] = {}
+        for pool in pools:
+            p = pool.priority
+            if p not in by_priority:
+                by_priority[p] = []
+            by_priority[p].append(pool)
+        
+        for priority in sorted(by_priority.keys()):
+            pools_at_priority = by_priority[priority]
+            # Round-robin across same-priority pools for parallel distribution
+            with self._lock:
+                start = self._round_robin_index % len(pools_at_priority)
+                self._round_robin_index = (self._round_robin_index + 1) % len(pools_at_priority)
             
-            try:
-                # Try to select a group if provided
-                if groups:
-                    for group in groups:
-                        if conn.select_group(group):
-                            break
+            for i in range(len(pools_at_priority)):
+                pool = pools_at_priority[(start + i) % len(pools_at_priority)]
+                conn = pool.get_connection(timeout=conn_timeout)
+                if not conn:
+                    continue
                 
-                data = conn.download_article(message_id)
-                if data is not None:
-                    pool.add_bandwidth(len(data))
-                    return data, pool.server_name
-            except Exception:
-                # Connection may be broken, don't return it
                 try:
-                    pool._lock.acquire()
-                    if conn in pool._connections:
-                        pool._connections.remove(conn)
-                    pool._lock.release()
+                    if groups:
+                        for group in groups:
+                            if conn.select_group(group):
+                                break
+                    
+                    data = conn.download_article(message_id)
+                    if data is not None:
+                        pool.add_bandwidth(len(data))
+                        return data, pool.server_name
                 except Exception:
-                    pass
-                conn.disconnect()
-                continue
-            finally:
-                try:
-                    pool.release_connection(conn)
-                except Exception:
-                    pass
+                    try:
+                        pool._lock.acquire()
+                        if conn in pool._connections:
+                            pool._connections.remove(conn)
+                        pool._lock.release()
+                    except Exception:
+                        pass
+                    conn.disconnect()
+                    continue
+                finally:
+                    try:
+                        pool.release_connection(conn)
+                    except Exception:
+                        pass
         
         return None, ""
     
@@ -358,6 +391,19 @@ class NNTPManager:
     def get_total_max_connections(self) -> int:
         """Get total max connections across all server pools."""
         return sum(pool.max_connections for pool in self._pools)
+    
+    def get_connection_stats(self) -> List[Dict[str, Any]]:
+        """Get per-server connection stats: name, active, max, host."""
+        result = []
+        for pool in self._pools:
+            active, max_conn = pool.get_connection_stats()
+            result.append({
+                "name": pool.server_name,
+                "host": pool.host,
+                "active": active,
+                "max": max_conn,
+            })
+        return result
     
     def close_all(self):
         """Close all server connections."""

@@ -21,7 +21,7 @@
     // Smart Hunt has its own banner row in toolbar
     const SMARTHUNT_APP_TYPE = 'requestarr-smarthunt';
     // Additional pages that show sponsor/partner banners (same rotation)
-    const EXTRA_BANNER_SECTIONS = ['apps', 'settings', 'system', 'movie-hunt', 'movie-hunt-settings', 'movie-hunt-instance-management', 'movie-hunt-instance-editor', 'swaparr', 'activity', 'nzb-hunt', 'nzb-hunt-activity', 'nzb-hunt-settings', 'notifications', 'backup-restore', 'scheduling', 'user', 'instance-editor', 'profile-editor', 'movie-management', 'settings-profiles', 'settings-sizes', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-root-folders', 'settings-logs'];
+    const EXTRA_BANNER_SECTIONS = ['apps', 'settings', 'system', 'movie-hunt', 'movie-hunt-settings', 'movie-hunt-instance-management', 'movie-hunt-instance-editor', 'swaparr', 'activity', 'nzb-hunt', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-server-editor', 'notifications', 'backup-restore', 'scheduling', 'user', 'instance-editor', 'profile-editor', 'movie-management', 'settings-profiles', 'settings-sizes', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-root-folders', 'settings-logs'];
 
     let rotationInterval = null;
     let sponsors = [];

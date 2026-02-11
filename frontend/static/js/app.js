@@ -138,7 +138,7 @@ let huntarrUI = {
             this.showMainSidebar();
             var systemSub = document.getElementById('system-sub');
             if (systemSub) { systemSub.classList.add('expanded'); systemSub.style.display = 'block'; }
-        } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
+        } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-server-editor' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
             console.log('[huntarrUI] Initialization - showing nzb hunt sidebar');
             this.showNzbHuntSidebar();
         } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'movie-hunt-instance-editor' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'settings-sizes' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-import-lists' || this.currentSection === 'settings-import-media' || this.currentSection === 'settings-root-folders') {
@@ -543,7 +543,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -717,6 +717,17 @@ let huntarrUI = {
                 else if (section === 'nzb-hunt-settings-processing') tab = 'processing';
                 else if (section === 'nzb-hunt-settings-advanced') tab = 'advanced';
                 window.NzbHunt._showSettingsTab(tab);
+            }
+        } else if (section === 'nzb-hunt-server-editor' && document.getElementById('nzb-hunt-server-editor-section')) {
+            if (!this._enableNzbHunt) { this.switchSection('home'); return; }
+            document.getElementById('nzb-hunt-server-editor-section').classList.add('active');
+            document.getElementById('nzb-hunt-server-editor-section').style.display = 'block';
+            newTitle = 'NZB Hunt – Usenet Server';
+            this.currentSection = 'nzb-hunt-server-editor';
+            this.showNzbHuntSidebar();
+            if (window.NzbHunt) {
+                if (typeof window.NzbHunt.initSettings === 'function') window.NzbHunt.initSettings();
+                if (typeof window.NzbHunt._populateServerEditorForm === 'function') window.NzbHunt._populateServerEditorForm();
             }
         } else if (section === 'movie-hunt-collection' && document.getElementById('movie-hunt-section')) {
             document.getElementById('movie-hunt-section').classList.add('active');
@@ -1613,14 +1624,14 @@ let huntarrUI = {
         } else if (section === 'nzb-hunt-activity') {
             var n = document.getElementById('nzbHuntActivityNav');
             if (n) n.classList.add('active');
-        } else if (section.startsWith('nzb-hunt-settings')) {
+        } else if (section.startsWith('nzb-hunt-settings') || section === 'nzb-hunt-server-editor') {
             var subGroup = document.getElementById('nzb-hunt-settings-sub');
             if (subGroup) subGroup.classList.add('expanded');
             
             // Highlight only the specific sub-item (Folders, Servers, Processing, Advanced), not the parent Settings
             var subId = '';
             if (section === 'nzb-hunt-settings-folders') subId = 'nzbHuntSettingsFoldersNav';
-            else if (section === 'nzb-hunt-settings-servers') subId = 'nzbHuntSettingsServersNav';
+            else if (section === 'nzb-hunt-settings-servers' || section === 'nzb-hunt-server-editor') subId = 'nzbHuntSettingsServersNav';
             else if (section === 'nzb-hunt-settings-processing') subId = 'nzbHuntSettingsProcessingNav';
             else if (section === 'nzb-hunt-settings-advanced') subId = 'nzbHuntSettingsAdvancedNav';
             

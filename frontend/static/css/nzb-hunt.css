@@ -6,7 +6,8 @@
 /* ── Section layout — match Discover (dark blue bg, same width) ─── */
 #nzb-hunt-section,
 #nzb-hunt-activity-section,
-#nzb-hunt-settings-section {
+#nzb-hunt-settings-section,
+#nzb-hunt-server-editor-section {
     background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%);
 }
 #nzb-hunt-section {
@@ -25,6 +26,66 @@
     max-width: none !important;
     margin: 0 !important;
     padding: 24px 0 !important;
+}
+
+/* ── Server Editor (full page) ───────────────────────────────────── */
+#nzb-hunt-server-editor-section {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+#nzb-hunt-server-editor-section.active {
+    display: block !important;
+}
+
+.nzb-server-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding: 14px 20px;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 14px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.nzb-server-editor-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f8fafc;
+    flex: 1;
+    min-width: 0;
+}
+
+.nzb-server-editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nzb-btn-ghost {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: #94a3b8;
+}
+.nzb-btn-ghost:hover {
+    background: rgba(148, 163, 184, 0.1) !important;
+    color: #e2e8f0;
+}
+
+.nzb-priority-help {
+    margin: 8px 0 0;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    max-width: none;
 }
 
 /* ── Status bar (speed, queue, disk) ─────────────────────────────── */
@@ -68,6 +129,45 @@
     height: 24px;
     background: rgba(148, 163, 184, 0.2);
     flex-shrink: 0;
+}
+
+/* Connections info icon + hover tooltip */
+.nzb-connections-info-wrapper {
+    position: relative;
+    cursor: help;
+}
+.nzb-connections-info-icon {
+    color: #64748b !important;
+    font-size: 0.95rem !important;
+}
+.nzb-connections-info-wrapper:hover .nzb-connections-info-icon {
+    color: #94a3b8 !important;
+}
+.nzb-connections-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: #e2e8f0;
+    line-height: 1.5;
+    white-space: nowrap;
+    max-width: 320px;
+    white-space: normal;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.nzb-connections-info-wrapper:hover .nzb-connections-tooltip {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* ── No server connected warning (same servers as Movie Hunt / TV Hunt) ─── */

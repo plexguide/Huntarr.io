@@ -138,6 +138,20 @@
                 var show = !status.servers_configured || !status.connection_ok;
                 warnEl.style.display = show ? 'flex' : 'none';
             }
+
+            // Update connections-per-server tooltip
+            var tooltipEl = document.getElementById('nzb-connections-tooltip');
+            if (tooltipEl) {
+                var connStats = status.connection_stats || [];
+                if (connStats.length === 0) {
+                    tooltipEl.textContent = 'Configure servers in Settings';
+                } else {
+                    tooltipEl.innerHTML = '<strong>Connections per server</strong><br>' +
+                        connStats.map(function (s) {
+                            return (s.name || s.host || 'Server') + ': ' + (s.active || 0) + ' / ' + (s.max || 0);
+                        }).join('<br>');
+                }
+            }
         },
 
         _updateQueueBadge: function (queue) {
@@ -183,8 +197,11 @@
                 var stateLabel = self._stateLabel(item.state);
                 var speed = item.state === 'downloading' ? self._formatBytes(item.speed_bps || 0) + '/s' : '—';
                 var timeLeft = item.time_left || '—';
-                var downloaded = self._formatBytes(item.downloaded_bytes || 0);
-                var totalSize = self._formatBytes(item.total_bytes || 0);
+                var db = item.downloaded_bytes || 0;
+                var tb = item.total_bytes || 0;
+                if (tb > 0 && db > tb) db = tb;
+                var downloaded = self._formatBytes(db);
+                var totalSize = self._formatBytes(tb);
                 var name = self._escHtml(item.name || 'Unknown');
                 var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
 
@@ -825,7 +842,7 @@
             this._setupSettingsTabs();
             this._setupFolderBrowse();
             this._setupServerGrid();
-            this._setupServerModal();
+            this._setupServerEditor();
             this._setupBrowseModal();
             this._setupCategoryGrid();
             this._setupCategoryModal();
@@ -1028,7 +1045,7 @@
             if (addCard) {
                 addCard.addEventListener('click', function () {
                     self._editIndex = null;
-                    self._openServerModal(null);
+                    self._navigateToServerEditor(null);
                 });
             }
         },
@@ -1095,7 +1112,7 @@
                     var i = parseInt(btn.getAttribute('data-idx'), 10);
                     if (action === 'edit') {
                         self._editIndex = i;
-                        self._openServerModal(self._servers[i]);
+                        self._navigateToServerEditor(self._servers[i]);
                     } else if (action === 'delete') {
                         var name = (self._servers[i] || {}).name || 'this server';
                         var idx = i;
@@ -1189,49 +1206,50 @@
         },
 
         /* ──────────────────────────────────────────────
-           Server Add/Edit Modal
+           Server Add/Edit (full page editor)
         ────────────────────────────────────────────── */
-        _serverModalSetupDone: false,
+        _serverEditorSetupDone: false,
 
-        _setupServerModal: function () {
-            if (this._serverModalSetupDone) return;
-            this._serverModalSetupDone = true;
+        _setupServerEditor: function () {
+            if (this._serverEditorSetupDone) return;
+            this._serverEditorSetupDone = true;
 
             var self = this;
-            var backdrop = document.getElementById('nzb-server-modal-backdrop');
-            var closeBtn = document.getElementById('nzb-server-modal-close');
-            var cancelBtn = document.getElementById('nzb-server-modal-cancel');
-            var saveBtn = document.getElementById('nzb-server-modal-save');
-            var testBtn = document.getElementById('nzb-server-modal-test');
+            var backBtn = document.getElementById('nzb-server-editor-back');
+            var saveBtn = document.getElementById('nzb-server-editor-save');
+            var testBtn = document.getElementById('nzb-server-editor-test');
 
-            if (backdrop) backdrop.addEventListener('click', function () { self._closeServerModal(); });
-            if (closeBtn) closeBtn.addEventListener('click', function () { self._closeServerModal(); });
-            if (cancelBtn) cancelBtn.addEventListener('click', function () { self._closeServerModal(); });
+            if (backBtn) backBtn.addEventListener('click', function () { self._navigateBackFromServerEditor(); });
             if (saveBtn) saveBtn.addEventListener('click', function () { self._saveServer(); });
             if (testBtn) testBtn.addEventListener('click', function () { self._testServerConnection(); });
 
             // When connection-related fields change, require a new successful test before Save
             self._setupServerModalConnectionCheck();
 
-            // ESC key (only one global listener for server modal)
+            // ESC key: navigate back when on server editor page
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     var bm = document.getElementById('nzb-browse-modal');
                     var cm = document.getElementById('nzb-cat-modal');
-                    var sm = document.getElementById('nzb-server-modal');
                     if (bm && bm.style.display === 'flex') { self._closeBrowseModal(); return; }
                     if (cm && cm.style.display === 'flex') { self._closeCategoryModal(); return; }
-                    if (sm && sm.style.display === 'flex') self._closeServerModal();
+                    if (window.huntarrUI && window.huntarrUI.currentSection === 'nzb-hunt-server-editor') {
+                        self._navigateBackFromServerEditor();
+                    }
                 }
             });
         },
 
-        _openServerModal: function (server) {
-            var modal = document.getElementById('nzb-server-modal');
-            if (!modal) return;
-            if (modal.parentElement !== document.body) document.body.appendChild(modal);
+        _navigateToServerEditor: function () {
+            window.location.hash = 'nzb-hunt-server-editor';
+        },
 
-            var title = document.getElementById('nzb-server-modal-title');
+        _populateServerEditorForm: function () {
+            var server = (this._editIndex !== null && this._servers && this._servers[this._editIndex])
+                ? this._servers[this._editIndex]
+                : null;
+
+            var title = document.getElementById('nzb-server-editor-title');
             if (title) title.textContent = server ? 'Edit Usenet Server' : 'Add Usenet Server';
 
             // Fill fields
@@ -1252,7 +1270,7 @@
                 }
             }
             f('nzb-server-connections', server ? (server.connections || 8) : 8);
-            f('nzb-server-priority', server ? (server.priority !== undefined ? server.priority : 0) : 0);
+            f('nzb-server-priority', server ? (Math.min(99, Math.max(0, server.priority !== undefined ? server.priority : 0))) : 0);
             f('nzb-server-enabled', server ? (server.enabled !== false) : true);
 
             // Require successful connection test before Save
@@ -1261,14 +1279,12 @@
 
             // Reset test status area
             this._resetTestStatus();
-
-            modal.style.display = 'flex';
         },
 
         _serverModalConnectionOk: false,
 
         _updateServerModalSaveButton: function () {
-            var saveBtn = document.getElementById('nzb-server-modal-save');
+            var saveBtn = document.getElementById('nzb-server-editor-save');
             if (!saveBtn) return;
             var host = (document.getElementById('nzb-server-host') || {}).value;
             var hasHost = (host || '').trim().length > 0;
@@ -1294,9 +1310,11 @@
             });
         },
 
-        _closeServerModal: function () {
-            var modal = document.getElementById('nzb-server-modal');
-            if (modal) modal.style.display = 'none';
+        _navigateBackFromServerEditor: function () {
+            if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
+                window.huntarrUI.switchSection('nzb-hunt-settings-servers');
+                window.location.hash = 'nzb-hunt-settings-servers';
+            }
         },
 
         _saveServer: function () {
@@ -1311,6 +1329,8 @@
                 return;
             }
 
+            var rawPriority = parseInt(g('nzb-server-priority'), 10);
+            var priority = (isNaN(rawPriority) ? 0 : Math.min(99, Math.max(0, rawPriority)));
             var payload = {
                 name: g('nzb-server-name') || 'Server',
                 host: host,
@@ -1319,7 +1339,7 @@
                 username: g('nzb-server-username'),
                 password: g('nzb-server-password'),
                 connections: parseInt(g('nzb-server-connections'), 10) || 8,
-                priority: parseInt(g('nzb-server-priority'), 10) || 0,
+                priority: priority,
                 enabled: !!g('nzb-server-enabled')
             };
 
@@ -1353,10 +1373,10 @@
                                 self._showTestStatus('fail', 'Saved, but connection to ' + hostName + ' failed: ' + testMsg);
                             }
                             self._loadServers();
-                            // Auto-close modal after a brief delay on success
+                            // Navigate back after a brief delay on success
                             if (testSuccess) {
                                 setTimeout(function () {
-                                    self._closeServerModal();
+                                    self._navigateBackFromServerEditor();
                                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                                         window.huntarrUI.showNotification('Server saved & connected!', 'success');
                                     }

@@ -178,7 +178,7 @@ class DownloadItem:
             "error_message": self.error_message,
             "status_message": self.status_message,
             "total_bytes": self.total_bytes,
-            "downloaded_bytes": self.downloaded_bytes,
+            "downloaded_bytes": min(self.downloaded_bytes, self.total_bytes) if self.total_bytes > 0 else self.downloaded_bytes,
             "total_segments": self.total_segments,
             "completed_segments": self.completed_segments,
             "failed_segments": self.failed_segments,
@@ -760,8 +760,19 @@ class NZBHuntDownloadManager:
         except Exception:
             pass
         
-        # Per-server bandwidth
+        # Per-server bandwidth and connection stats
         bandwidth_stats = self._nntp.get_bandwidth_stats()
+        connection_stats = self._nntp.get_connection_stats()
+        # When worker hasn't run yet, pools are empty - show server config with 0 active
+        if not connection_stats and self.has_servers():
+            for srv in self._get_servers():
+                if srv.get("enabled", True):
+                    connection_stats.append({
+                        "name": srv.get("name", srv.get("host", "Server")),
+                        "host": srv.get("host", ""),
+                        "active": 0,
+                        "max": int(srv.get("connections", 8)),
+                    })
         
         return {
             "active_count": len(active),
@@ -781,6 +792,7 @@ class NZBHuntDownloadManager:
             "speed_limit_human": _format_speed(self.get_speed_limit()) if self.get_speed_limit() > 0 else "Unlimited",
             "paused_global": self._paused_global,
             "bandwidth_by_server": bandwidth_stats,
+            "connection_stats": connection_stats,
             "servers_configured": self.has_servers(),
             "connection_ok": self._has_working_connection(),
             "worker_running": self._running,
@@ -1017,7 +1029,12 @@ class NZBHuntDownloadManager:
                                 
                                 # Update progress (thread-safe via GIL for simple assignments)
                                 item.completed_segments += 1
-                                item.downloaded_bytes += nbytes
+                                # Cap downloaded_bytes at total_bytes to prevent crazy size display
+                                # (can happen if NZB segment bytes are wrong or units mismatch)
+                                item.downloaded_bytes = min(
+                                    item.total_bytes,
+                                    item.downloaded_bytes + nbytes
+                                )
                                 
                                 # Update item speed from rolling window
                                 speed = self._get_rolling_speed()
