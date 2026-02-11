@@ -3,15 +3,18 @@
  * Independent module: does not share styles with Movie Hunt, Requestarr, or any other module.
  */
 
-/* ── Section layout ─────────────────────────────────────────────── */
+/* ── Section layout — match Discover (dark blue bg, same width) ─── */
+#nzb-hunt-section,
+#nzb-hunt-activity-section,
+#nzb-hunt-settings-section {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
 #nzb-hunt-section {
     display: none;
     width: 100%;
     min-height: 100vh;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 0;
-    margin: 0;
 }
 #nzb-hunt-section.active {
     display: block !important;
@@ -19,9 +22,9 @@
 
 .nzb-hunt-container {
     width: 100%;
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 24px 32px;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 24px 0 !important;
 }
 
 /* ── Status bar (speed, queue, disk) ─────────────────────────────── */
@@ -1355,7 +1358,7 @@
 /* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .nzb-hunt-container {
-        padding: 16px;
+        padding: 16px 0;
     }
     .nzb-status-bar {
         flex-direction: column;

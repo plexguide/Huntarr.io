@@ -2,10 +2,12 @@
  * Movie Hunt Calendar – Modern list-style upcoming releases view
  */
 
-/* Calendar view container */
+/* Calendar view container — match Discover/Movie Collection width */
 .movie-hunt-calendar-view {
-    padding: 0 30px 20px 30px;
+    padding: 0 0 20px 0;
     width: 100%;
+    max-width: none !important;
+    margin: 0;
     box-sizing: border-box;
 }
 
