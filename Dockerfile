@@ -33,7 +33,7 @@ COPY . /app/
 RUN mkdir -p /config /media /downloads && chmod -R 755 /config /media /downloads
 
 # Make entrypoint executable
-RUN chmod +x /app/entrypoint.sh
+RUN chmod +x /app/scripts/entrypoint.sh
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -53,4 +53,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD ["python3", "-c", "import requests; import sys; r = requests.get('http://localhost:9705/api/health', timeout=5); sys.exit(0 if r.status_code == 200 else 1)"]
 
 # Use entrypoint for PUID/PGID support, falling back to root if not set
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
