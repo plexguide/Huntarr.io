@@ -299,6 +299,36 @@
             }
         },
 
+        openDeleteModalFromHome(item, cardElement) {
+            if (!window.MovieCardDeleteModal) {
+                console.error('[MovieHunt] MovieCardDeleteModal not loaded');
+                return;
+            }
+            const select = document.getElementById('movie-hunt-instance-select');
+            const instanceName = select ? (select.options[select.selectedIndex] ? select.options[select.selectedIndex].textContent : '') : '';
+            const instanceId = select ? select.value : '';
+            const inLibrary = item.in_library || false;
+            const partial = item.partial || false;
+            const status = inLibrary ? 'available' : (partial ? 'requested' : 'requested');
+            const self = this;
+
+            window.MovieCardDeleteModal.open(item, {
+                instanceName: instanceName,
+                instanceId: instanceId,
+                status: status,
+                hasFile: inLibrary,
+                appType: 'movie_hunt',
+                onDeleted: function() {
+                    if (cardElement) {
+                        cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
+                        cardElement.style.opacity = '0';
+                        cardElement.style.transform = 'scale(0.8)';
+                        setTimeout(function() { cardElement.remove(); }, 300);
+                    }
+                }
+            });
+        },
+
         createCard(item) {
             const card = document.createElement('div');
             card.className = 'media-card';
@@ -338,11 +368,15 @@
                 ? '<button class="media-card-request-btn"><i class="fas fa-plus-circle"></i> Add</button>'
                 : '';
 
-            // Hide button: show only if instance exists AND item is NOT in_library and NOT partial (requested)
-            const canHide = hasInstance && !inLibrary && !partial;
-            const hideBtn = canHide
-                ? '<button class="media-card-hide-btn" title="Hide this media permanently"><i class="fas fa-eye-slash"></i></button>'
-                : '';
+            // Trash button for items in library or requested; hide button for items not in library
+            let actionBtn = '';
+            if (hasInstance) {
+                if (inLibrary || partial) {
+                    actionBtn = '<button class="media-card-delete-btn" title="Remove / Delete"><i class="fas fa-trash-alt"></i></button>';
+                } else {
+                    actionBtn = '<button class="media-card-hide-btn" title="Hide this media permanently"><i class="fas fa-eye-slash"></i></button>';
+                }
+            }
 
             if (inLibrary) card.classList.add('in-library');
 
@@ -364,7 +398,7 @@
                     <div class="${metaClass}">
                         <span class="media-card-year">${year}</span>
                         <span class="media-card-rating"><i class="fas fa-star"></i> ${rating}</span>
-                        ${hideBtn}
+                        ${actionBtn}
                     </div>
                 </div>
             `;
@@ -384,6 +418,7 @@
 
             const requestBtn = card.querySelector('.media-card-request-btn');
             const hideBtnEl = card.querySelector('.media-card-hide-btn');
+            const deleteBtnEl = card.querySelector('.media-card-delete-btn');
 
             const openRequestModal = () => {
                 const tmdbId = item.tmdb_id || item.id;
@@ -409,11 +444,21 @@
                 });
             }
 
+            // Delete button click - open delete modal
+            if (deleteBtnEl) {
+                deleteBtnEl.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.openDeleteModalFromHome(item, card);
+                });
+            }
+
             // Click anywhere on card opens detail page (whole card is clickable)
             card.style.cursor = 'pointer';
             card.addEventListener('click', (e) => {
-                // Don't open detail if clicking hide or request button
+                // Don't open detail if clicking hide, delete, or request button
                 if (hideBtnEl && (e.target === hideBtnEl || hideBtnEl.contains(e.target))) return;
+                if (deleteBtnEl && (e.target === deleteBtnEl || deleteBtnEl.contains(e.target))) return;
                 if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) {
                     e.preventDefault();
                     e.stopPropagation();

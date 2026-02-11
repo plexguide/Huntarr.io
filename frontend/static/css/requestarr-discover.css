@@ -488,6 +488,26 @@
     font-size: 12px;
 }
 
+/* Delete (trash) button on media cards */
+.media-card-delete-btn {
+    background: none;
+    border: none;
+    color: #475569;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.media-card-delete-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+.media-card-delete-btn i {
+    font-size: 12px;
+}
+
 /* Smooth card removal animation */
 .media-card.removing {
     opacity: 0;

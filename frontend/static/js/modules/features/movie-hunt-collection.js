@@ -476,10 +476,10 @@
             var rating = item.vote_average != null ? Number(item.vote_average).toFixed(1) : '';
             var ratingHtml = rating ? '<span class="media-card-rating"><i class="fas fa-star"></i> ' + rating + '</span>' : '';
 
-            // Hide button: show only if there is an instance tied to it AND item has a tmdb_id
+            // Delete button: show for all collection items (they are all available or requested)
             var hasInstance = !!self.getCurrentInstanceName();
-            var canHide = hasInstance && item.tmdb_id;
-            var hideHtml = canHide ? '<button class="media-card-hide-btn" title="Hide this media"><i class="fas fa-eye-slash"></i></button>' : '';
+            var canDelete = hasInstance && item.tmdb_id;
+            var deleteHtml = canDelete ? '<button class="media-card-delete-btn" title="Remove / Delete"><i class="fas fa-trash-alt"></i></button>' : '';
 
             if (status === 'available') card.classList.add('in-library');
 
@@ -497,16 +497,16 @@
                 '<div class="media-card-meta">' +
                 '<span class="media-card-year">' + year + '</span>' +
                 ratingHtml +
-                hideHtml +
+                deleteHtml +
                 '</div></div>';
 
-            // Handle hide button click
-            var hideBtn = card.querySelector('.media-card-hide-btn');
-            if (hideBtn) {
-                hideBtn.addEventListener('click', function(e) {
+            // Handle delete button click
+            var deleteBtn = card.querySelector('.media-card-delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    self.hideMedia(item.tmdb_id, item.title, item.poster_path, card);
+                    self.openDeleteModal(item, card);
                 });
             }
 
@@ -514,8 +514,8 @@
             if (item.tmdb_id && window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
                 card.style.cursor = 'pointer';
                 card.onclick = function(e) {
-                    // Don't open detail if clicking hide button
-                    if (e.target.closest && e.target.closest('.media-card-hide-btn')) return;
+                    // Don't open detail if clicking delete button
+                    if (e.target.closest && e.target.closest('.media-card-delete-btn')) return;
                     var movieData = {
                         tmdb_id: item.tmdb_id,
                         id: item.tmdb_id,
@@ -529,6 +529,36 @@
             }
 
             return card;
+        },
+
+        openDeleteModal: function(item, cardElement) {
+            var self = this;
+            if (!window.MovieCardDeleteModal) {
+                console.error('[MovieHuntCollection] MovieCardDeleteModal not loaded');
+                return;
+            }
+            var instanceName = self.getCurrentInstanceName();
+            var select = document.getElementById('movie-hunt-collection-instance');
+            var instanceId = select ? select.value : '';
+            var status = (item.status || 'requested').toLowerCase();
+
+            window.MovieCardDeleteModal.open(item, {
+                instanceName: instanceName,
+                instanceId: instanceId,
+                status: status,
+                hasFile: status === 'available',
+                appType: 'movie_hunt',
+                onDeleted: function() {
+                    if (cardElement) {
+                        cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
+                        cardElement.style.opacity = '0';
+                        cardElement.style.transform = 'scale(0.8)';
+                        setTimeout(function() { cardElement.remove(); }, 300);
+                    }
+                    // Reload collection after short delay
+                    setTimeout(function() { self.loadCollection(); }, 500);
+                }
+            });
         },
 
         removeFromCollection: function(title, year) {

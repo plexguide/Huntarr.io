@@ -493,6 +493,25 @@
     font-size: 12px;
 }
 
+/* Delete (trash) button on collection cards */
+#movie-hunt-collection-grid .media-card-delete-btn {
+    background: none;
+    border: none;
+    color: #475569;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+#movie-hunt-collection-grid .media-card-delete-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+#movie-hunt-collection-grid .media-card-delete-btn i { font-size: 12px; }
+
 /* Card removal animation */
 #movie-hunt-collection-grid .media-card.removing {
     opacity: 0;
@@ -922,6 +941,26 @@
     background: rgba(239, 68, 68, 0.1);
 }
 #movie-hunt-section .media-card-hide-btn i { font-size: 12px; }
+
+/* Delete (trash) button on Movie Home cards */
+#movie-hunt-section .media-card-delete-btn {
+    background: none;
+    border: none;
+    color: #475569;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+#movie-hunt-section .media-card-delete-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+#movie-hunt-section .media-card-delete-btn i { font-size: 12px; }
+
 #movie-hunt-section .loading-spinner {
     display: flex;
     flex-direction: column;

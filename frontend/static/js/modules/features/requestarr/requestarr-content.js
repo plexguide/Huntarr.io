@@ -1186,11 +1186,11 @@ export class RequestarrContent {
                         <i class="fas fa-star"></i>
                         ${rating}
                     </span>
-                    ${hasInstance ? `
-                        <button class="media-card-hide-btn" title="Hide this media permanently">
-                            <i class="fas fa-eye-slash"></i>
-                        </button>
-                    ` : ''}
+                    ${hasInstance ? (
+                        (inLibrary || partial)
+                            ? `<button class="media-card-delete-btn" title="Remove / Delete"><i class="fas fa-trash-alt"></i></button>`
+                            : `<button class="media-card-hide-btn" title="Hide this media permanently"><i class="fas fa-eye-slash"></i></button>`
+                    ) : ''}
                 </div>
             </div>
         `;
@@ -1211,6 +1211,7 @@ export class RequestarrContent {
         
         const requestBtn = card.querySelector('.media-card-request-btn');
         const hideBtn = card.querySelector('.media-card-hide-btn');
+        const deleteBtn = card.querySelector('.media-card-delete-btn');
         
         // Click anywhere on card opens detail page (movies) or modal (TV)
         card.style.cursor = 'pointer';
@@ -1220,6 +1221,13 @@ export class RequestarrContent {
                 e.preventDefault();
                 e.stopPropagation();
                 this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
+                return;
+            }
+            // Delete button opens delete modal
+            if (deleteBtn && (e.target === deleteBtn || deleteBtn.contains(e.target))) {
+                e.preventDefault();
+                e.stopPropagation();
+                this._openDeleteModal(item, card);
                 return;
             }
             // Hide button only hides
@@ -1257,6 +1265,54 @@ export class RequestarrContent {
         });
         
         return card;
+    }
+
+    /**
+     * Open the shared delete modal from a Requestarr card.
+     */
+    _openDeleteModal(item, cardElement) {
+        if (!window.MovieCardDeleteModal) {
+            console.error('[RequestarrContent] MovieCardDeleteModal not loaded');
+            return;
+        }
+        const inLibrary = item.in_library || false;
+        const partial = item.partial || false;
+        const status = inLibrary ? 'available' : (partial ? 'requested' : 'requested');
+
+        // Resolve instance info from compound value
+        let appType = 'movie_hunt';
+        let instanceName = '';
+        let instanceId = '';
+        const compoundValue = this.selectedMovieInstance || (cardElement.suggestedInstance || '');
+        if (compoundValue) {
+            const decoded = decodeInstanceValue(compoundValue);
+            appType = decoded.appType || 'movie_hunt';
+            instanceName = decoded.name || '';
+        }
+        // Try to resolve numeric instance ID
+        if (this.core && this.core.instances) {
+            const pool = this.core.instances[appType] || [];
+            const match = pool.find(i => i.name === instanceName);
+            if (match) instanceId = match.id || '';
+        }
+
+        const self = this;
+        window.MovieCardDeleteModal.open(item, {
+            instanceName: instanceName,
+            instanceId: instanceId,
+            status: status,
+            hasFile: inLibrary,
+            appType: appType,
+            onDeleted: function() {
+                // Animate card removal
+                if (cardElement) {
+                    cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
+                    cardElement.style.opacity = '0';
+                    cardElement.style.transform = 'scale(0.8)';
+                    setTimeout(function() { cardElement.remove(); }, 300);
+                }
+            }
+        });
     }
 
     async hideMedia(tmdbId, mediaType, title, cardElement) {
