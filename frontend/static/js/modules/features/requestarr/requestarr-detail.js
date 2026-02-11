@@ -313,11 +313,27 @@
             var inst = this.movieInstances.find(function(i) { return i.compoundValue === this.selectedInstanceName; }.bind(this));
             var instanceId = inst && inst.id != null ? inst.id : null;
             if (instanceId == null) return;
-            if (!window.MovieHuntDetail || typeof window.MovieHuntDetail.openDeleteModal !== 'function') return;
-            window.MovieHuntDetail.currentMovie = this.currentMovie;
-            window.MovieHuntDetail.selectedInstanceId = instanceId;
-            window.MovieHuntDetail.currentMovieStatus = this.currentMovieStatusForMH || null;
-            window.MovieHuntDetail.openDeleteModal();
+
+            // Use shared MovieCardDeleteModal directly
+            if (window.MovieCardDeleteModal) {
+                var movie = this.currentMovie;
+                var status = this.currentMovieStatusForMH || null;
+                var hasFile = !!(status && status.has_file);
+                var movieStatus = hasFile ? 'available' : 'requested';
+                var filePath = (status && status.path) || (status && status.root_folder_path) || '';
+                var self = this;
+                window.MovieCardDeleteModal.open(movie, {
+                    instanceName: decoded.name,
+                    instanceId: instanceId,
+                    status: movieStatus,
+                    hasFile: hasFile,
+                    filePath: filePath,
+                    appType: 'movie_hunt',
+                    onDeleted: function() {
+                        self.closeDetail();
+                    }
+                });
+            }
         },
 
         async updateDetailInfoBar() {

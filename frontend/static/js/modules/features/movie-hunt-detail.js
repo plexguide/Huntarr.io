@@ -598,103 +598,40 @@
             }
         },
 
-        /* ── Delete Modal ──────────────────────────────────────── */
+        /* ── Delete Modal (delegates to shared MovieCardDeleteModal) ── */
         openDeleteModal() {
             const movie = this.currentMovie;
             const status = this.currentMovieStatus;
             if (!movie) return;
 
-            const title = this.escapeHtml(movie.title || '');
-            const year = movie.year || '';
-            const hasFile = status && status.has_file;
-            // Prefer full file path for available movies, fall back to root folder
-            const filePath = (status && status.path) || '';
-            const rootFolder = (status && status.root_folder_path) || '';
-            const displayPath = filePath || rootFolder;
-            const folderDisplay = displayPath
-                ? this.escapeHtml(displayPath)
-                : (movie.title ? this.escapeHtml(movie.title + (year ? ' (' + year + ')' : '')) : 'Unknown');
-
-            const html =
-                '<div class="mh-modal-backdrop" id="mh-delete-modal">' +
-                    '<div class="mh-modal">' +
-                        '<div class="mh-modal-header mh-modal-header-danger">' +
-                            '<h3><i class="fas fa-trash-alt"></i> Delete — ' + title + '</h3>' +
-                            '<button class="mh-modal-x" id="mh-delete-close">&times;</button>' +
-                        '</div>' +
-                        '<div class="mh-modal-body">' +
-                            '<div class="mh-delete-path" title="' + folderDisplay + '"><i class="fas fa-folder"></i> <span class="mh-delete-path-text">' + folderDisplay + '</span></div>' +
-                            '<label class="mh-check-row">' +
-                                '<input type="checkbox" id="mh-delete-blocklist" checked>' +
-                                '<div><strong>Add to Blocklist</strong><div class="mh-help">Prevent movie from being re-added by import lists</div></div>' +
-                            '</label>' +
-                            (hasFile ? (
-                                '<label class="mh-check-row">' +
-                                    '<input type="checkbox" id="mh-delete-files">' +
-                                    '<div><strong>Delete Movie Files</strong><div class="mh-help">Delete the movie files and movie folder</div></div>' +
-                                '</label>'
-                            ) : '') +
-                        '</div>' +
-                        '<div class="mh-modal-footer">' +
-                            '<button class="mh-btn mh-btn-secondary" id="mh-delete-cancel">Close</button>' +
-                            '<button class="mh-btn mh-btn-danger" id="mh-delete-confirm">Delete</button>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>';
-
-            const existing = document.getElementById('mh-delete-modal');
-            if (existing) existing.remove();
-
-            document.body.insertAdjacentHTML('beforeend', html);
-
-            document.getElementById('mh-delete-close').addEventListener('click', () => document.getElementById('mh-delete-modal').remove());
-            document.getElementById('mh-delete-cancel').addEventListener('click', () => document.getElementById('mh-delete-modal').remove());
-            document.getElementById('mh-delete-modal').addEventListener('click', (e) => {
-                if (e.target.id === 'mh-delete-modal') document.getElementById('mh-delete-modal').remove();
-            });
-            document.getElementById('mh-delete-confirm').addEventListener('click', () => this.handleDelete());
-        },
-
-        async handleDelete() {
-            const movie = this.currentMovie;
-            if (!movie) return;
-            const tmdbId = movie.tmdb_id || movie.id;
-            const title = movie.title || '';
-            const year = movie.year || '';
-            const addToBlocklist = document.getElementById('mh-delete-blocklist')
-                ? document.getElementById('mh-delete-blocklist').checked : false;
-            const deleteFiles = document.getElementById('mh-delete-files')
-                ? document.getElementById('mh-delete-files').checked : false;
-
-            const delBtn = document.getElementById('mh-delete-confirm');
-            if (delBtn) { delBtn.disabled = true; delBtn.textContent = 'Deleting...'; }
-
-            try {
-                const resp = await fetch('./api/movie-hunt/collection/remove?instance_id=' + this.selectedInstanceId, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tmdb_id: tmdbId, title: title, year: String(year),
-                        add_to_blocklist: addToBlocklist, delete_files: deleteFiles
-                    })
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    const modal = document.getElementById('mh-delete-modal');
-                    if (modal) modal.remove();
-                    this.closeDetail();
-                } else {
-                    var msg = 'Delete failed: ' + (data.error || 'Unknown error');
-                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, 'error');
-                    else alert(msg);
-                    if (delBtn) { delBtn.disabled = false; delBtn.textContent = 'Delete'; }
-                }
-            } catch (err) {
-                var msg = 'Delete failed: ' + err.message;
-                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, 'error');
-                else alert(msg);
-                if (delBtn) { delBtn.disabled = false; delBtn.textContent = 'Delete'; }
+            if (!window.MovieCardDeleteModal) {
+                console.error('[MovieHuntDetail] MovieCardDeleteModal not loaded');
+                return;
             }
+
+            const hasFile = !!(status && status.has_file);
+            const filePath = (status && status.path) || (status && status.root_folder_path) || '';
+            const movieStatus = hasFile ? 'available' : 'requested';
+
+            // Resolve instance name from selectedInstanceId
+            let instanceName = '';
+            if (this.movieHuntInstances && this.selectedInstanceId) {
+                const match = this.movieHuntInstances.find(inst => inst.id === this.selectedInstanceId);
+                if (match) instanceName = match.name || '';
+            }
+
+            const self = this;
+            window.MovieCardDeleteModal.open(movie, {
+                instanceName: instanceName,
+                instanceId: this.selectedInstanceId || '',
+                status: movieStatus,
+                hasFile: hasFile,
+                filePath: filePath,
+                appType: 'movie_hunt',
+                onDeleted: function() {
+                    self.closeDetail();
+                }
+            });
         },
 
         /* ── Refresh ───────────────────────────────────────────── */
