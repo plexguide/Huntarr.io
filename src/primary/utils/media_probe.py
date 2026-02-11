@@ -21,12 +21,13 @@ logger = logging.getLogger("media_probe")
 
 
 _SCAN_PROFILES: Dict[str, Dict[str, int]] = {
-    # Lower values reduce read/analysis effort and system impact.
-    "light": {"timeout": 2, "probesize": 1_000_000, "analyzeduration": 500_000},
-    "default": {"timeout": 5, "probesize": 5_000_000, "analyzeduration": 2_000_000},
-    "moderate": {"timeout": 8, "probesize": 12_000_000, "analyzeduration": 5_000_000},
-    "heavy": {"timeout": 12, "probesize": 25_000_000, "analyzeduration": 10_000_000},
-    "maximum": {"timeout": 20, "probesize": 50_000_000, "analyzeduration": 20_000_000},
+    # Radarr uses 50MB probesize as default and retries at 150MB/150M for audio.
+    # Our profiles are aligned with Radarr's proven values for reliable scanning.
+    "light":    {"timeout":  5, "probesize":  10_000_000, "analyzeduration":   5_000_000},
+    "default":  {"timeout": 10, "probesize":  50_000_000, "analyzeduration":  20_000_000},
+    "moderate": {"timeout": 15, "probesize":  75_000_000, "analyzeduration":  50_000_000},
+    "heavy":    {"timeout": 20, "probesize": 100_000_000, "analyzeduration": 100_000_000},
+    "maximum":  {"timeout": 30, "probesize": 150_000_000, "analyzeduration": 150_000_000},
 }
 
 # ── Codec friendly-name mappings ──────────────────────────────────────────────
@@ -99,6 +100,169 @@ def _channels_to_layout(channels: int) -> str:
     return layout_map.get(channels, f"{channels}ch")
 
 
+# ── mediainfo fallback ────────────────────────────────────────────────────────
+
+def _probe_with_mediainfo(
+    file_path: str,
+    timeout_sec: int = 10,
+) -> Optional[Dict[str, Any]]:
+    """
+    Fallback probe using mediainfo CLI when ffprobe fails (e.g. strict EBML in MKV).
+    Returns the same dict shape as probe_media_file, or None on error.
+    """
+    try:
+        result = subprocess.run(
+            ["mediainfo", "--Output=JSON", file_path],
+            capture_output=True,
+            text=True,
+            timeout=timeout_sec,
+        )
+        if result.returncode != 0:
+            return None
+
+        data = json.loads(result.stdout)
+    except FileNotFoundError:
+        logger.info("mediainfo not found on system — fallback unavailable")
+        return None
+    except subprocess.TimeoutExpired:
+        logger.warning("mediainfo timed out for %s", file_path)
+        return None
+    except (json.JSONDecodeError, OSError) as exc:
+        logger.debug("mediainfo parse error for %s: %s", file_path, exc)
+        return None
+
+    tracks = []
+    media = data.get("media") or data
+    if isinstance(media, dict):
+        tracks = media.get("track") or []
+    if not tracks:
+        return None
+
+    video_codec = ""
+    video_resolution = ""
+    video_width = 0
+    video_height = 0
+    video_bit_depth = 0
+    audio_codec = ""
+    audio_channels = 0
+    audio_layout = ""
+    container_format = ""
+    duration_seconds = 0
+    bitrate = 0
+
+    for track in tracks:
+        track_type = (track.get("@type") or "").lower()
+
+        if track_type == "general":
+            container_format = (track.get("Format") or "").split(",")[0].strip()
+            dur = track.get("Duration")
+            if dur:
+                try:
+                    duration_seconds = round(float(dur))
+                except (ValueError, TypeError):
+                    pass
+            br = track.get("OverallBitRate")
+            if br:
+                try:
+                    bitrate = int(br)
+                except (ValueError, TypeError):
+                    pass
+
+        elif track_type == "video" and not video_codec:
+            raw_codec = (track.get("Format") or "").lower()
+            # Map common mediainfo format names
+            mi_video_map = {
+                "avc": "H.264", "h.264": "H.264", "h264": "H.264",
+                "hevc": "H.265", "h.265": "H.265", "h265": "H.265",
+                "av1": "AV1", "vp9": "VP9", "vp8": "VP8",
+                "mpeg-4 visual": "MPEG-4", "mpeg video": "MPEG-2",
+                "vc-1": "VC-1", "xvid": "XviD",
+            }
+            video_codec = mi_video_map.get(raw_codec, _VIDEO_CODEC_MAP.get(raw_codec, raw_codec.upper() if raw_codec else ""))
+
+            try:
+                video_width = int(track.get("Width") or 0)
+            except (ValueError, TypeError):
+                video_width = 0
+            try:
+                video_height = int(track.get("Height") or 0)
+            except (ValueError, TypeError):
+                video_height = 0
+            if video_height > 0:
+                video_resolution = _height_to_resolution(video_height)
+
+            bd = track.get("BitDepth")
+            if bd:
+                try:
+                    video_bit_depth = int(bd)
+                except (ValueError, TypeError):
+                    pass
+
+        elif track_type == "audio" and not audio_codec:
+            raw_codec = (track.get("Format") or "").lower()
+            mi_audio_map = {
+                "aac": "AAC", "ac-3": "AC3", "e-ac-3": "EAC3",
+                "dts": "DTS", "mlp fba": "TrueHD", "flac": "FLAC",
+                "mpeg audio": "MP3", "vorbis": "Vorbis", "opus": "Opus",
+                "pcm": "PCM", "alac": "ALAC", "wma": "WMA",
+            }
+            audio_codec = mi_audio_map.get(raw_codec, _AUDIO_CODEC_MAP.get(raw_codec, raw_codec.upper() if raw_codec else ""))
+
+            # Check for DTS variants
+            commercial = (track.get("Format_Commercial_IfAny") or "").lower()
+            if "dts" in raw_codec:
+                if "ma" in commercial or "hd ma" in commercial:
+                    audio_codec = "DTS-HD MA"
+                elif "dts:x" in commercial or "dts-x" in commercial:
+                    audio_codec = "DTS:X"
+                elif "hd" in commercial:
+                    audio_codec = "DTS-HD"
+            # Check for Atmos
+            if "atmos" in commercial:
+                audio_codec = audio_codec + " Atmos"
+
+            ch = track.get("Channels")
+            if ch:
+                try:
+                    audio_channels = int(ch)
+                    audio_layout = _channels_to_layout(audio_channels)
+                except (ValueError, TypeError):
+                    pass
+
+    if not video_codec and not audio_codec:
+        return None  # mediainfo couldn't parse anything useful
+
+    # ── File metadata ─────────────────────────────────────────────────────
+    try:
+        file_size = os.path.getsize(file_path)
+    except OSError:
+        file_size = 0
+    try:
+        file_mtime = int(os.path.getmtime(file_path))
+    except OSError:
+        file_mtime = 0
+
+    logger.debug("mediainfo fallback succeeded for %s: %s %s", file_path, video_resolution, video_codec)
+
+    return {
+        "video_codec": video_codec,
+        "video_resolution": video_resolution,
+        "video_width": video_width,
+        "video_height": video_height,
+        "video_bit_depth": video_bit_depth,
+        "audio_codec": audio_codec,
+        "audio_channels": audio_channels,
+        "audio_layout": audio_layout,
+        "container_format": container_format,
+        "duration_seconds": duration_seconds,
+        "bitrate": bitrate,
+        "probed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "file_size": file_size,
+        "file_mtime": file_mtime,
+        "scan_profile": "mediainfo",  # mark as mediainfo-sourced
+    }
+
+
 # ── Core probe function ───────────────────────────────────────────────────────
 
 def _resolve_probe_profile(
@@ -142,6 +306,11 @@ def probe_media_file(
 
     profile, timeout_sec, probe_size, analyze_duration = _resolve_probe_profile(scan_profile, timeout)
 
+    # ── Try ffprobe first ─────────────────────────────────────────────────
+    streams = []
+    fmt = {}
+    ffprobe_ok = False
+
     try:
         result = subprocess.run(
             [
@@ -159,29 +328,54 @@ def probe_media_file(
             timeout=timeout_sec,
         )
 
-        if result.returncode != 0:
-            logger.warning("ffprobe returned code %d for %s", result.returncode, file_path)
-            return None
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            streams = data.get("streams") or []
+            fmt = data.get("format") or {}
+            if streams:
+                ffprobe_ok = True
 
-        data = json.loads(result.stdout)
+                # Radarr pattern: retry with larger probesize if audio channels missing
+                audio_stream = next((s for s in streams if s.get("codec_type") == "audio"), None)
+                if audio_stream and not audio_stream.get("channels") and profile != "maximum":
+                    max_conf = _SCAN_PROFILES["maximum"]
+                    try:
+                        retry = subprocess.run(
+                            [
+                                "ffprobe", "-v", "quiet",
+                                "-probesize", str(max_conf["probesize"]),
+                                "-analyzeduration", str(max_conf["analyzeduration"]),
+                                "-print_format", "json",
+                                "-show_streams", "-show_format",
+                                file_path,
+                            ],
+                            capture_output=True, text=True,
+                            timeout=max_conf["timeout"],
+                        )
+                        if retry.returncode == 0:
+                            retry_data = json.loads(retry.stdout)
+                            retry_streams = retry_data.get("streams") or []
+                            if retry_streams:
+                                streams = retry_streams
+                                fmt = retry_data.get("format") or fmt
+                                logger.debug("Retry with larger probesize succeeded for %s", file_path)
+                    except Exception:
+                        pass  # keep original results
 
     except FileNotFoundError:
-        logger.info("ffprobe not found on system — media analysis unavailable")
-        return None
+        logger.info("ffprobe not found on system")
     except subprocess.TimeoutExpired:
-        logger.warning(
-            "ffprobe timed out after %ss for %s (profile=%s)",
-            timeout_sec,
-            file_path,
-            profile,
-        )
-        return None
+        logger.warning("ffprobe timed out after %ss for %s (profile=%s)", timeout_sec, file_path, profile)
     except (json.JSONDecodeError, OSError) as exc:
-        logger.warning("ffprobe parse/IO error for %s: %s", file_path, exc)
-        return None
+        logger.debug("ffprobe parse/IO error for %s: %s", file_path, exc)
 
-    streams = data.get("streams") or []
-    fmt = data.get("format") or {}
+    # ── Fallback to mediainfo if ffprobe got no streams ───────────────────
+    if not ffprobe_ok:
+        mi_result = _probe_with_mediainfo(file_path, timeout_sec)
+        if mi_result:
+            return mi_result
+        # Both failed
+        return None
 
     # ── Extract video stream info ─────────────────────────────────────────
     video_codec = ""

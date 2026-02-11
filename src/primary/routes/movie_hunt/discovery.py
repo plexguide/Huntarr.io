@@ -1055,13 +1055,18 @@ def api_movie_hunt_movie_status():
                     current_mtime = 0
                 # Check for cached media_info on the collection item (skip cache on force_probe)
                 cached_info = movie.get('media_info')
+                cached_profile = cached_info.get('scan_profile', 'default') if cached_info else ''
+                profile_match = (
+                    cached_profile == scan_profile
+                    or cached_profile == 'mediainfo'  # mediainfo fallback results are always valid
+                )
                 if (
                     not force_probe
                     and cached_info
                     and isinstance(cached_info, dict)
                     and cached_info.get('file_size') == file_size
                     and cached_info.get('file_mtime') == current_mtime
-                    and (cached_info.get('scan_profile') or 'default') == scan_profile
+                    and profile_match
                 ):
                     # Cache hit — use probed data
                     probe_data = cached_info

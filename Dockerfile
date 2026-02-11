@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install system dependencies including net-tools for health checks, tzdata for timezone support,
 # par2 for Usenet file verification/repair, p7zip for 7z/zip extraction, gosu for PUID/PGID support,
-# and ffmpeg (includes ffprobe) for media file analysis (resolution, codec, audio extraction)
+# ffmpeg (includes ffprobe) for media file analysis, and mediainfo as a lenient fallback for MKV files
 RUN apt-get update && apt-get install -y --no-install-recommends \
     net-tools \
     curl \
@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     p7zip-full \
     gosu \
     ffmpeg \
+    mediainfo \
     && rm -rf /var/lib/apt/lists/*
 
 # Install unrar from RARLAB (full RAR5 support, unrar-free doesn't handle RAR5)
