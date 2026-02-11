@@ -407,6 +407,19 @@ export class RequestarrModal {
             if (status.in_library) {
                 container.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> Already in library</span>';
                 if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Already in library'; }
+                // Sync Discover card badge — it may have been rendered before the movie was added
+                this._syncCardBadge(this.core.currentModalData.tmdb_id, true);
+            } else if (status.previously_requested) {
+                container.innerHTML = isMovieHunt
+                    ? '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-clock"></i> Requested — waiting for download</span>'
+                    : '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-clock"></i> Previously requested</span>';
+                if (requestBtn) {
+                    requestBtn.disabled = false;
+                    requestBtn.classList.remove('disabled');
+                    requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
+                }
+                // Sync Discover card badge to "requested" state
+                this._syncCardBadge(this.core.currentModalData.tmdb_id, false, true);
             } else {
                 container.innerHTML = isMovieHunt
                     ? '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to add</span>'
@@ -596,20 +609,21 @@ export class RequestarrModal {
 
                 const successMsg = result.message || (appType === 'movie_hunt' ? 'Successfully added to library.' : `${isTVShow ? 'Series' : 'Movie'} requested successfully!`);
                 this.core.showNotification(successMsg, 'success');
-                this.updateCardStatusAfterRequest(this.core.currentModalData.tmdb_id);
 
-                // Notify detail pages and other listeners that a request succeeded
+                // Immediately sync card badge to "requested" state
                 const tmdbId = this.core.currentModalData.tmdb_id;
                 const mediaType = this.core.currentModalData.media_type;
+                this._syncCardBadge(tmdbId, false, true);
+
+                // Notify detail pages and other listeners that a request succeeded
                 window.dispatchEvent(new CustomEvent('requestarr-request-success', {
                     detail: { tmdbId: tmdbId, mediaType: mediaType, appType: appType, instanceName: instanceName }
                 }));
 
                 // Delayed re-check: the movie might download very quickly (especially Movie Hunt)
-                // Re-fetch real status and update the card badge accurately
-                setTimeout(() => {
-                    this.refreshCardStatusFromAPI(tmdbId, mediaType);
-                }, 3000);
+                // Re-fetch real status and update card badge accurately
+                setTimeout(() => { this._refreshCardStatusFromAPI(tmdbId); }, 3000);
+                setTimeout(() => { this._refreshCardStatusFromAPI(tmdbId); }, 8000);
 
                 setTimeout(() => this.closeModal(), 2000);
             } else {
@@ -629,53 +643,59 @@ export class RequestarrModal {
         }
     }
 
-    updateCardStatusAfterRequest(tmdbId) {
+    /**
+     * Sync Discover card badges to match the real status.
+     * Called when the modal detects "Already in library", "Previously requested",
+     * or after a successful request.
+     *
+     * @param {number|string} tmdbId
+     * @param {boolean} inLibrary  - Movie is downloaded / fully available
+     * @param {boolean} requested  - Movie is requested but not yet downloaded
+     */
+    _syncCardBadge(tmdbId, inLibrary, requested) {
         const cards = document.querySelectorAll(`.media-card[data-tmdb-id="${tmdbId}"]`);
         cards.forEach((card) => {
-            // Immediately show "requested" state (bookmark badge)
             const badge = card.querySelector('.media-card-status-badge');
             if (badge) {
-                badge.className = 'media-card-status-badge partial';
-                badge.innerHTML = '<i class="fas fa-bookmark"></i>';
+                if (inLibrary) {
+                    badge.className = 'media-card-status-badge complete';
+                    badge.innerHTML = '<i class="fas fa-check"></i>';
+                    card.classList.add('in-library');
+                } else if (requested) {
+                    badge.className = 'media-card-status-badge partial';
+                    badge.innerHTML = '<i class="fas fa-bookmark"></i>';
+                }
             }
-            // Replace hide button (eye-slash) with trash icon since item is now in collection
-            const hideBtn = card.querySelector('.media-card-hide-btn');
-            if (hideBtn) {
-                hideBtn.className = 'media-card-delete-btn';
-                hideBtn.title = 'Remove / Delete';
-                hideBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            // If now in collection (either state), swap eye-slash → trash
+            if (inLibrary || requested) {
+                const hideBtn = card.querySelector('.media-card-hide-btn');
+                if (hideBtn) {
+                    hideBtn.className = 'media-card-delete-btn';
+                    hideBtn.title = 'Remove / Delete';
+                    hideBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                }
+                const requestBtn = card.querySelector('.media-card-request-btn');
+                if (requestBtn) requestBtn.remove();
             }
-            const requestBtn = card.querySelector('.media-card-request-btn');
-            if (requestBtn) requestBtn.remove();
         });
     }
 
     /**
-     * After a delay, re-check the actual library status from the API and update card badges.
-     * This handles the case where a movie downloads nearly instantly.
+     * After a delay, re-check the actual library status from the API and sync card badges.
+     * Uses the currently selected instance so the backend knows which collection to check.
      */
-    async refreshCardStatusFromAPI(tmdbId, mediaType) {
+    async _refreshCardStatusFromAPI(tmdbId) {
         try {
-            const resp = await fetch(`./api/requestarr/movie-status?tmdb_id=${tmdbId}`);
+            const instanceSelect = document.getElementById('modal-instance-select');
+            const instanceValue = instanceSelect ? instanceSelect.value : '';
+            if (!instanceValue) return;
+
+            const decoded = decodeInstanceValue(instanceValue);
+            const appTypeParam = decoded.appType === 'movie_hunt' ? '&app_type=movie_hunt' : '';
+            const resp = await fetch(`./api/requestarr/movie-status?tmdb_id=${tmdbId}&instance=${encodeURIComponent(decoded.name)}${appTypeParam}`);
             const data = await resp.json();
 
-            const inLibrary = data.in_library || false;
-            const partial = data.partial || data.previously_requested || false;
-
-            const cards = document.querySelectorAll(`.media-card[data-tmdb-id="${tmdbId}"]`);
-            cards.forEach((card) => {
-                const badge = card.querySelector('.media-card-status-badge');
-                if (badge) {
-                    if (inLibrary) {
-                        badge.className = 'media-card-status-badge complete';
-                        badge.innerHTML = '<i class="fas fa-check"></i>';
-                        card.classList.add('in-library');
-                    } else if (partial) {
-                        badge.className = 'media-card-status-badge partial';
-                        badge.innerHTML = '<i class="fas fa-bookmark"></i>';
-                    }
-                }
-            });
+            this._syncCardBadge(tmdbId, data.in_library || false, data.previously_requested || false);
         } catch (err) {
             console.warn('[RequestarrModal] Failed to refresh card status from API:', err);
         }
