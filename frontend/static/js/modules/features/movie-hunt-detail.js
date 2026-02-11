@@ -803,6 +803,17 @@
             // Use movie-status API for both info bar and action button so they always match
             const data = await this.fetchMovieHuntStatus(tmdbId, this.selectedInstanceId);
             const isDownloaded = data && data.found && (data.status || '').toLowerCase() === 'downloaded';
+            
+            // A movie is "found" if the API says so, OR if it's already downloaded/in-library
+            const isFound = !!(data && (data.found || (data.status && data.status !== '')));
+
+            // Update toolbar management buttons visibility
+            const editBtn = document.getElementById('mh-tb-edit');
+            const deleteBtn = document.getElementById('mh-tb-delete');
+            const refreshBtn = document.getElementById('mh-tb-refresh');
+            if (editBtn) editBtn.style.display = isFound ? '' : 'none';
+            if (deleteBtn) deleteBtn.style.display = isFound ? '' : 'none';
+            if (refreshBtn) refreshBtn.style.display = isFound ? '' : 'none';
 
             // Update action button — hide if already downloaded or already requested
             const actionsContainer = document.getElementById('mh-detail-actions');
