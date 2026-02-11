@@ -123,6 +123,10 @@
                 <span>Movie Collection</span>
             </a>
             <div class="nav-sub-group" id="movie-hunt-collection-sub">
+                <a href="./#movie-hunt-calendar" class="nav-item nav-item-sub" id="movieHuntCalendarNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
+                    <span>Calendar</span>
+                </a>
                 <a href="./#settings-import-media" class="nav-item nav-item-sub" id="movieHuntImportMediaNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
                     <span>Import Media</span>
@@ -150,10 +154,6 @@
                     <span>Logs</span>
                 </a>
             </div>
-            <a href="./#movie-hunt-calendar" class="nav-item" id="movieHuntCalendarNav">
-                <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
-                <span>Calendar</span>
-            </a>
             <a href="./#movie-hunt-settings" class="nav-item" id="movieHuntSettingsNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
                 <span>Settings</span>
@@ -211,18 +211,18 @@
                             // Allow setActiveNavItem to control visibility via 'expanded' class
                             // but force-hide if no instances exist
                             subGroup.style.display = hasInstances ? '' : 'none';
+                            if (collectionSub) {
+                                collectionSub.style.display = hasInstances ? '' : 'none';
+                            }
                             
                             if (hasInstances) {
-                                // Check for root folders to show/hide Import Media
+                                // Check for root folders to show/hide Import Media specifically
                                 fetch('./api/movie-hunt/root-folders')
                                     .then(function(r) { return r.json(); })
                                     .then(function(rfData) {
                                         var rootFolders = rfData.root_folders || [];
                                         var hasRootFolders = rootFolders.length > 0;
                                         
-                                        if (collectionSub) {
-                                            collectionSub.style.display = hasRootFolders ? '' : 'none';
-                                        }
                                         if (importMediaItem) {
                                             importMediaItem.style.display = hasRootFolders ? 'flex' : 'none';
                                         }
@@ -230,10 +230,8 @@
                                         if (typeof setActiveNavItem === 'function') setActiveNavItem();
                                     })
                                     .catch(function() {
-                                        if (collectionSub) collectionSub.style.display = 'none';
+                                        if (importMediaItem) importMediaItem.style.display = 'none';
                                     });
-                            } else {
-                                if (collectionSub) collectionSub.style.display = 'none';
                             }
                         })
                         .catch(function() {
@@ -563,7 +561,7 @@
         else if (currentHash === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; expandSub('movie-hunt-settings-sub'); }
         // Movie Hunt sections
         else if (currentHash === '#movie-hunt-home' || currentHash === '#movie-hunt-collection') { selector = '#movieHuntCollectionNav'; expandSub('movie-hunt-collection-sub'); }
-        else if (currentHash === '#movie-hunt-calendar') { selector = '#movieHuntCalendarNav'; }
+        else if (currentHash === '#movie-hunt-calendar') { selector = '#movieHuntCalendarNav'; expandSub('movie-hunt-collection-sub'); }
         else if (currentHash === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; expandSub('movie-hunt-activity-sub'); }
         else if (currentHash === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; expandSub('movie-hunt-activity-sub'); }
         else if (currentHash === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; expandSub('movie-hunt-activity-sub'); }
@@ -595,7 +593,7 @@
         var mhActivityHashes = ['#activity-queue', '#activity-history', '#activity-blocklist', '#activity-logs', '#logs-movie-hunt'];
         if (mhActivityHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-activity-sub');
 
-        var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#settings-import-media'];
+        var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#settings-import-media', '#movie-hunt-calendar'];
         if (mhCollectionHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-collection-sub');
     }
 

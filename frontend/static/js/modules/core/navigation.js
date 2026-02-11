@@ -460,7 +460,7 @@ window.HuntarrNavigation = {
         }
         var collectionSub = document.getElementById('movie-hunt-collection-sub');
         if (collectionSub) {
-            var showCollectionSub = ['movie-hunt-home', 'movie-hunt-collection', 'settings-import-media'].indexOf(currentSection) !== -1;
+            var showCollectionSub = ['movie-hunt-home', 'movie-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'].indexOf(currentSection) !== -1;
             collectionSub.classList.toggle('expanded', showCollectionSub);
         }
         var activitySub = document.getElementById('movie-hunt-activity-sub');
