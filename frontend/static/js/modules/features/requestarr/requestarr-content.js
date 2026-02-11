@@ -68,6 +68,24 @@ export class RequestarrContent {
         await this.loadTVInstances();
     }
 
+    /**
+     * Public refresh: re-fetch instance lists from the API and repopulate all
+     * Requestarr dropdowns (Discover + Movies/TV list pages).
+     * Called by navigation.js when switching to Requestarr sections so newly
+     * added/removed instances appear without a full page reload.
+     */
+    async refreshInstanceSelectors() {
+        // Allow _loadServerDefaults to re-fetch (instance selection may have changed)
+        this._serverDefaultsLoaded = false;
+        await this._loadServerDefaults();
+        await Promise.all([
+            this._populateDiscoverMovieInstances(),
+            this._populateDiscoverTVInstances()
+        ]);
+        await this.loadMovieInstances();
+        await this.loadTVInstances();
+    }
+
     // ----------------------------------------
     // SERVER-SIDE INSTANCE PERSISTENCE
     // ----------------------------------------

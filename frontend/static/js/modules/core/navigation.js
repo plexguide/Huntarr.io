@@ -222,6 +222,10 @@ window.HuntarrNavigation = {
         if (section === 'home') {
             if (ui.checkAppConnections) ui.checkAppConnections();
             if (ui.loadSwaparrStatus) ui.loadSwaparrStatus();
+            // Refresh instance dropdowns so newly added/removed instances appear
+            if (window.HomeRequestarr && typeof window.HomeRequestarr._populateInstanceDropdowns === 'function') {
+                window.HomeRequestarr._populateInstanceDropdowns();
+            }
         } else if (section === 'logs' || section === 'logs-movie-hunt') {
             if (section === 'logs-movie-hunt') {
                 const logAppSelect = document.getElementById('logAppSelect');
@@ -235,6 +239,49 @@ window.HuntarrNavigation = {
         
         if (config.view && section.startsWith('requestarr') && ui.runWhenRequestarrReady) {
             ui.runWhenRequestarrReady(config.view, () => window.RequestarrDiscover.switchView(config.view));
+            // Refresh instance dropdowns so newly added/removed instances appear
+            if (window.RequestarrContent && typeof window.RequestarrContent.refreshInstanceSelectors === 'function') {
+                window.RequestarrContent.refreshInstanceSelectors();
+            }
+        }
+        // Refresh Movie Hunt instance dropdowns when entering Movie Hunt sections
+        if (section.startsWith('movie-hunt-') && window.MovieHuntInstanceDropdown && typeof window.MovieHuntInstanceDropdown.refresh === 'function') {
+            var mhDropdownMap = {
+                'movie-hunt-home': 'movie-hunt-instance-select',
+                'movie-hunt-collection': 'movie-hunt-collection-instance-select',
+                'movie-hunt-calendar': 'movie-hunt-calendar-instance-select'
+            };
+            var mhDropdownId = mhDropdownMap[section];
+            if (mhDropdownId && document.getElementById(mhDropdownId)) {
+                window.MovieHuntInstanceDropdown.refresh(mhDropdownId);
+            }
+        }
+        // Refresh Activity instance dropdown when entering Activity sections
+        if ((section === 'activity-queue' || section === 'activity-history' || section === 'activity-blocklist' || section === 'activity-logs') && window.MovieHuntInstanceDropdown && typeof window.MovieHuntInstanceDropdown.refresh === 'function') {
+            if (document.getElementById('activity-instance-select')) {
+                window.MovieHuntInstanceDropdown.refresh('activity-instance-select');
+            }
+        }
+        // Refresh Scheduling instance dropdown when entering Scheduling section
+        if (section === 'scheduling' && typeof window.refreshSchedulingInstances === 'function') {
+            window.refreshSchedulingInstances();
+        }
+        // Refresh Movie Hunt instance dropdown on settings sub-pages
+        if (section.startsWith('settings-') && window.MovieHuntInstanceDropdown && typeof window.MovieHuntInstanceDropdown.refresh === 'function') {
+            var settingsDropdownMap = {
+                'settings-movie-management': 'movie-management-instance-select',
+                'settings-profiles': 'settings-profiles-instance-select',
+                'settings-custom-formats': 'settings-custom-formats-instance-select',
+                'settings-indexers': 'settings-indexers-instance-select',
+                'settings-clients': 'settings-clients-instance-select',
+                'settings-import-lists': 'settings-import-lists-instance-select',
+                'settings-import-media': 'import-media-instance-select',
+                'settings-root-folders': 'settings-root-folders-instance-select'
+            };
+            var settingsDropdownId = settingsDropdownMap[section];
+            if (settingsDropdownId && document.getElementById(settingsDropdownId)) {
+                window.MovieHuntInstanceDropdown.refresh(settingsDropdownId);
+            }
         }
         if (section === 'settings-movie-management' && window.MovieManagement && typeof window.MovieManagement.load === 'function') {
             window.MovieManagement.load();
