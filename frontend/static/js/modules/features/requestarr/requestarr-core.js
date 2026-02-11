@@ -134,7 +134,7 @@ export class RequestarrDiscover {
 
         if (globalSearchBar) {
             console.log(`[RequestarrDiscover] Found global search bar, applying visibility for ${view}`);
-            if (view === 'hidden' || view === 'settings') {
+            if (view === 'hidden' || view === 'settings' || view === 'smarthunt-settings') {
                 globalSearchBar.style.setProperty('display', 'none', 'important');
                 console.log('[RequestarrDiscover] Hiding global search bar');
             } else {
@@ -214,6 +214,9 @@ export class RequestarrDiscover {
                 break;
             case 'settings':
                 this.settings.loadSettings();
+                break;
+            case 'smarthunt-settings':
+                this.settings.loadSmartHuntSettings();
                 break;
         }
     }

@@ -45,6 +45,28 @@
                 </div>
             </div>
 
+            <!-- Smart Hunt Section (above existing carousels) -->
+            <section class="carousel-section" id="discover-smarthunt-section">
+                <div class="section-title-container">
+                    <h2 class="section-title">Smart Hunt <span class="fire-emoji">🔥</span></h2>
+                </div>
+                <div class="trending-bar"></div>
+                <div class="carousel-container">
+                    <button class="carousel-arrow left" data-target="discover-smarthunt-carousel">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="discover-smarthunt-carousel" class="media-carousel">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading Smart Hunt...</p>
+                        </div>
+                    </div>
+                    <button class="carousel-arrow right" data-target="discover-smarthunt-carousel">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </section>
+
             <!-- Trending Section -->
             <section class="carousel-section">
                 <div class="section-title-container">
@@ -521,6 +543,177 @@
                         <div class="slider-range" id="tv-votes-range"></div>
                         <input type="range" id="tv-filter-votes-min" class="range-min" value="0" min="0" max="10000" step="10">
                         <input type="range" id="tv-filter-votes-max" class="range-max" value="10000" min="0" max="10000" step="10">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Hunt Settings View -->
+    <div id="requestarr-smarthunt-settings-view" class="requestarr-view" style="display: none;">
+        <div class="reqset-container">
+            <!-- Toolbar -->
+            <div class="reqset-toolbar">
+                <div class="reqset-toolbar-left">
+                    <button class="reqset-back-btn" onclick="window.RequestarrDiscover && window.RequestarrDiscover.switchView('discover')">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <div class="reqset-breadcrumb">
+                        <i class="fas fa-fire"></i>
+                        <span>Requestarr</span>
+                        <i class="fas fa-chevron-right reqset-breadcrumb-sep"></i>
+                        <span>Smart Hunt</span>
+                    </div>
+                </div>
+                <div class="reqset-toolbar-right">
+                    <button id="smarthunt-save-btn" class="reqset-save-btn">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </div>
+            </div>
+
+            <!-- Two-column layout -->
+            <div class="reqset-grid">
+
+                <!-- Left Column: Smart Hunt Mix -->
+                <div class="reqset-card">
+                    <div class="reqset-card-header">
+                        <div class="reqset-card-icon reqset-icon-blue">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <h3>Smart Hunt Mix</h3>
+                    </div>
+                    <div class="reqset-card-body">
+                        <div class="settings-field">
+                            <label class="toggle-label">
+                                <span>Enable Smart Hunt</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="smarthunt-enabled" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </label>
+                            <small>Show Smart Hunt carousel on Home and Discover pages</small>
+                        </div>
+                        <div class="settings-field">
+                            <label class="toggle-label">
+                                <span>Hide Library Items</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="smarthunt-hide-library" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </label>
+                            <small>Hide items already in library, requested, or hidden</small>
+                        </div>
+                        <div class="settings-field">
+                            <label for="smarthunt-min-rating">Minimum TMDB Rating</label>
+                            <input type="number" id="smarthunt-min-rating" min="0" max="10" step="0.5" value="6.0" class="settings-input">
+                            <small>Only include items rated at or above this score</small>
+                        </div>
+                        <div class="settings-field">
+                            <label>Year Range</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="number" id="smarthunt-year-start" min="1900" max="2030" value="2000" class="settings-input" style="flex:1;">
+                                <span style="color: #888;">to</span>
+                                <input type="number" id="smarthunt-year-end" min="1900" max="2030" value="2027" class="settings-input" style="flex:1;">
+                            </div>
+                            <small>Filter results to this release year range</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Category Weights -->
+                <div class="reqset-card">
+                    <div class="reqset-card-header">
+                        <div class="reqset-card-icon reqset-icon-purple">
+                            <i class="fas fa-sliders-h"></i>
+                        </div>
+                        <h3>Category Weights</h3>
+                    </div>
+                    <div class="reqset-card-body">
+                        <div class="smarthunt-total-bar" id="smarthunt-total-bar">
+                            <span>Total: </span><strong id="smarthunt-total-value">100</strong><span>%</span>
+                        </div>
+
+                        <div class="smarthunt-weight-row">
+                            <div class="smarthunt-weight-label">
+                                <span>Similar to Library</span>
+                                <small>Recommendations based on what's in your library</small>
+                            </div>
+                            <div class="smarthunt-weight-input">
+                                <input type="number" id="smarthunt-pct-similar_library" min="0" max="100" value="30" class="settings-input smarthunt-pct">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="smarthunt-weight-row">
+                            <div class="smarthunt-weight-label">
+                                <span>Trending</span>
+                                <small>What's popular right now</small>
+                            </div>
+                            <div class="smarthunt-weight-input">
+                                <input type="number" id="smarthunt-pct-trending" min="0" max="100" value="20" class="settings-input smarthunt-pct">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="smarthunt-weight-row">
+                            <div class="smarthunt-weight-label">
+                                <span>Hidden Gems</span>
+                                <small>High quality, low popularity picks</small>
+                            </div>
+                            <div class="smarthunt-weight-input">
+                                <input type="number" id="smarthunt-pct-hidden_gems" min="0" max="100" value="15" class="settings-input smarthunt-pct">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="smarthunt-weight-row">
+                            <div class="smarthunt-weight-label">
+                                <span>New Releases</span>
+                                <small>Released in the last 3 months</small>
+                            </div>
+                            <div class="smarthunt-weight-input">
+                                <input type="number" id="smarthunt-pct-new_releases" min="0" max="100" value="10" class="settings-input smarthunt-pct">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="smarthunt-weight-row">
+                            <div class="smarthunt-weight-label">
+                                <span>Top Rated</span>
+                                <small>Highest rated on TMDB</small>
+                            </div>
+                            <div class="smarthunt-weight-input">
+                                <input type="number" id="smarthunt-pct-top_rated" min="0" max="100" value="10" class="settings-input smarthunt-pct">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="smarthunt-weight-row">
+                            <div class="smarthunt-weight-label">
+                                <span>Genre Deep Dive</span>
+                                <small>Genres your library is heavy in</small>
+                            </div>
+                            <div class="smarthunt-weight-input">
+                                <input type="number" id="smarthunt-pct-genre_mix" min="0" max="100" value="5" class="settings-input smarthunt-pct">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="smarthunt-weight-row">
+                            <div class="smarthunt-weight-label">
+                                <span>Upcoming</span>
+                                <small>Not released yet</small>
+                            </div>
+                            <div class="smarthunt-weight-input">
+                                <input type="number" id="smarthunt-pct-upcoming" min="0" max="100" value="5" class="settings-input smarthunt-pct">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="smarthunt-weight-row">
+                            <div class="smarthunt-weight-label">
+                                <span>Random / Surprise Me</span>
+                                <small>Surprise picks (auto-fills remaining %)</small>
+                            </div>
+                            <div class="smarthunt-weight-input">
+                                <input type="number" id="smarthunt-pct-random" min="0" max="100" value="5" class="settings-input smarthunt-pct">
+                                <span>%</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

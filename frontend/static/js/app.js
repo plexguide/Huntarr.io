@@ -543,7 +543,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -868,7 +868,8 @@ let huntarrUI = {
                 'requestarr-movies-view',
                 'requestarr-tv-view',
                 'requestarr-hidden-view',
-                'requestarr-settings-view'
+                'requestarr-settings-view',
+                'requestarr-smarthunt-settings-view'
             ];
             viewIds.forEach((viewId) => {
                 const view = document.getElementById(viewId);
@@ -927,6 +928,20 @@ let huntarrUI = {
             // Show settings view
             this.runWhenRequestarrReady('settings', () => {
                 window.RequestarrDiscover.switchView('settings');
+            });
+        } else if (section === 'requestarr-smarthunt-settings' && document.getElementById('requestarr-section')) {
+            document.getElementById('requestarr-section').classList.add('active');
+            document.getElementById('requestarr-section').style.display = 'block';
+            if (document.getElementById('requestarrSmartHuntSettingsNav')) document.getElementById('requestarrSmartHuntSettingsNav').classList.add('active');
+            newTitle = 'Smart Hunt';
+            this.currentSection = 'requestarr-smarthunt-settings';
+            
+            // Switch to Requestarr sidebar
+            this.showRequestarrSidebar();
+            
+            // Show Smart Hunt settings view
+            this.runWhenRequestarrReady('smarthunt-settings', () => {
+                window.RequestarrDiscover.switchView('smarthunt-settings');
             });
         } else if (section === 'apps') {
             console.log('[huntarrUI] Apps section requested - redirecting to Sonarr by default');

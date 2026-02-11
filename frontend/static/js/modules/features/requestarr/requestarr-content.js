@@ -140,6 +140,8 @@ export class RequestarrContent {
         this._clearDiscoveryCache('trending');
         this._clearDiscoveryCache('movies');
         await this._saveServerDefaults();
+        // Reload Smart Hunt carousel if active
+        if (this._discoverSmartHunt) this._discoverSmartHunt.reload();
     }
 
     /**
@@ -153,6 +155,8 @@ export class RequestarrContent {
         this._clearDiscoveryCache('trending');
         this._clearDiscoveryCache('tv');
         await this._saveServerDefaults();
+        // Reload Smart Hunt carousel if active
+        if (this._discoverSmartHunt) this._discoverSmartHunt.reload();
     }
 
     /**
@@ -652,12 +656,45 @@ export class RequestarrContent {
         
         // Load hidden media IDs for filtering
         await this.loadHiddenMediaIds();
+
+        // Initialize Smart Hunt carousel on the Discover page (check main settings toggle)
+        this._initDiscoverSmartHunt();
         
         await Promise.all([
             this.loadTrending(),
             this.loadPopularMovies(),
             this.loadPopularTV()
         ]);
+    }
+
+    /** Initialize Smart Hunt carousel on the Discover page */
+    async _initDiscoverSmartHunt() {
+        const section = document.getElementById('discover-smarthunt-section');
+        // Check main settings for enable_smarthunt toggle
+        try {
+            const resp = await fetch('./api/settings');
+            const data = await resp.json();
+            if (data && data.general && data.general.enable_smarthunt === false) {
+                if (section) section.style.display = 'none';
+                return;
+            }
+        } catch (e) {
+            // Default to showing if we can't reach settings
+        }
+        if (section) section.style.display = '';
+
+        if (!window.SmartHunt) return;
+        const self = this;
+        if (this._discoverSmartHunt) {
+            this._discoverSmartHunt.destroy();
+        }
+        this._discoverSmartHunt = new window.SmartHunt({
+            carouselId: 'discover-smarthunt-carousel',
+            core: { content: this },
+            getMovieInstance: () => self.selectedMovieInstance || '',
+            getTVInstance: () => self.selectedTVInstance || '',
+        });
+        this._discoverSmartHunt.load();
     }
 
     async loadHiddenMediaIds() {

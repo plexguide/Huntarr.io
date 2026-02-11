@@ -199,7 +199,15 @@
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-                        <p class="setting-help">Display rotating discover content on the home page (Trending This Week, Popular Movies, Popular TV Shows).</p>
+                        <p class="setting-help">Display discover content on the home page (Smart Hunt, Trending, Popular Movies, Popular TV Shows).</p>
+                        <div class="setting-item flex-row" id="enable_smarthunt_setting_item">
+                            <label for="enable_smarthunt">Enable Smart Hunt:</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enable_smarthunt" ${settings.enable_smarthunt !== false ? "checked" : ""}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p class="setting-help">Enable the Smart Hunt discovery engine on Home and Requestarr pages. Configure mix settings in Requestarr &gt; Smart Hunt.</p>
                     </div>
                 </div>
 

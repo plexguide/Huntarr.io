@@ -1591,4 +1591,157 @@ export class RequestarrSettings {
         }
     }
 
+    // ========================================
+    // SMART HUNT SETTINGS
+    // ========================================
+
+    async loadSmartHuntSettings() {
+        try {
+            const resp = await fetch('./api/requestarr/settings/smarthunt');
+            const data = await resp.json();
+            if (!data.success || !data.settings) return;
+            const s = data.settings;
+
+            // Populate toggles
+            const enabledEl = document.getElementById('smarthunt-enabled');
+            if (enabledEl) enabledEl.checked = s.enabled !== false;
+            const hideLibEl = document.getElementById('smarthunt-hide-library');
+            if (hideLibEl) hideLibEl.checked = s.hide_library_items !== false;
+
+            // Populate number fields
+            const minRating = document.getElementById('smarthunt-min-rating');
+            if (minRating) minRating.value = s.min_tmdb_rating ?? 6.0;
+            const ys = document.getElementById('smarthunt-year-start');
+            if (ys) ys.value = s.year_start ?? 2000;
+            const ye = document.getElementById('smarthunt-year-end');
+            if (ye) ye.value = s.year_end ?? (new Date().getFullYear() + 1);
+
+            // Populate percentages
+            const pcts = s.percentages || {};
+            const cats = ['similar_library', 'trending', 'hidden_gems', 'new_releases', 'top_rated', 'genre_mix', 'upcoming', 'random'];
+            cats.forEach(cat => {
+                const el = document.getElementById(`smarthunt-pct-${cat}`);
+                if (el) el.value = pcts[cat] ?? 0;
+            });
+
+            this._updateSmartHuntTotal();
+            this._wireSmartHuntEvents();
+        } catch (e) {
+            console.error('[SmartHuntSettings] Error loading:', e);
+        }
+    }
+
+    _wireSmartHuntEvents() {
+        // Wire percentage inputs to update total
+        if (this._smarthuntEventsWired) return;
+        this._smarthuntEventsWired = true;
+
+        document.querySelectorAll('.smarthunt-pct').forEach(input => {
+            input.addEventListener('input', () => this._updateSmartHuntTotal());
+        });
+
+        // Save button
+        const saveBtn = document.getElementById('smarthunt-save-btn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.saveSmartHuntSettings());
+        }
+    }
+
+    _updateSmartHuntTotal() {
+        const cats = ['similar_library', 'trending', 'hidden_gems', 'new_releases', 'top_rated', 'genre_mix', 'upcoming', 'random'];
+        let total = 0;
+        cats.forEach(cat => {
+            const el = document.getElementById(`smarthunt-pct-${cat}`);
+            if (el) total += parseInt(el.value) || 0;
+        });
+
+        const totalEl = document.getElementById('smarthunt-total-value');
+        const barEl = document.getElementById('smarthunt-total-bar');
+        if (totalEl) totalEl.textContent = total;
+        if (barEl) {
+            barEl.classList.toggle('is-valid', total === 100);
+            barEl.classList.toggle('is-invalid', total !== 100);
+        }
+    }
+
+    async saveSmartHuntSettings() {
+        const saveBtn = document.getElementById('smarthunt-save-btn');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        }
+
+        try {
+            const cats = ['similar_library', 'trending', 'hidden_gems', 'new_releases', 'top_rated', 'genre_mix', 'upcoming', 'random'];
+            const percentages = {};
+            let total = 0;
+            cats.forEach(cat => {
+                const el = document.getElementById(`smarthunt-pct-${cat}`);
+                const val = parseInt(el?.value) || 0;
+                percentages[cat] = val;
+                total += val;
+            });
+
+            // Auto-adjust Random if total != 100
+            if (total !== 100) {
+                const diff = 100 - total + (percentages.random || 0);
+                if (diff >= 0 && diff <= 100) {
+                    percentages.random = diff;
+                    const randomEl = document.getElementById('smarthunt-pct-random');
+                    if (randomEl) randomEl.value = diff;
+                } else {
+                    // Proportionally scale all categories
+                    const factor = 100 / (total || 1);
+                    let runningTotal = 0;
+                    cats.forEach((cat, i) => {
+                        if (i < cats.length - 1) {
+                            percentages[cat] = Math.round(percentages[cat] * factor);
+                            runningTotal += percentages[cat];
+                        } else {
+                            percentages[cat] = 100 - runningTotal;
+                        }
+                    });
+                    // Update UI
+                    cats.forEach(cat => {
+                        const el = document.getElementById(`smarthunt-pct-${cat}`);
+                        if (el) el.value = percentages[cat];
+                    });
+                }
+                this._updateSmartHuntTotal();
+            }
+
+            const settings = {
+                enabled: document.getElementById('smarthunt-enabled')?.checked ?? true,
+                hide_library_items: document.getElementById('smarthunt-hide-library')?.checked ?? true,
+                min_tmdb_rating: parseFloat(document.getElementById('smarthunt-min-rating')?.value) || 6.0,
+                year_start: parseInt(document.getElementById('smarthunt-year-start')?.value) || 2000,
+                year_end: parseInt(document.getElementById('smarthunt-year-end')?.value) || (new Date().getFullYear() + 1),
+                percentages: percentages,
+            };
+
+            const resp = await fetch('./api/requestarr/settings/smarthunt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings),
+            });
+            const data = await resp.json();
+
+            if (data.success) {
+                this.core.showNotification('Smart Hunt settings saved successfully', 'success');
+                // Invalidate frontend cache
+                if (window.invalidateSmartHuntCache) window.invalidateSmartHuntCache();
+            } else {
+                this.core.showNotification('Failed to save Smart Hunt settings', 'error');
+            }
+        } catch (e) {
+            console.error('[SmartHuntSettings] Error saving:', e);
+            this.core.showNotification('Failed to save Smart Hunt settings', 'error');
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+            }
+        }
+    }
+
 }

@@ -782,5 +782,98 @@ def get_instances(app_type):
         logger.error(f"Error getting {app_type} instances: {e}")
         return jsonify({'error': f'Failed to get {app_type} instances'}), 500
 
+# ---------------------------------------------------------------------------
+# Smart Hunt routes
+# ---------------------------------------------------------------------------
+
+@requestarr_bp.route('/smarthunt', methods=['GET'])
+def get_smarthunt():
+    """Get Smart Hunt discovery results.
+    
+    Query params:
+        page (int): 1-5, default 1 (20 items per page)
+        movie_app_type (str): radarr or movie_hunt
+        movie_instance_name (str): movie instance name
+        tv_instance_name (str): TV instance name
+    """
+    try:
+        from src.primary.apps.requestarr.smarthunt import SmartHuntEngine, get_smarthunt_settings
+
+        page = int(request.args.get('page', 1))
+        movie_app_type = request.args.get('movie_app_type', '')
+        movie_instance_name = request.args.get('movie_instance_name', '')
+        tv_instance_name = request.args.get('tv_instance_name', '')
+
+        # Fall back to saved default instances if not provided
+        if not movie_instance_name or not movie_app_type:
+            default_instances = requestarr_api.get_default_instances()
+            raw_movie = default_instances.get('movie_instance', '')
+            tv_instance_name = tv_instance_name or default_instances.get('tv_instance', '')
+            if raw_movie and ':' in raw_movie:
+                parts = raw_movie.split(':', 1)
+                movie_app_type = movie_app_type or parts[0]
+                movie_instance_name = movie_instance_name or parts[1]
+            else:
+                movie_app_type = movie_app_type or 'radarr'
+                movie_instance_name = movie_instance_name or raw_movie
+
+        settings = get_smarthunt_settings()
+        if not settings.get('enabled', True):
+            return jsonify({'results': [], 'page': page, 'has_more': False, 'enabled': False})
+
+        discover_filters = requestarr_api.get_discover_filters()
+        blacklisted_genres = requestarr_api.get_blacklisted_genres()
+
+        engine = SmartHuntEngine()
+        results = engine.get_results(
+            page=page,
+            settings=settings,
+            movie_instance=movie_instance_name,
+            tv_instance=tv_instance_name,
+            movie_app_type=movie_app_type or 'radarr',
+            discover_filters=discover_filters,
+            blacklisted_genres=blacklisted_genres,
+        )
+
+        has_more = page < 5 and len(results) > 0
+        return jsonify({
+            'results': results,
+            'page': page,
+            'has_more': has_more,
+            'enabled': True,
+        })
+    except Exception as e:
+        logger.error(f"Error getting Smart Hunt results: {e}")
+        return jsonify({'error': 'Failed to get Smart Hunt results'}), 500
+
+
+@requestarr_bp.route('/settings/smarthunt', methods=['GET'])
+def get_smarthunt_settings_route():
+    """Get Smart Hunt settings."""
+    try:
+        from src.primary.apps.requestarr.smarthunt import get_smarthunt_settings
+        settings = get_smarthunt_settings()
+        return jsonify({'success': True, 'settings': settings})
+    except Exception as e:
+        logger.error(f"Error getting Smart Hunt settings: {e}")
+        return jsonify({'error': 'Failed to get Smart Hunt settings'}), 500
+
+
+@requestarr_bp.route('/settings/smarthunt', methods=['POST'])
+def save_smarthunt_settings_route():
+    """Save Smart Hunt settings."""
+    try:
+        from src.primary.apps.requestarr.smarthunt import save_smarthunt_settings
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        save_smarthunt_settings(data)
+        return jsonify({'success': True, 'message': 'Smart Hunt settings saved'})
+    except Exception as e:
+        logger.error(f"Error saving Smart Hunt settings: {e}")
+        return jsonify({'error': 'Failed to save Smart Hunt settings'}), 500
+
+
 # Requestarr is always enabled with hardcoded TMDB API key
-logger.info("Requestarr initialized with hardcoded TMDB API key") 
+logger.info("Requestarr initialized with hardcoded TMDB API key")

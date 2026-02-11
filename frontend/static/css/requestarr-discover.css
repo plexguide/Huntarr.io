@@ -3939,3 +3939,120 @@ body.requestarr-modal-open {
     }
     .mh-req-close { top: 6px !important; right: 6px !important; }
 }
+
+/* ================================================================
+   Smart Hunt Settings
+   ================================================================ */
+
+.smarthunt-total-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    background: linear-gradient(145deg, rgba(20, 25, 35, 0.6), rgba(15, 19, 26, 0.4));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+}
+
+.smarthunt-total-bar.is-valid {
+    border-color: rgba(34, 197, 94, 0.5);
+    color: #86efac;
+}
+
+.smarthunt-total-bar.is-invalid {
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
+}
+
+.smarthunt-weight-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(90, 109, 137, 0.15);
+}
+
+.smarthunt-weight-row:last-child {
+    border-bottom: none;
+}
+
+.smarthunt-weight-label {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.smarthunt-weight-label span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #e0e6ed;
+}
+
+.smarthunt-weight-label small {
+    font-size: 11px;
+    color: #8892a4;
+    margin-top: 2px;
+}
+
+.smarthunt-weight-input {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.smarthunt-weight-input input.smarthunt-pct {
+    width: 60px;
+    text-align: center;
+    padding: 6px 4px;
+    font-size: 14px;
+    border-radius: 6px;
+    background: rgba(15, 19, 26, 0.5);
+    border: 1px solid rgba(90, 109, 137, 0.3);
+    color: #e0e6ed;
+}
+
+.smarthunt-weight-input span {
+    font-size: 13px;
+    color: #8892a4;
+}
+
+/* Toggle label for Smart Hunt settings */
+#requestarr-smarthunt-settings-view .toggle-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    color: #e0e6ed;
+}
+
+/* Settings input (number) */
+#requestarr-smarthunt-settings-view .settings-input {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    background: rgba(15, 19, 26, 0.5);
+    border: 1px solid rgba(90, 109, 137, 0.3);
+    color: #e0e6ed;
+    box-sizing: border-box;
+}
+
+/* Purple icon variant */
+.reqset-icon-purple {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.1));
+    color: #a78bfa;
+}
+
+@media (max-width: 600px) {
+    .smarthunt-weight-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+}
