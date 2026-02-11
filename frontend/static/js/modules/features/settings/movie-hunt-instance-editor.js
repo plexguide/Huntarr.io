@@ -44,7 +44,6 @@
             sleep_duration: s.sleep_duration !== undefined ? s.sleep_duration : 900,
             hourly_cap: s.hourly_cap !== undefined ? s.hourly_cap : 20,
             monitored_only: s.monitored_only !== false,
-            analyze_video_files: s.analyze_video_files !== false,
             tag_processed_items: s.tag_processed_items !== false,
             tag_enable_missing: s.tag_enable_missing !== false,
             tag_enable_upgrade: s.tag_enable_upgrade !== false,
@@ -125,8 +124,7 @@
             '<p class="editor-help-text">Time in minutes between processing cycles</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>API Cap - Hourly</label><input type="number" id="mh-editor-hourly-cap" value="' + safe.hourly_cap + '" min="1" max="400"></div>' +
             '<p class="editor-help-text">Maximum API requests per hour for this instance (10-20 recommended, max 400)</p></div>' +
-            '<div class="editor-field-group"><div class="editor-setting-item flex-row"><label>Monitored Only</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-monitored-only"' + (safe.monitored_only ? ' checked' : '') + '><span class="toggle-slider"></span></label></div><p class="editor-help-text">Only search for monitored items</p></div>' +
-            '<div class="editor-field-group"><div class="editor-setting-item flex-row"><label><i class="fas fa-film" style="margin-right: 6px; color: #8b5cf6;"></i>Analyze Video Files</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-analyze-video-files"' + (safe.analyze_video_files ? ' checked' : '') + '><span class="toggle-slider"></span></label></div><p class="editor-help-text">Use ffprobe to extract accurate resolution, video codec, and audio codec from media files. Results are cached per file. Disable if files are on slow network storage.</p></div></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item flex-row"><label>Monitored Only</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-monitored-only"' + (safe.monitored_only ? ' checked' : '') + '><span class="toggle-slider"></span></label></div><p class="editor-help-text">Only search for monitored items</p></div></div>' +
             '<div class="editor-section"><div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-tags"><i class="fas fa-tags"></i></span>TAGS</div></div>' +
             '<div class="editor-field-group tag-sub-box"><div class="editor-setting-item flex-row"><label>Tag missing items</label><label class="toggle-switch"><input type="checkbox" id="mh-editor-tag-enable-missing"' + (safe.tag_enable_missing ? ' checked' : '') + '><span class="toggle-slider"></span></label></div>' +
             '<div class="editor-setting-item" style="margin-top: 6px;"><label>Missing Items Tag</label><input type="text" id="mh-editor-tag-missing" value="' + escapeAttr((safe.custom_tags && safe.custom_tags.missing) ? safe.custom_tags.missing : 'huntarr-missing') + '" placeholder="huntarr-missing" maxlength="25"></div>' +
@@ -213,7 +211,6 @@
             hourly_cap: getNum('mh-editor-hourly-cap', 20),
             exempt_tags: tags,
             monitored_only: getCheck('mh-editor-monitored-only'),
-            analyze_video_files: getCheck('mh-editor-analyze-video-files'),
             tag_processed_items: true,
             tag_enable_missing: getCheck('mh-editor-tag-enable-missing'),
             tag_enable_upgrade: getCheck('mh-editor-tag-enable-upgrade'),

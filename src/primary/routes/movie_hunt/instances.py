@@ -154,6 +154,9 @@ def _validate_movie_hunt_settings(data: dict) -> tuple:
         elif key == "state_management_mode":
             raw = (str(val) or "custom").strip().lower() if val is not None else "custom"
             out[key] = raw if raw in ("custom", "disabled") else "custom"
+        elif key == "video_scan_profile":
+            raw = (str(val) or "default").strip().lower() if val is not None else "default"
+            out[key] = raw if raw in ("light", "default", "moderate", "heavy", "maximum") else "default"
         elif key == "enabled":
             out[key] = bool(val)
         elif key in ("monitored_only", "tag_processed_items", "tag_enable_missing",
@@ -280,4 +283,58 @@ def api_movie_hunt_current_instance_set():
         return jsonify({'instance_id': instance_id}), 200
     except Exception as e:
         logger.exception('Movie Hunt current instance set error')
+        return jsonify({'error': str(e)}), 500
+
+
+# ── Universal Video Settings (shared across all instances) ──────────────────
+
+MOVIE_HUNT_UNIVERSAL_VIDEO_KEY = "movie_hunt_universal_video"
+
+_UNIVERSAL_VIDEO_DEFAULTS = {
+    "analyze_video_files": True,
+    "video_scan_profile": "default",
+}
+
+_VALID_SCAN_PROFILES = {"light", "default", "moderate", "heavy", "maximum"}
+
+
+def get_universal_video_settings() -> dict:
+    """Return universal video settings, merged with defaults."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    saved = db.get_app_config(MOVIE_HUNT_UNIVERSAL_VIDEO_KEY)
+    if not saved or not isinstance(saved, dict):
+        return dict(_UNIVERSAL_VIDEO_DEFAULTS)
+    return {k: saved.get(k, _UNIVERSAL_VIDEO_DEFAULTS[k]) for k in _UNIVERSAL_VIDEO_DEFAULTS}
+
+
+@movie_hunt_bp.route('/api/movie-hunt/universal-video-settings', methods=['GET'])
+def api_movie_hunt_universal_video_get():
+    """Get universal video settings."""
+    try:
+        return jsonify(get_universal_video_settings()), 200
+    except Exception as e:
+        logger.exception('Universal video settings get error')
+        return jsonify({'error': str(e)}), 500
+
+
+@movie_hunt_bp.route('/api/movie-hunt/universal-video-settings', methods=['PUT', 'PATCH'])
+def api_movie_hunt_universal_video_put():
+    """Save universal video settings."""
+    try:
+        data = request.get_json()
+        if not data or not isinstance(data, dict):
+            return jsonify({'error': 'JSON body required'}), 400
+        out = dict(_UNIVERSAL_VIDEO_DEFAULTS)
+        if 'analyze_video_files' in data:
+            out['analyze_video_files'] = bool(data['analyze_video_files'])
+        if 'video_scan_profile' in data:
+            raw = (str(data['video_scan_profile']) or 'default').strip().lower()
+            out['video_scan_profile'] = raw if raw in _VALID_SCAN_PROFILES else 'default'
+        from src.primary.utils.database import get_database
+        db = get_database()
+        db.save_app_config(MOVIE_HUNT_UNIVERSAL_VIDEO_KEY, out)
+        return jsonify(out), 200
+    except Exception as e:
+        logger.exception('Universal video settings save error')
         return jsonify({'error': str(e)}), 500

@@ -23,6 +23,7 @@
 
     window.MovieHuntInstanceManagement = {
         _initialized: false,
+        _universalInitialized: false,
         init: function() {
             var self = this;
             if (!this._initialized) {
@@ -33,7 +34,126 @@
                 this.initDeleteModal();
                 this.initRenameModal();
             }
+            if (!this._universalInitialized) {
+                this._universalInitialized = true;
+                this.initUniversalVideoModal();
+            }
             this.loadList();
+            this.loadUniversalVideoCard();
+        },
+
+        /* ── Universal Video Settings (card + modal) ─────────────── */
+
+        initUniversalVideoModal: function() {
+            var self = this;
+            var modal = document.getElementById('mh-universal-video-modal');
+            var backdrop = document.getElementById('mh-universal-video-modal-backdrop');
+            var closeBtn = document.getElementById('mh-universal-video-modal-close');
+            var cancelBtn = document.getElementById('mh-universal-video-modal-cancel');
+            var saveBtn = document.getElementById('mh-universal-video-save-btn');
+            var editBtn = document.getElementById('mh-universal-video-edit-btn');
+            var analyzeToggle = document.getElementById('mh-universal-analyze-video-files');
+            var profileGroup = document.getElementById('mh-universal-video-scan-profile-group');
+            if (!modal) return;
+
+            function closeModal() {
+                modal.style.display = 'none';
+                document.body.classList.remove('instance-add-modal-open');
+            }
+            if (backdrop) backdrop.onclick = closeModal;
+            if (closeBtn) closeBtn.onclick = closeModal;
+            if (cancelBtn) cancelBtn.onclick = closeModal;
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
+            });
+            if (analyzeToggle && profileGroup) {
+                analyzeToggle.addEventListener('change', function() {
+                    profileGroup.style.display = analyzeToggle.checked ? 'block' : 'none';
+                });
+            }
+            if (editBtn) editBtn.addEventListener('click', function() { self.openUniversalVideoModal(); });
+            if (saveBtn) saveBtn.addEventListener('click', function() { self.saveUniversalVideoSettings(closeModal); });
+        },
+
+        openUniversalVideoModal: function() {
+            var modal = document.getElementById('mh-universal-video-modal');
+            var analyzeToggle = document.getElementById('mh-universal-analyze-video-files');
+            var profileSelect = document.getElementById('mh-universal-video-scan-profile');
+            var profileGroup = document.getElementById('mh-universal-video-scan-profile-group');
+            if (!modal) return;
+
+            fetch(api('./api/movie-hunt/universal-video-settings'), { cache: 'no-store' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (analyzeToggle) analyzeToggle.checked = data.analyze_video_files !== false;
+                    if (profileSelect) profileSelect.value = (data.video_scan_profile || 'default').toLowerCase();
+                    if (profileGroup) profileGroup.style.display = (analyzeToggle && analyzeToggle.checked) ? 'block' : 'none';
+                })
+                .catch(function() {
+                    if (analyzeToggle) analyzeToggle.checked = true;
+                    if (profileSelect) profileSelect.value = 'default';
+                    if (profileGroup) profileGroup.style.display = 'block';
+                })
+                .finally(function() {
+                    if (modal.parentNode !== document.body) document.body.appendChild(modal);
+                    modal.style.display = 'flex';
+                    document.body.classList.add('instance-add-modal-open');
+                });
+        },
+
+        saveUniversalVideoSettings: function(closeModalFn) {
+            var self = this;
+            var analyzeToggle = document.getElementById('mh-universal-analyze-video-files');
+            var profileSelect = document.getElementById('mh-universal-video-scan-profile');
+            var saveBtn = document.getElementById('mh-universal-video-save-btn');
+            if (!analyzeToggle || !profileSelect) return;
+
+            var payload = {
+                analyze_video_files: !!analyzeToggle.checked,
+                video_scan_profile: (profileSelect.value || 'default').toLowerCase()
+            };
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
+
+            fetch(api('./api/movie-hunt/universal-video-settings'), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.error) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.error, 'error');
+                    } else {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Video settings saved.', 'success');
+                        if (closeModalFn) closeModalFn();
+                        self.loadUniversalVideoCard();
+                    }
+                })
+                .catch(function() {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to save video settings.', 'error');
+                })
+                .finally(function() {
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> Save'; }
+                });
+        },
+
+        loadUniversalVideoCard: function() {
+            var statusIcon = document.getElementById('mh-universal-video-status-icon');
+            var profileLabel = document.getElementById('mh-universal-video-profile-label');
+            fetch(api('./api/movie-hunt/universal-video-settings'), { cache: 'no-store' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var enabled = data.analyze_video_files !== false;
+                    var profile = (data.video_scan_profile || 'default');
+                    var profileMap = { light: 'Light', 'default': 'Default', moderate: 'Moderate', heavy: 'Heavy', maximum: 'Maximum' };
+                    if (statusIcon) {
+                        statusIcon.className = 'instance-status-icon ' + (enabled ? 'status-connected' : 'status-disabled');
+                        statusIcon.title = enabled ? 'Enabled' : 'Disabled';
+                        statusIcon.innerHTML = enabled ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-minus-circle"></i>';
+                    }
+                    if (profileLabel) profileLabel.textContent = profileMap[profile] || 'Default';
+                })
+                .catch(function() {});
         },
 
         initAddModal: function() {

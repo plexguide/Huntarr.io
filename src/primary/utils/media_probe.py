@@ -15,9 +15,19 @@ import logging
 import os
 import subprocess
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 logger = logging.getLogger("media_probe")
+
+
+_SCAN_PROFILES: Dict[str, Dict[str, int]] = {
+    # Lower values reduce read/analysis effort and system impact.
+    "light": {"timeout": 2, "probesize": 1_000_000, "analyzeduration": 500_000},
+    "default": {"timeout": 5, "probesize": 5_000_000, "analyzeduration": 2_000_000},
+    "moderate": {"timeout": 8, "probesize": 12_000_000, "analyzeduration": 5_000_000},
+    "heavy": {"timeout": 12, "probesize": 25_000_000, "analyzeduration": 10_000_000},
+    "maximum": {"timeout": 20, "probesize": 50_000_000, "analyzeduration": 20_000_000},
+}
 
 # ── Codec friendly-name mappings ──────────────────────────────────────────────
 
@@ -91,7 +101,24 @@ def _channels_to_layout(channels: int) -> str:
 
 # ── Core probe function ───────────────────────────────────────────────────────
 
-def probe_media_file(file_path: str, timeout: int = 5) -> Optional[Dict[str, Any]]:
+def _resolve_probe_profile(
+    scan_profile: str,
+    timeout: Optional[int],
+) -> Tuple[str, int, int, int]:
+    """Resolve and validate probe profile values."""
+    profile = (scan_profile or "default").strip().lower()
+    if profile not in _SCAN_PROFILES:
+        profile = "default"
+    conf = _SCAN_PROFILES[profile]
+    timeout_sec = int(timeout) if timeout is not None else conf["timeout"]
+    return profile, timeout_sec, conf["probesize"], conf["analyzeduration"]
+
+
+def probe_media_file(
+    file_path: str,
+    timeout: Optional[int] = None,
+    scan_profile: str = "default",
+) -> Optional[Dict[str, Any]]:
     """
     Probe a media file using ffprobe and return structured metadata.
 
@@ -100,7 +127,8 @@ def probe_media_file(file_path: str, timeout: int = 5) -> Optional[Dict[str, Any
 
     Args:
         file_path: Absolute path to the media file.
-        timeout: Maximum seconds to wait for ffprobe (default 5).
+        timeout: Optional override for ffprobe timeout seconds.
+        scan_profile: One of light, default, moderate, heavy, maximum.
 
     Returns:
         Dict with media info, or None on any error.
@@ -112,11 +140,15 @@ def probe_media_file(file_path: str, timeout: int = 5) -> Optional[Dict[str, Any
     if not file_path or not os.path.isfile(file_path):
         return None
 
+    profile, timeout_sec, probe_size, analyze_duration = _resolve_probe_profile(scan_profile, timeout)
+
     try:
         result = subprocess.run(
             [
                 "ffprobe",
                 "-v", "quiet",
+                "-probesize", str(probe_size),
+                "-analyzeduration", str(analyze_duration),
                 "-print_format", "json",
                 "-show_streams",
                 "-show_format",
@@ -124,7 +156,7 @@ def probe_media_file(file_path: str, timeout: int = 5) -> Optional[Dict[str, Any
             ],
             capture_output=True,
             text=True,
-            timeout=timeout,
+            timeout=timeout_sec,
         )
 
         if result.returncode != 0:
@@ -137,7 +169,12 @@ def probe_media_file(file_path: str, timeout: int = 5) -> Optional[Dict[str, Any
         logger.info("ffprobe not found on system — media analysis unavailable")
         return None
     except subprocess.TimeoutExpired:
-        logger.warning("ffprobe timed out after %ds for %s", timeout, file_path)
+        logger.warning(
+            "ffprobe timed out after %ss for %s (profile=%s)",
+            timeout_sec,
+            file_path,
+            profile,
+        )
         return None
     except (json.JSONDecodeError, OSError) as exc:
         logger.warning("ffprobe parse/IO error for %s: %s", file_path, exc)
@@ -232,6 +269,10 @@ def probe_media_file(file_path: str, timeout: int = 5) -> Optional[Dict[str, Any
         file_size = os.path.getsize(file_path)
     except OSError:
         file_size = 0
+    try:
+        file_mtime = int(os.path.getmtime(file_path))
+    except OSError:
+        file_mtime = 0
 
     return {
         "video_codec": video_codec,
@@ -247,4 +288,6 @@ def probe_media_file(file_path: str, timeout: int = 5) -> Optional[Dict[str, Any
         "bitrate": bitrate,
         "probed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "file_size": file_size,
+        "file_mtime": file_mtime,
+        "scan_profile": profile,
     }

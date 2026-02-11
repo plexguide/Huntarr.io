@@ -1012,25 +1012,39 @@ def api_movie_hunt_movie_status():
                 file_score_breakdown = ''
 
             # 2) ffprobe-based extraction (if analyze_video_files is enabled)
+            # Read from universal video settings (shared across all instances)
             analyze_enabled = True  # default
+            scan_profile = 'default'
             try:
-                db = get_database()
-                hunt_settings = db.get_app_config_for_instance('movie_hunt_hunt_settings', instance_id) or {}
-                analyze_enabled = hunt_settings.get('analyze_video_files', True)
+                from .instances import get_universal_video_settings
+                uvs = get_universal_video_settings()
+                analyze_enabled = uvs.get('analyze_video_files', True)
+                scan_profile = (uvs.get('video_scan_profile') or 'default').strip().lower()
             except Exception:
                 pass
 
             if analyze_enabled:
+                current_mtime = 0
+                try:
+                    current_mtime = int(os.path.getmtime(file_path))
+                except OSError:
+                    current_mtime = 0
                 # Check for cached media_info on the collection item
                 cached_info = movie.get('media_info')
-                if cached_info and isinstance(cached_info, dict) and cached_info.get('file_size') == file_size:
+                if (
+                    cached_info
+                    and isinstance(cached_info, dict)
+                    and cached_info.get('file_size') == file_size
+                    and cached_info.get('file_mtime') == current_mtime
+                    and (cached_info.get('scan_profile') or 'default') == scan_profile
+                ):
                     # Cache hit — use probed data
                     probe_data = cached_info
                 else:
                     # Cache miss — probe the file
                     try:
                         from src.primary.utils.media_probe import probe_media_file
-                        probe_data = probe_media_file(file_path)
+                        probe_data = probe_media_file(file_path, scan_profile=scan_profile)
                     except Exception as probe_err:
                         movie_hunt_logger.debug("ffprobe failed for %s: %s", file_path, probe_err)
                         probe_data = None
