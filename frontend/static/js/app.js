@@ -1614,12 +1614,10 @@ let huntarrUI = {
             var n = document.getElementById('nzbHuntActivityNav');
             if (n) n.classList.add('active');
         } else if (section.startsWith('nzb-hunt-settings')) {
-            var n = document.getElementById('nzbHuntSettingsNav');
-            if (n) n.classList.add('active');
             var subGroup = document.getElementById('nzb-hunt-settings-sub');
             if (subGroup) subGroup.classList.add('expanded');
             
-            // Highlight specific sub-item
+            // Highlight only the specific sub-item (Folders, Servers, Processing, Advanced), not the parent Settings
             var subId = '';
             if (section === 'nzb-hunt-settings-folders') subId = 'nzbHuntSettingsFoldersNav';
             else if (section === 'nzb-hunt-settings-servers') subId = 'nzbHuntSettingsServersNav';
@@ -1629,6 +1627,10 @@ let huntarrUI = {
             if (subId) {
                 var sn = document.getElementById(subId);
                 if (sn) sn.classList.add('active');
+            } else {
+                // Generic nzb-hunt-settings (no sub-section) — highlight Settings parent
+                var n = document.getElementById('nzbHuntSettingsNav');
+                if (n) n.classList.add('active');
             }
         }
     },
