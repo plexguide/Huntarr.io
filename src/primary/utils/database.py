@@ -1061,12 +1061,13 @@ class HuntarrDatabase:
             return 0
         val = self.get_general_setting('movie_hunt_current_instance_id')
         if val is None:
-            return 0
+            return ids[0]
         try:
             iid = int(val)
-            return iid if iid in ids else 0
+            # If the stored ID is valid, return it; else return the first available instance
+            return iid if iid in ids else ids[0]
         except (TypeError, ValueError):
-            return 0
+            return ids[0]
 
     def set_current_movie_hunt_instance_id(self, instance_id: int):
         """Set current Movie Hunt instance (server-stored)."""
