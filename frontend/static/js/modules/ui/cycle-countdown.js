@@ -40,8 +40,6 @@ window.CycleCountdown = (function() {
     
     // Initialize countdown timers for all apps
     function initialize() {
-        console.log('[CycleCountdown] Initializing countdown timers');
-        
         // Clear any existing running cycle and pending reset states
         Object.keys(runningCycles).forEach(app => {
             runningCycles[app] = false;
@@ -55,14 +53,8 @@ window.CycleCountdown = (function() {
         setupResetButtonListeners();
         
         // First try to fetch from API
-        console.log('[CycleCountdown] Fetching initial data from API...');
         fetchAllCycleData()
             .then((data) => {
-                if (data && Object.keys(data).length > 0) {
-                    console.log('[CycleCountdown] Initial data fetch successful');
-                } else {
-                    console.log('[CycleCountdown] No apps configured yet - countdown will activate when apps are set up');
-                }
                 // Success - data is processed in fetchAllCycleData
             })
             .catch((error) => {
@@ -84,21 +76,12 @@ window.CycleCountdown = (function() {
             refreshInterval = setInterval(() => {
                 // Only refresh if not already fetching
                 if (!isFetchingData) {
-                    console.log('[CycleCountdown] API sync (every 15s) to maintain accuracy...');
                     fetchAllCycleData()
-                        .then((data) => {
-                            if (data && Object.keys(data).length > 0) {
-                                console.log('[CycleCountdown] API sync completed, timers will self-correct');
-                            }
-                            // Don't log anything when no apps are configured - this is normal
-                        })
-                        .catch(() => {
-                            console.log('[CycleCountdown] API sync failed, timers continue with last known data');
-                        });
+                        .then(() => {})
+                        .catch(() => {});
                 }
             }, 15000); // API sync every 15 seconds so "Starting Cycle" updates to countdown soon after sleep starts
             
-            console.log('[CycleCountdown] API sync interval started (15s) - timers run independently at 1s');
         }
         
         // Start the refresh cycle
@@ -126,7 +109,6 @@ window.CycleCountdown = (function() {
                 startingCyclePollTimeout = safeSetTimeout(poll, STARTING_CYCLE_POLL_INTERVAL_MS);
                 return;
             }
-            console.log('[CycleCountdown] Polling for countdown (sleep just started), attempt ' + startingCyclePollAttempts);
             fetchAllCycleData()
                 .then((data) => {
                     const stillStarting = data && Object.keys(data).some(app => {
@@ -144,7 +126,6 @@ window.CycleCountdown = (function() {
                         startingCyclePollTimeout = safeSetTimeout(poll, STARTING_CYCLE_POLL_INTERVAL_MS);
                     } else {
                         startingCyclePollTimeout = null;
-                        if (!stillStarting) console.log('[CycleCountdown] Countdown received, stopped polling');
                     }
                 })
                 .catch(() => {
@@ -168,8 +149,6 @@ window.CycleCountdown = (function() {
             const instanceName = button.getAttribute('data-instance-name') || null;
             if (app) {
                 const key = stateKey(app, instanceName);
-                console.log(`[CycleCountdown] Reset button clicked for ${key}, showing Pending Reset immediately`);
-                
                 // Set pending reset locally for instant UI feedback
                 pendingResets[key] = true;
                 
@@ -212,19 +191,14 @@ window.CycleCountdown = (function() {
                     const isRunning = !!runningCycles[key];
                     
                     if (resetDone && (hasCountdown || isRunning)) {
-                        console.log(`[CycleCountdown] Reset complete for ${key} — ${isRunning ? 'cycle running' : 'countdown available'}`);
                         clearInterval(pollInterval);
                         delete activeResetPolls[key];
                         updateTimerDisplay(app);
-                    } else if (pollAttempts % 5 === 0) {
-                        // Log every 10 seconds (5 * 2s)
-                        console.log(`[CycleCountdown] Waiting for reset to complete for ${key} (attempt ${pollAttempts}, pending=${!!pendingResets[key]}, countdown=${hasCountdown}, running=${isRunning})`);
                     }
                 })
                 .catch(() => {});
             
             if (pollAttempts >= maxPollAttempts) {
-                console.log(`[CycleCountdown] Max polling attempts reached for ${key}, stopping`);
                 clearInterval(pollInterval);
                 delete activeResetPolls[key];
                 // Clear the local pending state so normal display resumes
@@ -294,7 +268,6 @@ window.CycleCountdown = (function() {
     
     // Create timer display element in each app stats card (supports multiple instance cards)
     function createTimerElement(app) {
-        console.log(`[CycleCountdown] Creating timer elements for ${app}`);
         const dataApp = app;
         const cssClass = app.replace(/-/g, '');
         
@@ -329,7 +302,6 @@ window.CycleCountdown = (function() {
             if (timerIcon) timerIcon.classList.add(cssClass + '-icon');
             wrapper.appendChild(timerElement);
         });
-        console.log(`[CycleCountdown] Timer(s) created for ${app} (${resetButtons.length} card(s))`);
     }
     
     // Fetch cycle times for all tracked apps
@@ -357,8 +329,6 @@ window.CycleCountdown = (function() {
             // Use a completely relative URL approach to avoid any subpath issues
             const url = buildUrl('./api/cycle/status');
             
-            console.log(`[CycleCountdown] Fetching all cycle times from URL: ${url}`);
-            
             fetch(url, {
                 method: 'GET',
                 headers: {
@@ -378,9 +348,7 @@ window.CycleCountdown = (function() {
                 
                 // Check if we got valid data
                 if (Object.keys(data).length === 0) {
-                    // No data likely means no apps are configured yet - this is normal
-                    console.log('[CycleCountdown] No cycle data available (no apps configured yet)');
-                    resolve({}); // Resolve with empty data instead of rejecting
+                    resolve({}); // No apps configured yet
                     return;
                 }
                 
@@ -388,10 +356,7 @@ window.CycleCountdown = (function() {
                 
                 // Process the data for each app (per-instance for *arr, single for swaparr)
                 for (const app in data) {
-                    if (!trackedApps.includes(app)) {
-                        console.log(`[CycleCountdown] Skipping ${app} - not in tracked apps list`);
-                        continue;
-                    }
+                    if (!trackedApps.includes(app)) continue;
                     const appData = data[app];
                     if (!appData) continue;
                     // Per-instance format: { instances: { InstanceName: { next_cycle, cyclelock, pending_reset } } }
@@ -478,9 +443,7 @@ window.CycleCountdown = (function() {
                     }
                     resolve(data);
                 } else {
-                    // No valid app data likely means no apps are configured yet - this is normal
-                    console.log('[CycleCountdown] No configured apps found in API response');
-                    resolve({}); // Resolve with empty data instead of rejecting
+                    resolve({}); // No configured apps found
                 }
             })
             .catch(error => {
@@ -509,8 +472,6 @@ window.CycleCountdown = (function() {
         try {
             // Use a completely relative URL approach to avoid any subpath issues
             const url = buildUrl(`./api/cycle/status/${app}`);
-            
-            console.log(`[CycleCountdown] Fetching cycle time for ${app} from URL: ${url}`);
             
             // Use safe timeout to avoid context issues
             safeSetTimeout(() => {
@@ -555,7 +516,6 @@ window.CycleCountdown = (function() {
         // Clear any existing interval
         if (timerIntervals[app]) {
             clearInterval(timerIntervals[app]);
-            console.log(`[CycleCountdown] Cleared existing 1-second timer for ${app}`);
         }
         
         // Set up new interval to update every second for smooth countdown
@@ -563,7 +523,6 @@ window.CycleCountdown = (function() {
             updateTimerDisplay(app);
         }, 1000); // 1-second interval for smooth countdown
         
-        console.log(`[CycleCountdown] Set up 1-second countdown timer for ${app}`);
     }
     
     // Update the timer display for an app (per-instance when cards have data-instance-name)
@@ -679,26 +638,15 @@ window.CycleCountdown = (function() {
     }
     
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('[CycleCountdown] DOM loaded, checking page...');
-        
         // Skip initialization on login page or if not authenticated
         const isLoginPage = document.querySelector('.login-container, #loginForm, .login-form');
-        if (isLoginPage) {
-            console.log('[CycleCountdown] Login page detected, skipping initialization');
-            return;
-        }
+        if (isLoginPage) return;
         
         // Only initialize if we're on a page that has app status cards
-        // Check for the home section or any app status elements
         const homeSection = document.getElementById('homeSection');
         const hasAppCards = document.querySelector('.app-status-card, .status-card, [id$="StatusCard"]');
         
-        if (!homeSection && !hasAppCards) {
-            console.log('[CycleCountdown] Not on dashboard page, skipping initialization');
-            return;
-        }
-        
-        console.log('[CycleCountdown] Dashboard page detected, initializing...');
+        if (!homeSection && !hasAppCards) return;
         
         // Simple initialization with minimal delay
         setTimeout(function() {
@@ -711,12 +659,10 @@ window.CycleCountdown = (function() {
                     if (mutation.target.id === 'homeSection' && 
                         mutation.attributeName === 'class' && 
                         !mutation.target.classList.contains('hidden')) {
-                        console.log('[CycleCountdown] Home section became visible, reinitializing...');
                         initialize();
                     } else if (mutation.target.id === 'homeSection' && 
                                mutation.attributeName === 'class' && 
                                mutation.target.classList.contains('hidden')) {
-                        console.log('[CycleCountdown] Home section hidden, cleaning up...');
                         cleanup();
                     }
                 }
@@ -724,27 +670,15 @@ window.CycleCountdown = (function() {
             
             if (homeSection) {
                 observer.observe(homeSection, { attributes: true });
-                console.log('[CycleCountdown] Observer set up for home section');
-            } else {
-                console.log('[CycleCountdown] Home section not found, but app cards detected');
             }
         }, 100); // 100ms delay is enough
     });
     
     // Refresh all cycle data immediately (for timezone changes)
     function refreshAllData() {
-        console.log('[CycleCountdown] Refreshing all cycle data for timezone change');
         fetchAllCycleData()
-            .then((data) => {
-                if (data && Object.keys(data).length > 0) {
-                    console.log('[CycleCountdown] Data refreshed successfully for timezone change');
-                } else {
-                    console.log('[CycleCountdown] No apps configured during timezone refresh');
-                }
-            })
-            .catch((error) => {
-                console.warn('[CycleCountdown] Failed to refresh data for timezone change:', error.message);
-            });
+            .then(() => {})
+            .catch(() => {});
     }
 
     // Public API
