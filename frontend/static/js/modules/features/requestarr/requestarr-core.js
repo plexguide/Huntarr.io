@@ -61,7 +61,8 @@ export class RequestarrDiscover {
 
     async loadInstances() {
         try {
-            const response = await fetch('./api/requestarr/instances');
+            const _ts = Date.now();
+            const response = await fetch(`./api/requestarr/instances?t=${_ts}`, { cache: 'no-store' });
             const data = await response.json();
             
             if (data.sonarr || data.radarr || data.movie_hunt) {
@@ -80,42 +81,32 @@ export class RequestarrDiscover {
     async loadAllQualityProfiles() {
         // Load Radarr quality profiles
         for (const instance of this.instances.radarr) {
-            try {
-                const response = await fetch(`./api/requestarr/quality-profiles/radarr/${instance.name}`);
-                const data = await response.json();
-                if (data.success) {
-                    this.qualityProfiles[`radarr-${instance.name}`] = data.profiles;
-                }
-            } catch (error) {
-                console.error(`[RequestarrDiscover] Error loading Radarr quality profiles for ${instance.name}:`, error);
-            }
+            await this.loadQualityProfilesForInstance('radarr', instance.name);
         }
         
         // Load Sonarr quality profiles
         for (const instance of this.instances.sonarr) {
-            try {
-                const response = await fetch(`./api/requestarr/quality-profiles/sonarr/${instance.name}`);
-                const data = await response.json();
-                if (data.success) {
-                    this.qualityProfiles[`sonarr-${instance.name}`] = data.profiles;
-                }
-            } catch (error) {
-                console.error(`[RequestarrDiscover] Error loading Sonarr quality profiles for ${instance.name}:`, error);
-            }
+            await this.loadQualityProfilesForInstance('sonarr', instance.name);
         }
         
         // Load Movie Hunt quality profiles
         for (const instance of this.instances.movie_hunt) {
-            try {
-                const response = await fetch(`./api/requestarr/quality-profiles/movie_hunt/${instance.name}`);
-                const data = await response.json();
-                if (data.success) {
-                    this.qualityProfiles[`movie_hunt-${instance.name}`] = data.profiles;
-                }
-            } catch (error) {
-                console.error(`[RequestarrDiscover] Error loading Movie Hunt quality profiles for ${instance.name}:`, error);
-            }
+            await this.loadQualityProfilesForInstance('movie_hunt', instance.name);
         }
+    }
+
+    async loadQualityProfilesForInstance(appType, instanceName) {
+        try {
+            const response = await fetch(`./api/requestarr/quality-profiles/${appType}/${encodeURIComponent(instanceName)}`);
+            const data = await response.json();
+            if (data.success) {
+                this.qualityProfiles[`${appType}-${instanceName}`] = data.profiles;
+                return data.profiles;
+            }
+        } catch (error) {
+            console.error(`[RequestarrDiscover] Error loading quality profiles for ${appType}/${instanceName}:`, error);
+        }
+        return [];
     }
 
     // ========================================

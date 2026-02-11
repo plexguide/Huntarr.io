@@ -178,9 +178,25 @@ export class RequestarrModal {
         }
 
         const currentlySelectedInstance = isTVShow ? (this.preferences?.tv_instance || this.core.content.selectedTVInstance) : (this.preferences?.movie_instance || this.core.content.selectedMovieInstance);
-        const defaultInstance = this.suggestedInstance || currentlySelectedInstance || uniqueInstances[0]?.compoundValue || uniqueInstances[0]?.name || '';
+        const rawDefault = this.suggestedInstance || currentlySelectedInstance || uniqueInstances[0]?.compoundValue || uniqueInstances[0]?.name || '';
+        
+        // Resolve legacy plain-name values to compound values for movies
+        let defaultInstance = rawDefault;
+        let isMovieHunt = false;
+        if (!isTVShow && rawDefault) {
+            const matched = uniqueInstances.find(inst => inst.compoundValue === rawDefault || inst.name === rawDefault);
+            if (matched) {
+                defaultInstance = matched.compoundValue || matched.name;
+                isMovieHunt = matched.appType === 'movie_hunt';
+            }
+        } else if (isTVShow && rawDefault) {
+            const matched = uniqueInstances.find(inst => inst.name === rawDefault);
+            if (matched) {
+                isMovieHunt = matched.appType === 'movie_hunt';
+            }
+        }
 
-        console.log('[RequestarrModal] Default instance:', defaultInstance);
+        console.log('[RequestarrModal] Resolved instance:', defaultInstance, 'isMovieHunt:', isMovieHunt);
 
         // Populate poster
         const posterImg = document.getElementById('requestarr-modal-poster-img');
@@ -234,17 +250,29 @@ export class RequestarrModal {
         // Populate quality profile dropdown
         const qualitySelect = document.getElementById('modal-quality-profile');
         if (qualitySelect) {
-            // For movies, decode compound value to get the correct profile key
-            let profileKey, isMovieHunt = false;
+            let profileKey;
             if (isTVShow) {
                 profileKey = `sonarr-${defaultInstance}`;
             } else {
                 const decoded = decodeInstanceValue(defaultInstance);
                 profileKey = `${decoded.appType}-${decoded.name}`;
-                isMovieHunt = decoded.appType === 'movie_hunt';
             }
             const profiles = this.core.qualityProfiles[profileKey] || [];
-            this._populateQualityProfiles(qualitySelect, profiles, isMovieHunt);
+            
+            if (profiles.length === 0 && defaultInstance) {
+                // If profiles are missing from cache, show loading and try to fetch them now
+                qualitySelect.innerHTML = '<option value="">Loading profiles...</option>';
+                const decoded = isTVShow ? { appType: 'sonarr', name: defaultInstance } : decodeInstanceValue(defaultInstance);
+                this.core.loadQualityProfilesForInstance(decoded.appType, decoded.name).then(newProfiles => {
+                    if (newProfiles && newProfiles.length > 0) {
+                        this._populateQualityProfiles(qualitySelect, newProfiles, isMovieHunt);
+                    } else {
+                        this._populateQualityProfiles(qualitySelect, [], isMovieHunt);
+                    }
+                });
+            } else {
+                this._populateQualityProfiles(qualitySelect, profiles, isMovieHunt);
+            }
         }
 
         // Set status to checking
@@ -317,7 +345,11 @@ export class RequestarrModal {
                     const normalized = originalPath.replace(/\/+$/, '').toLowerCase();
                     if (!normalized) return;
                     if (!seenPaths.has(normalized)) {
-                        seenPaths.set(normalized, { path: originalPath, freeSpace: rf.freeSpace });
+                        seenPaths.set(normalized, { 
+                            path: originalPath, 
+                            freeSpace: rf.freeSpace,
+                            isDefault: !!rf.is_default
+                        });
                     }
                 });
 
@@ -325,10 +357,15 @@ export class RequestarrModal {
                     rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
                 } else {
                     rootSelect.innerHTML = '';
+                    let defaultFound = false;
                     seenPaths.forEach(rf => {
                         const opt = document.createElement('option');
                         opt.value = rf.path;
                         opt.textContent = rf.path + (rf.freeSpace != null ? ` (${Math.round(rf.freeSpace / 1e9)} GB free)` : '');
+                        if (rf.isDefault) {
+                            opt.selected = true;
+                            defaultFound = true;
+                        }
                         rootSelect.appendChild(opt);
                     });
                 }
@@ -485,19 +522,31 @@ export class RequestarrModal {
         this.loadModalRootFolders(instanceName, isTVShow);
 
         // Update quality profile dropdown
-        let profileKey, isMovieHunt = false;
-        if (isTVShow) {
-            profileKey = `sonarr-${instanceName}`;
-        } else {
-            const decoded = decodeInstanceValue(instanceName);
-            profileKey = `${decoded.appType}-${decoded.name}`;
-            isMovieHunt = decoded.appType === 'movie_hunt';
-        }
-        const profiles = this.core.qualityProfiles[profileKey] || [];
         const qualitySelect = document.getElementById('modal-quality-profile');
-
         if (qualitySelect) {
-            this._populateQualityProfiles(qualitySelect, profiles, isMovieHunt);
+            let profileKey, isMovieHunt = false;
+            if (isTVShow) {
+                profileKey = `sonarr-${instanceName}`;
+            } else {
+                const decoded = decodeInstanceValue(instanceName);
+                profileKey = `${decoded.appType}-${decoded.name}`;
+                isMovieHunt = decoded.appType === 'movie_hunt';
+            }
+            const profiles = this.core.qualityProfiles[profileKey] || [];
+
+            if (profiles.length === 0 && instanceName) {
+                qualitySelect.innerHTML = '<option value="">Loading profiles...</option>';
+                const decoded = isTVShow ? { appType: 'sonarr', name: instanceName } : decodeInstanceValue(instanceName);
+                this.core.loadQualityProfilesForInstance(decoded.appType, decoded.name).then(newProfiles => {
+                    if (newProfiles && newProfiles.length > 0) {
+                        this._populateQualityProfiles(qualitySelect, newProfiles, isMovieHunt);
+                    } else {
+                        this._populateQualityProfiles(qualitySelect, [], isMovieHunt);
+                    }
+                });
+            } else {
+                this._populateQualityProfiles(qualitySelect, profiles, isMovieHunt);
+            }
         }
 
         // Reload status
