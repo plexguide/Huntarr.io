@@ -1136,7 +1136,7 @@ export class RequestarrContent {
         const inLibrary = item.in_library || false;
         const partial = item.partial || false;
         const hasInstance = item.media_type === 'movie'
-            ? (this.core.instances.radarr || []).length > 0
+            ? ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
             : (this.core.instances.sonarr || []).length > 0;
         const metaClassName = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
         

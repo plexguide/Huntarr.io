@@ -234,6 +234,71 @@
             this.observer.observe(sentinel);
         },
 
+        getSelectedInstanceName() {
+            const select = document.getElementById('movie-hunt-instance-select');
+            if (!select || !select.value) return '';
+            const opt = select.options[select.selectedIndex];
+            return opt ? opt.textContent : '';
+        },
+
+        hideMediaFromHome(item, cardElement) {
+            const self = this;
+            const select = document.getElementById('movie-hunt-instance-select');
+            const instanceName = select ? (select.options[select.selectedIndex] ? select.options[select.selectedIndex].textContent : '') : '';
+            if (!instanceName) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('No instance selected.', 'error');
+                }
+                return;
+            }
+            const title = item.title || 'this movie';
+            const tmdbId = item.tmdb_id || item.id;
+            const msg = 'Hide "' + title + '" permanently?\n\nThis will remove it from all discovery pages. You can unhide it later from the Hidden Media page.';
+
+            const doHide = function() {
+                fetch('./api/requestarr/hidden-media', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tmdb_id: tmdbId,
+                        media_type: 'movie',
+                        title: title,
+                        poster_path: item.poster_path || null,
+                        app_type: 'movie_hunt',
+                        instance_name: instanceName
+                    })
+                })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('Failed to hide');
+                    return r.json();
+                })
+                .then(function() {
+                    // Animate card removal
+                    if (cardElement) {
+                        cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
+                        cardElement.style.opacity = '0';
+                        cardElement.style.transform = 'scale(0.8)';
+                        setTimeout(function() { cardElement.remove(); }, 300);
+                    }
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('"' + title + '" hidden.', 'success');
+                    }
+                })
+                .catch(function(err) {
+                    console.error('[MovieHunt] Error hiding media:', err);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to hide media.', 'error');
+                    }
+                });
+            };
+
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({ title: 'Hide Media', message: msg, confirmLabel: 'Hide', onConfirm: doHide });
+            } else {
+                doHide();
+            }
+        },
+
         createCard(item) {
             const card = document.createElement('div');
             card.className = 'media-card';
@@ -253,7 +318,8 @@
             const overview = item.overview || 'No description available.';
             const inLibrary = item.in_library || false;
             const partial = item.partial || false;
-            const hasInstance = this.instances && this.instances.length > 0;
+            const instanceSelect = document.getElementById('movie-hunt-instance-select');
+            const hasInstance = instanceSelect && instanceSelect.value && instanceSelect.value !== '';
 
             let statusBadge = '';
             if (hasInstance) {
@@ -270,6 +336,12 @@
             const showRequestBtn = hasInstance && !inLibrary;
             const overlayAction = showRequestBtn
                 ? '<button class="media-card-request-btn"><i class="fas fa-plus-circle"></i> Add</button>'
+                : '';
+
+            // Hide button: show only if instance exists AND item is NOT in_library and NOT partial (requested)
+            const canHide = hasInstance && !inLibrary && !partial;
+            const hideBtn = canHide
+                ? '<button class="media-card-hide-btn" title="Hide this media permanently"><i class="fas fa-eye-slash"></i></button>'
                 : '';
 
             if (inLibrary) card.classList.add('in-library');
@@ -292,6 +364,7 @@
                     <div class="${metaClass}">
                         <span class="media-card-year">${year}</span>
                         <span class="media-card-rating"><i class="fas fa-star"></i> ${rating}</span>
+                        ${hideBtn}
                     </div>
                 </div>
             `;
@@ -310,6 +383,7 @@
             }
 
             const requestBtn = card.querySelector('.media-card-request-btn');
+            const hideBtnEl = card.querySelector('.media-card-hide-btn');
 
             const openRequestModal = () => {
                 const tmdbId = item.tmdb_id || item.id;
@@ -326,10 +400,20 @@
                 }
             };
 
+            // Hide button click
+            if (hideBtnEl) {
+                hideBtnEl.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.hideMediaFromHome(item, card);
+                });
+            }
+
             // Click anywhere on card opens detail page (whole card is clickable)
             card.style.cursor = 'pointer';
             card.addEventListener('click', (e) => {
-                // Only exception: Request button opens request modal, not detail
+                // Don't open detail if clicking hide or request button
+                if (hideBtnEl && (e.target === hideBtnEl || hideBtnEl.contains(e.target))) return;
                 if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) {
                     e.preventDefault();
                     e.stopPropagation();

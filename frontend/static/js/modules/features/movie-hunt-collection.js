@@ -13,6 +13,7 @@
         sortBy: 'title.asc',
         viewMode: 'posters', // posters, table, overview
         items: [],
+        hiddenMediaSet: new Set(),
 
         init: function() {
             this.page = 1;
@@ -21,9 +22,112 @@
             this.setupSort();
             this.setupViewMode();
             this.setupSearch();
-            this.loadCollection();
+            this.loadHiddenMediaIds().then(function() {
+                window.MovieHuntCollection.loadCollection();
+            });
         },
 
+        // ─── Hidden Media ─────────────────────────────────────────────
+        loadHiddenMediaIds: function() {
+            var self = this;
+            return fetch('./api/requestarr/hidden-media?page=1&page_size=10000')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var items = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
+                    self.hiddenMediaSet = new Set();
+                    items.forEach(function(item) {
+                        var key = item.tmdb_id + ':' + item.media_type + ':' + item.app_type + ':' + item.instance_name;
+                        self.hiddenMediaSet.add(key);
+                    });
+                    console.log('[MovieHuntCollection] Loaded', self.hiddenMediaSet.size, 'hidden media items');
+                })
+                .catch(function(err) {
+                    console.error('[MovieHuntCollection] Error loading hidden media IDs:', err);
+                    self.hiddenMediaSet = new Set();
+                });
+        },
+
+        isMediaHidden: function(tmdbId) {
+            if (!this.hiddenMediaSet || this.hiddenMediaSet.size === 0) return false;
+            var instanceName = this.getCurrentInstanceName();
+            if (!instanceName) return false;
+            var key = tmdbId + ':movie:movie_hunt:' + instanceName;
+            return this.hiddenMediaSet.has(key);
+        },
+
+        getCurrentInstanceName: function() {
+            var select = document.getElementById('movie-hunt-collection-instance-select');
+            if (!select) return '';
+            return select.value || '';
+        },
+
+        hideMedia: function(tmdbId, title, posterPath, cardElement) {
+            var self = this;
+            var instanceName = self.getCurrentInstanceName();
+            if (!instanceName) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('No instance selected.', 'error');
+                }
+                return;
+            }
+
+            var msg = 'Hide "' + title + '" from your collection view?\n\nYou can unhide it later from the Hidden Media page.';
+            var doHide = function() {
+                fetch('./api/requestarr/hidden-media', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tmdb_id: tmdbId,
+                        media_type: 'movie',
+                        title: title,
+                        poster_path: posterPath || null,
+                        app_type: 'movie_hunt',
+                        instance_name: instanceName
+                    })
+                })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('Failed to hide media');
+                    return r.json();
+                })
+                .then(function() {
+                    var key = tmdbId + ':movie:movie_hunt:' + instanceName;
+                    self.hiddenMediaSet.add(key);
+
+                    // Animate card removal
+                    if (cardElement) {
+                        cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
+                        cardElement.style.opacity = '0';
+                        cardElement.style.transform = 'scale(0.8)';
+                        setTimeout(function() {
+                            cardElement.remove();
+                        }, 300);
+                    }
+
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('"' + title + '" hidden from collection.', 'success');
+                    }
+                })
+                .catch(function(err) {
+                    console.error('[MovieHuntCollection] Error hiding media:', err);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to hide media.', 'error');
+                    }
+                });
+            };
+
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Hide Media',
+                    message: msg,
+                    confirmLabel: 'Hide',
+                    onConfirm: doHide
+                });
+            } else {
+                doHide();
+            }
+        },
+
+        // ─── Search ───────────────────────────────────────────────────
         setupSearch: function() {
             var self = this;
             var input = document.getElementById('movie-hunt-collection-search-input');
@@ -146,13 +250,17 @@
             return card;
         },
 
+        // ─── Instance / Sort / View Mode Setup ────────────────────────
         setupInstanceSelect: function() {
             var select = document.getElementById('movie-hunt-collection-instance-select');
             if (!select) return;
             if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.attach) {
                 window.MovieHuntInstanceDropdown.attach('movie-hunt-collection-instance-select', function() {
                     window.MovieHuntCollection.page = 1;
-                    window.MovieHuntCollection.loadCollection();
+                    // Reload hidden media for the new instance, then reload collection
+                    window.MovieHuntCollection.loadHiddenMediaIds().then(function() {
+                        window.MovieHuntCollection.loadCollection();
+                    });
                 });
             } else {
                 select.innerHTML = '<option value="">No Movie Hunt instances</option>';
@@ -188,6 +296,7 @@
             };
         },
 
+        // ─── Data Loading & Rendering ─────────────────────────────────
         loadCollection: function() {
             var self = this;
             var grid = document.getElementById('movie-hunt-collection-grid');
@@ -238,7 +347,15 @@
                 return;
             }
 
-            if (this.items.length === 0) {
+            // Filter hidden items
+            var visibleItems = [];
+            for (var i = 0; i < this.items.length; i++) {
+                var item = this.items[i];
+                if (item.tmdb_id && this.isMediaHidden(item.tmdb_id)) continue;
+                visibleItems.push(item);
+            }
+
+            if (visibleItems.length === 0) {
                 if (grid) {
                     grid.style.display = 'flex';
                     grid.style.alignItems = 'center';
@@ -252,35 +369,36 @@
             }
 
             if (this.viewMode === 'table') {
-                this.renderTable();
+                this.renderTable(visibleItems);
             } else if (this.viewMode === 'overview') {
-                this.renderOverview();
+                this.renderOverview(visibleItems);
             } else {
-                this.renderPosters();
+                this.renderPosters(visibleItems);
             }
         },
 
-        renderPosters: function() {
+        renderPosters: function(items) {
             var grid = document.getElementById('movie-hunt-collection-grid');
             if (!grid) return;
             grid.style.display = 'grid';
             grid.style.alignItems = '';
             grid.style.justifyContent = '';
             grid.innerHTML = '';
-            // Render all items (no pagination)
-            for (var i = 0; i < this.items.length; i++) {
-                grid.appendChild(this.createCard(this.items[i], i));
+            var renderItems = items || this.items;
+            for (var i = 0; i < renderItems.length; i++) {
+                grid.appendChild(this.createCard(renderItems[i], i));
             }
         },
 
-        renderTable: function() {
+        renderTable: function(items) {
             var table = document.getElementById('movie-hunt-collection-table');
             var tbody = document.getElementById('movie-hunt-collection-table-body');
             if (!table || !tbody) return;
             table.style.display = 'block';
             tbody.innerHTML = '';
-            for (var i = 0; i < this.items.length; i++) {
-                var item = this.items[i];
+            var renderItems = items || this.items;
+            for (var i = 0; i < renderItems.length; i++) {
+                var item = renderItems[i];
                 var tr = document.createElement('tr');
                 var title = (item.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 var year = item.year || 'N/A';
@@ -300,14 +418,15 @@
             }
         },
 
-        renderOverview: function() {
+        renderOverview: function(items) {
             var overview = document.getElementById('movie-hunt-collection-overview');
             var list = document.getElementById('movie-hunt-collection-overview-list');
             if (!overview || !list) return;
             overview.style.display = 'block';
             list.innerHTML = '';
-            for (var i = 0; i < this.items.length; i++) {
-                var item = this.items[i];
+            var renderItems = items || this.items;
+            for (var i = 0; i < renderItems.length; i++) {
+                var item = renderItems[i];
                 var div = document.createElement('div');
                 div.className = 'media-overview-item';
                 var title = (item.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -357,6 +476,11 @@
             var rating = item.vote_average != null ? Number(item.vote_average).toFixed(1) : '';
             var ratingHtml = rating ? '<span class="media-card-rating"><i class="fas fa-star"></i> ' + rating + '</span>' : '';
 
+            // Hide button: show only if there is an instance tied to it AND item has a tmdb_id
+            var hasInstance = !!self.getCurrentInstanceName();
+            var canHide = hasInstance && item.tmdb_id;
+            var hideHtml = canHide ? '<button class="media-card-hide-btn" title="Hide this media"><i class="fas fa-eye-slash"></i></button>' : '';
+
             if (status === 'available') card.classList.add('in-library');
 
             card.innerHTML = '<div class="media-card-poster">' +
@@ -373,12 +497,25 @@
                 '<div class="media-card-meta">' +
                 '<span class="media-card-year">' + year + '</span>' +
                 ratingHtml +
+                hideHtml +
                 '</div></div>';
+
+            // Handle hide button click
+            var hideBtn = card.querySelector('.media-card-hide-btn');
+            if (hideBtn) {
+                hideBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    self.hideMedia(item.tmdb_id, item.title, item.poster_path, card);
+                });
+            }
 
             // Click anywhere on card opens detail page
             if (item.tmdb_id && window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
                 card.style.cursor = 'pointer';
-                card.onclick = function() {
+                card.onclick = function(e) {
+                    // Don't open detail if clicking hide button
+                    if (e.target.closest && e.target.closest('.media-card-hide-btn')) return;
                     var movieData = {
                         tmdb_id: item.tmdb_id,
                         id: item.tmdb_id,
@@ -419,7 +556,6 @@
             if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
                 window.HuntarrConfirm.show({ title: 'Remove from Requested List', message: 'Remove this movie from your requested list?', confirmLabel: 'Remove', onConfirm: doRemove });
             } else {
-                if (!confirm('Remove this movie from your requested list?')) return;
                 doRemove();
             }
         }
