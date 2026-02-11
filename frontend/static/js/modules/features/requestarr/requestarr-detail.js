@@ -212,12 +212,7 @@
             }
         },
 
-        async updateMovieStatus() {
-            // Toolbar visibility and action buttons are now driven entirely by
-            // updateDetailInfoBar(), which fetches the detailed status with `found`.
-            // This method is kept for backward compatibility but delegates.
-            // updateDetailInfoBar is always called alongside this.
-        },
+        // updateMovieStatus — removed (no-op). Status is driven by updateDetailInfoBar().
 
         formatFileSize(bytes) {
             if (!bytes || bytes === 0) return '0 B';
@@ -896,10 +891,8 @@
                     console.log('[RequestarrDetail] Instance changed to:', this.selectedInstanceName);
                     var isMovieHunt = _decodeInstanceValue(newValue).appType === 'movie_hunt';
                     this.replaceAndAttachToolbar(isMovieHunt);
-                    await this.updateMovieStatus();
                     this.updateDetailInfoBar();
                 });
-                this.updateMovieStatus();
                 this.updateDetailInfoBar();
             }
 

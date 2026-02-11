@@ -603,13 +603,19 @@ export class RequestarrModal {
 
     async submitRequest() {
         const instanceSelect = document.getElementById('modal-instance-select');
-        const qualityProfile = document.getElementById('modal-quality-profile').value;
+        const qualityProfileEl = document.getElementById('modal-quality-profile');
+        const qualityProfile = qualityProfileEl ? qualityProfileEl.value : '';
         const rootFolderSelect = document.getElementById('modal-root-folder');
         const rootFolderPath = rootFolderSelect && rootFolderSelect.value ? rootFolderSelect.value : '';
         const requestBtn = document.getElementById('modal-request-btn');
 
-        if (!instanceSelect.value) {
+        if (!instanceSelect || !instanceSelect.value) {
             this.core.showNotification('Please select an instance', 'error');
+            return;
+        }
+
+        if (!this.core.currentModalData) {
+            this.core.showNotification('No media data available', 'error');
             return;
         }
 

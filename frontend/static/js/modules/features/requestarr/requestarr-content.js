@@ -33,17 +33,6 @@ export class RequestarrContent {
             this.refreshInstanceSelectors();
         });
 
-        // Legacy localStorage discovery cache keys — no longer used.
-        // Caching is now server-side only. These keys are kept for cleanup.
-        this._LEGACY_CACHE_KEYS = ['huntarr-home-discovery-trending', 'huntarr-home-discovery-movies', 'huntarr-home-discovery-tv'];
-        this._cleanupLegacyCache();
-    }
-
-    /** Remove any leftover localStorage entries from the old client-side cache. */
-    _cleanupLegacyCache() {
-        try {
-            this._LEGACY_CACHE_KEYS.forEach(k => localStorage.removeItem(k));
-        } catch (e) { /* ignore */ }
     }
 
     // ========================================
@@ -120,9 +109,6 @@ export class RequestarrContent {
     async _setMovieInstance(compoundValue) {
         this.selectedMovieInstance = compoundValue;
         this._syncAllMovieSelectors();
-        // Clear discovery caches so stale statuses aren't served on next page load
-        this._clearDiscoveryCache('trending');
-        this._clearDiscoveryCache('movies');
         await this._saveServerDefaults();
         // Reload Smart Hunt carousel if active
         if (this._discoverSmartHunt) this._discoverSmartHunt.reload();
@@ -135,21 +121,11 @@ export class RequestarrContent {
     async _setTVInstance(value) {
         this.selectedTVInstance = value;
         this._syncAllTVSelectors();
-        // Clear discovery caches so stale statuses aren't served on next page load
-        this._clearDiscoveryCache('trending');
-        this._clearDiscoveryCache('tv');
         await this._saveServerDefaults();
         // Reload Smart Hunt carousel if active
         if (this._discoverSmartHunt) this._discoverSmartHunt.reload();
     }
 
-    /**
-     * @deprecated No-op — localStorage discovery cache has been removed.
-     * Kept so callers don't break. Server-side cache handles freshness.
-     */
-    _clearDiscoveryCache(section) {
-        // No-op: client-side cache removed; server manages caching.
-    }
 
     /**
      * Sync every movie-instance dropdown on the page to the current value.

@@ -26,6 +26,7 @@ export class RequestarrSettings {
 
     async loadHistory() {
         const container = document.getElementById('history-list');
+        if (!container) return;
         container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading history...</p></div>';
         
         try {
@@ -201,10 +202,11 @@ export class RequestarrSettings {
         }
 
         try {
+            const _ts = Date.now();
             const [movieHuntResponse, radarrResponse, sonarrResponse] = await Promise.all([
-                fetch('./api/requestarr/instances/movie_hunt'),
-                fetch('./api/requestarr/instances/radarr'),
-                fetch('./api/requestarr/instances/sonarr')
+                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
 
             const movieHuntData = await movieHuntResponse.json();
@@ -468,15 +470,9 @@ export class RequestarrSettings {
         } catch (error) {
             console.error('[RequestarrSettings] Error unhiding media:', error);
             if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to unhide media. Please try again.', 'error');
-            else alert('Failed to unhide media. Please try again.');
         }
         };
-        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
-            window.HuntarrConfirm.show({ title: 'Unhide Media', message: msg, confirmLabel: 'Unhide', onConfirm: function() { doUnhide(); } });
-        } else {
-            if (!confirm(msg)) return;
-            doUnhide();
-        }
+        window.HuntarrConfirm.show({ title: 'Unhide Media', message: `Unhide "${title}"?<br><br>This will make it visible in ${appType}/${instanceName} again.`, confirmLabel: 'Unhide', onConfirm: function() { doUnhide(); } });
     }
 
     // ========================================
@@ -678,15 +674,16 @@ export class RequestarrSettings {
         
         try {
             // Load Movie Hunt instances
-            const movieHuntResponse = await fetch('./api/requestarr/instances/movie_hunt');
+            const _ts = Date.now();
+            const movieHuntResponse = await fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' });
             const movieHuntData = await movieHuntResponse.json();
             
             // Load Radarr instances
-            const radarrResponse = await fetch('./api/requestarr/instances/radarr');
+            const radarrResponse = await fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' });
             const radarrData = await radarrResponse.json();
             
             // Load Sonarr instances
-            const sonarrResponse = await fetch('./api/requestarr/instances/sonarr');
+            const sonarrResponse = await fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' });
             const sonarrData = await sonarrResponse.json();
             
             // Load saved defaults

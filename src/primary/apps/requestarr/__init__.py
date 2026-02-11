@@ -954,13 +954,13 @@ class RequestarrAPI:
                     logger.error(f"Error checking Sonarr instance {instance['name']}: {e}")
             
             # Mark each item with status
+            cooldown_hours = self.get_cooldown_hours()
             for item in items:
                 tmdb_id = item.get('tmdb_id')
                 media_type = item.get('media_type')
                 
                 # Check cooldown status for the specified instance or all instances
                 item['in_cooldown'] = False
-                cooldown_hours = self.get_cooldown_hours()
                 
                 if app_type and instance_name:
                     # Check only the specified instance

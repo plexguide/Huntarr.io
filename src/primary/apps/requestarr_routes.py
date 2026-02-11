@@ -278,9 +278,8 @@ def get_popular_movies():
         if hide_available:
             results = requestarr_api.filter_available_media(results, 'movie')
         
-        # Always allow more pages when filtering (TMDB has 500+ pages)
-        # Frontend should continue loading until no results
-        has_more = len(results) > 0 or page < 100  # Reasonable upper limit
+        # Continue loading until no results returned or reasonable upper limit
+        has_more = len(results) > 0 and page < 100
         
         return jsonify({
             'results': results, 
@@ -347,9 +346,8 @@ def get_popular_tv():
         if hide_available:
             results = requestarr_api.filter_available_media(results, 'tv')
         
-        # Always allow more pages when filtering (TMDB has 500+ pages)
-        # Frontend should continue loading until no results
-        has_more = len(results) > 0 or page < 100  # Reasonable upper limit
+        # Continue loading until no results returned or reasonable upper limit
+        has_more = len(results) > 0 and page < 100
         
         return jsonify({
             'results': results, 

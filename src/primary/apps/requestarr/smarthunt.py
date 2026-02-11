@@ -354,7 +354,7 @@ class SmartHuntEngine:
             params["sort_by"] = "vote_average.desc"
             params["vote_average.gte"] = "7.0"
             params["vote_count.gte"] = "50"
-            params["with_vote_count.lte"] = "500"  # Not widely known
+            params["vote_count.lte"] = "500"  # Hidden gems: low vote count
             self._apply_year_filter(params, media_type, common)
             fetched = self._tmdb_discover(media_type, params, count, common)
             items.extend(fetched)
