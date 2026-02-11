@@ -186,6 +186,7 @@ let huntarrUI = {
         // Setup navigation for sidebars
         this.setupRequestarrNavigation();
         this.setupMovieHuntNavigation();
+        this.setupNzbHuntNavigation();
         this.setupAppsNavigation();
         this.setupSettingsNavigation();
         this.setupSystemNavigation();
@@ -695,22 +696,23 @@ let huntarrUI = {
             newTitle = 'NZB Hunt – Activity';
             this.currentSection = 'nzb-hunt-activity';
             this.showNzbHuntSidebar();
-        } else if (section === 'nzb-hunt-settings' && document.getElementById('nzb-hunt-settings-section')) {
+        } else if (section.startsWith('nzb-hunt-settings') && document.getElementById('nzb-hunt-settings-section')) {
             if (!this._enableNzbHunt) { this.switchSection('home'); return; }
             document.getElementById('nzb-hunt-settings-section').classList.add('active');
             document.getElementById('nzb-hunt-settings-section').style.display = 'block';
             newTitle = 'NZB Hunt – Settings';
-            this.currentSection = 'nzb-hunt-settings';
+            this.currentSection = section; // Keep the full section name (e.g., nzb-hunt-settings-folders)
             this.showNzbHuntSidebar();
             if (window.NzbHunt && typeof window.NzbHunt.initSettings === 'function') {
                 window.NzbHunt.initSettings();
             }
-            if (window._nzbHuntSettingsTab === 'servers' && window.NzbHunt && typeof window.NzbHunt._showSettingsTab === 'function') {
-                window.NzbHunt._showSettingsTab('servers');
-                delete window._nzbHuntSettingsTab;
-                if (window.location.hash !== '#nzb-hunt-settings') {
-                    window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-settings');
-                }
+            // If it's a specific sub-section, show that tab
+            if (window.NzbHunt && typeof window.NzbHunt._showSettingsTab === 'function') {
+                var tab = 'folders'; // default
+                if (section === 'nzb-hunt-settings-servers') tab = 'servers';
+                else if (section === 'nzb-hunt-settings-processing') tab = 'processing';
+                else if (section === 'nzb-hunt-settings-advanced') tab = 'advanced';
+                window.NzbHunt._showSettingsTab(tab);
             }
         } else if (section === 'movie-hunt-collection' && document.getElementById('movie-hunt-section')) {
             document.getElementById('movie-hunt-section').classList.add('active');
@@ -1582,6 +1584,9 @@ let huntarrUI = {
         // Update active nav item
         var items = document.querySelectorAll('#nzb-hunt-sidebar .nav-item');
         for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
+        var subGroup = document.getElementById('nzb-hunt-settings-sub');
+        if (subGroup) subGroup.classList.remove('expanded');
+
         var section = this.currentSection;
         if (section === 'nzb-hunt-home') {
             var n = document.getElementById('nzbHuntHomeNav');
@@ -1589,9 +1594,23 @@ let huntarrUI = {
         } else if (section === 'nzb-hunt-activity') {
             var n = document.getElementById('nzbHuntActivityNav');
             if (n) n.classList.add('active');
-        } else if (section === 'nzb-hunt-settings') {
+        } else if (section.startsWith('nzb-hunt-settings')) {
             var n = document.getElementById('nzbHuntSettingsNav');
             if (n) n.classList.add('active');
+            var subGroup = document.getElementById('nzb-hunt-settings-sub');
+            if (subGroup) subGroup.classList.add('expanded');
+            
+            // Highlight specific sub-item
+            var subId = '';
+            if (section === 'nzb-hunt-settings-folders') subId = 'nzbHuntSettingsFoldersNav';
+            else if (section === 'nzb-hunt-settings-servers') subId = 'nzbHuntSettingsServersNav';
+            else if (section === 'nzb-hunt-settings-processing') subId = 'nzbHuntSettingsProcessingNav';
+            else if (section === 'nzb-hunt-settings-advanced') subId = 'nzbHuntSettingsAdvancedNav';
+            
+            if (subId) {
+                var sn = document.getElementById(subId);
+                if (sn) sn.classList.add('active');
+            }
         }
     },
 
@@ -2413,6 +2432,12 @@ let huntarrUI = {
     setupMovieHuntNavigation: function() {
         if (window.HuntarrNavigation && window.HuntarrNavigation.setupMovieHuntNavigation) {
             window.HuntarrNavigation.setupMovieHuntNavigation();
+        }
+    },
+
+    setupNzbHuntNavigation: function() {
+        if (window.HuntarrNavigation && window.HuntarrNavigation.setupNzbHuntNavigation) {
+            window.HuntarrNavigation.setupNzbHuntNavigation();
         }
     },
 

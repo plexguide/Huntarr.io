@@ -867,19 +867,11 @@
            Settings sub-tabs (Folders / Servers)
         ────────────────────────────────────────────── */
         _setupSettingsTabs: function () {
-            var self = this;
-            document.querySelectorAll('#nzb-hunt-settings-section .nzb-settings-tab').forEach(function (tab) {
-                tab.addEventListener('click', function () {
-                    var t = tab.getAttribute('data-settings-tab');
-                    if (t) self._showSettingsTab(t);
-                });
-            });
+            // Tabs are now in the sidebar, handled by app.js
         },
 
         _showSettingsTab: function (tab) {
-            document.querySelectorAll('#nzb-hunt-settings-section .nzb-settings-tab').forEach(function (t) {
-                t.classList.toggle('active', t.getAttribute('data-settings-tab') === tab);
-            });
+            // Panels are still switched based on the tab name
             document.querySelectorAll('#nzb-hunt-settings-section .nzb-settings-panel').forEach(function (p) {
                 p.style.display = p.getAttribute('data-settings-panel') === tab ? 'block' : 'none';
             });

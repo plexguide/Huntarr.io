@@ -64,11 +64,6 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#movie-hunt-collection');
             }
         }
-        // NZB Hunt Settings → open Servers tab when linked from "no server" warning
-        if (section === 'nzb-hunt-settings-servers') {
-            section = 'nzb-hunt-settings';
-            window._nzbHuntSettingsTab = 'servers';
-        }
         if (section === 'activity') {
             section = 'activity-queue';
             if (window.location.hash !== '#activity-queue') window.location.hash = 'activity-queue';
@@ -569,6 +564,21 @@ window.HuntarrNavigation = {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const href = item.getAttribute('href') || '';
+                const hashIdx = href.indexOf('#');
+                const fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : href.replace(/^\.?\/*/, '');
+                if (fragment) window.location.hash = fragment;
+            });
+        });
+    },
+
+    setupNzbHuntNavigation: function() {
+        const nzbHuntNavItems = document.querySelectorAll('#nzb-hunt-sidebar .nav-item');
+        nzbHuntNavItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const link = item.tagName === 'A' ? item : item.querySelector('a');
+                if (!link) return;
+                const href = link.getAttribute('href') || '';
                 const hashIdx = href.indexOf('#');
                 const fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : href.replace(/^\.?\/*/, '');
                 if (fragment) window.location.hash = fragment;

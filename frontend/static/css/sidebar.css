@@ -290,7 +290,8 @@
 #movie-hunt-settings-sub,
 #movie-hunt-activity-sub,
 #system-sub,
-#settings-sub {
+#settings-sub,
+#nzb-hunt-settings-sub {
     display: none;
     margin-top: 0;
 }
@@ -298,12 +299,14 @@
 #movie-hunt-settings-sub.expanded,
 #movie-hunt-activity-sub.expanded,
 #system-sub.expanded,
-#settings-sub.expanded {
+#settings-sub.expanded,
+#nzb-hunt-settings-sub.expanded {
     display: block;
 }
 
 #movie-hunt-settings-sub .nav-item-sub,
 #movie-hunt-activity-sub .nav-item-sub,
+#nzb-hunt-settings-sub .nav-item-sub,
 #system-sub .nav-item-sub,
 #settings-sub .nav-item-sub {
     margin-top: 0;
@@ -405,7 +408,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 10px 12px;
+    padding: 2px 12px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(231, 76, 60, 0.3);
@@ -457,7 +460,7 @@
 
 /* Adjust nav-menu bottom padding for sidebar footer */
 .nav-menu {
-    padding-bottom: 100px;
+    padding-bottom: 90px;
 }
 
 /* ===== SETTINGS SUBPANEL ===== */
