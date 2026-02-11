@@ -459,7 +459,23 @@ def get_stats() -> Dict[str, Any]:
                 # Get configured instances from settings (uses 30s cache, no DB hit most of the time)
                 configured = []
                 app_settings = load_settings(app_type)
-                if app_settings and isinstance(app_settings.get("instances"), list):
+                
+                # Movie Hunt stores instances in a separate DB table, not in settings
+                if app_type == "movie_hunt":
+                    try:
+                        from src.primary.apps.movie_hunt.api import get_configured_instances as _mh_get_instances
+                        for inst in _mh_get_instances(quiet=True):
+                            name = _normalize_instance_name(inst.get("instance_name", "Default"))
+                            configured.append({
+                                "instance_name": name,
+                                "instance_id": inst.get("instance_id") or name,
+                                "hourly_cap": int(inst.get("hourly_cap", 20)),
+                                "state_management_mode": inst.get("state_management_mode", "custom"),
+                                "api_url": None  # Movie Hunt is internal
+                            })
+                    except Exception as e:
+                        logger.debug(f"Could not load Movie Hunt instances for stats: {e}")
+                elif app_settings and isinstance(app_settings.get("instances"), list):
                     for inst in app_settings["instances"]:
                         if inst.get("enabled", True) and inst.get("api_url") and inst.get("api_key"):
                             name = _normalize_instance_name(inst.get("name") or inst.get("instance_name"))
