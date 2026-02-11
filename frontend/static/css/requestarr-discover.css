@@ -2029,8 +2029,8 @@
     .movies-controls {
         flex-direction: column;
         align-items: stretch;
-        padding: 0 15px;
-        margin: 15px 0;
+        padding: 0;
+        margin: 0 0 15px 0;
         gap: 12px;
     }
     
@@ -3317,10 +3317,10 @@
     justify-items: start;
 }
 
-/* Fix Movies view padding to match Discover view */
+/* Fix Movies/TV view: match Discover compact layout (minimal vertical/horizontal spacing) */
 .movies-controls {
     padding: 0 !important;
-    margin: 20px 0 !important;
+    margin: 0 0 20px 0 !important;
 }
 
 .media-grid {
@@ -3350,7 +3350,8 @@
 
 .movies-controls {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: flex-start;
     align-items: center;
     margin: 0 0 20px 0;
     padding: 0;
