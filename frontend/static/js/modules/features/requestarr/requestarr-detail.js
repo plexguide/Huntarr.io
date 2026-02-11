@@ -638,10 +638,13 @@
             }
 
             // Status button
+            const hasInstances = this.movieInstances.length > 0;
             const inLibrary = originalMovie.in_library || false;
             let actionButton = '';
 
-            if (inLibrary) {
+            if (!hasInstances) {
+                actionButton = '<button class="mh-btn" disabled style="background: rgba(55, 65, 81, 0.8); color: #9ca3af; cursor: not-allowed; border: 1px solid rgba(107, 114, 128, 0.5); font-size: 0.95rem; padding: 10px 20px;"><i class="fas fa-server" style="margin-right: 8px; color: #9ca3af;"></i> No Instance Configured \u2014 Add to Get Started</button>';
+            } else if (inLibrary) {
                 actionButton = '<button class="mh-btn mh-btn-success" disabled><i class="fas fa-check"></i> Already Available</button>';
             } else {
                 actionButton = '<button class="mh-btn mh-btn-primary" id="requestarr-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
@@ -733,14 +736,14 @@
                                 </div>
                                 <div class="mh-hero-genres">${genres}</div>
                                 ${instanceSelectorHTML}
-                                <div class="mh-info-bar" id="requestarr-detail-info-bar">
+                                <div class="mh-info-bar" id="requestarr-detail-info-bar"${hasInstances ? '' : ' style="display:none"'}>
                                     <div class="mh-ib mh-ib-path">
                                         <div class="mh-ib-label">PATH</div>
-                                        <div class="mh-ib-val" id="requestarr-ib-path">${this.movieInstances.length > 0 ? '<i class="fas fa-spinner fa-spin"></i>' : '-'}</div>
+                                        <div class="mh-ib-val" id="requestarr-ib-path"><i class="fas fa-spinner fa-spin"></i></div>
                                     </div>
                                     <div class="mh-ib">
                                         <div class="mh-ib-label">STATUS</div>
-                                        <div class="mh-ib-val" id="requestarr-ib-status">${this.movieInstances.length > 0 ? '<i class="fas fa-spinner fa-spin"></i>' : '<span class="mh-badge mh-badge-none">No Instance</span>'}</div>
+                                        <div class="mh-ib-val" id="requestarr-ib-status"><i class="fas fa-spinner fa-spin"></i></div>
                                     </div>
                                     <div class="mh-ib">
                                         <div class="mh-ib-label">QUALITY PROFILE</div>
