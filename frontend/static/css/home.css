@@ -247,12 +247,12 @@
     color: #475569 !important;
 }
 
-/* ── Section Titles (Trending, Popular Movies, etc.) ────────────── */
+/* ── Section Titles (Smart Hunt, etc.) — match request/discover page size ────────────── */
 #homeSection .section-title {
-    font-size: 1rem !important;
+    font-size: 1.4em !important;
     font-weight: 700 !important;
     color: #e2e8f0 !important;
-    letter-spacing: 0.01em !important;
+    letter-spacing: 0.02em !important;
 }
 
 /* ── Home Instance Selectors ──────────────────────────────────── */
@@ -1022,6 +1022,10 @@
 
 .fire-emoji {
     font-size: 1.3em;
+}
+
+/* Glow only for Smart Hunt flame, not for Trending chart */
+.smarthunt-flame {
     filter: drop-shadow(0 0 8px rgba(255, 100, 50, 0.8)) drop-shadow(0 0 16px rgba(255, 150, 50, 0.6));
 }
 

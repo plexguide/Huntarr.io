@@ -3607,6 +3607,10 @@
 
 .fire-emoji {
     font-size: 1.3em;
+}
+
+/* Glow only for Smart Hunt flame, not for Trending chart */
+.smarthunt-flame {
     filter: drop-shadow(0 0 8px rgba(255, 100, 50, 0.8)) drop-shadow(0 0 16px rgba(255, 150, 50, 0.6));
 }
 
