@@ -7,7 +7,7 @@
 
 /* Space above sponsor = space below (20px); minimal top so it matches bottom */
 #requestarr-section .requestarr-content {
-    padding: 0 30px 20px 30px;
+    padding: 0;
     width: 100%;
     max-width: none !important;
     margin: 0;
@@ -18,6 +18,11 @@
 /* Requestarr banner row spacing */
 #requestarr-section .app-banners-row {
     margin: 0 0 8px 0;
+}
+
+/* Smart Hunt: sponsor banners above toolbar */
+.reqset-banners-row {
+    margin-bottom: 12px;
 }
 
 /* Global Search Bar - Full Width — refined blue style */
@@ -1149,7 +1154,7 @@
 /* ---- Requestarr Settings: Modern Layout ---- */
 .reqset-container {
     width: 100%;
-    padding: 0 16px;
+    padding: 0;
     box-sizing: border-box;
 }
 
@@ -1727,7 +1732,7 @@
 /* Responsive */
 @media (max-width: 768px) {
     .requestarr-content {
-        padding: 20px 15px;
+        padding: 0;
     }
     
     .view-header {
@@ -3332,7 +3337,7 @@
 
 /* Match Movies view layout exactly to Discover view - 0 top padding */
 #requestarr-section .requestarr-content {
-    padding: 0 30px 20px 30px;
+    padding: 0;
     overflow-x: hidden;
     overflow-y: auto;
 }
@@ -3378,7 +3383,7 @@
 
 @media (max-width: 768px) {
     #requestarr-section .requestarr-content {
-        padding: 0 15px 20px 15px;
+        padding: 0;
     }
     
     /* No extra grey: cards fixed width at 120px */
@@ -3421,42 +3426,45 @@
 
 /* Hidden Media Page Styles */
 
-/* Search Bar - Full Width */
+/* Search Bar - match Home/Discover global-search-bar (size + colors) */
 #requestarr-hidden-view .hidden-media-search {
     position: relative;
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 8px;
 }
 
 #requestarr-hidden-view .hidden-media-search i {
     position: absolute;
-    left: 20px;
+    left: 18px;
     top: 50%;
     transform: translateY(-50%);
-    color: #888;
-    font-size: 18px;
+    color: #475569;
+    font-size: 14px;
+    z-index: 1;
+    pointer-events: none;
 }
 
 #requestarr-hidden-view .hidden-media-search-input {
     width: 100%;
-    padding: 16px 20px 16px 55px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    color: #fff;
-    font-size: 16px;
-    transition: all 0.2s;
+    padding: 12px 16px 12px 44px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: #e2e8f0;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
     box-sizing: border-box;
 }
 
 #requestarr-hidden-view .hidden-media-search-input:focus {
     outline: none;
-    border-color: #22c55e;
-    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    background: rgba(30, 41, 59, 0.9);
 }
 
 #requestarr-hidden-view .hidden-media-search-input::placeholder {
-    color: #888;
+    color: #475569;
 }
 
 /* Discover View Instance Controls */

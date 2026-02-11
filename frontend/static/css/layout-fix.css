@@ -45,11 +45,12 @@ html, body {
 }
 
 /* FORCE CONTENT SECTIONS TO FILL REMAINING SPACE */
+/* 36px padding matches Smart Hunt layout (reference for consistency) */
 .content-section {
     display: none !important;
     flex: 1 !important;
     overflow-y: auto !important;
-    padding: 20px !important;
+    padding: 36px !important;
     box-sizing: border-box !important;
     height: 0 !important; /* Critical for flex calculation */
 }

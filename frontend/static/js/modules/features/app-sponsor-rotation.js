@@ -18,6 +18,8 @@
     const APP_TYPES = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'requestarr'];
     // Home + all app pages use the same sponsor rotation (same cache, same 1-min interval)
     const SPONSOR_SECTIONS = ['home', ...APP_TYPES];
+    // Smart Hunt has its own banner row in toolbar
+    const SMARTHUNT_APP_TYPE = 'requestarr-smarthunt';
 
     let rotationInterval = null;
     let sponsors = [];
@@ -87,6 +89,7 @@
         SPONSOR_SECTIONS.forEach(section => {
             updateSponsorBanner(sponsor, section);
         });
+        updateSponsorBanner(sponsor, SMARTHUNT_APP_TYPE);
     }
 
     // --- Partner Projects (Cleanuparr, SeekandWatch) - home + all app pages ---
@@ -133,6 +136,14 @@
                 bannerEl.setAttribute('data-partner-url', project.url);
             }
         });
+        // Smart Hunt page (has its own banner row)
+        const shName = document.getElementById(`${SMARTHUNT_APP_TYPE}-partner-projects-name`);
+        const shBanner = document.getElementById(`${SMARTHUNT_APP_TYPE}-partner-projects-banner`);
+        if (shName) shName.textContent = project.name;
+        if (shBanner && project.url) {
+            shBanner.href = project.url;
+            shBanner.setAttribute('data-partner-url', project.url);
+        }
     }
 
     function loadPartnerProjects() {

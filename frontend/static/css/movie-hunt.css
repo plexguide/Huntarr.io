@@ -644,7 +644,7 @@
 
 /* ========== Movie Hunt standalone: cards, grid, controls (no requestarr-discover) ========== */
 #movie-hunt-section .requestarr-content {
-    padding: 0 30px 20px 30px;
+    padding: 0;
     width: 100%;
     box-sizing: border-box;
 }
@@ -701,7 +701,7 @@
     justify-content: flex-start;
     align-items: center;
     margin: 20px 0;
-    padding: 0 20px;
+    padding: 0;
     gap: 15px;
 }
 #movie-hunt-section .instance-selector-container { flex-shrink: 0; }
@@ -796,7 +796,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 20px;
-    padding: 0 20px 40px 20px;
+    padding: 0 0 40px 0;
     min-height: 400px;
     justify-items: start;
 }
