@@ -28,7 +28,13 @@
             window.addEventListener('popstate', (e) => {
                 if (e.state && e.state.requestarrMovieDetail) {
                     this.openDetail(e.state.requestarrMovieDetail, e.state.options || {}, true);
-                } else if (e.state && !e.state.movieDetail) {
+                } else {
+                    this.closeDetail(true);
+                }
+            });
+
+            window.addEventListener('hashchange', () => {
+                if (!/^#requestarr-movie\//.test(window.location.hash || '')) {
                     this.closeDetail(true);
                 }
             });
@@ -97,7 +103,7 @@
                 detailView.classList.remove('active');
             }
 
-            if (!fromHistory && detailView && detailView.classList.contains('active')) {
+            if (!fromHistory && /^#requestarr-movie\//.test(window.location.hash || '')) {
                 history.back();
             }
         },
