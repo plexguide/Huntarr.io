@@ -120,6 +120,19 @@
             var select = document.getElementById(selectId);
             if (!select) return;
             populateSelect(select);
+        },
+
+        /** Refresh ALL currently-wired dropdowns (called on instances-changed event). */
+        refreshAll: function() {
+            Object.keys(_wiredElements).forEach(function(id) {
+                var select = document.getElementById(id);
+                if (select) populateSelect(select);
+            });
         }
     };
+
+    // Auto-refresh all MH dropdowns when any instance changes anywhere in the app
+    document.addEventListener('huntarr:instances-changed', function() {
+        window.MovieHuntInstanceDropdown.refreshAll();
+    });
 })();

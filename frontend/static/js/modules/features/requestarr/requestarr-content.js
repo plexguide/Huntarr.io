@@ -28,6 +28,11 @@ export class RequestarrContent {
         // Hidden media tracking
         this.hiddenMediaSet = new Set();
 
+        // Auto-refresh dropdowns when any instance is added/deleted/renamed anywhere in the app
+        document.addEventListener('huntarr:instances-changed', () => {
+            this.refreshInstanceSelectors();
+        });
+
         // Shared discovery cache with home page (24h) - same keys so both pages benefit
         this.DISCOVERY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
         this.DISCOVERY_CACHE_KEYS = { trending: 'huntarr-home-discovery-trending', movies: 'huntarr-home-discovery-movies', tv: 'huntarr-home-discovery-tv' };
@@ -214,9 +219,10 @@ export class RequestarrContent {
         if (!select) return;
 
         try {
+            const _ts = Date.now();
             const [mhResponse, radarrResponse] = await Promise.all([
-                fetch('./api/requestarr/instances/movie_hunt'),
-                fetch('./api/requestarr/instances/radarr')
+                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' })
             ]);
             const mhData = await mhResponse.json();
             const radarrData = await radarrResponse.json();
@@ -232,33 +238,37 @@ export class RequestarrContent {
                 }))
             ];
 
+            // Preserve current selection before clearing
+            const previousValue = this.selectedMovieInstance || select.value || '';
+
             select.innerHTML = '';
             if (allInstances.length === 0) {
                 select.innerHTML = '<option value="">No movie instances</option>';
                 return;
             }
 
-            const saved = this.selectedMovieInstance;
             allInstances.forEach((inst) => {
                 const cv = encodeInstanceValue(inst._appType, inst.name);
                 const opt = document.createElement('option');
                 opt.value = cv;
                 opt.textContent = inst._label;
-                if (saved && (cv === saved || inst.name === saved)) opt.selected = true;
+                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
                 select.appendChild(opt);
             });
 
-            // If nothing matched, first is already selected
-            if (!this.selectedMovieInstance) {
+            // Update in-memory selection to match what's actually selected
+            if (select.value) {
                 this.selectedMovieInstance = select.value;
-                this._saveServerDefaults();
             }
 
-            select.addEventListener('change', async () => {
-                await this._setMovieInstance(select.value);
-                console.log('[RequestarrContent] Discover movie instance changed:', select.value);
-                this.reloadDiscoverMovies();
-            });
+            // Only attach change listener once
+            if (!select._discoverChangeWired) {
+                select._discoverChangeWired = true;
+                select.addEventListener('change', async () => {
+                    await this._setMovieInstance(select.value);
+                    this.reloadDiscoverMovies();
+                });
+            }
         } catch (error) {
             console.error('[RequestarrContent] Error loading discover movie instances:', error);
         }
@@ -269,9 +279,12 @@ export class RequestarrContent {
         if (!select) return;
 
         try {
-            const response = await fetch('./api/requestarr/instances/sonarr');
+            const response = await fetch(`./api/requestarr/instances/sonarr?t=${Date.now()}`, { cache: 'no-store' });
             const data = await response.json();
             const instances = (data.instances || []).map(inst => ({ name: String(inst.name).trim() }));
+
+            // Preserve current selection before clearing
+            const previousValue = this.selectedTVInstance || select.value || '';
 
             select.innerHTML = '';
             if (instances.length === 0) {
@@ -279,25 +292,27 @@ export class RequestarrContent {
                 return;
             }
 
-            const saved = this.selectedTVInstance;
             instances.forEach((inst) => {
                 const opt = document.createElement('option');
                 opt.value = inst.name;
                 opt.textContent = `Sonarr \u2013 ${inst.name}`;
-                if (saved && inst.name === saved) opt.selected = true;
+                if (previousValue && inst.name === previousValue) opt.selected = true;
                 select.appendChild(opt);
             });
 
-            if (!this.selectedTVInstance) {
+            // Update in-memory selection to match what's actually selected
+            if (select.value) {
                 this.selectedTVInstance = select.value;
-                this._saveServerDefaults();
             }
 
-            select.addEventListener('change', async () => {
-                await this._setTVInstance(select.value);
-                console.log('[RequestarrContent] Discover TV instance changed:', select.value);
-                this.reloadDiscoverTV();
-            });
+            // Only attach change listener once
+            if (!select._discoverChangeWired) {
+                select._discoverChangeWired = true;
+                select.addEventListener('change', async () => {
+                    await this._setTVInstance(select.value);
+                    this.reloadDiscoverTV();
+                });
+            }
         } catch (error) {
             console.error('[RequestarrContent] Error loading discover TV instances:', error);
         }
@@ -365,10 +380,11 @@ export class RequestarrContent {
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            // Fetch both Movie Hunt and Radarr instances in parallel
+            // Fetch both Movie Hunt and Radarr instances in parallel (cache-bust for fresh data)
+            const _ts = Date.now();
             const [mhResponse, radarrResponse] = await Promise.all([
-                fetch('./api/requestarr/instances/movie_hunt'),
-                fetch('./api/requestarr/instances/radarr')
+                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' })
             ]);
             const mhData = await mhResponse.json();
             const radarrData = await radarrResponse.json();
@@ -510,7 +526,7 @@ export class RequestarrContent {
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            const response = await fetch('./api/requestarr/instances/sonarr');
+            const response = await fetch(`./api/requestarr/instances/sonarr?t=${Date.now()}`, { cache: 'no-store' });
             const data = await response.json();
             console.log('[RequestarrContent] Sonarr API returned', data.instances?.length || 0, 'instances');
             

@@ -44,6 +44,11 @@ const HomeRequestarr = {
         // Make this module globally accessible for auto-save visibility updates
         window.HomeRequestarr = this;
 
+        // Auto-refresh dropdowns when any instance is added/deleted/renamed anywhere in the app
+        document.addEventListener('huntarr:instances-changed', () => {
+            this._populateInstanceDropdowns();
+        });
+
         // Hide discovery sections until showSection() runs so we never flash initial or stale content
         if (this.elements.trendingSection) this.elements.trendingSection.style.display = 'none';
         if (this.elements.moviesSection) this.elements.moviesSection.style.display = 'none';
@@ -300,9 +305,10 @@ const HomeRequestarr = {
         const select = this.elements.movieInstanceSelect;
         if (!select) return;
         try {
+            const _ts = Date.now();
             const [mhResponse, radarrResponse] = await Promise.all([
-                fetch('./api/requestarr/instances/movie_hunt'),
-                fetch('./api/requestarr/instances/radarr')
+                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' })
             ]);
             const mhData = await mhResponse.json();
             const radarrData = await radarrResponse.json();
@@ -318,39 +324,44 @@ const HomeRequestarr = {
                 }))
             ];
 
+            // Preserve current selection before clearing (prefer in-memory default, fall back to DOM value)
+            const previousValue = this.defaultMovieInstance || select.value || '';
+
             select.innerHTML = '';
             if (allInstances.length === 0) {
                 select.innerHTML = '<option value="">No movie instances</option>';
                 return;
             }
 
-            const saved = this.defaultMovieInstance;
             allInstances.forEach(inst => {
                 const cv = this._encodeInstance(inst.appType, inst.name);
                 const opt = document.createElement('option');
                 opt.value = cv;
                 opt.textContent = inst.label;
-                if (saved && (cv === saved || inst.name === saved)) opt.selected = true;
+                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
                 select.appendChild(opt);
             });
 
-            // If no server default existed, use first option
-            if (!this.defaultMovieInstance && select.value) {
+            // Update in-memory default to match what's actually selected
+            if (select.value) {
                 this.defaultMovieInstance = select.value;
             }
 
-            select.addEventListener('change', async () => {
-                this.defaultMovieInstance = select.value;
-                console.log('[HomeRequestarr] Movie instance changed:', select.value);
-                // Clear caches so status badges refresh
-                this._clearCache('trending');
-                this._clearCache('movies');
-                await this._saveServerDefaults();
-                // Sync with Requestarr content module
-                this._syncRequestarrContent();
-                // Reload current section
-                this._reloadCurrentSection();
-            });
+            // Only attach change listener once (guard against duplicate listeners on refresh)
+            if (!select._homeChangeWired) {
+                select._homeChangeWired = true;
+                select.addEventListener('change', async () => {
+                    this.defaultMovieInstance = select.value;
+                    // Clear caches so status badges refresh
+                    this._clearCache('trending');
+                    this._clearCache('movies');
+                    await this._saveServerDefaults();
+                    // Sync with Requestarr content module
+                    this._syncRequestarrContent();
+                    // Reload current section
+                    this._reloadCurrentSection();
+                });
+            }
         } catch (error) {
             console.error('[HomeRequestarr] Error populating movie instances:', error);
         }
@@ -360,9 +371,12 @@ const HomeRequestarr = {
         const select = this.elements.tvInstanceSelect;
         if (!select) return;
         try {
-            const response = await fetch('./api/requestarr/instances/sonarr');
+            const response = await fetch(`./api/requestarr/instances/sonarr?t=${Date.now()}`, { cache: 'no-store' });
             const data = await response.json();
             const instances = (data.instances || []).map(inst => ({ name: String(inst.name).trim() }));
+
+            // Preserve current selection before clearing
+            const previousValue = this.defaultTVInstance || select.value || '';
 
             select.innerHTML = '';
             if (instances.length === 0) {
@@ -370,28 +384,31 @@ const HomeRequestarr = {
                 return;
             }
 
-            const saved = this.defaultTVInstance;
             instances.forEach(inst => {
                 const opt = document.createElement('option');
                 opt.value = inst.name;
                 opt.textContent = `Sonarr \u2013 ${inst.name}`;
-                if (saved && inst.name === saved) opt.selected = true;
+                if (previousValue && inst.name === previousValue) opt.selected = true;
                 select.appendChild(opt);
             });
 
-            if (!this.defaultTVInstance && select.value) {
+            // Update in-memory default to match what's actually selected
+            if (select.value) {
                 this.defaultTVInstance = select.value;
             }
 
-            select.addEventListener('change', async () => {
-                this.defaultTVInstance = select.value;
-                console.log('[HomeRequestarr] TV instance changed:', select.value);
-                this._clearCache('trending');
-                this._clearCache('tv');
-                await this._saveServerDefaults();
-                this._syncRequestarrContent();
-                this._reloadCurrentSection();
-            });
+            // Only attach change listener once (guard against duplicate listeners on refresh)
+            if (!select._homeChangeWired) {
+                select._homeChangeWired = true;
+                select.addEventListener('change', async () => {
+                    this.defaultTVInstance = select.value;
+                    this._clearCache('trending');
+                    this._clearCache('tv');
+                    await this._saveServerDefaults();
+                    this._syncRequestarrContent();
+                    this._reloadCurrentSection();
+                });
+            }
         } catch (error) {
             console.error('[HomeRequestarr] Error populating TV instances:', error);
         }

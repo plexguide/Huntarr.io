@@ -88,10 +88,11 @@ window.huntarrSchedules = window.huntarrSchedules || {
         if (!appTypeSelect || !instanceSelect) return;
 
         try {
-            // Fetch standard app settings and Movie Hunt instances in parallel
+            // Fetch standard app settings and Movie Hunt instances in parallel (cache-bust for fresh data)
+            const _ts = Date.now();
             const [settingsResp, movieHuntResp] = await Promise.all([
-                HuntarrUtils.fetchWithTimeout('./api/settings'),
-                HuntarrUtils.fetchWithTimeout('./api/movie-hunt/instances').catch(function() { return null; })
+                HuntarrUtils.fetchWithTimeout(`./api/settings?t=${_ts}`),
+                HuntarrUtils.fetchWithTimeout(`./api/movie-hunt/instances?t=${_ts}`).catch(function() { return null; })
             ]);
 
             if (settingsResp.ok) {
@@ -567,5 +568,10 @@ window.huntarrSchedules = window.huntarrSchedules || {
 
     window.refreshSchedulingTimezone = loadServerTimezone;
     window.refreshSchedulingInstances = loadAppInstances;
+
+    // Auto-refresh scheduling instances when any instance changes anywhere in the app
+    document.addEventListener('huntarr:instances-changed', function() {
+        loadAppInstances();
+    });
 
 })();

@@ -117,6 +117,9 @@ window.SettingsForms = {
             if (window.huntarrUI && window.huntarrUI.showNotification) {
                 window.huntarrUI.showNotification(successMessage || 'Settings saved successfully', 'success');
             }
+
+            // Notify all instance dropdowns across the SPA that data may have changed
+            try { document.dispatchEvent(new CustomEvent('huntarr:instances-changed', { detail: { appType: appType } })); } catch(e) {}
             
             // Re-sync memory. Use server-returned settings when present (e.g. server-generated instance_id).
             if (window.huntarrUI && window.huntarrUI.originalSettings) {
