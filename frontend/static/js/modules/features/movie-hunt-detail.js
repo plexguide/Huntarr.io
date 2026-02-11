@@ -211,13 +211,18 @@
             '<div class="mh-toolbar">' +
                 '<div class="mh-toolbar-left">' +
                     '<button class="mh-tb" id="mh-tb-back" title="Back"><i class="fas fa-arrow-left"></i></button>' +
-                    '<button class="mh-tb" id="mh-tb-refresh" title="Refresh"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>' +
-                    /* Force Search / Force Upgrade — placeholder, updated by updateMovieStatus */
+                    /* Shown when IN collection: */
+                    '<button class="mh-tb" id="mh-tb-refresh" title="Refresh" style="display:none"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>' +
                     '<span id="mh-tb-force-container"></span>' +
+                    /* Shown when NOT in collection: */
+                    '<button class="mh-tb" id="mh-tb-search-movie" title="Search Movie" style="display:none"><i class="fas fa-search"></i><span>Search Movie</span></button>' +
                 '</div>' +
                 '<div class="mh-toolbar-right">' +
-                    '<button class="mh-tb" id="mh-tb-edit" title="Edit"><i class="fas fa-wrench"></i><span>Edit</span></button>' +
-                    '<button class="mh-tb mh-tb-danger" id="mh-tb-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>' +
+                    /* Shown when IN collection: */
+                    '<button class="mh-tb" id="mh-tb-edit" title="Edit" style="display:none"><i class="fas fa-wrench"></i><span>Edit</span></button>' +
+                    '<button class="mh-tb mh-tb-danger" id="mh-tb-delete" title="Delete" style="display:none"><i class="fas fa-trash-alt"></i></button>' +
+                    /* Shown when NOT in collection: */
+                    '<button class="mh-tb" id="mh-tb-hide" title="Hide from discovery" style="display:none"><i class="fas fa-eye-slash"></i></button>' +
                 '</div>' +
             '</div>' +
 
@@ -371,6 +376,33 @@
             // Toolbar: Delete
             const deleteBtn = document.getElementById('mh-tb-delete');
             if (deleteBtn) deleteBtn.addEventListener('click', () => this.openDeleteModal());
+
+            // Toolbar: Search Movie (for items NOT in collection — requests via Requestarr modal)
+            const searchMovieBtn = document.getElementById('mh-tb-search-movie');
+            if (searchMovieBtn) searchMovieBtn.addEventListener('click', () => {
+                const id = this.currentMovie ? (this.currentMovie.tmdb_id || this.currentMovie.id) : null;
+                if (id && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                    window.RequestarrDiscover.modal.openModal(id, 'movie');
+                }
+            });
+
+            // Toolbar: Hide from discovery (for items NOT in collection)
+            const hideBtn = document.getElementById('mh-tb-hide');
+            if (hideBtn) hideBtn.addEventListener('click', () => {
+                if (!this.currentMovie || !window.MediaUtils) return;
+                window.MediaUtils.hideMedia({
+                    tmdbId: this.currentMovie.tmdb_id || this.currentMovie.id,
+                    mediaType: 'movie',
+                    title: this.currentMovie.title || 'this movie',
+                    posterPath: this.currentMovie.poster_path || null,
+                    appType: 'movie_hunt',
+                    instanceName: '',
+                    cardElement: null,
+                    onHidden: () => {
+                        this.closeDetail();
+                    }
+                });
+            });
 
             // Instance selector (Movie Hunt: refresh status; Radarr: switch to Requestarr detail)
             const instanceSelect = document.getElementById('mh-detail-instance-select');
@@ -814,6 +846,12 @@
             if (editBtn) editBtn.style.display = isFound ? '' : 'none';
             if (deleteBtn) deleteBtn.style.display = isFound ? '' : 'none';
             if (refreshBtn) refreshBtn.style.display = isFound ? '' : 'none';
+
+            // Not-in-collection buttons
+            const searchMovieBtn = document.getElementById('mh-tb-search-movie');
+            const hideBtn = document.getElementById('mh-tb-hide');
+            if (searchMovieBtn) searchMovieBtn.style.display = isFound ? 'none' : '';
+            if (hideBtn) hideBtn.style.display = isFound ? 'none' : '';
 
             // Update action button — hide if already downloaded or already requested
             const actionsContainer = document.getElementById('mh-detail-actions');

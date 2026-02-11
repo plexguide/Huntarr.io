@@ -224,13 +224,19 @@
             if (isMovieHunt) {
                 return '<div class="mh-toolbar" id="requestarr-detail-toolbar">' +
                     '<div class="mh-toolbar-left">' +
-                    '<button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>' +
-                    '<button class="mh-tb" id="requestarr-detail-refresh" title="Refresh"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>' +
-                    '<span id="requestarr-detail-force-container"></span>' +
+                        '<button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>' +
+                        // Shown when IN collection:
+                        '<button class="mh-tb" id="requestarr-detail-refresh" title="Refresh" style="display:none"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>' +
+                        '<span id="requestarr-detail-force-container"></span>' +
+                        // Shown when NOT in collection:
+                        '<button class="mh-tb" id="requestarr-detail-search-movie" title="Search Movie" style="display:none"><i class="fas fa-search"></i><span>Search Movie</span></button>' +
                     '</div>' +
                     '<div class="mh-toolbar-right">' +
-                    '<button class="mh-tb" id="requestarr-detail-edit" title="Edit"><i class="fas fa-wrench"></i><span>Edit</span></button>' +
-                    '<button class="mh-tb mh-tb-danger" id="requestarr-detail-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>' +
+                        // Shown when IN collection:
+                        '<button class="mh-tb" id="requestarr-detail-edit" title="Edit" style="display:none"><i class="fas fa-wrench"></i><span>Edit</span></button>' +
+                        '<button class="mh-tb mh-tb-danger" id="requestarr-detail-delete" title="Delete" style="display:none"><i class="fas fa-trash-alt"></i></button>' +
+                        // Shown when NOT in collection:
+                        '<button class="mh-tb" id="requestarr-detail-hide" title="Hide from discovery" style="display:none"><i class="fas fa-eye-slash"></i></button>' +
                     '</div></div>';
             }
             return '<div class="mh-toolbar" id="requestarr-detail-toolbar">' +
@@ -247,6 +253,7 @@
         },
 
         attachToolbarHandlers() {
+            var self = this;
             var backBtn = document.getElementById('requestarr-detail-back');
             if (backBtn) backBtn.addEventListener('click', () => this.closeDetail());
             var refreshBtn = document.getElementById('requestarr-detail-refresh');
@@ -255,6 +262,33 @@
             if (editBtn) editBtn.addEventListener('click', () => this.openEditModalForMovieHunt());
             var deleteBtn = document.getElementById('requestarr-detail-delete');
             if (deleteBtn) deleteBtn.addEventListener('click', () => this.openDeleteModalForMovieHunt());
+
+            // Search Movie (request) — for items NOT in collection
+            var searchMovieBtn = document.getElementById('requestarr-detail-search-movie');
+            if (searchMovieBtn) searchMovieBtn.addEventListener('click', function() {
+                if (self.currentMovie && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                    window.RequestarrDiscover.modal.openModal(self.currentMovie.tmdb_id || self.currentMovie.id, 'movie', self.selectedInstanceName);
+                }
+            });
+
+            // Hide from discovery — for items NOT in collection
+            var hideBtn = document.getElementById('requestarr-detail-hide');
+            if (hideBtn) hideBtn.addEventListener('click', function() {
+                if (!self.currentMovie || !window.MediaUtils) return;
+                var decoded = _decodeInstanceValue(self.selectedInstanceName || '');
+                window.MediaUtils.hideMedia({
+                    tmdbId: self.currentMovie.tmdb_id || self.currentMovie.id,
+                    mediaType: 'movie',
+                    title: self.currentMovie.title || 'this movie',
+                    posterPath: self.currentMovie.poster_path || null,
+                    appType: decoded.appType || 'movie_hunt',
+                    instanceName: decoded.name || '',
+                    cardElement: null,
+                    onHidden: function() {
+                        self.closeDetail();
+                    }
+                });
+            });
         },
 
         openEditModalForMovieHunt() {
@@ -391,20 +425,44 @@
 
         /**
          * Update toolbar buttons and action area based on movie status.
-         * Mirrors the logic in movie-hunt-detail.js updateMovieStatus.
+         *
+         * NOT in collection:
+         *   Toolbar-left:  Back, Search Movie (to request)
+         *   Toolbar-right: Hide icon (eye-slash → add to hidden media)
+         *   Action area:   "Request Movie" button
+         *
+         * IN collection (requested):
+         *   Toolbar-left:  Back, Refresh, Force Search
+         *   Toolbar-right: Edit, Delete (trash)
+         *   Action area:   empty (status bar shows state)
+         *
+         * IN collection (downloaded):
+         *   Toolbar-left:  Back, Refresh, Force Upgrade
+         *   Toolbar-right: Edit, Delete (trash)
+         *   Action area:   empty (status bar shows state)
          */
         _updateToolbarForStatus(isFound, isDownloaded, isMovieHunt) {
             var self = this;
 
-            // Toolbar management buttons (only visible if movie is in collection AND Movie Hunt)
+            // ── Toolbar management buttons ──
             var editBtn = document.getElementById('requestarr-detail-edit');
             var deleteBtn = document.getElementById('requestarr-detail-delete');
             var refreshBtn = document.getElementById('requestarr-detail-refresh');
+
+            // Edit, Delete, Refresh only for items in collection (Movie Hunt only)
             if (editBtn) editBtn.style.display = (isFound && isMovieHunt) ? '' : 'none';
             if (deleteBtn) deleteBtn.style.display = (isFound && isMovieHunt) ? '' : 'none';
             if (refreshBtn) refreshBtn.style.display = (isFound && isMovieHunt) ? '' : 'none';
 
-            // Force Search / Force Upgrade (only for Movie Hunt instances in collection)
+            // ── Hide button (eye-slash) — only when NOT in collection ──
+            var hideBtn = document.getElementById('requestarr-detail-hide');
+            if (hideBtn) hideBtn.style.display = (!isFound && isMovieHunt) ? '' : 'none';
+
+            // ── Search Movie button — only when NOT in collection ──
+            var searchMovieBtn = document.getElementById('requestarr-detail-search-movie');
+            if (searchMovieBtn) searchMovieBtn.style.display = (!isFound && isMovieHunt) ? '' : 'none';
+
+            // ── Force Search / Force Upgrade — only for Movie Hunt in collection ──
             var forceContainer = document.getElementById('requestarr-detail-force-container');
             if (forceContainer) {
                 if (!isFound || !isMovieHunt) {
@@ -420,12 +478,11 @@
                 }
             }
 
-            // Action button area — clear if in collection (status bar already shows state),
-            // show "Request Movie" only if not in collection
+            // ── Action button area ──
             var actionsContainer = document.querySelector('.mh-hero-actions');
             if (actionsContainer) {
                 if (isFound) {
-                    // Status bar already communicates the state, no need for redundant button
+                    // Status bar already communicates the state
                     actionsContainer.innerHTML = '';
                 } else {
                     actionsContainer.innerHTML = '<button class="mh-btn mh-btn-primary" id="requestarr-detail-request-btn"><i class="fas fa-download"></i> Request Movie</button>';
@@ -557,12 +614,14 @@
                 <div class="mh-toolbar" id="requestarr-detail-toolbar">
                     <div class="mh-toolbar-left">
                         <button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
-                        <button class="mh-tb" id="requestarr-detail-refresh" title="Refresh"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>
+                        <button class="mh-tb" id="requestarr-detail-refresh" title="Refresh" style="display:none"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>
                         <span id="requestarr-detail-force-container"></span>
+                        <button class="mh-tb" id="requestarr-detail-search-movie" title="Search Movie" style="display:none"><i class="fas fa-search"></i><span>Search Movie</span></button>
                     </div>
                     <div class="mh-toolbar-right">
-                        <button class="mh-tb" id="requestarr-detail-edit" title="Edit"><i class="fas fa-wrench"></i><span>Edit</span></button>
-                        <button class="mh-tb mh-tb-danger" id="requestarr-detail-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                        <button class="mh-tb" id="requestarr-detail-edit" title="Edit" style="display:none"><i class="fas fa-wrench"></i><span>Edit</span></button>
+                        <button class="mh-tb mh-tb-danger" id="requestarr-detail-delete" title="Delete" style="display:none"><i class="fas fa-trash-alt"></i></button>
+                        <button class="mh-tb" id="requestarr-detail-hide" title="Hide from discovery" style="display:none"><i class="fas fa-eye-slash"></i></button>
                     </div>
                 </div>`;
             } else {
