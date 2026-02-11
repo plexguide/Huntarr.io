@@ -598,6 +598,19 @@ export class RequestarrModal {
                 this.core.showNotification(successMsg, 'success');
                 this.updateCardStatusAfterRequest(this.core.currentModalData.tmdb_id);
 
+                // Notify detail pages and other listeners that a request succeeded
+                const tmdbId = this.core.currentModalData.tmdb_id;
+                const mediaType = this.core.currentModalData.media_type;
+                window.dispatchEvent(new CustomEvent('requestarr-request-success', {
+                    detail: { tmdbId: tmdbId, mediaType: mediaType, appType: appType, instanceName: instanceName }
+                }));
+
+                // Delayed re-check: the movie might download very quickly (especially Movie Hunt)
+                // Re-fetch real status and update the card badge accurately
+                setTimeout(() => {
+                    this.refreshCardStatusFromAPI(tmdbId, mediaType);
+                }, 3000);
+
                 setTimeout(() => this.closeModal(), 2000);
             } else {
                 const errorMsg = result.message || result.error || 'Request failed';
@@ -619,14 +632,53 @@ export class RequestarrModal {
     updateCardStatusAfterRequest(tmdbId) {
         const cards = document.querySelectorAll(`.media-card[data-tmdb-id="${tmdbId}"]`);
         cards.forEach((card) => {
+            // Immediately show "requested" state (bookmark badge)
             const badge = card.querySelector('.media-card-status-badge');
             if (badge) {
                 badge.className = 'media-card-status-badge partial';
                 badge.innerHTML = '<i class="fas fa-bookmark"></i>';
             }
+            // Replace hide button (eye-slash) with trash icon since item is now in collection
+            const hideBtn = card.querySelector('.media-card-hide-btn');
+            if (hideBtn) {
+                hideBtn.className = 'media-card-delete-btn';
+                hideBtn.title = 'Remove / Delete';
+                hideBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            }
             const requestBtn = card.querySelector('.media-card-request-btn');
             if (requestBtn) requestBtn.remove();
         });
+    }
+
+    /**
+     * After a delay, re-check the actual library status from the API and update card badges.
+     * This handles the case where a movie downloads nearly instantly.
+     */
+    async refreshCardStatusFromAPI(tmdbId, mediaType) {
+        try {
+            const resp = await fetch(`./api/requestarr/movie-status?tmdb_id=${tmdbId}`);
+            const data = await resp.json();
+
+            const inLibrary = data.in_library || false;
+            const partial = data.partial || data.previously_requested || false;
+
+            const cards = document.querySelectorAll(`.media-card[data-tmdb-id="${tmdbId}"]`);
+            cards.forEach((card) => {
+                const badge = card.querySelector('.media-card-status-badge');
+                if (badge) {
+                    if (inLibrary) {
+                        badge.className = 'media-card-status-badge complete';
+                        badge.innerHTML = '<i class="fas fa-check"></i>';
+                        card.classList.add('in-library');
+                    } else if (partial) {
+                        badge.className = 'media-card-status-badge partial';
+                        badge.innerHTML = '<i class="fas fa-bookmark"></i>';
+                    }
+                }
+            });
+        } catch (err) {
+            console.warn('[RequestarrModal] Failed to refresh card status from API:', err);
+        }
     }
 
     closeModal() {

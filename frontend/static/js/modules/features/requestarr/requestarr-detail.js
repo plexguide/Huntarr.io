@@ -779,6 +779,7 @@
         },
 
         setupDetailInteractions() {
+            var self = this;
             this.attachToolbarHandlers();
 
             // Instance selector: stay on Requestarr; toolbar and data update by instance type (Movie Hunt vs Radarr)
@@ -808,6 +809,16 @@
                             this.selectedInstanceName
                         );
                     }
+                });
+            }
+
+            // ── Auto-refresh after request/edit/delete via shared event system ──
+            if (window.MediaUtils) {
+                window.MediaUtils.teardownDetailRefreshListeners(this._refreshHandle);
+                this._refreshHandle = window.MediaUtils.setupDetailRefreshListeners({
+                    getTmdbId: function() { return self.currentMovie && (self.currentMovie.tmdb_id || self.currentMovie.id); },
+                    refreshCallback: function() { self.updateDetailInfoBar(); },
+                    label: 'RequestarrDetail'
                 });
             }
 

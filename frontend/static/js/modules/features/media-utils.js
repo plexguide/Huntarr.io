@@ -207,6 +207,82 @@
         return { appType: 'movie_hunt', instanceName: '', instanceId: '' };
     }
 
+    /* ── Detail page refresh-after-action event system ── */
+    /*
+     * Single source of truth for:
+     *   - Listening for request-success events (from Requestarr modal)
+     *   - Listening for status-changed events (from edit save, delete, etc.)
+     *   - Dispatching status-changed events
+     *   - Delayed re-fetch pattern (immediate + 3s + 8s for fast downloads)
+     *
+     * Both Movie Hunt detail and Requestarr detail call setupDetailRefreshListeners()
+     * with their own refreshCallback. The logic lives here once.
+     */
+
+    /**
+     * Set up event listeners that auto-refresh a detail page after user actions.
+     * Call this from setupDetailInteractions() in any detail page module.
+     *
+     * @param {Object} options
+     *   - getTmdbId {function}    — returns the current movie's TMDB ID (called on each event)
+     *   - refreshCallback {function} — called to refresh the detail page status/toolbar
+     *   - label {string}          — log label, e.g. 'MovieHuntDetail' or 'RequestarrDetail'
+     * @returns {Object} handle — pass to teardownDetailRefreshListeners() on cleanup
+     */
+    function setupDetailRefreshListeners(options) {
+        var getTmdbId = options.getTmdbId;
+        var refreshCb = options.refreshCallback;
+        var label = options.label || 'DetailPage';
+
+        function onRequestSuccess(e) {
+            var detail = e.detail || {};
+            var myId = getTmdbId();
+            if (!myId || String(detail.tmdbId) !== String(myId)) return;
+
+            console.log('[' + label + '] Request succeeded, refreshing status...');
+            refreshCb();
+            setTimeout(function() { refreshCb(); }, 3000);
+            setTimeout(function() { refreshCb(); }, 8000);
+        }
+
+        function onStatusChanged(e) {
+            var detail = e.detail || {};
+            var myId = getTmdbId();
+            if (!myId || String(detail.tmdbId) !== String(myId)) return;
+
+            console.log('[' + label + '] Status changed (' + (detail.action || '?') + '), refreshing...');
+            refreshCb();
+        }
+
+        window.addEventListener('requestarr-request-success', onRequestSuccess);
+        window.addEventListener('media-status-changed', onStatusChanged);
+
+        return { _reqHandler: onRequestSuccess, _statusHandler: onStatusChanged };
+    }
+
+    /**
+     * Remove listeners created by setupDetailRefreshListeners().
+     * @param {Object} handle — the return value from setupDetailRefreshListeners()
+     */
+    function teardownDetailRefreshListeners(handle) {
+        if (!handle) return;
+        if (handle._reqHandler) window.removeEventListener('requestarr-request-success', handle._reqHandler);
+        if (handle._statusHandler) window.removeEventListener('media-status-changed', handle._statusHandler);
+    }
+
+    /**
+     * Dispatch a status-changed event so all listening detail pages refresh.
+     * Call this after edit-save, force-search, force-upgrade, delete, etc.
+     *
+     * @param {number|string} tmdbId
+     * @param {string} action — e.g. 'edit', 'force-search', 'force-upgrade', 'delete'
+     */
+    function dispatchStatusChanged(tmdbId, action) {
+        window.dispatchEvent(new CustomEvent('media-status-changed', {
+            detail: { tmdbId: tmdbId, action: action || 'unknown' }
+        }));
+    }
+
     // Export to window
     window.MediaUtils = {
         hideMedia: hideMedia,
@@ -214,6 +290,9 @@
         getActionButton: getActionButton,
         animateCardRemoval: animateCardRemoval,
         decodeInstanceValue: decodeInstanceValue,
-        resolveMovieInstance: resolveMovieInstance
+        resolveMovieInstance: resolveMovieInstance,
+        setupDetailRefreshListeners: setupDetailRefreshListeners,
+        teardownDetailRefreshListeners: teardownDetailRefreshListeners,
+        dispatchStatusChanged: dispatchStatusChanged
     };
 })();

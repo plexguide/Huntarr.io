@@ -464,6 +464,16 @@
                 });
             }
 
+            // ── Auto-refresh after request/edit/delete via shared event system ──
+            if (window.MediaUtils) {
+                window.MediaUtils.teardownDetailRefreshListeners(this._refreshHandle);
+                this._refreshHandle = window.MediaUtils.setupDetailRefreshListeners({
+                    getTmdbId: function() { return self.currentMovie && (self.currentMovie.tmdb_id || self.currentMovie.id); },
+                    refreshCallback: function() { self.updateMovieStatus(); },
+                    label: 'MovieHuntDetail'
+                });
+            }
+
             // Similar movie cards
             document.querySelectorAll('.mh-similar-card').forEach(card => {
                 card.addEventListener('click', async () => {
@@ -616,6 +626,8 @@
                     const modal = document.getElementById('mh-edit-modal');
                     if (modal) modal.remove();
                     this.updateMovieStatus(); // refresh info bar
+                    // Notify all listening detail pages via shared event system
+                    if (window.MediaUtils) window.MediaUtils.dispatchStatusChanged(tmdbId, 'edit');
                 } else {
                     var msg = 'Save failed: ' + (data.error || 'Unknown error');
                     if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, 'error');
@@ -717,6 +729,7 @@
 
             if (btn) { btn.disabled = false; var icon = btn.querySelector('i'); if (icon) { icon.className = 'fas fa-search'; } }
             this.updateMovieStatus();
+            if (window.MediaUtils) window.MediaUtils.dispatchStatusChanged(movie.tmdb_id || movie.id, 'force-search');
         },
 
         /* ── Force Upgrade ─────────────────────────────────────── */
@@ -758,6 +771,7 @@
 
             if (btn) { btn.disabled = false; var icon = btn.querySelector('i'); if (icon) { icon.className = 'fas fa-arrow-circle-up'; } }
             this.updateMovieStatus();
+            if (window.MediaUtils) window.MediaUtils.dispatchStatusChanged(movie.tmdb_id || movie.id, 'force-upgrade');
         },
 
         /* ── Status ────────────────────────────────────────────── */
